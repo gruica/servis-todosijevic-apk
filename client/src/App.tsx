@@ -15,6 +15,7 @@ import MaintenanceSchedules from "@/pages/maintenance-schedules";
 import EmailSettings from "@/pages/email-settings";
 import SQLAdmin from "@/pages/sql-admin";
 import ExcelImportExport from "@/pages/excel-import-export";
+import ExcelImport from "@/pages/admin/excel-import";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 
@@ -34,6 +35,7 @@ function Router() {
       <RoleProtectedRoute path="/email-settings" component={EmailSettings} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/sql-admin" component={SQLAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
       {/* Technician routes */}

@@ -21,7 +21,8 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
-    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_chart" },
+    { path: "/excel", label: "Excel izvoz", icon: "download" },
+    { path: "/admin/excel-import", label: "Excel uvoz", icon: "upload" },
     { path: "/profile", label: "Moj profil", icon: "person" },
   ];
   
@@ -100,7 +101,9 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                                        item.icon === "mail" ? "Pošta" :
                                        item.icon === "group" ? "Grupa" :
                                        item.icon === "storage" ? "Baza" :
-                                       item.icon === "table_chart" ? "Tabela" : item.icon}</span>
+                                       item.icon === "table_chart" ? "Tabela" : 
+                                       item.icon === "download" ? "Preuzimanje" :
+                                       item.icon === "upload" ? "Otpremanje" : item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 </Link>
