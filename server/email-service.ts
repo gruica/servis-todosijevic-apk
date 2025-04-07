@@ -55,37 +55,55 @@ export class EmailService {
   }
   
   /**
-   * Učitava SMTP konfiguraciju iz fajla ili koristi podrazumevane vrednosti
+   * Učitava SMTP konfiguraciju iz fajla ili koristi environment varijable
    */
   private loadSmtpConfig(): void {
     try {
-      // Pokušaj učitati iz fajla
-      if (fs.existsSync(CONFIG_FILE_PATH)) {
-        const configData = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
-        this.configCache = JSON.parse(configData);
-        console.log('SMTP konfiguracija uspešno učitana iz fajla');
-      } else {
-        // Koristi podrazumevane vrednosti iz environment varijabli
-        this.configCache = {
-          host: process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com',
-          port: parseInt(process.env.EMAIL_PORT || '465'),
-          secure: process.env.EMAIL_SECURE === 'true', 
-          auth: {
-            user: process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com',
-            pass: process.env.EMAIL_PASSWORD || '',
-          },
-        };
-        console.log('Koristi se podrazumevana SMTP konfiguracija');
+      // Izvuci vrednosti iz environment varijabli
+      const host = process.env.EMAIL_HOST;
+      const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465;
+      const secure = process.env.EMAIL_SECURE === 'true';
+      const user = process.env.EMAIL_USER;
+      const pass = process.env.EMAIL_PASSWORD;
+      
+      if (!host || !user || !pass) {
+        console.error('SMTP konfiguracija nije kompletna. Nedostaju obavezne environment varijable:');
+        if (!host) console.error('- EMAIL_HOST nije postavljen');
+        if (!user) console.error('- EMAIL_USER nije postavljen');
+        if (!pass) console.error('- EMAIL_PASSWORD nije postavljen');
       }
+      
+      // Postavi from adresu iz env varijable ako postoji
+      if (process.env.EMAIL_FROM) {
+        this.from = process.env.EMAIL_FROM;
+        console.log(`Email FROM adresa postavljena na: ${this.from}`);
+      }
+      
+      // Kreiraj konfiguraciju
+      this.configCache = {
+        host: host || 'mail.frigosistemtodosijevic.com',
+        port: port,
+        secure: secure,
+        auth: {
+          user: user || 'info@frigosistemtodosijevic.com',
+          pass: pass || '',
+        },
+      };
+      
+      console.log(`SMTP konfiguracija učitana: server=${this.configCache.host}, port=${this.configCache.port}, secure=${this.configCache.secure}`);
       
       // Kreiraj transporter
-      if (this.configCache) {
-        this.transporter = nodemailer.createTransport(this.configCache);
-      }
+      this.transporter = nodemailer.createTransport(this.configCache);
       
+      // Pokušaj odmah verifikovati konekciju
+      this.transporter.verify()
+        .then(() => console.log('✓ SMTP konekcija uspešno verifikovana'))
+        .catch(err => console.error('✗ SMTP konekcija nije uspešna:', err.message));
+        
     } catch (error) {
       console.error('Greška pri učitavanju SMTP konfiguracije:', error);
-      // Koristi podrazumevane vrednosti ako dođe do greške
+      
+      // Koristi osnovne vrednosti ako dođe do greške
       this.configCache = {
         host: process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com',
         port: parseInt(process.env.EMAIL_PORT || '465'),
@@ -95,6 +113,8 @@ export class EmailService {
           pass: process.env.EMAIL_PASSWORD || '',
         },
       };
+      
+      // Kreiraj transporter i u slučaju greške
       this.transporter = nodemailer.createTransport(this.configCache);
     }
   }
@@ -139,20 +159,50 @@ export class EmailService {
   public async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       if (!this.transporter) {
+        console.log('Transporter nije inicijalizovan, pokušavam ponovno učitavanje konfiguracije...');
         this.loadSmtpConfig();
       }
       
-      await this.transporter.sendMail({
+      console.log(`Pokušavam poslati email na: ${options.to}`);
+      console.log(`Koristim SMTP server: ${this.configCache?.host || 'nije postavljen'}`);
+      console.log(`Koristim email adresu: ${this.from}`);
+      
+      // Priprema poruke
+      const mailOptions = {
         from: this.from,
         to: options.to,
         subject: options.subject,
         text: options.text,
         html: options.html,
-      });
+      };
+      
+      // Slanje email-a
+      const info = await this.transporter.sendMail(mailOptions);
+      
       console.log(`Email uspešno poslat na: ${options.to}`);
+      console.log(`ID poruke: ${info.messageId}`);
+      console.log(`Odgovor servera: ${info.response}`);
       return true;
-    } catch (error) {
+    } catch (err) {
+      const error = err as any;
       console.error('Greška pri slanju email-a:', error);
+      if (error.code) {
+        console.error(`Kod greške: ${error.code}`);
+      }
+      if (error.command) {
+        console.error(`Komanda koja je izazvala grešku: ${error.command}`);
+      }
+      
+      // Proveri da li su kredencijali ispravni
+      if (error.code === 'EAUTH') {
+        console.error('Greška autentifikacije: Proverite korisničko ime i lozinku');
+      }
+      
+      // Proveri da li je server dostupan
+      if (error.code === 'ECONNREFUSED') {
+        console.error('Server nije dostupan. Proverite host i port.');
+      }
+      
       return false;
     }
   }
@@ -296,7 +346,8 @@ export class EmailService {
       await this.transporter.verify();
       console.log('SMTP konekcija uspešno verifikovana');
       return true;
-    } catch (error) {
+    } catch (err) {
+      const error = err as any;
       console.error('Greška pri verifikaciji SMTP konekcije:', error);
       return false;
     }
@@ -344,7 +395,8 @@ export class EmailService {
       
       console.log(`Administratorsko obaveštenje poslato na: ${toAdmins}`);
       return true;
-    } catch (error) {
+    } catch (err) {
+      const error = err as any;
       console.error('Greška pri slanju administratorskog obaveštenja:', error);
       return false;
     }
