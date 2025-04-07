@@ -225,6 +225,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertServiceSchema.parse(req.body);
       const service = await storage.createService(validatedData);
+      
+      // Pošalji email obaveštenje klijentu o novom servisu
+      try {
+        if (service.clientId) {
+          const client = await storage.getClient(service.clientId);
+          if (client && client.email) {
+            const technician = service.technicianId ? 
+              await storage.getTechnician(service.technicianId) : null;
+            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+            
+            // Šaljemo obaveštenje klijentu
+            await emailService.sendServiceStatusUpdate(
+              client,
+              service.id,
+              service.status,
+              service.description || "",
+              technicianName
+            );
+            
+            console.log(`Email obaveštenje poslato klijentu ${client.fullName} za novi servis #${service.id}`);
+            
+            // Ako je dodeljen serviser, obavesti i njega
+            if (technician && technician.email) {
+              await emailService.sendNewServiceAssignment(
+                technician.email,
+                technician.fullName,
+                service.id,
+                client.fullName,
+                service.scheduledDate || service.createdAt,
+                `${client.address}, ${client.city}`,
+                service.description || ""
+              );
+              console.log(`Email obaveštenje poslato serviseru ${technician.fullName} za novi servis #${service.id}`);
+            }
+          } else {
+            console.warn(`Klijent ${client?.fullName || service.clientId} nema email adresu, obaveštenje nije poslato`);
+          }
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+        // Ne vraćamo grešku korisniku jer servis je uspešno kreiran
+      }
+      
       res.status(201).json(service);
     } catch (error) {
       if (error instanceof z.ZodError) {
