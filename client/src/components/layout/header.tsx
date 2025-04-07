@@ -43,12 +43,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon">
-            <span className="material-icons">notifications</span>
-          </Button>
-          <Button variant="ghost" size="icon">
-            <span className="material-icons">help_outline</span>
-          </Button>
+          {/* Nema više dodatnih dugmadi u headeru */}
         </div>
       </div>
       
