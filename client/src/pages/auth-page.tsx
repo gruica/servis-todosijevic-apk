@@ -22,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 // Define login and registration schemas
 const loginSchema = z.object({
   username: z.string().email({ message: "Molimo unesite validnu email adresu" }),
-  password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }),
+  password: z.string().min(1, { message: "Lozinka je obavezna" }),
   rememberMe: z.boolean().optional(),
 });
 
@@ -155,6 +155,11 @@ export default function AuthPage() {
                         Zaboravili ste lozinku?
                       </a>
                     </div>
+                    {loginMutation.isError && (
+                      <div className="bg-red-50 p-3 rounded-md text-red-500 text-sm mb-2">
+                        <p>Neispravno korisničko ime ili lozinka. Pokušajte ponovo.</p>
+                      </div>
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full" 
@@ -222,6 +227,11 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+                    {registerMutation.isError && (
+                      <div className="bg-red-50 p-3 rounded-md text-red-500 text-sm mb-2">
+                        <p>Greška pri registraciji. Korisničko ime možda već postoji.</p>
+                      </div>
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full" 

@@ -13,7 +13,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
 
   const menuItems = [
     { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
-    { path: "/clients", label: "Klijenti", icon: "people" },
+    { path: "/clients", label: "Klijenti", icon: "person" },
     { path: "/services", label: "Servisi", icon: "build" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
   ];
