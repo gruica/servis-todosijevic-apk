@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useMobile } from "@/hooks/use-mobile";
+import { AdminProfileWidget } from "@/components/admin/profile-widget";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -43,7 +44,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Nema više dodatnih dugmadi u headeru */}
+          <AdminProfileWidget />
         </div>
       </div>
       

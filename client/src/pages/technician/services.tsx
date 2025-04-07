@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
+import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 
 type TechnicianService = Service & {
   client?: {
@@ -153,13 +154,8 @@ export default function TechnicianServices() {
     <div className="container mx-auto py-4 px-4 md:px-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Moji servisi</h1>
-        <div className="flex gap-2">
-          <Link href="/tech/profile">
-            <Button variant="outline">
-              <User className="mr-2 h-4 w-4" />
-              Moj profil
-            </Button>
-          </Link>
+        <div className="flex gap-2 items-center">
+          <TechnicianProfileWidget />
           <Button 
             variant="destructive" 
             onClick={() => {
