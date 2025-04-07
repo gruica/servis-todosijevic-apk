@@ -65,7 +65,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                   href={item.path}
                   onClick={() => closeMobileMenu()}
                 >
-                  <a 
+                  <div 
                     className={cn(
                       "flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100",
                       location === item.path 
@@ -75,7 +75,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                   >
                     <span className="material-icons mr-3 text-primary">{item.icon}</span>
                     <span>{item.label}</span>
-                  </a>
+                  </div>
                 </Link>
               </li>
             ))}

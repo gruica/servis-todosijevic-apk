@@ -337,7 +337,6 @@ export default function Dashboard() {
                       {enrichedApplianceStats.map((stat) => (
                         <div key={stat.categoryId} className="flex items-center">
                           <div className="w-10 h-10 rounded-full bg-blue-100 text-primary flex items-center justify-center mr-3">
-                            <span className="material-icons">{stat.icon}</span>
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between mb-1">
