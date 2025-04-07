@@ -12,10 +12,10 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const { user } = useAuth();
 
   const menuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
-    { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/services", label: "Servisi", icon: "build" },
-    { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
+    { path: "/", label: "Kontrolna tabla", icon: "nadzorna_tabla" },
+    { path: "/clients", label: "Klijenti", icon: "osoba" },
+    { path: "/services", label: "Servisi", icon: "konstrukcija" },
+    { path: "/appliances", label: "Bela tehnika", icon: "frižider" },
   ];
 
   // Generate initials from user fullName
@@ -100,7 +100,7 @@ function LogoutButton() {
       className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
       disabled={logoutMutation.isPending}
     >
-      <span className="material-icons mr-3 text-gray-500">logout</span>
+      <span className="material-icons mr-3 text-gray-500">odjava</span>
       <span>Odjavi se</span>
     </button>
   );
