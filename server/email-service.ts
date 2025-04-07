@@ -32,6 +32,10 @@ export class EmailService {
   private from: string;
   private transporter!: Transporter;
   private configCache: SmtpConfig | null = null;
+  private adminEmails: string[] = [
+    'admin@frigosistemtodosijevic.me',
+    'jelena@frigosistemtodosijevic.me'
+  ];
 
   private constructor() {
     this.from = process.env.EMAIL_FROM || 'info@frigosistemtodosijevic.com';
@@ -294,6 +298,54 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error('Greška pri verifikaciji SMTP konekcije:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje obaveštenje administratorima o poslatom mailu
+   */
+  public async notifyAdminAboutEmail(
+    emailType: string,
+    recipient: string,
+    serviceId: number,
+    detailsText: string
+  ): Promise<boolean> {
+    if (this.adminEmails.length === 0) {
+      console.log('Nema konfigurisanih administratorskih email adresa za slanje obaveštenja');
+      return false;
+    }
+
+    const subject = `Administratorsko obaveštenje: ${emailType} za servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0066cc;">Administratorsko obaveštenje</h2>
+        <p>Poslato je sledeće email obaveštenje:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p><strong>Tip obaveštenja:</strong> ${emailType}</p>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Poslato na:</strong> ${recipient}</p>
+          <p><strong>Datum i vreme:</strong> ${new Date().toLocaleString('sr-ME')}</p>
+          <p><strong>Detalji:</strong> ${detailsText}</p>
+        </div>
+        <p>Ovo je automatsko obaveštenje sistema.</p>
+      </div>
+    `;
+
+    try {
+      const toAdmins = this.adminEmails.join(',');
+      
+      await this.transporter.sendMail({
+        from: this.from,
+        to: toAdmins,
+        subject,
+        html,
+      });
+      
+      console.log(`Administratorsko obaveštenje poslato na: ${toAdmins}`);
+      return true;
+    } catch (error) {
+      console.error('Greška pri slanju administratorskog obaveštenja:', error);
       return false;
     }
   }

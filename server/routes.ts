@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const technicianName = technician ? technician.fullName : "Nepoznat serviser";
             
             // Šaljemo obaveštenje klijentu
-            await emailService.sendServiceStatusUpdate(
+            const clientEmailSent = await emailService.sendServiceStatusUpdate(
               client,
               service.id,
               service.status,
@@ -244,11 +244,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               technicianName
             );
             
-            console.log(`Email obaveštenje poslato klijentu ${client.fullName} za novi servis #${service.id}`);
+            if (clientEmailSent) {
+              console.log(`Email obaveštenje poslato klijentu ${client.fullName} za novi servis #${service.id}`);
+              
+              // Obavesti administratore o poslatom mail-u klijentu
+              await emailService.notifyAdminAboutEmail(
+                "Novi servis",
+                client.email,
+                service.id,
+                `Poslato obaveštenje klijentu ${client.fullName} o novom servisu #${service.id} sa statusom ${service.status}`
+              );
+            }
             
             // Ako je dodeljen serviser, obavesti i njega
             if (technician && technician.email) {
-              await emailService.sendNewServiceAssignment(
+              const techEmailSent = await emailService.sendNewServiceAssignment(
                 technician.email,
                 technician.fullName,
                 service.id,
@@ -257,7 +267,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 `${client.address}, ${client.city}`,
                 service.description || ""
               );
-              console.log(`Email obaveštenje poslato serviseru ${technician.fullName} za novi servis #${service.id}`);
+              
+              if (techEmailSent) {
+                console.log(`Email obaveštenje poslato serviseru ${technician.fullName} za novi servis #${service.id}`);
+                
+                // Obavesti administratore o poslatom mail-u serviseru
+                await emailService.notifyAdminAboutEmail(
+                  "Dodela servisa serviseru",
+                  technician.email,
+                  service.id,
+                  `Poslato obaveštenje serviseru ${technician.fullName} o dodeli novog servisa #${service.id}`
+                );
+              }
             }
           } else {
             console.warn(`Klijent ${client?.fullName || service.clientId} nema email adresu, obaveštenje nije poslato`);
@@ -343,13 +364,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const technician = await storage.getTechnician(service.technicianId || 0);
             const technicianName = technician ? technician.fullName : "Nepoznat serviser";
             
-            await emailService.sendServiceStatusUpdate(
+            const emailSent = await emailService.sendServiceStatusUpdate(
               client, 
               serviceId,
               validStatus,
               technicianNotes || service.description || "",
               technicianName
             );
+            
+            if (emailSent && client.email) {
+              // Obavesti administratore o poslatom mail-u
+              await emailService.notifyAdminAboutEmail(
+                "Promena statusa servisa",
+                client.email,
+                serviceId,
+                `Poslato obaveštenje klijentu ${client.fullName} o promeni statusa servisa #${serviceId} u "${validStatus}"`
+              );
+            }
           }
         }
       } catch (emailError) {
