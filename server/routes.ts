@@ -680,9 +680,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get services for the logged-in technician
   app.get("/api/my-services", async (req, res) => {
     try {
+      // Obavezno staviti req.isAuthenticated() ovde za proveru
       if (!req.isAuthenticated()) {
+        console.log("Pristup api/my-services - korisnik nije prijavljen");
         return res.status(401).json({ error: "Potrebna je prijava" });
       }
+      
+      // Ispisati dodatne informacije za debugging
+      console.log(`my-services API pristup - user: ${JSON.stringify(req.user || {})}`);
       
       // Check if the user is a technician
       if (req.user?.role !== "technician" || !req.user?.technicianId) {
