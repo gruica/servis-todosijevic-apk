@@ -16,8 +16,9 @@ export function RoleProtectedRoute({
   if (isLoading) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <div className="flex items-center justify-center min-h-screen flex-col">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+          <p className="text-gray-500">Učitavanje...</p>
         </div>
       </Route>
     );

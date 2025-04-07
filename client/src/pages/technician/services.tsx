@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 type TechnicianService = Service & {
   client?: {
@@ -37,6 +38,7 @@ type TechnicianService = Service & {
 
 export default function TechnicianServices() {
   const { toast } = useToast();
+  const { logoutMutation } = useAuth();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);
@@ -144,6 +146,34 @@ export default function TechnicianServices() {
     <div className="container mx-auto py-4 px-4 md:px-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Moji servisi</h1>
+        <Button 
+          variant="destructive" 
+          onClick={() => {
+            logoutMutation.mutate(undefined, {
+              onSuccess: () => {
+                toast({
+                  title: "Odjava uspješna",
+                  description: "Uspješno ste se odjavili.",
+                });
+              },
+              onError: (error: Error) => {
+                toast({
+                  title: "Greška pri odjavi",
+                  description: error.message,
+                  variant: "destructive",
+                });
+              },
+            });
+          }}
+          disabled={logoutMutation.isPending}
+        >
+          {logoutMutation.isPending ? (
+            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+          ) : (
+            <LogOut className="mr-2 h-4 w-4" />
+          )}
+          Odjavi se
+        </Button>
       </div>
 
       <Tabs defaultValue="active" className="w-full" onValueChange={setActiveTab}>
