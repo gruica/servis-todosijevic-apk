@@ -9,8 +9,11 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
 const MemoryStore = createMemoryStore(session);
+const scryptAsync = promisify(scrypt);
 
 // Define extended storage interface
 export interface IStorage {
@@ -75,6 +78,13 @@ export class MemStorage implements IStorage {
   private applianceId: number;
   private serviceId: number;
 
+  // Hash password utility method
+  private async hashPassword(password: string) {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
+  }
+  
   constructor() {
     this.users = new Map();
     this.clients = new Map();
@@ -94,18 +104,31 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000, // prune expired entries every 24h
     });
     
-    // Add default admin user
-    this.createUser({
-      username: "admin@example.com",
-      password: "admin123.admin123", // In a real app, this would be hashed
-      fullName: "Administrator"
-    });
-    
     // Add some initial categories with proper icons
     this.seedApplianceCategories();
     
     // Add some manufacturers
     this.seedManufacturers();
+    
+    // Set up the initial admin account
+    this.seedAdminUser();
+  }
+  
+  private async seedAdminUser() {
+    // We need to hash the password manually since this is the initial seeding
+    const hashedPassword = await this.hashPassword("admin123.admin123");
+    
+    const id = this.userId++;
+    const user: User = { 
+      id, 
+      role: "admin", 
+      username: "admin@example.com", 
+      fullName: "Administrator", 
+      password: hashedPassword 
+    };
+    
+    this.users.set(id, user);
+    console.log("Admin user created:", user.username);
   }
 
   private seedApplianceCategories() {
@@ -152,7 +175,20 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
     const role = id === 1 ? "admin" : "user";
-    const user: User = { ...insertUser, id, role };
+    
+    // If the password isn't already hashed (contains no .), hash it
+    let password = insertUser.password;
+    if (!password.includes('.')) {
+      password = await this.hashPassword(password);
+    }
+    
+    const user: User = { 
+      ...insertUser, 
+      password, 
+      id, 
+      role 
+    };
+    
     this.users.set(id, user);
     return user;
   }

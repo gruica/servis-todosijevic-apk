@@ -22,10 +22,27 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const [hashed, salt] = stored.split(".");
+    
+    if (!hashed || !salt) {
+      console.error("Invalid stored password format:", stored);
+      return false;
+    }
+    
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    if (hashedBuf.length !== suppliedBuf.length) {
+      console.error(`Buffer length mismatch: ${hashedBuf.length} vs ${suppliedBuf.length}`);
+      return false;
+    }
+    
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -46,18 +63,38 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        } else {
+    new LocalStrategy(
+      {
+        usernameField: 'username',
+        passwordField: 'password',
+        session: true
+      },
+      async (username, password, done) => {
+        try {
+          console.log(`Attempting login with username: ${username}`);
+          const user = await storage.getUserByUsername(username);
+          
+          if (!user) {
+            console.log(`User not found: ${username}`);
+            return done(null, false, { message: 'Neispravno korisničko ime ili lozinka' });
+          }
+          
+          console.log(`User found: ${username}`);
+          const isPasswordValid = await comparePasswords(password, user.password);
+          
+          if (!isPasswordValid) {
+            console.log(`Invalid password for user: ${username}`);
+            return done(null, false, { message: 'Neispravno korisničko ime ili lozinka' });
+          }
+          
+          console.log(`Authentication successful for: ${username}`);
           return done(null, user);
+        } catch (error) {
+          console.error('Authentication error:', error);
+          return done(error);
         }
-      } catch (error) {
-        return done(error);
       }
-    }),
+    ),
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -77,9 +114,9 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Korisničko ime već postoji");
       }
 
+      // Password will be hashed in the storage.createUser method
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
+        ...req.body
       });
 
       // Remove password from the response
