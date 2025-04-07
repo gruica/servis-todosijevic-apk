@@ -851,9 +851,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // Ako password nije heširan (ne sadrži tačku), heširati ga
+    // Proveri da li je lozinka već validno heširana (ima format 'hash.salt')
     let password = insertUser.password;
-    if (!password.includes('.')) {
+    const parts = password.split('.');
+    if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
+      // Ako nije u ispravnom formatu, heširati je
       password = await this.hashPassword(password);
     }
 
@@ -869,9 +871,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, updateData: Partial<User>): Promise<User | undefined> {
-    // Ako je uključen password i nije heširan, heširati ga
-    if (updateData.password && !updateData.password.includes('.')) {
-      updateData.password = await this.hashPassword(updateData.password);
+    // Ako je uključen password, proveri da li je već validno heširan
+    if (updateData.password) {
+      const parts = updateData.password.split('.');
+      if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
+        // Ako nije u ispravnom formatu, heširati
+        updateData.password = await this.hashPassword(updateData.password);
+      }
     }
 
     const [updatedUser] = await db
@@ -883,8 +889,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    try {
+      const result = await db.delete(users).where(eq(users.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Greška pri brisanju korisnika:", error);
+      return false;
+    }
   }
 
   // Technician methods
@@ -1101,8 +1112,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMaintenanceSchedule(id: number): Promise<boolean> {
-    const result = await db.delete(maintenanceSchedules).where(eq(maintenanceSchedules.id, id));
-    return result.rowCount > 0;
+    try {
+      const result = await db.delete(maintenanceSchedules).where(eq(maintenanceSchedules.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Greška pri brisanju rasporeda održavanja:", error);
+      return false;
+    }
   }
 
   async getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<MaintenanceSchedule[]> {
@@ -1160,8 +1176,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMaintenanceAlert(id: number): Promise<boolean> {
-    const result = await db.delete(maintenanceAlerts).where(eq(maintenanceAlerts.id, id));
-    return result.rowCount > 0;
+    try {
+      const result = await db.delete(maintenanceAlerts).where(eq(maintenanceAlerts.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Greška pri brisanju alarma:", error);
+      return false;
+    }
   }
 
   async getUnreadMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
