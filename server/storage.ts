@@ -133,11 +133,11 @@ export class MemStorage implements IStorage {
 
   private seedApplianceCategories() {
     const categories = [
-      { name: "Mašina za veš", icon: "local_laundry_service" },
-      { name: "Frižider", icon: "kitchen" },
-      { name: "Šporet", icon: "microwave" },
-      { name: "Mašina za sudove", icon: "wash" },
-      { name: "Klima uređaj", icon: "ac_unit" }
+      { name: "Mašina za veš", icon: "veš_mašina" },
+      { name: "Frižider", icon: "frižider" },
+      { name: "Šporet", icon: "šporet" },
+      { name: "Mašina za sudove", icon: "sudopera" },
+      { name: "Klima uređaj", icon: "klima" }
     ];
     
     categories.forEach(category => {
