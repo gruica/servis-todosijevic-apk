@@ -91,7 +91,15 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                         : ""
                     )}
                   >
-                    <span className="material-icons mr-3 text-primary">{item.icon}</span>
+                    <span className="mr-3 text-primary">{item.icon === "grid_view" ? "Mreža" :
+                                       item.icon === "person" ? "Osoba" :
+                                       item.icon === "build" ? "Alat" :
+                                       item.icon === "kitchen" ? "Kuhinja" :
+                                       item.icon === "event" ? "Kalendar" :
+                                       item.icon === "mail" ? "Pošta" :
+                                       item.icon === "group" ? "Grupa" :
+                                       item.icon === "storage" ? "Baza" :
+                                       item.icon === "table_chart" ? "Tabela" : item.icon}</span>
                     <span>{item.label}</span>
                   </div>
                 </Link>
@@ -118,7 +126,7 @@ function LogoutButton() {
       className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
       disabled={logoutMutation.isPending}
     >
-      <span className="material-icons mr-3 text-gray-500">logout</span>
+      <span className="mr-3 text-gray-500">Izlaz</span>
       <span>Odjavi se</span>
     </button>
   );
