@@ -387,6 +387,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Users management routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
+      }
+      
+      // Get all users but don't return their passwords
+      const users = await Promise.all(
+        Array.from((await storage.getAllUsers()) || []).map(user => {
+          const { password, ...userWithoutPassword } = user;
+          return userWithoutPassword;
+        })
+      );
+      
+      res.json(users);
+    } catch (error) {
+      console.error("Error getting users:", error);
+      res.status(500).json({ error: "Greška pri dobijanju korisnika" });
+    }
+  });
+  
+  app.post("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za kreiranje korisnika" });
+      }
+      
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Korisničko ime već postoji" });
+      }
+      
+      // If creating a technician user, verify the technician exists
+      if (userData.role === "technician" && userData.technicianId) {
+        const technician = await storage.getTechnician(userData.technicianId);
+        if (!technician) {
+          return res.status(404).json({ error: "Serviser nije pronađen" });
+        }
+      }
+      
+      const newUser = await storage.createUser(userData);
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci korisnika", details: error.format() });
+      }
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Greška pri kreiranju korisnika" });
+    }
+  });
+  
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje korisnika" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      const existingUser = await storage.getUser(userId);
+      
+      if (!existingUser) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      // Parse the update data (with all fields optional except username)
+      const updateData = insertUserSchema
+        .omit({ password: true })
+        .extend({ password: z.string().optional() })
+        .parse(req.body);
+      
+      // If username is changing, check if it's already taken
+      if (updateData.username !== existingUser.username) {
+        const existingUserWithUsername = await storage.getUserByUsername(updateData.username);
+        if (existingUserWithUsername) {
+          return res.status(400).json({ error: "Korisničko ime već postoji" });
+        }
+      }
+      
+      // If role is technician and technicianId is provided, verify technician exists
+      if (updateData.role === "technician" && updateData.technicianId) {
+        const technician = await storage.getTechnician(updateData.technicianId);
+        if (!technician) {
+          return res.status(404).json({ error: "Serviser nije pronađen" });
+        }
+      }
+      
+      // Update the user
+      let updateUserData: any = {
+        ...existingUser,
+        username: updateData.username,
+        fullName: updateData.fullName,
+        role: updateData.role,
+        technicianId: updateData.technicianId
+      };
+      
+      // Only update password if provided
+      if (updateData.password) {
+        updateUserData.password = updateData.password;
+      }
+      
+      const updatedUser = await storage.updateUser(userId, updateUserData);
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Greška pri ažuriranju korisnika" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci korisnika", details: error.format() });
+      }
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju korisnika" });
+    }
+  });
+  
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje korisnika" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      
+      // Don't allow deleting yourself
+      if (req.user?.id === userId) {
+        return res.status(400).json({ error: "Ne možete izbrisati svoj korisnički nalog" });
+      }
+      
+      const success = await storage.deleteUser(userId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      res.status(200).json({ message: "Korisnik uspješno izbrisan" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Greška pri brisanju korisnika" });
+    }
+  });
+  
   // Routes for technician users
   app.get("/api/technician-profile", async (req, res) => {
     try {

@@ -17,7 +17,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/clients", label: "Klijenti", icon: "osoba" },
     { path: "/services", label: "Servisi", icon: "konstrukcija" },
     { path: "/appliances", label: "Bela tehnika", icon: "frižider" },
-    { path: "/create-tech-user", label: "Kreiraj servisera", icon: "osoba_dodaj" },
+    { path: "/users", label: "Korisnici", icon: "grupe" },
   ];
   
   const technicianMenuItems = [

@@ -25,6 +25,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
+  getAllUsers(): Promise<User[]>;
   
   // Technician methods
   getAllTechnicians(): Promise<Technician[]>;
@@ -500,6 +503,40 @@ export class MemStorage implements IStorage {
     return Array.from(this.services.values())
       .slice(-limit)
       .reverse();
+  }
+  
+  // Additional user management methods
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async updateUser(id: number, updateUserData: Partial<User>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) return undefined;
+    
+    // If the password is provided and not already hashed, hash it
+    let password = updateUserData.password || existingUser.password;
+    if (updateUserData.password && !updateUserData.password.includes('.')) {
+      password = await this.hashPassword(updateUserData.password);
+    }
+    
+    const updatedUser: User = {
+      ...existingUser,
+      ...updateUserData,
+      password,
+      id
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Check if user exists
+    if (!this.users.has(id)) return false;
+    
+    // Delete the user
+    return this.users.delete(id);
   }
 }
 

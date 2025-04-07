@@ -6,6 +6,7 @@ import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Services from "@/pages/services";
 import Appliances from "@/pages/appliances";
+import Users from "@/pages/users";
 import TechnicianServices from "@/pages/technician/services";
 import TechnicianProfile from "@/pages/technician/profile";
 import CreateTechnicianUser from "@/pages/create-technician-user";
@@ -22,6 +23,7 @@ function Router() {
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/services" component={Services} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/create-tech-user" component={CreateTechnicianUser} allowedRoles={["admin"]} />
       
       {/* Technician routes */}
