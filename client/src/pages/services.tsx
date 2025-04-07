@@ -35,6 +35,10 @@ const serviceFormSchema = insertServiceSchema.extend({
   status: z.string(),
   createdAt: z.string(),
   technicianId: z.coerce.number().optional(),
+  scheduledDate: z.string().optional(),
+  completedDate: z.string().optional(),
+  technicianNotes: z.string().optional(),
+  cost: z.string().optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -172,6 +176,7 @@ export default function Services() {
   // Create/Update service mutation
   const serviceMutation = useMutation({
     mutationFn: async (data: ServiceFormValues) => {
+      console.log("Podaci za slanje:", data);
       if (selectedService) {
         // Update service
         const res = await apiRequest("PUT", `/api/services/${selectedService.id}`, data);
@@ -182,7 +187,8 @@ export default function Services() {
         return await res.json();
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Uspešno sačuvan servis:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
@@ -197,6 +203,7 @@ export default function Services() {
       setSelectedClient(null);
     },
     onError: (error) => {
+      console.error("Greška pri čuvanju servisa:", error);
       toast({
         title: "Greška",
         description: error.message || "Došlo je do greške pri čuvanju podataka",
@@ -207,6 +214,7 @@ export default function Services() {
   
   // Open dialog for adding new service
   const handleAddService = () => {
+    console.log("Otvaranje dijaloga za dodavanje servisa");
     setSelectedService(null);
     setSelectedClient(null);
     form.reset({
@@ -222,10 +230,12 @@ export default function Services() {
       cost: "",
     });
     setIsDialogOpen(true);
+    console.log("Dialog otvoren:", isDialogOpen);
   };
   
   // Open dialog for editing service
   const handleEditService = (service: Service) => {
+    console.log("Uređivanje servisa:", service);
     setSelectedService(service);
     setSelectedClient(service.clientId);
     form.reset({
@@ -233,7 +243,7 @@ export default function Services() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
-      technicianId: service.technicianId,
+      technicianId: service.technicianId || undefined,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || "",
       completedDate: service.completedDate || "",
@@ -576,7 +586,7 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Zakazani datum</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -590,7 +600,7 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Datum završetka</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -610,6 +620,7 @@ export default function Services() {
                           placeholder="Napomene..." 
                           className="min-h-[80px]"
                           {...field} 
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -624,7 +635,7 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Cena servisa</FormLabel>
                       <FormControl>
-                        <Input placeholder="npr. 50 €" {...field} />
+                        <Input placeholder="npr. 50 €" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
