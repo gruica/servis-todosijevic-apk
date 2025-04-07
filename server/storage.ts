@@ -6,7 +6,9 @@ import {
   Appliance, InsertAppliance,
   Service, InsertService,
   ServiceStatus,
-  Technician, InsertTechnician
+  Technician, InsertTechnician,
+  MaintenanceSchedule, InsertMaintenanceSchedule,
+  MaintenanceAlert, InsertMaintenanceAlert
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -34,6 +36,25 @@ export interface IStorage {
   getTechnician(id: number): Promise<Technician | undefined>;
   createTechnician(technician: InsertTechnician): Promise<Technician>;
   updateTechnician(id: number, technician: InsertTechnician): Promise<Technician | undefined>;
+  
+  // Maintenance Schedule methods
+  getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]>;
+  getMaintenanceSchedule(id: number): Promise<MaintenanceSchedule | undefined>;
+  getMaintenanceSchedulesByAppliance(applianceId: number): Promise<MaintenanceSchedule[]>;
+  createMaintenanceSchedule(schedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule>;
+  updateMaintenanceSchedule(id: number, schedule: Partial<MaintenanceSchedule>): Promise<MaintenanceSchedule | undefined>;
+  deleteMaintenanceSchedule(id: number): Promise<boolean>;
+  getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<MaintenanceSchedule[]>;
+  
+  // Maintenance Alert methods
+  getAllMaintenanceAlerts(): Promise<MaintenanceAlert[]>;
+  getMaintenanceAlert(id: number): Promise<MaintenanceAlert | undefined>;
+  getMaintenanceAlertsBySchedule(scheduleId: number): Promise<MaintenanceAlert[]>;
+  createMaintenanceAlert(alert: InsertMaintenanceAlert): Promise<MaintenanceAlert>;
+  updateMaintenanceAlert(id: number, alert: Partial<MaintenanceAlert>): Promise<MaintenanceAlert | undefined>;
+  deleteMaintenanceAlert(id: number): Promise<boolean>;
+  getUnreadMaintenanceAlerts(): Promise<MaintenanceAlert[]>;
+  markMaintenanceAlertAsRead(id: number): Promise<MaintenanceAlert | undefined>;
   
   // Client methods
   getAllClients(): Promise<Client[]>;
@@ -111,6 +132,8 @@ export class MemStorage implements IStorage {
     this.appliances = new Map();
     this.services = new Map();
     this.technicians = new Map();
+    this.maintenanceSchedules = new Map();
+    this.maintenanceAlerts = new Map();
     
     this.userId = 1;
     this.clientId = 1;
@@ -119,6 +142,8 @@ export class MemStorage implements IStorage {
     this.applianceId = 1;
     this.serviceId = 1;
     this.technicianId = 1;
+    this.maintenanceScheduleId = 1;
+    this.maintenanceAlertId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -537,6 +562,150 @@ export class MemStorage implements IStorage {
     
     // Delete the user
     return this.users.delete(id);
+  }
+  
+  // Maintenance Schedule methods
+  private maintenanceSchedules = new Map<number, MaintenanceSchedule>();
+  private maintenanceScheduleId = 1;
+
+  async getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    return Array.from(this.maintenanceSchedules.values());
+  }
+
+  async getMaintenanceSchedule(id: number): Promise<MaintenanceSchedule | undefined> {
+    return this.maintenanceSchedules.get(id);
+  }
+
+  async getMaintenanceSchedulesByAppliance(applianceId: number): Promise<MaintenanceSchedule[]> {
+    return Array.from(this.maintenanceSchedules.values()).filter(
+      (schedule) => schedule.applianceId === applianceId,
+    );
+  }
+
+  async createMaintenanceSchedule(insertSchedule: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const id = this.maintenanceScheduleId++;
+    const schedule: MaintenanceSchedule = {
+      id,
+      applianceId: insertSchedule.applianceId,
+      name: insertSchedule.name,
+      description: insertSchedule.description || null,
+      frequency: insertSchedule.frequency,
+      lastMaintenanceDate: insertSchedule.lastMaintenanceDate || null,
+      nextMaintenanceDate: insertSchedule.nextMaintenanceDate,
+      customIntervalDays: insertSchedule.customIntervalDays || null,
+      isActive: insertSchedule.isActive !== undefined ? insertSchedule.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.maintenanceSchedules.set(id, schedule);
+    return schedule;
+  }
+
+  async updateMaintenanceSchedule(id: number, scheduleData: Partial<MaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
+    const existingSchedule = this.maintenanceSchedules.get(id);
+    if (!existingSchedule) return undefined;
+
+    const updatedSchedule: MaintenanceSchedule = {
+      ...existingSchedule,
+      ...scheduleData,
+      updatedAt: new Date()
+    };
+
+    this.maintenanceSchedules.set(id, updatedSchedule);
+    return updatedSchedule;
+  }
+
+  async deleteMaintenanceSchedule(id: number): Promise<boolean> {
+    if (!this.maintenanceSchedules.has(id)) return false;
+    
+    // Delete all related alerts first
+    const alertsToDelete = Array.from(this.maintenanceAlerts.values())
+      .filter(alert => alert.scheduleId === id)
+      .map(alert => alert.id);
+      
+    alertsToDelete.forEach(alertId => this.maintenanceAlerts.delete(alertId));
+    
+    return this.maintenanceSchedules.delete(id);
+  }
+
+  async getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<MaintenanceSchedule[]> {
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(now.getDate() + daysThreshold);
+    
+    return Array.from(this.maintenanceSchedules.values()).filter(schedule => {
+      const nextMaintenanceDate = new Date(schedule.nextMaintenanceDate);
+      return schedule.isActive && 
+             nextMaintenanceDate >= now && 
+             nextMaintenanceDate <= thresholdDate;
+    });
+  }
+
+  // Maintenance Alert methods
+  private maintenanceAlerts = new Map<number, MaintenanceAlert>();
+  private maintenanceAlertId = 1;
+
+  async getAllMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return Array.from(this.maintenanceAlerts.values());
+  }
+
+  async getMaintenanceAlert(id: number): Promise<MaintenanceAlert | undefined> {
+    return this.maintenanceAlerts.get(id);
+  }
+
+  async getMaintenanceAlertsBySchedule(scheduleId: number): Promise<MaintenanceAlert[]> {
+    return Array.from(this.maintenanceAlerts.values()).filter(
+      (alert) => alert.scheduleId === scheduleId,
+    );
+  }
+
+  async createMaintenanceAlert(insertAlert: InsertMaintenanceAlert): Promise<MaintenanceAlert> {
+    const id = this.maintenanceAlertId++;
+    const alert: MaintenanceAlert = {
+      id,
+      scheduleId: insertAlert.scheduleId,
+      title: insertAlert.title,
+      message: insertAlert.message,
+      alertDate: insertAlert.alertDate || new Date(),
+      status: insertAlert.status || "pending",
+      isRead: insertAlert.isRead !== undefined ? insertAlert.isRead : false,
+      createdAt: new Date()
+    };
+    this.maintenanceAlerts.set(id, alert);
+    return alert;
+  }
+
+  async updateMaintenanceAlert(id: number, alertData: Partial<MaintenanceAlert>): Promise<MaintenanceAlert | undefined> {
+    const existingAlert = this.maintenanceAlerts.get(id);
+    if (!existingAlert) return undefined;
+
+    const updatedAlert: MaintenanceAlert = {
+      ...existingAlert,
+      ...alertData
+    };
+
+    this.maintenanceAlerts.set(id, updatedAlert);
+    return updatedAlert;
+  }
+
+  async deleteMaintenanceAlert(id: number): Promise<boolean> {
+    if (!this.maintenanceAlerts.has(id)) return false;
+    return this.maintenanceAlerts.delete(id);
+  }
+
+  async getUnreadMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return Array.from(this.maintenanceAlerts.values()).filter(
+      (alert) => !alert.isRead,
+    );
+  }
+
+  async markMaintenanceAlertAsRead(id: number): Promise<MaintenanceAlert | undefined> {
+    const alert = this.maintenanceAlerts.get(id);
+    if (!alert) return undefined;
+    
+    alert.isRead = true;
+    this.maintenanceAlerts.set(id, alert);
+    return alert;
   }
 }
 

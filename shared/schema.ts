@@ -209,3 +209,83 @@ export const servicesRelations = relations(services, ({ one }) => ({
     references: [technicians.id],
   }),
 }));
+
+// Maintenance Prediction and Alerts
+export const maintenanceFrequencyEnum = z.enum([
+  "monthly", // Mesečno
+  "quarterly", // Kvartalno
+  "biannual", // Polugodišnje
+  "annual", // Godišnje
+  "custom" // Prilagođeno
+]);
+
+export type MaintenanceFrequency = z.infer<typeof maintenanceFrequencyEnum>;
+
+// Tabela za održavanje uređaja
+export const maintenanceSchedules = pgTable("maintenance_schedules", {
+  id: serial("id").primaryKey(),
+  applianceId: integer("appliance_id").notNull().references(() => appliances.id),
+  name: text("name").notNull(), // Naziv plana održavanja
+  description: text("description"), // Opis održavanja
+  frequency: text("frequency", { enum: ["monthly", "quarterly", "biannual", "annual", "custom"] }).notNull(),
+  lastMaintenanceDate: timestamp("last_maintenance_date"), // Datum poslednjeg održavanja
+  nextMaintenanceDate: timestamp("next_maintenance_date").notNull(), // Sledeći planirani datum
+  customIntervalDays: integer("custom_interval_days"), // Dani između održavanja (za prilagođeni interval)
+  isActive: boolean("is_active").default(true).notNull(), // Da li je aktivno
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedules).pick({
+  applianceId: true,
+  name: true,
+  description: true,
+  frequency: true,
+  lastMaintenanceDate: true,
+  nextMaintenanceDate: true,
+  customIntervalDays: true,
+  isActive: true
+});
+
+export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
+export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;
+
+// Tabela za obaveštenja o održavanju
+export const maintenanceAlerts = pgTable("maintenance_alerts", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull().references(() => maintenanceSchedules.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  alertDate: timestamp("alert_date").defaultNow().notNull(),
+  status: text("status", { enum: ["pending", "sent", "acknowledged", "completed"] }).default("pending").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMaintenanceAlertSchema = createInsertSchema(maintenanceAlerts).pick({
+  scheduleId: true,
+  title: true,
+  message: true,
+  alertDate: true,
+  status: true,
+  isRead: true
+});
+
+export type InsertMaintenanceAlert = z.infer<typeof insertMaintenanceAlertSchema>;
+export type MaintenanceAlert = typeof maintenanceAlerts.$inferSelect;
+
+// Relacije za održavanje
+export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
+  appliance: one(appliances, {
+    fields: [maintenanceSchedules.applianceId],
+    references: [appliances.id],
+  }),
+  alerts: many(maintenanceAlerts)
+}));
+
+export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one }) => ({
+  schedule: one(maintenanceSchedules, {
+    fields: [maintenanceAlerts.scheduleId],
+    references: [maintenanceSchedules.id],
+  })
+}));

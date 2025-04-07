@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -615,6 +615,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clients = await storage.getAllClients();
       const applianceStats = await storage.getApplianceStats();
       const technicians = await storage.getAllTechnicians();
+      // Get upcoming maintenance for next 7 days
+      const upcomingMaintenance = await storage.getUpcomingMaintenanceSchedules(7);
+      const unreadAlerts = await storage.getUnreadMaintenanceAlerts();
   
       res.json({
         activeCount: activeServices.length,
@@ -624,10 +627,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recentServices: await storage.getRecentServices(5),
         recentClients: await storage.getRecentClients(3),
         technicianCount: technicians.length,
-        applianceStats
+        applianceStats,
+        upcomingMaintenanceCount: upcomingMaintenance.length,
+        unreadAlertsCount: unreadAlerts.length
       });
     } catch (error) {
       res.status(500).json({ error: "Greška pri dobijanju statistike" });
+    }
+  });
+
+  // Maintenance Schedule routes
+  app.get("/api/maintenance-schedules", async (req, res) => {
+    try {
+      const schedules = await storage.getAllMaintenanceSchedules();
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju planova održavanja" });
+    }
+  });
+
+  app.get("/api/maintenance-schedules/:id", async (req, res) => {
+    try {
+      const schedule = await storage.getMaintenanceSchedule(parseInt(req.params.id));
+      if (!schedule) return res.status(404).json({ error: "Plan održavanja nije pronađen" });
+      res.json(schedule);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju plana održavanja" });
+    }
+  });
+
+  app.get("/api/appliances/:applianceId/maintenance-schedules", async (req, res) => {
+    try {
+      const schedules = await storage.getMaintenanceSchedulesByAppliance(parseInt(req.params.applianceId));
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju planova održavanja za uređaj" });
+    }
+  });
+
+  app.get("/api/maintenance-schedules/upcoming/:days", async (req, res) => {
+    try {
+      const days = parseInt(req.params.days);
+      if (isNaN(days)) {
+        return res.status(400).json({ error: "Broj dana mora biti broj" });
+      }
+      
+      const schedules = await storage.getUpcomingMaintenanceSchedules(days);
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju nadolazećih planova održavanja" });
+    }
+  });
+
+  app.post("/api/maintenance-schedules", async (req, res) => {
+    try {
+      const validatedData = insertMaintenanceScheduleSchema.parse(req.body);
+      const schedule = await storage.createMaintenanceSchedule(validatedData);
+      res.status(201).json(schedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci plana održavanja", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju plana održavanja" });
+    }
+  });
+
+  app.put("/api/maintenance-schedules/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertMaintenanceScheduleSchema.parse(req.body);
+      const updatedSchedule = await storage.updateMaintenanceSchedule(id, validatedData);
+      if (!updatedSchedule) return res.status(404).json({ error: "Plan održavanja nije pronađen" });
+      res.json(updatedSchedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci plana održavanja", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri ažuriranju plana održavanja" });
+    }
+  });
+
+  app.delete("/api/maintenance-schedules/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceSchedule(id);
+      if (!success) return res.status(404).json({ error: "Plan održavanja nije pronađen" });
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri brisanju plana održavanja" });
+    }
+  });
+
+  // Maintenance Alert routes
+  app.get("/api/maintenance-alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getAllMaintenanceAlerts();
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju obaveštenja o održavanju" });
+    }
+  });
+
+  app.get("/api/maintenance-alerts/unread", async (req, res) => {
+    try {
+      const alerts = await storage.getUnreadMaintenanceAlerts();
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju nepročitanih obaveštenja" });
+    }
+  });
+
+  app.get("/api/maintenance-alerts/:id", async (req, res) => {
+    try {
+      const alert = await storage.getMaintenanceAlert(parseInt(req.params.id));
+      if (!alert) return res.status(404).json({ error: "Obaveštenje nije pronađeno" });
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju obaveštenja" });
+    }
+  });
+
+  app.get("/api/maintenance-schedules/:scheduleId/alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getMaintenanceAlertsBySchedule(parseInt(req.params.scheduleId));
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju obaveštenja za plan održavanja" });
+    }
+  });
+
+  app.post("/api/maintenance-alerts", async (req, res) => {
+    try {
+      const validatedData = insertMaintenanceAlertSchema.parse(req.body);
+      const alert = await storage.createMaintenanceAlert(validatedData);
+      res.status(201).json(alert);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci obaveštenja", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju obaveštenja" });
+    }
+  });
+
+  app.put("/api/maintenance-alerts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertMaintenanceAlertSchema.parse(req.body);
+      const updatedAlert = await storage.updateMaintenanceAlert(id, validatedData);
+      if (!updatedAlert) return res.status(404).json({ error: "Obaveštenje nije pronađeno" });
+      res.json(updatedAlert);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci obaveštenja", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri ažuriranju obaveštenja" });
+    }
+  });
+
+  app.delete("/api/maintenance-alerts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMaintenanceAlert(id);
+      if (!success) return res.status(404).json({ error: "Obaveštenje nije pronađeno" });
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri brisanju obaveštenja" });
+    }
+  });
+
+  app.post("/api/maintenance-alerts/:id/mark-read", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const alert = await storage.markMaintenanceAlertAsRead(id);
+      if (!alert) return res.status(404).json({ error: "Obaveštenje nije pronađeno" });
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri označavanju obaveštenja kao pročitanog" });
     }
   });
 
