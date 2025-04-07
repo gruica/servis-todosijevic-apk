@@ -17,3 +17,6 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+// Export the same function with the name expected by header.tsx
+export const useMobile = useIsMobile;

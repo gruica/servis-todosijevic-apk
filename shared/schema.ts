@@ -1,135 +1,136 @@
-import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users
+// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  name: text("name"),
-  role: text("role").default("user")
+  fullName: text("full_name").notNull(),
+  role: text("role").default("user").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
-  name: true,
-  role: true
+  fullName: true,
 });
 
-// Clients
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+// Clients table
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  phone: text("phone").notNull(),
+  fullName: text("full_name").notNull(),
   email: text("email"),
-  address: text("address")
+  phone: text("phone").notNull(),
+  address: text("address"),
+  city: text("city"),
 });
 
 export const insertClientSchema = createInsertSchema(clients).pick({
-  name: true,
-  phone: true,
+  fullName: true,
   email: true,
-  address: true
+  phone: true,
+  address: true,
+  city: true,
 });
-
-// Appliance Types
-export const applianceTypes = pgTable("appliance_types", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull()
-});
-
-export const insertApplianceTypeSchema = createInsertSchema(applianceTypes).pick({
-  name: true
-});
-
-// Manufacturers
-export const manufacturers = pgTable("manufacturers", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull()
-});
-
-export const insertManufacturerSchema = createInsertSchema(manufacturers).pick({
-  name: true
-});
-
-// Appliances
-export const appliances = pgTable("appliances", {
-  id: serial("id").primaryKey(),
-  typeId: integer("type_id").notNull(),
-  manufacturerId: integer("manufacturer_id").notNull(),
-  model: text("model").notNull(),
-  serialNumber: text("serial_number")
-});
-
-export const insertApplianceSchema = createInsertSchema(appliances).pick({
-  typeId: true,
-  manufacturerId: true,
-  model: true,
-  serialNumber: true
-});
-
-// Service Statuses
-export const serviceStatuses = pgTable("service_statuses", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  color: text("color").notNull()
-});
-
-export const insertServiceStatusSchema = createInsertSchema(serviceStatuses).pick({
-  name: true,
-  color: true
-});
-
-// Services
-export const services = pgTable("services", {
-  id: serial("id").primaryKey(),
-  serviceNumber: text("service_number").notNull(),
-  clientId: integer("client_id").notNull(),
-  applianceId: integer("appliance_id").notNull(),
-  statusId: integer("status_id").notNull(),
-  description: text("description"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-});
-
-export const insertServiceSchema = createInsertSchema(services).pick({
-  serviceNumber: true,
-  clientId: true,
-  applianceId: true,
-  statusId: true,
-  description: true
-});
-
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
 
-export type InsertApplianceType = z.infer<typeof insertApplianceTypeSchema>;
-export type ApplianceType = typeof applianceTypes.$inferSelect;
+// Appliance categories
+export const applianceCategories = pgTable("appliance_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  icon: text("icon").notNull(), // Material icon name
+});
+
+export const insertApplianceCategorySchema = createInsertSchema(applianceCategories).pick({
+  name: true,
+  icon: true,
+});
+
+export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
+export type ApplianceCategory = typeof applianceCategories.$inferSelect;
+
+// Manufacturers
+export const manufacturers = pgTable("manufacturers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const insertManufacturerSchema = createInsertSchema(manufacturers).pick({
+  name: true,
+});
 
 export type InsertManufacturer = z.infer<typeof insertManufacturerSchema>;
 export type Manufacturer = typeof manufacturers.$inferSelect;
 
+// Appliances
+export const appliances = pgTable("appliances", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  categoryId: integer("category_id").notNull(),
+  manufacturerId: integer("manufacturer_id").notNull(),
+  model: text("model"),
+  serialNumber: text("serial_number"),
+  purchaseDate: text("purchase_date"),
+  notes: text("notes"),
+});
+
+export const insertApplianceSchema = createInsertSchema(appliances).pick({
+  clientId: true,
+  categoryId: true,
+  manufacturerId: true,
+  model: true,
+  serialNumber: true,
+  purchaseDate: true,
+  notes: true,
+});
+
 export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
 export type Appliance = typeof appliances.$inferSelect;
 
-export type InsertServiceStatus = z.infer<typeof insertServiceStatusSchema>;
-export type ServiceStatus = typeof serviceStatuses.$inferSelect;
+// Service status enum
+export const serviceStatusEnum = z.enum([
+  "pending", // čekanje
+  "scheduled", // zakazano
+  "in_progress", // u procesu
+  "waiting_parts", // čeka delove
+  "completed", // završeno
+  "cancelled", // otkazano
+]);
+
+export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
+
+// Services
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  applianceId: integer("appliance_id").notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: text("created_at").notNull(),
+  scheduledDate: text("scheduled_date"),
+  completedDate: text("completed_date"),
+  technicianNotes: text("technician_notes"),
+  cost: text("cost"),
+});
+
+export const insertServiceSchema = createInsertSchema(services).pick({
+  clientId: true,
+  applianceId: true,
+  description: true,
+  status: true,
+  createdAt: true,
+  scheduledDate: true,
+  completedDate: true,
+  technicianNotes: true,
+  cost: true,
+});
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
-
-// Extended service type with related data
-export type ServiceWithRelations = Service & {
-  client: Client;
-  appliance: Appliance & {
-    type: ApplianceType;
-    manufacturer: Manufacturer;
-  };
-  status: ServiceStatus;
-};
