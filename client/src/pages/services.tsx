@@ -35,10 +35,10 @@ const serviceFormSchema = insertServiceSchema.extend({
   status: z.string(),
   createdAt: z.string(),
   technicianId: z.coerce.number().optional(),
-  scheduledDate: z.string().optional(),
-  completedDate: z.string().optional(),
-  technicianNotes: z.string().optional(),
-  cost: z.string().optional(),
+  scheduledDate: z.string().optional().nullable(),
+  completedDate: z.string().optional().nullable(),
+  technicianNotes: z.string().optional().nullable(),
+  cost: z.string().optional().nullable(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -217,18 +217,23 @@ export default function Services() {
     console.log("Otvaranje dijaloga za dodavanje servisa");
     setSelectedService(null);
     setSelectedClient(null);
-    form.reset({
+    
+    const defaultValues = {
       clientId: 0,
       applianceId: 0,
       description: "",
       status: "pending",
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
-      scheduledDate: "",
-      completedDate: "",
-      technicianNotes: "",
-      cost: "",
-    });
+      scheduledDate: null,
+      completedDate: null,
+      technicianNotes: null,
+      cost: null,
+    };
+    
+    form.reset(defaultValues);
+    console.log("Forma resetovana sa:", defaultValues);
+    
     setIsDialogOpen(true);
     console.log("Dialog otvoren:", isDialogOpen);
   };
@@ -238,25 +243,40 @@ export default function Services() {
     console.log("Uređivanje servisa:", service);
     setSelectedService(service);
     setSelectedClient(service.clientId);
-    form.reset({
+    
+    const editValues = {
       clientId: service.clientId,
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
       technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
-      scheduledDate: service.scheduledDate || "",
-      completedDate: service.completedDate || "",
-      technicianNotes: service.technicianNotes || "",
-      cost: service.cost || "",
-    });
+      scheduledDate: service.scheduledDate || null,
+      completedDate: service.completedDate || null,
+      technicianNotes: service.technicianNotes || null,
+      cost: service.cost || null,
+    };
+    
+    form.reset(editValues);
+    console.log("Forma postavljena za uređivanje:", editValues);
+    
     setIsDialogOpen(true);
   };
   
   // Handle client change in form
   const handleClientChange = (clientId: string) => {
-    setSelectedClient(parseInt(clientId));
-    form.setValue("applianceId", 0);
+    console.log("Klijent promijenjen u:", clientId);
+    const clientIdNum = parseInt(clientId);
+    setSelectedClient(clientIdNum);
+    
+    // Resetirajmo odabir uređaja
+    form.setValue("applianceId", 0, { shouldValidate: false });
+    
+    // Postavimo klijenta u formu
+    form.setValue("clientId", clientIdNum, { shouldValidate: true });
+    
+    console.log("Novi odabrani klijent:", clientIdNum);
+    console.log("Forma nakon promjene klijenta:", form.getValues());
   };
   
   // Submit service form
