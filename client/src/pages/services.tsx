@@ -19,6 +19,7 @@ import {
   Client, 
   Appliance, 
   ApplianceCategory, 
+  Technician,
   insertServiceSchema, 
   serviceStatusEnum 
 } from "@shared/schema";
@@ -33,6 +34,7 @@ const serviceFormSchema = insertServiceSchema.extend({
   description: z.string().min(1, "Obavezno polje"),
   status: z.string(),
   createdAt: z.string(),
+  technicianId: z.coerce.number().optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -100,6 +102,10 @@ export default function Services() {
     queryKey: ["/api/appliances"],
   });
   
+  const { data: technicians } = useQuery<Technician[]>({
+    queryKey: ["/api/technicians"],
+  });
+  
   const { data: categories } = useQuery<ApplianceCategory[]>({
     queryKey: ["/api/categories"],
   });
@@ -154,6 +160,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
+      technicianId: undefined,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
       completedDate: "",
@@ -207,6 +214,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
+      technicianId: undefined,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
       completedDate: "",
@@ -225,6 +233,7 @@ export default function Services() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
+      technicianId: service.technicianId,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || "",
       completedDate: service.completedDate || "",
@@ -508,6 +517,35 @@ export default function Services() {
                           <SelectItem value="waiting_parts">Čeka delove</SelectItem>
                           <SelectItem value="completed">Završeno</SelectItem>
                           <SelectItem value="cancelled">Otkazano</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="technicianId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Serviser</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value?.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Izaberite servisera" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Nije dodeljeno</SelectItem>
+                          {technicians?.map(technician => (
+                            <SelectItem key={technician.id} value={technician.id.toString()}>
+                              {technician.fullName}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

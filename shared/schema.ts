@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users table
 export const users = pgTable("users", {
@@ -15,10 +16,32 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   fullName: true,
+  role: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Technicians/Servicemen table
+export const technicians = pgTable("technicians", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  specialization: text("specialization"),
+  active: boolean("active").default(true).notNull(),
+});
+
+export const insertTechnicianSchema = createInsertSchema(technicians).pick({
+  fullName: true,
+  phone: true,
+  email: true,
+  specialization: true,
+  active: true,
+});
+
+export type InsertTechnician = z.infer<typeof insertTechnicianSchema>;
+export type Technician = typeof technicians.$inferSelect;
 
 // Clients table
 export const clients = pgTable("clients", {
@@ -111,6 +134,7 @@ export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
   applianceId: integer("appliance_id").notNull(),
+  technicianId: integer("technician_id"),
   description: text("description").notNull(),
   status: text("status").notNull().default("pending"),
   createdAt: text("created_at").notNull(),
@@ -123,6 +147,7 @@ export const services = pgTable("services", {
 export const insertServiceSchema = createInsertSchema(services).pick({
   clientId: true,
   applianceId: true,
+  technicianId: true,
   description: true,
   status: true,
   createdAt: true,
@@ -134,3 +159,48 @@ export const insertServiceSchema = createInsertSchema(services).pick({
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  technicians: many(technicians),
+}));
+
+export const techniciansRelations = relations(technicians, ({ many }) => ({
+  services: many(services),
+}));
+
+export const clientsRelations = relations(clients, ({ many }) => ({
+  appliances: many(appliances),
+  services: many(services),
+}));
+
+export const appliancesRelations = relations(appliances, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [appliances.clientId],
+    references: [clients.id],
+  }),
+  category: one(applianceCategories, {
+    fields: [appliances.categoryId],
+    references: [applianceCategories.id],
+  }),
+  manufacturer: one(manufacturers, {
+    fields: [appliances.manufacturerId],
+    references: [manufacturers.id],
+  }),
+  services: many(services),
+}));
+
+export const servicesRelations = relations(services, ({ one }) => ({
+  client: one(clients, {
+    fields: [services.clientId],
+    references: [clients.id],
+  }),
+  appliance: one(appliances, {
+    fields: [services.applianceId],
+    references: [appliances.id],
+  }),
+  technician: one(technicians, {
+    fields: [services.technicianId],
+    references: [technicians.id],
+  }),
+}));

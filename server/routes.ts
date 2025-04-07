@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, serviceStatusEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, serviceStatusEnum } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -230,6 +230,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Technicians routes
+  app.get("/api/technicians", async (req, res) => {
+    try {
+      const technicians = await storage.getAllTechnicians();
+      res.json(technicians);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju servisera" });
+    }
+  });
+
+  app.get("/api/technicians/:id", async (req, res) => {
+    try {
+      const technician = await storage.getTechnician(parseInt(req.params.id));
+      if (!technician) return res.status(404).json({ error: "Serviser nije pronađen" });
+      res.json(technician);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju servisera" });
+    }
+  });
+
+  app.post("/api/technicians", async (req, res) => {
+    try {
+      const validatedData = insertTechnicianSchema.parse(req.body);
+      const technician = await storage.createTechnician(validatedData);
+      res.status(201).json(technician);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci servisera", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju servisera" });
+    }
+  });
+
+  app.put("/api/technicians/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertTechnicianSchema.parse(req.body);
+      const updatedTechnician = await storage.updateTechnician(id, validatedData);
+      if (!updatedTechnician) return res.status(404).json({ error: "Serviser nije pronađen" });
+      res.json(updatedTechnician);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci servisera", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri ažuriranju servisera" });
+    }
+  });
+  
+  app.get("/api/technicians/:technicianId/services", async (req, res) => {
+    try {
+      const services = await storage.getServicesByTechnician(parseInt(req.params.technicianId));
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ error: "Greška pri dobijanju servisa servisera" });
+    }
+  });
+
   // Dashboard stats route
   app.get("/api/stats", async (req, res) => {
     try {
@@ -238,6 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pendingServices = await storage.getServicesByStatus("pending");
       const clients = await storage.getAllClients();
       const applianceStats = await storage.getApplianceStats();
+      const technicians = await storage.getAllTechnicians();
   
       res.json({
         activeCount: activeServices.length,
@@ -246,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientCount: clients.length,
         recentServices: await storage.getRecentServices(5),
         recentClients: await storage.getRecentClients(3),
+        technicianCount: technicians.length,
         applianceStats
       });
     } catch (error) {

@@ -5,13 +5,17 @@ import {
   Manufacturer, InsertManufacturer,
   Appliance, InsertAppliance,
   Service, InsertService,
-  ServiceStatus
+  ServiceStatus,
+  Technician, InsertTechnician
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
+const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
@@ -21,6 +25,12 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Technician methods
+  getAllTechnicians(): Promise<Technician[]>;
+  getTechnician(id: number): Promise<Technician | undefined>;
+  createTechnician(technician: InsertTechnician): Promise<Technician>;
+  updateTechnician(id: number, technician: InsertTechnician): Promise<Technician | undefined>;
   
   // Client methods
   getAllClients(): Promise<Client[]>;
@@ -52,6 +62,7 @@ export interface IStorage {
   getService(id: number): Promise<Service | undefined>;
   getServicesByClient(clientId: number): Promise<Service[]>;
   getServicesByStatus(status: ServiceStatus): Promise<Service[]>;
+  getServicesByTechnician(technicianId: number): Promise<Service[]>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: InsertService): Promise<Service | undefined>;
   getRecentServices(limit: number): Promise<Service[]>;
@@ -70,6 +81,9 @@ export class MemStorage implements IStorage {
   
   sessionStore: any;
   
+  // Technicians collection
+  private technicians: Map<number, Technician>;
+
   // Auto-incrementing IDs
   private userId: number;
   private clientId: number;
@@ -77,6 +91,7 @@ export class MemStorage implements IStorage {
   private manufacturerId: number;
   private applianceId: number;
   private serviceId: number;
+  private technicianId: number;
 
   // Hash password utility method
   private async hashPassword(password: string) {
@@ -92,6 +107,7 @@ export class MemStorage implements IStorage {
     this.manufacturers = new Map();
     this.appliances = new Map();
     this.services = new Map();
+    this.technicians = new Map();
     
     this.userId = 1;
     this.clientId = 1;
@@ -99,6 +115,7 @@ export class MemStorage implements IStorage {
     this.manufacturerId = 1;
     this.applianceId = 1;
     this.serviceId = 1;
+    this.technicianId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -112,6 +129,22 @@ export class MemStorage implements IStorage {
     
     // Set up the initial admin account
     this.seedAdminUser();
+    
+    // Add the technicians
+    this.seedTechnicians();
+  }
+  
+  private seedTechnicians() {
+    const technicians = [
+      { fullName: "Jovan Todosijević", phone: "+382661234567", email: "jovan@servistodosijevic.me", specialization: "Frižideri i zamrzivači", active: true },
+      { fullName: "Gruica Todosijević", phone: "+382661234568", email: "gruica@servistodosijevic.me", specialization: "Mašine za veš i sudove", active: true },
+      { fullName: "Nikola Četković", phone: "+382661234569", email: "nikola@servistodosijevic.me", specialization: "Šporeti i mikrotalasne", active: true },
+      { fullName: "Petar Vulović", phone: "+382661234570", email: "petar@servistodosijevic.me", specialization: "Klima uređaji", active: true }
+    ];
+    
+    technicians.forEach(tech => {
+      this.createTechnician(tech);
+    });
   }
   
   private async seedAdminUser() {
@@ -123,7 +156,7 @@ export class MemStorage implements IStorage {
       id, 
       role: "admin", 
       username: "admin@example.com", 
-      fullName: "Administrator", 
+      fullName: "Jelena Todosijević", 
       password: hashedPassword 
     };
     
@@ -174,7 +207,9 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const role = id === 1 ? "admin" : "user";
+    
+    // If role is not provided, set default role
+    const role = insertUser.role || (id === 1 ? "admin" : "user");
     
     // If the password isn't already hashed (contains no .), hash it
     let password = insertUser.password;
@@ -191,6 +226,46 @@ export class MemStorage implements IStorage {
     
     this.users.set(id, user);
     return user;
+  }
+  
+  // Technician methods
+  async getAllTechnicians(): Promise<Technician[]> {
+    return Array.from(this.technicians.values());
+  }
+
+  async getTechnician(id: number): Promise<Technician | undefined> {
+    return this.technicians.get(id);
+  }
+  
+  async createTechnician(insertTechnician: InsertTechnician): Promise<Technician> {
+    const id = this.technicianId++;
+    const technician: Technician = {
+      id,
+      fullName: insertTechnician.fullName,
+      phone: insertTechnician.phone || null,
+      email: insertTechnician.email || null,
+      specialization: insertTechnician.specialization || null,
+      active: insertTechnician.active !== undefined ? insertTechnician.active : true
+    };
+    this.technicians.set(id, technician);
+    return technician;
+  }
+  
+  async updateTechnician(id: number, insertTechnician: InsertTechnician): Promise<Technician | undefined> {
+    const existingTechnician = this.technicians.get(id);
+    if (!existingTechnician) return undefined;
+    
+    const updatedTechnician: Technician = {
+      id,
+      fullName: insertTechnician.fullName,
+      phone: insertTechnician.phone || null,
+      email: insertTechnician.email || null,
+      specialization: insertTechnician.specialization || null,
+      active: insertTechnician.active !== undefined ? insertTechnician.active : true
+    };
+    
+    this.technicians.set(id, updatedTechnician);
+    return updatedTechnician;
   }
 
   // Client methods
@@ -369,6 +444,7 @@ export class MemStorage implements IStorage {
       id,
       clientId: insertService.clientId,
       applianceId: insertService.applianceId,
+      technicianId: insertService.technicianId || null,
       description: insertService.description,
       createdAt: insertService.createdAt,
       status: insertService.status || "pending",
@@ -389,6 +465,7 @@ export class MemStorage implements IStorage {
       id,
       clientId: insertService.clientId,
       applianceId: insertService.applianceId,
+      technicianId: insertService.technicianId || null,
       description: insertService.description,
       createdAt: insertService.createdAt,
       status: insertService.status || "pending",
@@ -399,6 +476,12 @@ export class MemStorage implements IStorage {
     };
     this.services.set(id, updatedService);
     return updatedService;
+  }
+  
+  async getServicesByTechnician(technicianId: number): Promise<Service[]> {
+    return Array.from(this.services.values()).filter(
+      (service) => service.technicianId === technicianId,
+    );
   }
   
   async getRecentServices(limit: number): Promise<Service[]> {
