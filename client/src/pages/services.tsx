@@ -189,14 +189,23 @@ export default function Services() {
     },
     onSuccess: (data) => {
       console.log("Uspešno sačuvan servis:", data);
+      
+      // Invalidiraj upite za servise i statistiku
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      
+      // Posebno invalidiraj statistiku i obavezno odradi fetch
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/stats"],
+        refetchType: 'all' // Prisilno odradi refetch
+      });
+      
       toast({
         title: selectedService 
           ? "Servis uspešno ažuriran" 
           : "Servis uspešno dodat",
         description: "Podaci o servisu su sačuvani",
       });
+      
       setIsDialogOpen(false);
       form.reset();
       setSelectedService(null);

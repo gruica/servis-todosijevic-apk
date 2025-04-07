@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -59,9 +59,28 @@ type DashboardStats = {
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  // Koristimo refetch opciju za osvežavanje statistike
+  const { 
+    data: stats, 
+    isLoading,
+    refetch: refetchStats
+  } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
   });
+  
+  // Dodajemo useEffect da osvežimo podatke kada se komponenta montira
+  useEffect(() => {
+    // Osvežimo statistiku kada se prikaže dashboard
+    refetchStats();
+    
+    // Postavimo interval za osvežavanje na svakih 5 sekundi
+    const intervalId = setInterval(() => {
+      refetchStats();
+    }, 5000);
+    
+    // Čistimo interval pri demontiranju
+    return () => clearInterval(intervalId);
+  }, [refetchStats]);
   
   const { data: categories } = useQuery<ApplianceCategory[]>({
     queryKey: ["/api/categories"],
