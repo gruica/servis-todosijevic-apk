@@ -6,16 +6,28 @@ import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Services from "@/pages/services";
 import Appliances from "@/pages/appliances";
+import TechnicianServices from "@/pages/technician/services";
+import TechnicianProfile from "@/pages/technician/profile";
+import CreateTechnicianUser from "@/pages/create-technician-user";
 import { ProtectedRoute } from "./lib/protected-route";
+import { RoleProtectedRoute } from "./lib/role-protected-route";
 
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/clients" component={Clients} />
-      <ProtectedRoute path="/services" component={Services} />
-      <ProtectedRoute path="/appliances" component={Appliances} />
+      
+      {/* Admin routes */}
+      <RoleProtectedRoute path="/" component={Dashboard} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/services" component={Services} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/create-tech-user" component={CreateTechnicianUser} allowedRoles={["admin"]} />
+      
+      {/* Technician routes */}
+      <RoleProtectedRoute path="/tech" component={TechnicianServices} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/profile" component={TechnicianProfile} allowedRoles={["technician"]} />
+      
       <Route component={NotFound} />
     </Switch>
   );

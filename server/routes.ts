@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, serviceStatusEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -229,7 +229,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri ažuriranju servisa" });
     }
   });
+  
+  // Update service status (for technicians)
+  app.put("/api/services/:id/status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Potrebna je prijava" });
+      }
+      
+      const serviceId = parseInt(req.params.id);
+      const { status, technicianNotes } = req.body;
+      
+      // Validate status
+      const validStatus = serviceStatusEnum.parse(status);
+      
+      // Get the service
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // If user is a technician, verify they can modify this service
+      if (req.user?.role === "technician") {
+        const technicianId = req.user.technicianId;
+        
+        // Check if technicianId matches service's technicianId
+        if (!technicianId || service.technicianId !== technicianId) {
+          return res.status(403).json({ 
+            error: "Nemate dozvolu da mijenjate ovaj servis" 
+          });
+        }
+      }
+      
+      // Update the service
+      const updatedService = await storage.updateService(serviceId, {
+        ...service,
+        status: validStatus,
+        technicianNotes: technicianNotes !== undefined ? technicianNotes : service.technicianNotes,
+        completedDate: validStatus === "completed" ? new Date().toISOString() : service.completedDate
+      });
+      
+      if (!updatedService) {
+        return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+      }
+      
+      // TODO: Send email notification when email functionality is enabled
+      
+      res.json(updatedService);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći status servisa", details: error.format() });
+      }
+      console.error("Error updating service status:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+    }
+  });
 
+  // Create technician users
+  app.post("/api/technician-users", async (req, res) => {
+    try {
+      // Verify that user is admin or has permission
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const { technicianId, username, password, fullName } = req.body;
+      
+      // Verify that technician exists
+      const technician = await storage.getTechnician(parseInt(technicianId));
+      if (!technician) {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+      
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Korisničko ime već postoji" });
+      }
+      
+      // Create user with technician role
+      const userData = insertUserSchema.parse({
+        username,
+        password,
+        fullName: fullName || technician.fullName,
+        role: "technician",
+        technicianId: technician.id
+      });
+      
+      const newUser = await storage.createUser(userData);
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci korisnika", details: error.format() });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju korisnika servisera" });
+    }
+  });
+  
   // Technicians routes
   app.get("/api/technicians", async (req, res) => {
     try {
@@ -284,6 +384,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(services);
     } catch (error) {
       res.status(500).json({ error: "Greška pri dobijanju servisa servisera" });
+    }
+  });
+  
+  // Routes for technician users
+  app.get("/api/technician-profile", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Potrebna je prijava" });
+      }
+      
+      // Check if the user is a technician
+      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+        return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
+      }
+      
+      // Get the technician details
+      const technician = await storage.getTechnician(req.user.technicianId);
+      if (!technician) {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+      
+      res.json(technician);
+    } catch (error) {
+      console.error("Error getting technician profile:", error);
+      res.status(500).json({ error: "Greška pri dobijanju profila servisera" });
+    }
+  });
+  
+  // Get services for the logged-in technician
+  app.get("/api/my-services", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Potrebna je prijava" });
+      }
+      
+      // Check if the user is a technician
+      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+        return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
+      }
+      
+      // Get all services assigned to this technician
+      const services = await storage.getServicesByTechnician(req.user.technicianId);
+      
+      // Get client and appliance data for each service
+      const servicesWithDetails = await Promise.all(services.map(async (service) => {
+        const client = await storage.getClient(service.clientId);
+        const appliance = await storage.getAppliance(service.applianceId);
+        
+        let applianceCategory = null;
+        if (appliance && appliance.categoryId) {
+          applianceCategory = await storage.getApplianceCategory(appliance.categoryId);
+        }
+        
+        return {
+          ...service,
+          client,
+          appliance: appliance ? {
+            ...appliance,
+            category: applianceCategory
+          } : null
+        };
+      }));
+      
+      res.json(servicesWithDetails);
+    } catch (error) {
+      console.error("Error getting technician services:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
 

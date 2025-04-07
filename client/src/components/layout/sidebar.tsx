@@ -11,12 +11,22 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
 
-  const menuItems = [
+  // Define menu items based on user role
+  const adminMenuItems = [
     { path: "/", label: "Kontrolna tabla", icon: "nadzorna_tabla" },
     { path: "/clients", label: "Klijenti", icon: "osoba" },
     { path: "/services", label: "Servisi", icon: "konstrukcija" },
     { path: "/appliances", label: "Bela tehnika", icon: "frižider" },
+    { path: "/create-tech-user", label: "Kreiraj servisera", icon: "osoba_dodaj" },
   ];
+  
+  const technicianMenuItems = [
+    { path: "/tech", label: "Moji servisi", icon: "konstrukcija" },
+    { path: "/tech/profile", label: "Moj profil", icon: "osoba" },
+  ];
+  
+  // Use the appropriate menu based on user role
+  const menuItems = user?.role === "technician" ? technicianMenuItems : adminMenuItems;
 
   // Generate initials from user fullName
   const getInitials = (name: string) => {
@@ -51,7 +61,11 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
               <div>
                 <p className="font-medium text-gray-800">{user.fullName}</p>
                 <p className="text-sm text-gray-500">
-                  {user.role === "admin" ? "Administrator" : "Korisnik"}
+                  {user.role === "admin" 
+                    ? "Administrator" 
+                    : user.role === "technician" 
+                      ? "Serviser" 
+                      : "Korisnik"}
                 </p>
               </div>
             </div>

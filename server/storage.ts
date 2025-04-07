@@ -157,11 +157,22 @@ export class MemStorage implements IStorage {
       role: "admin", 
       username: "admin@example.com", 
       fullName: "Jelena Todosijević", 
-      password: hashedPassword 
+      password: hashedPassword,
+      technicianId: null
     };
     
     this.users.set(id, user);
     console.log("Admin user created:", user.username);
+    
+    // Create a test technician user
+    this.createUser({
+      username: "serviser@example.com",
+      password: "serviser123",
+      fullName: "Jovan Todosijević",
+      role: "technician",
+      technicianId: 1 // First technician
+    });
+    console.log("Technician user created: serviser@example.com");
   }
 
   private seedApplianceCategories() {
@@ -221,7 +232,8 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       password, 
       id, 
-      role 
+      role,
+      technicianId: insertUser.technicianId !== undefined ? insertUser.technicianId : null
     };
     
     this.users.set(id, user);

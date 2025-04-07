@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").default("user").notNull(),
+  technicianId: integer("technician_id"), // Reference to technician if user is a technician
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -17,6 +18,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   role: true,
+  technicianId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -161,8 +163,11 @@ export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  technicians: many(technicians),
+export const usersRelations = relations(users, ({ one }) => ({
+  technician: one(technicians, {
+    fields: [users.technicianId],
+    references: [technicians.id],
+  }),
 }));
 
 export const techniciansRelations = relations(technicians, ({ many }) => ({
