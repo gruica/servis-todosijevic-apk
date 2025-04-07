@@ -8,14 +8,18 @@ import {
   ServiceStatus,
   Technician, InsertTechnician,
   MaintenanceSchedule, InsertMaintenanceSchedule,
-  MaintenanceAlert, InsertMaintenanceAlert
+  MaintenanceAlert, InsertMaintenanceAlert,
+  // Tabele za pristup bazi
+  users, technicians, clients, applianceCategories, manufacturers, 
+  appliances, services, maintenanceSchedules, maintenanceAlerts
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import { pool, db } from "./db";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
@@ -709,4 +713,473 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// DatabaseStorage implementacija
+export class DatabaseStorage implements IStorage {
+  sessionStore: any;
+
+  constructor() {
+    // Koristi PostgreSQL za session store
+    this.sessionStore = new PostgresSessionStore({
+      conObject: { connectionString: process.env.DATABASE_URL },
+      createTableIfMissing: true
+    });
+    
+    // Inicijalno podešavanje baze
+    this.initializeDatabaseIfEmpty();
+  }
+
+  private async initializeDatabaseIfEmpty(): Promise<void> {
+    try {
+      // Provera da li postoje korisnici
+      const existingUsers = await db.select().from(users);
+      if (existingUsers.length === 0) {
+        console.log("Inicijalizacija baze podataka...");
+        await this.seedApplianceCategories();
+        await this.seedManufacturers();
+        await this.seedTechnicians();
+        await this.seedAdminUser();
+      }
+    } catch (error) {
+      console.error("Greška pri inicijalizaciji baze:", error);
+    }
+  }
+
+  private async seedApplianceCategories(): Promise<void> {
+    try {
+      const categories = [
+        { name: "Mašina za veš", icon: "veš_mašina" },
+        { name: "Frižider", icon: "frižider" },
+        { name: "Šporet", icon: "šporet" },
+        { name: "Mašina za sudove", icon: "sudopera" },
+        { name: "Klima uređaj", icon: "klima" }
+      ];
+      
+      for (const category of categories) {
+        await db.insert(applianceCategories).values(category);
+      }
+    } catch (error) {
+      console.error("Greška pri kreiranju kategorija uređaja:", error);
+    }
+  }
+
+  private async seedManufacturers(): Promise<void> {
+    try {
+      const manufacturersList = [
+        { name: "Bosch" },
+        { name: "Samsung" },
+        { name: "Gorenje" },
+        { name: "Beko" },
+        { name: "LG" },
+        { name: "Whirlpool" },
+        { name: "Electrolux" }
+      ];
+      
+      for (const manufacturer of manufacturersList) {
+        await db.insert(manufacturers).values(manufacturer);
+      }
+    } catch (error) {
+      console.error("Greška pri kreiranju proizvođača:", error);
+    }
+  }
+
+  private async seedTechnicians(): Promise<void> {
+    try {
+      const techniciansList = [
+        { fullName: "Jovan Todosijević", phone: "+382661234567", email: "jovan@servistodosijevic.me", specialization: "Frižideri i zamrzivači", active: true },
+        { fullName: "Gruica Todosijević", phone: "+382661234568", email: "gruica@servistodosijevic.me", specialization: "Mašine za veš i sudove", active: true },
+        { fullName: "Nikola Četković", phone: "+382661234569", email: "nikola@servistodosijevic.me", specialization: "Šporeti i mikrotalasne", active: true },
+        { fullName: "Petar Vulović", phone: "+382661234570", email: "petar@servistodosijevic.me", specialization: "Klima uređaji", active: true }
+      ];
+      
+      for (const tech of techniciansList) {
+        await db.insert(technicians).values(tech);
+      }
+    } catch (error) {
+      console.error("Greška pri kreiranju servisera:", error);
+    }
+  }
+
+  private async seedAdminUser(): Promise<void> {
+    try {
+      const hashedPassword = await this.hashPassword("admin123.admin123");
+      
+      // Kreiranje admin korisnika
+      await db.insert(users).values({
+        username: "admin@example.com",
+        password: hashedPassword,
+        fullName: "Jelena Todosijević",
+        role: "admin"
+      });
+      console.log("Admin user created: admin@example.com");
+      
+      // Dohvatanje prvog servisera
+      const [firstTech] = await db.select().from(technicians).limit(1);
+      
+      if (firstTech) {
+        const hashedServiserPassword = await this.hashPassword("serviser123");
+        
+        // Kreiranje korisnika za servisera
+        await db.insert(users).values({
+          username: "serviser@example.com",
+          password: hashedServiserPassword,
+          fullName: firstTech.fullName,
+          role: "technician",
+          technicianId: firstTech.id
+        });
+        console.log("Technician user created: serviser@example.com");
+      }
+    } catch (error) {
+      console.error("Greška pri kreiranju korisnika:", error);
+    }
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    // Ako password nije heširan (ne sadrži tačku), heširati ga
+    let password = insertUser.password;
+    if (!password.includes('.')) {
+      password = await this.hashPassword(password);
+    }
+
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      password
+    }).returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateUser(id: number, updateData: Partial<User>): Promise<User | undefined> {
+    // Ako je uključen password i nije heširan, heširati ga
+    if (updateData.password && !updateData.password.includes('.')) {
+      updateData.password = await this.hashPassword(updateData.password);
+    }
+
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Technician methods
+  async getAllTechnicians(): Promise<Technician[]> {
+    return await db.select().from(technicians);
+  }
+
+  async getTechnician(id: number): Promise<Technician | undefined> {
+    const [technician] = await db.select().from(technicians).where(eq(technicians.id, id));
+    return technician;
+  }
+
+  async createTechnician(insertTechnician: InsertTechnician): Promise<Technician> {
+    const [technician] = await db.insert(technicians).values(insertTechnician).returning();
+    return technician;
+  }
+
+  async updateTechnician(id: number, data: InsertTechnician): Promise<Technician | undefined> {
+    const [updatedTechnician] = await db
+      .update(technicians)
+      .set(data)
+      .where(eq(technicians.id, id))
+      .returning();
+    return updatedTechnician;
+  }
+
+  // Client methods
+  async getAllClients(): Promise<Client[]> {
+    return await db.select().from(clients);
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async createClient(insertClient: InsertClient): Promise<Client> {
+    const [client] = await db.insert(clients).values(insertClient).returning();
+    return client;
+  }
+
+  async updateClient(id: number, data: InsertClient): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set(data)
+      .where(eq(clients.id, id))
+      .returning();
+    return updatedClient;
+  }
+
+  async getRecentClients(limit: number): Promise<Client[]> {
+    return await db.select().from(clients).orderBy(desc(clients.id)).limit(limit);
+  }
+
+  // Appliance Category methods
+  async getAllApplianceCategories(): Promise<ApplianceCategory[]> {
+    return await db.select().from(applianceCategories);
+  }
+
+  async getApplianceCategory(id: number): Promise<ApplianceCategory | undefined> {
+    const [category] = await db
+      .select()
+      .from(applianceCategories)
+      .where(eq(applianceCategories.id, id));
+    return category;
+  }
+
+  async createApplianceCategory(data: InsertApplianceCategory): Promise<ApplianceCategory> {
+    const [category] = await db.insert(applianceCategories).values(data).returning();
+    return category;
+  }
+
+  // Manufacturer methods
+  async getAllManufacturers(): Promise<Manufacturer[]> {
+    return await db.select().from(manufacturers);
+  }
+
+  async getManufacturer(id: number): Promise<Manufacturer | undefined> {
+    const [manufacturer] = await db
+      .select()
+      .from(manufacturers)
+      .where(eq(manufacturers.id, id));
+    return manufacturer;
+  }
+
+  async createManufacturer(data: InsertManufacturer): Promise<Manufacturer> {
+    const [manufacturer] = await db.insert(manufacturers).values(data).returning();
+    return manufacturer;
+  }
+
+  // Appliance methods
+  async getAllAppliances(): Promise<Appliance[]> {
+    return await db.select().from(appliances);
+  }
+
+  async getAppliance(id: number): Promise<Appliance | undefined> {
+    const [appliance] = await db.select().from(appliances).where(eq(appliances.id, id));
+    return appliance;
+  }
+
+  async getAppliancesByClient(clientId: number): Promise<Appliance[]> {
+    return await db.select().from(appliances).where(eq(appliances.clientId, clientId));
+  }
+
+  async createAppliance(data: InsertAppliance): Promise<Appliance> {
+    const [appliance] = await db.insert(appliances).values(data).returning();
+    return appliance;
+  }
+
+  async updateAppliance(id: number, data: InsertAppliance): Promise<Appliance | undefined> {
+    const [updatedAppliance] = await db
+      .update(appliances)
+      .set(data)
+      .where(eq(appliances.id, id))
+      .returning();
+    return updatedAppliance;
+  }
+
+  async getApplianceStats(): Promise<{categoryId: number, count: number}[]> {
+    const result = await db
+      .select({
+        categoryId: appliances.categoryId,
+        count: sql<number>`count(*)::int`
+      })
+      .from(appliances)
+      .groupBy(appliances.categoryId);
+    
+    return result;
+  }
+
+  // Service methods
+  async getAllServices(): Promise<Service[]> {
+    return await db.select().from(services);
+  }
+
+  async getService(id: number): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service;
+  }
+
+  async getServicesByClient(clientId: number): Promise<Service[]> {
+    return await db.select().from(services).where(eq(services.clientId, clientId));
+  }
+
+  async getServicesByStatus(status: ServiceStatus): Promise<Service[]> {
+    return await db.select().from(services).where(eq(services.status, status));
+  }
+
+  async getServicesByTechnician(technicianId: number): Promise<Service[]> {
+    return await db
+      .select()
+      .from(services)
+      .where(eq(services.technicianId, technicianId));
+  }
+
+  async createService(data: InsertService): Promise<Service> {
+    const [service] = await db.insert(services).values(data).returning();
+    return service;
+  }
+
+  async updateService(id: number, data: InsertService): Promise<Service | undefined> {
+    const [updatedService] = await db
+      .update(services)
+      .set(data)
+      .where(eq(services.id, id))
+      .returning();
+    return updatedService;
+  }
+
+  async getRecentServices(limit: number): Promise<Service[]> {
+    return await db
+      .select()
+      .from(services)
+      .orderBy(desc(services.createdAt))
+      .limit(limit);
+  }
+
+  // Maintenance Schedule methods
+  async getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    return await db.select().from(maintenanceSchedules);
+  }
+
+  async getMaintenanceSchedule(id: number): Promise<MaintenanceSchedule | undefined> {
+    const [schedule] = await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(eq(maintenanceSchedules.id, id));
+    return schedule;
+  }
+
+  async getMaintenanceSchedulesByAppliance(applianceId: number): Promise<MaintenanceSchedule[]> {
+    return await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(eq(maintenanceSchedules.applianceId, applianceId));
+  }
+
+  async createMaintenanceSchedule(data: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const [schedule] = await db.insert(maintenanceSchedules).values({
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return schedule;
+  }
+
+  async updateMaintenanceSchedule(id: number, data: Partial<MaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
+    const [updatedSchedule] = await db
+      .update(maintenanceSchedules)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(maintenanceSchedules.id, id))
+      .returning();
+    return updatedSchedule;
+  }
+
+  async deleteMaintenanceSchedule(id: number): Promise<boolean> {
+    const result = await db.delete(maintenanceSchedules).where(eq(maintenanceSchedules.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<MaintenanceSchedule[]> {
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(now.getDate() + daysThreshold);
+    
+    return await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(
+        and(
+          eq(maintenanceSchedules.isActive, true),
+          gte(maintenanceSchedules.nextMaintenanceDate, now),
+          lte(maintenanceSchedules.nextMaintenanceDate, thresholdDate)
+        )
+      );
+  }
+
+  // Maintenance Alert methods
+  async getAllMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return await db.select().from(maintenanceAlerts);
+  }
+
+  async getMaintenanceAlert(id: number): Promise<MaintenanceAlert | undefined> {
+    const [alert] = await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.id, id));
+    return alert;
+  }
+
+  async getMaintenanceAlertsBySchedule(scheduleId: number): Promise<MaintenanceAlert[]> {
+    return await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.scheduleId, scheduleId));
+  }
+
+  async createMaintenanceAlert(data: InsertMaintenanceAlert): Promise<MaintenanceAlert> {
+    const [alert] = await db.insert(maintenanceAlerts).values({
+      ...data,
+      createdAt: new Date()
+    }).returning();
+    return alert;
+  }
+
+  async updateMaintenanceAlert(id: number, data: Partial<MaintenanceAlert>): Promise<MaintenanceAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(maintenanceAlerts)
+      .set(data)
+      .where(eq(maintenanceAlerts.id, id))
+      .returning();
+    return updatedAlert;
+  }
+
+  async deleteMaintenanceAlert(id: number): Promise<boolean> {
+    const result = await db.delete(maintenanceAlerts).where(eq(maintenanceAlerts.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getUnreadMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.isRead, false));
+  }
+
+  async markMaintenanceAlertAsRead(id: number): Promise<MaintenanceAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(maintenanceAlerts)
+      .set({ isRead: true })
+      .where(eq(maintenanceAlerts.id, id))
+      .returning();
+    return updatedAlert;
+  }
+}
+
+// Koristimo PostgreSQL implementaciju umesto MemStorage
+export const storage = new DatabaseStorage();
