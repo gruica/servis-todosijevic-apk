@@ -430,9 +430,11 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Klijent</FormLabel>
                       <Select 
-                        onValueChange={(value) => handleClientChange(value)} 
-                        defaultValue={String(field.value)}
-                        value={String(field.value)}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleClientChange(value);
+                        }}
+                        value={field.value ? String(field.value) : "0"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -459,9 +461,10 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Uređaj</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={String(field.value)}
-                        value={String(field.value)}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        value={field.value ? String(field.value) : "0"}
                         disabled={!selectedClient}
                       >
                         <FormControl>
@@ -512,8 +515,10 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Status</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        value={field.value || "pending"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -541,8 +546,10 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Serviser</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value ? field.value.toString() : "0"}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        value={field.value ? field.value.toString() : "0"}
                       >
                         <FormControl>
                           <SelectTrigger>
