@@ -164,7 +164,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
-      technicianId: undefined,
+      technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
       completedDate: "",
@@ -222,7 +222,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
-      technicianId: undefined,
+      technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
       completedDate: "",
@@ -243,7 +243,7 @@ export default function Services() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
-      technicianId: service.technicianId || undefined,
+      technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || "",
       completedDate: service.completedDate || "",
@@ -542,7 +542,7 @@ export default function Services() {
                       <FormLabel>Serviser</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value?.toString()}
+                        defaultValue={field.value ? field.value.toString() : "0"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -550,7 +550,7 @@ export default function Services() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nije dodeljeno</SelectItem>
+                          <SelectItem value="0">Nije dodeljeno</SelectItem>
                           {technicians?.map(technician => (
                             <SelectItem key={technician.id} value={technician.id.toString()}>
                               {technician.fullName}
