@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { emailService } from "./email-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
+import { pool } from "./db";
 import { z } from "zod";
 
 // Email postavke schema
@@ -962,6 +963,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: "Greška pri dobijanju email postavki", 
         message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
+  // SQL Admin panel endpoint
+  app.post("/api/admin/execute-sql", async (req, res) => {
+    try {
+      // Provera da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Samo administrator ima pristup SQL upravljaču" });
+      }
+      
+      const { query } = req.body;
+      
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "SQL upit je obavezan" });
+      }
+      
+      // Zaštita od destruktivnih upita koji mogu oštetiti bazu
+      const lowerQuery = query.toLowerCase();
+      const isDestructive = 
+        lowerQuery.includes("drop table") || 
+        lowerQuery.includes("drop database") ||
+        lowerQuery.includes("truncate table");
+      
+      if (isDestructive) {
+        return res.status(400).json({
+          error: "Destruktivni upiti nisu dozvoljeni (DROP TABLE, DROP DATABASE, TRUNCATE)",
+          query
+        });
+      }
+      
+      // Izvršavanje SQL upita
+      const result = await pool.query(query);
+      
+      res.json({
+        success: true,
+        rowCount: result.rowCount,
+        rows: result.rows,
+        fields: result.fields?.map(f => ({
+          name: f.name,
+          dataTypeID: f.dataTypeID
+        }))
+      });
+    } catch (err) {
+      const error = err as Error;
+      console.error("SQL Error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Nepoznata greška pri izvršavanju SQL upita"
       });
     }
   });
