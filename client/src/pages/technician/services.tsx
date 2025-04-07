@@ -47,7 +47,7 @@ export default function TechnicianServices() {
   const [technicianNotes, setTechnicianNotes] = useState<string>("");
 
   // Fetch services assigned to the logged-in technician
-  const { data: services = [], isLoading } = useQuery<TechnicianService[]>({
+  const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
     queryKey: ["/api/my-services"],
     queryFn: async ({ signal }) => {
       const response = await fetch("/api/my-services", { signal });
@@ -56,6 +56,12 @@ export default function TechnicianServices() {
       }
       return response.json();
     },
+    // Obavezno osvežavaj podatke svakih 10 sekundi
+    refetchInterval: 10000,
+    // Omogući osvežavanje podataka i kada browser nije u fokusu
+    refetchIntervalInBackground: true,
+    // Smanji staleTime da bi podaci bili ažurniji
+    staleTime: 5000,
   });
 
   // Mutation for updating service status
