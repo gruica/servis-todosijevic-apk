@@ -13,20 +13,20 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
 
   // Define menu items based on user role
   const adminMenuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "nadzorna_tabla" },
-    { path: "/clients", label: "Klijenti", icon: "osoba" },
-    { path: "/services", label: "Servisi", icon: "konstrukcija" },
-    { path: "/appliances", label: "Bela tehnika", icon: "frižider" },
-    { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "kalendar" },
+    { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
+    { path: "/clients", label: "Klijenti", icon: "person" },
+    { path: "/services", label: "Servisi", icon: "build" },
+    { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
+    { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
-    { path: "/users", label: "Korisnici", icon: "grupe" },
-    { path: "/sql-admin", label: "SQL upravljač", icon: "baza_podataka" },
-    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_view" },
+    { path: "/users", label: "Korisnici", icon: "group" },
+    { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
+    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_chart" },
   ];
   
   const technicianMenuItems = [
-    { path: "/tech", label: "Moji servisi", icon: "konstrukcija" },
-    { path: "/tech/profile", label: "Moj profil", icon: "osoba" },
+    { path: "/tech", label: "Moji servisi", icon: "build" },
+    { path: "/tech/profile", label: "Moj profil", icon: "person" },
   ];
   
   // Use the appropriate menu based on user role
@@ -118,7 +118,7 @@ function LogoutButton() {
       className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
       disabled={logoutMutation.isPending}
     >
-      <span className="material-icons mr-3 text-gray-500">odjava</span>
+      <span className="material-icons mr-3 text-gray-500">logout</span>
       <span>Odjavi se</span>
     </button>
   );

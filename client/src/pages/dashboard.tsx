@@ -115,7 +115,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center">
                         <div className="rounded-full bg-blue-100 p-3 mr-4">
-                          <span className="material-icons text-primary">konstrukcija</span>
+                          <span className="material-icons text-primary">build</span>
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">Aktivni servisi</p>
@@ -129,7 +129,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center">
                         <div className="rounded-full bg-amber-100 p-3 mr-4">
-                          <span className="material-icons text-amber-500">osobe</span>
+                          <span className="material-icons text-amber-500">people</span>
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">Klijenti</p>
@@ -143,7 +143,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center">
                         <div className="rounded-full bg-green-100 p-3 mr-4">
-                          <span className="material-icons text-green-500">sve_završeno</span>
+                          <span className="material-icons text-green-500">done_all</span>
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">Završeni servisi</p>
@@ -157,7 +157,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center">
                         <div className="rounded-full bg-amber-100 p-3 mr-4">
-                          <span className="material-icons text-amber-500">raspored</span>
+                          <span className="material-icons text-amber-500">schedule</span>
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">Na čekanju</p>
@@ -176,7 +176,7 @@ export default function Dashboard() {
                 <h3 className="text-lg font-medium text-gray-800">Nedavni servisi</h3>
                 <Link href="/services" className="text-primary text-sm hover:underline flex items-center">
                   Svi servisi
-                  <span className="material-icons ml-1 text-sm">naprijed</span>
+                  <span className="material-icons ml-1 text-sm">arrow_forward</span>
                 </Link>
               </div>
               
@@ -228,10 +228,10 @@ export default function Dashboard() {
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="material-icons text-sm text-primary">vidljivost</span>
+                              <span className="material-icons text-sm text-primary">visibility</span>
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="material-icons text-sm text-primary">izmijeni</span>
+                              <span className="material-icons text-sm text-primary">edit</span>
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -250,7 +250,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-medium text-gray-800">Nedavni klijenti</h3>
                   <Link href="/clients" className="text-primary text-sm hover:underline flex items-center">
                     Svi klijenti
-                    <span className="material-icons ml-1 text-sm">naprijed</span>
+                    <span className="material-icons ml-1 text-sm">arrow_forward</span>
                   </Link>
                 </div>
                 
@@ -297,7 +297,7 @@ export default function Dashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <span className="material-icons text-sm text-primary">vidljivost</span>
+                                <span className="material-icons text-sm text-primary">visibility</span>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -314,7 +314,7 @@ export default function Dashboard() {
                   <h3 className="text-lg font-medium text-gray-800">Najčešći uređaji</h3>
                   <Link href="/appliances" className="text-primary text-sm hover:underline flex items-center">
                     Svi uređaji
-                    <span className="material-icons ml-1 text-sm">naprijed</span>
+                    <span className="material-icons ml-1 text-sm">arrow_forward</span>
                   </Link>
                 </div>
                 
