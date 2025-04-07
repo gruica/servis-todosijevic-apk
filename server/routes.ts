@@ -752,85 +752,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email settings route
-  app.post("/api/email-settings", async (req, res) => {
-    try {
-      // Verify that user is admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
-      const { host, port, secure, user, password } = req.body;
-      
-      // Validate required fields
-      if (!host || !port || !user || !password) {
-        return res.status(400).json({ error: "Sva polja su obavezna" });
-      }
-      
-      // Save settings to environment variables
-      process.env.EMAIL_HOST = host;
-      process.env.EMAIL_PORT = port.toString();
-      process.env.EMAIL_SECURE = secure ? "true" : "false";
-      process.env.EMAIL_USER = user;
-      process.env.EMAIL_PASSWORD = password;
-      process.env.EMAIL_FROM = user; // Koristimo istu email adresu kao pošiljaoca
-      
-      // Test connection
-      const isValid = await emailService.verifyConnection();
-      
-      if (!isValid) {
-        return res.status(400).json({ error: "Nije moguće povezati se sa SMTP serverom. Proverite postavke." });
-      }
-      
-      res.json({ success: true, message: "Email postavke uspešno sačuvane i testirane" });
-    } catch (error) {
-      console.error("Greška pri podešavanju email postavki:", error);
-      res.status(500).json({ error: "Greška pri čuvanju email postavki" });
-    }
-  });
+  // Napomena: Ovde je bila dupla email-settings ruta koja je uklonjena
   
-  // Email test route
-  app.post("/api/send-test-email", async (req, res) => {
-    try {
-      // Verify that user is admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
-      const { recipient } = req.body;
-      
-      if (!recipient) {
-        return res.status(400).json({ error: "Email adresa primaoca je obavezna" });
-      }
-      
-      const result = await emailService.sendEmail({
-        to: recipient,
-        subject: "Test email iz Frigo Sistema Todosijević",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #0066cc;">Test email</h2>
-            <p>Ovo je test email iz sistema za upravljanje servisima Frigo Sistema Todosijević.</p>
-            <p>Ako ste primili ovaj email, znači da su vaše email postavke pravilno konfigurisane.</p>
-            <hr style="border: 1px solid #ddd; margin: 20px 0;">
-            <p style="font-size: 12px; color: #666;">
-              Frigo Sistem Todosijević<br>
-              Kontakt telefon: +382 69 021 689<br>
-              Email: info@frigosistemtodosijevic.com
-            </p>
-          </div>
-        `
-      });
-      
-      if (result) {
-        res.json({ success: true, message: "Test email uspešno poslat" });
-      } else {
-        res.status(500).json({ error: "Nije moguće poslati test email" });
-      }
-    } catch (error) {
-      console.error("Greška pri slanju test email-a:", error);
-      res.status(500).json({ error: "Greška pri slanju test email-a" });
-    }
-  });
+  // Napomena: Ovde je bio duplirani test-email endpoint koji je uklonjen
   
   // Maintenance Alert routes
   app.get("/api/maintenance-alerts", async (req, res) => {
