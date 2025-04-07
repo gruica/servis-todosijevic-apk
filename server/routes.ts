@@ -3,9 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { emailService } from "./email-service";
+import { excelService } from "./excel-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { pool } from "./db";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import { promises as fs } from "fs";
 
 // Email postavke schema
 const emailSettingsSchema = z.object({
@@ -1014,6 +1018,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false,
         error: error.message || "Nepoznata greška pri izvršavanju SQL upita"
       });
+    }
+  });
+
+  // Podešavanje za upload fajlova
+  const uploadStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      const uploadDir = path.join(process.cwd(), 'uploads');
+      // Kreiraj folder ako ne postoji
+      fs.mkdir(uploadDir, { recursive: true })
+        .then(() => cb(null, uploadDir))
+        .catch(err => cb(err, uploadDir));
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  });
+
+  const upload = multer({ storage: uploadStorage });
+
+  // Excel export endpoints
+  app.get("/api/excel/clients", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const buffer = await excelService.exportClients();
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=klijenti.xlsx');
+      res.setHeader('Content-Length', buffer.length);
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error("Greška pri izvozu klijenata:", error);
+      res.status(500).json({ error: "Greška pri izvozu klijenata" });
+    }
+  });
+
+  app.get("/api/excel/technicians", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const buffer = await excelService.exportTechnicians();
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=serviseri.xlsx');
+      res.setHeader('Content-Length', buffer.length);
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error("Greška pri izvozu servisera:", error);
+      res.status(500).json({ error: "Greška pri izvozu servisera" });
+    }
+  });
+
+  app.get("/api/excel/appliances", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const buffer = await excelService.exportAppliances();
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=uredjaji.xlsx');
+      res.setHeader('Content-Length', buffer.length);
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error("Greška pri izvozu uređaja:", error);
+      res.status(500).json({ error: "Greška pri izvozu uređaja" });
+    }
+  });
+
+  app.get("/api/excel/services", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const buffer = await excelService.exportServices();
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=servisi.xlsx');
+      res.setHeader('Content-Length', buffer.length);
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error("Greška pri izvozu servisa:", error);
+      res.status(500).json({ error: "Greška pri izvozu servisa" });
+    }
+  });
+
+  app.get("/api/excel/maintenance", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const buffer = await excelService.exportMaintenanceSchedules();
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=odrzavanje.xlsx');
+      res.setHeader('Content-Length', buffer.length);
+      
+      res.end(buffer);
+    } catch (error) {
+      console.error("Greška pri izvozu planova održavanja:", error);
+      res.status(500).json({ error: "Greška pri izvozu planova održavanja" });
+    }
+  });
+
+  // Excel import endpoints
+  app.post("/api/excel/import/clients", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Nije priložen fajl" });
+      }
+      
+      const buffer = await fs.readFile(req.file.path);
+      const result = await excelService.importClients(buffer);
+      
+      // Obriši privremeni fajl
+      fs.unlink(req.file.path).catch(err => console.error("Greška pri brisanju privremenog fajla:", err));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Greška pri uvozu klijenata:", error);
+      res.status(500).json({ error: "Greška pri uvozu klijenata" });
+    }
+  });
+
+  app.post("/api/excel/import/appliances", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Nije priložen fajl" });
+      }
+      
+      const buffer = await fs.readFile(req.file.path);
+      const result = await excelService.importAppliances(buffer);
+      
+      // Obriši privremeni fajl
+      fs.unlink(req.file.path).catch(err => console.error("Greška pri brisanju privremenog fajla:", err));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Greška pri uvozu uređaja:", error);
+      res.status(500).json({ error: "Greška pri uvozu uređaja" });
+    }
+  });
+
+  app.post("/api/excel/import/services", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Nije priložen fajl" });
+      }
+      
+      const buffer = await fs.readFile(req.file.path);
+      const result = await excelService.importServices(buffer);
+      
+      // Obriši privremeni fajl
+      fs.unlink(req.file.path).catch(err => console.error("Greška pri brisanju privremenog fajla:", err));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Greška pri uvozu servisa:", error);
+      res.status(500).json({ error: "Greška pri uvozu servisa" });
     }
   });
 

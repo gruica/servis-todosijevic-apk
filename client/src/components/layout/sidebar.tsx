@@ -21,6 +21,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/users", label: "Korisnici", icon: "grupe" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "baza_podataka" },
+    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_view" },
   ];
   
   const technicianMenuItems = [
