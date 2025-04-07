@@ -14,18 +14,18 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   // Define menu items based on user role
   const adminMenuItems = [
     { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
-    { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/services", label: "Servisi", icon: "build" },
+    { path: "/clients", label: "Klijenti", icon: "people" },
+    { path: "/services", label: "Servisi", icon: "home_repair_service" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
-    { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
-    { path: "/email-settings", label: "Email postavke", icon: "mail" },
+    { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "calendar_month" },
+    { path: "/email-settings", label: "Email postavke", icon: "email" },
     { path: "/users", label: "Korisnici", icon: "group" },
-    { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
-    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_chart" },
+    { path: "/sql-admin", label: "SQL upravljač", icon: "database" },
+    { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_view" },
   ];
   
   const technicianMenuItems = [
-    { path: "/tech", label: "Moji servisi", icon: "build" },
+    { path: "/tech", label: "Moji servisi", icon: "home_repair_service" },
     { path: "/tech/profile", label: "Moj profil", icon: "person" },
   ];
   
@@ -51,7 +51,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
       )}
     >
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <h1 className="text-xl font-medium text-primary">SupaBaza</h1>
+        <h1 className="text-xl font-medium text-primary">Frigo Sistem Todosijević</h1>
       </div>
       <div className="py-4 flex-1">
         <div className="px-4 mb-6">

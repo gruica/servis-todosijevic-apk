@@ -96,7 +96,7 @@ export default function AuthPage() {
       <div className="w-full md:w-2/5 flex items-center justify-center p-4 md:p-10">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">SupaBaza</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Frigo Sistem Todosijević</CardTitle>
             <CardDescription className="text-center">
               Aplikacija za vođenje servisa bele tehnike
             </CardDescription>
@@ -255,7 +255,7 @@ export default function AuthPage() {
       {/* Right side - Hero section */}
       <div className="w-full md:w-3/5 bg-primary text-white hidden md:flex md:flex-col md:justify-center md:items-center p-10">
         <div className="max-w-lg">
-          <h1 className="text-4xl font-bold mb-4">Servis bele tehnike</h1>
+          <h1 className="text-4xl font-bold mb-4">Frigo Sistem Todosijević</h1>
           <p className="text-xl mb-6">
             Aplikacija za vođenje servisa bele tehnike u Crnoj Gori sa sistemom autentifikacije i praćenjem servisa.
           </p>

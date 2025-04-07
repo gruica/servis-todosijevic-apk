@@ -134,7 +134,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center">
                         <div className="rounded-full bg-blue-100 p-3 mr-4">
-                          <span className="material-icons text-primary">build</span>
+                          <span className="material-icons text-primary">home_repair_service</span>
                         </div>
                         <div>
                           <p className="text-gray-500 text-sm">Aktivni servisi</p>
@@ -247,10 +247,10 @@ export default function Dashboard() {
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="material-icons text-sm text-primary">visibility</span>
+                              <span className="material-icons text-sm text-primary">pageview</span>
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="material-icons text-sm text-primary">edit</span>
+                              <span className="material-icons text-sm text-primary">mode_edit</span>
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -316,7 +316,7 @@ export default function Dashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <span className="material-icons text-sm text-primary">visibility</span>
+                                <span className="material-icons text-sm text-primary">pageview</span>
                               </Button>
                             </TableCell>
                           </TableRow>

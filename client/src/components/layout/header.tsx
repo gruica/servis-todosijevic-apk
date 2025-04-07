@@ -24,7 +24,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
           >
             <span className="material-icons">menu</span>
           </Button>
-          <h1 className="text-xl font-medium text-primary ml-2 md:hidden">SupaBaza</h1>
+          <h1 className="text-xl font-medium text-primary ml-2 md:hidden">Frigo Sistem Todosijević</h1>
         </div>
         
         <div className="flex-1 max-w-3xl mx-4 hidden md:block">
