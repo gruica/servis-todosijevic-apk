@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { MaintenanceSchedule, MaintenanceFrequency } from "@shared/schema";
+import { emailService } from "./email-service";
 
 /**
  * Servis za praćenje i predviđanje održavanja uređaja
@@ -161,6 +162,39 @@ export class MaintenanceService {
           status: "pending",
           isRead: false
         });
+        
+        // Pošalji email obaveštenje klijentu
+        try {
+          // Dohvati uređaj za koji je zakazano održavanje
+          const appliance = await storage.getAppliance(schedule.applianceId);
+          if (appliance && appliance.clientId) {
+            // Dohvati klijenta
+            const client = await storage.getClient(appliance.clientId);
+            if (client && client.email) {
+              // Dohvati dodatne informacije o uređaju
+              let applianceName = appliance.model || appliance.serialNumber || "Nepoznat uređaj";
+              if (appliance.manufacturerId) {
+                const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                if (manufacturer) {
+                  applianceName = `${manufacturer.name} ${applianceName}`;
+                }
+              }
+              
+              // Pošalji email obaveštenje
+              await emailService.sendMaintenanceReminder(
+                client,
+                applianceName,
+                this.formatDate(nextMaintenanceDate),
+                schedule.description || ""
+              );
+              
+              console.log(`Email obaveštenje poslato klijentu ${client.fullName} za održavanje #${schedule.id}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Greška pri slanju email obaveštenja za održavanje #${schedule.id}:`, error);
+          // Ne bacamo grešku dalje jer ne želimo da narušimo glavnu funkcionalnost
+        }
       }
     }
   }

@@ -2,8 +2,22 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { emailService } from "./email-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { z } from "zod";
+
+// Email postavke schema
+const emailSettingsSchema = z.object({
+  host: z.string().min(1),
+  port: z.number().int().positive(),
+  secure: z.boolean().default(true),
+  user: z.string().min(1),
+  password: z.string().min(1),
+});
+
+const testEmailSchema = z.object({
+  recipient: z.string().email(),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -273,7 +287,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
       }
       
-      // TODO: Send email notification when email functionality is enabled
+      // Pošalji email obaveštenje klijentu o promeni statusa servisa
+      try {
+        if (service.clientId) {
+          const client = await storage.getClient(service.clientId);
+          if (client) {
+            const technician = await storage.getTechnician(service.technicianId || 0);
+            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+            
+            await emailService.sendServiceStatusUpdate(
+              client, 
+              serviceId,
+              validStatus,
+              technicianNotes || service.description || "",
+              technicianName
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+        // Ne vraćamo grešku korisniku jer servis je uspešno ažuriran
+      }
       
       res.json(updatedService);
     } catch (error) {
@@ -718,6 +752,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email settings route
+  app.post("/api/email-settings", async (req, res) => {
+    try {
+      // Verify that user is admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const { host, port, secure, user, password } = req.body;
+      
+      // Validate required fields
+      if (!host || !port || !user || !password) {
+        return res.status(400).json({ error: "Sva polja su obavezna" });
+      }
+      
+      // Save settings to environment variables
+      process.env.EMAIL_HOST = host;
+      process.env.EMAIL_PORT = port.toString();
+      process.env.EMAIL_SECURE = secure ? "true" : "false";
+      process.env.EMAIL_USER = user;
+      process.env.EMAIL_PASSWORD = password;
+      process.env.EMAIL_FROM = user; // Koristimo istu email adresu kao pošiljaoca
+      
+      // Test connection
+      const isValid = await emailService.verifyConnection();
+      
+      if (!isValid) {
+        return res.status(400).json({ error: "Nije moguće povezati se sa SMTP serverom. Proverite postavke." });
+      }
+      
+      res.json({ success: true, message: "Email postavke uspešno sačuvane i testirane" });
+    } catch (error) {
+      console.error("Greška pri podešavanju email postavki:", error);
+      res.status(500).json({ error: "Greška pri čuvanju email postavki" });
+    }
+  });
+  
+  // Email test route
+  app.post("/api/send-test-email", async (req, res) => {
+    try {
+      // Verify that user is admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const { recipient } = req.body;
+      
+      if (!recipient) {
+        return res.status(400).json({ error: "Email adresa primaoca je obavezna" });
+      }
+      
+      const result = await emailService.sendEmail({
+        to: recipient,
+        subject: "Test email iz Frigo Sistema Todosijević",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #0066cc;">Test email</h2>
+            <p>Ovo je test email iz sistema za upravljanje servisima Frigo Sistema Todosijević.</p>
+            <p>Ako ste primili ovaj email, znači da su vaše email postavke pravilno konfigurisane.</p>
+            <hr style="border: 1px solid #ddd; margin: 20px 0;">
+            <p style="font-size: 12px; color: #666;">
+              Frigo Sistem Todosijević<br>
+              Kontakt telefon: +382 69 021 689<br>
+              Email: info@frigosistemtodosijevic.com
+            </p>
+          </div>
+        `
+      });
+      
+      if (result) {
+        res.json({ success: true, message: "Test email uspešno poslat" });
+      } else {
+        res.status(500).json({ error: "Nije moguće poslati test email" });
+      }
+    } catch (error) {
+      console.error("Greška pri slanju test email-a:", error);
+      res.status(500).json({ error: "Greška pri slanju test email-a" });
+    }
+  });
+  
   // Maintenance Alert routes
   app.get("/api/maintenance-alerts", async (req, res) => {
     try {
@@ -803,6 +917,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(alert);
     } catch (error) {
       res.status(500).json({ error: "Greška pri označavanju obaveštenja kao pročitanog" });
+    }
+  });
+
+  // Email settings routes
+  app.post("/api/email-settings", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za upravljanje email postavkama" });
+      }
+
+      const validatedData = emailSettingsSchema.parse(req.body);
+      
+      // Postavi email konfiguraciju
+      emailService.setSmtpConfig({
+        host: validatedData.host,
+        port: validatedData.port,
+        secure: validatedData.secure,
+        auth: {
+          user: validatedData.user,
+          pass: validatedData.password,
+        }
+      });
+      
+      res.status(200).json({ success: true, message: "Email postavke su uspešno sačuvane" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeće email postavke", 
+          details: error.format() 
+        });
+      }
+      console.error("Greška pri čuvanju email postavki:", error);
+      res.status(500).json({ 
+        error: "Greška pri čuvanju email postavki", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+  
+  // Test email route
+  app.post("/api/send-test-email", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za slanje test email-a" });
+      }
+
+      const { recipient } = testEmailSchema.parse(req.body);
+      
+      // Prvo verifikuj konekciju
+      const isConnected = await emailService.verifyConnection();
+      if (!isConnected) {
+        return res.status(500).json({ 
+          error: "Nije moguće konektovati se na SMTP server" 
+        });
+      }
+      
+      // Pošalji test email
+      const result = await emailService.sendEmail({
+        to: recipient,
+        subject: "Test email - Frigoservis Todosijević",
+        html: `
+          <h2>Test email iz Frigoservis aplikacije</h2>
+          <p>Ovo je test email poslat iz aplikacije za upravljanje servisima.</p>
+          <p>Ako vidite ovaj email, to znači da su SMTP postavke ispravno konfigurisane.</p>
+          <p>Vreme slanja: ${new Date().toLocaleString('sr-Latn-ME')}</p>
+          <hr>
+          <p><strong>Frigoservis Todosijević</strong></p>
+        `
+      });
+      
+      if (result) {
+        res.status(200).json({ success: true, message: "Test email je uspešno poslat" });
+      } else {
+        res.status(500).json({ error: "Greška pri slanju test email-a" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeća email adresa", 
+          details: error.format() 
+        });
+      }
+      console.error("Greška pri slanju test email-a:", error);
+      res.status(500).json({ 
+        error: "Greška pri slanju test email-a", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+  
+  // Get current email settings
+  app.get("/api/email-settings", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pregled email postavki" });
+      }
+      
+      // Dohvati trenutne postavke (bez lozinke)
+      const config = emailService.getSmtpConfig();
+      
+      if (!config) {
+        return res.status(200).json({ 
+          configured: false
+        });
+      }
+      
+      res.status(200).json({
+        configured: true,
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        user: config.auth?.user || ""
+      });
+    } catch (error) {
+      console.error("Greška pri dobijanju email postavki:", error);
+      res.status(500).json({ 
+        error: "Greška pri dobijanju email postavki", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
     }
   });
 
