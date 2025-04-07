@@ -431,8 +431,8 @@ export default function Services() {
                       <FormLabel>Klijent</FormLabel>
                       <Select 
                         onValueChange={(value) => handleClientChange(value)} 
-                        defaultValue={field.value.toString()}
-                        value={field.value.toString()}
+                        defaultValue={String(field.value)}
+                        value={String(field.value)}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -460,8 +460,8 @@ export default function Services() {
                       <FormLabel>Uređaj</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value.toString()}
-                        value={field.value.toString()}
+                        defaultValue={String(field.value)}
+                        value={String(field.value)}
                         disabled={!selectedClient}
                       >
                         <FormControl>
