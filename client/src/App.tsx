@@ -7,6 +7,7 @@ import Clients from "@/pages/clients";
 import Services from "@/pages/services";
 import Appliances from "@/pages/appliances";
 import Users from "@/pages/users";
+import UserProfile from "@/pages/user-profile";
 import TechnicianServices from "@/pages/technician/services";
 import TechnicianProfile from "@/pages/technician/profile";
 import CreateTechnicianUser from "@/pages/create-technician-user";
@@ -33,6 +34,7 @@ function Router() {
       <RoleProtectedRoute path="/email-settings" component={EmailSettings} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/sql-admin" component={SQLAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServices} allowedRoles={["technician"]} />

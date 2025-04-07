@@ -22,6 +22,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel uvoz/izvoz", icon: "table_chart" },
+    { path: "/profile", label: "Moj profil", icon: "person" },
   ];
   
   const technicianMenuItems = [
