@@ -3,7 +3,7 @@ import { Client } from '@shared/schema';
 import fs from 'fs';
 import path from 'path';
 
-// Tip za SMTP konfiguraciju
+// Tip za SMTP konfiguraciju koji proširuje nodemailer TransportOptions
 export interface SmtpConfig {
   host: string;
   port: number;
@@ -18,7 +18,10 @@ export interface SmtpConfig {
     ciphers?: string;
     minVersion?: string;
   };
-  // Opcije za pool konekcije
+}
+
+// Tip sa dodatnim pooling opcijama za nodemailer
+export interface NodemailerTransportOptions extends TransportOptions {
   pool?: boolean;
   maxConnections?: number;
   maxMessages?: number;
@@ -135,7 +138,7 @@ export class EmailService {
         pool: true,
         maxConnections: 5,
         maxMessages: 100
-      });
+      } as NodemailerTransportOptions);
       
       // Pokušaj odmah verifikovati konekciju sa boljim debugom
       this.transporter.verify()
@@ -178,8 +181,8 @@ export class EmailService {
       // Kreiraj transporter i u slučaju greške
       this.transporter = nodemailer.createTransport({
         ...this.configCache,
-        pool: true
-      });
+        pool: true,
+      } as NodemailerTransportOptions);
     }
   }
   
@@ -200,7 +203,7 @@ export class EmailService {
       fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config));
       
       // Kreiraj novi transporter sa novom konfiguracijom
-      this.transporter = nodemailer.createTransport(config);
+      this.transporter = nodemailer.createTransport(config as unknown as NodemailerTransportOptions);
       
       console.log('SMTP konfiguracija uspešno ažurirana');
       return true;

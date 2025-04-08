@@ -103,12 +103,26 @@ export default function TechnicianServices() {
       });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
-      toast({
-        title: "Status uspješno ažuriran",
-        description: "Status servisa je uspješno promijenjen.",
-      });
+      
+      // Poboljšana poruka sa informacijom o slanju obaveštenja klijentu
+      if (data?.emailSent) {
+        toast({
+          title: "Status uspješno ažuriran",
+          description: `Status servisa je uspješno promijenjen. Email obaveštenje je poslato klijentu ${data.clientName || 'i serviseru'}. ${data.emailDetails || ''}`,
+          variant: "default",
+          duration: 5000, // Duža poruka treba da ostane duže na ekranu
+        });
+      } else {
+        toast({
+          title: "Status uspješno ažuriran",
+          description: "Status servisa je uspješno promijenjen. " + 
+            (data?.emailError ? `Email obaveštenje NIJE poslato: ${data.emailError}` : ""),
+          variant: data?.emailError ? "destructive" : "default",
+        });
+      }
+      
       setStatusDialogOpen(false);
     },
     onError: (error: Error) => {

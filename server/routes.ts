@@ -378,6 +378,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
       }
       
+      // Informacije o slanju emaila koje će biti vraćene klijentu
+      const emailInfo: {
+        emailSent: boolean;
+        clientName: string | null;
+        emailDetails: string | null;
+        emailError: string | null;
+      } = {
+        emailSent: false,
+        clientName: null,
+        emailDetails: null,
+        emailError: null
+      };
+      
       // Pošalji email obaveštenja SVIM povezanim stranama o promeni statusa servisa
       try {
         console.log(`[EMAIL SISTEM] Započinjem slanje obaveštenja o promeni statusa servisa #${serviceId} u "${validStatus}"`);
@@ -390,12 +403,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
           
           if (client) {
+            // Popuni ime klijenta za vraćanje klijentu
+            emailInfo.clientName = client.fullName;
+            
             console.log(`[EMAIL SISTEM] Pronađen klijent: ${client.fullName}, email: ${client.email || 'nije dostupan'}`);
             
             // 2. Šalje obaveštenje KLIJENTU
             if (client.email) {
               console.log(`[EMAIL SISTEM] Pokušavam slanje emaila klijentu ${client.fullName} (${client.email})`);
               
+              // Poboljšan sadržaj emaila koji sadrži više detalja
               const clientEmailContent = technicianNotes || service.description || "";
               const clientEmailSent = await emailService.sendServiceStatusUpdate(
                 client, 
@@ -407,6 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (clientEmailSent) {
                 console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
+                emailInfo.emailSent = true; // Označava da je email uspešno poslat
                 
                 // Obavesti administratore o poslatom mail-u klijentu
                 await emailService.notifyAdminAboutEmail(
@@ -417,12 +435,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               } else {
                 console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja klijentu ${client.fullName}`);
+                emailInfo.emailError = "Neuspešno slanje emaila klijentu. Proverite email postavke.";
               }
             } else {
               console.warn(`[EMAIL SISTEM] ⚠️ Klijent ${client.fullName} nema email adresu, preskačem slanje`);
+              emailInfo.emailError = `Klijent ${client.fullName} nema definisanu email adresu`;
             }
             
             // 3. Šalje obaveštenje SERVISERU
+            let techEmailSent = false;
             if (technician && technician.email) {
               console.log(`[EMAIL SISTEM] Pokušavam slanje emaila serviseru ${technician.fullName} (${technician.email})`);
               
@@ -436,8 +457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
                     <p><strong>Broj servisa:</strong> #${serviceId}</p>
                     <p><strong>Klijent:</strong> ${client.fullName}</p>
-                    <p><strong>Adresa klijenta:</strong> ${client.address}, ${client.city}</p>
-                    <p><strong>Telefon klijenta:</strong> ${client.phone}</p>
+                    <p><strong>Adresa klijenta:</strong> ${client.address || ''}, ${client.city || ''}</p>
+                    <p><strong>Telefon klijenta:</strong> ${client.phone || 'Nije dostupan'}</p>
                     <p><strong>Novi status:</strong> ${statusDescription}</p>
                     <p><strong>Napomena:</strong> ${technicianNotes || 'Nema napomene'}</p>
                   </div>
@@ -447,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               `;
               
               // Pošalji email serviseru (direktno, ne kroz specijalizovanu metodu)
-              const techEmailSent = await emailService.sendEmail({
+              techEmailSent = await emailService.sendEmail({
                 to: technician.email,
                 subject: technicianSubject,
                 html: technicianHTML,
@@ -455,6 +476,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (techEmailSent) {
                 console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje serviseru ${technician.fullName}`);
+                
+                // Ako nije poslat email klijentu, ali je serviseru, označimo da je slanje uspešno
+                if (!emailInfo.emailSent) {
+                  emailInfo.emailSent = true;
+                  emailInfo.clientName = `${technician.fullName} (serviser)`;
+                } else {
+                  // Ako je email poslat i klijentu i serviseru, ažurirajmo detalje
+                  emailInfo.emailDetails = `Obavešteni: klijent i serviser ${technician.fullName}`;
+                }
                 
                 // Obavesti administratore o poslatom mail-u serviseru
                 await emailService.notifyAdminAboutEmail(
@@ -465,6 +495,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               } else {
                 console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja serviseru ${technician.fullName}`);
+                
+                // Ako je već postavljeno da slanje klijentu nije uspelo, dodajmo info o serviseru
+                if (emailInfo.emailError) {
+                  emailInfo.emailError += " Takođe, slanje serviseru nije uspelo.";
+                } 
+                // Ako je slanje klijentu uspelo, ali serviseru nije, nemojmo to smatrati greškom
               }
             } else if (technician) {
               console.warn(`[EMAIL SISTEM] ⚠️ Serviser ${technician.fullName} nema email adresu, preskačem slanje`);
@@ -473,16 +509,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } else {
             console.error(`[EMAIL SISTEM] ❌ Klijent sa ID ${service.clientId} nije pronađen, ne mogu poslati obaveštenja`);
+            emailInfo.emailError = "Klijent nije pronađen u bazi podataka";
           }
         } else {
           console.error(`[EMAIL SISTEM] ❌ Servis #${serviceId} nema povezanog klijenta, ne mogu poslati obaveštenja`);
+          emailInfo.emailError = "Servis nema povezanog klijenta, ne mogu poslati obaveštenja";
         }
-      } catch (emailError) {
-        console.error("[EMAIL SISTEM] ❌ Greška pri slanju email obaveštenja:", emailError);
-        // Ne vraćamo grešku korisniku jer je servis uspešno ažuriran
+      } catch (error) {
+        console.error("[EMAIL SISTEM] ❌ Greška pri slanju email obaveštenja:", error);
+        // Bezbedno obradimo grešku koja može biti bilo kog tipa
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        emailInfo.emailError = `Sistemska greška: ${errorMessage || "Nepoznata greška"}`;
       }
       
-      res.json(updatedService);
+      // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
+      res.json({
+        ...updatedService,
+        ...emailInfo
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Nevažeći status servisa", details: error.format() });
