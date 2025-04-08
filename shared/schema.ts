@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   role: text("role").default("user").notNull(),
   technicianId: integer("technician_id"), // Reference to technician if user is a technician
+  email: text("email"), // Email adresa korisnika
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -19,6 +20,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   fullName: true,
   role: true,
   technicianId: true,
+  email: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

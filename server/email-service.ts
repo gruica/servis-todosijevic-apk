@@ -46,7 +46,8 @@ export class EmailService {
   private transporter!: Transporter;
   private configCache: SmtpConfig | null = null;
   private adminEmails: string[] = [
-    'admin@frigosistemtodosijevic.me',
+    'admin@frigosistemtodosijevic.com',
+    'jelena@frigosistemtodosijevic.com',
     'jelena@frigosistemtodosijevic.me'
   ];
 

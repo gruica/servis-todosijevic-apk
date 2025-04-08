@@ -40,6 +40,7 @@ export interface IStorage {
   getTechnician(id: number): Promise<Technician | undefined>;
   createTechnician(technician: InsertTechnician): Promise<Technician>;
   updateTechnician(id: number, technician: InsertTechnician): Promise<Technician | undefined>;
+  getUserByTechnicianId(technicianId: number): Promise<User | undefined>;
   
   // Maintenance Schedule methods
   getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]>;
@@ -190,7 +191,8 @@ export class MemStorage implements IStorage {
       username: "admin@example.com", 
       fullName: "Jelena Todosijević", 
       password: hashedPassword,
-      technicianId: null
+      technicianId: null,
+      email: "admin@frigosistemtodosijevic.com"
     };
     
     this.users.set(id, user);
@@ -202,7 +204,8 @@ export class MemStorage implements IStorage {
       password: "serviser123",
       fullName: "Jovan Todosijević",
       role: "technician",
-      technicianId: 1 // First technician
+      technicianId: 1, // First technician
+      email: "jovan@frigosistemtodosijevic.com"
     });
     console.log("Technician user created: serviser@example.com");
   }
@@ -261,11 +264,13 @@ export class MemStorage implements IStorage {
     }
     
     const user: User = { 
-      ...insertUser, 
-      password, 
       id, 
+      username: insertUser.username,
+      password, 
+      fullName: insertUser.fullName,
       role,
-      technicianId: insertUser.technicianId !== undefined ? insertUser.technicianId : null
+      technicianId: insertUser.technicianId !== undefined ? insertUser.technicianId : null,
+      email: insertUser.email || null
     };
     
     this.users.set(id, user);
@@ -310,6 +315,12 @@ export class MemStorage implements IStorage {
     
     this.technicians.set(id, updatedTechnician);
     return updatedTechnician;
+  }
+  
+  async getUserByTechnicianId(technicianId: number): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.technicianId === technicianId
+    );
   }
 
   // Client methods
@@ -495,7 +506,10 @@ export class MemStorage implements IStorage {
       scheduledDate: insertService.scheduledDate || null,
       completedDate: insertService.completedDate || null,
       technicianNotes: insertService.technicianNotes || null,
-      cost: insertService.cost || null
+      cost: insertService.cost || null,
+      usedParts: insertService.usedParts || null,
+      machineNotes: insertService.machineNotes || null,
+      isCompletelyFixed: insertService.isCompletelyFixed || null
     };
     this.services.set(id, service);
     return service;
@@ -516,7 +530,10 @@ export class MemStorage implements IStorage {
       scheduledDate: insertService.scheduledDate || null,
       completedDate: insertService.completedDate || null,
       technicianNotes: insertService.technicianNotes || null,
-      cost: insertService.cost || null
+      cost: insertService.cost || null,
+      usedParts: insertService.usedParts || null,
+      machineNotes: insertService.machineNotes || null,
+      isCompletelyFixed: insertService.isCompletelyFixed || null
     };
     this.services.set(id, updatedService);
     return updatedService;
@@ -920,6 +937,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(technicians.id, id))
       .returning();
     return updatedTechnician;
+  }
+  
+  async getUserByTechnicianId(technicianId: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.technicianId, technicianId));
+    return user;
   }
 
   // Client methods
