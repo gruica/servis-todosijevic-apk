@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { AdminLayout } from "@/components/layout/admin-layout";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 as CheckCircle, AlertCircle, Mail, Server as ServerIcon, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -22,11 +22,22 @@ const testEmailSchema = z.object({
 
 type TestEmailValues = z.infer<typeof testEmailSchema>;
 
+// Definicija tipa za rezultat testa
+interface TestResult {
+  success: boolean;
+  timestamp: string;
+  message: string;
+  recipient: string;
+  details?: string;
+  diagnosticInfo?: any;
+}
+
 export default function EmailTestPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("test-email");
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   // Preusmeravanje ako korisnik nije administrator
   useEffect(() => {
@@ -58,34 +69,52 @@ export default function EmailTestPage() {
     },
   });
 
-  // Mutacija za slanje test email-a
+  // Mutacija za slanje test email-a - koristi se unapređeni endpoint sa detaljnijim izveštajem
   const { mutate: sendTestEmail, isPending } = useMutation({
     mutationFn: async (data: TestEmailValues) => {
-      const response = await apiRequest("POST", "/api/test-email", data);
+      const response = await apiRequest("POST", "/api/send-test-email", data);
       return response.json();
     },
     onSuccess: (data) => {
+      // Podesi rezultat testa koji će biti prikazan u komponenti
+      setTestResult({
+        success: data.success,
+        timestamp: new Date().toISOString(),
+        message: data.success ? "Email uspešno poslat" : data.error || "Greška pri slanju email-a",
+        recipient: data.recipient || form.getValues().recipient,
+        details: data.details || '',
+        diagnosticInfo: data.diagnosticInfo || null
+      });
+
       if (data.success) {
         toast({
-          title: "Email poslat",
-          description: "Test email je uspešno poslat na navedenu adresu.",
+          title: "✅ Email uspešno poslat",
+          description: `📧 Test email je uspešno poslat na adresu ${data.recipient || form.getValues().recipient}. 
+            ${data.diagnosticInfo?.duration ? `(Vreme: ${data.diagnosticInfo.duration}ms)` : ''}`,
+          duration: 6000, // Duže trajanje za bolju vidljivost
         });
         form.reset();
       } else {
         toast({
-          title: "Greška pri slanju",
-          description: data.error || "Došlo je do greške pri slanju test email-a.",
+          title: "⚠️ Greška pri slanju email-a",
+          description: data.error 
+            ? `Nije moguće poslati email: ${data.error}. 
+               ${data.diagnosticInfo?.connectionTest === false ? 'Nije uspelo povezivanje sa SMTP serverom.' : ''}
+               ${data.diagnostics || ''}`
+            : "Došlo je do greške pri slanju test email-a. Proverite server logove za više detalja.",
           variant: "destructive",
+          duration: 8000, // Duže trajanje za greške
         });
       }
     },
     onError: (error) => {
       toast({
-        title: "Greška pri slanju",
+        title: "❌ Neuspešno slanje email-a",
         description: error instanceof Error 
-          ? error.message 
-          : "Došlo je do greške pri slanju test email-a.",
+          ? `Greška: ${error.message}. Proverite server logove za više detalja.` 
+          : "Došlo je do neočekivane greške pri slanju test email-a.",
         variant: "destructive",
+        duration: 8000, // Duže trajanje za greške
       });
     },
   });
@@ -167,11 +196,55 @@ export default function EmailTestPage() {
                   </Form>
                 )}
               </CardContent>
-              <CardFooter className="flex flex-col items-start">
+              <CardFooter className="flex flex-col items-start space-y-4 w-full">
                 <p className="text-sm text-muted-foreground">
                   Nakon slanja, proverite inbox (i spam folder) navedene email adrese 
                   da biste potvrdili da je email stigao.
                 </p>
+                
+                {testResult && (
+                  <div className={`w-full mt-6 p-4 rounded-md border ${
+                    testResult.success 
+                      ? "bg-green-50 border-green-200 text-green-800" 
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}>
+                    <h3 className="font-medium text-base mb-2 flex items-center">
+                      {testResult.success 
+                        ? <CheckCircle className="h-5 w-5 mr-2 text-green-600" /> 
+                        : <AlertCircle className="h-5 w-5 mr-2 text-red-600" />}
+                      {testResult.message}
+                    </h3>
+                    
+                    <div className="space-y-2 text-sm">
+                      <p><strong>Email primaoca:</strong> {testResult.recipient}</p>
+                      <p><strong>Vreme testa:</strong> {new Date(testResult.timestamp).toLocaleString('sr-Latn-ME')}</p>
+                      
+                      {testResult.details && (
+                        <p><strong>Detalji:</strong> {testResult.details}</p>
+                      )}
+                      
+                      {testResult.diagnosticInfo && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="font-medium mb-1">Dijagnostičke informacije:</p>
+                          <ul className="list-disc list-inside space-y-1 ml-2">
+                            {testResult.diagnosticInfo.connectionTest !== undefined && (
+                              <li>SMTP konekcija: {testResult.diagnosticInfo.connectionTest ? "Uspešna" : "Neuspešna"}</li>
+                            )}
+                            {testResult.diagnosticInfo.duration !== undefined && (
+                              <li>Vreme izvršavanja: {testResult.diagnosticInfo.duration}ms</li>
+                            )}
+                            {testResult.diagnosticInfo.smtpConfig && (
+                              <li>SMTP server: {testResult.diagnosticInfo.smtpConfig.host}:{testResult.diagnosticInfo.smtpConfig.port}</li>
+                            )}
+                            {testResult.diagnosticInfo.errorInfo && (
+                              <li className="text-red-600">Greška: {testResult.diagnosticInfo.errorInfo}</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           </TabsContent>

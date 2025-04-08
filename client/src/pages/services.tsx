@@ -199,12 +199,27 @@ export default function Services() {
         refetchType: 'all' // Prisilno odradi refetch
       });
       
-      toast({
-        title: selectedService 
-          ? "Servis uspešno ažuriran" 
-          : "Servis uspešno dodat",
-        description: "Podaci o servisu su sačuvani",
-      });
+      // Poboljšana i vizuelno uočljivija poruka sa informacijom o slanju obaveštenja
+      if (data?.emailSent) {
+        toast({
+          title: "✅ " + (selectedService ? "Servis uspešno ažuriran" : "Servis uspešno dodat"),
+          description: `Podaci o servisu su sačuvani. 📧 Email obaveštenje je poslato klijentu ${data.clientName || 'i/ili serviseru'}. ${data.emailDetails || ''}`,
+          duration: 6000, // Duža poruka treba da ostane duže na ekranu
+        });
+      } else if (data?.emailError) {
+        toast({
+          title: "⚠️ Servis sačuvan, ali email nije poslat",
+          description: `Podaci o servisu su sačuvani, ali nije bilo moguće poslati email obaveštenje. Razlog: ${data.emailError}`,
+          variant: "destructive",
+          duration: 6000,
+        });
+      } else {
+        toast({
+          title: "✅ " + (selectedService ? "Servis uspešno ažuriran" : "Servis uspešno dodat"),
+          description: "Podaci o servisu su sačuvani. Obaveštenja nisu poslata jer nema konfigurisanih email adresa.",
+          duration: 4000,
+        });
+      }
       
       setIsDialogOpen(false);
       form.reset();

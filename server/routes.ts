@@ -313,9 +313,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertServiceSchema.parse(req.body);
+      
+      // Preuzmemo originalni servis pre ažuriranja
+      const originalService = await storage.getService(id);
+      if (!originalService) return res.status(404).json({ error: "Servis nije pronađen" });
+      
       const updatedService = await storage.updateService(id, validatedData);
-      if (!updatedService) return res.status(404).json({ error: "Servis nije pronađen" });
-      res.json(updatedService);
+      if (!updatedService) return res.status(404).json({ error: "Greška pri ažuriranju servisa" });
+      
+      // Informacije o slanju emaila koje će biti vraćene klijentu
+      const emailInfo: {
+        emailSent: boolean;
+        clientName: string | null;
+        emailDetails: string | null;
+        emailError: string | null;
+      } = {
+        emailSent: false,
+        clientName: null,
+        emailDetails: null,
+        emailError: null
+      };
+      
+      // Proverimo da li je došlo do promene statusa i pošaljemo email samo u tom slučaju
+      if (originalService.status !== updatedService.status) {
+        // Pošalji email obaveštenja SVIM povezanim stranama o promeni statusa servisa
+        try {
+          console.log(`[EMAIL SISTEM] Započinjem slanje obaveštenja o promeni statusa servisa #${id} u "${updatedService.status}"`);
+          
+          // 1. Prvo dohvati sve neophodne podatke
+          if (updatedService.clientId) {
+            const client = await storage.getClient(updatedService.clientId);
+            const technician = updatedService.technicianId ? await storage.getTechnician(updatedService.technicianId) : null;
+            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+            const statusDescription = STATUS_DESCRIPTIONS[updatedService.status] || updatedService.status;
+            
+            if (client) {
+              // Popuni ime klijenta za vraćanje klijentu
+              emailInfo.clientName = client.fullName;
+              
+              console.log(`[EMAIL SISTEM] Pronađen klijent: ${client.fullName}, email: ${client.email || 'nije dostupan'}`);
+              
+              // 2. Šalje obaveštenje KLIJENTU
+              if (client.email) {
+                console.log(`[EMAIL SISTEM] Pokušavam slanje emaila klijentu ${client.fullName} (${client.email})`);
+                
+                // Poboljšan sadržaj emaila koji sadrži više detalja
+                const clientEmailContent = updatedService.technicianNotes || updatedService.description || "";
+                const clientEmailSent = await emailService.sendServiceStatusUpdate(
+                  client, 
+                  id,
+                  statusDescription,
+                  clientEmailContent,
+                  technicianName
+                );
+                
+                if (clientEmailSent) {
+                  console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
+                  emailInfo.emailSent = true;
+                  
+                  // Obavesti administratore o poslatom mail-u klijentu
+                  await emailService.notifyAdminAboutEmail(
+                    "Obaveštenje klijenta o promeni statusa",
+                    client.email,
+                    id,
+                    `Poslato obaveštenje klijentu ${client.fullName} o promeni statusa servisa #${id} u "${statusDescription}"`
+                  );
+                } else {
+                  console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja klijentu ${client.fullName}`);
+                  emailInfo.emailError = `Nije moguće poslati email klijentu ${client.fullName}. Proverite SMTP konfiguraciju.`;
+                }
+              } else {
+                console.log(`[EMAIL SISTEM] ℹ️ Klijent ${client.fullName} nema email adresu, preskačem slanje`);
+                emailInfo.emailError = `Klijent ${client.fullName} nema email adresu.`;
+              }
+            }
+            
+            // 3. Šalje obaveštenje SERVISERU
+            if (technician && technician.email) {
+              console.log(`[EMAIL SISTEM] Pokušavam slanje emaila serviseru ${technician.fullName} (${technician.email})`);
+              
+              // Sadržaj emaila za servisera
+              const technicianHTML = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #0066cc;">Obaveštenje o promeni statusa servisa</h2>
+                  <p>Poštovani/a ${technician.fullName},</p>
+                  <p>Status servisa koji vam je dodeljen je promenjen.</p>
+                  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <p><strong>Servis ID:</strong> #${id}</p>
+                    <p><strong>Klijent:</strong> ${client?.fullName || 'Nepoznato'}</p>
+                    <p><strong>Status:</strong> ${statusDescription}</p>
+                    <p><strong>Datum i vreme:</strong> ${new Date().toLocaleString('sr-ME')}</p>
+                    <p><strong>Napomene:</strong> ${updatedService.technicianNotes || 'Nema dodatnih napomena'}</p>
+                  </div>
+                  <p>Molimo vas da pregledate detalje u aplikaciji servisa.</p>
+                  <p>Srdačan pozdrav,<br>Servis Todosijević</p>
+                </div>
+              `;
+              
+              const techEmailSent = await emailService.sendEmail({
+                to: technician.email,
+                subject: `Obaveštenje: Promena statusa servisa #${id} u ${statusDescription}`,
+                html: technicianHTML,
+              });
+              
+              if (techEmailSent) {
+                console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje serviseru ${technician.fullName}`);
+                
+                // Ako nije poslat email klijentu, ali je serviseru, označimo da je slanje uspešno
+                if (!emailInfo.emailSent) {
+                  emailInfo.emailSent = true;
+                  emailInfo.clientName = `${technician.fullName} (serviser)`;
+                } else {
+                  // Ako je email poslat i klijentu i serviseru, ažurirajmo detalje
+                  emailInfo.emailDetails = `Obavešteni: klijent i serviser ${technician.fullName}`;
+                }
+                
+                // Obavesti administratore o poslatom mail-u serviseru
+                await emailService.notifyAdminAboutEmail(
+                  "Obaveštenje servisera o promeni statusa",
+                  technician.email,
+                  id,
+                  `Poslato obaveštenje serviseru ${technician.fullName} o promeni statusa servisa #${id} u "${statusDescription}"`
+                );
+              } else {
+                console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja serviseru ${technician.fullName}`);
+                
+                // Ako je već postavljeno da slanje klijentu nije uspelo, dodajmo info o serviseru
+                if (emailInfo.emailError) {
+                  emailInfo.emailError += ` Takođe, nije uspelo ni slanje serviseru ${technician.fullName}.`;
+                } else {
+                  emailInfo.emailError = `Nije moguće poslati email serviseru ${technician.fullName}. Proverite SMTP konfiguraciju.`;
+                }
+              }
+            } else if (technician) {
+              console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu, preskačem slanje`);
+            }
+          }
+        } catch (emailError: any) {
+          console.error("Error sending email notifications:", emailError);
+          emailInfo.emailError = emailError.message || "Nepoznata greška pri slanju emaila";
+        }
+      }
+      
+      // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
+      res.json({
+        ...updatedService,
+        ...emailInfo
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Nevažeći podaci servisa", details: error.format() });

@@ -106,20 +106,21 @@ export default function TechnicianServices() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
       
-      // Poboljšana poruka sa informacijom o slanju obaveštenja klijentu
+      // Poboljšana i vizuelno uočljivija poruka sa informacijom o slanju obaveštenja
       if (data?.emailSent) {
         toast({
-          title: "Status uspješno ažuriran",
-          description: `Status servisa je uspješno promijenjen. Email obaveštenje je poslato klijentu ${data.clientName || 'i serviseru'}. ${data.emailDetails || ''}`,
+          title: "✅ Status uspješno ažuriran",
+          description: `Status servisa je uspješno promijenjen. 📧 Email obaveštenje je poslato klijentu ${data.clientName || 'i serviseru'}. ${data.emailDetails || ''}`,
           variant: "default",
           duration: 5000, // Duža poruka treba da ostane duže na ekranu
         });
       } else {
         toast({
-          title: "Status uspješno ažuriran",
+          title: data?.emailError ? "⚠️ Status ažuriran, slanje email-a nije uspelo" : "✅ Status uspješno ažuriran",
           description: "Status servisa je uspješno promijenjen. " + 
-            (data?.emailError ? `Email obaveštenje NIJE poslato: ${data.emailError}` : ""),
+            (data?.emailError ? `⚠️ Email obaveštenje NIJE poslato: ${data.emailError}` : "📧 Email obaveštenja nisu konfigurisana."),
           variant: data?.emailError ? "destructive" : "default",
+          duration: 7000, // Još duže vreme prikaza za greške
         });
       }
       
