@@ -1015,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Test email route
+  // Unapređena ruta za slanje test email-a sa detaljnijim izveštajem
   app.post("/api/send-test-email", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
@@ -1025,44 +1025,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { recipient } = testEmailSchema.parse(req.body);
       
-      // Prvo verifikuj konekciju
-      const isConnected = await emailService.verifyConnection();
-      if (!isConnected) {
+      // Pripremi detaljan izveštaj
+      const diagnosticInfo: any = {
+        smtpConfig: null,
+        connectionTest: false,
+        emailSent: false,
+        timestamp: new Date().toISOString(),
+        errorInfo: null
+      };
+      
+      // Dohvati trenutnu SMTP konfiguraciju (bez lozinke)
+      const config = emailService.getSmtpConfig();
+      if (config) {
+        diagnosticInfo.smtpConfig = {
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: config.auth ? { user: config.auth.user } : null
+        };
+      } else {
+        diagnosticInfo.errorInfo = "SMTP konfiguracija nije postavljena";
         return res.status(500).json({ 
-          error: "Nije moguće konektovati se na SMTP server" 
+          success: false, 
+          error: "SMTP konfiguracija nije postavljena", 
+          diagnosticInfo 
         });
       }
       
-      // Pošalji test email
+      // Verifikuj konekciju
+      console.log(`[TEST EMAIL] Započinjem test slanja email-a na: ${recipient}`);
+      console.log(`[TEST EMAIL] Prvo verifikujem SMTP konekciju...`);
+      
+      const isConnected = await emailService.verifyConnection();
+      diagnosticInfo.connectionTest = isConnected;
+      
+      if (!isConnected) {
+        diagnosticInfo.errorInfo = "Nije moguće konektovati se na SMTP server";
+        return res.status(500).json({ 
+          success: false, 
+          error: "Nije moguće konektovati se na SMTP server", 
+          diagnosticInfo 
+        });
+      }
+      
+      console.log(`[TEST EMAIL] SMTP konekcija uspešna, šaljem test email...`);
+      
+      // Pošalji test email sa unapređenim sadržajem
       const result = await emailService.sendEmail({
         to: recipient,
         subject: "Test email - Frigoservis Todosijević",
         html: `
-          <h2>Test email iz Frigoservis aplikacije</h2>
-          <p>Ovo je test email poslat iz aplikacije za upravljanje servisima.</p>
-          <p>Ako vidite ovaj email, to znači da su SMTP postavke ispravno konfigurisane.</p>
-          <p>Vreme slanja: ${new Date().toLocaleString('sr-Latn-ME')}</p>
-          <hr>
-          <p><strong>Frigoservis Todosijević</strong></p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #0066cc;">Test email iz Frigoservis aplikacije</h2>
+            <p>Poštovani,</p>
+            <p>Ovo je test email poslat iz aplikacije za upravljanje servisima Frigo Sistema Todosijević.</p>
+            <p>Ako vidite ovaj email, to znači da su SMTP postavke ispravno konfigurisane i da je sistem spreman za slanje obaveštenja.</p>
+            
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <p><strong>SMTP Server:</strong> ${config.host}</p>
+              <p><strong>Port:</strong> ${config.port}</p>
+              <p><strong>Sigurna veza:</strong> ${config.secure ? 'Da' : 'Ne'}</p>
+              <p><strong>Email pošiljaoca:</strong> ${config.auth?.user || 'Nije postavljen'}</p>
+              <p><strong>Vreme slanja:</strong> ${new Date().toLocaleString('sr-Latn-ME')}</p>
+            </div>
+            
+            <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
+            <hr style="border: 1px solid #ddd; margin: 20px 0;">
+            <p style="font-size: 12px; color: #666;">
+              Frigo Sistem Todosijević<br>
+              Kontakt telefon: +382 69 021 689<br>
+              Email: info@frigosistemtodosijevic.com
+            </p>
+          </div>
         `
-      });
+      }, 3); // Postavljamo 3 pokušaja za test email
+      
+      // Ažuriranje dijagnostičkih podataka
+      diagnosticInfo.emailSent = result;
       
       if (result) {
-        res.status(200).json({ success: true, message: "Test email je uspešno poslat" });
+        console.log(`[TEST EMAIL] ✓ Test email uspešno poslat na: ${recipient}`);
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: "Test email je uspešno poslat", 
+          diagnosticInfo 
+        });
       } else {
-        res.status(500).json({ error: "Greška pri slanju test email-a" });
+        diagnosticInfo.errorInfo = "Greška pri slanju test email-a";
+        
+        console.error(`[TEST EMAIL] ✗ Greška pri slanju test email-a na: ${recipient}`);
+        
+        return res.status(500).json({ 
+          success: false, 
+          error: "Greška pri slanju test email-a", 
+          diagnosticInfo 
+        });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
+          success: false,
           error: "Nevažeća email adresa", 
           details: error.format() 
         });
       }
-      console.error("Greška pri slanju test email-a:", error);
-      res.status(500).json({ 
+      
+      console.error("[TEST EMAIL] Greška pri slanju test email-a:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      
+      return res.status(500).json({ 
+        success: false,
         error: "Greška pri slanju test email-a", 
-        message: error instanceof Error ? error.message : "Nepoznata greška"
+        message: errorMessage,
+        stackTrace: error instanceof Error ? error.stack : undefined
       });
     }
   });

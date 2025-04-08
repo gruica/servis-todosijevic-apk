@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -18,11 +18,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Mail, CheckCircle } from "lucide-react";
+import { Loader2, Mail, CheckCircle, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,9 +42,30 @@ const testEmailSchema = z.object({
 
 type TestEmailForm = z.infer<typeof testEmailSchema>;
 
+// Definišemo interfejs za dijagnostičke informacije
+interface DiagnosticInfo {
+  connectionTest: boolean;
+  emailSent: boolean;
+  timestamp: number;
+  smtpConfig?: {
+    host: string;
+    port: number;
+    secure: boolean;
+    auth?: {
+      user: string;
+    }
+  };
+  errorInfo?: string;
+  // Opciono dodatna polja za detaljne informacije
+  logs?: string[];
+  attempts?: number;
+  responseCode?: number;
+}
+
 const EmailSettingsPage = () => {
   const { toast } = useToast();
   const [testEmailSent, setTestEmailSent] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
 
   // Email settings form
   const form = useForm<EmailSettingsForm>({
@@ -65,6 +86,37 @@ const EmailSettingsPage = () => {
       recipient: "",
     },
   });
+  
+  // Učitaj trenutne postavke email-a
+  const emailSettingsQuery = useQuery({
+    queryKey: ['/api/email-settings'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/email-settings');
+        const data = await response.json();
+        
+        if (data.configured) {
+          // Postavi vrednosti forme ako su email postavke već konfigurisane
+          form.setValue('host', data.host);
+          form.setValue('port', data.port);
+          form.setValue('secure', data.secure);
+          form.setValue('user', data.user);
+          // Password nije uključen u odgovoru zbog sigurnosti
+          // Korisnik mora ponovo uneti lozinku
+          setIsConfigured(true);
+        }
+        
+        return data;
+      } catch (error) {
+        toast({
+          title: "Greška",
+          description: `Nije moguće učitati email postavke: ${error instanceof Error ? error.message : 'Nepoznata greška'}`,
+          variant: "destructive",
+        });
+        throw error;
+      }
+    }
+  });
 
   // Mutation for saving email settings
   const saveSettingsMutation = useMutation({
@@ -77,6 +129,10 @@ const EmailSettingsPage = () => {
         title: "Uspešno sačuvano",
         description: "Email postavke su uspešno sačuvane",
       });
+      // Osvežavanje podataka i oznaka da je konfigurisano
+      setIsConfigured(true);
+      // Poništavamo keš za query - sledeći put će se učitati nove vrednosti
+      emailSettingsQuery.refetch();
     },
     onError: (error: Error) => {
       toast({
@@ -87,13 +143,33 @@ const EmailSettingsPage = () => {
     },
   });
 
+  // State za detalje dijagnostike 
+  const [diagnosticInfo, setDiagnosticInfo] = useState<DiagnosticInfo | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  
+  // Helper za proveru statusa upita
+  const isLoadingSettings = emailSettingsQuery.isLoading;
+  const isErrorSettings = emailSettingsQuery.isError;
+
   // Mutation for sending test email
   const sendTestEmailMutation = useMutation({
     mutationFn: async (data: TestEmailForm) => {
       const response = await apiRequest("POST", "/api/send-test-email", data);
-      return await response.json();
+      const result = await response.json();
+      
+      // Čuvamo dijagnostičke podatke za prikaz
+      if (result.diagnosticInfo) {
+        setDiagnosticInfo(result.diagnosticInfo);
+        setShowDiagnostics(true);
+      }
+      
+      if (!result.success) {
+        throw new Error(result.error || "Greška pri slanju email-a");
+      }
+      
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Email poslat",
         description: "Test email je uspešno poslat",
@@ -123,12 +199,36 @@ const EmailSettingsPage = () => {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Email Postavke</h1>
+      
+      {isLoadingSettings && (
+        <div className="flex items-center justify-center p-6 border rounded-lg bg-background mb-6">
+          <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" />
+          <p>Učitavanje email konfiguracije...</p>
+        </div>
+      )}
+      
+      {isErrorSettings && (
+        <div className="flex items-center border-l-4 border-red-600 bg-red-50 p-4 mb-6 text-red-800">
+          <AlertCircle className="h-6 w-6 mr-3" />
+          <div>
+            <h3 className="font-medium">Greška pri učitavanju postavki</h3>
+            <p className="text-sm">Molimo pokušajte da osvežite stranicu ili kontaktirajte administratora.</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* SMTP Postavke */}
         <Card>
           <CardHeader>
-            <CardTitle>SMTP Postavke</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>SMTP Postavke</span>
+              {isConfigured && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" /> Konfigurisano
+                </span>
+              )}
+            </CardTitle>
             <CardDescription>
               Podesite SMTP postavke za slanje email obaveštenja
             </CardDescription>
@@ -313,6 +413,106 @@ const EmailSettingsPage = () => {
                 </Button>
               </form>
             </Form>
+
+            {/* Dijagnostičke informacije */}
+            {showDiagnostics && diagnosticInfo && (
+              <div className="mt-6 border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-2 font-medium flex justify-between items-center">
+                  <span>Dijagnostičke informacije</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowDiagnostics(false)}
+                    className="h-7 w-7 p-0"
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <div className="p-4 text-sm space-y-2">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                    <span className="font-medium">SMTP Status:</span>
+                    <span>
+                      {diagnosticInfo.connectionTest ? (
+                        <span className="text-green-600 font-medium">✓ Uspešna konekcija</span>
+                      ) : (
+                        <span className="text-red-600 font-medium">✗ Neuspešna konekcija</span>
+                      )}
+                    </span>
+                    
+                    <span className="font-medium">Email status:</span>
+                    <span>
+                      {diagnosticInfo.emailSent ? (
+                        <span className="text-green-600 font-medium">✓ Uspešno poslat</span>
+                      ) : (
+                        <span className="text-red-600 font-medium">✗ Neuspešno slanje</span>
+                      )}
+                    </span>
+                    
+                    {diagnosticInfo.smtpConfig && (
+                      <>
+                        <span className="font-medium">Host:</span>
+                        <span>{diagnosticInfo.smtpConfig.host}</span>
+                        
+                        <span className="font-medium">Port:</span>
+                        <span>{diagnosticInfo.smtpConfig.port}</span>
+                        
+                        <span className="font-medium">SSL/TLS:</span>
+                        <span>{diagnosticInfo.smtpConfig.secure ? 'Da' : 'Ne'}</span>
+                        
+                        <span className="font-medium">Korisnik:</span>
+                        <span>{diagnosticInfo.smtpConfig.auth?.user || 'Nije postavljen'}</span>
+                      </>
+                    )}
+                    
+                    <span className="font-medium">Vreme:</span>
+                    <span>{new Date(diagnosticInfo.timestamp).toLocaleString()}</span>
+                  </div>
+                  
+                  {diagnosticInfo.errorInfo && (
+                    <div className="mt-3 bg-red-50 border border-red-200 p-3 rounded text-red-800">
+                      <p className="font-medium">Greška:</p>
+                      <p>{diagnosticInfo.errorInfo}</p>
+                    </div>
+                  )}
+                  
+                  {/* Ako imamo logove, prikažemo ih */}
+                  {diagnosticInfo.logs && diagnosticInfo.logs.length > 0 && (
+                    <div className="mt-3 border border-border rounded overflow-hidden">
+                      <div className="bg-muted px-3 py-1 text-xs font-medium">Istorija slanja</div>
+                      <div className="p-2 text-xs font-mono bg-muted/30 max-h-32 overflow-y-auto">
+                        {diagnosticInfo.logs.map((log, index) => (
+                          <div key={index} className="py-0.5 border-b border-border/30 last:border-0">
+                            {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        // Pripremi dijagnostičke podatke za preuzimanje kao JSON datoteku
+                        const dataStr = JSON.stringify(diagnosticInfo, null, 2);
+                        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+                        
+                        const downloadAnchorNode = document.createElement('a');
+                        downloadAnchorNode.setAttribute("href", dataUri);
+                        downloadAnchorNode.setAttribute("download", `email-diagnostika-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`);
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                      }}
+                      className="text-xs"
+                    >
+                      Preuzmi detaljnu dijagnostiku
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-8 p-4 border rounded-lg bg-muted/50">
               <h3 className="font-medium mb-2">Saveti za podešavanje</h3>
