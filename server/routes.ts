@@ -1414,7 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <hr style="border: 1px solid #ddd; margin: 20px 0;">
             <p style="font-size: 12px; color: #666;">
               Frigo Sistem Todosijević<br>
-              Kontakt telefon: +382 69 021 689<br>
+              Kontakt telefon: 033 402 402<br>
               Email: info@frigosistemtodosijevic.com
             </p>
           </div>
@@ -1523,7 +1523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <hr style="border: 1px solid #ddd; margin: 20px 0;">
           <p style="font-size: 12px; color: #666;">
             Frigo Sistem Todosijević<br>
-            Kontakt telefon: +382 69 021 689<br>
+            Kontakt telefon: 033 402 402<br>
             Email: info@frigosistemtodosijevic.com
           </p>
         </div>

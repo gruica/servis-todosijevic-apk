@@ -446,12 +446,12 @@ export class EmailService {
           <p><strong>Opis:</strong> ${description}</p>
           <p><strong>Serviser:</strong> ${technicianName}</p>
         </div>
-        <p>Za sva dodatna pitanja, možete nas kontaktirati telefonom na broj +382 69 021 689 ili odgovorom na ovaj email.</p>
+        <p>Za sva dodatna pitanja, možete nas kontaktirati telefonom na broj 033 402 402 ili odgovorom na ovaj email.</p>
         <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
         <hr style="border: 1px solid #ddd; margin: 20px 0;">
         <p style="font-size: 12px; color: #666;">
           Frigo Sistem Todosijević<br>
-          Kontakt telefon: +382 69 021 689<br>
+          Kontakt telefon: 033 402 402<br>
           Email: info@frigosistemtodosijevic.com
         </p>
       </div>
@@ -508,12 +508,12 @@ export class EmailService {
           <p><strong>Opis:</strong> ${description}</p>
         </div>
         <p>Molimo Vas da obezbedite pristup uređaju u navedenom terminu.</p>
-        <p>Za sve izmene u rasporedu ili dodatna pitanja, kontaktirajte nas na +382 69 021 689.</p>
+        <p>Za sve izmene u rasporedu ili dodatna pitanja, kontaktirajte nas na broj telefona 033 402 402.</p>
         <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
         <hr style="border: 1px solid #ddd; margin: 20px 0;">
         <p style="font-size: 12px; color: #666;">
           Frigo Sistem Todosijević<br>
-          Kontakt telefon: +382 69 021 689<br>
+          Kontakt telefon: 033 402 402<br>
           Email: info@frigosistemtodosijevic.com
         </p>
       </div>
