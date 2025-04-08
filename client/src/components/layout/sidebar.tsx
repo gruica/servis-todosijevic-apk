@@ -16,6 +16,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/", label: "Kontrolna tabla", icon: "grid_view" },
     { path: "/clients", label: "Klijenti", icon: "person" },
     { path: "/services", label: "Servisi", icon: "build" },
+    { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
     { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },

@@ -12,6 +12,7 @@ import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
 import TechnicianServices from "@/pages/technician/services";
 import TechnicianProfile from "@/pages/technician/profile";
+import TechnicianServicesList from "@/pages/technician-services";
 import CreateTechnicianUser from "@/pages/create-technician-user";
 import MaintenanceSchedules from "@/pages/maintenance-schedules";
 import EmailSettings from "@/pages/email-settings";
@@ -36,6 +37,7 @@ function Router() {
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/create-tech-user" component={CreateTechnicianUser} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/technician-services" component={TechnicianServicesList} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/maintenance-schedules" component={MaintenanceSchedules} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/email-settings" component={EmailSettings} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/email-test" component={EmailTest} allowedRoles={["admin"]} />

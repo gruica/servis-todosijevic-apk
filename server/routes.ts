@@ -192,10 +192,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Services routes
   app.get("/api/services", async (req, res) => {
     try {
-      const { status } = req.query;
+      const { status, technicianId } = req.query;
       let services;
       
-      if (status && typeof status === 'string') {
+      // Ako je definisan tehničar, prvo filtriramo po njemu
+      if (technicianId && typeof technicianId === 'string') {
+        try {
+          const techId = parseInt(technicianId);
+          
+          // Ako je definisan i status, filtriramo dodatno po statusu
+          if (status && typeof status === 'string' && status !== 'all') {
+            try {
+              const validStatus = serviceStatusEnum.parse(status);
+              // Dohvatamo servise za tehničara pa onda filtriramo po statusu
+              const techServices = await storage.getServicesByTechnician(techId);
+              services = techServices.filter(s => s.status === validStatus);
+            } catch {
+              return res.status(400).json({ error: "Nevažeći status servisa" });
+            }
+          } else {
+            // Samo po tehničaru
+            services = await storage.getServicesByTechnician(techId);
+          }
+        } catch (err) {
+          return res.status(400).json({ error: "Nevažeći ID servisera" });
+        }
+      }
+      // Ako nije definisan tehničar, filtiramo samo po statusu ako je definisan
+      else if (status && typeof status === 'string' && status !== 'all') {
         try {
           const validStatus = serviceStatusEnum.parse(status);
           services = await storage.getServicesByStatus(validStatus);
@@ -203,11 +227,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Nevažeći status servisa" });
         }
       } else {
+        // Ako nije definisan ni tehničar ni status, dohvatamo sve servise
         services = await storage.getAllServices();
       }
       
       res.json(services);
     } catch (error) {
+      console.error("Greška pri dobijanju servisa:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
