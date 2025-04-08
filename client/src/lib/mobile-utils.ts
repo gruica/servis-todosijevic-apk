@@ -53,9 +53,24 @@ export async function openMapWithAddress(address: string, city: string | null = 
 }
 
 /**
- * Proverava da li je aplikacija pokrenuta u mobilnom okruženju
+ * Proverava da li je aplikacija pokrenuta u mobilnom okruženju (native ili web)
  * Korisno za prikazivanje/sakrivanje funkcionalnosti specifičnih za mobilni uređaj
+ * Prepoznaje i mobile web i native mobilne aplikacije
  */
 export function isMobileEnvironment(): boolean {
-  return isNativeMobile;
+  // Prvo proverimo da li je nativna Android/iOS aplikacija
+  if (isNativeMobile) {
+    return true;
+  }
+  
+  // Ako nije native, proverimo da li je mobilni web browser
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera || '';
+  
+  // Regularni izraz za prepoznavanje mobilnih uređaja
+  const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+  
+  // Proveravamo i širinu ekrana kao dodatni indikator
+  const isMobileWidth = window.innerWidth < 768;
+  
+  return mobileRegex.test(userAgent.toLowerCase()) || isMobileWidth;
 }

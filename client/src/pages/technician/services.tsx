@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 import { CallClientButton } from "@/components/ui/call-client-button";
-import { callPhoneNumber, openMapWithAddress } from "@/lib/mobile-utils";
+import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 
 type TechnicianService = Service & {
   client?: {
@@ -44,6 +44,8 @@ export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
   const isMobile = useIsMobile();
+  // Uvek proveriti mobilno okruženje (mobile web i APK)
+  const isMobileDevice = isMobileEnvironment();
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -121,24 +123,17 @@ export default function TechnicianServices() {
   const handleStatusChange = () => {
     if (!selectedService || !newStatus) return;
     
-    // Ako je status "completed", šaljemo sve podatke
-    if (newStatus === "completed") {
-      updateStatusMutation.mutate({
-        serviceId: selectedService.id,
-        status: newStatus,
-        notes: technicianNotes,
-        usedParts: usedParts,
-        machineNotes: machineNotes,
-        cost: cost,
-        isCompletelyFixed: isCompletelyFixed
-      });
-    } else {
-      updateStatusMutation.mutate({
-        serviceId: selectedService.id,
-        status: newStatus,
-        notes: technicianNotes
-      });
-    }
+    // Uvek šaljemo sve podatke nezavisno od statusa
+    // Tako podržavamo mobilne web korisnike koji imaju pristup svim poljima
+    updateStatusMutation.mutate({
+      serviceId: selectedService.id,
+      status: newStatus,
+      notes: technicianNotes,
+      usedParts: usedParts,
+      machineNotes: machineNotes,
+      cost: cost,
+      isCompletelyFixed: isCompletelyFixed
+    });
   };
 
   const openStatusDialog = (service: TechnicianService, status: ServiceStatus) => {
@@ -146,13 +141,11 @@ export default function TechnicianServices() {
     setNewStatus(status);
     setTechnicianNotes(service.technicianNotes || "");
     
-    // Ako je u pitanju završetak servisa, postavimo i ostala polja
-    if (status === "completed") {
-      setUsedParts(service.usedParts || "");
-      setMachineNotes(service.machineNotes || "");
-      setCost(service.cost || "");
-      setIsCompletelyFixed(service.isCompletelyFixed !== false);
-    }
+    // Uvek inicijalizujemo sva polja bez obzira na status (za mobile web)
+    setUsedParts(service.usedParts || "");
+    setMachineNotes(service.machineNotes || "");
+    setCost(service.cost || "");
+    setIsCompletelyFixed(service.isCompletelyFixed !== false);
     
     setStatusDialogOpen(true);
   };
@@ -379,12 +372,17 @@ export default function TechnicianServices() {
           <div className="py-2 sm:py-4">
             <p className="mb-2 sm:mb-4 text-sm sm:text-base">
               {newStatus === "in_progress" 
-                ? "Da li ste sigurni da želite da označite servis kao započet?" 
+                ? "Da li ste sigurni da želite da označite servis kao započet? Možete odmah uneti i podatke za završetak servisa ili sačekati da ih unesete pri završetku." 
                 : "Da li ste sigurni da želite da označite servis kao završen? Molimo popunite sledeća polja:"}
             </p>
+            {newStatus === "in_progress" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-3 text-blue-700 text-xs sm:text-sm">
+                <p>Napomena: Polja ispod su obavezna samo pri završetku servisa. Ako samo započinjete servis, možete ih popuniti kasnije.</p>
+              </div>
+            )}
             
             <div className="space-y-3 sm:space-y-4">
-              <div className="space-y-1 sm:space-y-2">
+              <div className={`space-y-1 sm:space-y-2 ${newStatus === "in_progress" ? "border-l-4 border-l-primary pl-2" : ""}`}>
                 <label htmlFor="technicianNotes" className="text-sm font-medium flex items-center">
                   Napomena servisera: <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -392,72 +390,83 @@ export default function TechnicianServices() {
                   id="technicianNotes"
                   value={technicianNotes}
                   onChange={(e) => setTechnicianNotes(e.target.value)}
-                  placeholder="Unesite napomenu o servisu i izvršenim radovima..."
+                  placeholder={newStatus === "in_progress" ? "Unesite napomenu o početku servisa..." : "Unesite napomenu o servisu i izvršenim radovima..."}
                   className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
                   required
                 />
               </div>
 
-              {newStatus === "completed" && (
-                <>
-                  <div className="space-y-1 sm:space-y-2">
-                    <label htmlFor="usedParts" className="text-sm font-medium flex items-center">
-                      Ugrađeni rezervni delovi: <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <Textarea
-                      id="usedParts"
-                      value={usedParts}
-                      onChange={(e) => setUsedParts(e.target.value)}
-                      placeholder="Navedite sve delove koje ste zamenili ili ugradili..."
-                      className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-1 sm:space-y-2">
-                    <label htmlFor="machineNotes" className="text-sm font-medium flex items-center">
-                      Napomene o stanju uređaja: <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <Textarea
-                      id="machineNotes"
-                      value={machineNotes}
-                      onChange={(e) => setMachineNotes(e.target.value)}
-                      placeholder="Unesite napomene o zatečenom stanju uređaja i stanju nakon servisa..."
-                      className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-1 sm:space-y-2">
-                    <label htmlFor="cost" className="text-sm font-medium flex items-center">
-                      Cena servisa (€): <span className="text-red-500 ml-1">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      id="cost"
-                      value={cost}
-                      onChange={(e) => setCost(e.target.value)}
-                      placeholder="Unesite iznos naplate..."
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 border p-2 sm:p-3 rounded-md border-input">
-                    <input 
-                      type="checkbox" 
-                      id="isCompletelyFixed"
-                      checked={isCompletelyFixed}
-                      onChange={(e) => setIsCompletelyFixed(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <label htmlFor="isCompletelyFixed" className="text-sm font-medium">
-                      Servis je uspešno završen i uređaj radi ispravno
-                    </label>
-                  </div>
-                </>
-              )}
+              {/* Prikazujemo uvek sva polja za završetak servisa čak i ako je trenutni status "započni servis" - zbog mobilnih korisnika */}
+              <>
+                <div className="space-y-1 sm:space-y-2">
+                  <label htmlFor="usedParts" className="text-sm font-medium flex items-center">
+                    Ugrađeni rezervni delovi: 
+                    <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                      {newStatus === "completed" ? "*" : "(opciono)"}
+                    </span>
+                  </label>
+                  <Textarea
+                    id="usedParts"
+                    value={usedParts}
+                    onChange={(e) => setUsedParts(e.target.value)}
+                    placeholder="Navedite sve delove koje ste zamenili ili ugradili..."
+                    className={`min-h-[70px] sm:min-h-[80px] text-sm sm:text-base ${newStatus === "in_progress" ? "bg-gray-50" : ""}`}
+                    required={newStatus === "completed"}
+                  />
+                </div>
+                
+                <div className="space-y-1 sm:space-y-2">
+                  <label htmlFor="machineNotes" className="text-sm font-medium flex items-center">
+                    Napomene o stanju uređaja: 
+                    <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                      {newStatus === "completed" ? "*" : "(opciono)"}
+                    </span>
+                  </label>
+                  <Textarea
+                    id="machineNotes"
+                    value={machineNotes}
+                    onChange={(e) => setMachineNotes(e.target.value)}
+                    placeholder="Unesite napomene o zatečenom stanju uređaja i stanju nakon servisa..."
+                    className={`min-h-[70px] sm:min-h-[80px] text-sm sm:text-base ${newStatus === "in_progress" ? "bg-gray-50" : ""}`}
+                    required={newStatus === "completed"}
+                  />
+                </div>
+                
+                <div className="space-y-1 sm:space-y-2">
+                  <label htmlFor="cost" className="text-sm font-medium flex items-center">
+                    Cena servisa (€): 
+                    <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                      {newStatus === "completed" ? "*" : "(opciono)"}
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    id="cost"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                    placeholder="Unesite iznos naplate..."
+                    className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base ${newStatus === "in_progress" ? "bg-gray-50" : ""}`}
+                    required={newStatus === "completed"}
+                  />
+                </div>
+                
+                <div className={`flex items-center space-x-2 border p-2 sm:p-3 rounded-md border-input ${newStatus === "in_progress" ? "bg-gray-50" : ""}`}>
+                  <input 
+                    type="checkbox" 
+                    id="isCompletelyFixed"
+                    checked={isCompletelyFixed}
+                    onChange={(e) => setIsCompletelyFixed(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="isCompletelyFixed" className="text-sm font-medium flex items-center">
+                    Servis je uspešno završen i uređaj radi ispravno
+                    <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                      {newStatus === "completed" ? "*" : "(opciono)"}
+                    </span>
+                  </label>
+                </div>
+              </>
             </div>
           </div>
           
