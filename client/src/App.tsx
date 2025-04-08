@@ -4,6 +4,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
+import ClientDetails from "@/pages/client-details";
 import Services from "@/pages/services";
 import Appliances from "@/pages/appliances";
 import Users from "@/pages/users";
@@ -27,6 +28,7 @@ function Router() {
       {/* Admin routes */}
       <RoleProtectedRoute path="/" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/services" component={Services} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />

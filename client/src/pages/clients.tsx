@@ -24,7 +24,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Pencil, Plus, Search, User, AlertCircle, ArrowRight } from "lucide-react";
+import { Pencil, Plus, Search, User, AlertCircle, ArrowRight, ExternalLink, Eye } from "lucide-react";
 
 const clientFormSchema = insertClientSchema.extend({
   fullName: z.string().min(1, "Obavezno polje"),
@@ -348,14 +348,26 @@ export default function Clients() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                onClick={() => handleEditClient(client)}
-                              >
-                                <Pencil className="h-4 w-4 text-primary" />
-                              </Button>
+                              <div className="flex justify-end space-x-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => navigate(`/clients/${client.id}`)}
+                                  title="Detalji"
+                                >
+                                  <Eye className="h-4 w-4 text-gray-600" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => handleEditClient(client)}
+                                  title="Izmeni"
+                                >
+                                  <Pencil className="h-4 w-4 text-primary" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
