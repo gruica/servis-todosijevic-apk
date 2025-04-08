@@ -9,13 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
+import { CallClientButton } from "@/components/ui/call-client-button";
+import { callPhoneNumber, openMapWithAddress } from "@/lib/mobile-utils";
 
 type TechnicianService = Service & {
   client?: {
@@ -137,9 +139,30 @@ export default function TechnicianServices() {
     }
   }
 
-  // Function to call client
-  const callClient = (phoneNumber: string) => {
-    window.location.href = `tel:${phoneNumber}`;
+  // Funkcija za otvaranje mape sa lokacijom klijenta
+  const openClientLocation = async (address: string, city: string | null) => {
+    try {
+      const success = await openMapWithAddress(address, city);
+      if (success) {
+        toast({
+          title: "Otvaranje mape",
+          description: "Lokacija klijenta se otvara u Google Maps aplikaciji",
+        });
+      } else {
+        toast({
+          title: "Greška pri otvaranju mape",
+          description: "Nije moguće otvoriti lokaciju. Proverite dozvole aplikacije.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Greška pri otvaranju mape:", error);
+      toast({
+        title: "Greška pri otvaranju mape",
+        description: "Došlo je do neočekivane greške pri otvaranju mape.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -243,15 +266,26 @@ export default function TechnicianServices() {
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between pt-2">
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => callClient(service.client?.phone || "")}
-                          disabled={!service.client?.phone}
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Pozovi klijenta
-                        </Button>
+                        <div className="flex gap-2">
+                          <CallClientButton 
+                            phoneNumber={service.client?.phone || ""}
+                            clientName={service.client?.fullName}
+                            variant="secondary" 
+                            size="sm"
+                            disabled={!service.client?.phone}
+                          />
+                          
+                          {service.client?.address && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openClientLocation(service.client?.address || "", service.client?.city || null)}
+                            >
+                              <MapPin className="h-4 w-4 mr-2" />
+                              Mapa
+                            </Button>
+                          )}
+                        </div>
 
                         {(service.status === "pending" || service.status === "scheduled") && (
                           <Button 

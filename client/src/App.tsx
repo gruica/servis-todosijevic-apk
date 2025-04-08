@@ -1,5 +1,6 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
@@ -19,6 +20,7 @@ import ExcelImportExport from "@/pages/excel-import-export";
 import ExcelImport from "@/pages/admin/excel-import";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
+import { initializeCapacitor, isNativeMobile } from "./capacitor";
 
 function Router() {
   return (
@@ -50,6 +52,17 @@ function Router() {
 }
 
 function App() {
+  // Inicijalizacija Capacitor-a prilikom učitavanja aplikacije
+  useEffect(() => {
+    // Inicijalizacija samo za nativne mobilne platforme
+    if (isNativeMobile) {
+      console.log("Inicijalizacija mobilne aplikacije...");
+      initializeCapacitor().catch(error => {
+        console.error("Greška pri inicijalizaciji mobilne aplikacije:", error);
+      });
+    }
+  }, []);
+
   return (
     <>
       <Router />
