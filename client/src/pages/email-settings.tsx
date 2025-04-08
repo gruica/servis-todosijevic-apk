@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Form,
@@ -25,6 +26,7 @@ import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 const emailSettingsSchema = z.object({
   host: z.string().min(1, { message: "Host je obavezan" }),
@@ -66,6 +68,7 @@ const EmailSettingsPage = () => {
   const { toast } = useToast();
   const [testEmailSent, setTestEmailSent] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
+  const [_, navigate] = useLocation();
 
   // Email settings form
   const form = useForm<EmailSettingsForm>({
@@ -526,6 +529,24 @@ const EmailSettingsPage = () => {
               </ul>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setShowDiagnostics(!showDiagnostics)}
+            >
+              {showDiagnostics ? "Sakrij dijagnostiku" : "Prikaži dijagnostiku"}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/email-test")}
+              type="button"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Testiranje email sistema
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>

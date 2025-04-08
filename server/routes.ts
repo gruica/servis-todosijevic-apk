@@ -11,6 +11,16 @@ import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
 
+// Mapiranje status kodova u opisne nazive statusa
+const STATUS_DESCRIPTIONS: Record<string, string> = {
+  'pending': 'Na čekanju',
+  'assigned': 'Dodeljen serviseru',
+  'scheduled': 'Zakazan termin',
+  'in_progress': 'U toku',
+  'completed': 'Završen',
+  'cancelled': 'Otkazan'
+};
+
 // Email postavke schema
 const emailSettingsSchema = z.object({
   host: z.string().min(1),
@@ -236,10 +246,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const technicianName = technician ? technician.fullName : "Nepoznat serviser";
             
             // Šaljemo obaveštenje klijentu
+            const statusText = STATUS_DESCRIPTIONS[service.status] || service.status;
             const clientEmailSent = await emailService.sendServiceStatusUpdate(
               client,
               service.id,
-              service.status,
+              statusText,
               service.description || "",
               technicianName
             );
@@ -367,36 +378,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
       }
       
-      // Pošalji email obaveštenje klijentu o promeni statusa servisa
+      // Pošalji email obaveštenja SVIM povezanim stranama o promeni statusa servisa
       try {
+        console.log(`[EMAIL SISTEM] Započinjem slanje obaveštenja o promeni statusa servisa #${serviceId} u "${validStatus}"`);
+
+        // 1. Prvo dohvati sve neophodne podatke
         if (service.clientId) {
           const client = await storage.getClient(service.clientId);
+          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+          const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
+          
           if (client) {
-            const technician = await storage.getTechnician(service.technicianId || 0);
-            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+            console.log(`[EMAIL SISTEM] Pronađen klijent: ${client.fullName}, email: ${client.email || 'nije dostupan'}`);
             
-            const emailSent = await emailService.sendServiceStatusUpdate(
-              client, 
-              serviceId,
-              validStatus,
-              technicianNotes || service.description || "",
-              technicianName
-            );
-            
-            if (emailSent && client.email) {
-              // Obavesti administratore o poslatom mail-u
-              await emailService.notifyAdminAboutEmail(
-                "Promena statusa servisa",
-                client.email,
+            // 2. Šalje obaveštenje KLIJENTU
+            if (client.email) {
+              console.log(`[EMAIL SISTEM] Pokušavam slanje emaila klijentu ${client.fullName} (${client.email})`);
+              
+              const clientEmailContent = technicianNotes || service.description || "";
+              const clientEmailSent = await emailService.sendServiceStatusUpdate(
+                client, 
                 serviceId,
-                `Poslato obaveštenje klijentu ${client.fullName} o promeni statusa servisa #${serviceId} u "${validStatus}"`
+                statusDescription,
+                clientEmailContent,
+                technicianName
               );
+              
+              if (clientEmailSent) {
+                console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
+                
+                // Obavesti administratore o poslatom mail-u klijentu
+                await emailService.notifyAdminAboutEmail(
+                  "Promena statusa servisa",
+                  client.email,
+                  serviceId,
+                  `Poslato obaveštenje klijentu ${client.fullName} o promeni statusa servisa #${serviceId} u "${statusDescription}"`
+                );
+              } else {
+                console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja klijentu ${client.fullName}`);
+              }
+            } else {
+              console.warn(`[EMAIL SISTEM] ⚠️ Klijent ${client.fullName} nema email adresu, preskačem slanje`);
             }
+            
+            // 3. Šalje obaveštenje SERVISERU
+            if (technician && technician.email) {
+              console.log(`[EMAIL SISTEM] Pokušavam slanje emaila serviseru ${technician.fullName} (${technician.email})`);
+              
+              // Kreiraj poruku sa detaljima servisa za servisera
+              const technicianSubject = `Ažuriran status servisa #${serviceId}: ${statusDescription}`;
+              const technicianHTML = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #0066cc;">Ažuriranje statusa servisa</h2>
+                  <p>Poštovani/a ${technician.fullName},</p>
+                  <p>Status servisa je ažuriran:</p>
+                  <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <p><strong>Broj servisa:</strong> #${serviceId}</p>
+                    <p><strong>Klijent:</strong> ${client.fullName}</p>
+                    <p><strong>Adresa klijenta:</strong> ${client.address}, ${client.city}</p>
+                    <p><strong>Telefon klijenta:</strong> ${client.phone}</p>
+                    <p><strong>Novi status:</strong> ${statusDescription}</p>
+                    <p><strong>Napomena:</strong> ${technicianNotes || 'Nema napomene'}</p>
+                  </div>
+                  <p>Ovo je automatsko obaveštenje sistema za praćenje servisa.</p>
+                  <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
+                </div>
+              `;
+              
+              // Pošalji email serviseru (direktno, ne kroz specijalizovanu metodu)
+              const techEmailSent = await emailService.sendEmail({
+                to: technician.email,
+                subject: technicianSubject,
+                html: technicianHTML,
+              });
+              
+              if (techEmailSent) {
+                console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje serviseru ${technician.fullName}`);
+                
+                // Obavesti administratore o poslatom mail-u serviseru
+                await emailService.notifyAdminAboutEmail(
+                  "Obaveštenje servisera o promeni statusa",
+                  technician.email,
+                  serviceId,
+                  `Poslato obaveštenje serviseru ${technician.fullName} o promeni statusa servisa #${serviceId} u "${statusDescription}"`
+                );
+              } else {
+                console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja serviseru ${technician.fullName}`);
+              }
+            } else if (technician) {
+              console.warn(`[EMAIL SISTEM] ⚠️ Serviser ${technician.fullName} nema email adresu, preskačem slanje`);
+            } else {
+              console.warn(`[EMAIL SISTEM] ⚠️ Servisu nije dodeljen serviser, preskačem slanje obaveštenja serviseru`);
+            }
+          } else {
+            console.error(`[EMAIL SISTEM] ❌ Klijent sa ID ${service.clientId} nije pronađen, ne mogu poslati obaveštenja`);
           }
+        } else {
+          console.error(`[EMAIL SISTEM] ❌ Servis #${serviceId} nema povezanog klijenta, ne mogu poslati obaveštenja`);
         }
       } catch (emailError) {
-        console.error("Greška pri slanju email obaveštenja:", emailError);
-        // Ne vraćamo grešku korisniku jer servis je uspešno ažuriran
+        console.error("[EMAIL SISTEM] ❌ Greška pri slanju email obaveštenja:", emailError);
+        // Ne vraćamo grešku korisniku jer je servis uspešno ažuriran
       }
       
       res.json(updatedService);
@@ -1172,6 +1255,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: "Greška pri dobijanju email postavki", 
         message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+  
+  // Test slanja email-a (samo za administratore)
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      console.log("[TEST EMAIL] Zahtev za testiranje email-a primljen.");
+      
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        console.log("[TEST EMAIL] Zahtev odbijen - korisnik nije administrator.");
+        return res.status(403).json({ error: "Nemate dozvolu za testiranje email sistema" });
+      }
+      
+      const { recipient } = testEmailSchema.parse(req.body);
+      
+      console.log(`[TEST EMAIL] Pokušavam poslati test email na: ${recipient}`);
+      
+      // Šaljemo test email
+      const subject = "Test email iz Frigo Sistem aplikacije";
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0066cc;">Test email</h2>
+          <p>Poštovani,</p>
+          <p>Ovo je test email poslat iz aplikacije za upravljanje servisima Frigo Sistema Todosijević.</p>
+          <p>Ako ste primili ovaj email, to znači da je sistem za slanje emailova pravilno konfigurisan.</p>
+          <p>Vreme slanja: ${new Date().toLocaleString('sr-ME')}</p>
+          <hr style="border: 1px solid #ddd; margin: 20px 0;">
+          <p style="font-size: 12px; color: #666;">
+            Frigo Sistem Todosijević<br>
+            Kontakt telefon: +382 69 021 689<br>
+            Email: info@frigosistemtodosijevic.com
+          </p>
+        </div>
+      `;
+      
+      const result = await emailService.sendEmail({
+        to: recipient,
+        subject,
+        html
+      }, 1); // Samo jedan pokušaj za testiranje
+      
+      if (result) {
+        console.log(`[TEST EMAIL] ✅ Test email uspešno poslat na: ${recipient}`);
+        // Obavesti administratore
+        await emailService.notifyAdminAboutEmail(
+          "Test email-a",
+          recipient,
+          0, // Nema ID servisa
+          `Administrator ${req.user.fullName} je testirao slanje email-a na adresu ${recipient}`
+        );
+        return res.json({ success: true, message: "Test email uspešno poslat" });
+      } else {
+        console.error(`[TEST EMAIL] ❌ Neuspešno slanje test email-a na: ${recipient}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Neuspešno slanje test email-a. Proverite server logove za više detalja." 
+        });
+      }
+    } catch (error) {
+      console.error("[TEST EMAIL] Greška:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeća email adresa", 
+          details: error.format() 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju test email-a", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
       });
     }
   });
