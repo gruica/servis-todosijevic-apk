@@ -183,6 +183,13 @@ export class EmailService {
         ...this.configCache,
         pool: true,
       } as NodemailerTransportOptions);
+      
+      console.log('[EMAIL] ℹ️ Kreiran fallback Gmail SMTP transporter sa sledećim podešavanjima:', {
+        host: this.configCache.host,
+        port: this.configCache.port,
+        secure: this.configCache.secure,
+        user: this.configCache.auth?.user || 'nije postavljen'
+      });
     }
   }
   
@@ -418,6 +425,14 @@ export class EmailService {
     description: string,
     technicianName: string
   ): Promise<boolean> {
+    console.log(`[DEBUG EMAIL] Početak slanja obaveštenja o statusu servisa #${serviceId} klijentu ${client.fullName} (${client.email || 'bez email-a'})`);
+    
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[DEBUG EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja klijentu ${client.fullName}`);
+      return false;
+    }
+
     const subject = `Ažuriranje statusa servisa #${serviceId}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -442,15 +457,25 @@ export class EmailService {
     `;
 
     if (!client.email) {
-      console.warn(`Ne mogu poslati email klijentu ${client.fullName} - email adresa nije dostupna`);
+      console.warn(`[DEBUG EMAIL] Ne mogu poslati email klijentu ${client.fullName} - email adresa nije dostupna`);
       return false;
     }
 
-    return await this.sendEmail({
-      to: client.email,
-      subject,
-      html,
-    });
+    console.log(`[DEBUG EMAIL] Pokretanje slanja email-a klijentu ${client.fullName} (${client.email}) koristeći SMTP server: ${this.configCache.host}:${this.configCache.port}`);
+    
+    try {
+      const result = await this.sendEmail({
+        to: client.email,
+        subject,
+        html,
+      }, 3); // 3 pokušaja slanja za obaveštenja o servisima
+      
+      console.log(`[DEBUG EMAIL] Rezultat slanja email-a za status servisa: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[DEBUG EMAIL] Greška pri slanju email-a za status servisa:`, error);
+      return false;
+    }
   }
 
   /**
@@ -462,6 +487,14 @@ export class EmailService {
     maintenanceDate: string,
     description: string
   ): Promise<boolean> {
+    console.log(`[DEBUG EMAIL] Početak slanja obaveštenja o održavanju za uređaj ${applianceName} klijentu ${client.fullName} (${client.email || 'bez email-a'})`);
+    
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[DEBUG EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja o održavanju klijentu ${client.fullName}`);
+      return false;
+    }
+    
     const subject = `Podsetnik za zakazano održavanje uređaja`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -486,15 +519,25 @@ export class EmailService {
     `;
 
     if (!client.email) {
-      console.warn(`Ne mogu poslati email klijentu ${client.fullName} - email adresa nije dostupna`);
+      console.warn(`[DEBUG EMAIL] Ne mogu poslati email klijentu ${client.fullName} - email adresa nije dostupna`);
       return false;
     }
 
-    return await this.sendEmail({
-      to: client.email,
-      subject,
-      html,
-    });
+    console.log(`[DEBUG EMAIL] Pokretanje slanja email-a o održavanju klijentu ${client.fullName} (${client.email}) koristeći SMTP server: ${this.configCache.host}:${this.configCache.port}`);
+    
+    try {
+      const result = await this.sendEmail({
+        to: client.email,
+        subject,
+        html,
+      }, 3); // 3 pokušaja slanja za važna obaveštenja o održavanju
+      
+      console.log(`[DEBUG EMAIL] Rezultat slanja email-a o održavanju: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[DEBUG EMAIL] Greška pri slanju email-a o održavanju:`, error);
+      return false;
+    }
   }
 
   /**
@@ -509,6 +552,19 @@ export class EmailService {
     address: string,
     description: string
   ): Promise<boolean> {
+    console.log(`[DEBUG EMAIL] Početak slanja obaveštenja serviseru ${technicianName} (${technicianEmail || 'bez email-a'}) o dodeljenom servisu #${serviceId}`);
+    
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[DEBUG EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja serviseru ${technicianName}`);
+      return false;
+    }
+    
+    if (!technicianEmail) {
+      console.warn(`[DEBUG EMAIL] Ne mogu poslati email serviseru ${technicianName} - email adresa nije dostupna`);
+      return false;
+    }
+
     const subject = `Novi servis dodeljen #${serviceId}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -528,11 +584,21 @@ export class EmailService {
       </div>
     `;
 
-    return await this.sendEmail({
-      to: technicianEmail,
-      subject,
-      html,
-    });
+    console.log(`[DEBUG EMAIL] Pokretanje slanja email-a serviseru ${technicianName} (${technicianEmail}) koristeći SMTP server: ${this.configCache.host}:${this.configCache.port}`);
+    
+    try {
+      const result = await this.sendEmail({
+        to: technicianEmail,
+        subject,
+        html,
+      }, 3); // 3 pokušaja slanja za obaveštenja serviserima
+      
+      console.log(`[DEBUG EMAIL] Rezultat slanja email-a serviseru: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[DEBUG EMAIL] Greška pri slanju email-a serviseru:`, error);
+      return false;
+    }
   }
 
   /**
@@ -779,8 +845,16 @@ export class EmailService {
     detailsText: string,
     maxRetries: number = 2
   ): Promise<boolean> {
+    console.log(`[DEBUG ADMIN EMAIL] Pokretanje slanja administratorskog obaveštenja za servis #${serviceId}`);
+    
     if (this.adminEmails.length === 0) {
-      console.log('[EMAIL] Nema konfigurisanih administratorskih email adresa za slanje obaveštenja');
+      console.log('[DEBUG ADMIN EMAIL] Nema konfigurisanih administratorskih email adresa za slanje obaveštenja');
+      return false;
+    }
+
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[DEBUG ADMIN EMAIL] Nema konfigurisanog SMTP servera za slanje administratorskog obaveštenja`);
       return false;
     }
 
@@ -797,15 +871,32 @@ export class EmailService {
           <p><strong>Detalji:</strong> ${detailsText}</p>
         </div>
         <p>Ovo je automatsko obaveštenje sistema.</p>
+        <div style="background-color: #f0f8ff; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 12px;">
+          <p><strong>SMTP Informacije:</strong></p>
+          <p>Server: ${this.configCache?.host || 'Nije konfigurisan'}</p>
+          <p>Port: ${this.configCache?.port || 'Nije konfigurisan'}</p>
+          <p>Korisnik: ${this.configCache?.auth?.user || 'Nije konfigurisan'}</p>
+          <p>Šalju se na: ${this.adminEmails.join(', ')}</p>
+        </div>
       </div>
     `;
 
-    // Koristi našu unapređenu funkciju za slanje emaila sa podrškom za ponovne pokušaje
-    return await this.sendEmail({
-      to: this.adminEmails.join(','),
-      subject,
-      html,
-    }, maxRetries);
+    console.log(`[DEBUG ADMIN EMAIL] Slanje administratorskog obaveštenja na: ${this.adminEmails.join(', ')}`);
+
+    try {
+      // Koristi našu unapređenu funkciju za slanje emaila sa podrškom za ponovne pokušaje
+      const result = await this.sendEmail({
+        to: this.adminEmails.join(','),
+        subject,
+        html,
+      }, maxRetries);
+      
+      console.log(`[DEBUG ADMIN EMAIL] Rezultat slanja administratorskog obaveštenja: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[DEBUG ADMIN EMAIL] Greška pri slanju administratorskog obaveštenja:`, error);
+      return false;
+    }
   }
 }
 
