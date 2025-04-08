@@ -321,7 +321,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const serviceId = parseInt(req.params.id);
-      const { status, technicianNotes } = req.body;
+      const { 
+        status, 
+        technicianNotes,
+        usedParts,
+        machineNotes,
+        cost,
+        isCompletelyFixed
+      } = req.body;
       
       // Validate status
       const validStatus = serviceStatusEnum.parse(status);
@@ -349,6 +356,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...service,
         status: validStatus,
         technicianNotes: technicianNotes !== undefined ? technicianNotes : service.technicianNotes,
+        usedParts: usedParts !== undefined ? usedParts : service.usedParts,
+        machineNotes: machineNotes !== undefined ? machineNotes : service.machineNotes,
+        cost: cost !== undefined ? cost : service.cost,
+        isCompletelyFixed: isCompletelyFixed !== undefined ? isCompletelyFixed : service.isCompletelyFixed,
         completedDate: validStatus === "completed" ? new Date().toISOString() : service.completedDate
       });
       
@@ -724,7 +735,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               completedDate: row.completed_date,
               cost: row.cost,
               technicianNotes: row.technician_notes,
-              createdAt: row.created_at
+              createdAt: row.created_at,
+              usedParts: row.used_parts,
+              machineNotes: row.machine_notes,
+              isCompletelyFixed: row.is_completely_fixed
             }));
           }
         } catch (dbError) {

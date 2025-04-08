@@ -49,6 +49,10 @@ export default function TechnicianServices() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<ServiceStatus | null>(null);
   const [technicianNotes, setTechnicianNotes] = useState<string>("");
+  const [usedParts, setUsedParts] = useState<string>("");
+  const [machineNotes, setMachineNotes] = useState<string>("");
+  const [cost, setCost] = useState<string>("");
+  const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -70,8 +74,31 @@ export default function TechnicianServices() {
 
   // Mutation for updating service status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ serviceId, status, notes }: { serviceId: number; status: string; notes: string }) => {
-      const res = await apiRequest("PUT", `/api/services/${serviceId}/status`, { status, technicianNotes: notes });
+    mutationFn: async ({ 
+      serviceId, 
+      status, 
+      notes, 
+      usedParts, 
+      machineNotes, 
+      cost, 
+      isCompletelyFixed 
+    }: { 
+      serviceId: number; 
+      status: string; 
+      notes: string;
+      usedParts?: string;
+      machineNotes?: string;
+      cost?: string;
+      isCompletelyFixed?: boolean;
+    }) => {
+      const res = await apiRequest("PUT", `/api/services/${serviceId}/status`, { 
+        status, 
+        technicianNotes: notes,
+        usedParts,
+        machineNotes,
+        cost,
+        isCompletelyFixed
+      });
       return await res.json();
     },
     onSuccess: () => {
@@ -94,17 +121,39 @@ export default function TechnicianServices() {
   const handleStatusChange = () => {
     if (!selectedService || !newStatus) return;
     
-    updateStatusMutation.mutate({
-      serviceId: selectedService.id,
-      status: newStatus,
-      notes: technicianNotes,
-    });
+    // Ako je status "completed", šaljemo sve podatke
+    if (newStatus === "completed") {
+      updateStatusMutation.mutate({
+        serviceId: selectedService.id,
+        status: newStatus,
+        notes: technicianNotes,
+        usedParts: usedParts,
+        machineNotes: machineNotes,
+        cost: cost,
+        isCompletelyFixed: isCompletelyFixed
+      });
+    } else {
+      updateStatusMutation.mutate({
+        serviceId: selectedService.id,
+        status: newStatus,
+        notes: technicianNotes
+      });
+    }
   };
 
   const openStatusDialog = (service: TechnicianService, status: ServiceStatus) => {
     setSelectedService(service);
     setNewStatus(status);
     setTechnicianNotes(service.technicianNotes || "");
+    
+    // Ako je u pitanju završetak servisa, postavimo i ostala polja
+    if (status === "completed") {
+      setUsedParts(service.usedParts || "");
+      setMachineNotes(service.machineNotes || "");
+      setCost(service.cost || "");
+      setIsCompletelyFixed(service.isCompletelyFixed !== false);
+    }
+    
     setStatusDialogOpen(true);
   };
 
@@ -334,17 +383,76 @@ export default function TechnicianServices() {
                 : "Da li ste sigurni da želite da označite servis kao završen?"}
             </p>
             
-            <div className="space-y-2">
-              <label htmlFor="technicianNotes" className="text-sm font-medium">
-                Napomena servisera:
-              </label>
-              <Textarea
-                id="technicianNotes"
-                value={technicianNotes}
-                onChange={(e) => setTechnicianNotes(e.target.value)}
-                placeholder="Unesite napomenu o servisu..."
-                className="min-h-[100px]"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="technicianNotes" className="text-sm font-medium">
+                  Napomena servisera:
+                </label>
+                <Textarea
+                  id="technicianNotes"
+                  value={technicianNotes}
+                  onChange={(e) => setTechnicianNotes(e.target.value)}
+                  placeholder="Unesite napomenu o servisu..."
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              {newStatus === "completed" && (
+                <>
+                  <div className="space-y-2">
+                    <label htmlFor="usedParts" className="text-sm font-medium">
+                      Utrošeni delovi:
+                    </label>
+                    <Textarea
+                      id="usedParts"
+                      value={usedParts}
+                      onChange={(e) => setUsedParts(e.target.value)}
+                      placeholder="Navedite sve delove koje ste zamenili ili ugradili..."
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="machineNotes" className="text-sm font-medium">
+                      Napomene vezane za mašinu:
+                    </label>
+                    <Textarea
+                      id="machineNotes"
+                      value={machineNotes}
+                      onChange={(e) => setMachineNotes(e.target.value)}
+                      placeholder="Unesite napomene vezane za stanje mašine..."
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="cost" className="text-sm font-medium">
+                      Iznos naplate (€):
+                    </label>
+                    <input
+                      type="text"
+                      id="cost"
+                      value={cost}
+                      onChange={(e) => setCost(e.target.value)}
+                      placeholder="Unesite iznos..."
+                      className="w-full rounded-md border border-input bg-background px-3 py-2"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="checkbox" 
+                      id="isCompletelyFixed"
+                      checked={isCompletelyFixed}
+                      onChange={(e) => setIsCompletelyFixed(e.target.checked)}
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <label htmlFor="isCompletelyFixed" className="text-sm font-medium">
+                      Servis je u potpunosti završen
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           

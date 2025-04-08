@@ -144,6 +144,9 @@ export const services = pgTable("services", {
   completedDate: text("completed_date"),
   technicianNotes: text("technician_notes"),
   cost: text("cost"),
+  usedParts: text("used_parts"),
+  machineNotes: text("machine_notes"),
+  isCompletelyFixed: boolean("is_completely_fixed"),
 });
 
 export const insertServiceSchema = createInsertSchema(services).pick({
@@ -157,6 +160,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   completedDate: true,
   technicianNotes: true,
   cost: true,
+  usedParts: true,
+  machineNotes: true,
+  isCompletelyFixed: true,
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
