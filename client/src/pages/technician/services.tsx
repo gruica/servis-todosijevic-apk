@@ -369,7 +369,7 @@ export default function TechnicianServices() {
 
       {/* Status update dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {newStatus === "in_progress" ? "Započni servis" : "Završi servis"}
@@ -380,20 +380,21 @@ export default function TechnicianServices() {
             <p className="mb-4">
               {newStatus === "in_progress" 
                 ? "Da li ste sigurni da želite da označite servis kao započet?" 
-                : "Da li ste sigurni da želite da označite servis kao završen?"}
+                : "Da li ste sigurni da želite da označite servis kao završen? Molimo popunite sledeća polja:"}
             </p>
             
             <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="technicianNotes" className="text-sm font-medium">
-                  Napomena servisera:
+                  Napomena servisera: <span className="text-red-500">*</span>
                 </label>
                 <Textarea
                   id="technicianNotes"
                   value={technicianNotes}
                   onChange={(e) => setTechnicianNotes(e.target.value)}
-                  placeholder="Unesite napomenu o servisu..."
+                  placeholder="Unesite napomenu o servisu i izvršenim radovima..."
                   className="min-h-[80px]"
+                  required
                 />
               </div>
 
@@ -401,7 +402,7 @@ export default function TechnicianServices() {
                 <>
                   <div className="space-y-2">
                     <label htmlFor="usedParts" className="text-sm font-medium">
-                      Utrošeni delovi:
+                      Ugrađeni rezervni delovi: <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       id="usedParts"
@@ -409,46 +410,49 @@ export default function TechnicianServices() {
                       onChange={(e) => setUsedParts(e.target.value)}
                       placeholder="Navedite sve delove koje ste zamenili ili ugradili..."
                       className="min-h-[80px]"
+                      required
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <label htmlFor="machineNotes" className="text-sm font-medium">
-                      Napomene vezane za mašinu:
+                      Napomene o stanju uređaja: <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       id="machineNotes"
                       value={machineNotes}
                       onChange={(e) => setMachineNotes(e.target.value)}
-                      placeholder="Unesite napomene vezane za stanje mašine..."
+                      placeholder="Unesite napomene o zatečenom stanju uređaja i stanju nakon servisa..."
                       className="min-h-[80px]"
+                      required
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <label htmlFor="cost" className="text-sm font-medium">
-                      Iznos naplate (€):
+                      Cena servisa (€): <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       id="cost"
                       value={cost}
                       onChange={(e) => setCost(e.target.value)}
-                      placeholder="Unesite iznos..."
+                      placeholder="Unesite iznos naplate..."
                       className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      required
                     />
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 border p-3 rounded-md border-input">
                     <input 
                       type="checkbox" 
                       id="isCompletelyFixed"
                       checked={isCompletelyFixed}
                       onChange={(e) => setIsCompletelyFixed(e.target.checked)}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                     />
                     <label htmlFor="isCompletelyFixed" className="text-sm font-medium">
-                      Servis je u potpunosti završen
+                      Servis je uspešno završen i uređaj radi ispravno
                     </label>
                   </div>
                 </>
