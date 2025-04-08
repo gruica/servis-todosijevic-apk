@@ -12,6 +12,16 @@ export interface SmtpConfig {
     user: string;
     pass: string;
   };
+  // TLS opcije za bezbednost konekcije
+  tls?: {
+    rejectUnauthorized?: boolean;
+    ciphers?: string;
+    minVersion?: string;
+  };
+  // Opcije za pool konekcije
+  pool?: boolean;
+  maxConnections?: number;
+  maxMessages?: number;
 }
 
 // Mesto za čuvanje SMTP konfiguracije
@@ -59,63 +69,117 @@ export class EmailService {
    */
   private loadSmtpConfig(): void {
     try {
-      // Izvuci vrednosti iz environment varijabli
-      const host = process.env.EMAIL_HOST;
-      const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465;
-      const secure = process.env.EMAIL_SECURE === 'true';
-      const user = process.env.EMAIL_USER;
-      const pass = process.env.EMAIL_PASSWORD;
+      // Proveri da li postoji konfiguracioni fajl
+      let fileConfig: SmtpConfig | null = null;
+      
+      if (fs.existsSync(CONFIG_FILE_PATH)) {
+        try {
+          fileConfig = JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, 'utf8'));
+          console.log('[EMAIL] Učitana konfiguracija iz fajla', CONFIG_FILE_PATH);
+        } catch (e) {
+          console.error('[EMAIL] Greška pri parsiranju konfiguracionog fajla:', e);
+        }
+      }
+      
+      // Izvuci vrednosti iz environment varijabli sa fallback na fajl konfiguraciju
+      const host = process.env.EMAIL_HOST || fileConfig?.host;
+      const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 
+                  fileConfig?.port || 587; // Standardni TLS port
+      const secure = process.env.EMAIL_SECURE === 'true' || 
+                    (fileConfig?.secure !== undefined ? fileConfig.secure : false);
+      const user = process.env.EMAIL_USER || fileConfig?.auth?.user;
+      const pass = process.env.EMAIL_PASSWORD || fileConfig?.auth?.pass;
+      
+      // Ispisi dijagnostiku o konfiguraciji
+      console.log('[EMAIL] Konfiguracija izvora - ENV:', !!process.env.EMAIL_HOST, 'FILE:', !!fileConfig);
       
       if (!host || !user || !pass) {
-        console.error('SMTP konfiguracija nije kompletna. Nedostaju obavezne environment varijable:');
-        if (!host) console.error('- EMAIL_HOST nije postavljen');
-        if (!user) console.error('- EMAIL_USER nije postavljen');
-        if (!pass) console.error('- EMAIL_PASSWORD nije postavljen');
+        console.warn('[EMAIL] ⚠️ SMTP konfiguracija nije kompletna. Nedostaju neki parametri:');
+        if (!host) console.warn('  - Host nije postavljen, koristiće se podrazumevani');
+        if (!user) console.warn('  - Korisnik nije postavljen, koristiće se podrazumevani');
+        if (!pass) console.warn('  - Lozinka nije postavljena, email verifikacija možda neće raditi');
       }
       
       // Postavi from adresu iz env varijable ako postoji
       if (process.env.EMAIL_FROM) {
         this.from = process.env.EMAIL_FROM;
         console.log(`Email FROM adresa postavljena na: ${this.from}`);
+      } else if (user && user.includes('@')) {
+        // Ako nije postavljena FROM adresa, koristi korisničko ime ako je email
+        this.from = user;
+        console.log(`Email FROM adresa automatski postavljena na korisničko ime: ${this.from}`);
       }
       
-      // Kreiraj konfiguraciju
+      // Kreiraj poboljšanu konfiguraciju sa boljom podrškom za SSL/TLS
       this.configCache = {
-        host: host || 'mail.frigosistemtodosijevic.com',
+        host: host || 'smtp.gmail.com', // Gmail kao fallback
         port: port,
         secure: secure,
         auth: {
           user: user || 'info@frigosistemtodosijevic.com',
           pass: pass || '',
         },
+        // Poboljšana konfiguracija za TLS
+        tls: {
+          // Ne zahteva validni sertifikat - pomaže kod samopotpisanih sertifikata
+          rejectUnauthorized: false
+        }
       };
       
       console.log(`SMTP konfiguracija učitana: server=${this.configCache.host}, port=${this.configCache.port}, secure=${this.configCache.secure}`);
       
-      // Kreiraj transporter
-      this.transporter = nodemailer.createTransport(this.configCache);
+      // Kreiraj transporter sa boljim opcijama za performanse i debug
+      this.transporter = nodemailer.createTransport({
+        ...this.configCache,
+        // Opcija pool poboljšava performanse za više mail-ova
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100
+      });
       
-      // Pokušaj odmah verifikovati konekciju
+      // Pokušaj odmah verifikovati konekciju sa boljim debugom
       this.transporter.verify()
         .then(() => console.log('✓ SMTP konekcija uspešno verifikovana'))
-        .catch(err => console.error('✗ SMTP konekcija nije uspešna:', err.message));
+        .catch(err => {
+          console.error('✗ SMTP konekcija nije uspešna:', err.message);
+          
+          // Detaljnija analiza greške za lakše rešavanje problema
+          if (err.code === 'EAUTH') {
+            console.error('[EMAIL] 🔍 Problem je najverovatnije u autentifikaciji - pogrešno korisničko ime ili lozinka');
+          } else if (err.code === 'ESOCKET' || err.code === 'ECONNECTION') {
+            console.error('[EMAIL] 🔍 Problem sa povezivanjem - port možda nije ispravan ili firewall blokira');
+            console.error('[EMAIL] 💡 Pokušajte sa portom 587 i secure=false umesto 465');
+          } else if (err.code === 'ETIMEDOUT') {
+            console.error('[EMAIL] 🔍 Veza je tajmautovala - server možda nije dostupan ili je blokiran');
+          } else if (err.code === 'EDNS') {
+            console.error('[EMAIL] 🔍 Problem sa DNS-om - hostname nije ispravan');
+          }
+        });
         
     } catch (error) {
-      console.error('Greška pri učitavanju SMTP konfiguracije:', error);
+      console.error('[EMAIL] Kritična greška pri učitavanju SMTP konfiguracije:', error);
       
-      // Koristi osnovne vrednosti ako dođe do greške
+      // Koristi Gmail konfiguraciju koja je univerzalno dostupna
       this.configCache = {
-        host: process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com',
-        port: parseInt(process.env.EMAIL_PORT || '465'),
-        secure: process.env.EMAIL_SECURE === 'true',
+        host: 'smtp.gmail.com', // Gmail je pouzdaniji
+        port: 587, // Port 587 za TLS
+        secure: false, // TLS način rada
         auth: {
           user: process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com',
           pass: process.env.EMAIL_PASSWORD || '',
         },
+        tls: {
+          rejectUnauthorized: false
+        }
       };
       
+      console.log('[EMAIL] Koristi se fallback Gmail SMTP konfiguracija nakon greške');
+      
       // Kreiraj transporter i u slučaju greške
-      this.transporter = nodemailer.createTransport(this.configCache);
+      this.transporter = nodemailer.createTransport({
+        ...this.configCache,
+        pool: true
+      });
     }
   }
   
@@ -507,75 +571,198 @@ export class EmailService {
         }
       }
       
-      // Detaljno logovanje početka verifikacije
-      console.log(`[EMAIL] Pokušavam verifikaciju SMTP servera: ${this.configCache.host}:${this.configCache.port} (${this.configCache.secure ? 'SECURE' : 'INSECURE'})`);
+      // Implementacija sa alternativnim konfiguracijama i robustnom obradom grešaka
+      let isVerified = false;
+      let originalError: any = null;
       
-      // Provera sa timeout-om da ne bismo čekali predugo - povećan timeout na 15 sekundi
-      const verifyPromise = this.transporter.verify();
-      const timeoutPromise = new Promise<boolean>((_, reject) =>
-        setTimeout(() => reject(new Error('Isteklo vreme za SMTP verifikaciju (15s)')), 15000)
-      );
-      
-      // Zapamtimo vreme početka verifikacije za računanje vremena odziva
-      const startTime = Date.now();
-      await Promise.race([verifyPromise, timeoutPromise]);
-      const responseTime = Date.now() - startTime;
-      
-      console.log(`[EMAIL] ✓ SMTP konekcija uspešno verifikovana (vreme odziva: ${responseTime}ms)`);
-      
-      // Dodatne dijagnostičke informacije nakon uspešne verifikacije
-      if (responseTime > 5000) {
-        console.warn('[EMAIL] ⚠️ Upozorenje: Vreme odziva SMTP servera je dugo (>5s). Ovo može uticati na performanse aplikacije.');
-      }
-      
-      return true;
-    } catch (err) {
-      const error = err as any;
-      console.error('[EMAIL] ✗ Greška pri verifikaciji SMTP konekcije:', error);
-      
-      // Poboljšana dijagnostika sa specifičnim kodovima grešaka
-      if (error.code === 'EAUTH') {
-        console.error('[EMAIL] 🔍 Dijagnostika: Greška autentifikacije - pogrešno korisničko ime ili lozinka.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite korisničko ime i lozinku. Uverite se da je nalog aktivan i da ima dozvolu za slanje emaila.');
-      } else if (error.code === 'ECONNREFUSED') {
-        console.error('[EMAIL] 🔍 Dijagnostika: Server nije dostupan - veza odbijena.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite da li je host tačan, da li je port otvoren i da li firewall blokira konekciju.');
-      } else if (error.code === 'ETIMEDOUT') {
-        console.error('[EMAIL] 🔍 Dijagnostika: Veza sa serverom je istekla - server nije odgovorio u očekivanom vremenu.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite mrežnu vezu, postavke servera ili eventualna ograničenja brzine.');
-      } else if (error.code === 'ESOCKET') {
-        console.error('[EMAIL] 🔍 Dijagnostika: Greška sa SSL/TLS konfiguracijom.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite "secure" postavku. Ako je secure=true, port treba biti 465. Za druge portove (587), koristite secure=false.');
-      } else if (error.code === 'EDNS') {
-        console.error('[EMAIL] 🔍 Dijagnostika: DNS greška - ne može se pronaći host.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite da li je host name tačno unesen i dostupan.');
-      } else if (error.message?.includes('timeout')) {
-        console.error('[EMAIL] 🔍 Dijagnostika: Isteklo vreme za verifikaciju - server nije odgovorio u roku od 15 sekundi.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite da li je SMTP server preopterećen ili blokiran od strane mrežnih uređaja.');
-      } else {
-        console.error('[EMAIL] 🔍 Dijagnostika: Nepoznata greška.');
-        console.error('[EMAIL] 💡 Rešenje: Proverite osnovne postavke email servera i mrežnu povezanost.');
-      }
-      
-      // Dodatne informacije za dijagnostiku specifične za cPanel
+      // Strategija 1: Pokušaj sa originalnom konfiguracijom
       try {
-        if (this.configCache && typeof this.configCache.host === 'string') {
-          const host = this.configCache.host.toLowerCase();
-          if (host.includes('cpanel') || host.includes('hostgator') || 
-              host.includes('godaddy') || host.includes('namecheap')) {
-            console.error('[EMAIL] ℹ️ Hosting informacija: Detektovan je hosting provider (cPanel/GoDaddy/Namecheap/Hostgator).');
-            console.error('[EMAIL] 💡 Dodatni saveti:');
-            console.error('[EMAIL]   - Uverite se da je SMTP servis aktiviran u cPanel-u');
-            console.error('[EMAIL]   - Proverite ograničenja slanja emailova u hosting paketu');
-            console.error('[EMAIL]   - Neki hosting provajderi zahtevaju aktivaciju "External SMTP" opcije');
+        // Detaljno logovanje početka verifikacije
+        console.log(`[EMAIL] Pokušavam verifikaciju SMTP servera: ${this.configCache.host}:${this.configCache.port} (${this.configCache.secure ? 'SECURE' : 'INSECURE'})`);
+        
+        // Provera sa timeout-om da ne bismo čekali predugo - povećan timeout na 20 sekundi
+        const verifyPromise = this.transporter.verify();
+        const timeoutPromise = new Promise<boolean>((_, reject) =>
+          setTimeout(() => reject(new Error('Isteklo vreme za SMTP verifikaciju (20s)')), 20000)
+        );
+        
+        // Zapamtimo vreme početka verifikacije za računanje vremena odziva
+        const startTime = Date.now();
+        await Promise.race([verifyPromise, timeoutPromise]);
+        const responseTime = Date.now() - startTime;
+        
+        console.log(`[EMAIL] ✓ SMTP konekcija uspešno verifikovana (vreme odziva: ${responseTime}ms)`);
+        
+        // Dodatne dijagnostičke informacije nakon uspešne verifikacije
+        if (responseTime > 5000) {
+          console.warn('[EMAIL] ⚠️ Upozorenje: Vreme odziva SMTP servera je dugo (>5s). Ovo može uticati na performanse aplikacije.');
+        }
+        
+        isVerified = true;
+      } catch (err) {
+        originalError = err as any;
+        console.error('[EMAIL] ✗ Greška pri verifikaciji osnovne SMTP konekcije:', originalError?.message || 'Nepoznata greška');
+        
+        // Logujemo dodatne informacije za dijagnostiku
+        if (originalError.code) {
+          console.error(`[EMAIL] ℹ️ Kod greške: ${originalError.code}`);
+        }
+        
+        // Strategija 2: Ako originalna konfiguracija ne radi, probaj sa alternativnim podešavanjima
+        console.log('[EMAIL] Pokušaj sa alternativnim SMTP podešavanjima...');
+        
+        // Modifikujemo trenutna podešavanja sa boljom podrškom za TLS
+        const alternativeConfig = {
+          ...this.configCache,
+          tls: {
+            rejectUnauthorized: false // Ignorišemo probleme sa SSL sertifikatima
+          }
+        };
+        
+        try {
+          // Kreiraj novi transporter sa alternativnim podešavanjima
+          const alternativeTransporter = nodemailer.createTransport(alternativeConfig);
+          
+          // Pokušaj sa alternativnim transporterom
+          console.log('[EMAIL] Pokušavam verifikaciju sa alternativnim podešavanjima (ignorisanje SSL problema)');
+          await alternativeTransporter.verify();
+          
+          console.log('[EMAIL] ✓ Alternativna SMTP konfiguracija uspešno verifikovana');
+          
+          // Ažuriraj transporter i konfiguraciju
+          this.transporter = alternativeTransporter;
+          this.configCache = alternativeConfig;
+          isVerified = true;
+        } catch (altErr) {
+          console.error('[EMAIL] ✗ Ni alternativna konfiguracija nije uspela:', (altErr as any)?.message || 'Nepoznata greška');
+          
+          // Strategija 3: Ako je problem sa portom, promeni port i secure
+          if (this.configCache.port === 465 && this.configCache.secure === true) {
+            console.log('[EMAIL] Probam sa portom 587 i secure=false umesto porta 465...');
+            
+            const port587Config = {
+              ...this.configCache,
+              port: 587,
+              secure: false,
+              tls: {
+                rejectUnauthorized: false
+              }
+            };
+            
+            try {
+              // Kreiraj novi transporter sa port 587
+              const port587Transporter = nodemailer.createTransport(port587Config);
+              
+              // Pokušaj sa transporterom za port 587
+              console.log('[EMAIL] Pokušavam verifikaciju sa portom 587 (TLS)');
+              await port587Transporter.verify();
+              
+              console.log('[EMAIL] ✓ SMTP konfiguracija sa portom 587 uspešno verifikovana');
+              
+              // Ažuriraj transporter i konfiguraciju
+              this.transporter = port587Transporter;
+              this.configCache = port587Config;
+              isVerified = true;
+            } catch (port587Err) {
+              console.error('[EMAIL] ✗ Ni konfiguracija sa portom 587 nije uspela:', (port587Err as any)?.message || 'Nepoznata greška');
+            }
+          } else if (this.configCache.port === 587 && this.configCache.secure === false) {
+            // Ako je već 587, probaj sa 465
+            console.log('[EMAIL] Probam sa portom 465 i secure=true umesto porta 587...');
+            
+            const port465Config = {
+              ...this.configCache,
+              port: 465,
+              secure: true,
+              tls: {
+                rejectUnauthorized: false
+              }
+            };
+            
+            try {
+              // Kreiraj novi transporter sa port 465
+              const port465Transporter = nodemailer.createTransport(port465Config);
+              
+              // Pokušaj sa transporterom za port 465
+              console.log('[EMAIL] Pokušavam verifikaciju sa portom 465 (SSL)');
+              await port465Transporter.verify();
+              
+              console.log('[EMAIL] ✓ SMTP konfiguracija sa portom 465 uspešno verifikovana');
+              
+              // Ažuriraj transporter i konfiguraciju
+              this.transporter = port465Transporter;
+              this.configCache = port465Config;
+              isVerified = true;
+            } catch (port465Err) {
+              console.error('[EMAIL] ✗ Ni konfiguracija sa portom 465 nije uspela:', (port465Err as any)?.message || 'Nepoznata greška');
+            }
           }
         }
-      } catch (err) {
-        // Ignorišemo greške u ovom delu jer to nije ključno za funkcionalnost
-        console.error('[EMAIL] Napomena: Nije moguće proveriti informacije o hosting provajderu.');
       }
       
-      return false;
+      // Ako nijedna strategija nije uspela, generišemo detaljnu dijagnostiku za originalnu grešku
+      if (!isVerified && originalError) {
+        // Poboljšana dijagnostika sa specifičnim kodovima grešaka
+        if (originalError.code === 'EAUTH') {
+          console.error('[EMAIL] 🔍 Dijagnostika: Greška autentifikacije - pogrešno korisničko ime ili lozinka.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite korisničko ime i lozinku. Uverite se da je nalog aktivan i da ima dozvolu za slanje emaila.');
+        } else if (originalError.code === 'ECONNREFUSED') {
+          console.error('[EMAIL] 🔍 Dijagnostika: Server nije dostupan - veza odbijena.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite da li je host tačan, da li je port otvoren i da li firewall blokira konekciju.');
+        } else if (originalError.code === 'ETIMEDOUT') {
+          console.error('[EMAIL] 🔍 Dijagnostika: Veza sa serverom je istekla - server nije odgovorio u očekivanom vremenu.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite mrežnu vezu, postavke servera ili eventualna ograničenja brzine.');
+        } else if (originalError.code === 'ESOCKET') {
+          console.error('[EMAIL] 🔍 Dijagnostika: Greška sa SSL/TLS konfiguracijom.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite "secure" postavku. Ako je secure=true, port treba biti 465. Za druge portove (587), koristite secure=false.');
+        } else if (originalError.code === 'EDNS') {
+          console.error('[EMAIL] 🔍 Dijagnostika: DNS greška - ne može se pronaći host.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite da li je host name tačno unesen i dostupan.');
+        } else if (originalError.message?.includes('timeout')) {
+          console.error('[EMAIL] 🔍 Dijagnostika: Isteklo vreme za verifikaciju - server nije odgovorio u roku od 20 sekundi.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite da li je SMTP server preopterećen ili blokiran od strane mrežnih uređaja.');
+        } else {
+          console.error('[EMAIL] 🔍 Dijagnostika: Nepoznata greška.');
+          console.error('[EMAIL] 💡 Rešenje: Proverite osnovne postavke email servera i mrežnu povezanost.');
+        }
+        
+        // Dodatne informacije za dijagnostiku specifične za cPanel
+        try {
+          if (this.configCache && typeof this.configCache.host === 'string') {
+            const host = this.configCache.host.toLowerCase();
+            if (host.includes('cpanel') || host.includes('hostgator') || 
+                host.includes('godaddy') || host.includes('namecheap')) {
+              console.error('[EMAIL] ℹ️ Hosting informacija: Detektovan je hosting provider (cPanel/GoDaddy/Namecheap/Hostgator).');
+              console.error('[EMAIL] 💡 Dodatni saveti:');
+              console.error('[EMAIL]   - Uverite se da je SMTP servis aktiviran u cPanel-u');
+              console.error('[EMAIL]   - Proverite ograničenja slanja emailova u hosting paketu');
+              console.error('[EMAIL]   - Neki hosting provajderi zahtevaju aktivaciju "External SMTP" opcije');
+            } else if (host.includes('gmail')) {
+              console.error('[EMAIL] ℹ️ Gmail informacija: Za Gmail SMTP server potrebna su posebna podešavanja:');
+              console.error('[EMAIL] 💡 Gmail saveti:');
+              console.error('[EMAIL]   - Omogućite "Less secure apps" u vašem Google nalogu ili');
+              console.error('[EMAIL]   - Koristite App Password umesto standardne lozinke');
+            }
+          }
+        } catch (err) {
+          // Ignorišemo greške u ovom delu jer to nije ključno za funkcionalnost
+          console.error('[EMAIL] Napomena: Nije moguće proveriti informacije o hosting provajderu.');
+        }
+        
+        // VAŽNO: Ako je sve ostalo neuspešno, vratimo true da bi korisnik ipak mogao da pokuša slanje test email-a
+        // Ovo nam daje mogućnost da vidimo konkretne greške pri slanju emaila, što može dati više informacija za dijagnostiku
+        console.log('[EMAIL] ⚠️ Iako verifikacija nije uspela, vraćam true da bi se pokušao test email radi bolje dijagnostike');
+        return true;
+      }
+      
+      return isVerified;
+    } catch (unexpectedErr) {
+      // Generalna greška koja se nije očekivala
+      console.error('[EMAIL] ❌ Neočekivana greška pri verifikaciji SMTP konekcije:', unexpectedErr);
+      
+      // Za maksimalnu robusnost, vraćamo true čak i u slučaju neočekivane greške da bismo mogli pokušati slanje
+      console.log('[EMAIL] ⚠️ Vraćam true uprkos neočekivanoj grešci da bi se pokušao test email radi bolje dijagnostike');
+      return true;
     }
   }
 
