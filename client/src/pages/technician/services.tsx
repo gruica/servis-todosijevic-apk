@@ -367,83 +367,84 @@ export default function TechnicianServices() {
         ))}
       </Tabs>
 
-      {/* Status update dialog */}
+      {/* Status update dialog - optimizovan za mobilne uređaje */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {newStatus === "in_progress" ? "Započni servis" : "Završi servis"}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="py-4">
-            <p className="mb-4">
+          <div className="py-2 sm:py-4">
+            <p className="mb-2 sm:mb-4 text-sm sm:text-base">
               {newStatus === "in_progress" 
                 ? "Da li ste sigurni da želite da označite servis kao započet?" 
                 : "Da li ste sigurni da želite da označite servis kao završen? Molimo popunite sledeća polja:"}
             </p>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="technicianNotes" className="text-sm font-medium">
-                  Napomena servisera: <span className="text-red-500">*</span>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-1 sm:space-y-2">
+                <label htmlFor="technicianNotes" className="text-sm font-medium flex items-center">
+                  Napomena servisera: <span className="text-red-500 ml-1">*</span>
                 </label>
                 <Textarea
                   id="technicianNotes"
                   value={technicianNotes}
                   onChange={(e) => setTechnicianNotes(e.target.value)}
                   placeholder="Unesite napomenu o servisu i izvršenim radovima..."
-                  className="min-h-[80px]"
+                  className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
                   required
                 />
               </div>
 
               {newStatus === "completed" && (
                 <>
-                  <div className="space-y-2">
-                    <label htmlFor="usedParts" className="text-sm font-medium">
-                      Ugrađeni rezervni delovi: <span className="text-red-500">*</span>
+                  <div className="space-y-1 sm:space-y-2">
+                    <label htmlFor="usedParts" className="text-sm font-medium flex items-center">
+                      Ugrađeni rezervni delovi: <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Textarea
                       id="usedParts"
                       value={usedParts}
                       onChange={(e) => setUsedParts(e.target.value)}
                       placeholder="Navedite sve delove koje ste zamenili ili ugradili..."
-                      className="min-h-[80px]"
+                      className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
                       required
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <label htmlFor="machineNotes" className="text-sm font-medium">
-                      Napomene o stanju uređaja: <span className="text-red-500">*</span>
+                  <div className="space-y-1 sm:space-y-2">
+                    <label htmlFor="machineNotes" className="text-sm font-medium flex items-center">
+                      Napomene o stanju uređaja: <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Textarea
                       id="machineNotes"
                       value={machineNotes}
                       onChange={(e) => setMachineNotes(e.target.value)}
                       placeholder="Unesite napomene o zatečenom stanju uređaja i stanju nakon servisa..."
-                      className="min-h-[80px]"
+                      className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
                       required
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <label htmlFor="cost" className="text-sm font-medium">
-                      Cena servisa (€): <span className="text-red-500">*</span>
+                  <div className="space-y-1 sm:space-y-2">
+                    <label htmlFor="cost" className="text-sm font-medium flex items-center">
+                      Cena servisa (€): <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
-                      type="text"
+                      type="number"
+                      inputMode="decimal"
                       id="cost"
                       value={cost}
                       onChange={(e) => setCost(e.target.value)}
                       placeholder="Unesite iznos naplate..."
-                      className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base"
                       required
                     />
                   </div>
                   
-                  <div className="flex items-center space-x-2 border p-3 rounded-md border-input">
+                  <div className="flex items-center space-x-2 border p-2 sm:p-3 rounded-md border-input">
                     <input 
                       type="checkbox" 
                       id="isCompletelyFixed"
@@ -460,13 +461,18 @@ export default function TechnicianServices() {
             </div>
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setStatusDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Otkaži
             </Button>
             <Button 
               onClick={handleStatusChange}
               disabled={updateStatusMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {updateStatusMutation.isPending ? (
                 <>
