@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   phone: text("phone"), // Broj telefona korisnika
   address: text("address"), // Adresa korisnika
   city: text("city"), // Grad korisnika
+  companyName: text("company_name"), // Naziv kompanije za poslovne partnere
+  companyId: text("company_id"), // Jedinstveni identifikator kompanije
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -27,6 +29,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   phone: true,
   address: true,
   city: true,
+  companyName: true,
+  companyId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -155,6 +159,8 @@ export const services = pgTable("services", {
   usedParts: text("used_parts"),
   machineNotes: text("machine_notes"),
   isCompletelyFixed: boolean("is_completely_fixed"),
+  businessPartnerId: integer("business_partner_id"), // ID korisnika poslovnog partnera
+  partnerCompanyName: text("partner_company_name"), // Naziv kompanije poslovnog partnera
 });
 
 export const insertServiceSchema = createInsertSchema(services).pick({
@@ -171,6 +177,8 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   usedParts: true,
   machineNotes: true,
   isCompletelyFixed: true,
+  businessPartnerId: true,
+  partnerCompanyName: true,
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;

@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import ClientDetails from "@/pages/client-details";
@@ -29,10 +30,17 @@ import CustomerServiceRequest from "@/pages/customer";
 import CustomerProfile from "@/pages/customer/profile";
 import CustomerServices from "@/pages/customer/services";
 
+// Import business partner pages
+import BusinessDashboard from "@/pages/business";
+import BusinessProfile from "@/pages/business/profile";
+import BusinessServices from "@/pages/business/services";
+import NewBusinessServiceRequest from "@/pages/business/services/new";
+
 function Router() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
+      <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/" component={Dashboard} allowedRoles={["admin"]} />
@@ -59,6 +67,12 @@ function Router() {
       <RoleProtectedRoute path="/customer" component={CustomerServiceRequest} allowedRoles={["customer"]} />
       <RoleProtectedRoute path="/customer/profile" component={CustomerProfile} allowedRoles={["customer"]} />
       <RoleProtectedRoute path="/customer/services" component={CustomerServices} allowedRoles={["customer"]} />
+      
+      {/* Business Partner routes */}
+      <RoleProtectedRoute path="/business" component={BusinessDashboard} allowedRoles={["business"]} />
+      <RoleProtectedRoute path="/business/profile" component={BusinessProfile} allowedRoles={["business"]} />
+      <RoleProtectedRoute path="/business/services" component={BusinessServices} allowedRoles={["business"]} />
+      <RoleProtectedRoute path="/business/services/new" component={NewBusinessServiceRequest} allowedRoles={["business"]} />
       
       <Route component={NotFound} />
     </Switch>
