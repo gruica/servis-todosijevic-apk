@@ -5,11 +5,13 @@ import { setupAuth } from "./auth";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
-import { pool } from "./db";
+import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
+import { eq } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -1801,6 +1803,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Greška pri uvozu servisa:", error);
       res.status(500).json({ error: "Greška pri uvozu servisa" });
+    }
+  });
+  
+  // Korisničke API rute
+  // Dohvatanje servisa za korisnika po userId
+  app.get("/api/services/user/:userId", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "customer") {
+      return res.status(403).json({ error: "Nedozvoljeni pristup" });
+    }
+    
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Proveriti da li korisnik pristupa sopstvenim servisima
+      if (req.user.id !== userId) {
+        return res.status(403).json({ error: "Nedozvoljeni pristup tuđim servisima" });
+      }
+      
+      // Dohvatanje klijenta po email-u (username korisnika)
+      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.username));
+      const client = clients.length > 0 ? clients[0] : null;
+      
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+      
+      // Dohvatanje servisa za klijenta
+      const services = await db.select().from(schema.services).where(eq(schema.services.clientId, client.id));
+      
+      // Dohvatanje uređaja za servise
+      const detailedServices = await Promise.all(services.map(async (service) => {
+        const [appliance] = await db
+          .select()
+          .from(schema.appliances)
+          .where(eq(schema.appliances.id, service.applianceId));
+        
+        let category = null;
+        let manufacturer = null;
+        
+        if (appliance) {
+          if (appliance.categoryId) {
+            const [cat] = await db
+              .select()
+              .from(schema.applianceCategories)
+              .where(eq(schema.applianceCategories.id, appliance.categoryId));
+            category = cat;
+          }
+          
+          if (appliance.manufacturerId) {
+            const [manuf] = await db
+              .select()
+              .from(schema.manufacturers)
+              .where(eq(schema.manufacturers.id, appliance.manufacturerId));
+            manufacturer = manuf;
+          }
+        }
+        
+        return {
+          ...service,
+          appliance,
+          category,
+          manufacturer,
+        };
+      }));
+      
+      res.json(detailedServices);
+    } catch (error: any) {
+      console.error("Greška pri dohvatanju servisa korisnika:", error);
+      res.status(500).json({ error: `Greška pri dohvatanju servisa: ${error.message}` });
     }
   });
 

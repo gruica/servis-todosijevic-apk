@@ -29,6 +29,9 @@ const loginSchema = z.object({
 const registerSchema = insertUserSchema.extend({
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }),
   confirmPassword: z.string(),
+  phone: z.string().min(1, { message: "Broj telefona je obavezan" }),
+  address: z.string().min(1, { message: "Adresa je obavezna" }),
+  city: z.string().min(1, { message: "Grad je obavezan" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Lozinke se ne podudaraju",
   path: ["confirmPassword"],
@@ -48,6 +51,8 @@ export default function AuthPage() {
       // Redirect to different pages based on user role
       if (user.role === "technician") {
         navigate("/tech");
+      } else if (user.role === "customer") {
+        navigate("/customer");
       } else {
         navigate("/");
       }
@@ -72,6 +77,10 @@ export default function AuthPage() {
       password: "",
       confirmPassword: "",
       fullName: "",
+      phone: "",
+      address: "",
+      city: "",
+      role: "customer", // Postavljamo role na customer za registraciju
     },
   });
 
@@ -87,6 +96,10 @@ export default function AuthPage() {
       username: values.username,
       password: values.password,
       fullName: values.fullName,
+      phone: values.phone,
+      address: values.address,
+      city: values.city,
+      role: "customer", // Uvek postavljamo rolu na customer
     });
   }
 
@@ -201,6 +214,45 @@ export default function AuthPage() {
                           <FormLabel>Email adresa</FormLabel>
                           <FormControl>
                             <Input placeholder="vasa@adresa.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Broj telefona</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+38269123456" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Adresa</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ulica i broj" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grad</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Podgorica" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

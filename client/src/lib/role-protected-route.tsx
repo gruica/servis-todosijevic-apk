@@ -34,8 +34,16 @@ export function RoleProtectedRoute({
 
   // Check if user has one of the allowed roles
   if (!allowedRoles.includes(user.role)) {
-    // Redirect admin to dashboard, technician to technician dashboard
-    const redirectPath = user.role === "technician" ? "/tech" : "/";
+    // Redirect based on user role
+    let redirectPath = "/";
+    
+    if (user.role === "technician") {
+      redirectPath = "/tech";
+    } else if (user.role === "customer") {
+      redirectPath = "/customer";
+    } else if (user.role === "admin") {
+      redirectPath = "/";
+    }
     
     return (
       <Route path={path}>

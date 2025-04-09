@@ -9,9 +9,12 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").default("user").notNull(),
+  role: text("role").default("customer").notNull(), // Promenjen default na customer
   technicianId: integer("technician_id"), // Reference to technician if user is a technician
   email: text("email"), // Email adresa korisnika
+  phone: text("phone"), // Broj telefona korisnika
+  address: text("address"), // Adresa korisnika
+  city: text("city"), // Grad korisnika
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -21,6 +24,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
   technicianId: true,
   email: true,
+  phone: true,
+  address: true,
+  city: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -24,6 +24,11 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 import { initializeCapacitor, isNativeMobile } from "./capacitor";
 
+// Import customer pages
+import CustomerServiceRequest from "@/pages/customer";
+import CustomerProfile from "@/pages/customer/profile";
+import CustomerServices from "@/pages/customer/services";
+
 function Router() {
   return (
     <Switch>
@@ -49,6 +54,11 @@ function Router() {
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServices} allowedRoles={["technician"]} />
       <RoleProtectedRoute path="/tech/profile" component={TechnicianProfile} allowedRoles={["technician"]} />
+      
+      {/* Customer routes */}
+      <RoleProtectedRoute path="/customer" component={CustomerServiceRequest} allowedRoles={["customer"]} />
+      <RoleProtectedRoute path="/customer/profile" component={CustomerProfile} allowedRoles={["customer"]} />
+      <RoleProtectedRoute path="/customer/services" component={CustomerServices} allowedRoles={["customer"]} />
       
       <Route component={NotFound} />
     </Switch>
