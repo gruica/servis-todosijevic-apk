@@ -169,7 +169,7 @@ export default function HomePage() {
             <div className="flex flex-col text-center md:text-right">
               <p>Kontakt: 033 402 402</p>
               <p>Email: info@frigosistemtodosijevic.com</p>
-              <p>Adresa: Cetinjska 5, Berane, Crna Gora</p>
+              <p>Adresa: Lastva grbaljska bb 85317 Kotor, Crna Gora</p>
             </div>
           </div>
           <div className="mt-6 text-center text-blue-200">
