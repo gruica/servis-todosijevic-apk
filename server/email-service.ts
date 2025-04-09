@@ -48,7 +48,8 @@ export class EmailService {
   private adminEmails: string[] = [
     'admin@frigosistemtodosijevic.com',
     'jelena@frigosistemtodosijevic.com',
-    'jelena@frigosistemtodosijevic.me'
+    'jelena@frigosistemtodosijevic.me',
+    'vladimir.jela.84@gmail.com' // Dodali smo još jedan admin email za testiranje
   ];
 
   private constructor() {
@@ -608,6 +609,9 @@ export class EmailService {
    */
   public async verifyConnection(): Promise<boolean> {
     try {
+      // Reset smtp connection to ensure we have fresh connection
+      this.loadSmtpConfig();
+      
       console.log('[EMAIL] Započinjem verifikaciju SMTP konekcije');
       
       if (!this.configCache) {
