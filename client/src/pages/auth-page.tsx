@@ -53,6 +53,8 @@ export default function AuthPage() {
         navigate("/tech");
       } else if (user.role === "customer") {
         navigate("/customer");
+      } else if (user.role === "admin") {
+        navigate("/admin");
       } else {
         navigate("/");
       }

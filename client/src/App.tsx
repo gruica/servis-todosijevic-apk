@@ -36,14 +36,20 @@ import BusinessProfile from "@/pages/business/profile";
 import BusinessServices from "@/pages/business/services";
 import NewBusinessServiceRequest from "@/pages/business/services/new";
 
+// Import the new HomePage
+import HomePage from "@/pages/home-page";
+
 function Router() {
   return (
     <Switch>
+      {/* Public home page - novi javni homepage za sve korisnike */}
+      <Route path="/" component={HomePage} />
+      
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       
       {/* Admin routes */}
-      <RoleProtectedRoute path="/" component={Dashboard} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/services" component={Services} allowedRoles={["admin"]} />
