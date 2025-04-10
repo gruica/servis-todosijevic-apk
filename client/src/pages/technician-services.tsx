@@ -263,7 +263,7 @@ export default function TechnicianServices() {
                       <TableBody>
                         {filteredServices?.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                            <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                               {selectedTechnicianId 
                                 ? `Nema ${searchQuery || statusFilter !== "all" 
                                     ? "rezultata za vašu pretragu" 
@@ -294,6 +294,20 @@ export default function TechnicianServices() {
                             <TableCell className="max-w-xs truncate" title={service.description}>
                               {service.description}
                             </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-1"
+                                onClick={() => {
+                                  setSelectedService(service);
+                                  setIsDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span>Detalji</span>
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -305,6 +319,140 @@ export default function TechnicianServices() {
           </div>
         </main>
       </div>
+
+      {/* Service Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedService && (
+            <div className="space-y-6">
+              {/* Osnovni podaci o servisu */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Osnovni podaci</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <div className="mt-1">{getStatusBadge(selectedService.status)}</div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Datum prijave</p>
+                      <p className="text-sm font-medium">{formatDate(selectedService.createdAt)}</p>
+                    </div>
+                    
+                    {selectedService.scheduledDate && (
+                      <div>
+                        <p className="text-sm text-gray-500">Zakazano za</p>
+                        <div className="flex items-center mt-1">
+                          <Calendar className="w-4 h-4 mr-1 text-blue-500" />
+                          <p className="text-sm font-medium">{formatDate(selectedService.scheduledDate)}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedService.completedDate && (
+                      <div>
+                        <p className="text-sm text-gray-500">Datum završetka</p>
+                        <p className="text-sm font-medium">{formatDate(selectedService.completedDate)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Klijent</h3>
+                  <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                    <div className="flex items-center">
+                      <div className={`w-10 h-10 rounded-full ${getAvatarColor(selectedService.clientName)} text-white flex items-center justify-center mr-3`}>
+                        <span className="text-sm font-medium">{getUserInitials(selectedService.clientName)}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{selectedService.clientName}</p>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-gray-500">Uređaj</p>
+                      <p className="text-sm font-medium">{selectedService.applianceName}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Opis problema */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Opis problema</h3>
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <p className="text-sm whitespace-pre-wrap">{selectedService.description}</p>
+                </div>
+              </div>
+              
+              {/* Tehnički detalji */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Tehnički detalji</h3>
+                <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+                  {selectedService.technicianNotes && (
+                    <div>
+                      <p className="text-sm text-gray-500">Beleške servisera</p>
+                      <p className="text-sm whitespace-pre-wrap">{selectedService.technicianNotes}</p>
+                    </div>
+                  )}
+                  
+                  {selectedService.machineNotes && (
+                    <div>
+                      <p className="text-sm text-gray-500">Stanje uređaja</p>
+                      <p className="text-sm whitespace-pre-wrap">{selectedService.machineNotes}</p>
+                    </div>
+                  )}
+                  
+                  {selectedService.usedParts && (
+                    <div>
+                      <p className="text-sm text-gray-500">Korišćeni delovi</p>
+                      <p className="text-sm whitespace-pre-wrap">{selectedService.usedParts}</p>
+                    </div>
+                  )}
+                  
+                  {selectedService.cost != null && (
+                    <div>
+                      <p className="text-sm text-gray-500">Cena servisa</p>
+                      <p className="text-sm font-medium">{selectedService.cost} €</p>
+                    </div>
+                  )}
+                  
+                  {selectedService.isCompletelyFixed != null && (
+                    <div>
+                      <p className="text-sm text-gray-500">Status popravke</p>
+                      <p className="text-sm font-medium">
+                        {selectedService.isCompletelyFixed 
+                          ? "Potpuno popravljeno" 
+                          : "Delimično popravljeno"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Serviser */}
+              {selectedService.technicianId && technicians && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Serviser</h3>
+                  <div className="p-4 border rounded-lg bg-gray-50">
+                    <div className="flex items-center">
+                      <Wrench className="w-5 h-5 mr-2 text-blue-500" />
+                      <p className="font-medium">
+                        {technicians.find(t => t.id === selectedService.technicianId)?.fullName || "Nepoznato"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
