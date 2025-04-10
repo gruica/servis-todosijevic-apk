@@ -60,13 +60,21 @@ export default function Clients() {
   
 
   
-  const { data: clients, isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+  // Dodajemo error handling i logging za dijagnostiku
+  const { data: clients, isLoading, error: clientsError } = useQuery<Client[]>({
+    queryKey: ["/api/clients"]
   });
   
+  // Log stanje podataka
+  useEffect(() => {
+    console.log("Stanje klijenata:", { clients, isLoading, error: clientsError });
+  }, [clients, isLoading, clientsError]);
+  
   // Filter clients based on search query
-  const filteredClients = clients?.filter(client => {
+  const filteredClients = clients?.filter((client: Client) => {
     // Implementiramo null provjere za sva polja koja koristimo
+    if (!client) return false;
+    
     const nameMatch = client?.fullName?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
     const emailMatch = client?.email?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
     const phoneMatch = client?.phone?.includes?.(searchQuery) || false;
@@ -164,13 +172,23 @@ export default function Clients() {
   
 
   // Get manufacturer and category data
-  const { data: categories } = useQuery<ApplianceCategory[]>({
-    queryKey: ["/api/categories"],
+  const { data: categories, error: categoriesError } = useQuery<ApplianceCategory[]>({
+    queryKey: ["/api/categories"]
   });
   
-  const { data: manufacturers } = useQuery<Manufacturer[]>({
-    queryKey: ["/api/manufacturers"],
+  // Log kategorija
+  useEffect(() => {
+    console.log("Stanje kategorija:", { categories, error: categoriesError });
+  }, [categories, categoriesError]);
+  
+  const { data: manufacturers, error: manufacturersError } = useQuery<Manufacturer[]>({
+    queryKey: ["/api/manufacturers"]
   });
+  
+  // Log proizvođača
+  useEffect(() => {
+    console.log("Stanje proizvođača:", { manufacturers, error: manufacturersError });
+  }, [manufacturers, manufacturersError]);
   
   // Form za dodavanje uređaja
   const applianceForm = useForm<ApplianceFormValues>({
@@ -351,7 +369,7 @@ export default function Clients() {
                           </TableRow>
                         )}
                         
-                        {filteredClients?.map((client) => (
+                        {filteredClients?.map((client: Client) => (
                           <TableRow key={client.id}>
                             <TableCell>
                               <div className="flex items-center">
@@ -538,7 +556,7 @@ export default function Clients() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories?.map(category => (
+                          {categories?.map((category: ApplianceCategory) => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
                             </SelectItem>
@@ -566,7 +584,7 @@ export default function Clients() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {manufacturers?.map(manufacturer => (
+                          {manufacturers?.map((manufacturer: Manufacturer) => (
                             <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
                               {manufacturer.name}
                             </SelectItem>
