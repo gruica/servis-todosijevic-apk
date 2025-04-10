@@ -39,6 +39,9 @@ const serviceFormSchema = insertServiceSchema.extend({
   completedDate: z.string().optional().nullable(),
   technicianNotes: z.string().optional().nullable(),
   cost: z.string().optional().nullable(),
+  // Dodajemo polja za poslovnog partnera
+  businessPartnerId: z.number().optional().nullable(),
+  partnerCompanyName: z.string().optional().nullable(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -170,6 +173,9 @@ export default function Services() {
       completedDate: "",
       technicianNotes: "",
       cost: "",
+      // Početne vrednosti za poslovno partnerstvo
+      businessPartnerId: null,
+      partnerCompanyName: null,
     },
   });
   
@@ -253,6 +259,9 @@ export default function Services() {
       completedDate: null,
       technicianNotes: null,
       cost: null,
+      // Početne vrednosti za poslovno partnerstvo
+      businessPartnerId: null,
+      partnerCompanyName: null,
     };
     
     form.reset(defaultValues);
@@ -279,6 +288,9 @@ export default function Services() {
       completedDate: service.completedDate || null,
       technicianNotes: service.technicianNotes || null,
       cost: service.cost || null,
+      // Dodajemo podatke o poslovnom partneru ako postoje
+      businessPartnerId: service.businessPartnerId || null,
+      partnerCompanyName: service.partnerCompanyName || null,
     };
     
     form.reset(editValues);
@@ -413,7 +425,14 @@ export default function Services() {
                                 <div className={`w-8 h-8 rounded-full ${getAvatarColor(service.clientName)} text-white flex items-center justify-center mr-3`}>
                                   <span className="text-xs font-medium">{getUserInitials(service.clientName)}</span>
                                 </div>
-                                <span>{service.clientName}</span>
+                                <div className="flex flex-col">
+                                  <span>{service.clientName}</span>
+                                  {service.businessPartnerId && service.partnerCompanyName && (
+                                    <span className="text-xs text-blue-600 font-medium mt-1">
+                                      Via: {service.partnerCompanyName}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -693,6 +712,41 @@ export default function Services() {
                   )}
                 />
               </div>
+              
+              {/* Prikaz podataka o klijentu i poslovnom partneru ako postoje */}
+              {selectedService && selectedService.businessPartnerId && (
+                <div className="bg-blue-50 p-4 rounded-md mt-2">
+                  <h3 className="font-medium text-blue-800 mb-2">Informacije o naručiocu servisa</h3>
+                  
+                  {/* Detalji o klijentu */}
+                  {clients && clients.find(c => c.id === selectedService.clientId) && (
+                    <div className="mb-3">
+                      <h4 className="font-medium text-sm text-blue-600">Podaci o klijentu:</h4>
+                      {(() => {
+                        const client = clients.find(c => c.id === selectedService.clientId);
+                        return client ? (
+                          <div className="grid grid-cols-2 gap-2 text-sm mt-1">
+                            <div><span className="font-medium">Ime i prezime:</span> {client.fullName}</div>
+                            <div><span className="font-medium">Telefon:</span> {client.phone}</div>
+                            <div><span className="font-medium">Email:</span> {client.email || "/"}</div>
+                            <div><span className="font-medium">Adresa:</span> {client.address}</div>
+                            <div><span className="font-medium">Grad:</span> {client.city}</div>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                  
+                  {/* Detalji o poslovnom partneru */}
+                  <div>
+                    <h4 className="font-medium text-sm text-blue-600">Zahtev kreirao poslovni partner:</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm mt-1">
+                      <div><span className="font-medium">Kompanija:</span> {selectedService.partnerCompanyName || "/"}</div>
+                      <div><span className="font-medium">ID partnera:</span> {selectedService.businessPartnerId}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <DialogFooter>
                 <Button type="submit" disabled={serviceMutation.isPending}>
