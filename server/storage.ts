@@ -96,6 +96,11 @@ export interface IStorage {
   updateService(id: number, service: InsertService): Promise<Service | undefined>;
   getRecentServices(limit: number): Promise<Service[]>;
   
+  // Business Partner methods
+  getServicesByPartner(partnerId: number): Promise<Service[]>;
+  getServiceWithDetails(serviceId: number): Promise<any>;
+  getServiceStatusHistory(serviceId: number): Promise<any[]>;
+  
   // Session store
   sessionStore: any; // Express session store
 }
@@ -549,6 +554,128 @@ export class MemStorage implements IStorage {
     return Array.from(this.services.values())
       .slice(-limit)
       .reverse();
+  }
+  
+  // Business partner methods
+  async getServicesByPartner(partnerId: number): Promise<Service[]> {
+    return Array.from(this.services.values()).filter(
+      (service) => service.businessPartnerId === partnerId
+    );
+  }
+  
+  async getServiceWithDetails(serviceId: number): Promise<any> {
+    const service = this.services.get(serviceId);
+    if (!service) return null;
+    
+    const client = service.clientId ? await this.getClient(service.clientId) : null;
+    const appliance = service.applianceId ? await this.getAppliance(service.applianceId) : null;
+    const technician = service.technicianId ? await this.getTechnician(service.technicianId) : null;
+    const category = appliance?.categoryId ? await this.getApplianceCategory(appliance.categoryId) : null;
+    const manufacturer = appliance?.manufacturerId ? await this.getManufacturer(appliance.manufacturerId) : null;
+    
+    return {
+      ...service,
+      client: client ? {
+        id: client.id,
+        fullName: client.fullName,
+        phone: client.phone,
+        email: client.email,
+        address: client.address,
+        city: client.city
+      } : null,
+      appliance: appliance ? {
+        id: appliance.id,
+        model: appliance.model,
+        serialNumber: appliance.serialNumber
+      } : null,
+      technician: technician ? {
+        id: technician.id,
+        fullName: technician.fullName,
+        phone: technician.phone,
+        email: technician.email
+      } : null,
+      category: category ? {
+        id: category.id,
+        name: category.name
+      } : null,
+      manufacturer: manufacturer ? {
+        id: manufacturer.id,
+        name: manufacturer.name
+      } : null
+    };
+  }
+  
+  // Implementacija za istoriju promena statusa servisa (zahteva dopunu schema.ts u budućnosti)
+  async getServiceStatusHistory(serviceId: number): Promise<any[]> {
+    // Za sada, za test u inmemory bazi, vraćamo simuliranu istoriju
+    const service = this.services.get(serviceId);
+    if (!service) return [];
+    
+    // Simuliramo istoriju promena statusa na osnovu trenutnog statusa
+    const history = [];
+    
+    // Dodajemo početni status "on hold" kad je servis kreiran
+    history.push({
+      id: 1,
+      serviceId,
+      oldStatus: "",
+      newStatus: "on_hold",
+      notes: "Servis kreiran",
+      createdAt: service.createdAt,
+      createdBy: "Poslovni partner"
+    });
+    
+    if (service.status !== "on_hold") {
+      // Dodajemo promenu na "pending" ako je servis prešao u taj status
+      history.push({
+        id: 2,
+        serviceId,
+        oldStatus: "on_hold",
+        newStatus: "pending",
+        notes: "Servis primljen na razmatranje",
+        createdAt: new Date(new Date(service.createdAt).getTime() + 86400000).toISOString(), // dan kasnije
+        createdBy: "Administrator"
+      });
+    }
+    
+    if (service.status === "in_progress" || service.status === "completed" || service.status === "canceled") {
+      // Dodajemo promenu na "in_progress" kad je serviser dodeljen
+      history.push({
+        id: 3,
+        serviceId,
+        oldStatus: "pending",
+        newStatus: "in_progress",
+        notes: "Serviser dodeljen",
+        createdAt: service.scheduledDate || new Date(new Date(service.createdAt).getTime() + 172800000).toISOString(), // dva dana kasnije
+        createdBy: service.technicianId ? `Serviser ${service.technicianId}` : "Administrator"
+      });
+    }
+    
+    if (service.status === "completed") {
+      // Dodajemo krajnju promenu na "completed"
+      history.push({
+        id: 4,
+        serviceId,
+        oldStatus: "in_progress",
+        newStatus: "completed",
+        notes: service.technicianNotes || "Servis završen",
+        createdAt: service.completedDate || new Date().toISOString(),
+        createdBy: service.technicianId ? `Serviser ${service.technicianId}` : "Administrator"
+      });
+    } else if (service.status === "canceled") {
+      // Dodajemo krajnju promenu na "canceled"
+      history.push({
+        id: 4,
+        serviceId,
+        oldStatus: "in_progress",
+        newStatus: "canceled",
+        notes: "Servis otkazan",
+        createdAt: new Date().toISOString(),
+        createdBy: "Administrator"
+      });
+    }
+    
+    return history;
   }
   
   // Additional user management methods
