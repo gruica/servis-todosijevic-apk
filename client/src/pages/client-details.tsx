@@ -98,13 +98,20 @@ export default function ClientDetails() {
   const { data: clientDetails, isLoading: isClientLoading, error } = useQuery<any, Error>({
     queryKey: ["/api/clients/details", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}/details`);
-      if (!res.ok) {
-        throw new Error("Klijent nije pronađen");
+      try {
+        const res = await fetch(`/api/clients/${clientId}/details`);
+        if (!res.ok) {
+          throw new Error("Klijent nije pronađen");
+        }
+        const data = await res.json();
+        console.log("Detalji klijenta učitani:", data);
+        return data;
+      } catch (err) {
+        console.error("Greška pri dobavljanju detalja klijenta:", err);
+        throw err;
       }
-      return res.json();
     },
-    retry: false,
+    retry: 1,
   });
   
   // Izdvajamo osnovne podatke klijenta za lakši pristup
@@ -122,11 +129,9 @@ export default function ClientDetails() {
     }
   }, [error, toast, navigate]);
 
-  // Dobavljanje uređaja ovog klijenta
-  const { data: appliances, isLoading: isAppliancesLoading } = useQuery<Appliance[], Error>({
-    queryKey: ["/api/appliances/client", clientId],
-    enabled: !!clientId,
-  });
+  // Koristimo uređaje iz clientDetails
+  const appliances = clientDetails?.appliances || [];
+  const isAppliancesLoading = isClientLoading;
 
   // Dobavljanje kategorija uređaja
   const { data: categories } = useQuery<ApplianceCategory[], Error>({
@@ -170,7 +175,8 @@ export default function ClientDetails() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appliances/client", clientId] });
+      // Osvežavamo podatke o klijentu da bi se prikazali novi uređaji
+      queryClient.invalidateQueries({ queryKey: ["/api/clients/details", clientId] });
       toast({
         title: selectedAppliance 
           ? "Uređaj uspešno ažuriran" 
