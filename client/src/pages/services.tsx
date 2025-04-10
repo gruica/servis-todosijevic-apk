@@ -473,7 +473,7 @@ export default function Services() {
       
       {/* Add/Edit Service Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedService ? "Izmeni servis" : "Dodaj novi servis"}
@@ -745,9 +745,9 @@ export default function Services() {
                 </div>
               )}
               
-              <DialogFooter>
-                <Button type="submit" disabled={serviceMutation.isPending}>
-                  {serviceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+              <DialogFooter className="sticky bottom-0 bg-white pt-2 pb-2 border-t mt-4">
+                <Button type="submit" size="lg" disabled={serviceMutation.isPending}>
+                  {serviceMutation.isPending ? "Čuvanje..." : "Sačuvaj promene"}
                 </Button>
               </DialogFooter>
             </form>
