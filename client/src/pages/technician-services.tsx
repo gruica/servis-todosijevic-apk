@@ -59,7 +59,7 @@ function getAvatarColor(name: string) {
   return colors[hash % colors.length];
 }
 
-export default function TechnicianServices() {
+export default function TechnicianServicesList() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>(""); 
   const [statusFilter, setStatusFilter] = useState<string>("all");
