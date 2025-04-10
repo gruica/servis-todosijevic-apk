@@ -35,7 +35,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
             </span>
             <Input
               type="text"
-              placeholder="Pretraži servise, klijente..."
+              placeholder="Pretraga"
               className="w-full pl-10 pr-4 bg-gray-100"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -56,7 +56,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
             </span>
             <Input
               type="text"
-              placeholder="Pretraži..."
+              placeholder="Pretraga"
               className="w-full pl-10 pr-4 bg-gray-100"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
