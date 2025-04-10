@@ -277,10 +277,8 @@ export default function Clients() {
             <Card className="mb-6">
               <CardContent className="p-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Pretraga klijenata po imenu, e-mailu ili telefonu..."
-                    className="pl-9"
+                    placeholder="Pretraga"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />

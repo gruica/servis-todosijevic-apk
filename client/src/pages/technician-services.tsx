@@ -106,14 +106,26 @@ export default function TechnicianServices() {
     };
   });
   
-  // Filter services based on search query
+  // Filter services based on selected technician, status, and search query
   const filteredServices = enrichedServices?.filter(service => {
-    const matchesSearch = 
-      service.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.applianceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchQuery.toLowerCase());
+    // Filter by technician
+    const matchesTechnician = selectedTechnicianId 
+      ? service.technicianId === parseInt(selectedTechnicianId)
+      : true;
+      
+    // Filter by status
+    const matchesStatus = statusFilter && statusFilter !== "all" 
+      ? service.status === statusFilter
+      : true;
+      
+    // Filter by search query
+    const matchesSearch = searchQuery
+      ? service.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.applianceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
     
-    return matchesSearch;
+    return matchesTechnician && matchesStatus && matchesSearch;
   });
   
   // Get status options for select component
@@ -230,14 +242,14 @@ export default function TechnicianServices() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredServices?.length === 0 && (
+                        {(!filteredServices || filteredServices.length === 0) && (
                           <TableRow>
                             <TableCell colSpan={7} className="text-center py-6 text-gray-500">
-                              {selectedTechnicianId 
-                                ? `Nema ${searchQuery || statusFilter !== "all" 
-                                    ? "rezultata za vašu pretragu" 
-                                    : "servisa za odabranog servisera"}`
-                                : "Odaberite servisera za prikaz servisa"}
+                              {searchQuery || statusFilter !== "all" 
+                                ? "Nema rezultata za vašu pretragu" 
+                                : selectedTechnicianId 
+                                  ? "Nema servisa za odabranog servisera"
+                                  : "Nema pronađenih servisa"}
                             </TableCell>
                           </TableRow>
                         )}
