@@ -239,6 +239,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
+  
+  // Business Partner API Endpoints
+  app.get("/api/business/services", async (req, res) => {
+    try {
+      const { partnerId } = req.query;
+      
+      if (!partnerId || typeof partnerId !== 'string') {
+        return res.status(400).json({ error: "Nedostaje ID poslovnog partnera" });
+      }
+      
+      try {
+        const partnerIdNum = parseInt(partnerId);
+        
+        // Dohvati servise povezane sa poslovnim partnerom
+        const services = await storage.getServicesByPartner(partnerIdNum);
+        res.json(services);
+      } catch (err) {
+        return res.status(400).json({ error: "Nevažeći ID poslovnog partnera" });
+      }
+    } catch (error) {
+      console.error("Greška pri dobijanju servisa za poslovnog partnera:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa" });
+    }
+  });
+  
+  // API za detalje servisa za poslovnog partnera sa istorijom statusa
+  app.get("/api/business/services/:id", async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { partnerId } = req.query;
+      
+      if (!partnerId || typeof partnerId !== 'string') {
+        return res.status(400).json({ error: "Nedostaje ID poslovnog partnera" });
+      }
+      
+      const partnerIdNum = parseInt(partnerId);
+      
+      // Prvo proveri da li je servis povezan sa ovim poslovnim partnerom
+      const service = await storage.getService(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Provera da li servis pripada poslovnom partneru
+      if (service.businessPartnerId !== partnerIdNum) {
+        return res.status(403).json({ error: "Nemate pristup ovom servisu" });
+      }
+      
+      // Dohvati detaljne informacije o servisu
+      const serviceDetails = await storage.getServiceWithDetails(serviceId);
+      
+      // Dohvati istoriju statusa za servis
+      const statusHistory = await storage.getServiceStatusHistory(serviceId);
+      
+      // Kombinuj podatke
+      const response = {
+        ...serviceDetails,
+        statusHistory
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("Greška pri dobijanju detalja servisa:", error);
+      res.status(500).json({ error: "Greška pri dobijanju detalja servisa" });
+    }
+  });
 
   app.get("/api/services/:id", async (req, res) => {
     try {
