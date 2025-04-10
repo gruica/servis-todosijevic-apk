@@ -38,9 +38,12 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
 
   // Generate initials from user fullName
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') return '';
+    
     return name
       .split(' ')
-      .map(word => word[0].toUpperCase())
+      .filter(word => word.length > 0)
+      .map(word => word[0]?.toUpperCase() || '')
       .join('');
   };
 

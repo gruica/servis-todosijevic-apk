@@ -40,9 +40,12 @@ function formatDate(dateString: string) {
 
 // Get user initials from name
 function getUserInitials(name: string) {
+  if (!name || typeof name !== 'string') return '';
+  
   return name
     .split(' ')
-    .map(word => word[0].toUpperCase())
+    .filter(word => word.length > 0)
+    .map(word => word[0]?.toUpperCase() || '')
     .join('');
 }
 
