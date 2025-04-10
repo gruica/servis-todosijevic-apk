@@ -67,11 +67,11 @@ export default function ClientDetails() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Dobavljanje podataka o klijentu
-  const { data: client, isLoading: isClientLoading, error } = useQuery<Client, Error>({
-    queryKey: ["/api/clients", clientId],
+  // Dobavljanje podataka o klijentu sa svim detaljima
+  const { data: clientDetails, isLoading: isClientLoading, error } = useQuery<any, Error>({
+    queryKey: ["/api/clients/details", clientId],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${clientId}`);
+      const res = await fetch(`/api/clients/${clientId}/details`);
       if (!res.ok) {
         throw new Error("Klijent nije pronađen");
       }
@@ -79,6 +79,9 @@ export default function ClientDetails() {
     },
     retry: false,
   });
+  
+  // Izdvajamo osnovne podatke klijenta za lakši pristup
+  const client = clientDetails;
   
   // Upravljanje greškama i preusmeravanje
   useEffect(() => {

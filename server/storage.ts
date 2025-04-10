@@ -64,6 +64,7 @@ export interface IStorage {
   // Client methods
   getAllClients(): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
+  getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
   getRecentClients(limit: number): Promise<Client[]>;
@@ -335,6 +336,123 @@ export class MemStorage implements IStorage {
 
   async getClient(id: number): Promise<Client | undefined> {
     return this.clients.get(id);
+  }
+  
+  /**
+   * Dobavlja detaljne informacije o klijentu sa aparatima i istorijom servisa
+   */
+  async getClientWithDetails(id: number): Promise<any | undefined> {
+    const client = this.clients.get(id);
+    if (!client) return undefined;
+    
+    // Dobavljanje svih uređaja klijenta
+    const appliances = await this.getAppliancesByClient(id);
+    
+    // Priprema objekata za proširivanje informacija
+    const appliancesWithDetails = [];
+    
+    // Za svaki uređaj dobavljamo kategoriju i proizvođača
+    for (const appliance of appliances) {
+      const category = this.applianceCategories.get(appliance.categoryId);
+      const manufacturer = this.manufacturers.get(appliance.manufacturerId);
+      
+      // Dobavljanje svih servisa povezanih sa ovim uređajem
+      const applianceServices = Array.from(this.services.values()).filter(
+        (service) => service.applianceId === appliance.id
+      );
+      
+      // Za svaki servis dobavljamo informacije o serviseru
+      const servicesWithTechnicians = [];
+      
+      for (const service of applianceServices) {
+        let technicianInfo = null;
+        
+        if (service.technicianId) {
+          const technician = this.technicians.get(service.technicianId);
+          if (technician) {
+            technicianInfo = {
+              id: technician.id,
+              fullName: technician.fullName,
+              specialization: technician.specialization,
+              phone: technician.phone,
+              email: technician.email
+            };
+          }
+        }
+        
+        // Dobavljanje istorije statusa servisa
+        const statusHistory = await this.getServiceStatusHistory(service.id);
+        
+        servicesWithTechnicians.push({
+          ...service,
+          technician: technicianInfo,
+          statusHistory
+        });
+      }
+      
+      appliancesWithDetails.push({
+        ...appliance,
+        category: category || { name: "Nepoznata kategorija" },
+        manufacturer: manufacturer || { name: "Nepoznat proizvođač" },
+        services: servicesWithTechnicians
+      });
+    }
+    
+    // Dobavljanje svih servisa klijenta
+    const clientServices = Array.from(this.services.values()).filter(
+      (service) => service.clientId === id
+    );
+    
+    // Za svaki servis dobavljamo informacije o serviseru i aparatu
+    const servicesWithDetails = [];
+    
+    for (const service of clientServices) {
+      let technicianInfo = null;
+      let applianceInfo = null;
+      
+      if (service.technicianId) {
+        const technician = this.technicians.get(service.technicianId);
+        if (technician) {
+          technicianInfo = {
+            id: technician.id,
+            fullName: technician.fullName,
+            specialization: technician.specialization,
+            phone: technician.phone,
+            email: technician.email
+          };
+        }
+      }
+      
+      if (service.applianceId) {
+        const appliance = this.appliances.get(service.applianceId);
+        if (appliance) {
+          const category = this.applianceCategories.get(appliance.categoryId);
+          const manufacturer = this.manufacturers.get(appliance.manufacturerId);
+          
+          applianceInfo = {
+            ...appliance,
+            category: category || { name: "Nepoznata kategorija" },
+            manufacturer: manufacturer || { name: "Nepoznat proizvođač" }
+          };
+        }
+      }
+      
+      // Dobavljanje istorije statusa servisa
+      const statusHistory = await this.getServiceStatusHistory(service.id);
+      
+      servicesWithDetails.push({
+        ...service,
+        technician: technicianInfo,
+        appliance: applianceInfo,
+        statusHistory
+      });
+    }
+    
+    return {
+      ...client,
+      appliances: appliancesWithDetails,
+      services: servicesWithDetails
+    };
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
@@ -870,6 +988,150 @@ export class DatabaseStorage implements IStorage {
     
     // Inicijalno podešavanje baze
     this.initializeDatabaseIfEmpty();
+  }
+  
+  /**
+   * Dobavlja detaljne informacije o klijentu sa aparatima i istorijom servisa
+   */
+  async getClientWithDetails(id: number): Promise<any | undefined> {
+    try {
+      // Dobavljanje klijenta
+      const [client] = await db.select().from(clients).where(eq(clients.id, id));
+      if (!client) return undefined;
+      
+      // Dobavljanje svih uređaja klijenta
+      const clientAppliances = await db.select()
+        .from(appliances)
+        .where(eq(appliances.clientId, id));
+      
+      // Priprema objekata za proširivanje informacija
+      const appliancesWithDetails = [];
+      
+      // Za svaki uređaj dobavljamo kategoriju i proizvođača
+      for (const appliance of clientAppliances) {
+        const [category] = appliance.categoryId ? 
+          await db.select().from(applianceCategories).where(eq(applianceCategories.id, appliance.categoryId)) :
+          [{ name: "Nepoznata kategorija" }];
+          
+        const [manufacturer] = appliance.manufacturerId ? 
+          await db.select().from(manufacturers).where(eq(manufacturers.id, appliance.manufacturerId)) :
+          [{ name: "Nepoznat proizvođač" }];
+        
+        // Dobavljanje svih servisa povezanih sa ovim uređajem
+        const applianceServices = await db.select()
+          .from(services)
+          .where(eq(services.applianceId, appliance.id));
+        
+        // Za svaki servis dobavljamo informacije o serviseru
+        const servicesWithTechnicians = [];
+        
+        for (const service of applianceServices) {
+          let technicianInfo = null;
+          
+          if (service.technicianId) {
+            const [technician] = await db.select()
+              .from(technicians)
+              .where(eq(technicians.id, service.technicianId));
+              
+            if (technician) {
+              technicianInfo = {
+                id: technician.id,
+                fullName: technician.fullName,
+                specialization: technician.specialization,
+                phone: technician.phone,
+                email: technician.email
+              };
+            }
+          }
+          
+          // Dobavljanje istorije statusa servisa
+          const statusHistory = await this.getServiceStatusHistory(service.id);
+          
+          servicesWithTechnicians.push({
+            ...service,
+            technician: technicianInfo,
+            statusHistory
+          });
+        }
+        
+        appliancesWithDetails.push({
+          ...appliance,
+          category: category || { name: "Nepoznata kategorija" },
+          manufacturer: manufacturer || { name: "Nepoznat proizvođač" },
+          services: servicesWithTechnicians
+        });
+      }
+      
+      // Dobavljanje svih servisa klijenta
+      const clientServices = await db.select()
+        .from(services)
+        .where(eq(services.clientId, id));
+      
+      // Za svaki servis dobavljamo informacije o serviseru i aparatu
+      const servicesWithDetails = [];
+      
+      for (const service of clientServices) {
+        let technicianInfo = null;
+        let applianceInfo = null;
+        
+        if (service.technicianId) {
+          const [technician] = await db.select()
+            .from(technicians)
+            .where(eq(technicians.id, service.technicianId));
+            
+          if (technician) {
+            technicianInfo = {
+              id: technician.id,
+              fullName: technician.fullName,
+              specialization: technician.specialization,
+              phone: technician.phone,
+              email: technician.email
+            };
+          }
+        }
+        
+        if (service.applianceId) {
+          const [appliance] = await db.select()
+            .from(appliances)
+            .where(eq(appliances.id, service.applianceId));
+            
+          if (appliance) {
+            const [category] = appliance.categoryId ? 
+              await db.select().from(applianceCategories).where(eq(applianceCategories.id, appliance.categoryId)) :
+              [{ name: "Nepoznata kategorija" }];
+              
+            const [manufacturer] = appliance.manufacturerId ? 
+              await db.select().from(manufacturers).where(eq(manufacturers.id, appliance.manufacturerId)) :
+              [{ name: "Nepoznat proizvođač" }];
+            
+            applianceInfo = {
+              ...appliance,
+              category: category || { name: "Nepoznata kategorija" },
+              manufacturer: manufacturer || { name: "Nepoznat proizvođač" }
+            };
+          }
+        }
+        
+        // Dobavljanje istorije statusa servisa
+        const statusHistory = await this.getServiceStatusHistory(service.id);
+        
+        servicesWithDetails.push({
+          ...service,
+          technician: technicianInfo,
+          appliance: applianceInfo,
+          statusHistory
+        });
+      }
+      
+      return {
+        ...client,
+        appliances: appliancesWithDetails,
+        services: servicesWithDetails
+      };
+    } catch (error) {
+      console.error("Greška pri dobavljanju detalja klijenta:", error);
+      return undefined;
+    }
   }
 
   private async initializeDatabaseIfEmpty(): Promise<void> {

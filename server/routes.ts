@@ -59,6 +59,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju klijenta" });
     }
   });
+  
+  // Endpoint za dobijanje detaljnih informacija o klijentu (sa aparatima, servisima i serviserima)
+  app.get("/api/clients/:id/details", async (req, res) => {
+    try {
+      const clientDetails = await storage.getClientWithDetails(parseInt(req.params.id));
+      if (!clientDetails) return res.status(404).json({ error: "Klijent nije pronađen" });
+      res.json(clientDetails);
+    } catch (error) {
+      console.error("Greška pri dobijanju detalja klijenta:", error);
+      res.status(500).json({ error: "Greška pri dobijanju detalja klijenta" });
+    }
+  });
 
   app.post("/api/clients", async (req, res) => {
     try {
