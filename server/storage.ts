@@ -181,14 +181,14 @@ export class MemStorage implements IStorage {
   }
   
   private async seedAdminUser() {
-    // We need to hash the password manually since this is the initial seeding
-    const hashedPassword = await this.hashPassword("admin123.admin123");
+    // Admin sa jednostavnijim korisničkim imenom za lakšu prijavu
+    const hashedPassword = await this.hashPassword("admin123");
     
     const id = this.userId++;
     const user: User = { 
       id, 
       role: "admin", 
-      username: "admin@example.com", 
+      username: "admin", 
       fullName: "Jelena Todosijević", 
       password: hashedPassword,
       technicianId: null,
