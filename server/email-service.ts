@@ -105,74 +105,55 @@ export class EmailService {
   /**
    * Učitava SMTP konfiguraciju iz fajla ili koristi environment varijable
    */
+  /**
+   * DEPRECIRANA METODA - zadržana samo zbog kompatibilnosti
+   * Ne koristiti više ovu metodu za učitavanje konfiguracije!
+   * Email transporter se sada inicijalizuje samo jednom prilikom pokretanja aplikacije
+   */
   private loadSmtpConfig(): void {
     try {
-      // Proveri da li postoji konfiguracioni fajl
-      let fileConfig: SmtpConfig | null = null;
+      console.log("[EMAIL] ⚠️ UPOZORENJE: Poziv zastarele loadSmtpConfig() metode");
+      console.log("[EMAIL] Konfiguracija se ne menja tokom rada aplikacije zbog stabilnosti");
       
-      if (fs.existsSync(CONFIG_FILE_PATH)) {
-        try {
-          fileConfig = JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, 'utf8'));
-          console.log('[EMAIL] Učitana konfiguracija iz fajla', CONFIG_FILE_PATH);
-        } catch (e) {
-          console.error('[EMAIL] Greška pri parsiranju konfiguracionog fajla:', e);
-        }
+      // Proveri da li transporter već postoji
+      if (this.transporter) {
+        console.log("[EMAIL] Email transporter već postoji i neće biti promenjen");
+        this.transporter.verify()
+          .then(() => console.log('[EMAIL] ✓ Postojeći transporter je ispravan'))
+          .catch(err => console.log('[EMAIL] ⚠️ Postojeći transporter ima problema, ali neće biti zamenjen:', err.message));
+        return;
       }
       
-      // Izvuci vrednosti iz environment varijabli sa fallback na fajl konfiguraciju
-      const host = process.env.EMAIL_HOST || fileConfig?.host;
-      const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 
-                  fileConfig?.port || 587; // Standardni TLS port
-      const secure = process.env.EMAIL_SECURE === 'true' || 
-                    (fileConfig?.secure !== undefined ? fileConfig.secure : false);
-      const user = process.env.EMAIL_USER || fileConfig?.auth?.user;
-      const pass = process.env.EMAIL_PASSWORD || fileConfig?.auth?.pass;
+      // Samo ako transporter ne postoji (što ne bi trebalo da se desi), kreiramo ga
+      console.log("[EMAIL] Kreiranje transportera jer ne postoji (ovo ne bi trebalo da se desi)");
       
-      // Ispisi dijagnostiku o konfiguraciji
-      console.log('[EMAIL] Konfiguracija izvora - ENV:', !!process.env.EMAIL_HOST, 'FILE:', !!fileConfig);
+      // Izvor konfiguracije - podrazumevano vrednosti
+      const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
+      const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465;
+      const secure = process.env.EMAIL_SECURE === 'true' || true;
+      const user = process.env.EMAIL_USER || '';
+      const pass = process.env.EMAIL_PASSWORD || '';
       
-      if (!host || !user || !pass) {
-        console.warn('[EMAIL] ⚠️ SMTP konfiguracija nije kompletna. Nedostaju neki parametri:');
-        if (!host) console.warn('  - Host nije postavljen, koristiće se podrazumevani');
-        if (!user) console.warn('  - Korisnik nije postavljen, koristiće se podrazumevani');
-        if (!pass) console.warn('  - Lozinka nije postavljena, email verifikacija možda neće raditi');
-      }
-      
-      // Postavi from adresu iz env varijable ako postoji
-      if (process.env.EMAIL_FROM) {
-        this.from = process.env.EMAIL_FROM;
-        console.log(`Email FROM adresa postavljena na: ${this.from}`);
-      } else if (user && user.includes('@')) {
-        // Ako nije postavljena FROM adresa, koristi korisničko ime ako je email
-        this.from = user;
-        console.log(`Email FROM adresa automatski postavljena na korisničko ime: ${this.from}`);
-      }
-      
-      // Kreiraj poboljšanu konfiguraciju sa boljom podrškom za SSL/TLS
+      // Kreiraj pojednostavljenu konfiguraciju
       this.configCache = {
-        host: host || 'smtp.gmail.com', // Gmail kao fallback
-        port: port,
-        secure: secure,
+        host,
+        port,
+        secure,
         auth: {
-          user: user || 'info@frigosistemtodosijevic.com',
-          pass: pass || '',
+          user,
+          pass,
         },
-        // Poboljšana konfiguracija za TLS
         tls: {
-          // Ne zahteva validni sertifikat - pomaže kod samopotpisanih sertifikata
           rejectUnauthorized: false
         }
       };
       
-      console.log(`SMTP konfiguracija učitana: server=${this.configCache.host}, port=${this.configCache.port}, secure=${this.configCache.secure}`);
+      console.log(`[EMAIL] Pojednostavljena SMTP konfiguracija: server=${host}, port=${port}, secure=${secure}`);
       
-      // Kreiraj transporter sa boljim opcijama za performanse i debug
+      // Kreiraj transporter sa osnovnim opcijama
       this.transporter = nodemailer.createTransport({
         ...this.configCache,
-        // Opcija pool poboljšava performanse za više mail-ova
         pool: true,
-        maxConnections: 5,
-        maxMessages: 100
       } as NodemailerTransportOptions);
       
       // Pokušaj odmah verifikovati konekciju sa boljim debugom
