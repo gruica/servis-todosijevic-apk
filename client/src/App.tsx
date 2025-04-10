@@ -13,7 +13,7 @@ import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
 import TechnicianServices from "@/pages/technician/services";
 import TechnicianProfile from "@/pages/technician/profile";
-import TechnicianServicesList from "@/pages/technician-services";
+import TechnicianServicesList from "@/pages/technician-services-new";
 import CreateTechnicianUser from "@/pages/create-technician-user";
 import MaintenanceSchedules from "@/pages/maintenance-schedules";
 import EmailSettings from "@/pages/email-settings";
