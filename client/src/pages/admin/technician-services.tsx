@@ -10,14 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye } from "lucide-react";
-import { Service, Technician, ApplianceCategory } from "@shared/schema";
-
-// Format date to local format
-function formatDate(dateString: string) {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("sr-ME");
-}
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
@@ -40,24 +32,31 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function TechnicianServicesList() {
+// Format date helper
+function formatDate(dateString: string) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("sr-ME");
+}
+
+export default function TechnicianServicesAdmin() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Fetch all technicians
-  const { data: technicians, isLoading: technicianLoading } = useQuery<Technician[]>({
+  // Fetch technicians
+  const { data: technicians, isLoading: loadingTechnicians } = useQuery({
     queryKey: ["/api/technicians"],
   });
   
-  // Fetch all services
-  const { data: services, isLoading: servicesLoading } = useQuery<Service[]>({
+  // Fetch services
+  const { data: services, isLoading: loadingServices } = useQuery({
     queryKey: ["/api/services"],
   });
   
-  // Filter services based on selected technician and status
-  const filteredServices = services?.filter(service => {
+  // Simple filtering function
+  const filteredServices = services?.filter((service: any) => {
     // Filter by technician
     if (selectedTechnicianId && service.technicianId !== parseInt(selectedTechnicianId)) {
       return false;
@@ -69,52 +68,46 @@ export default function TechnicianServicesList() {
     }
     
     // Filter by search query
-    if (searchQuery.trim() !== "") {
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      const description = service.description.toLowerCase();
-      const serviceId = service.id.toString();
-      return description.includes(query) || serviceId.includes(query);
+      return (
+        (service.description?.toLowerCase().includes(query)) || 
+        (service.id.toString().includes(query))
+      );
     }
     
     return true;
   });
-  
-  // Get technician name by ID
-  const getTechnicianName = (id: number | null) => {
-    if (id === null) return "Nije dodeljen";
-    const technician = technicians?.find(t => t.id === id);
-    return technician ? technician.fullName : "Nije dodeljen";
-  };
 
+  // Get technician name helper
+  const getTechnicianName = (id: number | null) => {
+    if (!id) return "Nije dodeljen";
+    const tech = technicians?.find((t: any) => t.id === id);
+    return tech ? tech.fullName : "Nije dodeljen";
+  };
+  
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
         isMobileOpen={sidebarOpen} 
-        closeMobileMenu={() => setSidebarOpen(false)}
+        closeMobileMenu={() => setSidebarOpen(false)} 
       />
       
-      {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-4">
-          <div className="container mx-auto space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Servisi po serviserima</h2>
-              <p className="text-muted-foreground">
-                Pregled servisa dodeljenih određenom serviseru
-              </p>
-            </div>
+          <div className="container mx-auto">
+            <h1 className="text-2xl font-bold mb-1">Servisi po serviserima</h1>
+            <p className="text-gray-500 mb-6">Pregled servisa dodeljenih određenom serviseru</p>
             
             {/* Filters */}
-            <Card>
+            <Card className="mb-6">
               <CardContent className="p-4 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Select
-                      value={selectedTechnicianId}
+                    <Select 
+                      value={selectedTechnicianId} 
                       onValueChange={setSelectedTechnicianId}
                     >
                       <SelectTrigger>
@@ -122,7 +115,7 @@ export default function TechnicianServicesList() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Svi serviseri</SelectItem>
-                        {technicians?.map(tech => (
+                        {technicians?.map((tech: any) => (
                           <SelectItem key={tech.id} value={tech.id.toString()}>
                             {tech.fullName}
                           </SelectItem>
@@ -132,8 +125,8 @@ export default function TechnicianServicesList() {
                   </div>
                   
                   <div>
-                    <Select
-                      value={statusFilter}
+                    <Select 
+                      value={statusFilter} 
                       onValueChange={setStatusFilter}
                     >
                       <SelectTrigger>
@@ -144,7 +137,7 @@ export default function TechnicianServicesList() {
                         <SelectItem value="pending">Na čekanju</SelectItem>
                         <SelectItem value="assigned">Dodeljen</SelectItem>
                         <SelectItem value="scheduled">Zakazan</SelectItem>
-                        <SelectItem value="in_progress">U procesu</SelectItem>
+                        <SelectItem value="in_progress">U toku</SelectItem>
                         <SelectItem value="waiting_parts">Čeka delove</SelectItem>
                         <SelectItem value="completed">Završen</SelectItem>
                         <SelectItem value="cancelled">Otkazan</SelectItem>
@@ -156,14 +149,14 @@ export default function TechnicianServicesList() {
                     <Input
                       placeholder="Pretraga"
                       value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            {/* Results */}
+            {/* Services Table */}
             <Card>
               <CardHeader className="pb-0">
                 <CardTitle>
@@ -173,67 +166,65 @@ export default function TechnicianServicesList() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {(servicesLoading || technicianLoading) ? (
+                {(loadingServices || loadingTechnicians) ? (
                   <div className="p-4 space-y-3">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Datum</TableHead>
+                        <TableHead>Serviser</TableHead>
+                        <TableHead>Opis</TableHead>
+                        <TableHead className="text-right">Akcije</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {!filteredServices || filteredServices.length === 0 ? (
                         <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Kreiran</TableHead>
-                          <TableHead>Serviser</TableHead>
-                          <TableHead>Opis</TableHead>
-                          <TableHead className="text-right">Akcije</TableHead>
+                          <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                            Nema pronađenih servisa
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {!filteredServices || filteredServices.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                              Nema pronađenih servisa
+                      ) : (
+                        filteredServices.map((service: any) => (
+                          <TableRow key={service.id}>
+                            <TableCell className="font-medium">#{service.id}</TableCell>
+                            <TableCell>
+                              <StatusBadge status={service.status} />
+                            </TableCell>
+                            <TableCell>{formatDate(service.createdAt)}</TableCell>
+                            <TableCell>{getTechnicianName(service.technicianId)}</TableCell>
+                            <TableCell className="max-w-md truncate">
+                              {service.description}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => console.log("Details", service.id)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Detalji
+                              </Button>
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          filteredServices.map(service => (
-                            <TableRow key={service.id}>
-                              <TableCell className="font-medium">#{service.id}</TableCell>
-                              <TableCell>
-                                <StatusBadge status={service.status} />
-                              </TableCell>
-                              <TableCell>{formatDate(service.createdAt)}</TableCell>
-                              <TableCell>{getTechnicianName(service.technicianId)}</TableCell>
-                              <TableCell className="max-w-sm truncate">
-                                {service.description}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => console.log("View details", service.id)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Detalji
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
-              <CardFooter className="border-t p-2 text-xs text-muted-foreground">
-                {filteredServices && filteredServices.length > 0 && (
-                  <p>Ukupno pronađeno: {filteredServices.length} servisa</p>
-                )}
-              </CardFooter>
+              {filteredServices && filteredServices.length > 0 && (
+                <CardFooter className="border-t p-2 text-sm text-gray-500">
+                  Ukupno: {filteredServices.length} servisa
+                </CardFooter>
+              )}
             </Card>
           </div>
         </main>
