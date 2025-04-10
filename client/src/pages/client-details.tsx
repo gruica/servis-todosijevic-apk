@@ -27,6 +27,33 @@ import {
 // Prošireni interfejs za servise sa imenom servisera
 interface ExtendedService extends Service {
   technicianName?: string;
+  appliance?: {
+    id: number;
+    model?: string;
+    serialNumber?: string;
+    category?: {
+      id: number;
+      name: string;
+    };
+    manufacturer?: {
+      id: number;
+      name: string;
+    };
+  };
+  technician?: {
+    id: number;
+    fullName: string;
+    specialization?: string;
+    phone?: string;
+  };
+  statusHistory?: Array<{
+    id: number;
+    serviceId: number;
+    oldStatus: string;
+    newStatus: string;
+    createdAt: string;
+    notes?: string;
+  }>;
 }
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -233,11 +260,11 @@ export default function ClientDetails() {
   const filteredServices = services ? 
     (serviceFilter === "all" ? 
       services : 
-      services.filter(service => service.status === serviceFilter)) : 
+      services.filter((service: any) => service.status === serviceFilter)) : 
     [];
 
   // Priprema samo 5 najnovijih servisa za prikaz u tabeli "Nedavni servisi"
-  const recentServices = services?.slice(0, 5).sort((a, b) => {
+  const recentServices = services?.slice(0, 5).sort((a: any, b: any) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
   
@@ -543,29 +570,24 @@ export default function ClientDetails() {
                             </TableRow>
                           )}
                           
-                          {filteredServices?.map((service) => {
-                            const appliance = appliances?.find(a => a.id === service.applianceId);
-                            const categoryName = appliance 
-                              ? getCategoryName(appliance.categoryId) 
-                              : "Nepoznato";
-                            const manufacturerName = appliance 
-                              ? getManufacturerName(appliance.manufacturerId) 
-                              : "";
-                              
+                          {filteredServices?.map((service: any) => {
+                            // Koristi detalje o uređajima i serviserima iz clientDetails
+                            const appliance = service.appliance;
+                            
                             return (
                               <TableRow 
                                 key={service.id} 
                                 className="hover:bg-blue-50 transition-colors cursor-pointer"
-                                onClick={() => handleViewServiceDetails(service)}
+                                onClick={() => handleViewServiceDetails(service as ExtendedService)}
                               >
                                 <TableCell>
                                   {formatDate(service.createdAt)}
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex flex-col">
-                                    <span className="font-medium">{categoryName}</span>
-                                    {manufacturerName && (
-                                      <span className="text-xs text-gray-500">{manufacturerName}</span>
+                                    <span className="font-medium">{appliance?.category?.name || "Nepoznata kategorija"}</span>
+                                    {appliance?.manufacturer?.name && (
+                                      <span className="text-xs text-gray-500">{appliance?.manufacturer?.name}{appliance?.model ? ` (${appliance.model})` : ''}</span>
                                     )}
                                   </div>
                                 </TableCell>
@@ -573,27 +595,36 @@ export default function ClientDetails() {
                                   {service.description}
                                 </TableCell>
                                 <TableCell>
-                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    service.status === "completed" ? "bg-green-100 text-green-800" :
-                                    service.status === "in_progress" ? "bg-blue-100 text-blue-800" :
-                                    service.status === "waiting_parts" ? "bg-amber-100 text-amber-800" :
-                                    service.status === "scheduled" ? "bg-purple-100 text-purple-800" :
-                                    service.status === "cancelled" ? "bg-red-100 text-red-800" :
-                                    "bg-gray-100 text-gray-800"
-                                  }`}>
-                                    {service.status === "completed" && "Završeno"}
-                                    {service.status === "in_progress" && "U procesu"}
-                                    {service.status === "waiting_parts" && "Čeka delove"}
-                                    {service.status === "scheduled" && "Zakazano"}
-                                    {service.status === "cancelled" && "Otkazano"}
-                                    {service.status === "pending" && "Na čekanju"}
+                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyles(service.status)}`}>
+                                    {translateStatus(service.status)}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  {service.technicianName || (service.technicianId ? "Dodeljen" : <span className="text-gray-400">Nije dodeljen</span>)}
+                                  {service.technician ? (
+                                    <div className="flex items-center">
+                                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                                        <span className="text-xs">{service.technician.fullName.charAt(0)}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-medium">{service.technician.fullName}</span>
+                                        {service.technician.specialization && (
+                                          <p className="text-xs text-gray-500">{service.technician.specialization}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">Nije dodeljen</span>
+                                  )}
                                 </TableCell>
                                 <TableCell>
-                                  {service.cost ? `${service.cost} €` : <span className="text-gray-400">-</span>}
+                                  {service.cost ? (
+                                    <div className="font-medium">
+                                      <Banknote className="h-3 w-3 inline mr-1 text-green-600" />
+                                      {service.cost}€
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             );
@@ -748,6 +779,133 @@ export default function ClientDetails() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Service Details Dialog */}
+      <Dialog open={isServiceDetailsOpen} onOpenChange={setIsServiceDetailsOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              Detalji servisa
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedServiceDetails && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Status</h4>
+                  <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyles(selectedServiceDetails.status)}`}>
+                    {translateStatus(selectedServiceDetails.status)}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Datum</h4>
+                  <p className="text-sm">{formatDate(selectedServiceDetails.createdAt)}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-1">Opis problema</h4>
+                <p className="text-sm">{selectedServiceDetails.description}</p>
+              </div>
+              
+              {selectedServiceDetails.appliance && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Uređaj</h4>
+                  <div className="text-sm">
+                    <p><b>Kategorija:</b> {selectedServiceDetails.appliance.category?.name}</p>
+                    <p><b>Proizvođač:</b> {selectedServiceDetails.appliance.manufacturer?.name}</p>
+                    {selectedServiceDetails.appliance.model && (
+                      <p><b>Model:</b> {selectedServiceDetails.appliance.model}</p>
+                    )}
+                    {selectedServiceDetails.appliance.serialNumber && (
+                      <p><b>Serijski broj:</b> {selectedServiceDetails.appliance.serialNumber}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {selectedServiceDetails.technician && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Serviser</h4>
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                      <span className="text-xs">{selectedServiceDetails.technician.fullName.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedServiceDetails.technician.fullName}</p>
+                      {selectedServiceDetails.technician.specialization && (
+                        <p className="text-xs text-gray-600">{selectedServiceDetails.technician.specialization}</p>
+                      )}
+                      {selectedServiceDetails.technician.phone && (
+                        <p className="text-xs text-gray-600">
+                          <Phone className="h-3 w-3 inline mr-1" />
+                          {selectedServiceDetails.technician.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {selectedServiceDetails.cost && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Cena servisa</h4>
+                  <p className="text-lg font-bold">
+                    <Banknote className="h-4 w-4 inline mr-1 text-green-600" />
+                    {selectedServiceDetails.cost}€
+                  </p>
+                </div>
+              )}
+              
+              {selectedServiceDetails.technicianNotes && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">Napomene servisera</h4>
+                  <p className="text-sm">{selectedServiceDetails.technicianNotes}</p>
+                </div>
+              )}
+              
+              {/* Status Timeline */}
+              {selectedServiceDetails?.statusHistory && selectedServiceDetails.statusHistory.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Istorija statusa</h4>
+                  <div className="border rounded-md p-3 bg-gray-50">
+                    <div className="space-y-3">
+                      {selectedServiceDetails.statusHistory.map((history: any, index: number) => (
+                        <div key={index} className="flex items-start">
+                          <div className="mr-3 mt-1">
+                            <div className="h-4 w-4 rounded-full bg-blue-500"></div>
+                            {index < (selectedServiceDetails.statusHistory?.length || 0) - 1 && (
+                              <div className="h-8 w-0.5 bg-blue-200 ml-2"></div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {translateStatus(history.newStatus)} 
+                            </p>
+                            <p className="text-xs text-gray-600 mb-1">
+                              {formatDate(history.createdAt)}
+                            </p>
+                            {history.notes && (
+                              <p className="text-sm text-gray-700">{history.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsServiceDetailsOpen(false)}>
+              Zatvori
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
