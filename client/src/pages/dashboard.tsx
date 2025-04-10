@@ -71,54 +71,46 @@ export default function Dashboard() {
     error,
     refetch: refetchStats
   } = useQuery<DashboardStats>({
-    queryKey: ["/api/stats"],
-    onSuccess: (data) => {
-      console.log("Stats podaci uspešno učitani:", data);
-    },
-    onError: (err) => {
-      console.error("Greška pri učitavanju stats podataka:", err);
-    }
+    queryKey: ["/api/stats"]
   });
   
   // Dohvatamo kategorije
   const { data: categories, error: categoriesError } = useQuery<ApplianceCategory[]>({
-    queryKey: ["/api/categories"],
-    onSuccess: (data) => {
-      console.log("Kategorije uspešno učitane:", data);
-    },
-    onError: (err) => {
-      console.error("Greška pri učitavanju kategorija:", err);
-    }
+    queryKey: ["/api/categories"]
   });
   
   // Dodajemo useEffect da osvežimo podatke kada se komponenta montira
   useEffect(() => {
     console.log("Dashboard useEffect se pokreće");
     
-    // Osvežimo statistiku kada se prikaže dashboard
-    refetchStats();
-    
-    // Postavimo interval za osvežavanje na svakih 5 sekundi
-    const intervalId = setInterval(() => {
+    try {
+      // Osvežimo statistiku kada se prikaže dashboard
       refetchStats();
-    }, 5000);
-    
-    // Čistimo interval pri demontiranju
-    return () => clearInterval(intervalId);
+      
+      // Postavimo interval za osvežavanje na svakih 5 sekundi
+      const intervalId = setInterval(() => {
+        refetchStats();
+      }, 5000);
+      
+      // Čistimo interval pri demontiranju
+      return () => clearInterval(intervalId);
+    } catch (err) {
+      console.error("Greška u useEffect:", err);
+    }
   }, [refetchStats]);
   
   // Enrich appliance stats with category data
-  const enrichedApplianceStats = stats?.applianceStats.map(stat => {
+  const enrichedApplianceStats = stats?.applianceStats?.map(stat => {
     const category = categories?.find(c => c.id === stat.categoryId);
     return {
       ...stat,
       name: category?.name || "Nepoznato",
       icon: category?.icon || "devices"
     };
-  }).sort((a, b) => b.count - a.count) || [];
+  })?.sort((a, b) => b.count - a.count) || [];
   
   // Calculate total for percentages
-  const totalAppliances = enrichedApplianceStats.reduce((sum, stat) => sum + stat.count, 0) || 1;
+  const totalAppliances = enrichedApplianceStats?.reduce((sum, stat) => sum + stat.count, 0) || 1;
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -240,7 +232,7 @@ export default function Dashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {stats?.recentServices.length === 0 && (
+                      {(!stats?.recentServices || stats.recentServices.length === 0) && (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-4 text-gray-500">
                             Nema servisa za prikaz
@@ -248,7 +240,7 @@ export default function Dashboard() {
                         </TableRow>
                       )}
                       
-                      {stats?.recentServices.map((service) => (
+                      {stats?.recentServices?.map((service) => (
                         <TableRow key={service.id}>
                           <TableCell className="font-medium">#{service.id}</TableCell>
                           <TableCell>
@@ -311,7 +303,7 @@ export default function Dashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {stats?.recentClients.length === 0 && (
+                        {(!stats?.recentClients || stats.recentClients.length === 0) && (
                           <TableRow>
                             <TableCell colSpan={3} className="text-center py-4 text-gray-500">
                               Nema klijenata za prikaz
@@ -319,7 +311,7 @@ export default function Dashboard() {
                           </TableRow>
                         )}
                         
-                        {stats?.recentClients.map((client) => (
+                        {stats?.recentClients?.map((client) => (
                           <TableRow key={client.id}>
                             <TableCell>
                               <div className="flex items-center">
