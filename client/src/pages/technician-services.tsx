@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Filter, UserRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Filter, UserRound, Eye, Calendar, Wrench } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   Service, 
@@ -62,6 +64,8 @@ export default function TechnicianServices() {
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>(""); 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Fetch all technicians
   const { data: technicians, isLoading: technicianLoading } = useQuery<Technician[]>({
@@ -253,6 +257,7 @@ export default function TechnicianServices() {
                           <TableHead>Status</TableHead>
                           <TableHead>Datum prijave</TableHead>
                           <TableHead>Opis</TableHead>
+                          <TableHead>Akcije</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
