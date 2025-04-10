@@ -162,14 +162,39 @@ export default function Clients() {
   
   // Get user initials from name
   function getUserInitials(name: string | null | undefined) {
-    if (!name) return "";
+    if (!name) return "?";
     
-    return name
-      .split(' ')
-      .map(word => word?.[0]?.toUpperCase() || "")
-      .join('');
+    try {
+      return name
+        .split(' ')
+        .map(word => word?.[0]?.toUpperCase() || "")
+        .join('') || "?";
+    } catch (error) {
+      console.error(`Greška pri dobijanju inicijala za ime: ${name}`, error);
+      return "?";
+    }
   }
   
+  // Get color for avatar based on name
+  function getAvatarColor(name: string | null | undefined) {
+    if (!name) return "bg-gray-400"; // Sigurna boja za slučaj da nema imena
+    
+    try {
+      // Algoritam za dobijanje konzistentne boje za različita imena
+      const colors = [
+        "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+        "bg-indigo-500", "bg-purple-500", "bg-pink-500", 
+        "bg-red-500", "bg-orange-500", "bg-teal-500"
+      ];
+      
+      const nameSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const colorIndex = nameSum % colors.length;
+      return colors[colorIndex];
+    } catch (error) {
+      console.error(`Greška pri dobijanju boje za ime: ${name}`, error);
+      return "bg-gray-400"; // Sigurna boja u slučaju greške
+    }
+  }
 
   // Get manufacturer and category data
   const { data: categories, error: categoriesError } = useQuery<ApplianceCategory[]>({
@@ -264,13 +289,7 @@ export default function Clients() {
     applianceMutation.mutate(data);
   };
   
-  function getAvatarColor(name: string | null | undefined) {
-    const colors = ["bg-blue-500", "bg-green-500", "bg-amber-500", "bg-red-500", "bg-purple-500", "bg-pink-500"];
-    if (!name) return colors[0];
-    
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  }
+  // Funkcija je prethodno definisana, ne treba nam duplikat
   
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
