@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
@@ -38,12 +38,16 @@ import NewBusinessServiceRequest from "@/pages/business/services/new";
 
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
+import ClientTest from "./pages/client-test";
 
 function Router() {
   return (
     <Switch>
       {/* Public home page - novi javni homepage za sve korisnike */}
       <Route path="/" component={HomePage} />
+      
+      {/* Test route - samo za razvoj */}
+      <Route path="/client-test/:id" component={ClientTest} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
