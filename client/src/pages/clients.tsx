@@ -75,11 +75,24 @@ export default function Clients() {
     // Implementiramo null provjere za sva polja koja koristimo
     if (!client) return false;
     
-    const nameMatch = client?.fullName?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
-    const emailMatch = client?.email?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
-    const phoneMatch = client?.phone?.includes?.(searchQuery) || false;
-    
-    return nameMatch || emailMatch || phoneMatch;
+    try {
+      // Provera imena klijenta uz sigurnosne provere
+      const nameMatch = client.fullName ? 
+        client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) : false;
+        
+      // Provera emaila uz sigurnosne provere
+      const emailMatch = client.email ? 
+        client.email.toLowerCase().includes(searchQuery.toLowerCase()) : false;
+        
+      // Provera telefona uz sigurnosne provere  
+      const phoneMatch = client.phone ? 
+        client.phone.includes(searchQuery) : false;
+      
+      return nameMatch || emailMatch || phoneMatch;
+    } catch (error) {
+      console.error("Greška pri filtriranju klijenta:", error, client);
+      return false; // U slučaju greške, klijent neće biti prikazan
+    }
   });
   
   // Add new client form
@@ -395,12 +408,16 @@ export default function Clients() {
                                 <div className={`w-8 h-8 rounded-full ${getAvatarColor(client.fullName)} text-white flex items-center justify-center mr-3`}>
                                   <span className="text-xs font-medium">{getUserInitials(client.fullName)}</span>
                                 </div>
-                                <span className="font-medium">{client.fullName}</span>
+                                <span className="font-medium">{client.fullName || "Nepoznat klijent"}</span>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col">
-                                <span>{client.phone}</span>
+                                {client.phone ? (
+                                  <span>{client.phone}</span>
+                                ) : (
+                                  <span className="text-gray-400">Telefon nije unet</span>
+                                )}
                                 {client.email && <span className="text-xs text-gray-500">{client.email}</span>}
                               </div>
                             </TableCell>
