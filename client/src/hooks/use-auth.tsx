@@ -33,10 +33,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      console.log("Attempting login with username:", credentials.username);
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Login error:", res.status, errorText);
+          throw new Error(errorText || "Neispravno korisničko ime ili lozinka");
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error("Login fetch error:", err);
+        throw err;
+      }
     },
     onSuccess: (user: SelectUser) => {
+      console.log("Login successful, user:", user.username);
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Uspešna prijava",
@@ -44,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Login mutation error:", error);
       toast({
         title: "Greška pri prijavi",
         description: "Neispravno korisničko ime ili lozinka",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useRoute } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { insertUserSchema } from "@shared/schema";
@@ -87,6 +87,7 @@ export default function AuthPage() {
   });
 
   function onLoginSubmit(values: LoginValues) {
+    console.log("Submitting login with username:", values.username);
     loginMutation.mutate({
       username: values.username,
       password: values.password,
@@ -132,9 +133,9 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email adresa</FormLabel>
+                          <FormLabel>Korisničko ime</FormLabel>
                           <FormControl>
-                            <Input placeholder="vasa@adresa.com" {...field} />
+                            <Input placeholder="Unesite korisničko ime" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -213,9 +214,9 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email adresa</FormLabel>
+                          <FormLabel>Korisničko ime</FormLabel>
                           <FormControl>
-                            <Input placeholder="vasa@adresa.com" {...field} />
+                            <Input placeholder="Unesite korisničko ime" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
