@@ -62,17 +62,39 @@ type DashboardStats = {
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  console.log("Dashboard komponenta se renderuje");
+  
   // Koristimo refetch opciju za osvežavanje statistike
   const { 
     data: stats, 
     isLoading,
+    error,
     refetch: refetchStats
   } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"],
+    onSuccess: (data) => {
+      console.log("Stats podaci uspešno učitani:", data);
+    },
+    onError: (err) => {
+      console.error("Greška pri učitavanju stats podataka:", err);
+    }
+  });
+  
+  // Dohvatamo kategorije
+  const { data: categories, error: categoriesError } = useQuery<ApplianceCategory[]>({
+    queryKey: ["/api/categories"],
+    onSuccess: (data) => {
+      console.log("Kategorije uspešno učitane:", data);
+    },
+    onError: (err) => {
+      console.error("Greška pri učitavanju kategorija:", err);
+    }
   });
   
   // Dodajemo useEffect da osvežimo podatke kada se komponenta montira
   useEffect(() => {
+    console.log("Dashboard useEffect se pokreće");
+    
     // Osvežimo statistiku kada se prikaže dashboard
     refetchStats();
     
@@ -84,10 +106,6 @@ export default function Dashboard() {
     // Čistimo interval pri demontiranju
     return () => clearInterval(intervalId);
   }, [refetchStats]);
-  
-  const { data: categories } = useQuery<ApplianceCategory[]>({
-    queryKey: ["/api/categories"],
-  });
   
   // Enrich appliance stats with category data
   const enrichedApplianceStats = stats?.applianceStats.map(stat => {
