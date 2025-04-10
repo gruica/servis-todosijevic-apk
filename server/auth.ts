@@ -48,11 +48,12 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret",
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: false,
     store: storage.sessionStore,
+    name: 'frigosistem_sid', // Specificiramo jedinstveno ime za cookie
     cookie: {
-      secure: false, // postaviću na false da bi radilo u razvoju
+      secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
       sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 dana
@@ -99,13 +100,26 @@ export function setupAuth(app: Express) {
     ),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    console.log(`Serializing user ID: ${user.id}`);
+    done(null, user.id);
+  });
+  
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`Deserializing user with ID: ${id}`);
       const user = await storage.getUser(id);
+      
+      if (!user) {
+        console.error(`User not found for ID: ${id} during deserialization`);
+        return done(null, false);
+      }
+      
+      console.log(`User deserialized successfully: ${user.username}`);
       done(null, user);
     } catch (error) {
-      done(error);
+      console.error(`Error deserializing user ${id}:`, error);
+      done(error, null);
     }
   });
 
@@ -133,16 +147,65 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    // Remove password from the response
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.status(200).json(userWithoutPassword);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: SelectUser | false, info: { message: string } | undefined) => {
+      if (err) {
+        console.error("Login error:", err);
+        return next(err);
+      }
+      
+      if (!user) {
+        console.log("Login failed:", info?.message || "Neuspješna prijava");
+        return res.status(401).json({ 
+          error: info?.message || "Neispravno korisničko ime ili lozinka" 
+        });
+      }
+
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Session establishment error:", loginErr);
+          return next(loginErr);
+        }
+        
+        // Uspješna prijava - logiram sesiju
+        console.log(`Login successful, session established for user ${user.username} (ID: ${user.id}), session ID: ${req.sessionID}`);
+        
+        // Remove password from the response
+        const { password, ...userWithoutPassword } = user as SelectUser;
+        res.status(200).json(userWithoutPassword);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      console.log("Logout attempted but no user is authenticated");
+      return res.sendStatus(200);
+    }
+    
+    const userId = req.user?.id;
+    const username = req.user?.username;
+    const sessionId = req.sessionID;
+    
+    console.log(`Logging out user ${username} (ID: ${userId}), session ID: ${sessionId}`);
+    
     req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+      if (err) {
+        console.error("Error during logout:", err);
+        return next(err);
+      }
+      
+      console.log(`User ${username} successfully logged out`);
+      
+      // Uništi sesiju za dodatnu sigurnost
+      req.session.destroy((sessionErr) => {
+        if (sessionErr) {
+          console.error("Error destroying session:", sessionErr);
+        } else {
+          console.log(`Session ${sessionId} destroyed`);
+        }
+        res.sendStatus(200);
+      });
     });
   });
 
