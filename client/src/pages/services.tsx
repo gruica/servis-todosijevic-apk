@@ -351,19 +351,16 @@ export default function Services() {
               <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="relative md:col-span-2">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Pretraga po klijentu, uređaju, opisu..."
-                      className="pl-9"
+                      placeholder="Pretraga"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                   <div className="relative">
-                    <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="pl-9">
-                        <SelectValue placeholder="Filter po statusu" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((option) => (
