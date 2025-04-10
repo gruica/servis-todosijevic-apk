@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { BusinessLayout } from "@/components/layout/business-layout";
+import BusinessLayout from "@/components/layout/business-layout";
 
 // Tip za detalje servisa
 interface ServiceDetails {
@@ -430,7 +430,7 @@ export default function ServiceDetails() {
                     
                     {service.appliance && (
                       <div className="flex">
-                        <Tool className="h-4 w-4 text-gray-400 mr-3" />
+                        <Wrench className="h-4 w-4 text-gray-400 mr-3" />
                         <div>
                           <p className="text-sm text-gray-500">Model</p>
                           <p className="font-medium">{service.appliance.model}</p>
