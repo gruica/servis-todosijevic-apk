@@ -1057,7 +1057,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getService(id: number): Promise<Service | undefined> {
-    const [service] = await db.select().from(services).where(eq(services.id, id));
+    // Дохвата сервис са свим повезаним детаљима клијента, уређаја, категорије, произвођача и техничара
+    const [service] = await db.select()
+      .from(services)
+      .leftJoin(clients, eq(services.clientId, clients.id))
+      .leftJoin(appliances, eq(services.applianceId, appliances.id)) 
+      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+      .leftJoin(technicians, eq(services.technicianId, technicians.id))
+      .leftJoin(users, eq(services.businessPartnerId, users.id))
+      .where(eq(services.id, id))
+      .then(rows => rows.map(row => ({
+        ...row.services,
+        client: row.clients,
+        appliance: row.appliances,
+        category: row.applianceCategories,
+        manufacturer: row.manufacturers,
+        technician: row.technicians,
+        businessPartner: row.users ? {
+          id: row.users.id,
+          username: row.users.username,
+          fullName: row.users.fullName,
+          companyName: row.users.companyName,
+          email: row.users.email,
+          phone: row.users.phone,
+          address: row.users.address,
+          city: row.users.city
+        } : undefined
+      })));
+    
     return service;
   }
 
