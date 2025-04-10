@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -8,7 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye } from "lucide-react";
+import { Eye, Calendar as CalendarIcon } from "lucide-react";
+import { format, parse, isValid } from "date-fns";
+import { sr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Jednostavna komponenta za status servisa
 const StatusBadge = ({ status }: { status: string }) => {
@@ -37,6 +42,9 @@ export default function TechnicianServicesList() {
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [dateString, setDateString] = useState<string>("");
+  const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
 
   // Učitavanje servisera
   const { data: technicians } = useQuery<any[]>({
@@ -47,6 +55,15 @@ export default function TechnicianServicesList() {
   const { data: services } = useQuery<any[]>({
     queryKey: ["/api/services"],
   });
+
+  // Konvertuj string datum u Date objekat ako je izabran
+  useEffect(() => {
+    if (date) {
+      setDateString(format(date, 'yyyy-MM-dd'));
+    } else {
+      setDateString('');
+    }
+  }, [date]);
 
   // Filtriranje servisa
   const filteredServices = services?.filter((service) => {
@@ -60,6 +77,15 @@ export default function TechnicianServicesList() {
       return false;
     }
     
+    // Filter po datumu
+    if (dateString && service.createdAt) {
+      // Konvertujemo i poredimo samo datum (bez vremena)
+      const serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+      if (serviceDate !== dateString) {
+        return false;
+      }
+    }
+    
     // Pretraga
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -70,6 +96,40 @@ export default function TechnicianServicesList() {
     
     return true;
   });
+
+  // Izračunavanje ukupnog iznosa za dan i servisera
+  useEffect(() => {
+    if (!services || services.length === 0 || !dateString) {
+      setTotalAmountForDay(0);
+      return;
+    }
+
+    let total = 0;
+    const techId = selectedTechnicianId !== "all" ? parseInt(selectedTechnicianId) : null;
+    
+    services.forEach(service => {
+      // Provera da li je servis odgovarajući za dati datum
+      const serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+      if (serviceDate === dateString) {
+        // Ako je filter po serviseru aktivan, saberi samo njegove servise
+        if (techId && service.technicianId === techId) {
+          const cost = service.cost ? parseFloat(service.cost) : 0;
+          if (!isNaN(cost)) {
+            total += cost;
+          }
+        } 
+        // Ako nema filtera po serviseru, saberi sve servise za taj dan
+        else if (!techId) {
+          const cost = service.cost ? parseFloat(service.cost) : 0;
+          if (!isNaN(cost)) {
+            total += cost;
+          }
+        }
+      }
+    });
+
+    setTotalAmountForDay(total);
+  }, [services, dateString, selectedTechnicianId]);
 
   // Funkcija za formatiranje datuma
   const formatDate = (dateString: string) => {
@@ -107,7 +167,7 @@ export default function TechnicianServicesList() {
             {/* Filteri */}
             <Card>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <Select
                       value={selectedTechnicianId}
@@ -147,6 +207,29 @@ export default function TechnicianServicesList() {
                     </Select>
                   </div>
                   <div>
+                    {/* Datum selector */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date ? format(date, "dd.MM.yyyy") : "Izaberi datum"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                          locale={sr}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
                     <Input
                       placeholder="Pretraga"
                       value={searchQuery}
@@ -154,6 +237,22 @@ export default function TechnicianServicesList() {
                     />
                   </div>
                 </div>
+                
+                {/* Prikaz ukupnog iznosa za izabrani dan */}
+                {dateString && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-medium">Izabrani datum: </span>
+                        <span>{date ? format(date, "dd.MM.yyyy") : ""}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Ukupno naplaćeno: </span>
+                        <span className="text-lg font-bold">{totalAmountForDay.toFixed(2)} €</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
