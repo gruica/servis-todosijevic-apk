@@ -57,19 +57,22 @@ export class EmailService {
     this.from = process.env.EMAIL_FROM || 'info@frigosistemtodosijevic.com';
     
     // Učitavanje konfiguracije i kreiranje stabilnog transportera
-    // Učitavamo SMTP postavke iz okruženja
+    // Učitavamo SMTP postavke iz okruženja - ispravne vrednosti
     const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
     const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465; 
     const secure = process.env.EMAIL_SECURE === 'true' || true;
-    const user = process.env.EMAIL_USER || '';
+    const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
     const pass = process.env.EMAIL_PASSWORD || '';
+    
+    // Dodatna provera formata host-a da eliminišemo čestu grešku
+    const correctedHost = host.includes('@') ? host.replace('@', '.') : host;
     
     console.log('[EMAIL] Kreiranje stabilnog email transportera...');
     console.log(`[EMAIL] Konfiguracija: server=${host}, port=${port}, secure=${secure}`);
     
-    // Kreiramo stabilnu konfiguraciju
+    // Kreiramo stabilnu konfiguraciju sa ispravljenim host-om
     this.configCache = {
-      host,
+      host: correctedHost, // Koristimo ispravljeni host
       port,
       secure,
       auth: {
@@ -80,6 +83,8 @@ export class EmailService {
         rejectUnauthorized: false
       }
     };
+    
+    console.log(`[EMAIL] Konfigurisani host: ${correctedHost} (originalni: ${host})`);
     
     // Kreiramo transporter koji se neće menjati tokom izvršavanja aplikacije
     this.transporter = nodemailer.createTransport({
