@@ -23,6 +23,11 @@ import {
   insertApplianceSchema,
   Service
 } from "@shared/schema";
+
+// Prošireni interfejs za servise sa imenom servisera
+interface ExtendedService extends Service {
+  technicianName?: string;
+}
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -464,18 +469,19 @@ export default function ClientDetails() {
                             <TableHead>Opis</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Serviser</TableHead>
+                            <TableHead>Cena</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {(!recentServices || recentServices.length === 0) && (
+                          {(!filteredServices || filteredServices.length === 0) && (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                              <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                                 Nema servisa za prikaz
                               </TableCell>
                             </TableRow>
                           )}
                           
-                          {recentServices?.map((service) => {
+                          {filteredServices?.map((service) => {
                             const appliance = appliances?.find(a => a.id === service.applianceId);
                             const categoryName = appliance 
                               ? getCategoryName(appliance.categoryId) 
@@ -485,7 +491,11 @@ export default function ClientDetails() {
                               : "";
                               
                             return (
-                              <TableRow key={service.id}>
+                              <TableRow 
+                                key={service.id} 
+                                className="hover:bg-blue-50 transition-colors cursor-pointer"
+                                onClick={() => handleViewServiceDetails(service)}
+                              >
                                 <TableCell>
                                   {formatDate(service.createdAt)}
                                 </TableCell>
@@ -518,7 +528,10 @@ export default function ClientDetails() {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  {service.technicianId ? "Dodeljen" : <span className="text-gray-400">Nije dodeljen</span>}
+                                  {service.technicianName || (service.technicianId ? "Dodeljen" : <span className="text-gray-400">Nije dodeljen</span>)}
+                                </TableCell>
+                                <TableCell>
+                                  {service.cost ? `${service.cost} €` : <span className="text-gray-400">-</span>}
                                 </TableCell>
                               </TableRow>
                             );
