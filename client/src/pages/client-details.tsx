@@ -36,7 +36,8 @@ import {
   AlarmClock, 
   Calendar, 
   Tag,
-  AlertCircle
+  AlertCircle,
+  Banknote
 } from "lucide-react";
 
 // Form schema za dodavanje novog uređaja
@@ -217,9 +218,53 @@ export default function ClientDetails() {
     return new Date(dateString).toLocaleDateString('sr-RS');
   };
 
+  // State za filter servisa i prikaz detalja
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [isServiceDetailsOpen, setIsServiceDetailsOpen] = useState(false);
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<Service | null>(null);
+
+  // Filtriranje servisa po statusu
+  const filteredServices = services ? 
+    (serviceFilter === "all" ? 
+      services : 
+      services.filter(service => service.status === serviceFilter)) : 
+    [];
+
+  // Priprema samo 5 najnovijih servisa za prikaz u tabeli "Nedavni servisi"
   const recentServices = services?.slice(0, 5).sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+  
+  // Funkcija za dobijanje stilova statusa servisa
+  const getStatusStyles = (status: string): string => {
+    switch (status) {
+      case "completed": return "bg-green-100 text-green-800";
+      case "in_progress": return "bg-blue-100 text-blue-800";
+      case "waiting_parts": return "bg-amber-100 text-amber-800";
+      case "scheduled": return "bg-purple-100 text-purple-800";
+      case "cancelled": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800"; // pending i ostalo
+    }
+  };
+  
+  // Funkcija za prevod statusa servisa
+  const translateStatus = (status: string): string => {
+    switch (status) {
+      case "pending": return "Na čekanju";
+      case "scheduled": return "Zakazano";
+      case "in_progress": return "U procesu";
+      case "waiting_parts": return "Čeka delove";
+      case "completed": return "Završeno";
+      case "cancelled": return "Otkazano";
+      default: return status;
+    }
+  };
+  
+  // Otvaranje dijaloga za detalje servisa
+  const handleViewServiceDetails = (service: Service) => {
+    setSelectedServiceDetails(service);
+    setIsServiceDetailsOpen(true);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -380,11 +425,27 @@ export default function ClientDetails() {
                 </CardContent>
               </Card>
               
-              {/* Recent services */}
+              {/* Svi servisi klijenta */}
               <Card className="lg:col-span-3">
-                <CardHeader>
-                  <CardTitle>Nedavni servisi</CardTitle>
-                  <CardDescription>Pregled poslednjih 5 servisa</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle>Istorija servisa</CardTitle>
+                    <CardDescription>Pregled svih servisa klijenta</CardDescription>
+                  </div>
+                  <Select defaultValue="all" onValueChange={(value) => setServiceFilter(value)}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter statusa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Svi servisi</SelectItem>
+                      <SelectItem value="pending">Na čekanju</SelectItem>
+                      <SelectItem value="scheduled">Zakazano</SelectItem>
+                      <SelectItem value="in_progress">U procesu</SelectItem>
+                      <SelectItem value="waiting_parts">Čeka delove</SelectItem>
+                      <SelectItem value="completed">Završeno</SelectItem>
+                      <SelectItem value="cancelled">Otkazano</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </CardHeader>
                 <CardContent>
                   {isServicesLoading ? (

@@ -1808,6 +1808,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Korisničke API rute
   // Dohvatanje servisa za korisnika po userId
+  // Ruta za dobijanje servisa po klijent ID-u
+  app.get("/api/services/client/:clientId", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ error: "Neispravan ID klijenta" });
+      }
+      
+      // Dobavljamo sve servise za datog klijenta
+      const services = await db.select()
+        .from(schema.services)
+        .where(eq(schema.services.clientId, clientId))
+        .orderBy(sql`${schema.services.createdAt} DESC`);
+      
+      // Za svaki servis dodajemo ime servisera ako postoji
+      const servicesWithNames = await Promise.all(services.map(async (service) => {
+        if (service.technicianId) {
+          const [technician] = await db.select()
+            .from(schema.users)
+            .where(eq(schema.users.id, service.technicianId));
+          
+          if (technician) {
+            return { 
+              ...service, 
+              technicianName: technician.fullName 
+            };
+          }
+        }
+        return service;
+      }));
+      
+      res.json(servicesWithNames);
+    } catch (error) {
+      console.error("Greška pri dobavljanju servisa za klijenta:", error);
+      res.status(500).json({ error: "Greška pri dobavljanju servisa" });
+    }
+  });
+  
   app.get("/api/services/user/:userId", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== "customer") {
       return res.status(403).json({ error: "Nedozvoljeni pristup" });
