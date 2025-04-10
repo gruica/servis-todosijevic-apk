@@ -11,7 +11,8 @@ export default function ClientTest() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`/api/clients/${clientId}/details`);
+        // Koristimo test rutu koja ne zahteva autentifikaciju
+        const res = await fetch(`/api/test/clients/${clientId}/details`);
         if (!res.ok) {
           throw new Error("Klijent nije pronađen");
         }

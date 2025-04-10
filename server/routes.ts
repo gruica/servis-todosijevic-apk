@@ -63,11 +63,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint za dobijanje detaljnih informacija o klijentu (sa aparatima, servisima i serviserima)
   app.get("/api/clients/:id/details", async (req, res) => {
     try {
+      // Provera autentifikacije - samo admin može da vidi detalje klijenta
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(401).json({ error: "Nemate dozvolu za pristup detaljima klijenta" });
+      }
+      
       const clientDetails = await storage.getClientWithDetails(parseInt(req.params.id));
       if (!clientDetails) return res.status(404).json({ error: "Klijent nije pronađen" });
       res.json(clientDetails);
     } catch (error) {
       console.error("Greška pri dobijanju detalja klijenta:", error);
+      res.status(500).json({ error: "Greška pri dobijanju detalja klijenta" });
+    }
+  });
+  
+  // TEST RUTA - Samo za razvoj i testiranje
+  app.get("/api/test/clients/:id/details", async (req, res) => {
+    try {
+      console.log("[TEST RUTA] Pristup detaljima klijenta bez autentifikacije, ID:", req.params.id);
+      const clientDetails = await storage.getClientWithDetails(parseInt(req.params.id));
+      if (!clientDetails) return res.status(404).json({ error: "Klijent nije pronađen" });
+      res.json(clientDetails);
+    } catch (error) {
+      console.error("[TEST RUTA] Greška pri dobijanju detalja klijenta:", error);
       res.status(500).json({ error: "Greška pri dobijanju detalja klijenta" });
     }
   });
