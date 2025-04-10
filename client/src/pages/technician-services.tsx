@@ -34,7 +34,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 // Glavni komponent
 export default function TechnicianServicesList() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("");
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -51,7 +51,7 @@ export default function TechnicianServicesList() {
   // Filtriranje servisa
   const filteredServices = services?.filter((service) => {
     // Filter po serviseru
-    if (selectedTechnicianId && service.technicianId !== parseInt(selectedTechnicianId)) {
+    if (selectedTechnicianId && selectedTechnicianId !== "all" && service.technicianId !== parseInt(selectedTechnicianId)) {
       return false;
     }
     
@@ -117,7 +117,7 @@ export default function TechnicianServicesList() {
                         <SelectValue placeholder="Serviser" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Svi serviseri</SelectItem>
+                        <SelectItem value="all">Svi serviseri</SelectItem>
                         {technicians?.map((tech) => (
                           <SelectItem key={tech.id} value={tech.id.toString()}>
                             {tech.fullName}
@@ -161,7 +161,7 @@ export default function TechnicianServicesList() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {selectedTechnicianId
+                  {selectedTechnicianId && selectedTechnicianId !== "all"
                     ? `Servisi za: ${getTechnicianName(parseInt(selectedTechnicianId))}`
                     : "Svi servisi"}
                 </CardTitle>
