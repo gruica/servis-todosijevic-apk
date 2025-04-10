@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 // Define login and registration schemas
 const loginSchema = z.object({
-  username: z.string().email({ message: "Molimo unesite validnu email adresu" }),
+  username: z.string().min(1, { message: "Korisničko ime je obavezno" }),
   password: z.string().min(1, { message: "Lozinka je obavezna" }),
   rememberMe: z.boolean().optional(),
 });
