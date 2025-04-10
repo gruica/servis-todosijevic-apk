@@ -246,11 +246,11 @@ export default function Dashboard() {
                           <TableCell>{getStatusBadge(service.status)}</TableCell>
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="text-sm text-primary">Pregled</span>
+                            <Button variant="ghost" size="sm" className="mr-2">
+                              Detalji
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <span className="text-sm text-primary">Izmeni</span>
+                            <Button variant="ghost" size="sm">
+                              Izmeni
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -315,8 +315,8 @@ export default function Dashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <span className="text-sm text-primary">Pregled</span>
+                              <Button variant="ghost" size="sm">
+                                Detalji
                               </Button>
                             </TableCell>
                           </TableRow>

@@ -327,13 +327,9 @@ export default function Users() {
 
       {/* Search bar */}
       <div className="relative mb-6">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
         <Input
           type="search"
-          placeholder="Pretraži korisnike..."
-          className="pl-10"
+          placeholder="Pretraga"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
