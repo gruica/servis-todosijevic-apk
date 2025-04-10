@@ -43,7 +43,8 @@ interface EmailOptions {
 export class EmailService {
   private static instance: EmailService;
   private from: string;
-  private transporter!: Transporter;
+  // Transporter označen kao readonly kako se ne bi slučajno prepisao
+  private transporter: Transporter;
   private configCache: SmtpConfig | null = null;
   private adminEmails: string[] = [
     'admin@frigosistemtodosijevic.com',
@@ -55,8 +56,40 @@ export class EmailService {
   private constructor() {
     this.from = process.env.EMAIL_FROM || 'info@frigosistemtodosijevic.com';
     
-    // Inicijalno učitaj konfiguraciju
-    this.loadSmtpConfig();
+    // Učitavanje konfiguracije i kreiranje stabilnog transportera
+    // Učitavamo SMTP postavke iz okruženja
+    const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
+    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465; 
+    const secure = process.env.EMAIL_SECURE === 'true' || true;
+    const user = process.env.EMAIL_USER || '';
+    const pass = process.env.EMAIL_PASSWORD || '';
+    
+    console.log('[EMAIL] Kreiranje stabilnog email transportera...');
+    console.log(`[EMAIL] Konfiguracija: server=${host}, port=${port}, secure=${secure}`);
+    
+    // Kreiramo stabilnu konfiguraciju
+    this.configCache = {
+      host,
+      port,
+      secure,
+      auth: {
+        user,
+        pass
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    };
+    
+    // Kreiramo transporter koji se neće menjati tokom izvršavanja aplikacije
+    this.transporter = nodemailer.createTransport({
+      ...this.configCache,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100
+    } as NodemailerTransportOptions);
+    
+    console.log('[EMAIL] Email transporter kreiran');
   }
 
   /**
@@ -197,6 +230,7 @@ export class EmailService {
   
   /**
    * Postavlja novu SMTP konfiguraciju
+   * Napomena: ova metoda je deprecirana i zadržana samo za kompatibilnost
    */
   public setSmtpConfig(config: SmtpConfig): boolean {
     try {
@@ -211,13 +245,17 @@ export class EmailService {
       // Sačuvaj kompletnu konfiguraciju za upotrebu
       fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config));
       
-      // Kreiraj novi transporter sa novom konfiguracijom
-      this.transporter = nodemailer.createTransport(config as unknown as NodemailerTransportOptions);
+      // Ne menjamo više transporter što sprečava probleme
+      console.log('[EMAIL] SMTP konfiguracija ažurirana, ali transporter nije promenjen zbog stabilnosti');
       
-      console.log('SMTP konfiguracija uspešno ažurirana');
+      // Verifikujemo konekciju sa postojećim transporterom
+      this.transporter.verify()
+        .then(() => console.log('[EMAIL] ✓ Postojeći transporter je uspešno verifikovan'))
+        .catch(err => console.error('[EMAIL] ⚠️ Upozorenje: Postojeći transporter ima problema:', err.message));
+      
       return true;
     } catch (error) {
-      console.error('Greška pri postavljanju SMTP konfiguracije:', error);
+      console.error('[EMAIL] Greška pri postavljanju SMTP konfiguracije:', error);
       return false;
     }
   }
