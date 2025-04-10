@@ -208,10 +208,8 @@ export default function BusinessServices() {
         {/* Filteri i pretraga */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Pretraži servise..."
-              className="pl-8"
+              placeholder="Pretraga"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -221,7 +219,7 @@ export default function BusinessServices() {
             onValueChange={(value) => setStatusFilter(value)}
           >
             <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Filter po statusu" />
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Svi statusi</SelectItem>
