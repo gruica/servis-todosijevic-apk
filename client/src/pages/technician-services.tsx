@@ -72,36 +72,9 @@ export default function TechnicianServices() {
     queryKey: ["/api/technicians"],
   });
   
-  // Fetch services based on selected technician and status
+  // Fetch all services - filtering will be done on the client side
   const { data: services, isLoading: servicesLoading } = useQuery<Service[]>({
-    queryKey: ["/api/services", selectedTechnicianId, statusFilter],
-    queryFn: async ({ signal }) => {
-      let url = "/api/services";
-      
-      // Build the query parameters
-      const params = new URLSearchParams();
-      
-      if (selectedTechnicianId) {
-        params.append("technicianId", selectedTechnicianId);
-      }
-      
-      if (statusFilter && statusFilter !== "all") {
-        params.append("status", statusFilter);
-      }
-      
-      // Append query parameters if they exist
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await fetch(url, { signal });
-      if (!response.ok) {
-        throw new Error("Greška pri dobijanju servisa");
-      }
-      return response.json();
-    },
-    // Only run the query if a technician is selected
-    enabled: true,
+    queryKey: ["/api/services"],
   });
   
   // Fetch clients for displaying client names
@@ -179,12 +152,11 @@ export default function TechnicianServices() {
               <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="relative">
-                    <UserRound className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Select 
                       value={selectedTechnicianId} 
                       onValueChange={setSelectedTechnicianId}
                     >
-                      <SelectTrigger className="pl-9">
+                      <SelectTrigger>
                         <SelectValue placeholder="Izaberite servisera" />
                       </SelectTrigger>
                       <SelectContent>
@@ -199,10 +171,9 @@ export default function TechnicianServices() {
                   </div>
                   
                   <div className="relative">
-                    <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="pl-9">
-                        <SelectValue placeholder="Filter po statusu" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((option) => (
@@ -215,10 +186,8 @@ export default function TechnicianServices() {
                   </div>
                   
                   <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Pretraga po klijentu, uređaju, opisu..."
-                      className="pl-9"
+                      placeholder="Pretraga"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
