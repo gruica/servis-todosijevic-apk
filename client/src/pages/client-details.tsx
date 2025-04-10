@@ -109,7 +109,7 @@ export default function ClientDetails() {
   });
 
   // Dobavljanje servisa za ovog klijenta
-  const { data: services, isLoading: isServicesLoading } = useQuery<Service[], Error>({
+  const { data: services, isLoading: isServicesLoading } = useQuery<ExtendedService[], Error>({
     queryKey: ["/api/services/client", clientId],
     enabled: !!clientId,
   });
@@ -226,7 +226,7 @@ export default function ClientDetails() {
   // State za filter servisa i prikaz detalja
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [isServiceDetailsOpen, setIsServiceDetailsOpen] = useState(false);
-  const [selectedServiceDetails, setSelectedServiceDetails] = useState<Service | null>(null);
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<ExtendedService | null>(null);
 
   // Filtriranje servisa po statusu
   const filteredServices = services ? 
@@ -266,7 +266,7 @@ export default function ClientDetails() {
   };
   
   // Otvaranje dijaloga za detalje servisa
-  const handleViewServiceDetails = (service: Service) => {
+  const handleViewServiceDetails = (service: ExtendedService) => {
     setSelectedServiceDetails(service);
     setIsServiceDetailsOpen(true);
   };
