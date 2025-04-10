@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, Clock, Tool, Calendar, Phone, Mail, MapPin, Building, MessageSquare, ClipboardCheck } from "lucide-react";
+import { Loader2, ArrowLeft, Clock, Wrench, Calendar, Phone, Mail, MapPin, Building, MessageSquare, ClipboardCheck } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -230,7 +230,7 @@ export default function ServiceDetails() {
                     </div>
                     
                     <div className="flex">
-                      <Tool className="h-5 w-5 text-gray-400 mr-3" />
+                      <Wrench className="h-5 w-5 text-gray-400 mr-3" />
                       <div>
                         <p className="text-sm text-gray-500">Status</p>
                         <p className="font-medium">{translateStatus(service.status)}</p>
@@ -287,7 +287,7 @@ export default function ServiceDetails() {
                       <h3 className="text-lg font-medium mb-3">Dodeljen serviser</h3>
                       <div className="bg-blue-50 p-4 rounded-md flex items-start">
                         <div className="bg-blue-100 rounded-full p-2 mr-3">
-                          <Tool className="h-5 w-5 text-blue-600" />
+                          <Wrench className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
                           <p className="font-medium text-blue-800">{service.technician.fullName}</p>

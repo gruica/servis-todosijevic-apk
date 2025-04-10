@@ -1252,6 +1252,176 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(services.createdAt))
       .limit(limit);
   }
+  
+  // Business Partner methods
+  async getServicesByPartner(partnerId: number): Promise<Service[]> {
+    return await db
+      .select()
+      .from(services)
+      .where(eq(services.businessPartnerId, partnerId))
+      .orderBy(desc(services.createdAt));
+  }
+  
+  async getServiceWithDetails(serviceId: number): Promise<any> {
+    // Dohvati osnovne podatke o servisu
+    const [service] = await db.select().from(services).where(eq(services.id, serviceId));
+    
+    if (!service) return null;
+    
+    // Dohvati podatke o klijentu
+    let client = null;
+    if (service.clientId) {
+      const [clientData] = await db.select().from(clients).where(eq(clients.id, service.clientId));
+      if (clientData) {
+        client = {
+          id: clientData.id,
+          fullName: clientData.fullName,
+          phone: clientData.phone,
+          email: clientData.email,
+          address: clientData.address,
+          city: clientData.city
+        };
+      }
+    }
+    
+    // Dohvati podatke o uređaju
+    let appliance = null;
+    let category = null;
+    let manufacturer = null;
+    
+    if (service.applianceId) {
+      const [applianceData] = await db.select().from(appliances).where(eq(appliances.id, service.applianceId));
+      
+      if (applianceData) {
+        appliance = {
+          id: applianceData.id,
+          model: applianceData.model,
+          serialNumber: applianceData.serialNumber
+        };
+        
+        // Dohvati kategoriju uređaja
+        if (applianceData.categoryId) {
+          const [categoryData] = await db.select().from(applianceCategories).where(eq(applianceCategories.id, applianceData.categoryId));
+          if (categoryData) {
+            category = {
+              id: categoryData.id,
+              name: categoryData.name
+            };
+          }
+        }
+        
+        // Dohvati proizvođača
+        if (applianceData.manufacturerId) {
+          const [manufacturerData] = await db.select().from(manufacturers).where(eq(manufacturers.id, applianceData.manufacturerId));
+          if (manufacturerData) {
+            manufacturer = {
+              id: manufacturerData.id,
+              name: manufacturerData.name
+            };
+          }
+        }
+      }
+    }
+    
+    // Dohvati podatke o tehničaru
+    let technician = null;
+    if (service.technicianId) {
+      const [technicianData] = await db.select().from(technicians).where(eq(technicians.id, service.technicianId));
+      if (technicianData) {
+        technician = {
+          id: technicianData.id,
+          fullName: technicianData.fullName,
+          phone: technicianData.phone,
+          email: technicianData.email
+        };
+      }
+    }
+    
+    // Kombinuj sve podatke
+    return {
+      ...service,
+      client,
+      appliance,
+      technician,
+      category,
+      manufacturer
+    };
+  }
+  
+  async getServiceStatusHistory(serviceId: number): Promise<any[]> {
+    // Potrebno je kreirati tabelu za istoriju statusa u budućnosti
+    // Za sada, simuliramo istoriju na osnovu postojećih podataka
+    
+    const [service] = await db.select().from(services).where(eq(services.id, serviceId));
+    
+    if (!service) return [];
+    
+    // Simuliramo istoriju promena statusa na osnovu trenutnog statusa
+    const history = [];
+    
+    // Dodajemo početni status "on hold" kad je servis kreiran
+    history.push({
+      id: 1,
+      serviceId,
+      oldStatus: "",
+      newStatus: "on_hold",
+      notes: "Servis kreiran",
+      createdAt: service.createdAt,
+      createdBy: "Poslovni partner"
+    });
+    
+    if (service.status !== "on_hold") {
+      // Dodajemo promenu na "pending" ako je servis prešao u taj status
+      history.push({
+        id: 2,
+        serviceId,
+        oldStatus: "on_hold",
+        newStatus: "pending",
+        notes: "Servis primljen na razmatranje",
+        createdAt: new Date(new Date(service.createdAt).getTime() + 86400000).toISOString(), // dan kasnije
+        createdBy: "Administrator"
+      });
+    }
+    
+    if (service.status === "in_progress" || service.status === "completed" || service.status === "canceled") {
+      // Dodajemo promenu na "in_progress" kad je serviser dodeljen
+      history.push({
+        id: 3,
+        serviceId,
+        oldStatus: "pending",
+        newStatus: "in_progress",
+        notes: "Serviser dodeljen",
+        createdAt: service.scheduledDate || new Date(new Date(service.createdAt).getTime() + 172800000).toISOString(), // dva dana kasnije
+        createdBy: service.technicianId ? `Serviser ${service.technicianId}` : "Administrator"
+      });
+    }
+    
+    if (service.status === "completed") {
+      // Dodajemo krajnju promenu na "completed"
+      history.push({
+        id: 4,
+        serviceId,
+        oldStatus: "in_progress",
+        newStatus: "completed",
+        notes: service.technicianNotes || "Servis završen",
+        createdAt: service.completedDate || new Date().toISOString(),
+        createdBy: service.technicianId ? `Serviser ${service.technicianId}` : "Administrator"
+      });
+    } else if (service.status === "canceled") {
+      // Dodajemo krajnju promenu na "canceled"
+      history.push({
+        id: 4,
+        serviceId,
+        oldStatus: "in_progress",
+        newStatus: "canceled",
+        notes: "Servis otkazan",
+        createdAt: new Date().toISOString(),
+        createdBy: "Administrator"
+      });
+    }
+    
+    return history;
+  }
 
   // Maintenance Schedule methods
   async getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
