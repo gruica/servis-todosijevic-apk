@@ -65,11 +65,14 @@ export default function Clients() {
   });
   
   // Filter clients based on search query
-  const filteredClients = clients?.filter(client => 
-    client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    client.phone.includes(searchQuery)
-  );
+  const filteredClients = clients?.filter(client => {
+    // Implementiramo null provjere za sva polja koja koristimo
+    const nameMatch = client?.fullName?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
+    const emailMatch = client?.email?.toLowerCase?.()?.includes?.(searchQuery.toLowerCase()) || false;
+    const phoneMatch = client?.phone?.includes?.(searchQuery) || false;
+    
+    return nameMatch || emailMatch || phoneMatch;
+  });
   
   // Add new client form
   const form = useForm<ClientFormValues>({
@@ -150,10 +153,12 @@ export default function Clients() {
   };
   
   // Get user initials from name
-  function getUserInitials(name: string) {
+  function getUserInitials(name: string | null | undefined) {
+    if (!name) return "";
+    
     return name
       .split(' ')
-      .map(word => word[0].toUpperCase())
+      .map(word => word?.[0]?.toUpperCase() || "")
       .join('');
   }
   
@@ -241,8 +246,10 @@ export default function Clients() {
     applianceMutation.mutate(data);
   };
   
-  function getAvatarColor(name: string) {
+  function getAvatarColor(name: string | null | undefined) {
     const colors = ["bg-blue-500", "bg-green-500", "bg-amber-500", "bg-red-500", "bg-purple-500", "bg-pink-500"];
+    if (!name) return colors[0];
+    
     const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];
   }
