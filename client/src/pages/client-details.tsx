@@ -111,11 +111,9 @@ export default function ClientDetails() {
     queryKey: ["/api/manufacturers"],
   });
 
-  // Dobavljanje servisa za ovog klijenta
-  const { data: services, isLoading: isServicesLoading } = useQuery<ExtendedService[], Error>({
-    queryKey: ["/api/services/client", clientId],
-    enabled: !!clientId,
-  });
+  // Direktno koristimo servise iz clientDetails-a umesto posebnog API poziva
+  const services = clientDetails?.services || [];
+  const isServicesLoading = isClientLoading;
 
   // Forma za dodavanje/izmenu uređaja
   const applianceForm = useForm<ApplianceFormValues>({
@@ -357,12 +355,12 @@ export default function ClientDetails() {
                 </CardContent>
               </Card>
               
-              {/* Appliances */}
+              {/* Appliances with service history */}
               <Card className="lg:col-span-2">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
                     <CardTitle>Uređaji klijenta</CardTitle>
-                    <CardDescription>Pregled svih uređaja</CardDescription>
+                    <CardDescription>Pregled svih uređaja sa istorijom servisa</CardDescription>
                   </div>
                   <Button onClick={handleAddAppliance}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -370,64 +368,125 @@ export default function ClientDetails() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {isAppliancesLoading ? (
+                  {isClientLoading ? (
                     <div className="space-y-3">
                       <Skeleton className="h-12 w-full" />
                       <Skeleton className="h-12 w-full" />
                       <Skeleton className="h-12 w-full" />
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Kategorija</TableHead>
-                            <TableHead>Proizvođač/Model</TableHead>
-                            <TableHead>Serijski broj</TableHead>
-                            <TableHead>Datum kupovine</TableHead>
-                            <TableHead className="text-right">Akcije</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {appliances?.length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                                Nema uređaja za prikaz
-                              </TableCell>
-                            </TableRow>
-                          )}
-                          
-                          {appliances?.map((appliance) => (
-                            <TableRow key={appliance.id}>
-                              <TableCell>
-                                {getCategoryName(appliance.categoryId)}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{getManufacturerName(appliance.manufacturerId)}</span>
-                                  {appliance.model && <span className="text-sm text-gray-500">{appliance.model}</span>}
+                    <div className="space-y-6">
+                      {clientDetails?.appliances?.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          Nema uređaja za prikaz
+                        </div>
+                      ) : (
+                        clientDetails?.appliances?.map((appliance: any) => (
+                          <div key={appliance.id} className="mb-8 border rounded-lg overflow-hidden">
+                            {/* Kartica uređaja */}
+                            <div className="bg-blue-50 p-4 border-b flex justify-between items-center">
+                              <div>
+                                <h3 className="text-lg font-semibold text-blue-800">
+                                  {appliance.category?.name || "Nepoznata kategorija"} 
+                                  {appliance.model && <span className="ml-2 font-normal">({appliance.model})</span>}
+                                </h3>
+                                <p className="text-sm text-blue-600">
+                                  {appliance.manufacturer?.name || "Nepoznat proizvođač"}
+                                  {appliance.serialNumber && <span className="ml-2">S/N: {appliance.serialNumber}</span>}
+                                </p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8"
+                                onClick={() => handleEditAppliance(appliance)}
+                              >
+                                <Pencil className="h-4 w-4 mr-1" />
+                                Izmeni
+                              </Button>
+                            </div>
+                            
+                            {/* Servisi ovog uređaja */}
+                            {appliance.services && appliance.services.length > 0 ? (
+                              <div className="p-4">
+                                <h4 className="text-sm font-medium mb-3 text-gray-700">Istorija servisa</h4>
+                                <div className="space-y-4">
+                                  {appliance.services.map((service: any) => (
+                                    <div key={service.id} className="border rounded-md p-3 bg-white">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusStyles(service.status)}`}>
+                                            {translateStatus(service.status)}
+                                          </span>
+                                          <span className="text-sm text-gray-500 ml-2">
+                                            {formatDate(service.createdAt)}
+                                          </span>
+                                        </div>
+                                        {service.cost && (
+                                          <div className="text-sm font-medium">
+                                            <Banknote className="h-3 w-3 inline mr-1" />
+                                            {service.cost}€
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      <p className="text-sm text-gray-700 mb-2">{service.description}</p>
+                                      
+                                      {service.technician && (
+                                        <div className="flex items-center mt-3 text-sm text-gray-600">
+                                          <div className="bg-gray-100 rounded-full h-6 w-6 flex items-center justify-center mr-2">
+                                            <span className="text-xs">{service.technician.fullName.charAt(0)}</span>
+                                          </div>
+                                          <div>
+                                            <p className="font-medium">{service.technician.fullName}</p>
+                                            {service.technician.specialization && (
+                                              <p className="text-xs">{service.technician.specialization}</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Status timeline */}
+                                      {service.statusHistory && service.statusHistory.length > 0 && (
+                                        <div className="mt-3 pt-3 border-t">
+                                          <p className="text-xs font-medium text-gray-500 mb-2">Istorija statusa:</p>
+                                          <div className="space-y-2">
+                                            {service.statusHistory.map((history: any, index: number) => (
+                                              <div key={index} className="flex items-start">
+                                                <div className="mr-2 mt-0.5">
+                                                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                                                  {index < service.statusHistory.length - 1 && (
+                                                    <div className="h-6 w-0.5 bg-blue-200 ml-1.5"></div>
+                                                  )}
+                                                </div>
+                                                <div className="flex-1">
+                                                  <p className="text-xs font-medium">
+                                                    {translateStatus(history.newStatus)} 
+                                                    <span className="font-normal text-gray-500 ml-1">
+                                                      ({formatDate(history.createdAt)})
+                                                    </span>
+                                                  </p>
+                                                  {history.notes && (
+                                                    <p className="text-xs text-gray-500">{history.notes}</p>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                {appliance.serialNumber || <span className="text-gray-400">Nije definisano</span>}
-                              </TableCell>
-                              <TableCell>
-                                {appliance.purchaseDate ? formatDate(appliance.purchaseDate) : <span className="text-gray-400">Nije definisano</span>}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => handleEditAppliance(appliance)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                              </div>
+                            ) : (
+                              <div className="p-4 text-center text-gray-500 text-sm">
+                                Nema servisa za ovaj uređaj
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </CardContent>
