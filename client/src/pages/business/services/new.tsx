@@ -207,7 +207,7 @@ export default function NewBusinessServiceRequest() {
   
   return (
     <BusinessLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 max-w-4xl mx-auto pb-20"> {/* Dodat padding na dnu za mobilne uređaje */}
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -508,11 +508,15 @@ export default function NewBusinessServiceRequest() {
                   )}
                 />
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex justify-between">
+                <div className="text-sm text-gray-500">
+                  * Sva polja označena kao obavezna moraju biti popunjena
+                </div>
                 <Button 
                   type="submit" 
                   className="w-full md:w-auto"
                   disabled={isSubmitting}
+                  size="lg"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center">
