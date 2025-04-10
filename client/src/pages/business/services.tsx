@@ -213,13 +213,14 @@ export default function BusinessServices() {
               Pregled i upravljanje servisnim zahtevima
             </p>
           </div>
+          {/* Dugme za kreiranje novog servisnog zahteva - uvek vidljivo na svakom ekranu */}
           <Button 
-            className="mt-4 md:mt-0 fixed bottom-4 right-4 md:static z-50" 
-            size={isMobile ? "lg" : "default"}
+            className="fixed bottom-5 right-5 z-50 shadow-lg" 
+            size="lg"
             onClick={() => navigate("/business/services/new")}
           >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novi servisni zahtev
+            <PlusCircle className="mr-2 h-5 w-5" />
+            <span className="font-medium">Novi servisni zahtev</span>
           </Button>
         </div>
         
