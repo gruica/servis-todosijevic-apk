@@ -139,6 +139,23 @@ export default function BusinessServices() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detekcija mobilnog uređaja
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Inicijalno postavljanje
+    handleResize();
+    
+    // Dodavanje event listenera
+    window.addEventListener("resize", handleResize);
+    
+    // Čišćenje
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   
   // Dohvatanje servisa za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
@@ -197,7 +214,8 @@ export default function BusinessServices() {
             </p>
           </div>
           <Button 
-            className="mt-4 md:mt-0" 
+            className="mt-4 md:mt-0 fixed bottom-4 right-4 md:static z-50" 
+            size={isMobile ? "lg" : "default"}
             onClick={() => navigate("/business/services/new")}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
