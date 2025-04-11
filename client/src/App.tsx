@@ -46,8 +46,7 @@ function Router() {
       {/* Public home page - novi javni homepage za sve korisnike */}
       <Route path="/" component={HomePage} />
       
-      {/* Test route - samo za razvoj */}
-      <Route path="/client-test/:id" component={ClientTest} />
+      {/* Test route uklonjena za produkciju */}
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />

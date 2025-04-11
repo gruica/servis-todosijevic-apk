@@ -77,18 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // TEST RUTA - Samo za razvoj i testiranje
-  app.get("/api/test/clients/:id/details", async (req, res) => {
-    try {
-      console.log("[TEST RUTA] Pristup detaljima klijenta bez autentifikacije, ID:", req.params.id);
-      const clientDetails = await storage.getClientWithDetails(parseInt(req.params.id));
-      if (!clientDetails) return res.status(404).json({ error: "Klijent nije pronađen" });
-      res.json(clientDetails);
-    } catch (error) {
-      console.error("[TEST RUTA] Greška pri dobijanju detalja klijenta:", error);
-      res.status(500).json({ error: "Greška pri dobijanju detalja klijenta" });
-    }
-  });
+  // TEST RUTA je uklonjena za produkciju
 
   app.post("/api/clients", async (req, res) => {
     try {

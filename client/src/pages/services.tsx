@@ -75,17 +75,28 @@ function formatDate(dateString: string) {
 
 // Get user initials from name
 function getUserInitials(name: string) {
+  if (!name) return '?';
+  
   return name
     .split(' ')
-    .map(word => word[0].toUpperCase())
+    .map(word => word && word[0] ? word[0].toUpperCase() : '')
+    .filter(Boolean)
     .join('');
 }
 
 // Generate random color based on name
 function getAvatarColor(name: string) {
+  if (!name) return "bg-gray-500";
+  
   const colors = ["bg-blue-500", "bg-green-500", "bg-amber-500", "bg-red-500", "bg-purple-500", "bg-pink-500"];
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
+  
+  try {
+    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  } catch (error) {
+    console.error("Greška pri generisanju boje avatara:", error);
+    return "bg-gray-500";
+  }
 }
 
 export default function Services() {
@@ -138,10 +149,11 @@ export default function Services() {
   
   // Filter services based on search query and status filter
   const filteredServices = enrichedServices?.filter(service => {
+    // Bezbedno pretraživanje sa proverom na null/undefined
     const matchesSearch = 
-      service.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.applianceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (service.clientName && service.clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (service.applianceName && service.applianceName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     
