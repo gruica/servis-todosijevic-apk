@@ -78,17 +78,17 @@ export function AdminProfileWidget() {
     <div className="flex items-center">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="flex items-center gap-2 h-10">
-            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-              <span className="font-medium text-sm">
+          <Button variant="ghost" size="sm" className="flex items-center gap-1 h-9 px-2 ml-1">
+            <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center">
+              <span className="font-medium text-xs">
                 {getInitials(user.fullName)}
               </span>
             </div>
-            <div className="hidden md:block text-left">
-              <p className="text-sm font-medium">{user.fullName}</p>
-              <p className="text-xs text-gray-500">{user.role === "admin" ? "Administrator" : "Serviser"}</p>
+            <div className="hidden md:block text-left ml-1.5">
+              <p className="text-sm font-medium leading-tight">{user.fullName}</p>
+              <p className="text-xs text-gray-500 leading-tight">{user.role === "admin" ? "Administrator" : "Serviser"}</p>
             </div>
-            <Settings className="h-4 w-4 ml-1" />
+            <Settings className="h-4 w-4 ml-0.5 text-gray-500" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="end">

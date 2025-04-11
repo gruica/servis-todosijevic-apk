@@ -15,7 +15,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
   
   return (
     <header className="bg-white shadow-sm flex-shrink-0">
-      <div className="flex items-center justify-between h-16 px-4">
+      <div className="flex items-center justify-between h-16 px-3 md:px-4">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -25,10 +25,10 @@ export function Header({ toggleSidebar }: HeaderProps) {
           >
             <span className="material-icons">menu</span>
           </Button>
-          <h1 className="text-xl font-medium text-primary ml-2 md:hidden">Frigo Sistem Todosijević</h1>
+          <h1 className="text-lg font-medium text-primary ml-1 md:hidden truncate max-w-[180px]">Frigo Sistem</h1>
         </div>
         
-        <div className="flex-1 max-w-3xl mx-4">
+        <div className="hidden md:block flex-1 max-w-3xl mx-4">
           <div className="relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3">
               <span className="material-icons text-gray-400">search</span>
@@ -43,7 +43,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center">
           <AdminProfileWidget />
         </div>
       </div>
