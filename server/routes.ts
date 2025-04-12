@@ -81,14 +81,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
-      const validatedData = insertClientSchema.parse(req.body);
+      // Dodatna validacija podataka o klijentu - Zod provera
+      const validationResult = insertClientSchema.safeParse(req.body);
+      
+      // Ako podaci nisu validni, vrati grešku sa detaljima
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci klijenta", 
+          details: validationResult.error.format(),
+          message: "Svi podaci o klijentu moraju biti pravilno uneti. Proverite podatke i pokušajte ponovo."
+        });
+      }
+      
+      // Dodatna poslovna pravila
+      const validatedData = validationResult.data;
+      
+      // Provera telefona (mora sadržati samo brojeve, +, -, razmake i zagrade)
+      if (!/^[+]?[\d\s()-]{6,20}$/.test(validatedData.phone)) {
+        return res.status(400).json({
+          error: "Nevažeći broj telefona",
+          message: "Broj telefona može sadržati samo brojeve, razmake i znakove +()-"
+        });
+      }
+      
+      // Provera da li email već postoji (ako je unet)
+      if (validatedData.email) {
+        const existingClientWithEmail = await storage.getClientByEmail(validatedData.email);
+        if (existingClientWithEmail) {
+          return res.status(400).json({
+            error: "Email već postoji",
+            message: "Klijent sa ovim email-om već postoji u bazi podataka"
+          });
+        }
+      }
+      
+      // Ako su svi uslovi ispunjeni, kreiramo klijenta
       const client = await storage.createClient(validatedData);
-      res.status(201).json(client);
+      
+      // Vrati uspešan odgovor
+      res.status(201).json({
+        success: true,
+        message: "Klijent je uspešno kreiran",
+        data: client
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Nevažeći podaci klijenta", details: error.format() });
       }
-      res.status(500).json({ error: "Greška pri kreiranju klijenta" });
+      console.error("Greška pri kreiranju klijenta:", error);
+      res.status(500).json({ error: "Greška pri kreiranju klijenta", message: error.message });
     }
   });
 

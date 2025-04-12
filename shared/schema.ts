@@ -67,12 +67,20 @@ export const clients = pgTable("clients", {
   city: text("city"),
 });
 
+// Poboljšana šema za validaciju klijenata sa detaljnijim pravilima
 export const insertClientSchema = createInsertSchema(clients).pick({
   fullName: true,
   email: true,
   phone: true,
   address: true,
   city: true,
+}).extend({
+  fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime je predugačko"),
+  email: z.string().email("Unesite validnu email adresu").or(z.literal("")).optional(),
+  phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
+    .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-"),
+  address: z.string().min(3, "Adresa mora imati najmanje 3 karaktera").or(z.literal("")).optional(),
+  city: z.string().min(2, "Grad mora imati najmanje 2 karaktera").or(z.literal("")).optional(),
 });
 
 export type InsertClient = z.infer<typeof insertClientSchema>;
@@ -118,6 +126,7 @@ export const appliances = pgTable("appliances", {
   notes: text("notes"),
 });
 
+// Poboljšana šema za validaciju uređaja
 export const insertApplianceSchema = createInsertSchema(appliances).pick({
   clientId: true,
   categoryId: true,
@@ -126,6 +135,22 @@ export const insertApplianceSchema = createInsertSchema(appliances).pick({
   serialNumber: true,
   purchaseDate: true,
   notes: true,
+}).extend({
+  clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
+  categoryId: z.number().int().positive("ID kategorije mora biti pozitivan broj"),
+  manufacturerId: z.number().int().positive("ID proizvođača mora biti pozitivan broj"),
+  model: z.string().min(1, "Model je obavezan").max(100, "Model je predugačak").or(z.literal("")).optional(),
+  serialNumber: z.string().max(50, "Serijski broj je predugačak").or(z.literal("")).optional(),
+  purchaseDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .or(z.literal(""))
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime()) && date <= new Date();
+    }, "Datum kupovine ne može biti u budućnosti"),
+  notes: z.string().max(500, "Napomene su predugačke").or(z.literal("")).optional(),
 });
 
 export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
@@ -163,6 +188,7 @@ export const services = pgTable("services", {
   partnerCompanyName: text("partner_company_name"), // Naziv kompanije poslovnog partnera
 });
 
+// Poboljšana šema za validaciju servisa
 export const insertServiceSchema = createInsertSchema(services).pick({
   clientId: true,
   applianceId: true,
@@ -179,6 +205,54 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: true,
   businessPartnerId: true,
   partnerCompanyName: true,
+}).extend({
+  clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
+  applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),
+  technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").nullable().optional(),
+  description: z.string().min(5, "Opis problema mora biti detaljniji (min. 5 karaktera)").max(1000, "Opis je predugačak"),
+  status: serviceStatusEnum,
+  createdAt: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .refine(val => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, "Nevažeći datum"),
+  scheduledDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .or(z.literal(""))
+    .nullable()
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, "Nevažeći datum zakazivanja"),
+  completedDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .or(z.literal(""))
+    .nullable()
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, "Nevažeći datum završetka"),
+  technicianNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).nullable().optional(),
+  cost: z.string().max(50, "Iznos je predugačak").or(z.literal("")).nullable().optional(),
+  usedParts: z.string().max(1000, "Lista delova je predugačka").or(z.literal("")).nullable().optional()
+    .refine(val => {
+      if (!val) return true;
+      try {
+        JSON.parse(val);
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Nevažeći JSON format za korišćene delove"),
+  machineNotes: z.string().max(500, "Napomene o uređaju su predugačke").or(z.literal("")).nullable().optional(),
+  isCompletelyFixed: z.boolean().nullable().optional(),
+  businessPartnerId: z.number().int().positive("ID poslovnog partnera mora biti pozitivan broj").nullable().optional(),
+  partnerCompanyName: z.string().max(100, "Naziv kompanije je predugačak").or(z.literal("")).nullable().optional(),
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
