@@ -93,10 +93,24 @@ export const applianceCategories = pgTable("appliance_categories", {
   icon: text("icon").notNull(), // Material icon name
 });
 
-export const insertApplianceCategorySchema = createInsertSchema(applianceCategories).pick({
-  name: true,
-  icon: true,
-});
+export const insertApplianceCategorySchema = createInsertSchema(applianceCategories)
+  .pick({
+    name: true,
+    icon: true,
+  })
+  .extend({
+    // Validacija imena kategorije
+    name: z.string()
+      .min(2, "Naziv kategorije mora imati najmanje 2 karaktera")
+      .max(100, "Naziv kategorije ne sme biti duži od 100 karaktera")
+      .trim(), // Uklanja razmake na početku i kraju
+    
+    // Validacija ikone
+    icon: z.string()
+      .min(1, "Ikona je obavezna")
+      .max(50, "Naziv ikone je predugačak")
+      .trim(), // Uklanja razmake na početku i kraju
+  });
 
 export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
 export type ApplianceCategory = typeof applianceCategories.$inferSelect;
@@ -107,9 +121,17 @@ export const manufacturers = pgTable("manufacturers", {
   name: text("name").notNull().unique(),
 });
 
-export const insertManufacturerSchema = createInsertSchema(manufacturers).pick({
-  name: true,
-});
+export const insertManufacturerSchema = createInsertSchema(manufacturers)
+  .pick({
+    name: true,
+  })
+  .extend({
+    // Validacija da ime proizvođača mora biti između 2 i 100 karaktera
+    name: z.string()
+      .min(2, "Naziv proizvođača mora imati najmanje 2 karaktera")
+      .max(100, "Naziv proizvođača ne sme biti duži od 100 karaktera")
+      .trim(), // Uklanja razmake na početku i kraju
+  });
 
 export type InsertManufacturer = z.infer<typeof insertManufacturerSchema>;
 export type Manufacturer = typeof manufacturers.$inferSelect;
