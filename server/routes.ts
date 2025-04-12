@@ -116,6 +116,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju kategorija" });
     }
   });
+  
+  // Novi API endpoint za kategorije uređaja - posebno za dijagnostiku
+  app.get("/api/appliance-categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllApplianceCategories();
+      res.json(categories || []);
+    } catch (error) {
+      console.error('Greška pri dobijanju kategorija uređaja:', error);
+      res.status(500).json({ error: "Greška pri dobijanju kategorija uređaja", details: error.message });
+    }
+  });
 
   app.post("/api/categories", async (req, res) => {
     try {
