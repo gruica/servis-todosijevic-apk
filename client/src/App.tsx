@@ -9,6 +9,7 @@ import Clients from "@/pages/clients";
 import ClientDetails from "@/pages/client-details";
 import Services from "@/pages/services";
 import SimplifiedServices from "@/pages/simplified-services";
+import BasicServicesPage from "@/pages/basic/services";
 import Appliances from "@/pages/appliances";
 import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
@@ -56,8 +57,9 @@ function Router() {
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
-      {/* Privremeno korišćenje pojednostavljene verzije stranice servisa */}
-      <RoleProtectedRoute path="/services" component={SimplifiedServices} allowedRoles={["admin"]} />
+      {/* Nova osnovna verzija servisa */}
+      <RoleProtectedRoute path="/services" component={BasicServicesPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/services-alt" component={SimplifiedServices} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/create-tech-user" component={CreateTechnicianUser} allowedRoles={["admin"]} />
