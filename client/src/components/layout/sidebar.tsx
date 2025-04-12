@@ -100,6 +100,9 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                         : ""
                     )}
                   >
+                    {item.icon && (
+                      <span className="material-symbols-outlined mr-3">{item.icon}</span>
+                    )}
                     <span>{item.label}</span>
                   </div>
                 </Link>

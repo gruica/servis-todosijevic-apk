@@ -3,6 +3,9 @@ import { AdminLayout } from "@/components/layout/admin-layout";
 import UserVerificationPanel from "@/components/admin/UserVerificationPanel";
 
 export default function UserVerificationPage() {
+  const pathInfo = window.location.pathname;
+  console.log("UserVerificationPage učitan, putanja:", pathInfo);
+
   return (
     <AdminLayout>
       <div className="container py-6 px-4">
@@ -13,6 +16,10 @@ export default function UserVerificationPage() {
               Upravljajte verifikacijom novih korisnika koji čekaju odobrenje
             </p>
           </div>
+        </div>
+        
+        <div className="mb-4 p-2 bg-blue-50 text-blue-800 rounded">
+          Trenutna putanja: {pathInfo}
         </div>
         
         <UserVerificationPanel />
