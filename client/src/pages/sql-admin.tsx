@@ -43,7 +43,7 @@ export default function SQLAdminPage() {
     },
     {
       title: "Pregled svih servisa",
-      query: "SELECT id, description, status, created_date FROM services ORDER BY created_date DESC LIMIT 10;"
+      query: "SELECT id, description, status, created_at FROM services ORDER BY created_at DESC LIMIT 10;"
     }
   ];
 

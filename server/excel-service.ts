@@ -434,7 +434,7 @@ export class ExcelService {
           completedDate: row.completedDate ? String(row.completedDate || row.completed_date || row.datum_zavrsetka) : undefined,
           cost: row.cost ? String(row.cost || row.cena || row.cijena) : undefined,
           technicianNotes: row.technicianNotes ? String(row.technicianNotes || row.tech_notes || row.beleske_servisera) : undefined,
-          createdAt: row.createdAt ? String(row.createdAt || row.created_date || row.datum_kreiranja) : new Date().toISOString()
+          createdAt: row.createdAt ? String(row.createdAt || row.created_at || row.datum_kreiranja) : new Date().toISOString()
         };
         
         // Validiraj podatke
