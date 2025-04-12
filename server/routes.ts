@@ -10,7 +10,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 // Mapiranje status kodova u opisne nazive statusa

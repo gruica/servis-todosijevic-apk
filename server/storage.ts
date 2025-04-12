@@ -1553,30 +1553,49 @@ export class DatabaseStorage implements IStorage {
       console.log(`Dohvatam servise za tehničara ${technicianId}`);
       
       let query = db
-        .select({
-          id: services.id,
-          clientId: services.clientId,
-          applianceId: services.applianceId,
-          technicianId: services.technicianId,
-          description: services.description,
-          status: services.status,
-          createdAt: services.createdAt,
-          scheduledDate: services.scheduledDate,
-          completedDate: services.completedDate,
-          technicianNotes: services.technicianNotes,
-          cost: services.cost,
-          usedParts: services.usedParts,
-          machineNotes: services.machineNotes,
-          isCompletelyFixed: services.isCompletelyFixed
-        })
+        .select()
         .from(services)
         .where(eq(services.technicianId, technicianId))
-        .orderBy(sql`${services.createdAt} DESC`);
-
+        .orderBy(desc(services.createdAt));
+        
+      // Dodamo limit ako je specificiran
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+      
+      const results = await query;
       console.log(`Pronađeno ${results.length} servisa za tehničara ${technicianId}`);
       return results;
     } catch (error) {
       console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
+      throw error;
+    }
+  }
+  
+  // Nova optimizirana metoda za dohvaćanje servisa po tehničaru i statusu
+  async getServicesByTechnicianAndStatus(technicianId: number, status: ServiceStatus, limit?: number): Promise<Service[]> {
+    try {
+      console.log(`Dohvatam servise za tehničara ${technicianId} sa statusom '${status}'`);
+      
+      let query = db
+        .select()
+        .from(services)
+        .where(and(
+          eq(services.technicianId, technicianId),
+          eq(services.status, status)
+        ))
+        .orderBy(desc(services.createdAt));
+        
+      // Dodamo limit ako je specificiran
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+      
+      const results = await query;
+      console.log(`Pronađeno ${results.length} servisa za tehničara ${technicianId} sa statusom '${status}'`);
+      return results;
+    } catch (error) {
+      console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId} sa statusom '${status}':`, error);
       throw error;
     }
   }
