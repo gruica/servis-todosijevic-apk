@@ -87,12 +87,13 @@ export interface IStorage {
   updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;
   getApplianceStats(): Promise<{categoryId: number, count: number}[]>;
   
-  // Service methods
-  getAllServices(): Promise<Service[]>;
+  // Service methods - optimizirana verzija
+  getAllServices(limit?: number): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   getServicesByClient(clientId: number): Promise<Service[]>;
-  getServicesByStatus(status: ServiceStatus): Promise<Service[]>;
-  getServicesByTechnician(technicianId: number): Promise<Service[]>;
+  getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]>;
+  getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]>;
+  getServicesByTechnicianAndStatus(technicianId: number, status: ServiceStatus, limit?: number): Promise<Service[]>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: InsertService): Promise<Service | undefined>;
   getRecentServices(limit: number): Promise<Service[]>;
@@ -1536,15 +1537,22 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(services).where(eq(services.clientId, clientId));
   }
 
-  async getServicesByStatus(status: ServiceStatus): Promise<Service[]> {
-    return await db.select().from(services).where(eq(services.status, status));
+  async getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]> {
+    let query = db.select().from(services).where(eq(services.status, status));
+    
+    // Dodamo limit ako je specificiran za optimizaciju
+    if (limit && limit > 0) {
+      query = query.limit(limit);
+    }
+    
+    return await query;
   }
 
-  async getServicesByTechnician(technicianId: number): Promise<Service[]> {
+  async getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]> {
     try {
       console.log(`Dohvatam servise za tehničara ${technicianId}`);
       
-      const results = await db
+      let query = db
         .select({
           id: services.id,
           clientId: services.clientId,
