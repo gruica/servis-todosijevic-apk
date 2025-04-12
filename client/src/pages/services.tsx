@@ -445,7 +445,7 @@ export default function Services() {
                       <TableBody>
                         {filteredServices?.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                            <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                               {searchQuery || statusFilter !== "all"
                                 ? "Nema rezultata za vašu pretragu" 
                                 : "Nema servisa za prikaz"}
@@ -492,6 +492,15 @@ export default function Services() {
                               </div>
                             </TableCell>
                             <TableCell>{getStatusBadge(service.status)}</TableCell>
+                            <TableCell>
+                              {service.businessPartnerId ? (
+                                <Badge variant="outline" className="font-normal">
+                                  {service.partnerCompanyName || "Poslovni partner"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="font-normal">Admin</Badge>
+                              )}
+                            </TableCell>
                             <TableCell>{formatDate(service.createdAt)}</TableCell>
                             <TableCell className="max-w-xs truncate">{service.description}</TableCell>
                             <TableCell className="text-right">
