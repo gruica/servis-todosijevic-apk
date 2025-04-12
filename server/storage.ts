@@ -30,10 +30,13 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
+  getUnverifiedUsers(): Promise<User[]>;
+  verifyUser(id: number, adminId: number): Promise<User | undefined>;
   
   // Technician methods
   getAllTechnicians(): Promise<Technician[]>;

@@ -17,6 +17,10 @@ export const users = pgTable("users", {
   city: text("city"), // Grad korisnika
   companyName: text("company_name"), // Naziv kompanije za poslovne partnere
   companyId: text("company_id"), // Jedinstveni identifikator kompanije
+  isVerified: boolean("is_verified").default(false).notNull(), // Da li je korisnik verifikovan od strane administratora
+  registeredAt: timestamp("registered_at").defaultNow().notNull(), // Datum i vreme registracije
+  verifiedAt: timestamp("verified_at"), // Datum i vreme kada je korisnik verifikovan
+  verifiedBy: integer("verified_by"), // ID administratora koji je verifikovao korisnika
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -31,6 +35,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   city: true,
   companyName: true,
   companyId: true,
+  isVerified: true,
+}).extend({
+  username: z.string().min(3, "Korisničko ime mora imati najmanje 3 karaktera").max(50, "Korisničko ime je predugačko"),
+  password: z.string().min(6, "Lozinka mora imati najmanje 6 karaktera"),
+  fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime i prezime je predugačko"),
+  email: z.string().email("Unesite validnu email adresu").or(z.literal("")).optional(),
+  phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
+    .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-")
+    .or(z.literal("")).optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

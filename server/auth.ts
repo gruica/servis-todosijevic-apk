@@ -90,6 +90,13 @@ export function setupAuth(app: Express) {
             return done(null, false, { message: 'Neispravno korisničko ime ili lozinka' });
           }
           
+          // Dodatna provera: da li je korisnik verifikovan
+          // Administratori uvek mogu da se prijave, ostali korisnici moraju biti verifikovani
+          if (user.role !== 'admin' && !user.isVerified) {
+            console.log(`User ${username} is not verified`);
+            return done(null, false, { message: 'Vaš nalog nije još verifikovan od strane administratora. Molimo sačekajte potvrdu.' });
+          }
+          
           console.log(`Authentication successful for: ${username}`);
           return done(null, user);
         } catch (error) {
@@ -125,24 +132,61 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).send("Korisničko ime već postoji");
+      // Provera da li već postoji korisnik sa istim korisničkim imenom
+      const existingUsername = await storage.getUserByUsername(req.body.username);
+      if (existingUsername) {
+        return res.status(400).json({
+          error: "Korisničko ime već postoji",
+          message: "Molimo odaberite drugo korisničko ime."
+        });
+      }
+      
+      // Provera email adrese ako je poslata
+      if (req.body.email) {
+        // Provera da li već postoji korisnik sa istim email-om
+        const existingEmail = await storage.getUserByEmail(req.body.email);
+        if (existingEmail) {
+          return res.status(400).json({
+            error: "Email adresa već postoji",
+            message: "Korisnik sa ovom email adresom je već registrovan."
+          });
+        }
       }
 
-      // Password will be hashed in the storage.createUser method
-      const user = await storage.createUser({
-        ...req.body
-      });
+      // Korisnički podaci za kreiranje
+      const userData = {
+        ...req.body,
+        isVerified: req.body.role === 'admin', // Administratori su automatski verifikovani
+        registeredAt: new Date().toISOString()
+      };
+      
+      // Lozinka će biti heširana u storage.createUser metodi
+      const user = await storage.createUser(userData);
 
-      // Remove password from the response
+      // Ukloni lozinku iz odgovora
       const { password, ...userWithoutPassword } = user;
-
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(userWithoutPassword);
-      });
+      
+      // Logujemo registraciju
+      console.log(`User ${user.username} registered with role ${user.role}, verification status: ${user.isVerified}`);
+      
+      // Administrator može odmah da se prijavi, ostali korisnici dobijaju poruku o potrebnoj verifikaciji
+      if (user.role === 'admin') {
+        req.login(user, (err) => {
+          if (err) return next(err);
+          res.status(201).json({
+            ...userWithoutPassword,
+            message: "Administrator uspešno registrovan i prijavljen."
+          });
+        });
+      } else {
+        // Za obične korisnike vraćamo samo podatke bez prijave
+        res.status(201).json({
+          ...userWithoutPassword,
+          message: "Registracija uspešna! Molimo sačekajte da administrator verifikuje vaš nalog pre prijave."
+        });
+      }
     } catch (error) {
+      console.error("Registration error:", error);
       next(error);
     }
   });
