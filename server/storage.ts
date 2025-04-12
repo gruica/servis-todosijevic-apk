@@ -1487,10 +1487,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServicesByTechnician(technicianId: number): Promise<Service[]> {
-    return await db
-      .select()
-      .from(services)
-      .where(eq(services.technicianId, technicianId));
+    try {
+      console.log(`Dohvatam servise za tehničara ${technicianId}`);
+      
+      const results = await db
+        .select({
+          id: services.id,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          technicianId: services.technicianId,
+          description: services.description,
+          status: services.status,
+          createdAt: services.createdAt,
+          scheduledDate: services.scheduledDate,
+          completedDate: services.completedDate,
+          technicianNotes: services.technicianNotes,
+          cost: services.cost,
+          usedParts: services.usedParts,
+          machineNotes: services.machineNotes,
+          isCompletelyFixed: services.isCompletelyFixed
+        })
+        .from(services)
+        .where(eq(services.technicianId, technicianId))
+        .orderBy(sql`${services.createdAt} DESC`);
+
+      console.log(`Pronađeno ${results.length} servisa za tehničara ${technicianId}`);
+      return results;
+    } catch (error) {
+      console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
+      throw error;
+    }
   }
 
   async createService(data: InsertService): Promise<Service> {

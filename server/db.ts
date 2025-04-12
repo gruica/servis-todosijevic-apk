@@ -11,5 +11,25 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Poboljšana konfiguracija pool-a
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 20, // maksimalan broj konekcija
+  idleTimeoutMillis: 30000, // timeout za neaktivne konekcije
+  connectionTimeoutMillis: 2000, // timeout za nove konekcije
+});
+
+// Event handleri za pool
+pool.on('connect', () => {
+  console.log('Baza: Nova konekcija uspostavljena');
+});
+
+pool.on('error', (err) => {
+  console.error('Baza: Greška u pool-u:', err);
+});
+
+export const db = drizzle({ 
+  client: pool, 
+  schema,
+  logger: true // uključi logovanje upita
+});
