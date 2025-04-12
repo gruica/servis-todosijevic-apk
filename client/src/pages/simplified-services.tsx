@@ -16,9 +16,14 @@ import { Service } from "@shared/schema";
 export default function SimplifiedServices() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Dohvati samo podatke o servisima
+  // Dohvati samo podatke o servisima - sa dodatnim oporavkom od greške
   const { data: services, isLoading, error } = useQuery<Service[]>({
     queryKey: ["/api/services"],
+    retry: 3,
+    retryDelay: 1000,
+    onError: (error) => {
+      console.error("Greška pri dohvatanju servisa:", error);
+    }
   });
   
   function getStatusBadge(status: string) {
