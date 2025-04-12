@@ -1442,13 +1442,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Service methods
-  async getAllServices(): Promise<Service[]> {
+  async getAllServices(limit?: number): Promise<Service[]> {
     try {
       console.log('Dohvatanje svih servisa...');
       
       // Koristimo innerJoin za validaciju veza između tabela
       // Ovo će osigurati da servisi imaju validne reference na klijente i uređaje
-      const result = await db.select({
+      let query = db.select({
         id: services.id,
         clientId: services.clientId,
         applianceId: services.applianceId,
@@ -1468,12 +1468,22 @@ export class DatabaseStorage implements IStorage {
       })
       .from(services)
       .innerJoin(clients, eq(services.clientId, clients.id))
-      .innerJoin(appliances, eq(services.applianceId, appliances.id));
+      .innerJoin(appliances, eq(services.applianceId, appliances.id))
+      .orderBy(desc(services.createdAt));
+      
+      // Dodamo limit ako je specificiran za optimizaciju
+      if (limit && limit > 0) {
+        query = query.limit(limit);
+      }
+      
+      const result = await query;
       
       // Vodimo zapisnik o ključevima prvog rezultata za debug
       if (result.length > 0) {
         console.log("Ključevi prvog servisa:", Object.keys(result[0]));
-        console.log("Prvi servis createdAt:", result[0].createdAt);
+        if (result[0].createdAt) {
+          console.log("Prvi servis createdAt:", new Date(result[0].createdAt).toISOString().split('T')[0]);
+        }
       }
       
       console.log(`Uspješno dohvaćeno ${result.length} servisa sa validnim referencama`);
