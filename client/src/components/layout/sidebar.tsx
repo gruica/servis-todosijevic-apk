@@ -12,12 +12,13 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const { user } = useAuth();
 
   // Define menu items based on user role
+  // Verzija 2 - Samo najbitnije opcije
   const adminMenuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
+    { path: "/", label: "Kontrolna tabla", icon: "dashboard", highlight: true },
     { path: "/clients", label: "Klijenti", icon: "person" },
     { path: "/admin/services", label: "Servisi", icon: "build" },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
-    { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
+    { path: "/appliances", label: "Bela tehnika", icon: "home_repair_service" },
     { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
@@ -94,6 +95,9 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                       "flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100",
                       location === item.path 
                         ? "bg-blue-50 border-l-4 border-primary text-primary" 
+                        : "",
+                      (item as any).highlight
+                        ? "font-medium text-blue-700"
                         : ""
                     )}
                   >
@@ -101,6 +105,9 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                       <span className="material-symbols-outlined mr-3">{item.icon}</span>
                     )}
                     <span>{item.label}</span>
+                    {(item.path === "/admin/services" || item.path === "/admin/user-verification") && (
+                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Novo</span>
+                    )}
                   </div>
                 </Link>
               </li>
