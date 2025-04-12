@@ -227,6 +227,9 @@ export default function EnhancedServices() {
       const appliance = appliances?.find(a => a.id === service.applianceId);
       const category = appliance?.categoryId ? categories?.find(c => c.id === appliance.categoryId) : null;
       const technician = service.technicianId ? technicians?.find(t => t.id === service.technicianId) : null;
+      const creator = service.businessPartnerId 
+        ? `Poslovni partner: ${service.partnerCompanyName || 'Nepoznato'}`
+        : "Admin";
       
       // Add JSON parsing for usedParts if it exists
       let parsedUsedParts = [];
@@ -254,6 +257,7 @@ export default function EnhancedServices() {
         serialNumber: appliance?.serialNumber || "",
         purchaseDate: appliance?.purchaseDate || "",
         parsedUsedParts,
+        createdBy: creator,
       };
     } catch (error) {
       console.error(`Greška pri obogaćivanju servisa #${service.id}:`, error);
@@ -706,6 +710,7 @@ export default function EnhancedServices() {
                           <TableHead>Uređaj</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Serviser</TableHead>
+                          <TableHead>Kreirao</TableHead>
                           <TableHead>Datum prijave</TableHead>
                           <TableHead>Akcije</TableHead>
                         </TableRow>
@@ -782,6 +787,13 @@ export default function EnhancedServices() {
                                   </PopoverContent>
                                 </Popover>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="font-normal">
+                                {service.businessPartnerId 
+                                  ? service.partnerCompanyName || "Poslovni partner" 
+                                  : "Admin"}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               {formatDate(service.createdAt)}

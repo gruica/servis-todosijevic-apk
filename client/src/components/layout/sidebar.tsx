@@ -15,7 +15,8 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const adminMenuItems = [
     { path: "/", label: "Kontrolna tabla", icon: "grid_view" },
     { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/services", label: "Servisi", icon: "build" },
+    { path: "/admin/services", label: "Servisi (unapređeno)", icon: "build" },
+    { path: "/services", label: "Servisi (staro)", icon: "build" },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
     { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },

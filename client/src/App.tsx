@@ -64,7 +64,9 @@ function Router() {
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
-      {/* Verzije servisa */}
+      {/* Admin verzija servisa - zaštićena */}
+      <RoleProtectedRoute path="/admin/services" component={EnhancedServices} allowedRoles={["admin"]} />
+      {/* Javne verzije servisa za testiranje */}
       <Route path="/services" component={EnhancedServices} />
       <Route path="/services-basic" component={BasicServicesPage} />
       <Route path="/services-alt" component={SimplifiedServices} />
