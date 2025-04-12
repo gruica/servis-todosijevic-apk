@@ -13,17 +13,17 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
 
   // Define menu items based on user role
   const adminMenuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "grid_view" },
+    { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
     { path: "/clients", label: "Klijenti", icon: "person" },
     { path: "/admin/services", label: "Servisi (unapređeno)", icon: "build" },
     { path: "/services", label: "Servisi (staro)", icon: "build" },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
     { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
+    { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
-    { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel izvoz", icon: "download" },
     { path: "/admin/excel-import", label: "Excel uvoz", icon: "upload" },
@@ -109,6 +109,30 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
               </li>
             ))}
           </ul>
+          
+          {/* Posebna sekcija za verifikaciju korisnika (prikazuje se samo za admin) */}
+          {user?.role === "admin" && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h3 className="px-4 text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2">
+                ADMINISTRACIJA
+              </h3>
+              <ul>
+                <li>
+                  <Link href="/admin/user-verification" onClick={() => closeMobileMenu()}>
+                    <div className={cn(
+                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
+                      location === "/admin/user-verification" 
+                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
+                        : "border-l-4 border-transparent"
+                    )}>
+                      <span className="material-symbols-outlined mr-3">verified_user</span>
+                      <span>Verifikacija korisnika</span>
+                    </div>
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
         </nav>
       </div>
       
