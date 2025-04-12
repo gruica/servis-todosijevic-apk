@@ -136,16 +136,41 @@ export default function Services() {
   
   // Enrich services with client and appliance data
   const enrichedServices = services?.map(service => {
-    const client = clients?.find(c => c.id === service.clientId);
-    const appliance = appliances?.find(a => a.id === service.applianceId);
-    const category = categories?.find(c => c.id === appliance?.categoryId);
-    
-    return {
-      ...service,
-      clientName: client?.fullName || "Nepoznato",
-      applianceName: category?.name || "Nepoznat uređaj",
-      icon: category?.icon || "devices",
-    };
+    try {
+      // Proveravamo da li su clientId i applianceId validni
+      if (!service.clientId || !service.applianceId) {
+        console.warn(`Servis #${service.id} ima nevažeći clientId:${service.clientId} ili applianceId:${service.applianceId}`);
+      }
+      
+      const client = clients?.find(c => c.id === service.clientId);
+      const appliance = appliances?.find(a => a.id === service.applianceId);
+      const category = appliance?.categoryId ? categories?.find(c => c.id === appliance.categoryId) : null;
+      
+      // Dodajemo dodatne debug informacije
+      if (!client) {
+        console.warn(`Nije pronađen klijent za servis #${service.id}, clientId:${service.clientId}`);
+      }
+      
+      if (!appliance) {
+        console.warn(`Nije pronađen uređaj za servis #${service.id}, applianceId:${service.applianceId}`);
+      }
+      
+      return {
+        ...service,
+        clientName: client?.fullName || "Nepoznato",
+        applianceName: category?.name || "Nepoznat uređaj",
+        icon: category?.icon || "devices",
+      };
+    } catch (error) {
+      console.error(`Greška pri obogaćivanju servisa #${service.id}:`, error);
+      // Vraćamo osnovni servis bez dodatnih podataka ako dođe do greške
+      return {
+        ...service,
+        clientName: "Greška u podacima",
+        applianceName: "Nepoznato",
+        icon: "error",
+      };
+    }
   });
   
   // Filter services based on search query and status filter
