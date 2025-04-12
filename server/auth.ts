@@ -260,6 +260,86 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
   
+  // API za dohvatanje neverifikovanih korisnika (samo za administratore)
+  app.get("/api/users/unverified", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Potrebna je prijava" });
+      }
+      
+      // Provera da li je prijavljeni korisnik administrator
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Pristup zabranjen. Potrebna je administratorska uloga." });
+      }
+      
+      // Dohvati neverifikovane korisnike
+      const unverifiedUsers = await storage.getUnverifiedUsers();
+      
+      // Ukloni osetljive podatke pre slanja
+      const safeUsers = unverifiedUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Greška pri dohvatanju neverifikovanih korisnika:", error);
+      next(error);
+    }
+  });
+  
+  // API za verifikaciju korisnika (samo za administratore)
+  app.post("/api/users/:id/verify", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Potrebna je prijava" });
+      }
+      
+      // Provera da li je prijavljeni korisnik administrator
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Pristup zabranjen. Potrebna je administratorska uloga." });
+      }
+      
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Nevažeći ID korisnika" });
+      }
+      
+      // Prvo proveri da li korisnik postoji
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      if (user.isVerified) {
+        return res.status(400).json({ error: "Korisnik je već verifikovan" });
+      }
+      
+      // Verifikuj korisnika
+      const updatedUser = await storage.verifyUser(userId, req.user.id);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Greška pri verifikaciji korisnika" });
+      }
+      
+      // Ukloni osetljive podatke pre slanja
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      // Šalji email obaveštenja korisniku - implementirati kasnije
+      
+      res.json({
+        success: true,
+        message: "Korisnik uspešno verifikovan",
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      console.error("Greška pri verifikaciji korisnika:", error);
+      next(error);
+    }
+  });
+  
   // Ruta za promjenu šifre prijavljenog korisnika
   app.post("/api/change-password", async (req, res, next) => {
     try {
