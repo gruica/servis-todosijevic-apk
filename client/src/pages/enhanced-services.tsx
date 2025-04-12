@@ -1215,6 +1215,13 @@ export default function EnhancedServices() {
               <DialogDescription>
                 Pregled detalja servisa
               </DialogDescription>
+              {selectedService.businessPartnerId && (
+                <div className="mt-2">
+                  <Badge variant="secondary" className="text-xs">
+                    Kreirao: {selectedService.partnerCompanyName || "Poslovni partner"}
+                  </Badge>
+                </div>
+              )}
             </DialogHeader>
             
             <div className="space-y-6">
