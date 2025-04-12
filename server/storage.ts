@@ -310,6 +310,10 @@ export class MemStorage implements IStorage {
       password = await this.hashPassword(password);
     }
     
+    const now = new Date();
+    // Administratori i serviseri (techniciani) su automatski verifikovani
+    const isVerified = role === "admin" || role === "technician" || !!insertUser.isVerified;
+    
     const user: User = { 
       id, 
       username: insertUser.username,
@@ -317,7 +321,16 @@ export class MemStorage implements IStorage {
       fullName: insertUser.fullName,
       role,
       technicianId: insertUser.technicianId !== undefined ? insertUser.technicianId : null,
-      email: insertUser.email || null
+      email: insertUser.email || null,
+      phone: insertUser.phone || null,
+      address: insertUser.address || null,
+      city: insertUser.city || null,
+      companyName: insertUser.companyName || null,
+      companyId: insertUser.companyId || null,
+      isVerified: isVerified,
+      registeredAt: now.toISOString(),
+      verifiedAt: isVerified ? now.toISOString() : null,
+      verifiedBy: isVerified && role === "admin" ? id : null // samoodobravanje za administratore
     };
     
     this.users.set(id, user);
@@ -377,6 +390,14 @@ export class MemStorage implements IStorage {
 
   async getClient(id: number): Promise<Client | undefined> {
     return this.clients.get(id);
+  }
+  
+  async getClientByEmail(email: string): Promise<Client | undefined> {
+    if (!email) return undefined;
+    
+    return Array.from(this.clients.values()).find(
+      (client) => client.email === email
+    );
   }
   
   /**
@@ -572,6 +593,14 @@ export class MemStorage implements IStorage {
   async getAppliance(id: number): Promise<Appliance | undefined> {
     return this.appliances.get(id);
   }
+  
+  async getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined> {
+    if (!serialNumber) return undefined;
+    
+    return Array.from(this.appliances.values()).find(
+      (appliance) => appliance.serialNumber === serialNumber
+    );
+  }
 
   async getAppliancesByClient(clientId: number): Promise<Appliance[]> {
     return Array.from(this.appliances.values()).filter(
@@ -673,7 +702,9 @@ export class MemStorage implements IStorage {
       cost: insertService.cost || null,
       usedParts: insertService.usedParts || null,
       machineNotes: insertService.machineNotes || null,
-      isCompletelyFixed: insertService.isCompletelyFixed || null
+      isCompletelyFixed: insertService.isCompletelyFixed || null,
+      businessPartnerId: insertService.businessPartnerId || null,
+      partnerCompanyName: insertService.partnerCompanyName || null
     };
     this.services.set(id, service);
     return service;
@@ -706,6 +737,12 @@ export class MemStorage implements IStorage {
   async getServicesByTechnician(technicianId: number): Promise<Service[]> {
     return Array.from(this.services.values()).filter(
       (service) => service.technicianId === technicianId,
+    );
+  }
+  
+  async getServicesByTechnicianAndStatus(technicianId: number, status: ServiceStatus): Promise<Service[]> {
+    return Array.from(this.services.values()).filter(
+      (service) => service.technicianId === technicianId && service.status === status,
     );
   }
   
