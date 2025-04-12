@@ -1,7 +1,7 @@
 /**
  * Skripta za resetovanje lozinki poslovnih partnera na standardnu vrednost
  */
-import { db } from "../server/db";
+import { pool } from "../server/db";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
@@ -21,15 +21,13 @@ async function resetBusinessPartnerPasswords() {
     const standardPassword = "partner123";
     
     // Dohvati sve korisnike sa ulogom "business"
-    const businessPartners = await db.query.users.findMany({
-      where: (users, { eq }) => eq(users.role, "business"),
-      columns: {
-        id: true,
-        username: true,
-        fullName: true,
-        companyName: true
-      }
-    });
+    const businessPartnersResult = await pool.query(`
+      SELECT id, username, full_name, company_name 
+      FROM users 
+      WHERE role = 'business'
+    `);
+    
+    const businessPartners = businessPartnersResult.rows;
     
     console.log(`Pronađeno ${businessPartners.length} poslovnih partnera.\n`);
     
@@ -42,13 +40,14 @@ async function resetBusinessPartnerPasswords() {
     for (const partner of businessPartners) {
       const hashedPassword = await hashPassword(standardPassword);
       
-      // Direktan SQL upit za ažuriranje lozinke - koristimo numerisane parametre
-      await db.execute(
-        `UPDATE users SET password = $1 WHERE id = ${partner.id}`,
-        [hashedPassword]
-      );
+      // Direktan SQL upit za ažuriranje lozinke
+      await pool.query(`
+        UPDATE users
+        SET password = $1
+        WHERE id = $2
+      `, [hashedPassword, partner.id]);
       
-      console.log(`Resetovana lozinka za partnera: ${partner.fullName} (${partner.companyName || 'bez firme'})`);
+      console.log(`Resetovana lozinka za partnera: ${partner.full_name} (${partner.company_name || 'bez firme'})`);
     }
     
     console.log("\nLozinke uspešno resetovane za sve poslovne partnere.");
@@ -56,6 +55,8 @@ async function resetBusinessPartnerPasswords() {
     
   } catch (error) {
     console.error("Greška pri resetovanju lozinki:", error);
+  } finally {
+    await pool.end();
   }
 }
 
