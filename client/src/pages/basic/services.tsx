@@ -79,14 +79,42 @@ const BasicServicesPage = () => {
       const data = await response.json();
       console.log('Učitani podaci:', data);
       
+      // Detaljniji debug log za prvi element, ako postoji
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('Prvi element iz API-ja:', JSON.stringify(data[0], null, 2));
+        console.log('Imena polja prvog elementa:', Object.keys(data[0]));
+        
+        // Provjera da li element sadrži 'createdAt' ili 'created_at'
+        if (data[0].createdAt) {
+          console.log("API vraća polje 'createdAt':", data[0].createdAt);
+        } else if (data[0].created_at) {
+          console.log("API vraća polje 'created_at':", data[0].created_at);
+        } else {
+          console.log("Niti 'createdAt' niti 'created_at' nije pronađeno u podacima!");
+        }
+      }
+      
       // Transformacija podataka kako bi se ujednačila imena polja
-      const transformedData = Array.isArray(data) ? data.map(service => ({
-        id: service.id,
-        status: service.status,
-        // Ako imamo createdAt koristimo ga, inače koristimo created_at ako postoji
-        createdAt: service.createdAt || service.created_at || '',
-        description: service.description || ''
-      })) : [];
+      const transformedData = Array.isArray(data) ? data.map(service => {
+        // Pronađimo sve moguće oblike datuma
+        let dateField = '';
+        if (service.createdAt) {
+          dateField = service.createdAt;
+          console.log(`Koristeći createdAt: ${dateField}`);
+        } else if (service.created_at) {
+          dateField = service.created_at;
+          console.log(`Koristeći created_at: ${dateField}`);
+        } else {
+          console.warn(`Servis ID ${service.id} nema datum!`);
+        }
+        
+        return {
+          id: service.id,
+          status: service.status,
+          createdAt: dateField,
+          description: service.description || ''
+        };
+      }) : [];
       
       console.log('Transformirani podaci:', transformedData);
       setServices(transformedData);

@@ -58,7 +58,7 @@ function Router() {
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       {/* Nova osnovna verzija servisa */}
-      <RoleProtectedRoute path="/services" component={BasicServicesPage} allowedRoles={["admin"]} />
+      <Route path="/services" component={BasicServicesPage} />
       <RoleProtectedRoute path="/services-alt" component={SimplifiedServices} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />
