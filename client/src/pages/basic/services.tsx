@@ -52,11 +52,20 @@ const styles = {
 };
 
 // Tip za servis - minimalno potrebno
+type ApiService = {
+  id: number;
+  status: string;
+  createdAt?: string; // camelCase format
+  created_at?: string; // snake_case format
+  description: string;
+  [key: string]: any; // Dozvoljava dodatna polja koja možda dobijemo sa API-ja
+};
+
+// Tip za konzistentni format na frontendu
 type BasicService = {
   id: number;
   status: string;
-  createdAt: string; // Ime koje očekuje React komponenta
-  created_at?: string; // Ime koje možda dolazi sa API-ja
+  createdAt: string; // Uvijek koristimo camelCase u React komponenti
   description: string;
 };
 

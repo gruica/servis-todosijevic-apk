@@ -1469,8 +1469,28 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(clients, eq(services.clientId, clients.id))
       .innerJoin(appliances, eq(services.applianceId, appliances.id));
       
+      // Vodimo zapisnik o ključevima prvog rezultata za debug
+      if (result.length > 0) {
+        console.log("Ključevi prvog servisa:", Object.keys(result[0]));
+        console.log("Prvi servis createdAt:", result[0].createdAt);
+      }
+      
       console.log(`Uspješno dohvaćeno ${result.length} servisa sa validnim referencama`);
-      return result;
+      
+      // Transformacija naziva iz snake_case u camelCase ako je potrebno
+      const transformedResult = result.map(service => {
+        // Ako je slučajno createdAt transformirano iz created_at nazad u snake_case od strane orm-a
+        if (!service.createdAt && (service as any).created_at) {
+          return {
+            ...service,
+            // Ako imamo created_at umesto createdAt, prebacujemo u camelCase format
+            createdAt: (service as any).created_at,
+          };
+        }
+        return service;
+      });
+      
+      return transformedResult;
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije

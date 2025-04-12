@@ -252,7 +252,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         services = await storage.getAllServices();
       }
       
-      res.json(services);
+      // Osiguramo da imamo konzistentno camelCase mapiranje polja
+      const formattedServices = services.map(service => {
+        // Ako createdAt nedostaje ali imamo created_at, koristimo created_at vrijednost
+        if (!service.createdAt && (service as any).created_at) {
+          return {
+            ...service,
+            createdAt: (service as any).created_at
+          };
+        }
+        return service;
+      });
+      
+      console.log(`API vraća ${formattedServices.length} servisa`);
+      if (formattedServices.length > 0) {
+        console.log("Ključevi prvog servisa:", Object.keys(formattedServices[0]));
+      }
+      
+      res.json(formattedServices);
     } catch (error) {
       console.error("Greška pri dobijanju servisa:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
