@@ -40,7 +40,8 @@ import NewBusinessServiceRequest from "@/pages/business/services/new";
 
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
-import ClientTest from "./pages/client-test";
+import DiagnosticsPage from "@/pages/diagnostics";
+import DiagnosticServicesPage from "@/pages/diagnostic-services";
 
 function Router() {
   return (
@@ -48,7 +49,9 @@ function Router() {
       {/* Public home page - novi javni homepage za sve korisnike */}
       <Route path="/" component={HomePage} />
       
-      {/* Test route uklonjena za produkciju */}
+      {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
+      <Route path="/diagnostics" component={DiagnosticsPage} />
+      <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
