@@ -358,72 +358,36 @@ export default function Services() {
               </Button>
             </div>
             
-            {/* Search and filter - responsive design */}
+            {/* Search and filter */}
             <Card className="mb-6">
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="relative">
-                    <div className="flex items-center border rounded-md overflow-hidden">
-                      <div className="pl-3 pr-2 text-gray-400">
-                        <Search size={18} />
-                      </div>
-                      <Input
-                        placeholder="Pretraga servisa"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                      />
-                      {searchQuery && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 mr-1"
-                          onClick={() => setSearchQuery("")}
-                        >
-                          <span className="sr-only">Očisti</span>
-                          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
-                          </svg>
-                        </Button>
-                      )}
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative md:col-span-2">
+                    <Input
+                      placeholder="Pretraga"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="relative">
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger>
-                          <div className="flex items-center">
-                            <Filter size={16} className="mr-2" />
-                            <SelectValue placeholder="Status" />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {statusOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="md:text-right">
-                      <Button 
-                        onClick={handleAddService} 
-                        className="w-full md:w-auto"
-                        size="sm"
-                      >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Dodaj novi servis
-                      </Button>
-                    </div>
+                  <div className="relative">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            {/* Services - responsive view */}
+            {/* Services table */}
             <Card>
               <CardHeader className="pb-0">
                 <CardTitle className="text-lg font-medium">Lista servisa</CardTitle>
@@ -438,144 +402,80 @@ export default function Services() {
                     <Skeleton className="h-12 w-full" />
                   </div>
                 ) : (
-                  <>
-                    {/* Desktop View - Full Table */}
-                    <div className="hidden md:block overflow-x-auto">
-                      <Table>
-                        <TableHeader>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Klijent</TableHead>
+                          <TableHead>Uređaj</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Datum prijave</TableHead>
+                          <TableHead>Opis</TableHead>
+                          <TableHead className="text-right">Akcije</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredServices?.length === 0 && (
                           <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Klijent</TableHead>
-                            <TableHead>Uređaj</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Datum prijave</TableHead>
-                            <TableHead>Opis</TableHead>
-                            <TableHead className="text-right">Akcije</TableHead>
+                            <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                              {searchQuery || statusFilter !== "all"
+                                ? "Nema rezultata za vašu pretragu" 
+                                : "Nema servisa za prikaz"}
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredServices?.length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={7} className="text-center py-6 text-gray-500">
-                                {searchQuery || statusFilter !== "all"
-                                  ? "Nema rezultata za vašu pretragu" 
-                                  : "Nema servisa za prikaz"}
-                              </TableCell>
-                            </TableRow>
-                          )}
-                          
-                          {filteredServices?.map((service) => (
-                            <TableRow key={service.id}>
-                              <TableCell className="font-medium">#{service.id}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <div className={`w-8 h-8 rounded-full ${getAvatarColor(service.clientName)} text-white flex items-center justify-center mr-3`}>
-                                    <span className="text-xs font-medium">{getUserInitials(service.clientName)}</span>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span>{service.clientName}</span>
-                                    {service.businessPartnerId && service.partnerCompanyName && (
-                                      <span className="text-xs text-blue-600 font-medium mt-1">
-                                        Via: {service.partnerCompanyName}
-                                      </span>
-                                    )}
-                                  </div>
+                        )}
+                        
+                        {filteredServices?.map((service) => (
+                          <TableRow key={service.id}>
+                            <TableCell className="font-medium">#{service.id}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <div className={`w-8 h-8 rounded-full ${getAvatarColor(service.clientName)} text-white flex items-center justify-center mr-3`}>
+                                  <span className="text-xs font-medium">{getUserInitials(service.clientName)}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center">
-                                  <span className="material-icons text-primary mr-2">{service.icon}</span>
-                                  <span>{service.applianceName}</span>
+                                <div className="flex flex-col">
+                                  <span>{service.clientName}</span>
+                                  {service.businessPartnerId && service.partnerCompanyName && (
+                                    <span className="text-xs text-blue-600 font-medium mt-1">
+                                      Via: {service.partnerCompanyName}
+                                    </span>
+                                  )}
                                 </div>
-                              </TableCell>
-                              <TableCell>{getStatusBadge(service.status)}</TableCell>
-                              <TableCell>{formatDate(service.createdAt)}</TableCell>
-                              <TableCell className="max-w-xs truncate">{service.description}</TableCell>
-                              <TableCell className="text-right">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => handleEditService(service)}
-                                >
-                                  <Eye className="h-4 w-4 text-primary" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
-                                  onClick={() => handleEditService(service)}
-                                >
-                                  <Pencil className="h-4 w-4 text-primary" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    
-                    {/* Mobile View - Card Style Layout */}
-                    <div className="md:hidden">
-                      {filteredServices?.length === 0 ? (
-                        <div className="text-center py-6 text-gray-500">
-                          {searchQuery || statusFilter !== "all"
-                            ? "Nema rezultata za vašu pretragu" 
-                            : "Nema servisa za prikaz"}
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {filteredServices?.map((service) => (
-                            <div 
-                              key={service.id} 
-                              className="p-4 border rounded-lg shadow-sm bg-white"
-                              onClick={() => handleEditService(service)}
-                            >
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center">
-                                  <div className={`w-10 h-10 rounded-full ${getAvatarColor(service.clientName)} text-white flex items-center justify-center mr-3`}>
-                                    <span className="text-sm font-medium">{getUserInitials(service.clientName)}</span>
-                                  </div>
-                                  <div>
-                                    <div className="font-medium">{service.clientName}</div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                      <span className="material-icons text-primary text-sm mr-1">{service.icon}</span>
-                                      <span>{service.applianceName}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-sm font-medium">#{service.id}</div>
                               </div>
-                              
-                              <div className="ml-13 pl-3 border-l-2 border-gray-200 mt-2 mb-2">
-                                <p className="text-sm mb-1 line-clamp-2">{service.description}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <span className="material-icons text-primary mr-2">{service.icon}</span>
+                                <span>{service.applianceName}</span>
                               </div>
-                              
-                              <div className="flex justify-between items-center mt-3">
-                                <div>{getStatusBadge(service.status)}</div>
-                                <div className="text-sm text-gray-600">{formatDate(service.createdAt)}</div>
-                              </div>
-                              
-                              <div className="flex justify-end mt-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-8 px-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditService(service);
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4 text-primary mr-1" />
-                                  <span className="text-xs">Uredi</span>
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(service.status)}</TableCell>
+                            <TableCell>{formatDate(service.createdAt)}</TableCell>
+                            <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => handleEditService(service)}
+                              >
+                                <Eye className="h-4 w-4 text-primary" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => handleEditService(service)}
+                              >
+                                <Pencil className="h-4 w-4 text-primary" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
