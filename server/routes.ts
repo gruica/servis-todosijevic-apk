@@ -221,65 +221,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Services routes
+  // Services routes - optimizovana verzija
   app.get("/api/services", async (req, res) => {
     try {
-      const { status, technicianId } = req.query;
+      // Startamo mjerenje vremena
+      const startTime = Date.now();
+      const { status, technicianId, limit } = req.query;
+      
+      // Postavimo limit za broj servisa ako je potrebno
+      let limitNumber = undefined;
+      if (limit && typeof limit === 'string') {
+        try {
+          limitNumber = parseInt(limit);
+        } catch {
+          // Ignorišemo nevažeći limit
+        }
+      }
+      
       let services;
       
-      // Ako je definisan tehničar, prvo filtriramo po njemu
+      // Optimizovan pristup koji odmah dohvata filtrirane rezultate direktno iz baze
+      // umjesto da prvo dohvatamo sve pa onda filtriramo u memoriji
       if (technicianId && typeof technicianId === 'string') {
         try {
           const techId = parseInt(technicianId);
           
-          // Ako je definisan i status, filtriramo dodatno po statusu
           if (status && typeof status === 'string' && status !== 'all') {
             try {
               const validStatus = serviceStatusEnum.parse(status);
-              // Dohvatamo servise za tehničara pa onda filtriramo po statusu
-              const techServices = await storage.getServicesByTechnician(techId);
-              services = techServices.filter(s => s.status === validStatus);
+              // Direktno dohvatamo servise za tehničara i status
+              services = await storage.getServicesByTechnicianAndStatus(techId, validStatus, limitNumber);
             } catch {
               return res.status(400).json({ error: "Nevažeći status servisa" });
             }
           } else {
             // Samo po tehničaru
-            services = await storage.getServicesByTechnician(techId);
+            services = await storage.getServicesByTechnician(techId, limitNumber);
           }
         } catch (err) {
           return res.status(400).json({ error: "Nevažeći ID servisera" });
         }
       }
-      // Ako nije definisan tehničar, filtiramo samo po statusu ako je definisan
       else if (status && typeof status === 'string' && status !== 'all') {
         try {
           const validStatus = serviceStatusEnum.parse(status);
-          services = await storage.getServicesByStatus(validStatus);
+          services = await storage.getServicesByStatus(validStatus, limitNumber);
         } catch {
           return res.status(400).json({ error: "Nevažeći status servisa" });
         }
       } else {
-        // Ako nije definisan ni tehničar ni status, dohvatamo sve servise
-        services = await storage.getAllServices();
+        // Dohvatamo sve servise, ali možemo ograničiti broj
+        services = await storage.getAllServices(limitNumber);
       }
       
-      // Osiguramo da imamo konzistentno camelCase mapiranje polja
-      const formattedServices = services.map(service => {
-        // Ako createdAt nedostaje ali imamo created_at, koristimo created_at vrijednost
-        if (!service.createdAt && (service as any).created_at) {
-          return {
-            ...service,
-            createdAt: (service as any).created_at
-          };
-        }
-        return service;
-      });
+      // Optimizacija: mapiranje se vrši samo za specifične slučajeve
+      // gde su polja u snake_case, umjesto za svaki objekat
+      let formattedServices = services;
       
-      console.log(`API vraća ${formattedServices.length} servisa`);
+      // Samo prvi servis provjeravamo za potrebe formatiranja
+      if (services.length > 0 && !services[0].createdAt && (services[0] as any).created_at) {
+        console.log("Potrebno mapiranje iz snake_case u camelCase");
+        formattedServices = services.map(service => {
+          if (!service.createdAt && (service as any).created_at) {
+            return {
+              ...service,
+              createdAt: (service as any).created_at
+            };
+          }
+          return service;
+        });
+      }
+      
+      // Mjerimo ukupno vrijeme izvršenja
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+      
+      // Logovanje samo za dijagnostičke svrhe
+      if (executionTime > 200) {
+        console.log(`API vraća ${formattedServices.length} servisa - SPORO (${executionTime}ms)`);
+      } else {
+        console.log(`API vraća ${formattedServices.length} servisa (${executionTime}ms)`);
+      }
+      
       if (formattedServices.length > 0) {
         console.log("Ključevi prvog servisa:", Object.keys(formattedServices[0]));
       }
       
+      // Dodajemo zaglavlje za vrijeme izvršenja - samo za dijagnostičke svrhe
+      res.setHeader('X-Execution-Time', executionTime.toString());
       res.json(formattedServices);
     } catch (error) {
       console.error("Greška pri dobijanju servisa:", error);

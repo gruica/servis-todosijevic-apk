@@ -613,18 +613,32 @@ const SystemDiagnostics: React.FC = () => {
       }
       
       // Postavimo sve provjere sustava u stanje
-      setSystemStatuses([
+      const allStatuses = [
         servicesStatus,
         clientsStatus,
         techniciansStatus,
         appliancesStatus,
         categoriesStatus,
         sessionStatus
-      ]);
+      ];
       
-      // Postavimo početne statistike ako nisu već postavljene
-      if (!systemStats) {
-        setSystemStats({
+      setSystemStatuses(allStatuses);
+      
+      // Izračunaj prosječno vrijeme odgovora za API-je
+      let totalResponseTime = 0;
+      let apiCount = 0;
+      
+      allStatuses.forEach(status => {
+        if (status.details?.responseTime) {
+          totalResponseTime += status.details.responseTime;
+          apiCount++;
+        }
+      });
+      
+      // Postavimo statistike
+      setSystemStats(prev => {
+        // Osnovne statistike ako ne postoje
+        const stats = prev || {
           totalServices: 0,
           activeServices: 0,
           completedServices: 0,
@@ -632,8 +646,18 @@ const SystemDiagnostics: React.FC = () => {
           totalTechnicians: 0,
           totalAppliances: 0,
           totalCategories: 0
-        });
-      }
+        };
+        
+        // Dodamo prosječno vrijeme odgovora ako imamo API-je
+        if (apiCount > 0) {
+          return {
+            ...stats,
+            avgResponseTime: totalResponseTime / apiCount
+          };
+        }
+        
+        return stats;
+      });
     } catch (err) {
       console.error('Greška prilikom provjere statusa sustava:', err);
       setError('Greška prilikom provjere statusa sustava. Molimo pokušajte ponovno kasnije.');
@@ -642,9 +666,30 @@ const SystemDiagnostics: React.FC = () => {
     }
   };
   
-  // Funkcija za prikaz statusa sustava
+  // Funkcija za prikaz statusa sustava - poboljšana verzija
   const getOverallSystemStatus = (): 'healthy' | 'warning' | 'critical' | 'unknown' => {
     if (systemStatuses.length === 0) return 'unknown';
+    
+    // Računanje prosječnog vremena odgovora - ako je prosječno vrijeme veliko, pokazat ćemo upozorenje
+    let totalResponseTime = 0;
+    let apiCount = 0;
+    
+    systemStatuses.forEach(status => {
+      if (status.details?.responseTime) {
+        totalResponseTime += status.details.responseTime;
+        apiCount++;
+      }
+    });
+    
+    // Ako imamo barem jedan API i provjerimo prosječno vrijeme odgovora
+    if (apiCount > 0) {
+      const avgResponseTime = totalResponseTime / apiCount;
+      
+      // Ako je prosječno vrijeme veće od 800ms, postavimo upozorenje čak i ako svi API-ji rade
+      if (avgResponseTime > 800 && systemStatuses.every(s => s.status === 'healthy')) {
+        return 'warning'; // Sustav je funkcionalan, ali spor
+      }
+    }
     
     if (systemStatuses.some(s => s.status === 'critical')) return 'critical';
     if (systemStatuses.some(s => s.status === 'warning')) return 'warning';
