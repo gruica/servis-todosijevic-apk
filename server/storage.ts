@@ -1303,6 +1303,38 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async getUnverifiedUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.isVerified, false),
+        sql`${users.role} != 'admin'` // Administrator je uvek verifikovan
+      ))
+      .orderBy(desc(users.registeredAt));
+  }
+  
+  async verifyUser(id: number, adminId: number): Promise<User | undefined> {
+    const now = new Date();
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        isVerified: true,
+        verifiedAt: now,
+        verifiedBy: adminId
+      })
+      .where(eq(users.id, id))
+      .returning();
+      
+    return updatedUser;
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     // Proveri da li je lozinka već validno heširana (ima format 'hash.salt')
@@ -1393,6 +1425,11 @@ export class DatabaseStorage implements IStorage {
     const [client] = await db.select().from(clients).where(eq(clients.id, id));
     return client;
   }
+  
+  async getClientByEmail(email: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.email, email));
+    return client;
+  }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
     const [client] = await db.insert(clients).values(insertClient).returning();
@@ -1455,6 +1492,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAppliance(id: number): Promise<Appliance | undefined> {
     const [appliance] = await db.select().from(appliances).where(eq(appliances.id, id));
+    return appliance;
+  }
+  
+  async getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined> {
+    const [appliance] = await db.select().from(appliances).where(eq(appliances.serialNumber, serialNumber));
     return appliance;
   }
 
