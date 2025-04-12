@@ -28,6 +28,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, Plus, Search, Eye, Filter } from "lucide-react";
 
+// PAŽNJA: Stranica je privremeno pojednostavljena zbog problema sa belim ekranom
+
 const serviceFormSchema = insertServiceSchema.extend({
   clientId: z.coerce.number().min(1, "Obavezno polje"),
   applianceId: z.coerce.number().min(1, "Obavezno polje"),
@@ -39,7 +41,6 @@ const serviceFormSchema = insertServiceSchema.extend({
   completedDate: z.string().optional().nullable(),
   technicianNotes: z.string().optional().nullable(),
   cost: z.string().optional().nullable(),
-  // Dodajemo polja za poslovnog partnera
   businessPartnerId: z.number().optional().nullable(),
   partnerCompanyName: z.string().optional().nullable(),
 });
