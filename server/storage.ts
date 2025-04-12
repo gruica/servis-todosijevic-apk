@@ -1442,7 +1442,34 @@ export class DatabaseStorage implements IStorage {
 
   // Service methods
   async getAllServices(): Promise<Service[]> {
-    return await db.select().from(services);
+    try {
+      // Modifikujemo upit da proveri validnost veza između tabela
+      return await db.select({
+        id: services.id,
+        clientId: services.clientId,
+        applianceId: services.applianceId,
+        technicianId: services.technicianId,
+        description: services.description,
+        status: services.status,
+        createdAt: services.createdAt,
+        scheduledDate: services.scheduledDate,
+        completedDate: services.completedDate,
+        technicianNotes: services.technicianNotes,
+        cost: services.cost,
+        usedParts: services.usedParts,
+        machineNotes: services.machineNotes,
+        isCompletelyFixed: services.isCompletelyFixed,
+        businessPartnerId: services.businessPartnerId,
+        partnerCompanyName: services.partnerCompanyName
+      })
+      .from(services)
+      .innerJoin(clients, eq(services.clientId, clients.id))
+      .innerJoin(appliances, eq(services.applianceId, appliances.id));
+    } catch (error) {
+      console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
+      // Fallback na osnovni upit bez validacije
+      return await db.select().from(services);
+    }
   }
 
   async getService(id: number): Promise<Service | undefined> {
