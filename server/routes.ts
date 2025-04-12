@@ -1464,6 +1464,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint za dobijanje neverifikovanih korisnika
+  app.get("/api/users/unverified", async (req, res) => {
+    try {
+      // Osiguramo da je korisnik autorizovan - samo admin može da vidi neverifikovane korisnike
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu za pristup neverifikovanim korisnicima",
+          message: "Samo administrator može pristupiti ovim podacima."
+        });
+      }
+      
+      // Dobavimo sve neverifikovane korisnike
+      const unverifiedUsers = await Promise.all(
+        Array.from((await storage.getUnverifiedUsers()) || []).map(user => {
+          // Isključimo lozinku iz odgovora
+          const { password, ...userWithoutPassword } = user;
+          return userWithoutPassword;
+        })
+      );
+      
+      res.json({
+        success: true,
+        count: unverifiedUsers.length,
+        data: unverifiedUsers
+      });
+    } catch (error) {
+      console.error("Greška pri dobijanju neverifikovanih korisnika:", error);
+      res.status(500).json({ 
+        error: "Greška pri dobijanju neverifikovanih korisnika", 
+        message: "Došlo je do interne greške pri dobijanju liste neverifikovanih korisnika."
+      });
+    }
+  });
+  
+  // Endpoint za verifikaciju korisnika
+  app.post("/api/users/:id/verify", async (req, res) => {
+    try {
+      // Osiguramo da je korisnik autorizovan - samo admin može da verifikuje korisnike
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu za verifikaciju korisnika", 
+          message: "Samo administrator može verifikovati korisnike."
+        });
+      }
+      
+      const userId = parseInt(req.params.id);
+      const adminId = req.user.id;
+      
+      // Pozivamo metodu za verifikaciju korisnika
+      const verifiedUser = await storage.verifyUser(userId, adminId);
+      
+      // Ako korisnik nije pronađen, vraćamo grešku
+      if (!verifiedUser) {
+        return res.status(404).json({ 
+          error: "Korisnik nije pronađen", 
+          message: "Korisnik sa zadatim ID-om nije pronađen u sistemu."
+        });
+      }
+      
+      // Isključimo lozinku iz odgovora
+      const { password, ...userWithoutPassword } = verifiedUser;
+      
+      // Obaveštavamo korisnika email-om o verifikaciji
+      try {
+        await emailService.sendVerificationConfirmation(
+          verifiedUser.email,
+          verifiedUser.fullName
+        );
+      } catch (emailError) {
+        console.error("Greška pri slanju email-a o verifikaciji:", emailError);
+        // Ne prekidamo proces verifikacije ako email ne može biti poslat
+      }
+      
+      // Vraćamo uspešan odgovor
+      res.json({
+        success: true,
+        message: "Korisnik je uspešno verifikovan",
+        data: userWithoutPassword
+      });
+    } catch (error) {
+      console.error("Greška pri verifikaciji korisnika:", error);
+      res.status(500).json({ 
+        error: "Greška pri verifikaciji korisnika", 
+        message: "Došlo je do interne greške pri verifikaciji korisnika."
+      });
+    }
+  });
+  
   app.post("/api/users", async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {

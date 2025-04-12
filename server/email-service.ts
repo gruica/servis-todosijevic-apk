@@ -569,6 +569,108 @@ export class EmailService {
   /**
    * Šalje obaveštenje serviseru o novom dodeljenom servisu
    */
+  /**
+   * Šalje email korisniku kada je njegov nalog verifikovan 
+   * @param userEmail Email adresa korisnika
+   * @param userName Ime korisnika
+   * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
+   */
+  public async sendVerificationConfirmation(
+    userEmail: string,
+    userName: string
+  ): Promise<boolean> {
+    try {
+      console.log(`[EMAIL] 📨 Slanje potvrde o verifikaciji na: ${userEmail}`);
+      
+      const currentDate = new Date().toLocaleDateString('sr-Latn-ME');
+      
+      // HTML poruka za potvrdu o verifikaciji
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://frigosistemtodosijevic.com/wp-content/uploads/2016/10/logo-1.png" alt="Frigo Sistem Todosijević" style="max-width: 200px;">
+          </div>
+          
+          <h2 style="color: #0056b3; text-align: center;">Vaš nalog je verifikovan</h2>
+          
+          <p>Poštovani/a <strong>${userName}</strong>,</p>
+          
+          <p>Sa zadovoljstvom vas obaveštavamo da je vaš nalog uspešno verifikovan od strane administratora.</p>
+          
+          <p>Sada možete pristupiti svim funkcionalnostima našeg sistema za upravljanje servisima.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Datum verifikacije:</strong> ${currentDate}</p>
+          </div>
+          
+          <p>Za pristup sistemu, koristite svoje korisničko ime i lozinku koju ste definisali prilikom registracije.</p>
+          
+          <p>Ukoliko imate bilo kakvih pitanja ili problema prilikom korišćenja sistema, slobodno nas kontaktirajte:</p>
+          
+          <ul style="margin-bottom: 20px;">
+            <li><strong>Telefon:</strong> 033 402 402</li>
+            <li><strong>Email:</strong> info@frigosistemtodosijevic.com</li>
+          </ul>
+          
+          <p>Hvala vam na poverenju!</p>
+          
+          <p>S poštovanjem,<br>
+          <strong>Tim Frigo Sistem Todosijević</strong></p>
+          
+          <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 20px; font-size: 12px; color: #777; text-align: center;">
+            <p>Frigo Sistem Todosijević<br>
+            Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
+            www.frigosistemtodosijevic.com</p>
+          </div>
+        </div>
+      `;
+      
+      // Tekstualna verzija poruke (za email klijente koji ne podržavaju HTML)
+      const text = `
+Vaš nalog je verifikovan
+
+Poštovani/a ${userName},
+
+Sa zadovoljstvom vas obaveštavamo da je vaš nalog uspešno verifikovan od strane administratora.
+
+Sada možete pristupiti svim funkcionalnostima našeg sistema za upravljanje servisima.
+
+Datum verifikacije: ${currentDate}
+
+Za pristup sistemu, koristite svoje korisničko ime i lozinku koju ste definisali prilikom registracije.
+
+Ukoliko imate bilo kakvih pitanja ili problema prilikom korišćenja sistema, slobodno nas kontaktirajte:
+- Telefon: 033 402 402
+- Email: info@frigosistemtodosijevic.com
+
+Hvala vam na poverenju!
+
+S poštovanjem,
+Tim Frigo Sistem Todosijević
+
+----
+Frigo Sistem Todosijević
+Lastva grbaljska bb, 85317 Kotor, Crna Gora
+www.frigosistemtodosijevic.com
+      `;
+      
+      // Slanje email-a
+      const result = await this.sendEmail({
+        to: userEmail,
+        subject: "Vaš nalog je verifikovan - Frigo Sistem Todosijević",
+        html,
+        text
+      });
+      
+      // Vraćamo rezultat
+      return result;
+      
+    } catch (error) {
+      console.error('[EMAIL] Greška pri slanju potvrde o verifikaciji:', error);
+      return false;
+    }
+  }
+  
   public async sendNewServiceAssignment(
     technicianEmail: string,
     technicianName: string,
