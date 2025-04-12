@@ -54,6 +54,7 @@ function Router() {
       <Route path="/diagnostics" component={DiagnosticsPage} />
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
       <Route path="/system-diagnostics" component={SystemDiagnostics} />
+      <Route path="/services-debug" component={React.lazy(() => import('@/pages/services-debug'))} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
@@ -62,9 +63,10 @@ function Router() {
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
-      {/* Nova osnovna verzija servisa */}
+      {/* Osnovne verzije servisa - javno dostupne za testiranje */}
       <Route path="/services" component={BasicServicesPage} />
-      <RoleProtectedRoute path="/services-alt" component={SimplifiedServices} allowedRoles={["admin"]} />
+      <Route path="/services-alt" component={SimplifiedServices} />
+      <Route path="/services-safe" component={React.lazy(() => import('@/pages/services-safe'))} />
       <RoleProtectedRoute path="/appliances" component={Appliances} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/users" component={Users} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/create-tech-user" component={CreateTechnicianUser} allowedRoles={["admin"]} />
