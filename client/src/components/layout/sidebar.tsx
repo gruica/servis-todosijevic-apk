@@ -20,6 +20,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
     { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
+    { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/users", label: "Korisnici", icon: "group" },
