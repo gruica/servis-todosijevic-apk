@@ -55,7 +55,8 @@ const styles = {
 type BasicService = {
   id: number;
   status: string;
-  createdAt: string;
+  createdAt: string; // Ime koje očekuje React komponenta
+  created_at?: string; // Ime koje možda dolazi sa API-ja
   description: string;
 };
 
@@ -77,7 +78,18 @@ const BasicServicesPage = () => {
       
       const data = await response.json();
       console.log('Učitani podaci:', data);
-      setServices(Array.isArray(data) ? data : []);
+      
+      // Transformacija podataka kako bi se ujednačila imena polja
+      const transformedData = Array.isArray(data) ? data.map(service => ({
+        id: service.id,
+        status: service.status,
+        // Ako imamo createdAt koristimo ga, inače koristimo created_at ako postoji
+        createdAt: service.createdAt || service.created_at || '',
+        description: service.description || ''
+      })) : [];
+      
+      console.log('Transformirani podaci:', transformedData);
+      setServices(transformedData);
     } catch (err) {
       console.error('Greška pri učitavanju servisa:', err);
       setError((err as Error).message || 'Greška pri učitavanju podataka');
@@ -95,9 +107,22 @@ const BasicServicesPage = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     try {
+      // Parsiranje datuma prema različitim mogućim formatima
       const date = new Date(dateString);
-      return date.toLocaleDateString('sr-ME');
+      
+      // Provjera valjanosti datuma
+      if (isNaN(date.getTime())) {
+        return dateString; // Vraćamo originalni string ako datum nije valjan
+      }
+      
+      // Formatiranje prema lokalnim postavkama
+      return date.toLocaleDateString('sr-ME', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
     } catch {
+      console.warn(`Neuspješno parsiranje datuma: ${dateString}`);
       return dateString;
     }
   };
