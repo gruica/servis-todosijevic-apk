@@ -1443,8 +1443,11 @@ export class DatabaseStorage implements IStorage {
   // Service methods
   async getAllServices(): Promise<Service[]> {
     try {
-      // Modifikujemo upit da proveri validnost veza između tabela
-      return await db.select({
+      console.log('Dohvatanje svih servisa...');
+      
+      // Koristimo innerJoin za validaciju veza između tabela
+      // Ovo će osigurati da servisi imaju validne reference na klijente i uređaje
+      const result = await db.select({
         id: services.id,
         clientId: services.clientId,
         applianceId: services.applianceId,
@@ -1465,9 +1468,13 @@ export class DatabaseStorage implements IStorage {
       .from(services)
       .innerJoin(clients, eq(services.clientId, clients.id))
       .innerJoin(appliances, eq(services.applianceId, appliances.id));
+      
+      console.log(`Uspješno dohvaćeno ${result.length} servisa sa validnim referencama`);
+      return result;
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije
+      console.log("Korištenje fallback upita za dohvatanje servisa");
       return await db.select().from(services);
     }
   }
