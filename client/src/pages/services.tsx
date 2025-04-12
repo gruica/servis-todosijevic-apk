@@ -446,8 +446,22 @@ export default function Services() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center">
-                                <span className="material-icons text-primary mr-2">{service.icon}</span>
-                                <span>{service.applianceName}</span>
+                                {/* Sigurniji prikaz ikone */}
+                                {service.icon ? (
+                                  <span className="text-primary mr-2 flex items-center justify-center w-6 h-6">
+                                    {/* Umesto material-icons, koristimo predefinisane vrednosti */}
+                                    {service.icon === "sudopera" && "🍽️"}
+                                    {service.icon === "ves_masina" && "👕"}
+                                    {service.icon === "frizider" && "❄️"}
+                                    {service.icon === "sporet" && "🔥"}
+                                    {service.icon === "bojler" && "♨️"}
+                                    {service.icon === "devices" && "📱"}
+                                    {!["sudopera", "ves_masina", "frizider", "sporet", "bojler", "devices"].includes(service.icon) && "🔧"}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 mr-2">📦</span>
+                                )}
+                                <span>{service.applianceName || "Nepoznat uređaj"}</span>
                               </div>
                             </TableCell>
                             <TableCell>{getStatusBadge(service.status)}</TableCell>
