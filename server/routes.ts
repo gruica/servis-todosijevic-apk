@@ -96,6 +96,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Dodatna poslovna pravila
       const validatedData = validationResult.data;
       
+      // Provera duplikata po email adresi ako je uneta
+      if (validatedData.email) {
+        try {
+          const existingClient = await storage.getClientByEmail(validatedData.email);
+          if (existingClient) {
+            return res.status(400).json({
+              error: "Duplikat email adrese",
+              message: `Klijent sa email adresom '${validatedData.email}' već postoji u bazi. Koristite funkciju pretrage da pronađete postojećeg klijenta.`
+            });
+          }
+        } catch (emailCheckError) {
+          console.error("Greška pri proveri duplikata email adrese:", emailCheckError);
+          // Ne vraćamo grešku korisniku ovde, nastavljamo proces
+        }
+      }
+      
+      // Formatiranje telefonskog broja
+      if (validatedData.phone) {
+        // Ako telefon ne počinje sa +, dodajemo prefiks za Crnu Goru
+        if (!validatedData.phone.startsWith('+')) {
+          // Prvo uklanjamo sve što nije broj
+          const numberOnly = validatedData.phone.replace(/\D/g, '');
+          
+          // Ako počinje sa 0, zamenjujemo ga sa 382
+          if (numberOnly.startsWith('0')) {
+            validatedData.phone = '+382' + numberOnly.substring(1);
+          } else {
+            // Inače dodajemo prefiks na ceo broj
+            validatedData.phone = '+382' + numberOnly;
+          }
+        }
+      }
+      
       // Provera telefona (mora sadržati samo brojeve, +, -, razmake i zagrade)
       if (!/^[+]?[\d\s()-]{6,20}$/.test(validatedData.phone)) {
         return res.status(400).json({
@@ -530,7 +563,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/services", async (req, res) => {
     try {
-      const validatedData = insertServiceSchema.parse(req.body);
+      // Koristimo safeParse za bolje upravljanje greškama
+      const validationResult = insertServiceSchema.safeParse(req.body);
+      
+      // Ako podaci nisu validni, vraćamo detaljnu poruku o greškama
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci servisa", 
+          details: validationResult.error.format(),
+          message: "Svi obavezni podaci o servisu moraju biti pravilno uneti."
+        });
+      }
+      
+      const validatedData = validationResult.data;
+      
+      // Dodatna validacija: provera da li klijent postoji
+      try {
+        const client = await storage.getClient(validatedData.clientId);
+        if (!client) {
+          return res.status(400).json({
+            error: "Klijent ne postoji",
+            message: "Izabrani klijent nije pronađen u bazi podataka."
+          });
+        }
+      } catch (clientError) {
+        console.error("Greška pri proveri klijenta:", clientError);
+        return res.status(400).json({
+          error: "Greška pri proveri klijenta",
+          message: "Nije moguće proveriti postojanje klijenta."
+        });
+      }
+      
+      // Dodatna validacija: provera da li uređaj postoji
+      try {
+        const appliance = await storage.getAppliance(validatedData.applianceId);
+        if (!appliance) {
+          return res.status(400).json({
+            error: "Uređaj ne postoji",
+            message: "Izabrani uređaj nije pronađen u bazi podataka."
+          });
+        }
+        
+        // Dodatno proveravamo da li uređaj pripada odabranom klijentu
+        if (appliance.clientId !== validatedData.clientId) {
+          return res.status(400).json({
+            error: "Uređaj ne pripada klijentu",
+            message: "Izabrani uređaj ne pripada odabranom klijentu. Molimo proverite podatke."
+          });
+        }
+      } catch (applianceError) {
+        console.error("Greška pri proveri uređaja:", applianceError);
+        return res.status(400).json({
+          error: "Greška pri proveri uređaja",
+          message: "Nije moguće proveriti postojanje uređaja."
+        });
+      }
+      
+      // Ako je dodeljen serviser, proverimo da li postoji
+      if (validatedData.technicianId) {
+        try {
+          const technician = await storage.getTechnician(validatedData.technicianId);
+          if (!technician) {
+            return res.status(400).json({
+              error: "Serviser ne postoji",
+              message: "Izabrani serviser nije pronađen u bazi podataka."
+            });
+          }
+          
+          // Dodatna provera: da li je serviser aktivan
+          if (technician.active === false) {
+            return res.status(400).json({
+              error: "Serviser nije aktivan",
+              message: "Izabrani serviser trenutno nije aktivan i ne može biti dodeljen servisima."
+            });
+          }
+        } catch (technicianError) {
+          console.error("Greška pri proveri servisera:", technicianError);
+          return res.status(400).json({
+            error: "Greška pri proveri servisera",
+            message: "Nije moguće proveriti postojanje servisera."
+          });
+        }
+      }
+      
+      // Ako je naveden poslovni partner, proverimo da li postoji
+      if (validatedData.businessPartnerId) {
+        try {
+          const partner = await storage.getUserByUsername(`partner_${validatedData.businessPartnerId}`);
+          if (!partner || partner.role !== 'partner') {
+            return res.status(400).json({
+              error: "Poslovni partner ne postoji",
+              message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
+            });
+          }
+        } catch (partnerError) {
+          console.error("Greška pri proveri poslovnog partnera:", partnerError);
+          // Ovde samo logujemo grešku ali nastavljamo, jer može biti sistemska greška
+        }
+      }
+      
+      // Format JSON-a za korišćene delove
+      if (validatedData.usedParts) {
+        try {
+          // Proverava da li je usedParts validan JSON
+          JSON.parse(validatedData.usedParts);
+        } catch (jsonError) {
+          return res.status(400).json({
+            error: "Nevažeći format korišćenih delova",
+            message: "Lista korišćenih delova mora biti u validnom JSON formatu."
+          });
+        }
+      }
+      
+      // Ako je definisano polje isCompletelyFixed, proverimo da li ima smisla
+      if (validatedData.isCompletelyFixed !== undefined && validatedData.isCompletelyFixed !== null) {
+        if (validatedData.status !== 'completed') {
+          return res.status(400).json({
+            error: "Nedosledan status servisa",
+            message: "Polje 'Da li je potpuno popravljeno' može biti postavljeno samo za završene servise."
+          });
+        }
+      }
+      
+      // Ako su svi uslovi zadovoljeni, kreiramo servis
       const service = await storage.createService(validatedData);
       
       // Pošalji email obaveštenje klijentu o novom servisu
@@ -605,12 +760,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ne vraćamo grešku korisniku jer servis je uspešno kreiran
       }
       
-      res.status(201).json(service);
+      // Vraćamo uspešan odgovor sa kreiranim servisom
+      res.status(201).json({
+        success: true,
+        message: "Servis je uspešno kreiran",
+        data: service
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Nevažeći podaci servisa", details: error.format() });
       }
-      res.status(500).json({ error: "Greška pri kreiranju servisa" });
+      console.error("Greška pri kreiranju servisa:", error);
+      res.status(500).json({ error: "Greška pri kreiranju servisa", message: error instanceof Error ? error.message : "Nepoznata greška" });
     }
   });
 

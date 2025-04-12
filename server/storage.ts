@@ -992,6 +992,48 @@ export class DatabaseStorage implements IStorage {
     // Inicijalno podešavanje baze
     this.initializeDatabaseIfEmpty();
   }
+
+  /**
+   * Dobavlja klijenta po email adresi, koristi se za proveru duplikata
+   * @param email Email adresa klijenta
+   * @returns Pronađeni klijent ili undefined
+   */
+  async getClientByEmail(email: string): Promise<Client | undefined> {
+    try {
+      // Štiti od nula vrednosti
+      if (!email) return undefined;
+      
+      const [client] = await db.select()
+        .from(clients)
+        .where(eq(clients.email, email));
+      
+      return client || undefined;
+    } catch (error) {
+      console.error("Greška pri dobavljanju klijenta po emailu:", error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * Dobavlja uređaj po serijskom broju, koristi se za proveru duplikata
+   * @param serialNumber Serijski broj uređaja
+   * @returns Pronađeni uređaj ili undefined
+   */
+  async getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined> {
+    try {
+      // Štiti od nula vrednosti
+      if (!serialNumber) return undefined;
+      
+      const [appliance] = await db.select()
+        .from(appliances)
+        .where(eq(appliances.serialNumber, serialNumber));
+      
+      return appliance || undefined;
+    } catch (error) {
+      console.error("Greška pri dobavljanju uređaja po serijskom broju:", error);
+      return undefined;
+    }
+  }
   
   /**
    * Dobavlja detaljne informacije o klijentu sa aparatima i istorijom servisa
