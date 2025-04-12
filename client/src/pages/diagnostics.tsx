@@ -246,6 +246,20 @@ const DiagnosticsPage = () => {
           Otvori dijagnostičku stranicu Servisa &rarr;
         </a>
       </div>
+
+      <div style={{ marginTop: '15px' }}>
+        <a 
+          href="/system-diagnostics" 
+          style={{
+            color: '#007bff',
+            textDecoration: 'none',
+            marginLeft: '20px',
+            fontWeight: 'bold'
+          }}
+        >
+          Pametna Dijagnostička Kontrolna Tabla &rarr;
+        </a>
+      </div>
     </div>
   );
 };

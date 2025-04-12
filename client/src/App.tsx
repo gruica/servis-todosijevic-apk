@@ -42,6 +42,7 @@ import NewBusinessServiceRequest from "@/pages/business/services/new";
 import HomePage from "@/pages/home-page";
 import DiagnosticsPage from "@/pages/diagnostics";
 import DiagnosticServicesPage from "@/pages/diagnostic-services";
+import SystemDiagnostics from "@/pages/system-diagnostics";
 
 function Router() {
   return (
@@ -52,6 +53,7 @@ function Router() {
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
+      <Route path="/system-diagnostics" component={SystemDiagnostics} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
