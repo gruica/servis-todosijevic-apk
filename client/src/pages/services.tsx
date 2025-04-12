@@ -436,6 +436,7 @@ export default function Services() {
                           <TableHead>Klijent</TableHead>
                           <TableHead>Uređaj</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Kreirao</TableHead>
                           <TableHead>Datum prijave</TableHead>
                           <TableHead>Opis</TableHead>
                           <TableHead className="text-right">Akcije</TableHead>
