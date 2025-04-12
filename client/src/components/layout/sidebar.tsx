@@ -15,18 +15,15 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const adminMenuItems = [
     { path: "/", label: "Kontrolna tabla", icon: "dashboard" },
     { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/admin/services", label: "Servisi (unapređeno)", icon: "build" },
-    { path: "/services", label: "Servisi (staro)", icon: "build" },
+    { path: "/admin/services", label: "Servisi", icon: "build" },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/appliances", label: "Bela tehnika", icon: "kitchen" },
-    { path: "/maintenance-schedules", label: "Planovi održavanja", icon: "event" },
     { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel izvoz", icon: "download" },
-    { path: "/admin/excel-import", label: "Excel uvoz", icon: "upload" },
     { path: "/profile", label: "Moj profil", icon: "person" },
   ];
   
