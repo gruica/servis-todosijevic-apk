@@ -262,6 +262,41 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!email) return undefined;
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+  
+  async getUnverifiedUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(
+      (user) => user.role !== 'admin' && !user.isVerified
+    ).sort((a, b) => {
+      // Sortiraj po datumu registracije (noviji prvo)
+      const dateA = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
+      const dateB = b.registeredAt ? new Date(b.registeredAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }
+  
+  async verifyUser(id: number, adminId: number): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const now = new Date();
+    
+    const updatedUser: User = {
+      ...user,
+      isVerified: true,
+      verifiedAt: now.toISOString(),
+      verifiedBy: adminId
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
