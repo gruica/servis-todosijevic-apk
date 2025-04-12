@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,7 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Service } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+
+// Definicija jednostavnog tipa za service
+type SimpleService = {
+  id: number;
+  status: string;
+  description: string;
+  createdAt: string;
+};
 
 /**
  * Pojednostavljena verzija stranice servisa za rešavanje problema bijelog ekrana
@@ -16,15 +23,30 @@ import { Service } from "@shared/schema";
 export default function SimplifiedServices() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Dohvati samo podatke o servisima - sa dodatnim oporavkom od greške
-  const { data: services, isLoading, error } = useQuery<Service[]>({
-    queryKey: ["/api/services"],
-    retry: 3,
-    retryDelay: 1000,
-    onError: (error) => {
-      console.error("Greška pri dohvatanju servisa:", error);
-    }
-  });
+  // State za servise
+  const [services, setServices] = useState<SimpleService[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Dohvatanje servisa direktno preko fetch
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiRequest("GET", "/api/services");
+        const data = await response.json();
+        setServices(data || []);
+        setError(null);
+      } catch (err) {
+        console.error("Greška pri dohvatanju servisa:", err);
+        setError(err instanceof Error ? err : new Error("Greška pri dohvatanju podataka"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
   
   function getStatusBadge(status: string) {
     let variant = "outline";
@@ -68,10 +90,30 @@ export default function SimplifiedServices() {
     return date.toLocaleDateString("sr-ME");
   }
   
-  // Provera grešaka i ispisivanje u konzoli
-  if (error) {
-    console.error("Greška pri dohvatanju servisa:", error);
-  }
+  // Dodajmo funkcionalnost za osvežavanje servisa
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setError(null);
+    // Odmah pozivamo fetch funkciju
+    fetch('/api/services')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Neuspešan odgovor servera: ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        setServices(data || []);
+        console.log("Podaci osveženi:", data);
+      })
+      .catch(err => {
+        console.error("Greška pri osvežavanju servisa:", err);
+        setError(err instanceof Error ? err : new Error("Greška pri dohvatanju podataka"));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -152,19 +194,37 @@ export default function SimplifiedServices() {
                   </div>
                 )}
               </CardContent>
+              <div className="p-4 flex justify-end border-t">
+                <Button 
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isLoading ? "Učitavanje..." : "Osveži podatke"}
+                </Button>
+              </div>
             </Card>
             
             <div className="mt-8 text-center p-4 bg-blue-50 rounded-md">
               <p className="text-blue-700">
                 Puna verzija stranice servisa je trenutno nedostupna i radi se na popravci.
               </p>
-              <Button 
-                variant="outline" 
-                className="mt-2"
-                onClick={() => window.location.href = "/"}
-              >
-                Povratak na početnu stranicu
-              </Button>
+              <div className="flex justify-center mt-2 space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = "/"}
+                >
+                  Povratak na početnu stranicu
+                </Button>
+                {error && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleRefresh}
+                  >
+                    Pokušaj ponovo
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </main>
