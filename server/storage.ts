@@ -64,6 +64,7 @@ export interface IStorage {
   // Client methods
   getAllClients(): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
+  getClientByEmail(email: string): Promise<Client | undefined>; // Nova metoda za pretragu po emailu
   getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
@@ -82,6 +83,7 @@ export interface IStorage {
   // Appliance methods
   getAllAppliances(): Promise<Appliance[]>;
   getAppliance(id: number): Promise<Appliance | undefined>;
+  getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined>; // Nova metoda za pretragu po serijskom broju
   getAppliancesByClient(clientId: number): Promise<Appliance[]>;
   createAppliance(appliance: InsertAppliance): Promise<Appliance>;
   updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;

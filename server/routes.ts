@@ -236,14 +236,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/appliances", async (req, res) => {
     try {
-      const validatedData = insertApplianceSchema.parse(req.body);
+      // Koristimo safeParse umesto parse za detaljniju kontrolu grešaka
+      const validationResult = insertApplianceSchema.safeParse(req.body);
+      
+      // Ako podaci nisu validni, vrati detaljnu poruku o grešci
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci uređaja", 
+          details: validationResult.error.format(),
+          message: "Svi obavezni podaci o uređaju moraju biti pravilno uneti."
+        });
+      }
+      
+      const validatedData = validationResult.data;
+      
+      // Dodatna provera validnosti klijenta
+      try {
+        const client = await storage.getClient(validatedData.clientId);
+        if (!client) {
+          return res.status(400).json({
+            error: "Klijent ne postoji",
+            message: "Izabrani klijent nije pronađen u bazi podataka."
+          });
+        }
+      } catch (clientError) {
+        return res.status(400).json({
+          error: "Greška pri proveri klijenta",
+          message: "Nije moguće proveriti postojanje klijenta."
+        });
+      }
+      
+      // Dodatna provera validnosti kategorije
+      try {
+        const category = await storage.getApplianceCategory(validatedData.categoryId);
+        if (!category) {
+          return res.status(400).json({
+            error: "Kategorija ne postoji",
+            message: "Izabrana kategorija uređaja nije pronađena u bazi podataka."
+          });
+        }
+      } catch (categoryError) {
+        return res.status(400).json({
+          error: "Greška pri proveri kategorije",
+          message: "Nije moguće proveriti postojanje kategorije uređaja."
+        });
+      }
+      
+      // Dodatna provera validnosti proizvođača
+      try {
+        const manufacturer = await storage.getManufacturer(validatedData.manufacturerId);
+        if (!manufacturer) {
+          return res.status(400).json({
+            error: "Proizvođač ne postoji",
+            message: "Izabrani proizvođač nije pronađen u bazi podataka."
+          });
+        }
+      } catch (manufacturerError) {
+        return res.status(400).json({
+          error: "Greška pri proveri proizvođača",
+          message: "Nije moguće proveriti postojanje proizvođača."
+        });
+      }
+      
+      // Ako je serijski broj unet, proveri da li već postoji uređaj sa istim serijskim brojem
+      if (validatedData.serialNumber) {
+        try {
+          const existingAppliance = await storage.getApplianceBySerialNumber(validatedData.serialNumber);
+          if (existingAppliance) {
+            return res.status(400).json({
+              error: "Serijski broj već postoji",
+              message: "Uređaj sa ovim serijskim brojem već postoji u bazi podataka."
+            });
+          }
+        } catch (serialCheckError) {
+          // Samo logujemo ali ne prekidamo izvršenje
+          console.warn("Nije moguće proveriti postojanje serijskog broja:", serialCheckError);
+        }
+      }
+      
+      // Ako su svi uslovi ispunjeni, kreiramo uređaj
       const appliance = await storage.createAppliance(validatedData);
-      res.status(201).json(appliance);
+      
+      // Vrati uspešan odgovor
+      res.status(201).json({
+        success: true,
+        message: "Uređaj je uspešno kreiran",
+        data: appliance
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Nevažeći podaci uređaja", details: error.format() });
       }
-      res.status(500).json({ error: "Greška pri kreiranju uređaja" });
+      console.error("Greška pri kreiranju uređaja:", error);
+      res.status(500).json({ error: "Greška pri kreiranju uređaja", message: error.message });
     }
   });
 
