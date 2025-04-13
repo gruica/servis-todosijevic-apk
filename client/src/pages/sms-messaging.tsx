@@ -71,14 +71,20 @@ export default function SMSMessaging() {
   const [charactersLeft, setCharactersLeft] = useState(160);
   const [charsLeftBulk, setCharsLeftBulk] = useState(160);
   
-  // Dohvati konfiguraciju SMS servisa
-  const { data: smsConfig, isLoading: configLoading } = useQuery<SMSConfigResponse>({
+  // Dohvati konfiguraciju SMS servisa - obavezno osvežiti svaki put
+  const { data: smsConfig, isLoading: configLoading, refetch: refetchSmsConfig } = useQuery<SMSConfigResponse>({
     queryKey: ["/api/sms/config"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/sms/config");
-      return await res.json();
+      console.log("SMS config response:", res.status);
+      const data = await res.json();
+      console.log("SMS config data:", data);
+      return data;
     },
-    retry: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 5000, // Osvežavanje svakih 5 sekundi
+    retry: 3,
   });
 
   // Dohvati listu klijenata
