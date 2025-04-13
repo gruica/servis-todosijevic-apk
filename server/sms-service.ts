@@ -32,14 +32,23 @@ export class SmsService {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     this.defaultFrom = process.env.TWILIO_PHONE_NUMBER || '';
 
-    if (accountSid && authToken && this.defaultFrom) {
-      this.twilioClient = twilio(accountSid, authToken);
-      this.isConfigured = true;
-      console.log('[SMS] SMS servis uspešno inicijalizovan');
+    // Provera za validne Twilio kredencijale - accountSid mora da počinje sa "AC"
+    if (accountSid && accountSid.startsWith('AC') && authToken && this.defaultFrom) {
+      try {
+        this.twilioClient = twilio(accountSid, authToken);
+        this.isConfigured = true;
+        console.log('[SMS] SMS servis uspešno inicijalizovan');
+      } catch (error) {
+        console.error('[SMS] Greška pri inicijalizaciji Twilio klijenta:', error);
+        this.isConfigured = false;
+        // Definišemo praznog klijenta da bi aplikacija mogla da se pokrene
+        this.twilioClient = {} as twilio.Twilio;
+      }
     } else {
-      console.warn('[SMS] SMS servis nije pravilno konfigurisan. Nedostaju kredencijali.');
-      // Kreiramo klijenta, ali označavamo da nije konfigurisan
-      this.twilioClient = twilio('DEMO_ACCOUNT_SID', 'DEMO_AUTH_TOKEN');
+      console.warn('[SMS] SMS servis nije pravilno konfigurisan. Nedostaju kredencijali ili su nevalidni.');
+      this.isConfigured = false;
+      // Definišemo praznog klijenta da bi aplikacija mogla da se pokrene
+      this.twilioClient = {} as twilio.Twilio;
     }
   }
 
@@ -72,6 +81,12 @@ export class SmsService {
     }
 
     try {
+      // Dodatna provera da li twilioClient ima metodu messages.create
+      if (!this.twilioClient.messages || typeof this.twilioClient.messages.create !== 'function') {
+        console.error('[SMS] Twilio klijent nije pravilno inicijalizovan.');
+        return false;
+      }
+
       const normalizedTo = this.normalizePhoneNumber(options.to);
       if (!this.isValidPhoneNumber(normalizedTo)) {
         console.error(`[SMS] Nevažeći broj telefona: ${options.to}`);
