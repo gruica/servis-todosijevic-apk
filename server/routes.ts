@@ -1175,17 +1175,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
       }
       
-      // Informacije o slanju emaila koje će biti vraćene klijentu
+      // Informacije o slanju emaila i SMS-a koje će biti vraćene klijentu
       const emailInfo: {
         emailSent: boolean;
+        smsSent: boolean;
         clientName: string | null;
         emailDetails: string | null;
         emailError: string | null;
+        smsError: string | null;
       } = {
         emailSent: false,
+        smsSent: false,
         clientName: null,
         emailDetails: null,
-        emailError: null
+        emailError: null,
+        smsError: null
       };
       
       // Pošalji email obaveštenja SVIM povezanim stranama o promeni statusa servisa
