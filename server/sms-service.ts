@@ -22,6 +22,7 @@ export class SmsService {
   private twilioClient: twilio.Twilio;
   private defaultFrom: string;
   private isConfigured: boolean = false;
+  private readonly senderName: string = "FST SERVIS";
 
   /**
    * Privatni konstruktor za inicijalizaciju SMS servisa
@@ -106,7 +107,7 @@ export class SmsService {
       return false;
     }
 
-    const message = `Frigo Sistem Todosijević: Status vašeg servisa #${serviceId} je promenjen u "${newStatus}". ${additionalInfo || ''}`;
+    const message = `${this.senderName}: Status vašeg servisa #${serviceId} je promenjen u "${newStatus}". ${additionalInfo || ''}`;
     
     return await this.sendSms({
       to: client.phone,
@@ -129,7 +130,7 @@ export class SmsService {
     }
 
     const formattedDate = this.formatDate(scheduledDate);
-    const message = `Frigo Sistem Todosijević: Podsećamo vas na zakazano održavanje za ${applianceName} dana ${formattedDate}. ${additionalInfo || ''}`;
+    const message = `${this.senderName}: Podsećamo vas na zakazano održavanje za ${applianceName} dana ${formattedDate}. ${additionalInfo || ''}`;
     
     return await this.sendSms({
       to: client.phone,
@@ -151,7 +152,7 @@ export class SmsService {
       return false;
     }
 
-    let message = `Frigo Sistem Todosijević: Vaš zahtev za servis #${serviceId} za ${deviceInfo} je primljen.`;
+    let message = `${this.senderName}: Vaš zahtev za servis #${serviceId} za ${deviceInfo} je primljen.`;
     
     if (scheduledDate) {
       const formattedDate = this.formatDate(scheduledDate);
