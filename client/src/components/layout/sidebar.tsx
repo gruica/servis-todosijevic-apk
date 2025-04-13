@@ -21,6 +21,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/appliances", label: "Bela tehnika", icon: "home_repair_service" },
     { path: "/users", label: "Korisnici", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
+    { path: "/admin/sms", label: "SMS poruke", icon: "sms", highlight: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
@@ -105,7 +106,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                       <span className="material-symbols-outlined mr-3">{item.icon}</span>
                     )}
                     <span>{item.label}</span>
-                    {(item.path === "/admin/services" || item.path === "/admin/user-verification") && (
+                    {(item.path === "/admin/services" || item.path === "/admin/user-verification" || item.path === "/admin/sms") && (
                       <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Novo</span>
                     )}
                   </div>

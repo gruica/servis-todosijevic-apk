@@ -2610,6 +2610,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SMS Servis rute
+  
+  // Schema za validaciju test SMS-a
+  const testSmsSchema = z.object({
+    recipient: z.string().min(1, { message: "Broj telefona je obavezan" }),
+    message: z.string().min(1, { message: "Tekst poruke je obavezan" }).max(160, { message: "SMS poruka ne može biti duža od 160 karaktera" })
+  });
+  
+  // Ruta za proveru konfiguracije SMS servisa
+  app.get("/api/sms/config", (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(401).json({ error: "Nemate dozvolu za pristup konfiguraciji SMS servisa" });
+    }
+    
+    const isConfigured = smsService.isProperlyConfigured();
+    res.json({
+      configured: isConfigured,
+      phone: process.env.TWILIO_PHONE_NUMBER || null
+    });
+  });
+  
+  // Ruta za slanje test SMS poruke
+  app.post("/api/sms/test", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(401).json({ error: "Nemate dozvolu za slanje test poruka" });
+    }
+    
+    try {
+      const validationResult = testSmsSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci za SMS", 
+          details: validationResult.error.format() 
+        });
+      }
+      
+      const { recipient, message } = validationResult.data;
+      
+      // Slanje test poruke
+      const result = await smsService.sendSms({
+        to: recipient,
+        body: message
+      });
+      
+      if (result) {
+        res.json({ success: true, message: "SMS poruka je uspešno poslata" });
+      } else {
+        res.status(500).json({ error: "Greška pri slanju SMS poruke" });
+      }
+    } catch (error) {
+      console.error("Greška pri slanju test SMS poruke:", error);
+      res.status(500).json({ error: "Greška pri slanju test SMS poruke", details: error.message });
+    }
+  });
+  
+  // Ruta za slanje SMS obaveštenja klijentu o promeni statusa servisa
+  app.post("/api/sms/service-update/:serviceId", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user?.role !== "admin" && req.user?.role !== "technician")) {
+      return res.status(401).json({ error: "Nemate dozvolu za slanje obaveštenja" });
+    }
+    
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const service = await storage.getService(serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Dohvatanje podataka o klijentu
+      const client = await storage.getClient(service.clientId);
+      if (!client || !client.phone) {
+        return res.status(400).json({ 
+          error: "Nedostaju podaci o klijentu", 
+          message: "Klijent ne postoji ili nema definisan broj telefona" 
+        });
+      }
+      
+      // Slanje SMS obaveštenja o promeni statusa
+      const result = await smsService.sendServiceStatusUpdate(
+        client,
+        serviceId,
+        STATUS_DESCRIPTIONS[service.status] || service.status,
+        req.body.additionalInfo
+      );
+      
+      if (result) {
+        res.json({ success: true, message: "SMS obaveštenje je uspešno poslato" });
+      } else {
+        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja" });
+      }
+    } catch (error) {
+      console.error("Greška pri slanju SMS obaveštenja o servisu:", error);
+      res.status(500).json({ error: "Greška pri slanju SMS obaveštenja", details: error.message });
+    }
+  });
+  
+  // Ruta za masovno slanje SMS poruka izabranim klijentima
+  app.post("/api/sms/bulk", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(401).json({ error: "Nemate dozvolu za slanje masovnih poruka" });
+    }
+    
+    try {
+      const { clientIds, message } = req.body;
+      
+      if (!Array.isArray(clientIds) || clientIds.length === 0) {
+        return res.status(400).json({ error: "Morate izabrati bar jednog klijenta" });
+      }
+      
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: "Tekst poruke je obavezan" });
+      }
+      
+      if (message.length > 160) {
+        return res.status(400).json({ error: "SMS poruka ne može biti duža od 160 karaktera" });
+      }
+      
+      const results = [];
+      const errors = [];
+      
+      // Iteriramo kroz sve klijente i šaljemo im poruke
+      for (const clientId of clientIds) {
+        try {
+          const client = await storage.getClient(clientId);
+          
+          if (!client || !client.phone) {
+            errors.push({ 
+              clientId, 
+              error: "Klijent ne postoji ili nema definisan broj telefona" 
+            });
+            continue;
+          }
+          
+          const result = await smsService.sendSms({
+            to: client.phone,
+            body: `Frigo Sistem Todosijević: ${message}`
+          });
+          
+          if (result) {
+            results.push({ clientId, success: true });
+          } else {
+            errors.push({ clientId, error: "Greška pri slanju SMS poruke" });
+          }
+        } catch (error) {
+          errors.push({ clientId, error: error.message });
+        }
+      }
+      
+      res.json({
+        success: errors.length === 0,
+        results: {
+          total: clientIds.length,
+          sent: results.length,
+          failed: errors.length
+        },
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error("Greška pri masovnom slanju SMS poruka:", error);
+      res.status(500).json({ error: "Greška pri masovnom slanju SMS poruka", details: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
