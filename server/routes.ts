@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
+import { smsService } from "./sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
