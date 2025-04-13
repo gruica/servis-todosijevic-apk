@@ -32,12 +32,18 @@ export class SmsService {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     this.defaultFrom = process.env.TWILIO_PHONE_NUMBER || '';
 
+    console.log('[SMS DEBUG] Provera Twilio kredencijala:', 
+      'accountSid:', accountSid ? `${accountSid.substring(0, 5)}...` : 'nedostaje', 
+      'authToken:', authToken ? 'postoji' : 'nedostaje',
+      'phone:', this.defaultFrom || 'nedostaje');
+
     // Provera za validne Twilio kredencijale - accountSid mora da počinje sa "AC"
     if (accountSid && accountSid.startsWith('AC') && authToken && this.defaultFrom) {
       try {
+        console.log('[SMS DEBUG] Pokušaj inicijalizacije Twilio klijenta');
         this.twilioClient = twilio(accountSid, authToken);
         this.isConfigured = true;
-        console.log('[SMS] SMS servis uspešno inicijalizovan');
+        console.log('[SMS] SMS servis uspešno inicijalizovan sa brojem:', this.defaultFrom);
       } catch (error) {
         console.error('[SMS] Greška pri inicijalizaciji Twilio klijenta:', error);
         this.isConfigured = false;
@@ -46,6 +52,11 @@ export class SmsService {
       }
     } else {
       console.warn('[SMS] SMS servis nije pravilno konfigurisan. Nedostaju kredencijali ili su nevalidni.');
+      if (!accountSid) console.warn('[SMS] Nedostaje TWILIO_ACCOUNT_SID');
+      else if (!accountSid.startsWith('AC')) console.warn('[SMS] TWILIO_ACCOUNT_SID ne počinje sa "AC"');
+      if (!authToken) console.warn('[SMS] Nedostaje TWILIO_AUTH_TOKEN');
+      if (!this.defaultFrom) console.warn('[SMS] Nedostaje TWILIO_PHONE_NUMBER');
+      
       this.isConfigured = false;
       // Definišemo praznog klijenta da bi aplikacija mogla da se pokrene
       this.twilioClient = {} as twilio.Twilio;

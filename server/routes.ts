@@ -2664,16 +2664,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Nemate dozvolu za pristup konfiguraciji SMS servisa" });
     }
     
-    const isConfigured = smsService.isProperlyConfigured();
-    
+    // Ovo je pojednostavljeni pristup koji će direktno koristiti environment varijable
     // Proverimo da li su svi potrebni kredencijali prisutni
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
     
+    console.log('[SMS CONFIG API] Kredencijali:', 
+      'accountSid:', accountSid ? `${accountSid.substring(0, 5)}...` : 'nedostaje', 
+      'authToken:', authToken ? 'postoji' : 'nedostaje',
+      'phone:', phoneNumber || 'nedostaje');
+    
+    // Proverimo sami da li je konfiguracija validna
+    const isValidConfig = 
+      accountSid && 
+      accountSid.startsWith('AC') && 
+      authToken && 
+      phoneNumber;
+    
+    console.log('[SMS CONFIG API] Validna konfiguracija:', isValidConfig);
+    
     // Informacije o konfiguraciji
     const configInfo = {
-      configured: isConfigured,
+      configured: isValidConfig,
       phone: phoneNumber || null,
       missingCredentials: {
         accountSid: !accountSid,
