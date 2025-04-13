@@ -2665,10 +2665,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const isConfigured = smsService.isProperlyConfigured();
-    res.json({
+    
+    // Proverimo da li su svi potrebni kredencijali prisutni
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    
+    // Informacije o konfiguraciji
+    const configInfo = {
       configured: isConfigured,
-      phone: process.env.TWILIO_PHONE_NUMBER || null
-    });
+      phone: phoneNumber || null,
+      missingCredentials: {
+        accountSid: !accountSid,
+        authToken: !authToken,
+        phoneNumber: !phoneNumber
+      },
+      invalidCredentials: {
+        accountSid: accountSid && !accountSid.startsWith('AC'),
+      }
+    };
+    
+    res.json(configInfo);
   });
   
   // Ruta za slanje test SMS poruke

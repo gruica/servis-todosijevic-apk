@@ -42,6 +42,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 interface SMSConfigResponse {
   configured: boolean;
   phone: string | null;
+  missingCredentials: {
+    accountSid: boolean;
+    authToken: boolean;
+    phoneNumber: boolean;
+  };
+  invalidCredentials: {
+    accountSid: boolean;
+  };
 }
 
 interface Client {
@@ -254,7 +262,21 @@ export default function SMSMessaging() {
             <Info className="h-4 w-4" />
             <AlertTitle>Upozorenje</AlertTitle>
             <AlertDescription>
-              SMS servis nije pravilno konfigurisan. Proverite vaše Twilio kredencijale.
+              <p>SMS servis nije pravilno konfigurisan. Proverite sledeće kredencijale:</p>
+              <ul className="list-disc pl-5 mt-2">
+                {smsConfig.missingCredentials.accountSid && (
+                  <li>Nedostaje Twilio Account SID</li>
+                )}
+                {smsConfig.missingCredentials.authToken && (
+                  <li>Nedostaje Twilio Auth Token</li>
+                )}
+                {smsConfig.missingCredentials.phoneNumber && (
+                  <li>Nedostaje Twilio broj telefona</li>
+                )}
+                {smsConfig.invalidCredentials.accountSid && (
+                  <li>Account SID nije validan (mora početi sa "AC")</li>
+                )}
+              </ul>
             </AlertDescription>
           </Alert>
         )}
