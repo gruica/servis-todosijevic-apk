@@ -1205,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`[EMAIL SISTEM] Pronađen klijent: ${client.fullName}, email: ${client.email || 'nije dostupan'}`);
             
-            // 2. Šalje obaveštenje KLIJENTU
+            // 2. Šalje EMAIL obaveštenje KLIJENTU
             if (client.email) {
               console.log(`[EMAIL SISTEM] Pokušavam slanje emaila klijentu ${client.fullName} (${client.email})`);
               
@@ -1235,8 +1235,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 emailInfo.emailError = "Neuspešno slanje emaila klijentu. Proverite email postavke.";
               }
             } else {
-              console.warn(`[EMAIL SISTEM] ⚠️ Klijent ${client.fullName} nema email adresu, preskačem slanje`);
+              console.warn(`[EMAIL SISTEM] ⚠️ Klijent ${client.fullName} nema email adresu, preskačem slanje emaila`);
               emailInfo.emailError = `Klijent ${client.fullName} nema definisanu email adresu`;
+            }
+            
+            // 3. Šalje SMS obaveštenje KLIJENTU - nova funkcionalnost
+            if (client.phone) {
+              console.log(`[SMS SISTEM] Pokušavam slanje SMS poruke klijentu ${client.fullName} (${client.phone})`);
+              
+              // Kraći sadržaj za SMS koji je maksimalno 160 karaktera
+              const clientSmsContent = technicianNotes || service.description || "";
+              // Skraćujemo napomenu ako postoji
+              let additionalInfo = "";
+              if (clientSmsContent && clientSmsContent.length > 0) {
+                const maxNoteLength = 70; // Ograničavamo dužinu napomene
+                additionalInfo = clientSmsContent.length > maxNoteLength 
+                  ? clientSmsContent.substring(0, maxNoteLength) + '...' 
+                  : clientSmsContent;
+              }
+              
+              // Šaljemo SMS klijentu
+              const clientSmsSent = await smsService.sendServiceStatusUpdate(
+                client,
+                serviceId,
+                statusDescription,
+                additionalInfo
+              );
+              
+              if (clientSmsSent) {
+                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName}`);
+                emailInfo.smsSent = true; // Označava da je SMS uspešno poslat
+              } else {
+                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke klijentu ${client.fullName}`);
+                emailInfo.smsError = "Neuspešno slanje SMS poruke klijentu. Proverite SMS postavke.";
+              }
+            } else {
+              console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
+              emailInfo.smsError = `Klijent ${client.fullName} nema definisan broj telefona`;
             }
             
             // 3. Šalje obaveštenje SERVISERU
@@ -1321,10 +1356,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           emailInfo.emailError = "Servis nema povezanog klijenta, ne mogu poslati obaveštenja";
         }
       } catch (error) {
-        console.error("[EMAIL SISTEM] ❌ Greška pri slanju email obaveštenja:", error);
+        console.error("[SISTEM OBAVEŠTENJA] ❌ Greška pri slanju obaveštenja:", error);
         // Bezbedno obradimo grešku koja može biti bilo kog tipa
         const errorMessage = error instanceof Error ? error.message : String(error);
-        emailInfo.emailError = `Sistemska greška: ${errorMessage || "Nepoznata greška"}`;
+        emailInfo.emailError = `Sistemska greška (email): ${errorMessage || "Nepoznata greška"}`;
+        emailInfo.smsError = `Sistemska greška (SMS): ${errorMessage || "Nepoznata greška"}`;
       }
       
       // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
