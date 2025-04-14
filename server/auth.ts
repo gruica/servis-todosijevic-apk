@@ -190,10 +190,18 @@ export function setupAuth(app: Express) {
         });
       } else {
         // Za obične korisnike vraćamo samo podatke bez prijave
-        res.status(201).json({
-          ...userWithoutPassword,
-          message: "Registracija uspešna! Molimo sačekajte da administrator verifikuje vaš nalog pre prijave."
-        });
+        // Posebna poruka za poslovne partnere
+        if (user.role === 'business') {
+          res.status(201).json({
+            ...userWithoutPassword,
+            message: "Registracija uspešna! Vaš zahtev je prosleđen administratoru na pregled. Bićete obavešteni putem email-a kada je nalog aktiviran."
+          });
+        } else {
+          res.status(201).json({
+            ...userWithoutPassword,
+            message: "Registracija uspešna! Molimo sačekajte da administrator verifikuje vaš nalog pre prijave."
+          });
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);

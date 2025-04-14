@@ -75,16 +75,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const data = await res.json();
+      console.log("Odgovor nakon registracije:", data);
+      return data;
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Uspešna registracija",
-        description: `Dobrodošli, ${user.fullName}!`,
-      });
+    onSuccess: (data: any) => {
+      // Ako je korisnik poslovni partner, ne postavljamo ga u queryClient
+      // jer mora biti verifikovan pre pristupa
+      if (data.role === "business") {
+        toast({
+          title: "Uspešna registracija",
+          description: data.message || "Zahtev za registraciju je uspešno poslat. Administrator će uskoro verifikovati vaš nalog.",
+        });
+      } else {
+        // Za ostale tipove korisnika, postavljamo podatke u queryClient
+        queryClient.setQueryData(["/api/user"], data);
+        toast({
+          title: "Uspešna registracija",
+          description: `Dobrodošli, ${data.fullName}!`,
+        });
+      }
     },
     onError: (error: Error) => {
+      console.error("Greška pri registraciji:", error);
       toast({
         title: "Greška pri registraciji",
         description: error.message || "Korisničko ime već postoji",

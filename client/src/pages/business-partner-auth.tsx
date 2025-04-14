@@ -91,6 +91,8 @@ export default function BusinessPartnerAuthPage() {
 
   function onRegisterSubmit(values: RegisterValues) {
     // Dodajemo ulogu poslovnog partnera
+    console.log("Poslovni partner - podaci za registraciju:", values);
+    
     registerMutation.mutate({
       username: values.username,
       password: values.password,
@@ -101,6 +103,7 @@ export default function BusinessPartnerAuthPage() {
       city: values.city,
       role: "business", // Postavljamo role na business
       companyId: values.companyName.toLowerCase().replace(/[^a-z0-9]/g, ""), // Generišemo companyId iz imena kompanije
+      email: values.username, // Koristimo username kao email jer je već validiran kao email
     });
   }
 
@@ -193,7 +196,7 @@ export default function BusinessPartnerAuthPage() {
                         Registracija za poslovne partnere
                       </p>
                       <p className="mt-1 text-xs">
-                        Nakon registracije, vaš nalog će biti pregledan od strane administratora.
+                        Nakon registracije, vaš nalog će biti pregledan od strane administratora. Dobićete email obaveštenje kada nalog bude aktiviran.
                       </p>
                     </div>
                     
