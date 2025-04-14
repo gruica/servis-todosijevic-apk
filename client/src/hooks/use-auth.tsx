@@ -64,9 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       console.error("Login mutation error:", error);
+      // Proveri da li je greška o neverifikovanom nalogu
+      const errorMessage = error.message || "";
+      const isVerificationError = errorMessage.includes("nije verifikovan") || 
+                                 errorMessage.includes("nije još verifikovan") ||
+                                 errorMessage.includes("sačekajte potvrdu");
+      
       toast({
         title: "Greška pri prijavi",
-        description: "Neispravno korisničko ime ili lozinka",
+        description: isVerificationError 
+          ? "Vaš nalog još nije verifikovan. Molimo sačekajte da administrator odobri vaš nalog."
+          : "Neispravno korisničko ime ili lozinka",
         variant: "destructive",
       });
     },

@@ -1508,8 +1508,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint za dobijanje neverifikovanih korisnika
   app.get("/api/users/unverified", async (req, res) => {
     try {
+      console.log("GET /api/users/unverified - Zahtev za dobijanje neverifikovanih korisnika");
+      console.log("Autorizacija korisnika:", req.isAuthenticated() ? `Autentifikovan (${req.user?.username}, uloga: ${req.user?.role})` : "Nije autentifikovan");
+      
       // Osiguramo da je korisnik autorizovan - samo admin može da vidi neverifikovane korisnike
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        console.log("Neautorizovan pristup endpoint-u za neverifikovane korisnike");
         return res.status(403).json({ 
           error: "Nemate dozvolu za pristup neverifikovanim korisnicima",
           message: "Samo administrator može pristupiti ovim podacima."
@@ -1517,19 +1521,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Dobavimo sve neverifikovane korisnike
-      const unverifiedUsers = await Promise.all(
-        Array.from((await storage.getUnverifiedUsers()) || []).map(user => {
-          // Isključimo lozinku iz odgovora
-          const { password, ...userWithoutPassword } = user;
-          return userWithoutPassword;
-        })
-      );
+      console.log("Dohvatanje neverifikovanih korisnika iz baze...");
+      const rawUsers = await storage.getUnverifiedUsers();
+      console.log(`Pronađeno ${rawUsers.length} neverifikovanih korisnika u bazi`);
       
-      res.json({
-        success: true,
-        count: unverifiedUsers.length,
-        data: unverifiedUsers
+      // Isključimo lozinku iz odgovora
+      const unverifiedUsers = rawUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
       });
+      
+      // Vraćamo samo niz korisnika bez nested data polja da bi odgovaralo očekivanom formatu u frontendu
+      console.log(`Vraćanje ${unverifiedUsers.length} neverifikovanih korisnika klijentu`);
+      res.json(unverifiedUsers);
     } catch (error) {
       console.error("Greška pri dobijanju neverifikovanih korisnika:", error);
       res.status(500).json({ 
@@ -1542,8 +1546,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint za verifikaciju korisnika
   app.post("/api/users/:id/verify", async (req, res) => {
     try {
+      console.log(`Pokušaj verifikacije korisnika sa ID ${req.params.id}`);
+      
       // Osiguramo da je korisnik autorizovan - samo admin može da verifikuje korisnike
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        console.log("Verifikacija neuspešna - korisnik nije admin");
         return res.status(403).json({ 
           error: "Nemate dozvolu za verifikaciju korisnika", 
           message: "Samo administrator može verifikovati korisnike."
@@ -1553,36 +1560,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const adminId = req.user.id;
       
+      console.log(`Administrator ${adminId} (${req.user.username}) verifikuje korisnika ${userId}`);
+      
       // Pozivamo metodu za verifikaciju korisnika
       const verifiedUser = await storage.verifyUser(userId, adminId);
       
       // Ako korisnik nije pronađen, vraćamo grešku
       if (!verifiedUser) {
+        console.log(`Korisnik sa ID ${userId} nije pronađen`);
         return res.status(404).json({ 
           error: "Korisnik nije pronađen", 
           message: "Korisnik sa zadatim ID-om nije pronađen u sistemu."
         });
       }
       
+      console.log(`Korisnik ${verifiedUser.username} (ID: ${verifiedUser.id}) uspešno verifikovan`);
+      
       // Isključimo lozinku iz odgovora
       const { password, ...userWithoutPassword } = verifiedUser;
       
       // Obaveštavamo korisnika email-om o verifikaciji
-      try {
-        await emailService.sendVerificationConfirmation(
-          verifiedUser.email,
-          verifiedUser.fullName
-        );
-      } catch (emailError) {
-        console.error("Greška pri slanju email-a o verifikaciji:", emailError);
-        // Ne prekidamo proces verifikacije ako email ne može biti poslat
+      if (verifiedUser.email) {
+        try {
+          console.log(`Slanje email potvrde o verifikaciji na ${verifiedUser.email}`);
+          await emailService.sendVerificationConfirmation(
+            verifiedUser.email,
+            verifiedUser.fullName
+          );
+          console.log("Email potvrde uspešno poslat");
+        } catch (emailError) {
+          console.error("Greška pri slanju email-a o verifikaciji:", emailError);
+          // Ne prekidamo proces verifikacije ako email ne može biti poslat
+        }
+      } else {
+        console.log("Korisnik nema email adresu, preskačem slanje potvrde.");
       }
       
-      // Vraćamo uspešan odgovor
+      // Vraćamo uspešan odgovor - vraćamo user direktno umesto nested u data field
+      console.log("Vraćam odgovor sa podacima korisnika");
       res.json({
         success: true,
         message: "Korisnik je uspešno verifikovan",
-        data: userWithoutPassword
+        user: userWithoutPassword
       });
     } catch (error) {
       console.error("Greška pri verifikaciji korisnika:", error);
