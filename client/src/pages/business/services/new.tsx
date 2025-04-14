@@ -39,21 +39,42 @@ interface Manufacturer {
 // Validaciona šema za novi zahtev za servis
 const newServiceSchema = z.object({
   // Podaci o klijentu
-  clientFullName: z.string().min(1, "Ime i prezime klijenta je obavezno"),
-  clientPhone: z.string().min(1, "Telefon klijenta je obavezan"),
-  clientEmail: z.string().email("Unesite važeću email adresu").optional().or(z.literal("")),
-  clientAddress: z.string().min(1, "Adresa klijenta je obavezna"),
-  clientCity: z.string().min(1, "Grad klijenta je obavezan"),
+  clientFullName: z.string().min(3, "Ime i prezime klijenta je obavezno (min. 3 karaktera)")
+    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime i prezime (samo slova, razmaci i crtice)"),
+  clientPhone: z.string()
+    .min(6, "Telefon klijenta je obavezan (min. 6 cifara)")
+    .regex(/^[0-9+\s()-]{6,20}$/, "Unesite ispravan format telefona, npr. '067123456' ili '+382 67 123 456'"),
+  clientEmail: z.string()
+    .email("Unesite važeću email adresu, npr. 'klijent@example.com'")
+    .optional()
+    .or(z.literal("")),
+  clientAddress: z.string()
+    .min(5, "Adresa klijenta je obavezna (min. 5 karaktera)")
+    .max(100, "Adresa je predugačka (maks. 100 karaktera)")
+    .refine(val => val.trim().length > 0, "Adresa ne može sadržati samo prazan prostor"),
+  clientCity: z.string()
+    .min(2, "Grad klijenta je obavezan (min. 2 karaktera)")
+    .max(50, "Ime grada je predugačko")
+    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime grada (samo slova, razmaci i crtice)"),
   
   // Podaci o uređaju
   categoryId: z.string().min(1, "Izaberite kategoriju uređaja"),
   manufacturerId: z.string().min(1, "Izaberite proizvođača"),
-  model: z.string().min(1, "Model uređaja je obavezan"),
-  serialNumber: z.string().optional(),
-  purchaseDate: z.string().optional(),
+  model: z.string()
+    .min(2, "Model uređaja je obavezan (min. 2 karaktera)")
+    .max(100, "Naziv modela je predugačak")
+    .refine(val => val.trim().length > 0, "Model ne može sadržati samo prazan prostor"),
+  serialNumber: z.string()
+    .regex(/^[a-zA-Z0-9-]*$/, "Serijski broj može sadržati samo slova, brojeve i crtice")
+    .optional()
+    .or(z.literal("")),
+  purchaseDate: z.string().optional().or(z.literal("")),
   
   // Podaci o servisu
-  description: z.string().min(1, "Opis problema je obavezan").max(1000, "Opis problema je predugačak"),
+  description: z.string()
+    .min(10, "Opis problema je obavezan (min. 10 karaktera)")
+    .max(1000, "Opis problema je predugačak (maks. 1000 karaktera)")
+    .refine(val => val.trim().length > 0, "Opis problema ne može sadržati samo prazan prostor"),
   saveClientData: z.boolean().default(true),
 });
 
@@ -242,8 +263,11 @@ export default function NewBusinessServiceRequest() {
                     <FormItem>
                       <FormLabel>Ime i prezime klijenta</FormLabel>
                       <FormControl>
-                        <Input placeholder="Unesite ime i prezime klijenta" {...field} />
+                        <Input placeholder="npr. Marko Petrović" {...field} />
                       </FormControl>
+                      <FormDescription>
+                        Obavezno polje - unesite puno ime i prezime (min. 3 karaktera)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -257,8 +281,11 @@ export default function NewBusinessServiceRequest() {
                       <FormItem>
                         <FormLabel>Telefon klijenta</FormLabel>
                         <FormControl>
-                          <Input placeholder="Unesite telefon klijenta" {...field} />
+                          <Input placeholder="npr. 067123456 ili +382 67 123 456" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Obavezno polje - unesite važeći broj telefona (najmanje 6 cifara)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -272,12 +299,15 @@ export default function NewBusinessServiceRequest() {
                         <FormLabel>Email klijenta (opciono)</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Unesite email klijenta" 
+                            placeholder="npr. klijent@example.com" 
                             type="email" 
                             {...field} 
                             value={field.value || ""}
                           />
                         </FormControl>
+                        <FormDescription>
+                          Opcionalno polje - unesite validnu email adresu za kontakt
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -292,8 +322,11 @@ export default function NewBusinessServiceRequest() {
                       <FormItem>
                         <FormLabel>Adresa klijenta</FormLabel>
                         <FormControl>
-                          <Input placeholder="Unesite adresu klijenta" {...field} />
+                          <Input placeholder="npr. Ulica Slobode 25" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Obavezno polje - unesite punu adresu (min. 5 karaktera)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -306,8 +339,11 @@ export default function NewBusinessServiceRequest() {
                       <FormItem>
                         <FormLabel>Grad klijenta</FormLabel>
                         <FormControl>
-                          <Input placeholder="Unesite grad klijenta" {...field} />
+                          <Input placeholder="npr. Podgorica" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Obavezno polje - unesite grad klijenta (min. 2 karaktera)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -432,8 +468,11 @@ export default function NewBusinessServiceRequest() {
                       <FormItem>
                         <FormLabel>Model uređaja</FormLabel>
                         <FormControl>
-                          <Input placeholder="Unesite model uređaja" {...field} />
+                          <Input placeholder="npr. WV60-1860" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Obavezno polje - unesite tačan model uređaja (min. 2 karaktera)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -447,11 +486,14 @@ export default function NewBusinessServiceRequest() {
                         <FormLabel>Serijski broj (opciono)</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Unesite serijski broj uređaja" 
+                            placeholder="npr. SN-12345678" 
                             {...field} 
                             value={field.value || ""}
                           />
                         </FormControl>
+                        <FormDescription>
+                          Opcionalno polje - unesite serijski broj ako je dostupan
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -471,6 +513,9 @@ export default function NewBusinessServiceRequest() {
                           value={field.value || ""}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Opcionalno polje - unesite približan datum kupovine ako je poznat
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -495,13 +540,20 @@ export default function NewBusinessServiceRequest() {
                       <FormLabel>Detaljan opis problema</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Unesite detaljan opis problema sa uređajem" 
+                          placeholder="npr. Frižider ne hladi dovoljno, čuje se glasno zujanje iz zadnjeg dela uređaja. Problem je počeo pre dva dana." 
                           className="min-h-[120px]"
                           {...field} 
                         />
                       </FormControl>
                       <FormDescription>
-                        Opišite problem što detaljnije da bismo mogli što bolje da pomognemo
+                        <p>Obavezno polje - opišite problem što detaljnije (min. 10 karaktera)</p>
+                        <p className="mt-2 text-muted-foreground">Uključite informacije kao što su:</p>
+                        <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                          <li>Kako se problem manifestuje</li>
+                          <li>Kada je problem primećen</li>
+                          <li>Da li postoje specifični zvukovi ili simptomi</li>
+                          <li>Prethodne opravke (ako ih je bilo)</li>
+                        </ul>
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
