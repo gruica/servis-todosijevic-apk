@@ -1409,19 +1409,75 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // Proveri da li je lozinka već validno heširana (ima format 'hash.salt')
-    let password = insertUser.password;
-    const parts = password.split('.');
-    if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
-      // Ako nije u ispravnom formatu, heširati je
-      password = await this.hashPassword(password);
-    }
+    try {
+      console.log("Kreiranje korisnika:", {
+        username: insertUser.username,
+        fullName: insertUser.fullName,
+        role: insertUser.role,
+        email: insertUser.email,
+        companyName: insertUser.companyName,
+        phone: insertUser.phone
+      });
+      
+      // Proveri da li je lozinka već validno heširana (ima format 'hash.salt')
+      let password = insertUser.password;
+      const parts = password.split('.');
+      if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
+        // Ako nije u ispravnom formatu, heširati je
+        password = await this.hashPassword(password);
+      }
+      
+      // Eksplicitno postavljamo email polje na vrednost username ako nije već postavljeno
+      // jer username mora biti email adresa
+      const email = insertUser.email || insertUser.username;
+      
+      // Za poslovne partnere, isVerified je uvek false na početku
+      const isVerified = insertUser.role === "admin" || insertUser.role === "technician";
+      
+      // Priprema registracije za insertovanje u bazu
+      const userToInsert = {
+        username: insertUser.username,
+        password: password,
+        fullName: insertUser.fullName,
+        role: insertUser.role || "customer",
+        technicianId: insertUser.technicianId,
+        email: email,
+        phone: insertUser.phone,
+        address: insertUser.address,
+        city: insertUser.city,
+        companyName: insertUser.companyName,
+        companyId: insertUser.companyId,
+        isVerified: isVerified,
+        registeredAt: new Date().toISOString(),
+        verifiedAt: isVerified ? new Date().toISOString() : null,
+        verifiedBy: null // Administratori će biti verifikovani naknadno od strane drugih administratora
+      };
+      
+      console.log("Vrednosti za unos u bazu:", {
+        username: userToInsert.username,
+        role: userToInsert.role,
+        email: userToInsert.email,
+        companyName: userToInsert.companyName
+      });
 
-    const [user] = await db.insert(users).values({
-      ...insertUser,
-      password
-    }).returning();
-    return user;
+      const [user] = await db.insert(users).values(userToInsert).returning();
+      
+      if (!user) {
+        throw new Error("Došlo je do greške pri kreiranju korisnika. Korisnik nije vraćen iz baze.");
+      }
+      
+      console.log("Korisnik uspešno kreiran:", {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role
+      });
+      
+      return user;
+    } catch (error) {
+      console.error("Greška pri kreiranju korisnika:", error);
+      throw error;
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
