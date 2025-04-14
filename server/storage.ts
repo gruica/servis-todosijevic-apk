@@ -1382,14 +1382,38 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUnverifiedUsers(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .where(and(
-        eq(users.isVerified, false),
-        sql`${users.role} != 'admin'` // Administrator je uvek verifikovan
-      ))
-      .orderBy(desc(users.registeredAt));
+    try {
+      console.log("Dohvatanje neverifikovanih korisnika...");
+      
+      // Kombinujemo upite za business partnere i druge korisnike
+      const result = await db
+        .select()
+        .from(users)
+        .where(and(
+          eq(users.isVerified, false),
+          sql`${users.role} != 'admin'` // Administrator je uvek verifikovan
+        ))
+        .orderBy(desc(users.registeredAt));
+      
+      // Posebno pronađimo poslovne partnere radi logovanja
+      const businessPartners = result.filter(user => user.role === 'business');
+      console.log(`Pronađeno ${result.length} neverifikovanih korisnika, od toga ${businessPartners.length} poslovnih partnera`);
+      
+      if (businessPartners.length > 0) {
+        console.log("Poslovni partneri koji čekaju verifikaciju:", businessPartners.map(p => ({
+          id: p.id,
+          username: p.username,
+          fullName: p.fullName,
+          companyName: p.companyName,
+          registeredAt: p.registeredAt
+        })));
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Greška pri dohvatanju neverifikovanih korisnika:", error);
+      throw error;
+    }
   }
   
   async verifyUser(id: number, adminId: number): Promise<User | undefined> {

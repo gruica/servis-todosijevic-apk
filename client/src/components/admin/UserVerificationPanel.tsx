@@ -37,7 +37,8 @@ const UserVerificationPanel: React.FC = () => {
         throw new Error(data.message || "Greška pri dobijanju neverifikovanih korisnika");
       }
       
-      setUnverifiedUsers(data.data || []);
+      setUnverifiedUsers(data || []);
+      console.log("Dobavljeni neverifikovani korisnici:", data);
     } catch (err: any) {
       console.error("Greška pri dobijanju neverifikovanih korisnika:", err);
       setError(err.message || "Došlo je do greške pri učitavanju neverifikovanih korisnika");
@@ -63,12 +64,14 @@ const UserVerificationPanel: React.FC = () => {
         throw new Error(data.message || "Greška pri verifikaciji korisnika");
       }
       
+      console.log("Uspešna verifikacija korisnika, odgovor:", data);
+      
       // Ukloni korisnika iz liste neverifikovanih
       setUnverifiedUsers(prev => prev.filter(user => user.id !== userId));
       
       toast({
         title: "Korisnik verifikovan",
-        description: `Korisnik ${data.data.fullName} je uspešno verifikovan`,
+        description: `Korisnik ${data.user?.fullName || "Korisnik"} je uspešno verifikovan`,
         variant: "default",
       });
     } catch (err: any) {
