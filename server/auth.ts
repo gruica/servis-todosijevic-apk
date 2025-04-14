@@ -156,9 +156,19 @@ export function setupAuth(app: Express) {
       // Korisnički podaci za kreiranje
       const userData = {
         ...req.body,
-        isVerified: req.body.role === 'admin', // Administratori su automatski verifikovani
+        // Administratori su automatski verifikovani, a poslovni partneri prolaze kroz proces verifikacije
+        isVerified: req.body.role === 'admin', 
         registeredAt: new Date().toISOString()
       };
+      
+      // Posebni slučaj za poslovne partnere
+      if (req.body.role === 'business') {
+        console.log("Registracija poslovnog partnera:", {
+          username: req.body.username,
+          companyName: req.body.companyName,
+          email: req.body.email
+        });
+      }
       
       // Lozinka će biti heširana u storage.createUser metodi
       const user = await storage.createUser(userData);
