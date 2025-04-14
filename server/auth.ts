@@ -132,9 +132,28 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      console.log("Registracija - primljeni podaci:", {
+        username: req.body.username,
+        email: req.body.email,
+        fullName: req.body.fullName,
+        role: req.body.role,
+        companyName: req.body.companyName,
+        phone: req.body.phone
+      });
+      
+      // Validacija obaveznih polja
+      if (!req.body.username || !req.body.password || !req.body.fullName) {
+        console.log("Registracija neuspešna: nedostaju obavezna polja");
+        return res.status(400).json({
+          error: "Nepotpuni podaci",
+          message: "Korisničko ime, lozinka i ime su obavezna polja."
+        });
+      }
+      
       // Provera da li već postoji korisnik sa istim korisničkim imenom
       const existingUsername = await storage.getUserByUsername(req.body.username);
       if (existingUsername) {
+        console.log(`Registracija neuspešna: korisničko ime ${req.body.username} već postoji`);
         return res.status(400).json({
           error: "Korisničko ime već postoji",
           message: "Molimo odaberite drugo korisničko ime."
@@ -146,6 +165,7 @@ export function setupAuth(app: Express) {
         // Provera da li već postoji korisnik sa istim email-om
         const existingEmail = await storage.getUserByEmail(req.body.email);
         if (existingEmail) {
+          console.log(`Registracija neuspešna: email ${req.body.email} već postoji`);
           return res.status(400).json({
             error: "Email adresa već postoji",
             message: "Korisnik sa ovom email adresom je već registrovan."
@@ -155,29 +175,42 @@ export function setupAuth(app: Express) {
 
       // Korisnički podaci za kreiranje
       const userData = {
-        ...req.body,
-        // Administratori su automatski verifikovani, a poslovni partneri prolaze kroz proces verifikacije
+        username: req.body.username,
+        password: req.body.password,
+        fullName: req.body.fullName,
+        role: req.body.role || 'customer',
+        email: req.body.email || req.body.username, // Garantujemo da uvek imamo email
+        phone: req.body.phone || null,
+        address: req.body.address || null,
+        city: req.body.city || null,
+        companyName: req.body.companyName || null,
+        companyId: req.body.companyId || null,
+        technicianId: req.body.technicianId || null,
         isVerified: req.body.role === 'admin', 
         registeredAt: new Date().toISOString()
       };
       
       // Posebni slučaj za poslovne partnere
       if (req.body.role === 'business') {
-        console.log("Registracija poslovnog partnera:", {
-          username: req.body.username,
-          companyName: req.body.companyName,
-          email: req.body.email
+        console.log("Registracija poslovnog partnera - obrađeni podaci:", {
+          username: userData.username,
+          fullName: userData.fullName,
+          companyName: userData.companyName,
+          email: userData.email,
+          role: userData.role
         });
       }
       
       // Lozinka će biti heširana u storage.createUser metodi
+      console.log("Pokušaj kreiranja korisnika...");
       const user = await storage.createUser(userData);
+      console.log("Korisnik uspešno kreiran sa ID:", user.id);
 
       // Ukloni lozinku iz odgovora
       const { password, ...userWithoutPassword } = user;
       
       // Logujemo registraciju
-      console.log(`User ${user.username} registered with role ${user.role}, verification status: ${user.isVerified}`);
+      console.log(`Korisnik ${user.username} registrovan sa ulogom ${user.role}, status verifikacije: ${user.isVerified}`);
       
       // Administrator može odmah da se prijavi, ostali korisnici dobijaju poruku o potrebnoj verifikaciji
       if (user.role === 'admin') {

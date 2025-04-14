@@ -1434,23 +1434,27 @@ export class DatabaseStorage implements IStorage {
       // Za poslovne partnere, isVerified je uvek false na početku
       const isVerified = insertUser.role === "admin" || insertUser.role === "technician";
       
-      // Priprema registracije za insertovanje u bazu
+      // Konvertujemo stringove datuma u Date objekte za ispravno skladištenje
+      const now = new Date();
+      const verifiedDate = isVerified ? now : null;
+      
+      // Priprema registracije za insertovanje u bazu - sa ispravnim tipovima
       const userToInsert = {
-        username: insertUser.username,
-        password: password,
-        fullName: insertUser.fullName,
+        username: insertUser.username || "",
+        password: password || "",
+        fullName: insertUser.fullName || "",
         role: insertUser.role || "customer",
-        technicianId: insertUser.technicianId,
-        email: email,
-        phone: insertUser.phone,
-        address: insertUser.address,
-        city: insertUser.city,
-        companyName: insertUser.companyName,
-        companyId: insertUser.companyId,
+        technicianId: insertUser.technicianId || null,
+        email: email || null,
+        phone: insertUser.phone || null,
+        address: insertUser.address || null,
+        city: insertUser.city || null,
+        companyName: insertUser.companyName || null,
+        companyId: insertUser.companyId || null,
         isVerified: isVerified,
-        registeredAt: new Date().toISOString(),
-        verifiedAt: isVerified ? new Date().toISOString() : null,
-        verifiedBy: null // Administratori će biti verifikovani naknadno od strane drugih administratora
+        registeredAt: now,
+        verifiedAt: verifiedDate,
+        verifiedBy: null
       };
       
       console.log("Vrednosti za unos u bazu:", {
@@ -1460,11 +1464,58 @@ export class DatabaseStorage implements IStorage {
         companyName: userToInsert.companyName
       });
 
-      const [user] = await db.insert(users).values(userToInsert).returning();
+      // Koristimo direktan zahtev umesto drizle ORM-a zbog problema sa tipovima
+      const query = `
+        INSERT INTO users (username, password, full_name, role, technician_id, email, phone, address, city, company_name, company_id, is_verified, registered_at, verified_at, verified_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        RETURNING id, username, password, full_name, role, technician_id, email, phone, address, city, company_name, company_id, is_verified, registered_at, verified_at, verified_by
+      `;
       
-      if (!user) {
+      const values = [
+        userToInsert.username,
+        userToInsert.password,
+        userToInsert.fullName,
+        userToInsert.role,
+        userToInsert.technicianId,
+        userToInsert.email,
+        userToInsert.phone,
+        userToInsert.address,
+        userToInsert.city,
+        userToInsert.companyName,
+        userToInsert.companyId,
+        userToInsert.isVerified,
+        userToInsert.registeredAt,
+        userToInsert.verifiedAt,
+        userToInsert.verifiedBy
+      ];
+      
+      console.log("Izvršavanje SQL upita za kreiranje korisnika");
+      
+      const result = await pool.query(query, values);
+      
+      if (!result.rows || result.rows.length === 0) {
         throw new Error("Došlo je do greške pri kreiranju korisnika. Korisnik nije vraćen iz baze.");
       }
+      
+      // Mapiranje rezultata u User objekat
+      const user: User = {
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        password: result.rows[0].password,
+        fullName: result.rows[0].full_name,
+        role: result.rows[0].role,
+        technicianId: result.rows[0].technician_id,
+        email: result.rows[0].email,
+        phone: result.rows[0].phone,
+        address: result.rows[0].address,
+        city: result.rows[0].city,
+        companyName: result.rows[0].company_name,
+        companyId: result.rows[0].company_id,
+        isVerified: result.rows[0].is_verified,
+        registeredAt: new Date(result.rows[0].registered_at),
+        verifiedAt: result.rows[0].verified_at ? new Date(result.rows[0].verified_at) : null,
+        verifiedBy: result.rows[0].verified_by
+      };
       
       console.log("Korisnik uspešno kreiran:", {
         id: user.id,
