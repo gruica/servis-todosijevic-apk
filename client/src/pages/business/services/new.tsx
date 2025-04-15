@@ -163,8 +163,8 @@ export default function NewBusinessServiceRequest() {
           status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
           createdAt: today,
           // Dodajemo podatke o poslovnom partneru
-          businessPartnerId: user?.id,
-          partnerCompanyName: user?.companyName,
+          businessPartnerId: user?.id ? Number(user.id) : undefined,
+          partnerCompanyName: user?.companyName || "",
         });
         
         if (!serviceResponse.ok) {
