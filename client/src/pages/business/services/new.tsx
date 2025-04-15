@@ -125,14 +125,20 @@ export default function NewBusinessServiceRequest() {
         // Prvo, kreiramo klijenta
         const clientResponse = await apiRequest("POST", "/api/clients", {
           fullName: data.clientFullName,
-          email: data.clientEmail || null,
+          email: data.clientEmail || "", // Koristimo prazan string umesto null
           phone: data.clientPhone,
           address: data.clientAddress,
           city: data.clientCity,
         });
         
         if (!clientResponse.ok) {
-          throw new Error("Greška prilikom kreiranja klijenta");
+          // Pokušajmo dobiti detaljniju poruku o grešci
+          const errorData = await clientResponse.json().catch(() => null);
+          if (errorData && (errorData.message || errorData.error)) {
+            throw new Error(errorData.message || errorData.error);
+          } else {
+            throw new Error("Greška prilikom kreiranja klijenta. Proverite podatke i pokušajte ponovo.");
+          }
         }
         
         const client = await clientResponse.json();
@@ -143,12 +149,18 @@ export default function NewBusinessServiceRequest() {
           categoryId: parseInt(data.categoryId),
           manufacturerId: parseInt(data.manufacturerId),
           model: data.model,
-          serialNumber: data.serialNumber || null,
-          purchaseDate: data.purchaseDate || null,
+          serialNumber: data.serialNumber || "", // Koristimo prazan string umesto null
+          purchaseDate: data.purchaseDate || "", // Koristimo prazan string umesto null
         });
         
         if (!applianceResponse.ok) {
-          throw new Error("Greška prilikom kreiranja uređaja");
+          // Pokušajmo dobiti detaljniju poruku o grešci
+          const errorData = await applianceResponse.json().catch(() => null);
+          if (errorData && (errorData.message || errorData.error)) {
+            throw new Error(errorData.message || errorData.error);
+          } else {
+            throw new Error("Greška prilikom kreiranja uređaja. Proverite podatke i pokušajte ponovo.");
+          }
         }
         
         const appliance = await applianceResponse.json();
@@ -168,7 +180,13 @@ export default function NewBusinessServiceRequest() {
         });
         
         if (!serviceResponse.ok) {
-          throw new Error("Greška prilikom kreiranja servisa");
+          // Pokušajmo dobiti detaljniju poruku o grešci
+          const errorData = await serviceResponse.json().catch(() => null);
+          if (errorData && (errorData.message || errorData.error)) {
+            throw new Error(errorData.message || errorData.error);
+          } else {
+            throw new Error("Greška prilikom kreiranja servisa. Proverite podatke i pokušajte ponovo.");
+          }
         }
         
         return await serviceResponse.json();
@@ -187,9 +205,33 @@ export default function NewBusinessServiceRequest() {
       });
     },
     onError: (error: Error) => {
+      console.error("Detalji greške:", error);
+      
+      // Pokušaj da izvučeš više informacija iz greške ako postoje
+      let errorMessage = error.message || "Došlo je do greške prilikom kreiranja zahteva za servis.";
+      
+      // Pokušaj da parsiraš poruku greške ako je JSON string
+      try {
+        if (error.message && error.message.includes('{')) {
+          const jsonStartIndex = error.message.indexOf('{');
+          const jsonString = error.message.substring(jsonStartIndex);
+          const errorData = JSON.parse(jsonString);
+          
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' 
+              ? errorData.error 
+              : "Nevažeći podaci. Proverite sve unete informacije.";
+          }
+        }
+      } catch (parseError) {
+        console.error("Greška pri parsiranju poruke greške:", parseError);
+      }
+      
       toast({
         title: "Greška pri kreiranju zahteva",
-        description: error.message || "Došlo je do greške prilikom kreiranja zahteva za servis.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
