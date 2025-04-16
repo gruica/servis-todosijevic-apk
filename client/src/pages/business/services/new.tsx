@@ -177,6 +177,13 @@ export default function NewBusinessServiceRequest() {
           // Dodajemo podatke o poslovnom partneru
           businessPartnerId: user?.id ? Number(user.id) : undefined,
           partnerCompanyName: user?.companyName || "",
+          // Obavezno logovanje vrednosti za dijagnostiku
+          _debug_info: JSON.stringify({ 
+            partnerId: user?.id,
+            partnerIdType: typeof user?.id,
+            companyName: user?.companyName,
+            userRole: user?.role
+          })
         });
         
         if (!serviceResponse.ok) {

@@ -240,6 +240,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: true,
   businessPartnerId: true,
   partnerCompanyName: true,
+
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),

@@ -828,13 +828,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ako je naveden poslovni partner, proverimo da li postoji
       if (validatedData.businessPartnerId) {
         try {
-          const partner = await storage.getUserByUsername(`partner_${validatedData.businessPartnerId}`);
-          if (!partner || partner.role !== 'partner') {
+          // Tražimo partnera prvo po ID-u
+          const partner = await storage.getUser(validatedData.businessPartnerId);
+          
+          // Ako nismo našli partnera po ID-u, pokušajmo preko korisničkog imena (stari format)
+          if (!partner) {
+            const partnerByUsername = await storage.getUserByUsername(`partner_${validatedData.businessPartnerId}`);
+            
+            if (!partnerByUsername || partnerByUsername.role !== 'partner') {
+              return res.status(400).json({
+                error: "Poslovni partner ne postoji",
+                message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
+              });
+            }
+          } else if (partner.role !== 'partner') {
             return res.status(400).json({
-              error: "Poslovni partner ne postoji",
-              message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
+              error: "Korisniku nedostaju prava",
+              message: "Izabrani korisnik nema ulogu poslovnog partnera."
             });
           }
+          
+          // Ako smo došli do ovde, partner je validan
+          console.log(`Poslovni partner potvrđen za zahtev. ID: ${validatedData.businessPartnerId}`);
         } catch (partnerError) {
           console.error("Greška pri proveri poslovnog partnera:", partnerError);
           // Ovde samo logujemo grešku ali nastavljamo, jer može biti sistemska greška
@@ -865,7 +880,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ako su svi uslovi zadovoljeni, kreiramo servis
-      const service = await storage.createService(validatedData);
+      console.log("==== DEBUG INFO ZA SERVIS ====");
+      console.log("Podaci o partneru - ID:", validatedData.businessPartnerId, "tip:", typeof validatedData.businessPartnerId);
+      console.log("Partner kompanija:", validatedData.partnerCompanyName);
+      if (validatedData._debug_info) {
+        console.log("Debug info iz klijenta:", validatedData._debug_info);
+        try {
+          const debugData = JSON.parse(validatedData._debug_info as string);
+          console.log("Parsirana debug info:", debugData);
+        } catch (e) {
+          console.log("Nije moguće parsirati debug info");
+        }
+      }
+      
+      // Uklonimo debug info pre kreiranja servisa
+      const { _debug_info, ...serviceData } = validatedData;
+      const service = await storage.createService(serviceData);
       
       // Pošalji email obaveštenje klijentu o novom servisu
       try {
