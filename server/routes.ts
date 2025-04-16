@@ -828,12 +828,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ako je naveden poslovni partner, proverimo da li postoji
       if (validatedData.businessPartnerId) {
         try {
+          console.log(`Pokušaj validacije poslovnog partnera sa ID: ${validatedData.businessPartnerId}`);
+          
           // Tražimo partnera prvo po ID-u
           const partner = await storage.getUser(validatedData.businessPartnerId);
+          console.log(`Rezultat pretrage korisnika sa ID=${validatedData.businessPartnerId}:`, partner ? `Pronađen korisnik ${partner.username} (uloga: ${partner.role})` : "Nije pronađen");
           
           // Ako nismo našli partnera po ID-u, pokušajmo preko korisničkog imena (stari format)
           if (!partner) {
-            const partnerByUsername = await storage.getUserByUsername(`partner_${validatedData.businessPartnerId}`);
+            const usernameFormat = `partner_${validatedData.businessPartnerId}`;
+            console.log(`Pokušaj pretrage po starom formatu korisničkog imena: ${usernameFormat}`);
+            
+            const partnerByUsername = await storage.getUserByUsername(usernameFormat);
+            console.log(`Rezultat pretrage po korisničkom imenu ${usernameFormat}:`, partnerByUsername ? `Pronađen korisnik (uloga: ${partnerByUsername.role})` : "Nije pronađen");
             
             if (!partnerByUsername || partnerByUsername.role !== 'partner') {
               return res.status(400).json({
@@ -842,6 +849,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           } else if (partner.role !== 'partner') {
+            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'partner'`);
+            
             return res.status(400).json({
               error: "Korisniku nedostaju prava",
               message: "Izabrani korisnik nema ulogu poslovnog partnera."
@@ -883,18 +892,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("==== DEBUG INFO ZA SERVIS ====");
       console.log("Podaci o partneru - ID:", validatedData.businessPartnerId, "tip:", typeof validatedData.businessPartnerId);
       console.log("Partner kompanija:", validatedData.partnerCompanyName);
-      if (validatedData._debug_info) {
-        console.log("Debug info iz klijenta:", validatedData._debug_info);
+      
+      // Provera debug info-a - moramo koristiti any tip jer ovo nije deo formalne šeme
+      const anyData = validatedData as any;
+      if (anyData._debug_info) {
+        console.log("Debug info iz klijenta:", anyData._debug_info);
         try {
-          const debugData = JSON.parse(validatedData._debug_info as string);
+          const debugData = JSON.parse(anyData._debug_info);
           console.log("Parsirana debug info:", debugData);
         } catch (e) {
           console.log("Nije moguće parsirati debug info");
         }
       }
       
-      // Uklonimo debug info pre kreiranja servisa
-      const { _debug_info, ...serviceData } = validatedData;
+      // Uklonimo debug info pre kreiranja servisa (koristimo any cast)
+      const { _debug_info, ...serviceData } = anyData;
       const service = await storage.createService(serviceData);
       
       // Pošalji email obaveštenje klijentu o novom servisu

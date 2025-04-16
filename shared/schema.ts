@@ -289,6 +289,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: z.boolean().nullable().optional(),
   businessPartnerId: z.number().int().positive("ID poslovnog partnera mora biti pozitivan broj").nullable().optional(),
   partnerCompanyName: z.string().max(100, "Naziv kompanije je predugačak").or(z.literal("")).nullable().optional(),
+  _debug_info: z.string().optional(), // Privremeno polje za dijagnostiku - biće uklonjeno u produkciji
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
