@@ -182,7 +182,8 @@ export default function NewBusinessServiceRequest() {
             partnerId: user?.id,
             partnerIdType: typeof user?.id,
             companyName: user?.companyName,
-            userRole: user?.role
+            userRole: user?.role,
+            fullUserObject: JSON.stringify(user)
           })
         });
         

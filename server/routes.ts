@@ -665,6 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const partnerIdNum = parseInt(partnerId);
+        console.log(`Dohvatanje servisa za poslovnog partnera sa ID: ${partnerIdNum}`);
         
         // Dohvati servise povezane sa poslovnim partnerom
         const services = await storage.getServicesByPartner(partnerIdNum);
@@ -842,14 +843,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const partnerByUsername = await storage.getUserByUsername(usernameFormat);
             console.log(`Rezultat pretrage po korisničkom imenu ${usernameFormat}:`, partnerByUsername ? `Pronađen korisnik (uloga: ${partnerByUsername.role})` : "Nije pronađen");
             
-            if (!partnerByUsername || partnerByUsername.role !== 'partner') {
+            if (!partnerByUsername || (partnerByUsername.role !== 'partner' && partnerByUsername.role !== 'business')) {
               return res.status(400).json({
                 error: "Poslovni partner ne postoji",
                 message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
               });
             }
-          } else if (partner.role !== 'partner') {
-            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'partner'`);
+          } else if (partner.role !== 'partner' && partner.role !== 'business') {
+            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'partner' ili 'business'`);
             
             return res.status(400).json({
               error: "Korisniku nedostaju prava",

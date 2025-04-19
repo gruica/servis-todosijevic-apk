@@ -29,6 +29,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    onSuccess: (userData) => {
+      if (userData) {
+        console.log("Učitani korisnički podaci:", {
+          id: userData.id,
+          username: userData.username,
+          role: userData.role,
+          companyName: userData.companyName
+        });
+      }
+    }
   });
 
   const loginMutation = useMutation({
