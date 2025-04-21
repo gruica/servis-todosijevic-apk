@@ -174,6 +174,7 @@ export default function NewBusinessServiceRequest() {
           description: data.description,
           status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
           createdAt: today,
+          usedParts: "[]", // Dodajemo praznu listu za delove da izbegnemo greške validacije
           // Dodajemo podatke o poslovnom partneru
           businessPartnerId: user?.id ? Number(user.id) : undefined,
           partnerCompanyName: user?.companyName || "",
