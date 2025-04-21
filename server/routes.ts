@@ -897,12 +897,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Provera debug info-a - moramo koristiti any tip jer ovo nije deo formalne šeme
       const anyData = validatedData as any;
       if (anyData._debug_info) {
-        console.log("Debug info iz klijenta:", anyData._debug_info);
+        console.log("Debug info iz klijenta (raw) - tip:", typeof anyData._debug_info);
         try {
-          const debugData = JSON.parse(anyData._debug_info);
-          console.log("Parsirana debug info:", debugData);
+          let debugData;
+          // Pokušaj parsiranja samo ako je string, inače koristi direktno vrednost
+          if (typeof anyData._debug_info === 'string') {
+            debugData = JSON.parse(anyData._debug_info);
+            console.log("Parsirana debug info:", debugData);
+          } else {
+            console.log("Debug info nije string, već:", anyData._debug_info);
+            debugData = anyData._debug_info;
+          }
         } catch (e) {
-          console.log("Nije moguće parsirati debug info");
+          console.error("Nije moguće parsirati debug info:", e);
+          console.error("Problematična vrednost:", anyData._debug_info);
         }
       }
       
