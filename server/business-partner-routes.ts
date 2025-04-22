@@ -105,10 +105,10 @@ export function registerBusinessPartnerRoutes(app: Express) {
           categoryId: parseInt(categoryId),
           manufacturerId: parseInt(manufacturerId),
           model,
-          serialNumber: serialNumber || null,
-          purchaseDate: null,
-          warrantyExpiryDate: null,
-          notes: null
+          serialNumber: serialNumber || "",
+          purchaseDate: "",
+          warrantyExpiryDate: "",
+          notes: ""
         });
         
         finalApplianceId = newAppliance.id;

@@ -34,10 +34,10 @@ export default function BusinessDashboard() {
   
   // Dohvatanje servisnih zahteva za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
-    queryKey: ["/api/business/services/summary", user?.id],
+    queryKey: ["/api/business/services", user?.id],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/business/services?partnerId=${user?.id}`);
+        const response = await fetch(`/api/business/services`);
         if (!response.ok) {
           throw new Error('Greška pri dohvatanju servisa');
         }
