@@ -97,15 +97,31 @@ export default function NewBusinessServiceRequest() {
     queryKey: ["/api/manufacturers"],
   });
   
+  // Dohvatanje clientId iz URL-a ako postoji
+  const [searchParams] = useLocation().searchParams;
+  const clientId = searchParams ? searchParams.get('clientId') : null;
+  
+  // Dohvatanje podataka klijenta ako je clientId prosleđen
+  const { data: client, isLoading: isLoadingClient } = useQuery({
+    queryKey: ['/api/clients', clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const response = await fetch(`/api/clients/${clientId}`);
+      if (!response.ok) throw new Error('Greška pri dohvatanju klijenta');
+      return await response.json();
+    },
+    enabled: !!clientId
+  });
+  
   // Inicijalizacija forme
   const form = useForm<NewServiceFormValues>({
     resolver: zodResolver(newServiceSchema),
     defaultValues: {
-      clientFullName: "",
-      clientPhone: "",
-      clientEmail: "",
-      clientAddress: "",
-      clientCity: "",
+      clientFullName: client?.fullName || "",
+      clientPhone: client?.phone || "",
+      clientEmail: client?.email || "",
+      clientAddress: client?.address || "",
+      clientCity: client?.city || "",
       categoryId: "",
       manufacturerId: "",
       model: "",

@@ -77,13 +77,21 @@ export default function BusinessDashboard() {
               Pregled vaših servisnih zahteva i aktivnosti
             </p>
           </div>
-          <Button 
-            className="mt-4 md:mt-0" 
-            onClick={() => navigate("/business/services/new")}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novi servisni zahtev
-          </Button>
+          <div className="flex gap-2 mt-4 md:mt-0">
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/business/clients/new")}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Novi klijent
+            </Button>
+            <Button 
+              onClick={() => navigate("/business/services/new")}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Novi servisni zahtev
+            </Button>
+          </div>
         </div>
         
         {/* Kartice sa statistikama */}

@@ -1,151 +1,231 @@
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
-import { insertClientSchema, insertApplianceSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema } from "@shared/schema";
+import { z } from "zod";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
+import * as schema from "@shared/schema";
+import { emailService } from "./email-service";
+import { smsService } from "./sms-service";
 
-/**
- * Registruje rute specifične za poslovne partnere
- * Sve rute su zaštićene proverom autentikacije i role
- */
-export function registerBusinessPartnerRoutes(app: Express): void {
-  
+export function registerBusinessPartnerRoutes(app: Express) {
   // Middleware za proveru da li je korisnik poslovni partner
-  const isBusinessPartner = (req, res, next) => {
+  const isBusinessPartner = (req: Request, res: Response, next: NextFunction) => {
+    // Provera autentifikacije
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Niste prijavljeni" });
+      return res.status(401).json({
+        error: "Niste prijavljeni",
+        message: "Morate biti prijavljeni da biste pristupili ovom resursu."
+      });
     }
-    
-    if (!["business", "partner"].includes(req.user.role)) {
-      return res.status(403).json({ error: "Nemate dozvolu za pristup ovoj funkcionalnosti" });
+
+    // Provera uloge
+    if (req.user?.role !== "business_partner") {
+      return res.status(403).json({
+        error: "Nemate dozvolu",
+        message: "Samo poslovni partneri mogu pristupiti ovom resursu."
+      });
     }
-    
+
     next();
   };
-  
-  // Ruta za kreiranje novog servisa u jednom koraku (klijent + uređaj + servis)
-  app.post("/api/business/create-service", isBusinessPartner, async (req, res) => {
-    try {
-      console.log("[BUSINESS PARTNER API] Započinjem proces kreiranja servisa za poslovnog partnera", req.user.username);
-      
-      // Dekonstrukcija zahteva
-      const { client: clientData, appliance: applianceData, service: serviceData } = req.body;
-      
-      console.log("[BUSINESS PARTNER API] Podaci o klijentu:", JSON.stringify(clientData));
-      console.log("[BUSINESS PARTNER API] Podaci o uređaju:", JSON.stringify(applianceData));
-      console.log("[BUSINESS PARTNER API] Podaci o servisu:", JSON.stringify(serviceData));
-      
-      // 1. Validacija podataka o klijentu
-      const parsedClient = insertClientSchema.safeParse({
-        fullName: clientData.fullName,
-        phone: clientData.phone,
-        email: clientData.email || "",
-        address: clientData.address,
-        city: clientData.city,
-        notes: clientData.notes || ""
-      });
-      
-      if (!parsedClient.success) {
-        console.error("[BUSINESS PARTNER API] Validacija klijenta neuspešna:", parsedClient.error.message);
-        return res.status(400).json({ 
-          error: "Nevažeći podaci o klijentu",
-          details: parsedClient.error.message
-        });
-      }
-      
-      // 1. Kreiranje klijenta
-      console.log("[BUSINESS PARTNER API] Kreiranje klijenta...");
-      const clientResult = await storage.createClient(parsedClient.data);
-      console.log("[BUSINESS PARTNER API] Klijent kreiran sa ID:", clientResult.id);
-      
-      // 2. Validacija podataka o uređaju
-      const parsedAppliance = insertApplianceSchema.safeParse({
-        clientId: clientResult.id,
-        categoryId: applianceData.categoryId,
-        manufacturerId: applianceData.manufacturerId,
-        model: applianceData.model,
-        serialNumber: applianceData.serialNumber || "",
-        purchaseDate: applianceData.purchaseDate || ""
-      });
-      
-      if (!parsedAppliance.success) {
-        console.error("[BUSINESS PARTNER API] Validacija uređaja neuspešna:", parsedAppliance.error.message);
-        return res.status(400).json({ 
-          error: "Nevažeći podaci o uređaju",
-          details: parsedAppliance.error.message
-        });
-      }
-      
-      // 2. Kreiranje uređaja
-      console.log("[BUSINESS PARTNER API] Kreiranje uređaja...");
-      const applianceResult = await storage.createAppliance(parsedAppliance.data);
-      console.log("[BUSINESS PARTNER API] Uređaj kreiran sa ID:", applianceResult.id);
-      
-      // 3. Kreiranje servisa
-      console.log("[BUSINESS PARTNER API] Kreiranje servisa...");
-      
-      const today = new Date().toISOString().split("T")[0];
-      
-      const serviceResult = await storage.createService({
-        clientId: clientResult.id,
-        applianceId: applianceResult.id,
-        description: serviceData.description,
-        status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
-        createdAt: today,
-        usedParts: "[]", // Uvek prazna lista za nove servise
-        businessPartnerId: req.user.id,
-        partnerCompanyName: req.user.companyName || "",
-        technicianId: null, // Null jer administrator kasnije dodeljuje servisera
-        scheduledDate: null,
-        completedDate: null,
-        technicianNotes: null,
-        cost: null,
-        machineNotes: null,
-        isCompletelyFixed: null
-      });
-      
-      console.log("[BUSINESS PARTNER API] Servis uspešno kreiran sa ID:", serviceResult.id);
-      
-      // Vraćamo kompletan rezultat kreiranja
-      return res.status(201).json({
-        success: true,
-        client: clientResult,
-        appliance: applianceResult,
-        service: serviceResult,
-        message: "Servis uspešno kreiran"
-      });
-      
-    } catch (error) {
-      console.error("[BUSINESS PARTNER API] Kritična greška pri kreiranju servisa:", error);
-      return res.status(500).json({ 
-        error: "Došlo je do greške pri kreiranju servisa", 
-        details: error.message || "Nepoznata greška"
-      });
-    }
-  });
-  
-  // Dohvatanje liste klijenata za poslovnog partnera
-  app.get("/api/business/clients", isBusinessPartner, async (req, res) => {
-    try {
-      // Dobavi sve klijente i vrati ih
-      const clients = await storage.getAllClients();
-      return res.json(clients);
-    } catch (error) {
-      console.error("[BUSINESS PARTNER API] Greška pri dohvatanju klijenata:", error);
-      return res.status(500).json({ error: "Greška pri dohvatanju klijenata" });
-    }
-  });
-  
-  // Dohvatanje servisa kreiranih od strane trenutnog poslovnog partnera
+
+  // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
     try {
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ error: "Niste prijavljeni ili nedostaju podaci o korisniku" });
-      }
-      // Koristimo postojeću metodu getServicesByPartner umesto getServicesByBusinessPartnerId
-      const services = await storage.getServicesByPartner(req.user.id);
-      return res.json(services);
+      const partnerId = req.user.id;
+      
+      // Dobijanje servisa za konkretnog poslovnog partnera
+      const services = await storage.getServicesByBusinessPartnerId(partnerId);
+      
+      res.json(services);
     } catch (error) {
-      console.error("[BUSINESS PARTNER API] Greška pri dohvatanju servisa:", error);
-      return res.status(500).json({ error: "Greška pri dohvatanju servisa" });
+      console.error("Greška pri dobijanju servisa za poslovnog partnera:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri dobijanju servisa. Pokušajte ponovo kasnije." 
+      });
+    }
+  });
+
+  // Kreiranje novog servisa od strane poslovnog partnera
+  app.post("/api/business/services", isBusinessPartner, async (req, res) => {
+    try {
+      // Izvlačimo relevantna polja iz zahteva
+      const {
+        clientId,
+        applianceId,
+        description,
+        // Dodatna polja za uređaj ako se novi kreira
+        categoryId,
+        manufacturerId,
+        model,
+        serialNumber,
+        // Dodatna polja za klijenta ako se novi kreira
+        clientFullName,
+        clientPhone,
+        clientEmail,
+        clientAddress,
+        clientCity
+      } = req.body;
+
+      const partnerId = req.user.id;
+      const partnerCompanyName = req.user.companyName || "Poslovni partner";
+
+      // Prvo provera da li imamo postojećeg klijenta
+      let finalClientId = clientId;
+      
+      if (!finalClientId && clientFullName) {
+        // Kreiramo novog klijenta
+        const newClient = await storage.createClient({
+          fullName: clientFullName,
+          phone: clientPhone,
+          email: clientEmail || null,
+          address: clientAddress,
+          city: clientCity
+        });
+        
+        finalClientId = newClient.id;
+      }
+      
+      if (!finalClientId) {
+        return res.status(400).json({
+          error: "Nedostaje ID klijenta",
+          message: "Morate odabrati postojećeg klijenta ili uneti podatke za novog."
+        });
+      }
+
+      // Zatim provera da li imamo postojeći uređaj
+      let finalApplianceId = applianceId;
+      
+      if (!finalApplianceId && categoryId && manufacturerId && model) {
+        // Kreiramo novi uređaj
+        const newAppliance = await storage.createAppliance({
+          clientId: finalClientId,
+          categoryId: parseInt(categoryId),
+          manufacturerId: parseInt(manufacturerId),
+          model,
+          serialNumber: serialNumber || null,
+          purchaseDate: null,
+          warrantyExpiryDate: null,
+          notes: null
+        });
+        
+        finalApplianceId = newAppliance.id;
+      }
+      
+      if (!finalApplianceId) {
+        return res.status(400).json({
+          error: "Nedostaje ID uređaja",
+          message: "Morate odabrati postojeći uređaj ili uneti podatke za novi."
+        });
+      }
+
+      // Na kraju kreiramo servis
+      const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      
+      const newService = await storage.createService({
+        clientId: finalClientId,
+        applianceId: finalApplianceId,
+        technicianId: null, // Poslovni partner ne može dodeliti servisera
+        description,
+        status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
+        scheduledDate: null,
+        completedDate: null,
+        cost: null,
+        technicianNotes: null,
+        createdAt: today,
+        usedParts: "[]", // Prazna lista za delove
+        machineNotes: null,
+        isCompletelyFixed: null,
+        // Dodajemo podatke o poslovnom partneru
+        businessPartnerId: partnerId,
+        partnerCompanyName
+      });
+
+      // Slanje obaveštenja administratorima o novom servisu
+      try {
+        await emailService.sendNewServiceAdminNotification({
+          serviceId: newService.id,
+          clientName: await storage.getClient(finalClientId).then(client => client?.fullName || "Klijent"),
+          businessPartnerName: partnerCompanyName,
+          description
+        });
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+        // Ne prekidamo izvršenje ako slanje email-a ne uspe
+      }
+
+      res.status(201).json(newService);
+    } catch (error: unknown) {
+      console.error("Greška pri kreiranju servisa od strane poslovnog partnera:", error);
+      
+      // Detaljnija poruka o grešci
+      let errorMessage = "Došlo je do greške pri kreiranju servisa.";
+      if (error instanceof z.ZodError) {
+        errorMessage = "Nevažeći podaci: " + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      res.status(500).json({ 
+        error: "Greška pri kreiranju servisa", 
+        message: errorMessage
+      });
+    }
+  });
+
+  // Dobijanje detalja o servisu za poslovnog partnera
+  app.get("/api/business/services/:id", isBusinessPartner, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const partnerId = req.user.id;
+      
+      // Dobijanje servisa
+      const service = await storage.getService(serviceId);
+      
+      // Provera da li servis postoji
+      if (!service) {
+        return res.status(404).json({
+          error: "Servis nije pronađen",
+          message: "Traženi servis ne postoji ili je uklonjen."
+        });
+      }
+      
+      // Provera da li servis pripada ovom poslovnom partneru
+      if (service.businessPartnerId !== partnerId) {
+        return res.status(403).json({
+          error: "Nemate dozvolu",
+          message: "Nemate dozvolu da pristupite detaljima ovog servisa."
+        });
+      }
+      
+      // Dobijanje dodatnih informacija o servisu
+      const client = await storage.getClient(service.clientId);
+      const appliance = await storage.getAppliance(service.applianceId);
+      const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+      const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+      
+      // Vraćanje kompletnih podataka
+      res.json({
+        ...service,
+        client,
+        appliance: appliance ? {
+          ...appliance,
+          category,
+          manufacturer
+        } : null
+      });
+    } catch (error: unknown) {
+      console.error("Greška pri dobijanju detalja servisa:", error);
+      let errorMessage = "Došlo je do greške pri dobijanju detalja servisa.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: errorMessage
+      });
     }
   });
 }
