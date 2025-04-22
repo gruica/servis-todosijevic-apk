@@ -33,10 +33,10 @@ export function registerBusinessPartnerRoutes(app: Express) {
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
     try {
-      const partnerId = req.user.id;
+      const partnerId = req.user!.id;
       
       // Dobijanje servisa za konkretnog poslovnog partnera
-      const services = await storage.getServicesByBusinessPartnerId(partnerId);
+      const services = await storage.getServicesByPartner(partnerId);
       
       res.json(services);
     } catch (error) {
@@ -69,8 +69,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
         clientCity
       } = req.body;
 
-      const partnerId = req.user.id;
-      const partnerCompanyName = req.user.companyName || "Poslovni partner";
+      const partnerId = req.user!.id;
+      const partnerCompanyName = req.user!.companyName || "Poslovni partner";
 
       // Prvo provera da li imamo postojećeg klijenta
       let finalClientId = clientId;
@@ -145,12 +145,33 @@ export function registerBusinessPartnerRoutes(app: Express) {
 
       // Slanje obaveštenja administratorima o novom servisu
       try {
-        await emailService.sendNewServiceAdminNotification({
-          serviceId: newService.id,
-          clientName: await storage.getClient(finalClientId).then(client => client?.fullName || "Klijent"),
-          businessPartnerName: partnerCompanyName,
-          description
-        });
+        // Šaljemo email svim administratorima o novom zahtevu
+        const adminUsers = await storage.getAllUsers();
+        const admins = adminUsers.filter(user => user.role === "admin");
+        
+        // Dobavljanje detalja klijenta
+        const client = await storage.getClient(finalClientId);
+        const clientName = client?.fullName || "Klijent";
+        
+        // Ako ima administratora, šaljemo email
+        if (admins.length > 0) {
+          // Email za administratore
+          for (const admin of admins) {
+            if (admin.email) {
+              await emailService.sendEmail({
+                to: admin.email,
+                subject: `Novi servisni zahtev #${newService.id} od partnera ${partnerCompanyName}`,
+                html: `
+                  <h2>Novi servisni zahtev #${newService.id}</h2>
+                  <p><strong>Partner:</strong> ${partnerCompanyName}</p>
+                  <p><strong>Klijent:</strong> ${clientName}</p>
+                  <p><strong>Opis:</strong> ${description}</p>
+                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
+                `
+              });
+            }
+          }
+        }
       } catch (emailError) {
         console.error("Greška pri slanju email obaveštenja:", emailError);
         // Ne prekidamo izvršenje ako slanje email-a ne uspe
@@ -179,7 +200,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   app.get("/api/business/services/:id", isBusinessPartner, async (req, res) => {
     try {
       const serviceId = parseInt(req.params.id);
-      const partnerId = req.user.id;
+      const partnerId = req.user!.id;
       
       // Dobijanje servisa
       const service = await storage.getService(serviceId);

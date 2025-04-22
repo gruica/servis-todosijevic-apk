@@ -98,8 +98,9 @@ export default function NewBusinessServiceRequest() {
   });
   
   // Dohvatanje clientId iz URL-a ako postoji
-  const [searchParams] = useLocation().searchParams;
-  const clientId = searchParams ? searchParams.get('clientId') : null;
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const clientId = urlParams.get('clientId');
   
   // Dohvatanje podataka klijenta ako je clientId prosleđen
   const { data: client, isLoading: isLoadingClient } = useQuery({

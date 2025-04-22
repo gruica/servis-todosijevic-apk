@@ -98,7 +98,7 @@ export interface IStorage {
   getServicesByClient(clientId: number): Promise<Service[]>;
   getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]>;
   getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]>;
-  getServicesByBusinessPartnerId(businessPartnerId: number): Promise<Service[]>;
+  // Već postoji
   getServicesByTechnicianAndStatus(technicianId: number, status: ServiceStatus, limit?: number): Promise<Service[]>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: InsertService): Promise<Service | undefined>;
