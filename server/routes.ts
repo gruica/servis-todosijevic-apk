@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
@@ -40,6 +41,9 @@ const testEmailSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Registruj rute za poslovne partnere
+  registerBusinessPartnerRoutes(app);
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
