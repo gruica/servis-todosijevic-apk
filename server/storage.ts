@@ -687,7 +687,10 @@ export class MemStorage implements IStorage {
     );
   }
 
+  // Ova metoda je implementirana samo za MemStorage i neće se koristiti u produkciji
+  // Stvarna implementacija je data u DatabaseStorage klasi
   async createService(insertService: InsertService): Promise<Service> {
+    // Pravljenje imitacije servisa za MemStorage - u praksi se neće koristiti
     const id = this.serviceId++;
     const service: Service = { 
       id,
