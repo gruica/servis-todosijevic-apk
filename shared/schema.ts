@@ -287,9 +287,14 @@ export const insertServiceSchema = createInsertSchema(services).pick({
     }, "Nevažeći JSON format za korišćene delove"),
   machineNotes: z.string().max(500, "Napomene o uređaju su predugačke").or(z.literal("")).nullable().optional(),
   isCompletelyFixed: z.boolean().nullable().optional(),
-  businessPartnerId: z.number().int().positive("ID poslovnog partnera mora biti pozitivan broj").nullable().optional(),
+  businessPartnerId: z.union([
+    z.number().int().positive("ID poslovnog partnera mora biti pozitivan broj"),
+    z.string().refine((val) => !isNaN(parseInt(val)), {
+      message: "ID poslovnog partnera mora biti broj ili string koji se može konvertovati u broj"
+    }).transform(val => parseInt(val))
+  ]).nullable().optional(),
   partnerCompanyName: z.string().max(100, "Naziv kompanije je predugačak").or(z.literal("")).nullable().optional(),
-  _debug_info: z.string().optional(), // Privremeno polje za dijagnostiku - biće uklonjeno u produkciji
+  _debug_info: z.string().optional().or(z.record(z.any())), // Privremeno polje za dijagnostiku - biće uklonjeno u produkciji
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
