@@ -920,7 +920,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Uklonimo debug info pre kreiranja servisa (koristimo any cast)
       const { _debug_info, ...serviceData } = anyData;
-      const service = await storage.createService(serviceData);
+      
+      // Konvertujemo businessPartnerId u broj ako je string ili null ako nedostaje
+      const parsedData = {
+        ...serviceData,
+        businessPartnerId: serviceData.businessPartnerId ? 
+          (typeof serviceData.businessPartnerId === 'string' ? 
+            parseInt(serviceData.businessPartnerId) : 
+            serviceData.businessPartnerId) : 
+          null
+      };
+      
+      console.log("Kreiram servis sa sledećim podacima:", {
+        clientId: parsedData.clientId,
+        applianceId: parsedData.applianceId,
+        description: parsedData.description,
+        status: parsedData.status,
+        businessPartnerId: parsedData.businessPartnerId,
+        businessPartnerIdType: typeof parsedData.businessPartnerId,
+        partnerCompanyName: parsedData.partnerCompanyName
+      });
+      
+      const service = await storage.createService(parsedData);
       
       // Pošalji email obaveštenje klijentu o novom servisu
       try {
