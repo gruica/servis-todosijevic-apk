@@ -121,29 +121,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        await apiRequest("POST", "/api/logout");
+        // Dodatno - direktan fetch kao rezervni mehanizam
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+      } catch (error) {
+        console.error("Greška pri odjavljivanju:", error);
+      }
     },
     onSuccess: () => {
+      // Čišćenje svih podataka
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Čišćenje celog keša
+      localStorage.removeItem("lastAuthRedirect");
+      
+      // Brisanje kolačića (cookies) kroz postavljanje isteklih
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
       toast({
         title: "Uspešno ste se odjavili",
         description: "Vidimo se ponovo!",
       });
     },
     onError: (error: Error) => {
+      // Čak i u slučaju greške, očistimo podatke
+      queryClient.setQueryData(["/api/user"], null);
+      localStorage.removeItem("lastAuthRedirect");
+      
       toast({
-        title: "Greška pri odjavljivanju",
-        description: error.message,
-        variant: "destructive",
+        title: "Odjavljivanje",
+        description: "Sesija je zatvorena",
       });
     },
   });
 
-  // Nova funkcija za čišćenje auth korisnika
+  // Nova funkcija za čišćenje auth korisnika - poboljšana verzija
   const clearAuthUser = () => {
     console.log("Čišćenje korisničkih podataka za novi login");
+    
+    // Čišćenje React Query keša
     queryClient.setQueryData(["/api/user"], null);
+    queryClient.invalidateQueries({queryKey: ["/api/user"]});
+    
+    // Čišćenje localStorage
     localStorage.removeItem("lastAuthRedirect");
+    
+    // Čišćenje kolačića (cookies) - za svaki slučaj
+    document.cookie.split(";").forEach(function(c) {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    
+    // Dodatno sigurnosno čišćenje sesije pozivom na backend
+    fetch("/api/logout", {
+      method: "POST",
+      credentials: "include"
+    }).then(() => {
+      console.log("Sesija uspešno očišćena");
+    }).catch((err) => {
+      console.error("Greška pri čišćenju sesije:", err);
+    });
   };
 
   return (

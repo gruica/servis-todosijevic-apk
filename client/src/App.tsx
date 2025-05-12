@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import React, { useEffect } from "react";
 import NotFound from "@/pages/not-found";
@@ -108,6 +108,18 @@ function Router() {
 }
 
 function App() {
+  const [, navigate] = useLocation();
+  
+  // Provera da li postoji zahtev za odjavom, i ako postoji, automatski odradi redirekt
+  useEffect(() => {
+    const logoutRequested = localStorage.getItem("logoutRequested");
+    if (logoutRequested === "true") {
+      console.log("Detektovan zahtev za odjavom, preusmeravanje na stranicu za prijavu");
+      localStorage.removeItem("logoutRequested");
+      navigate("/auth");
+    }
+  }, [navigate]);
+  
   // Inicijalizacija Capacitor-a prilikom učitavanja aplikacije
   useEffect(() => {
     // Inicijalizacija samo za nativne mobilne platforme
