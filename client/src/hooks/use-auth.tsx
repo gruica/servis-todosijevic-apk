@@ -15,6 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  clearAuthUser: () => void; // Nova funkcija za čišćenje korisničkih podataka
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -26,19 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch,
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    onSuccess: (userData) => {
-      if (userData) {
-        console.log("Učitani korisnički podaci:", {
-          id: userData.id,
-          username: userData.username,
-          role: userData.role,
-          companyName: userData.companyName
-        });
-      }
-    }
+    staleTime: 0, // Uvek sveži podaci
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const loginMutation = useMutation({
@@ -144,6 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Nova funkcija za čišćenje auth korisnika
+  const clearAuthUser = () => {
+    console.log("Čišćenje korisničkih podataka za novi login");
+    queryClient.setQueryData(["/api/user"], null);
+    localStorage.removeItem("lastAuthRedirect");
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -153,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        clearAuthUser,
       }}
     >
       {children}

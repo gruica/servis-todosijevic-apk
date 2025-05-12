@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Lock, User, CheckCircle2, Settings } from "lucide-react";
+import { Lock, User, CheckCircle2, Settings, LogOut } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AuthHelper } from "@/auth-helper";
 
 // Šema za validaciju promjene šifre

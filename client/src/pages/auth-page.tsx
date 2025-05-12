@@ -48,6 +48,7 @@ export default function AuthPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
+      console.log("Auth page: User already logged in, redirecting based on role:", user.role);
       // Redirect to different pages based on user role
       if (user.role === "technician") {
         navigate("/tech");
@@ -55,11 +56,24 @@ export default function AuthPage() {
         navigate("/customer");
       } else if (user.role === "admin") {
         navigate("/admin");
+      } else if (user.role === "business") {
+        navigate("/business");
       } else {
         navigate("/");
       }
     }
   }, [user, navigate]);
+  
+  // Check if button was clicked to explicitly log out
+  useEffect(() => {
+    const logoutRequested = localStorage.getItem("logoutRequested");
+    if (logoutRequested === "true") {
+      const { clearAuthUser } = useAuth();
+      console.log("Explicit logout requested, clearing auth user");
+      clearAuthUser();
+      localStorage.removeItem("logoutRequested");
+    }
+  }, []);
 
   // Login form
   const loginForm = useForm<LoginValues>({
