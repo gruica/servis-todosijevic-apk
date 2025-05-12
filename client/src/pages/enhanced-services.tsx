@@ -187,6 +187,8 @@ export default function EnhancedServices() {
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   const { toast } = useToast();
+  // Proveravamo ulogu korisnika kroz useAuth hook
+  const { isAdmin, isTechnician, isBusinessPartner, isClient } = useAuth();
   
   const { data: services, isLoading: isServicesLoading } = useQuery<Service[]>({
     queryKey: ["/api/services"],

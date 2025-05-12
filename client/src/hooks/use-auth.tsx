@@ -16,6 +16,10 @@ type AuthContextType = {
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
   clearAuthUser: () => void; // Nova funkcija za čišćenje korisničkih podataka
+  isAdmin: boolean; // Provera da li je korisnik administrator
+  isTechnician: boolean; // Provera da li je korisnik serviser
+  isBusinessPartner: boolean; // Provera da li je korisnik poslovni partner
+  isClient: boolean; // Provera da li je korisnik klijent
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -187,6 +191,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Provera uloge korisnika
+  const isAdmin = user?.role === "admin";
+  const isTechnician = user?.role === "technician";
+  const isBusinessPartner = user?.role === "business_partner";
+  const isClient = user?.role === "client";
+
   return (
     <AuthContext.Provider
       value={{
@@ -197,6 +207,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutMutation,
         registerMutation,
         clearAuthUser,
+        // Prosleđujemo booleane za proveru uloge
+        isAdmin: isAdmin || false,
+        isTechnician: isTechnician || false,
+        isBusinessPartner: isBusinessPartner || false,
+        isClient: isClient || false,
       }}
     >
       {children}
