@@ -898,6 +898,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Podaci o partneru - ID:", validatedData.businessPartnerId, "tip:", typeof validatedData.businessPartnerId);
       console.log("Partner kompanija:", validatedData.partnerCompanyName);
       
+      // Dodajna provera i konverzija businessPartnerId
+      if (validatedData.businessPartnerId !== null && validatedData.businessPartnerId !== undefined) {
+        try {
+          // Proverimo da li je već broj
+          if (typeof validatedData.businessPartnerId !== 'number') {
+            validatedData.businessPartnerId = Number(validatedData.businessPartnerId);
+            // Dodatna provera da li je konverzija uspešna
+            if (isNaN(validatedData.businessPartnerId)) {
+              console.error("Neuspešna konverzija businessPartnerId u broj");
+              validatedData.businessPartnerId = null;
+            }
+          }
+        } catch (error) {
+          console.error("Greška pri konverziji businessPartnerId:", error);
+          validatedData.businessPartnerId = null;
+        }
+      }
+      
       // Provera debug info-a - moramo koristiti any tip jer ovo nije deo formalne šeme
       const anyData = validatedData as any;
       if (anyData._debug_info) {

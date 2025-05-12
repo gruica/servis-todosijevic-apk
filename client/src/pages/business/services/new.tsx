@@ -193,7 +193,7 @@ export default function NewBusinessServiceRequest() {
           createdAt: today,
           usedParts: "[]", // Dodajemo praznu listu za delove da izbegnemo greške validacije
           // Dodajemo podatke o poslovnom partneru
-          businessPartnerId: user?.id ? parseInt(user.id.toString()) : null,
+          businessPartnerId: user?.id ? Number(user.id) : null,
           partnerCompanyName: user?.companyName || "",
           // Obavezno logovanje vrednosti za dijagnostiku
           _debug_info: JSON.stringify({ 
