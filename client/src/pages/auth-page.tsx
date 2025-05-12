@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { queryClient } from "@/lib/queryClient";
 
 // Define login and registration schemas
 const loginSchema = z.object({
@@ -68,10 +69,21 @@ export default function AuthPage() {
   useEffect(() => {
     const logoutRequested = localStorage.getItem("logoutRequested");
     if (logoutRequested === "true") {
-      const { clearAuthUser } = useAuth();
-      console.log("Explicit logout requested, clearing auth user");
-      clearAuthUser();
+      console.log("Explicit logout requested, cleaning up auth state");
+      
+      // Popravljamo localStorage
       localStorage.removeItem("logoutRequested");
+      
+      // Popravljamo queryClient cache
+      queryClient.setQueryData(["/api/user"], null);
+      
+      // Popravljamo sesiju - dodatni korak za osiguranje
+      fetch("/api/logout", {
+        method: "POST",
+        credentials: "include"
+      }).then(() => {
+        console.log("Sesija očišćena nakon zahteva za odjavom");
+      });
     }
   }, []);
 
@@ -102,6 +114,11 @@ export default function AuthPage() {
 
   function onLoginSubmit(values: LoginValues) {
     console.log("Submitting login with username:", values.username);
+    
+    // Prvo ispraznimo sve prethodne podatke o korisniku
+    queryClient.setQueryData(["/api/user"], null);
+    
+    // Zatim pokušamo login
     loginMutation.mutate({
       username: values.username,
       password: values.password,

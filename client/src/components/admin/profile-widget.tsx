@@ -26,10 +26,11 @@ const changePasswordSchema = z.object({
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 export function AdminProfileWidget() {
-  const { user } = useAuth();
+  const { user, logoutMutation, clearAuthUser } = useAuth();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [, navigate] = useLocation();
   
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
@@ -201,11 +202,26 @@ export function AdminProfileWidget() {
               </div>
             </CardContent>
             <CardFooter className="border-t pt-3 flex justify-between">
-              <Link href="/profile">
-                <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
-                  Kompletan profil
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  // Postavimo flag za zahtev za odjavom
+                  localStorage.setItem("logoutRequested", "true");
+                  // Očistimo korisnički sessiju
+                  clearAuthUser();
+                  // Pozovemo odjavu
+                  logoutMutation.mutate();
+                  // Zatvorimo popup
+                  setIsOpen(false);
+                  // Redirektujemo na auth stranicu
+                  navigate("/auth");
+                }}
+                className="flex items-center text-red-600 hover:text-red-700"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Odjavi se
+              </Button>
               <Link href="/">
                 <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
                   Kontrolna tabla
