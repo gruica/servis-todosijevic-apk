@@ -1079,44 +1079,43 @@ export default function EnhancedServices() {
                       </FormItem>
                     )}
                   />
-                  
-                  <FormField
-                    control={form.control}
-                    name="completedDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Datum završetka</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className="w-full flex justify-start text-left font-normal"
-                              >
-                                <Check className="mr-2 h-4 w-4" />
-                                {field.value ? formatDate(field.value) : "Izaberite datum"}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? new Date(field.value) : undefined}
-                              onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
-                              locale={srLatn}
-                              disabled={(date) => date > new Date()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription>
-                          Datum kada je servis završen
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              ) : null}
+                
+                <FormField
+                  control={form.control}
+                  name="completedDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Datum završetka</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className="w-full flex justify-start text-left font-normal"
+                            >
+                              <Check className="mr-2 h-4 w-4" />
+                              {field.value ? formatDate(field.value) : "Izaberite datum"}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={field.value ? new Date(field.value) : undefined}
+                            onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
+                            locale={srLatn}
+                            disabled={(date) => date > new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Datum kada je servis završen
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               {isTechnician ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1161,26 +1160,25 @@ export default function EnhancedServices() {
                     <FormField
                       control={form.control}
                       name="isCompletelyFixed"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-6">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Potpuno popravljeno</FormLabel>
-                            <FormDescription>
-                              Označite ako je uređaj u potpunosti popravljen
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-6">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Potpuno popravljeno</FormLabel>
+                          <FormDescription>
+                            Označite ako je uređaj u potpunosti popravljen
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              ) : null}
+              </div>
               
               <DialogFooter className="pt-4">
                 <Button 
