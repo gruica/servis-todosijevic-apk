@@ -177,6 +177,32 @@ function truncateText(text: string, maxLength: number = 50) {
   return text.substring(0, maxLength) + "...";
 }
 
+// Get available status options based on current service state and user role
+function getAvailableStatusOptions(currentStatus?: string, isCreating: boolean = false) {
+  // Ako kreiramo novi servis, dozvoljen je samo početni status
+  if (isCreating) {
+    return ["pending"];
+  }
+  
+  // Logičan redosled statusa na osnovu trenutnog stanja
+  switch (currentStatus) {
+    case "pending":
+      return ["pending", "scheduled", "cancelled"];
+    case "scheduled":
+      return ["scheduled", "in_progress", "cancelled"];
+    case "in_progress":
+      return ["in_progress", "waiting_parts", "completed", "cancelled"];
+    case "waiting_parts":
+      return ["waiting_parts", "in_progress", "completed", "cancelled"];
+    case "completed":
+      return ["completed"]; // Završeni servisi se ne mogu menjati
+    case "cancelled":
+      return ["cancelled", "pending"]; // Otkazani se mogu vratiti na čekanje
+    default:
+      return ["pending"];
+  }
+}
+
 export default function EnhancedServices() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -950,7 +976,7 @@ export default function EnhancedServices() {
                           <SelectValue placeholder="Izaberite status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {serviceStatusEnum.options.map((status) => (
+                          {getAvailableStatusOptions(selectedService?.status, !selectedService).map((status) => (
                             <SelectItem key={status} value={status}>
                               {getStatusBadge(status)}
                             </SelectItem>
@@ -995,33 +1021,36 @@ export default function EnhancedServices() {
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="technicianId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Serviser</FormLabel>
-                      <Select
-                        value={field.value ? field.value.toString() : "0"}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Izaberite servisera" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Nedodeljen</SelectItem>
-                          {technicians?.map((tech) => (
-                            <SelectItem key={tech.id} value={tech.id.toString()}>
-                              {tech.fullName}
-                              {tech.specialization && ` (${tech.specialization})`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Dodela servisera - samo za administratore i postojeće servise */}
+                {isAdmin && selectedService && ["pending", "scheduled"].includes(selectedService.status) ? (
+                  <FormField
+                    control={form.control}
+                    name="technicianId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Serviser</FormLabel>
+                        <Select
+                          value={field.value ? field.value.toString() : "0"}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Izaberite servisera" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">Nedodeljen</SelectItem>
+                            {technicians?.map((tech) => (
+                              <SelectItem key={tech.id} value={tech.id.toString()}>
+                                {tech.fullName}
+                                {tech.specialization && ` (${tech.specialization})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : null}
               </div>
               
               {/* Description */}
@@ -1043,8 +1072,9 @@ export default function EnhancedServices() {
                 )}
               />
               
-              {isTechnician ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Datum zakazivanja - samo za administratore i zakazane servise */}
+              {isAdmin && selectedService && selectedService.status === "scheduled" ? (
+                <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="scheduledDate"
@@ -1069,6 +1099,7 @@ export default function EnhancedServices() {
                               selected={field.value ? new Date(field.value) : undefined}
                               onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : null)}
                               locale={srLatn}
+                              disabled={(date) => date < new Date()}
                             />
                           </PopoverContent>
                         </Popover>
@@ -1079,7 +1110,12 @@ export default function EnhancedServices() {
                       </FormItem>
                     )}
                   />
-                  
+                </div>
+              ) : null}
+
+              {/* Datum završetka - samo za završene servise */}
+              {selectedService && selectedService.status === "completed" ? (
+                <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="completedDate"
@@ -1118,7 +1154,8 @@ export default function EnhancedServices() {
                 </div>
               ) : null}
               
-              {isTechnician ? (
+              {/* Polja za servisera - dostupna samo serviseru i samo za postojeće servise */}
+              {isTechnician && selectedService && ["in_progress", "waiting_parts", "completed"].includes(selectedService.status) ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -1158,26 +1195,29 @@ export default function EnhancedServices() {
                       )}
                     />
                   
-                    <FormField
-                      control={form.control}
-                      name="isCompletelyFixed"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-6">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Potpuno popravljeno</FormLabel>
-                            <FormDescription>
-                              Označite ako je uređaj u potpunosti popravljen
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                    {/* Polje "potpuno popravljeno" samo za završene servise */}
+                    {selectedService?.status === "completed" && (
+                      <FormField
+                        control={form.control}
+                        name="isCompletelyFixed"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-6">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || false}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Potpuno popravljeno</FormLabel>
+                              <FormDescription>
+                                Označite ako je uređaj u potpunosti popravljen
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 </div>
               ) : null}
