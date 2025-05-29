@@ -936,30 +936,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Uklonimo debug info pre kreiranja servisa (koristimo any cast)
-      const { _debug_info, ...serviceData } = anyData;
-      
-      // Konvertujemo businessPartnerId u broj ako je string ili null ako nedostaje
-      const parsedData = {
-        ...serviceData,
-        businessPartnerId: serviceData.businessPartnerId ? 
-          (typeof serviceData.businessPartnerId === 'string' ? 
-            parseInt(serviceData.businessPartnerId) : 
-            serviceData.businessPartnerId) : 
-          null
+      // Kreirajmo objekat sa samo potrebnim poljima za bazu podataka
+      const serviceToCreate = {
+        clientId: validatedData.clientId,
+        applianceId: validatedData.applianceId,
+        technicianId: validatedData.technicianId || null,
+        description: validatedData.description,
+        status: validatedData.status || "pending",
+        createdAt: validatedData.createdAt || new Date().toISOString().split('T')[0],
+        scheduledDate: validatedData.scheduledDate || null,
+        completedDate: validatedData.completedDate || null,
+        technicianNotes: validatedData.technicianNotes || null,
+        cost: validatedData.cost || null,
+        usedParts: validatedData.usedParts || "[]",
+        machineNotes: validatedData.machineNotes || null,
+        isCompletelyFixed: validatedData.isCompletelyFixed || null,
+        businessPartnerId: validatedData.businessPartnerId || null,
+        partnerCompanyName: validatedData.partnerCompanyName || null
       };
       
       console.log("Kreiram servis sa sledećim podacima:", {
-        clientId: parsedData.clientId,
-        applianceId: parsedData.applianceId,
-        description: parsedData.description,
-        status: parsedData.status,
-        businessPartnerId: parsedData.businessPartnerId,
-        businessPartnerIdType: typeof parsedData.businessPartnerId,
-        partnerCompanyName: parsedData.partnerCompanyName
+        clientId: serviceToCreate.clientId,
+        applianceId: serviceToCreate.applianceId,
+        technicianId: serviceToCreate.technicianId,
+        description: serviceToCreate.description,
+        status: serviceToCreate.status,
+        businessPartnerId: serviceToCreate.businessPartnerId,
+        partnerCompanyName: serviceToCreate.partnerCompanyName
       });
       
-      const service = await storage.createService(parsedData);
+      const service = await storage.createService(serviceToCreate);
       
       // Pošalji email obaveštenje klijentu o novom servisu
       try {
