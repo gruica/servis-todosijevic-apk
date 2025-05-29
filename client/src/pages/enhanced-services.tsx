@@ -916,6 +916,9 @@ export default function EnhancedServices() {
                         </SelectTrigger>
                         <SelectContent className="max-h-80">
                           <SelectItem value="0">Izaberite klijenta</SelectItem>
+                          <SelectItem value="new_client" className="text-blue-600 font-medium">
+                            + Dodaj novog klijenta
+                          </SelectItem>
                           {clients?.map((client) => (
                             <SelectItem key={client.id} value={client.id.toString()}>
                               {client.fullName} {client.phone && `(${client.phone})`}

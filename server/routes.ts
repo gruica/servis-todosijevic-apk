@@ -747,19 +747,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/services", async (req, res) => {
     try {
-      // Koristimo safeParse za bolje upravljanje greškama
-      const validationResult = insertServiceSchema.safeParse(req.body);
+      console.log("=== KREIRANJE NOVOG SERVISA ===");
+      console.log("Podaci iz frontend forme:", req.body);
       
-      // Ako podaci nisu validni, vraćamo detaljnu poruku o greškama
-      if (!validationResult.success) {
+      // Manuelna validacija osnovnih podataka umesto schema
+      const { clientId, applianceId, description } = req.body;
+      
+      // Proveravamo samo obavezna polja
+      if (!clientId || clientId <= 0) {
         return res.status(400).json({ 
-          error: "Nevažeći podaci servisa", 
-          details: validationResult.error.format(),
-          message: "Svi obavezni podaci o servisu moraju biti pravilno uneti."
+          error: "Nevažeći ID klijenta", 
+          message: "Molimo izaberite validnog klijenta."
         });
       }
       
-      const validatedData = validationResult.data;
+      if (!applianceId || applianceId <= 0) {
+        return res.status(400).json({ 
+          error: "Nevažeći ID uređaja", 
+          message: "Molimo izaberite validan uređaj."
+        });
+      }
+      
+      if (!description || description.trim().length < 5) {
+        return res.status(400).json({ 
+          error: "Nevažeći opis problema", 
+          message: "Opis problema mora biti detaljniji (minimum 5 karaktera)."
+        });
+      }
+      
+      // Kreiraj objekat sa default vrednostima
+      const validatedData = {
+        clientId: parseInt(clientId),
+        applianceId: parseInt(applianceId),
+        description: description.trim(),
+        status: req.body.status || "pending",
+        createdAt: req.body.createdAt || new Date().toISOString().split('T')[0],
+        technicianId: req.body.technicianId && req.body.technicianId > 0 ? parseInt(req.body.technicianId) : null,
+        scheduledDate: req.body.scheduledDate || null,
+        completedDate: req.body.completedDate || null,
+        technicianNotes: req.body.technicianNotes || null,
+        cost: req.body.cost || null,
+        usedParts: req.body.usedParts || "[]",
+        machineNotes: req.body.machineNotes || null,
+        isCompletelyFixed: req.body.isCompletelyFixed || null,
+        businessPartnerId: req.body.businessPartnerId || null,
+        partnerCompanyName: req.body.partnerCompanyName || null
+      };
       
       // Dodatna validacija: provera da li klijent postoji
       try {
