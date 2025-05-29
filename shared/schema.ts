@@ -223,7 +223,7 @@ export const services = pgTable("services", {
   partnerCompanyName: text("partner_company_name"), // Naziv kompanije poslovnog partnera
 });
 
-// Poboljšana šema za validaciju servisa
+// Osnovni schema za validaciju servisa - samo obavezna polja
 export const insertServiceSchema = createInsertSchema(services).pick({
   clientId: true,
   applianceId: true,
@@ -240,13 +240,12 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: true,
   businessPartnerId: true,
   partnerCompanyName: true,
-
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),
   technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").nullable().optional(),
   description: z.string().min(5, "Opis problema mora biti detaljniji (min. 5 karaktera)").max(1000, "Opis je predugačak"),
-  status: serviceStatusEnum,
+  status: serviceStatusEnum.default("pending"),
   createdAt: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
     .refine(val => {
@@ -259,7 +258,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
     .nullable()
     .optional()
     .refine(val => {
-      if (!val) return true;
+      if (!val || val === "") return true;
       const date = new Date(val);
       return !isNaN(date.getTime());
     }, "Nevažeći datum zakazivanja"),
@@ -269,7 +268,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
     .nullable()
     .optional()
     .refine(val => {
-      if (!val) return true;
+      if (!val || val === "") return true;
       const date = new Date(val);
       return !isNaN(date.getTime());
     }, "Nevažeći datum završetka"),
@@ -277,7 +276,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   cost: z.string().max(50, "Iznos je predugačak").or(z.literal("")).nullable().optional(),
   usedParts: z.string().max(1000, "Lista delova je predugačka").or(z.literal("")).nullable().optional()
     .refine(val => {
-      if (!val) return true;
+      if (!val || val === "") return true;
       try {
         JSON.parse(val);
         return true;
@@ -294,7 +293,18 @@ export const insertServiceSchema = createInsertSchema(services).pick({
     }).transform(val => parseInt(val))
   ]).nullable().optional(),
   partnerCompanyName: z.string().max(100, "Naziv kompanije je predugačak").or(z.literal("")).nullable().optional(),
-  _debug_info: z.string().optional().or(z.record(z.any())), // Privremeno polje za dijagnostiku - biće uklonjeno u produkciji
+}).partial({
+  // Ova polja su opciona za osnovnu formu za kreiranje servisa
+  technicianId: true,
+  scheduledDate: true,
+  completedDate: true,
+  technicianNotes: true,
+  cost: true,
+  usedParts: true,
+  machineNotes: true,
+  isCompletelyFixed: true,
+  businessPartnerId: true,
+  partnerCompanyName: true,
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;
