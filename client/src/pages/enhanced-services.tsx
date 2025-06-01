@@ -211,6 +211,7 @@ export default function EnhancedServices() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   const { toast } = useToast();
@@ -511,6 +512,40 @@ export default function EnhancedServices() {
     },
   });
   
+  // Create new client mutation
+  const createClientMutation = useMutation({
+    mutationFn: async (clientData: { fullName: string; phone: string; email?: string; address?: string; city?: string }) => {
+      const res = await apiRequest("POST", "/api/clients", clientData);
+      return await res.json();
+    },
+    onSuccess: (newClient) => {
+      console.log("Novi klijent kreiran:", newClient);
+      
+      // Invalidate clients query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      
+      // Set the newly created client as selected
+      form.setValue("clientId", newClient.id);
+      setSelectedClient(newClient.id);
+      
+      // Close the new client dialog
+      setIsNewClientDialogOpen(false);
+      
+      toast({
+        title: "✅ Klijent dodat",
+        description: `Klijent ${newClient.fullName} je uspešno dodat u sistem.`,
+      });
+    },
+    onError: (error) => {
+      console.error("Greška pri kreiranju klijenta:", error);
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri dodavanju klijenta",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Open dialog for adding new service
   const handleAddService = () => {
     setSelectedService(null);
@@ -573,6 +608,12 @@ export default function EnhancedServices() {
   
   // Handle client change in form
   const handleClientChange = (clientId: string) => {
+    if (clientId === "new_client") {
+      // Open new client dialog
+      setIsNewClientDialogOpen(true);
+      return;
+    }
+    
     const clientIdNum = parseInt(clientId);
     setSelectedClient(clientIdNum);
     
@@ -1024,8 +1065,8 @@ export default function EnhancedServices() {
                   )}
                 />
                 
-                {/* Dodela servisera - samo za administratore i postojeće servise */}
-                {isAdmin && selectedService && ["pending", "scheduled"].includes(selectedService.status) ? (
+                {/* Dodela servisera - dostupno administratorima */}
+                {isAdmin ? (
                   <FormField
                     control={form.control}
                     name="technicianId"
@@ -1034,7 +1075,7 @@ export default function EnhancedServices() {
                         <FormLabel>Serviser</FormLabel>
                         <Select
                           value={field.value ? field.value.toString() : "0"}
-                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          onValueChange={(value) => field.onChange(parseInt(value) || null)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Izaberite servisera" />
@@ -1465,6 +1506,127 @@ export default function EnhancedServices() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* New Client Dialog */}
+      <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dodaj novog klijenta</DialogTitle>
+            <DialogDescription>
+              Unesite podatke o novom klijentu. Polja označena sa * su obavezna.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const clientData = {
+              fullName: formData.get('fullName') as string,
+              phone: formData.get('phone') as string,
+              email: formData.get('email') as string || undefined,
+              address: formData.get('address') as string || undefined,
+              city: formData.get('city') as string || undefined,
+            };
+            
+            if (!clientData.fullName.trim() || !clientData.phone.trim()) {
+              toast({
+                title: "Greška",
+                description: "Ime i telefon su obavezna polja",
+                variant: "destructive",
+              });
+              return;
+            }
+            
+            createClientMutation.mutate(clientData);
+          }} className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ime i prezime *
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Unesite ime i prezime klijenta"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefon *
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="067/123-456"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="klijent@example.com"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                  Adresa
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ulica i broj"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                  Grad
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Podgorica"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsNewClientDialogOpen(false)}
+                disabled={createClientMutation.isPending}
+              >
+                Otkaži
+              </Button>
+              <Button
+                type="submit"
+                disabled={createClientMutation.isPending}
+              >
+                {createClientMutation.isPending ? "Dodavanje..." : "Dodaj klijenta"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

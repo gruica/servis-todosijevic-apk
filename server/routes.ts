@@ -1090,11 +1090,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/services/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertServiceSchema.parse(req.body);
+      
+      console.log("=== AŽURIRANJE SERVISA ===");
+      console.log("ID servisa:", id);
+      console.log("Podaci iz frontend forme:", req.body);
       
       // Preuzmemo originalni servis pre ažuriranja
       const originalService = await storage.getService(id);
       if (!originalService) return res.status(404).json({ error: "Servis nije pronađen" });
+      
+      // Manuelna validacija osnovnih podataka
+      const { clientId, applianceId, description } = req.body;
+      
+      // Kreiraj objekat sa ažuriranim vrednostima, zadržavajući postojeće ako nisu poslate
+      const validatedData = {
+        clientId: clientId ? parseInt(clientId) : originalService.clientId,
+        applianceId: applianceId ? parseInt(applianceId) : originalService.applianceId,
+        description: description ? description.trim() : originalService.description,
+        status: req.body.status || originalService.status,
+        createdAt: req.body.createdAt || originalService.createdAt,
+        technicianId: req.body.technicianId !== undefined ? 
+          (req.body.technicianId && req.body.technicianId > 0 ? parseInt(req.body.technicianId) : null) : 
+          originalService.technicianId,
+        scheduledDate: req.body.scheduledDate !== undefined ? req.body.scheduledDate : originalService.scheduledDate,
+        completedDate: req.body.completedDate !== undefined ? req.body.completedDate : originalService.completedDate,
+        technicianNotes: req.body.technicianNotes !== undefined ? req.body.technicianNotes : originalService.technicianNotes,
+        cost: req.body.cost !== undefined ? req.body.cost : originalService.cost,
+        usedParts: req.body.usedParts !== undefined ? req.body.usedParts : originalService.usedParts,
+        machineNotes: req.body.machineNotes !== undefined ? req.body.machineNotes : originalService.machineNotes,
+        isCompletelyFixed: req.body.isCompletelyFixed !== undefined ? req.body.isCompletelyFixed : originalService.isCompletelyFixed,
+        businessPartnerId: req.body.businessPartnerId !== undefined ? req.body.businessPartnerId : originalService.businessPartnerId,
+        partnerCompanyName: req.body.partnerCompanyName !== undefined ? req.body.partnerCompanyName : originalService.partnerCompanyName
+      };
+      
+      console.log("Validovani podaci za ažuriranje:", validatedData);
       
       const updatedService = await storage.updateService(id, validatedData);
       if (!updatedService) return res.status(404).json({ error: "Greška pri ažuriranju servisa" });
