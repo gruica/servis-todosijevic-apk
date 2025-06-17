@@ -36,45 +36,24 @@ interface Manufacturer {
   name: string;
 }
 
-// Validaciona šema za novi zahtev za servis
+// Jednostavna validaciona šema usklađena sa backend logikom
 const newServiceSchema = z.object({
-  // Podaci o klijentu
-  clientFullName: z.string().min(3, "Ime i prezime klijenta je obavezno (min. 3 karaktera)")
-    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime i prezime (samo slova, razmaci i crtice)"),
-  clientPhone: z.string()
-    .min(6, "Telefon klijenta je obavezan (min. 6 cifara)")
-    .regex(/^[0-9+\s()-]{6,20}$/, "Unesite ispravan format telefona, npr. '067123456' ili '+382 67 123 456'"),
-  clientEmail: z.string()
-    .email("Unesite važeću email adresu, npr. 'klijent@example.com'")
-    .optional()
-    .or(z.literal("")),
-  clientAddress: z.string()
-    .min(5, "Adresa klijenta je obavezna (min. 5 karaktera)")
-    .max(100, "Adresa je predugačka (maks. 100 karaktera)")
-    .refine(val => val.trim().length > 0, "Adresa ne može sadržati samo prazan prostor"),
-  clientCity: z.string()
-    .min(2, "Grad klijenta je obavezan (min. 2 karaktera)")
-    .max(50, "Ime grada je predugačko")
-    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime grada (samo slova, razmaci i crtice)"),
+  // Podaci o klijentu - pojednostavljeno
+  clientFullName: z.string().min(1, "Ime i prezime klijenta je obavezno"),
+  clientPhone: z.string().min(1, "Telefon klijenta je obavezan"),
+  clientEmail: z.string().optional().or(z.literal("")),
+  clientAddress: z.string().optional().or(z.literal("")),
+  clientCity: z.string().optional().or(z.literal("")),
   
-  // Podaci o uređaju
+  // Podaci o uređaju - pojednostavljeno
   categoryId: z.string().min(1, "Izaberite kategoriju uređaja"),
   manufacturerId: z.string().min(1, "Izaberite proizvođača"),
-  model: z.string()
-    .min(2, "Model uređaja je obavezan (min. 2 karaktera)")
-    .max(100, "Naziv modela je predugačak")
-    .refine(val => val.trim().length > 0, "Model ne može sadržati samo prazan prostor"),
-  serialNumber: z.string()
-    .regex(/^[a-zA-Z0-9-]*$/, "Serijski broj može sadržati samo slova, brojeve i crtice")
-    .optional()
-    .or(z.literal("")),
+  model: z.string().min(1, "Model uređaja je obavezan"),
+  serialNumber: z.string().optional().or(z.literal("")),
   purchaseDate: z.string().optional().or(z.literal("")),
   
-  // Podaci o servisu
-  description: z.string()
-    .min(10, "Opis problema je obavezan (min. 10 karaktera)")
-    .max(1000, "Opis problema je predugačak (maks. 1000 karaktera)")
-    .refine(val => val.trim().length > 0, "Opis problema ne može sadržati samo prazan prostor"),
+  // Podaci o servisu - samo opis je obavezan
+  description: z.string().min(1, "Opis problema je obavezan"),
   saveClientData: z.boolean().default(true),
 });
 
@@ -133,87 +112,37 @@ export default function NewBusinessServiceRequest() {
     },
   });
   
-  // Mutacija za kreiranje servisa
+  // Mutacija za kreiranje servisa putem business partner API-ja
   const createServiceMutation = useMutation({
     mutationFn: async (data: NewServiceFormValues) => {
       setIsSubmitting(true);
       
       try {
-        // Prvo, kreiramo klijenta
-        const clientResponse = await apiRequest("POST", "/api/clients", {
-          fullName: data.clientFullName,
-          email: data.clientEmail || "", // Koristimo prazan string umesto null
-          phone: data.clientPhone,
-          address: data.clientAddress,
-          city: data.clientCity,
-        });
+        console.log("Slanje zahteva za kreiranje servisa:", data);
         
-        if (!clientResponse.ok) {
-          // Pokušajmo dobiti detaljniju poruku o grešci
-          const errorData = await clientResponse.json().catch(() => null);
-          if (errorData && (errorData.message || errorData.error)) {
-            throw new Error(errorData.message || errorData.error);
-          } else {
-            throw new Error("Greška prilikom kreiranja klijenta. Proverite podatke i pokušajte ponovo.");
-          }
-        }
-        
-        const client = await clientResponse.json();
-        
-        // Zatim, kreiramo uređaj za klijenta
-        const applianceResponse = await apiRequest("POST", "/api/appliances", {
-          clientId: client.id,
-          categoryId: parseInt(data.categoryId),
-          manufacturerId: parseInt(data.manufacturerId),
-          model: data.model,
-          serialNumber: data.serialNumber || "", // Koristimo prazan string umesto null
-          purchaseDate: data.purchaseDate || "", // Koristimo prazan string umesto null
-        });
-        
-        if (!applianceResponse.ok) {
-          // Pokušajmo dobiti detaljniju poruku o grešci
-          const errorData = await applianceResponse.json().catch(() => null);
-          if (errorData && (errorData.message || errorData.error)) {
-            throw new Error(errorData.message || errorData.error);
-          } else {
-            throw new Error("Greška prilikom kreiranja uređaja. Proverite podatke i pokušajte ponovo.");
-          }
-        }
-        
-        const appliance = await applianceResponse.json();
-        
-        // Konačno, kreiramo servis
-        const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
-        
-        const serviceResponse = await apiRequest("POST", "/api/services", {
-          clientId: client.id,
-          applianceId: appliance.id,
-          description: data.description,
-          status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
-          createdAt: today,
-          usedParts: "[]", // Dodajemo praznu listu za delove da izbegnemo greške validacije
-          // Dodajemo podatke o poslovnom partneru
-          businessPartnerId: user?.id ? Number(user.id) : null,
-          partnerCompanyName: user?.companyName || "",
-          // Obavezno logovanje vrednosti za dijagnostiku
-          _debug_info: JSON.stringify({ 
-            partnerId: user?.id,
-            partnerIdType: typeof user?.id,
-            companyName: user?.companyName,
-            userRole: user?.role,
-            fullUserObject: { 
-              id: user?.id,
-              username: user?.username,
-              role: user?.role,
-              companyName: user?.companyName,
-              fullName: user?.fullName
-            }
-          })
+        // Koristimo specijalizovanu business partner rutu
+        const serviceResponse = await apiRequest("POST", "/api/business/services", {
+          // Podaci o klijentu
+          clientFullName: data.clientFullName.trim(),
+          clientPhone: data.clientPhone.trim(),
+          clientEmail: data.clientEmail?.trim() || "",
+          clientAddress: data.clientAddress?.trim() || "",
+          clientCity: data.clientCity?.trim() || "",
+          
+          // Podaci o uređaju
+          categoryId: data.categoryId,
+          manufacturerId: data.manufacturerId,
+          model: data.model.trim(),
+          serialNumber: data.serialNumber?.trim() || "",
+          
+          // Opis servisa
+          description: data.description.trim()
         });
         
         if (!serviceResponse.ok) {
-          // Pokušajmo dobiti detaljniju poruku o grešci
           const errorData = await serviceResponse.json().catch(() => null);
+          console.error("Greška response:", errorData);
+          
           if (errorData && (errorData.message || errorData.error)) {
             throw new Error(errorData.message || errorData.error);
           } else {
