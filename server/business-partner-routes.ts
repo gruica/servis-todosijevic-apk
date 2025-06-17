@@ -51,7 +51,11 @@ export function registerBusinessPartnerRoutes(app: Express) {
   // Kreiranje novog servisa od strane poslovnog partnera
   app.post("/api/business/services", isBusinessPartner, async (req, res) => {
     try {
-      // Izvlačimo relevantna polja iz zahteva
+      console.log("=== KREIRANJE SERVISA OD STRANE POSLOVNOG PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      console.log("Korisnik:", req.user);
+      
+      // Izvlačimo relevantna polja iz zahteva sa osnovnom validacijom
       const {
         clientId,
         applianceId,
@@ -69,66 +73,98 @@ export function registerBusinessPartnerRoutes(app: Express) {
         clientCity
       } = req.body;
 
+      // Osnovna validacija obaveznih polja
+      if (!description || description.trim().length === 0) {
+        console.error("Nedostaje opis servisa");
+        return res.status(400).json({
+          error: "Nedostaje opis servisa",
+          message: "Opis servisa je obavezno polje."
+        });
+      }
+
       const partnerId = req.user!.id;
       const partnerCompanyName = req.user!.companyName || "Poslovni partner";
+      
+      console.log("Partner ID:", partnerId);
+      console.log("Partner Company:", partnerCompanyName);
 
       // Prvo provera da li imamo postojećeg klijenta
-      let finalClientId = clientId;
+      let finalClientId = clientId && clientId > 0 ? parseInt(clientId) : null;
       
-      if (!finalClientId && clientFullName) {
+      console.log("Client ID iz forme:", clientId);
+      console.log("Final Client ID:", finalClientId);
+      
+      if (!finalClientId && clientFullName && clientPhone) {
+        console.log("Kreiram novog klijenta sa podacima:", { clientFullName, clientPhone, clientEmail });
         // Kreiramo novog klijenta
         const newClient = await storage.createClient({
-          fullName: clientFullName,
-          phone: clientPhone,
-          email: clientEmail || null,
-          address: clientAddress,
-          city: clientCity
+          fullName: clientFullName.trim(),
+          phone: clientPhone.trim(),
+          email: clientEmail?.trim() || null,
+          address: clientAddress?.trim() || null,
+          city: clientCity?.trim() || null
         });
         
         finalClientId = newClient.id;
+        console.log("Kreiran novi klijent sa ID:", finalClientId);
       }
       
       if (!finalClientId) {
+        console.error("Nema client ID ni podataka za novog klijenta");
         return res.status(400).json({
           error: "Nedostaje ID klijenta",
-          message: "Morate odabrati postojećeg klijenta ili uneti podatke za novog."
+          message: "Morate odabrati postojećeg klijenta ili uneti podatke za novog (ime i telefon su obavezni)."
         });
       }
 
       // Zatim provera da li imamo postojeći uređaj
-      let finalApplianceId = applianceId;
+      let finalApplianceId = applianceId && applianceId > 0 ? parseInt(applianceId) : null;
+      
+      console.log("Appliance ID iz forme:", applianceId);
+      console.log("Final Appliance ID:", finalApplianceId);
       
       if (!finalApplianceId && categoryId && manufacturerId && model) {
+        console.log("Kreiram novi uređaj sa podacima:", { categoryId, manufacturerId, model, serialNumber });
         // Kreiramo novi uređaj
         const newAppliance = await storage.createAppliance({
           clientId: finalClientId,
           categoryId: parseInt(categoryId),
           manufacturerId: parseInt(manufacturerId),
-          model,
-          serialNumber: serialNumber || "",
+          model: model.trim(),
+          serialNumber: serialNumber?.trim() || "",
           purchaseDate: "",
-          warrantyExpiryDate: "",
           notes: ""
         });
         
         finalApplianceId = newAppliance.id;
+        console.log("Kreiran novi uređaj sa ID:", finalApplianceId);
       }
       
       if (!finalApplianceId) {
+        console.error("Nema appliance ID ni podataka za novi uređaj");
         return res.status(400).json({
           error: "Nedostaje ID uređaja",
-          message: "Morate odabrati postojeći uređaj ili uneti podatke za novi."
+          message: "Morate odabrati postojeći uređaj ili uneti podatke za novi (kategorija, proizvođač i model su obavezni)."
         });
       }
 
       // Na kraju kreiramo servis
       const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
       
+      console.log("Kreiranje servisa sa podacima:");
+      console.log({
+        clientId: finalClientId,
+        applianceId: finalApplianceId,
+        description: description.trim(),
+        businessPartnerId: partnerId,
+        partnerCompanyName
+      });
+      
       const newService = await storage.createService({
         clientId: finalClientId,
         applianceId: finalApplianceId,
         technicianId: null, // Poslovni partner ne može dodeliti servisera
-        description,
+        description: description.trim(),
         status: "pending", // Poslovni partneri mogu kreirati samo servise sa statusom "pending"
         scheduledDate: null,
         completedDate: null,
@@ -142,6 +178,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
         businessPartnerId: partnerId,
         partnerCompanyName
       });
+      
+      console.log("Servis uspešno kreiran sa ID:", newService.id);
 
       // Slanje obaveštenja administratorima o novom servisu
       try {
@@ -179,19 +217,25 @@ export function registerBusinessPartnerRoutes(app: Express) {
 
       res.status(201).json(newService);
     } catch (error: unknown) {
-      console.error("Greška pri kreiranju servisa od strane poslovnog partnera:", error);
+      console.error("=== GREŠKA PRI KREIRANJU SERVISA OD STRANE POSLOVNOG PARTNERA ===");
+      console.error("Error object:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      console.error("Request body:", req.body);
+      console.error("User:", req.user);
       
       // Detaljnija poruka o grešci
       let errorMessage = "Došlo je do greške pri kreiranju servisa.";
       if (error instanceof z.ZodError) {
         errorMessage = "Nevažeći podaci: " + error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+        console.error("Zod validation errors:", error.errors);
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
       
       res.status(500).json({ 
         error: "Greška pri kreiranju servisa", 
-        message: errorMessage
+        message: errorMessage,
+        details: error instanceof Error ? error.message : "Nepoznata greška"
       });
     }
   });
