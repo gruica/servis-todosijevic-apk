@@ -91,8 +91,8 @@ export function setupAuth(app: Express) {
           }
           
           // Dodatna provera: da li je korisnik verifikovan
-          // Administratori uvek mogu da se prijave, ostali korisnici moraju biti verifikovani
-          if (user.role !== 'admin' && !user.isVerified) {
+          // Administratori i poslovni partneri mogu da se prijave uvek, ostali korisnici moraju biti verifikovani
+          if (user.role !== 'admin' && user.role !== 'business_partner' && !user.isVerified) {
             console.log(`User ${username} is not verified`);
             return done(null, false, { message: 'Vaš nalog nije još verifikovan od strane administratora. Molimo sačekajte potvrdu.' });
           }
