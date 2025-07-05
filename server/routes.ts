@@ -3026,6 +3026,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer routes - kreiranje servisa
+  app.post("/api/customer/services", async (req, res) => {
+    try {
+      // Proveravamo da li je korisnik prijavljen i da li je klijent
+      if (!req.isAuthenticated() || req.user?.role !== "customer") {
+        return res.status(401).json({ error: "Nemate dozvolu za pristup ovom resursu" });
+      }
+
+      // Validacija podataka
+      const serviceData = insertServiceSchema.pick({
+        clientId: true,
+        applianceId: true,
+        description: true,
+        scheduledDate: true
+      }).safeParse(req.body);
+
+      if (!serviceData.success) {
+        return res.status(400).json({
+          error: "Nevažeći podaci servisa",
+          details: serviceData.error.format()
+        });
+      }
+
+      // Klijent može da kreira servis samo za sebe
+      const clientId = serviceData.data.clientId;
+      
+      // Proveravamo da li uređaj postoji i pripada klijentu
+      const appliance = await storage.getAppliance(serviceData.data.applianceId);
+      if (!appliance) {
+        return res.status(404).json({ error: "Uređaj nije pronađen" });
+      }
+      
+      if (appliance.clientId !== clientId) {
+        return res.status(403).json({ error: "Uređaj ne pripada vašem nalogu" });
+      }
+
+      // Kreiranje servisa
+      const newService = await storage.createService({
+        ...serviceData.data,
+        status: "pending" as const,
+        createdAt: new Date().toISOString().split('T')[0] // Dodajem createdAt
+      });
+
+      // Slanje email notifikacije administratorima
+      try {
+        const client = await storage.getClient(clientId);
+        if (client) {
+          // Koristim postojeću email funkcionalnost
+          const adminUsers = await storage.getAllUsers();
+          const admins = adminUsers.filter(user => user.role === "admin");
+          
+          for (const admin of admins) {
+            if (admin.email) {
+              await emailService.sendEmail({
+                to: admin.email,
+                subject: `Novi zahtev za servis #${newService.id} od klijenta ${client.fullName}`,
+                html: `
+                  <h2>Novi zahtev za servis #${newService.id}</h2>
+                  <p><strong>Klijent:</strong> ${client.fullName}</p>
+                  <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
+                  <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
+                  <p><strong>Opis:</strong> ${newService.description}</p>
+                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
+                `
+              });
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email notifikacije:", emailError);
+      }
+
+      res.status(201).json(newService);
+    } catch (error) {
+      console.error("Greška pri kreiranju servisa:", error);
+      res.status(500).json({ error: "Greška pri kreiranju servisa", message: error.message });
+    }
+  });
+
+  // Customer routes - pregled svojih servisa
+  app.get("/api/customer/services", async (req, res) => {
+    try {
+      // Proveravamo da li je korisnik prijavljen i da li je klijent
+      if (!req.isAuthenticated() || req.user?.role !== "customer") {
+        return res.status(401).json({ error: "Nemate dozvolu za pristup ovom resursu" });
+      }
+
+      // Dohvatamo sve servise za ovog klijenta
+      const services = await storage.getServicesByClient(req.user.id);
+      res.json(services);
+    } catch (error) {
+      console.error("Greška pri dohvatanju servisa:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju servisa", message: error.message });
+    }
+  });
+
+  // Customer routes - pregled svojih uređaja
+  app.get("/api/customer/appliances", async (req, res) => {
+    try {
+      // Proveravamo da li je korisnik prijavljen i da li je klijent
+      if (!req.isAuthenticated() || req.user?.role !== "customer") {
+        return res.status(401).json({ error: "Nemate dozvolu za pristup ovom resursu" });
+      }
+
+      // Dohvatamo sve uređaje za ovog klijenta
+      const appliances = await storage.getAppliancesByClient(req.user.id);
+      res.json(appliances);
+    } catch (error) {
+      console.error("Greška pri dohvatanju uređaja:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju uređaja", message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

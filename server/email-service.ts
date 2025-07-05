@@ -567,6 +567,83 @@ export class EmailService {
   }
 
   /**
+   * Šalje obaveštenje administratorima o novom servisu od klijenta
+   * @param client Klijent koji je kreirao servis
+   * @param service Kreiran servis
+   * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
+   */
+  public async sendNewServiceNotification(
+    client: Client,
+    service: any
+  ): Promise<boolean> {
+    console.log(`[DEBUG EMAIL] Početak slanja obaveštenja o novom servisu #${service.id} od klijenta ${client.fullName}`);
+    
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[DEBUG EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja o novom servisu`);
+      return false;
+    }
+
+    const subject = `Novi servisni zahtev #${service.id} od klijenta ${client.fullName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0066cc;">Novi servisni zahtev</h2>
+        <p>Poštovani,</p>
+        <p>Klijent je kreirao novi zahtev za servis:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p><strong>Broj servisa:</strong> #${service.id}</p>
+          <p><strong>Klijent:</strong> ${client.fullName}</p>
+          <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
+          <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
+          <p><strong>Opis problema:</strong> ${service.description}</p>
+          <p><strong>Status:</strong> ${service.status}</p>
+          ${service.scheduledDate ? `<p><strong>Željeni termin:</strong> ${service.scheduledDate}</p>` : ''}
+        </div>
+        <p>Molimo vas da pregledate novi zahtev u administratorskom panelu i dodelite odgovarajućeg servisera.</p>
+        <p>Srdačan pozdrav,<br>Sistem za upravljanje servisima</p>
+      </div>
+    `;
+
+    const text = `
+Novi servisni zahtev #${service.id}
+
+Klijent: ${client.fullName}
+Email: ${client.email || 'Nije dostupan'}
+Telefon: ${client.phone || 'Nije dostupan'}
+Opis: ${service.description}
+Status: ${service.status}
+${service.scheduledDate ? `Željeni termin: ${service.scheduledDate}` : ''}
+
+Molimo vas da pregledate novi zahtev u administratorskom panelu.
+    `;
+
+    // Slanje email-a svim administratorima
+    try {
+      const allAdmins = this.adminEmails;
+      let successCount = 0;
+      
+      for (const adminEmail of allAdmins) {
+        const result = await this.sendEmail({
+          to: adminEmail,
+          subject,
+          text,
+          html
+        });
+        
+        if (result) {
+          successCount++;
+        }
+      }
+      
+      console.log(`[EMAIL] ✅ Obaveštenje o novom servisu poslato na ${successCount}/${allAdmins.length} admin adresa`);
+      return successCount > 0;
+    } catch (error) {
+      console.error(`[EMAIL] ❌ Greška pri slanju obaveštenja o novom servisu:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje obaveštenje serviseru o novom dodeljenom servisu
    */
   /**
