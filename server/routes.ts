@@ -1929,8 +1929,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get services for the logged-in technician
-  app.get("/api/my-services", async (req, res) => {
+  // Helper function for technician services logic
+  const getTechnicianServices = async (req: Request, res: Response) => {
     try {
       // Obavezno staviti req.isAuthenticated() ovde za proveru
       if (!req.isAuthenticated()) {
@@ -2013,7 +2013,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error getting technician services:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
-  });
+  };
+
+  // Get services for the logged-in technician (legacy endpoint)
+  app.get("/api/my-services", getTechnicianServices);
+
+  // Get services for the logged-in technician (new endpoint)
+  app.get("/api/technician/services", getTechnicianServices);
 
   // Dashboard stats route
   app.get("/api/stats", async (req, res) => {
