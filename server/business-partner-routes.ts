@@ -19,8 +19,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
       });
     }
 
-    // Provera uloge
-    if (req.user?.role !== "business_partner") {
+    // Provera uloge - prihvatamo i "business" i "business_partner"
+    if (req.user?.role !== "business_partner" && req.user?.role !== "business") {
       return res.status(403).json({
         error: "Nemate dozvolu",
         message: "Samo poslovni partneri mogu pristupiti ovom resursu."

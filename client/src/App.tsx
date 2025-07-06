@@ -97,10 +97,10 @@ function Router() {
       <RoleProtectedRoute path="/customer/services" component={CustomerServices} allowedRoles={["customer"]} />
       
       {/* Business Partner routes */}
-      <RoleProtectedRoute path="/business" component={BusinessDashboard} allowedRoles={["business_partner"]} />
-      <RoleProtectedRoute path="/business/profile" component={BusinessProfile} allowedRoles={["business_partner"]} />
-      <RoleProtectedRoute path="/business/services" component={BusinessServices} allowedRoles={["business_partner"]} />
-      <RoleProtectedRoute path="/business/services/new" component={NewBusinessServiceRequest} allowedRoles={["business_partner"]} />
+      <RoleProtectedRoute path="/business" component={BusinessDashboard} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/profile" component={BusinessProfile} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/services" component={BusinessServices} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/services/new" component={NewBusinessServiceRequest} allowedRoles={["business_partner", "business"]} />
       
       <Route component={NotFound} />
     </Switch>
