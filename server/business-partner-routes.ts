@@ -293,4 +293,74 @@ export function registerBusinessPartnerRoutes(app: Express) {
       });
     }
   });
+
+  // Endpoint za dobijanje podataka potrebnih za kreiranje klijenata
+  app.get("/api/business/clients/new", isBusinessPartner, async (req, res) => {
+    try {
+      // Vraćaj podatke potrebne za kreiranje novog klijenta
+      const categories = await storage.getAllApplianceCategories();
+      const manufacturers = await storage.getAllManufacturers();
+      
+      res.json({
+        categories,
+        manufacturers,
+        success: true,
+        message: "Podaci za kreiranje klijenta uspešno dohvaćeni"
+      });
+    } catch (error) {
+      console.error("Greška pri dohvatanju podataka za kreiranje klijenta:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri dohvatanju podataka za kreiranje klijenta"
+      });
+    }
+  });
+
+  // Endpoint za kreiranje novog klijenta od strane poslovnog partnera
+  app.post("/api/business/clients", isBusinessPartner, async (req, res) => {
+    try {
+      console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      console.log("Korisnik:", req.user);
+      
+      const validatedData = insertClientSchema.parse(req.body);
+      const newClient = await storage.createClient(validatedData);
+      
+      console.log("Uspešno kreiran klijent:", newClient);
+      
+      res.status(201).json({
+        ...newClient,
+        success: true,
+        message: "Klijent je uspešno kreiran"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci klijenta", 
+          details: error.format(),
+          message: "Molimo proverite unete podatke i pokušajte ponovo"
+        });
+      }
+      console.error("Greška pri kreiranju klijenta:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri kreiranju klijenta. Pokušajte ponovo kasnije."
+      });
+    }
+  });
+
+  // Endpoint za dobijanje svih klijenata poslovnog partnera
+  app.get("/api/business/clients", isBusinessPartner, async (req, res) => {
+    try {
+      // Za sada vraćamo sve klijente - možda treba filtrirati po business partner-u u budućnosti
+      const clients = await storage.getAllClients();
+      res.json(clients);
+    } catch (error) {
+      console.error("Greška pri dohvatanju klijenata za poslovnog partnera:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri dohvatanju klijenata"
+      });
+    }
+  });
 }

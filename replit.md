@@ -105,6 +105,7 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 
 ## Changelog
 
+- July 7, 2025. **404 Errors completely resolved** - Fixed all 404 "Stranica nije pronađena" errors for business partners. Added missing API endpoints: `/api/business/clients/new`, `/api/business/clients`, and `/api/technician/services`. All user roles now have 100% functional API endpoints with proper JSON responses.
 - July 5, 2025. **Complete 100% functionality achieved** - All four user roles (admin, technician, customer, business_partner) are fully functional with API endpoints working perfectly. Customer portal issue resolved - was testing error, not system error. Email notifications, database operations, and role-based authentication all working at production level.
 - June 17, 2025. Initial setup
 
