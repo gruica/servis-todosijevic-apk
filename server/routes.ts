@@ -3145,6 +3145,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Missing endpoints for assign technician and update status
+  app.put("/api/services/:id/assign-technician", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za dodeljivanje servisera" });
+      }
+      
+      const serviceId = parseInt(req.params.id);
+      const { technicianId } = req.body;
+      
+      if (!technicianId || !Number.isInteger(technicianId)) {
+        return res.status(400).json({ error: "ID servisera je obavezan" });
+      }
+      
+      // Proveri da li servis postoji
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Proveri da li serviser postoji
+      const technician = await storage.getTechnician(technicianId);
+      if (!technician) {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+      
+      // Dodeli servisera
+      const updatedService = await storage.updateService(serviceId, { 
+        technicianId,
+        status: 'assigned' as ServiceStatus 
+      });
+      
+      console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
+      
+      res.json({
+        ...updatedService,
+        message: `Serviser ${technician.fullName} je uspešno dodeljen servisu #${serviceId}`,
+        technicianName: technician.fullName
+      });
+    } catch (error) {
+      console.error("Greška pri dodeljivanju servisera:", error);
+      res.status(500).json({ error: "Greška pri dodeljivanju servisera" });
+    }
+  });
+
+  app.put("/api/services/:id/update-status", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin ili serviser
+      if (!req.isAuthenticated() || !["admin", "technician"].includes(req.user?.role || "")) {
+        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje statusa" });
+      }
+      
+      const serviceId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status || !serviceStatusEnum.options.includes(status)) {
+        return res.status(400).json({ error: "Nevažeći status servisa" });
+      }
+      
+      // Proveri da li servis postoji
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Ažuriraj status
+      const updatedService = await storage.updateService(serviceId, { status });
+      
+      console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
+      
+      res.json({
+        ...updatedService,
+        message: `Status servisa je uspešno ažuriran na: ${status}`
+      });
+    } catch (error) {
+      console.error("Greška pri ažuriranju statusa:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

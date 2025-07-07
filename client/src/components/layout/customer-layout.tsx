@@ -76,19 +76,18 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
           <ul className="space-y-1">
             {navigation.map((item) => (
               <li key={item.name}>
-                <Link href={item.href}>
-                  <a
-                    className={cn(
-                      "flex items-center px-3 py-2.5 text-sm font-medium rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors",
-                      item.current
-                        ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                        : "text-gray-700"
-                    )}
-                    onClick={() => isMobile && setIsSidebarOpen(false)}
-                  >
-                    <item.icon className="h-5 w-5 mr-3" />
-                    {item.name}
-                  </a>
+                <Link 
+                  href={item.href}
+                  className={cn(
+                    "flex items-center px-3 py-2.5 text-sm font-medium rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors",
+                    item.current
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                      : "text-gray-700"
+                  )}
+                  onClick={() => isMobile && setIsSidebarOpen(false)}
+                >
+                  <item.icon className="h-5 w-5 mr-3" />
+                  {item.name}
                 </Link>
               </li>
             ))}
