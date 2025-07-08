@@ -5,6 +5,7 @@ import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
+import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
@@ -24,6 +25,14 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'completed': 'Završen',
   'cancelled': 'Otkazan'
 };
+
+// SMS postavke schema
+const smsSettingsSchema = z.object({
+  provider: z.enum(['messaggio', 'plivo', 'budgetsms', 'viber', 'twilio']),
+  apiKey: z.string().min(1),
+  authToken: z.string().optional(),
+  senderId: z.string().optional()
+});
 
 // Email postavke schema
 const emailSettingsSchema = z.object({
@@ -3223,6 +3232,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Greška pri ažuriranju statusa:", error);
       res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+    }
+  });
+
+  // SMS Configuration endpoints
+  app.post("/api/admin/sms-settings", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju SMS-a" });
+      }
+      
+      const smsConfig = smsSettingsSchema.parse(req.body);
+      
+      console.log(`[SMS ADMIN] Konfiguracija SMS provajdera: ${smsConfig.provider}`);
+      
+      // Konfiguriši novi SMS servis
+      newSmsService.configure(smsConfig);
+      
+      res.json({ 
+        success: true, 
+        message: `SMS provajder ${smsConfig.provider} je uspešno konfigurisan`,
+        provider: smsConfig.provider
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeće SMS postavke", 
+          details: error.format() 
+        });
+      }
+      console.error("Greška pri konfiguraciji SMS-a:", error);
+      res.status(500).json({ 
+        error: "Greška pri konfiguraciji SMS-a", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
+  app.get("/api/admin/sms-settings", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
+      }
+      
+      const configInfo = newSmsService.getConfigInfo();
+      
+      if (!configInfo) {
+        return res.json({ 
+          configured: false,
+          recommendations: [
+            { provider: 'messaggio', description: 'Najbolja opcija za Crnu Goru', price: '€0.025-0.05/SMS' },
+            { provider: 'plivo', description: 'Pouzdana multinacionalna opcija', price: '€0.03-0.08/SMS' },
+            { provider: 'budgetsms', description: 'Najjeftinija opcija', price: '€0.052/SMS' },
+            { provider: 'viber', description: 'Hibridna opcija (Viber + SMS fallback)', price: '€0.0025/Viber + SMS fallback' }
+          ]
+        });
+      }
+      
+      res.json({
+        configured: true,
+        provider: configInfo.provider
+      });
+    } catch (error) {
+      console.error("Greška pri dobijanju SMS postavki:", error);
+      res.status(500).json({ 
+        error: "Greška pri dobijanju SMS postavki", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
+  app.post("/api/admin/test-sms", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za testiranje SMS-a" });
+      }
+      
+      const { recipient } = z.object({ recipient: z.string().min(8) }).parse(req.body);
+      
+      console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
+      
+      const result = await newSmsService.sendSms({
+        to: recipient,
+        message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
+        type: 'transactional'
+      });
+      
+      if (result.success) {
+        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient}`);
+        return res.json({ 
+          success: true, 
+          message: "Test SMS uspešno poslat",
+          messageId: result.messageId,
+          cost: result.cost,
+          provider: newSmsService.getConfigInfo()?.provider
+        });
+      } else {
+        console.error(`[SMS TEST] ❌ Neuspešno slanje test SMS-a: ${result.error}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: result.error || "Neuspešno slanje test SMS-a"
+        });
+      }
+    } catch (error) {
+      console.error("[SMS TEST] Greška:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeći broj telefona", 
+          details: error.format() 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju test SMS-a", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
+  // SMS notification endpoints for services
+  app.post("/api/services/:id/send-sms", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin ili serviser
+      if (!req.isAuthenticated() || !["admin", "technician"].includes(req.user?.role || "")) {
+        return res.status(403).json({ error: "Nemate dozvolu za slanje SMS obaveštenja" });
+      }
+      
+      const serviceId = parseInt(req.params.id);
+      const { message, type } = z.object({
+        message: z.string().min(1).max(160),
+        type: z.enum(['appointment', 'status_update', 'reminder', 'custom']).optional()
+      }).parse(req.body);
+      
+      // Dohvati servis sa klijentom
+      const service = await storage.getService(serviceId);
+      if (!service || !service.client) {
+        return res.status(404).json({ error: "Servis ili klijent nije pronađen" });
+      }
+      
+      if (!service.client.phone) {
+        return res.status(400).json({ error: "Klijent nema broj telefona" });
+      }
+      
+      console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
+      
+      const result = await newSmsService.sendSms({
+        to: service.client.phone,
+        message: message,
+        type: type || 'custom'
+      });
+      
+      if (result.success) {
+        console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
+        return res.json({ 
+          success: true, 
+          message: "SMS obaveštenje uspešno poslato",
+          messageId: result.messageId,
+          cost: result.cost
+        });
+      } else {
+        console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${result.error}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: result.error || "Neuspešno slanje SMS obaveštenja"
+        });
+      }
+    } catch (error) {
+      console.error("[SMS] Greška pri slanju obaveštenja:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeći podaci", 
+          details: error.format() 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju SMS obaveštenja", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
     }
   });
 

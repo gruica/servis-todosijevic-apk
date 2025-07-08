@@ -135,6 +135,19 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                     </div>
                   </Link>
                 </li>
+                <li>
+                  <Link href="/admin/sms-settings" onClick={() => closeMobileMenu()}>
+                    <div className={cn(
+                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
+                      location === "/admin/sms-settings" 
+                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
+                        : "border-l-4 border-transparent"
+                    )}>
+                      <span className="material-symbols-outlined mr-3">sms</span>
+                      <span>SMS Notifikacije</span>
+                    </div>
+                  </Link>
+                </li>
               </ul>
             </div>
           )}
