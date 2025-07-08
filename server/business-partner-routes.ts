@@ -7,6 +7,7 @@ import { eq, and } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { emailService } from "./email-service";
 import { smsService } from "./sms-service";
+import { smsService as newSmsService } from "./twilio-sms";
 
 export function registerBusinessPartnerRoutes(app: Express) {
   // Middleware za proveru da li je korisnik poslovni partner

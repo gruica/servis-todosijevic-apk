@@ -34,6 +34,20 @@ const smsSettingsSchema = z.object({
   senderId: z.string().optional()
 });
 
+// Funkcija za generisanje SMS poruke na osnovu statusa servisa
+function generateStatusUpdateMessage(serviceId: number, newStatus: string, technicianName?: string | null): string {
+  const statusMessages = {
+    'assigned': `Frigo Sistem: Vaš servis #${serviceId} je dodeljen serviseru ${technicianName || ''}. Kontakt: 033 402 402`,
+    'scheduled': `Frigo Sistem: Zakazan je termin za servis #${serviceId}. Kontakt: 033 402 402`,
+    'in_progress': `Frigo Sistem: Servis #${serviceId} je u toku. Kontakt: 033 402 402`,
+    'completed': `Frigo Sistem: Servis #${serviceId} je završen. Kontakt: 033 402 402`,
+    'cancelled': `Frigo Sistem: Servis #${serviceId} je otkazan. Kontakt: 033 402 402`,
+    'pending': `Frigo Sistem: Servis #${serviceId} je u pripremi. Kontakt: 033 402 402`
+  };
+  
+  return statusMessages[newStatus] || `Frigo Sistem: Status servisa #${serviceId} je ažuriran. Kontakt: 033 402 402`;
+}
+
 // Email postavke schema
 const emailSettingsSchema = z.object({
   host: z.string().min(1),
@@ -1429,20 +1443,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   : clientSmsContent;
               }
               
-              // Šaljemo SMS klijentu
-              const clientSmsSent = await smsService.sendServiceStatusUpdate(
-                client,
-                serviceId,
-                statusDescription,
-                additionalInfo
-              );
+              // Šaljemo SMS klijentu preko novog SMS servisa
+              const smsMessage = generateStatusUpdateMessage(serviceId, statusDescription, additionalInfo);
+              const clientSmsSent = await newSmsService.sendSms({
+                to: client.phone || '',
+                message: smsMessage,
+                type: 'status_update'
+              });
               
-              if (clientSmsSent) {
-                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName}`);
-                emailInfo.smsSent = true; // Označava da je SMS uspešno poslat
+              if (clientSmsSent.success) {
+                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko ${newSmsService.getConfigInfo()?.provider || 'novog SMS servisa'}`);
+                emailInfo.smsSent = true;
+                if (clientSmsSent.messageId) {
+                  console.log(`[SMS SISTEM] Message ID: ${clientSmsSent.messageId}`);
+                }
               } else {
-                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke klijentu ${client.fullName}`);
-                emailInfo.smsError = "Neuspešno slanje SMS poruke klijentu. Proverite SMS postavke.";
+                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
+                
+                // Fallback na postojeći Twilio SMS servis
+                console.log(`[SMS SISTEM] Pokušavam fallback na Twilio SMS servis...`);
+                try {
+                  const fallbackSent = await smsService.sendServiceStatusUpdate(
+                    client,
+                    { id: serviceId, description: statusDescription, status: statusDescription },
+                    statusDescription,
+                    additionalInfo
+                  );
+                  
+                  if (fallbackSent) {
+                    console.log(`[SMS SISTEM] ✅ Fallback SMS uspešno poslat preko Twilio`);
+                    emailInfo.smsSent = true;
+                  } else {
+                    emailInfo.smsError = "Neuspešno slanje SMS poruke preko oba servisa. Proverite SMS postavke.";
+                  }
+                } catch (fallbackError) {
+                  console.error(`[SMS SISTEM] ❌ Fallback SMS takođe neuspešan:`, fallbackError);
+                  emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
+                }
               }
             } else {
               console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
@@ -3189,6 +3226,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
       
+      // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
+      if (service.client?.phone) {
+        const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
+        const smsResult = await newSmsService.sendSms({
+          to: service.client.phone,
+          message: smsMessage,
+          type: 'status_update'
+        });
+        
+        if (smsResult.success) {
+          console.log(`[SMS] ✅ SMS obaveštenje o dodeljivanju servisera poslato klijentu ${service.client.fullName}`);
+        } else {
+          console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
+          // Fallback na Twilio
+          await smsService.sendServiceStatusUpdate(
+            service.client,
+            { id: serviceId, description: service.description, status: 'assigned' },
+            'assigned',
+            technician.fullName
+          );
+        }
+      }
+      
       res.json({
         ...updatedService,
         message: `Serviser ${technician.fullName} je uspešno dodeljen servisu #${serviceId}`,
@@ -3224,6 +3284,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedService = await storage.updateService(serviceId, { status });
       
       console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
+      
+      // Pošalji SMS obaveštenje klijentu o promenama statusa
+      if (service.client?.phone) {
+        const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
+        const smsResult = await newSmsService.sendSms({
+          to: service.client.phone,
+          message: smsMessage,
+          type: 'status_update'
+        });
+        
+        if (smsResult.success) {
+          console.log(`[SMS] ✅ SMS obaveštenje o statusu poslato klijentu ${service.client.fullName}`);
+        } else {
+          console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
+          // Fallback na Twilio
+          await smsService.sendServiceStatusUpdate(
+            service.client,
+            { id: serviceId, description: service.description, status: status },
+            status,
+            service.technician?.fullName
+          );
+        }
+      }
       
       res.json({
         ...updatedService,

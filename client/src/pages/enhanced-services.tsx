@@ -43,6 +43,7 @@ import {
   Calendar as CalendarIcon,
   FileText,
   Clock,
+  MessageSquare,
   User,
   Wrench,
   Check,
@@ -214,6 +215,9 @@ export default function EnhancedServices() {
   const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
+  const [selectedServiceForSms, setSelectedServiceForSms] = useState<Service | null>(null);
+  const [smsMessage, setSmsMessage] = useState("");
   const { toast } = useToast();
   // Proveravamo ulogu korisnika kroz useAuth hook
   const { isAdmin, isTechnician, isBusinessPartner, isClient } = useAuth();
@@ -512,6 +516,38 @@ export default function EnhancedServices() {
     },
   });
   
+  // Send SMS mutation
+  const sendSmsMutation = useMutation({
+    mutationFn: async ({ serviceId, message }: { serviceId: number, message: string }) => {
+      const res = await apiRequest("POST", `/api/services/${serviceId}/send-sms`, { 
+        message, 
+        type: 'custom' 
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      console.log("SMS uspešno poslat:", data);
+      
+      toast({
+        title: "✅ SMS poslat",
+        description: data.message || "SMS obaveštenje je uspešno poslato klijentu",
+      });
+      
+      // Zatvori SMS dialog
+      setIsSmsDialogOpen(false);
+      setSmsMessage("");
+      setSelectedServiceForSms(null);
+    },
+    onError: (error) => {
+      console.error("Greška pri slanju SMS-a:", error);
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri slanju SMS-a",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Create new client mutation
   const createClientMutation = useMutation({
     mutationFn: async (clientData: { fullName: string; phone: string; email?: string; address?: string; city?: string }) => {
@@ -606,6 +642,24 @@ export default function EnhancedServices() {
     setIsViewDialogOpen(true);
   };
   
+  // Open SMS dialog
+  const handleSendSms = (service: typeof enrichedServices[0]) => {
+    setSelectedServiceForSms(service);
+    setSmsMessage(`Frigo Sistem: Obaveštenje o servisu #${service.id}. Kontakt: 033 402 402`);
+    setIsSmsDialogOpen(true);
+  };
+  
+  // Handle SMS form submission
+  const handleSmsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedServiceForSms || !smsMessage.trim()) return;
+    
+    sendSmsMutation.mutate({
+      serviceId: selectedServiceForSms.id,
+      message: smsMessage.trim()
+    });
+  };
+
   // Handle client change in form
   const handleClientChange = (clientId: string) => {
     if (clientId === "new_client") {
@@ -906,6 +960,12 @@ export default function EnhancedServices() {
                                   <Pencil className="h-3 w-3 mr-1" />
                                   Izmeni
                                 </Button>
+                                {service.clientPhone && (
+                                  <Button variant="outline" size="sm" onClick={() => handleSendSms(service)}>
+                                    <MessageSquare className="h-3 w-3 mr-1" />
+                                    SMS
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1627,6 +1687,21 @@ export default function EnhancedServices() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {/* SMS Dialog */}
+      <SmsDialog
+        isOpen={isSmsDialogOpen}
+        onClose={() => {
+          setIsSmsDialogOpen(false);
+          setSmsMessage("");
+          setSelectedServiceForSms(null);
+        }}
+        service={selectedServiceForSms}
+        message={smsMessage}
+        setMessage={setSmsMessage}
+        onSend={handleSmsSubmit}
+        isLoading={sendSmsMutation.isPending}
+      />
     </div>
   );
 }
@@ -1675,3 +1750,74 @@ const CommandItem = ({
     </button>
   );
 };
+
+// SMS Dialog Component
+const SmsDialog = ({
+  isOpen,
+  onClose,
+  service,
+  message,
+  setMessage,
+  onSend,
+  isLoading
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  service: Service | null;
+  message: string;
+  setMessage: (message: string) => void;
+  onSend: (e: React.FormEvent) => void;
+  isLoading: boolean;
+}) => {
+  if (!service) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Pošaljite SMS</DialogTitle>
+          <DialogDescription>
+            Servis #{service.id} - {service.clientName}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSend} className="space-y-4">
+          <div>
+            <label htmlFor="sms-message" className="block text-sm font-medium text-gray-700 mb-2">
+              Poruka
+            </label>
+            <Textarea
+              id="sms-message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Unesite poruku..."
+              className="min-h-[100px]"
+              required
+            />
+            <div className="text-sm text-gray-500 mt-1">
+              Maksimalno 160 karaktera
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Otkaži
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                  Šalje se...
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Pošalji SMS
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
