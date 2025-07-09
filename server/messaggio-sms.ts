@@ -17,7 +17,7 @@ export interface MessaggioSmsResult {
 export class MessaggioSmsService {
   private apiKey: string;
   private senderId: string;
-  private baseUrl = 'https://api.messaggio.com/v1';
+  private baseUrl = 'https://api.messaggio.com/api/v1';
 
   constructor() {
     this.apiKey = process.env.MESSAGGIO_API_KEY || '';
@@ -72,11 +72,15 @@ export class MessaggioSmsService {
       console.log(`[MESSAGGIO] Slanje SMS-a na ${formattedPhone}: ${options.message.substring(0, 50)}...`);
 
       const payload = {
-        to: formattedPhone,
-        message: options.message,
-        from: this.senderId,
-        type: 'sms'
+        recipients: [formattedPhone],
+        text: options.message,
+        sender: this.senderId,
+        country: "ME"
       };
+
+      console.log(`[MESSAGGIO DEBUG] URL: ${this.baseUrl}/messages`);
+      console.log(`[MESSAGGIO DEBUG] Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`[MESSAGGIO DEBUG] Headers: Authorization: Bearer ${this.apiKey.substring(0, 10)}...`);
 
       const response = await axios.post(`${this.baseUrl}/messages`, payload, {
         headers: {
@@ -146,20 +150,69 @@ export class MessaggioSmsService {
 
       console.log('[MESSAGGIO] Testiranje konekcije...');
       
-      const response = await axios.get(`${this.baseUrl}/account/balance`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        timeout: 10000
-      });
+      // Pokušaj sa različitim endpoint-ima i base URL-ovima
+      const testConfigs = [
+        { baseUrl: 'https://api.messaggio.com/api/v1', endpoint: '/balance' },
+        { baseUrl: 'https://api.messaggio.com/api/v1', endpoint: '/account/balance' },
+        { baseUrl: 'https://api.messaggio.com/api/v1', endpoint: '/user/balance' },
+        { baseUrl: 'https://api.messaggio.com', endpoint: '/api/v1/balance' },
+        { baseUrl: 'https://api.messaggio.com', endpoint: '/balance' },
+        { baseUrl: 'https://api.messaggio.com', endpoint: '/account' },
+        { baseUrl: 'https://messaggio.com/api', endpoint: '/balance' },
+        { baseUrl: 'https://messaggio.com/api/v1', endpoint: '/balance' },
+      ];
 
-      if (response.status === 200) {
-        console.log('[MESSAGGIO] ✅ Konekcija uspešna. Balans:', response.data);
-        return true;
-      } else {
-        console.error(`[MESSAGGIO] ❌ Test neuspešan: ${response.status}`);
-        return false;
+      for (const config of testConfigs) {
+        try {
+          const url = `${config.baseUrl}${config.endpoint}`;
+          console.log(`[MESSAGGIO] Testiranje: ${url}`);
+          
+          // Pokušaj sa različitim formatima autentifikacije
+          const authConfigs = [
+            { 'Authorization': `Bearer ${this.apiKey}` },
+            { 'Authorization': `API-Key ${this.apiKey}` },
+            { 'Authorization': this.apiKey },
+            { 'X-API-Key': this.apiKey },
+            { 'apikey': this.apiKey },
+            { 'token': this.apiKey },
+            { 'Authorization': `Token ${this.apiKey}` },
+            { 'api-key': this.apiKey }
+          ];
+
+          for (const authConfig of authConfigs) {
+            try {
+              const response = await axios.get(url, {
+                headers: {
+                  ...authConfig,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                timeout: 10000
+              });
+
+              if (response.status === 200) {
+                console.log(`[MESSAGGIO] ✅ Konekcija uspešna sa ${url} i auth:`, Object.keys(authConfig)[0]);
+                console.log(`[MESSAGGIO] Balans:`, response.data);
+                // Ažuriraj base URL za buduće pozive
+                this.baseUrl = config.baseUrl;
+                return true;
+              }
+            } catch (authError: any) {
+              if (authError.response?.status !== 403) {
+                console.log(`[MESSAGGIO] ${url} sa ${Object.keys(authConfig)[0]} - Status: ${authError.response?.status}, Error: ${authError.message}`);
+              }
+              continue;
+            }
+          }
+
+        } catch (error: any) {
+          console.log(`[MESSAGGIO] ${config.baseUrl}${config.endpoint} - Svi auth metodi neuspešni`);
+          continue;
+        }
       }
+
+      console.error('[MESSAGGIO] ❌ Svi endpoint-i neuspešni');
+      return false;
 
     } catch (error: any) {
       console.error('[MESSAGGIO] ❌ Test konekcije neuspešan:', error.message);
@@ -179,7 +232,7 @@ export class MessaggioSmsService {
         };
       }
 
-      const response = await axios.get(`${this.baseUrl}/account/balance`, {
+      const response = await axios.get(`${this.baseUrl}/balance`, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`
         },

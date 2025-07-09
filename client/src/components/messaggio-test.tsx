@@ -39,9 +39,25 @@ export function MessaggioTest({ className }: MessaggioTestProps) {
       }
     } catch (error: any) {
       console.error("Greška pri testiranju Messaggio:", error);
+      
+      let errorMessage = "Neuspešno testiranje Messaggio servisa.";
+      if (error.response?.status === 403) {
+        errorMessage = "Nemate dozvolu - proverite API kredencijale.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Neautorizovan pristup - proverite API ključ.";
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setTestResult({
+        success: false,
+        error: errorMessage,
+        details: error.response?.data
+      });
+      
       toast({
         title: "Greška",
-        description: "Neuspešno testiranje Messaggio servisa.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -123,6 +139,24 @@ export function MessaggioTest({ className }: MessaggioTestProps) {
                 <p className="text-sm text-yellow-700">
                   Proverite da li su MESSAGGIO_API_KEY i MESSAGGIO_SENDER_ID ispravno konfigurisani u Replit Secrets.
                 </p>
+              </div>
+            )}
+
+            {testResult.error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium">
+                  Greška: {testResult.error}
+                </p>
+                {testResult.details && (
+                  <details className="mt-2">
+                    <summary className="text-xs text-red-600 cursor-pointer">
+                      Detaljnije informacije
+                    </summary>
+                    <pre className="mt-1 text-xs text-red-600 overflow-x-auto">
+                      {JSON.stringify(testResult.details, null, 2)}
+                    </pre>
+                  </details>
+                )}
               </div>
             )}
           </div>
