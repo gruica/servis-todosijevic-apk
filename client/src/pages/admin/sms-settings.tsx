@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MessageSquare, Smartphone, Send, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MessaggioTest } from "@/components/messaggio-test";
 
 interface SmsProvider {
   provider: string;
@@ -153,6 +154,9 @@ export default function SmsSettings() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Messaggio Test */}
+      <MessaggioTest />
 
       <div className="grid md:grid-cols-2 gap-6">
         

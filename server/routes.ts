@@ -7,6 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
+import { messaggioSmsService } from "./messaggio-sms";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -3288,17 +3289,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
-        const smsResult = await newSmsService.sendSms({
+        
+        // Pokušaj prvo sa Messaggio
+        let smsResult = await messaggioSmsService.sendSms({
           to: service.client.phone,
           message: smsMessage,
           type: 'status_update'
         });
         
+        // Fallback na Twilio ako Messaggio ne radi
+        if (!smsResult.success) {
+          console.log(`[SMS] Messaggio neuspešan za status update, pokušavam sa Twilio...`);
+          smsResult = await newSmsService.sendSms({
+            to: service.client.phone,
+            message: smsMessage,
+            type: 'status_update'
+          });
+        }
+        
         if (smsResult.success) {
           console.log(`[SMS] ✅ SMS obaveštenje o statusu poslato klijentu ${service.client.fullName}`);
         } else {
           console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
-          // Fallback na Twilio
+          // Poslednji fallback na originalni sms-service
           await smsService.sendServiceStatusUpdate(
             service.client,
             { id: serviceId, description: service.description, status: status },
@@ -3315,6 +3328,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Greška pri ažuriranju statusa:", error);
       res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+    }
+  });
+
+  // Test Messaggio connection endpoint
+  app.get("/api/messaggio/test", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
+      }
+      
+      console.log("[MESSAGGIO] Admin testira konekciju...");
+      
+      const connectionTest = await messaggioSmsService.testConnection();
+      const balanceInfo = await messaggioSmsService.getBalance();
+      
+      res.json({
+        success: true,
+        connection: connectionTest,
+        balance: balanceInfo
+      });
+    } catch (error: any) {
+      console.error("[MESSAGGIO] Greška pri testiranju:", error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri testiranju Messaggio servisa",
+        details: error.message 
+      });
     }
   });
 
@@ -3465,11 +3506,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      const result = await newSmsService.sendSms({
+      // Pokušaj prvo sa Messaggio servisom
+      let result = await messaggioSmsService.sendSms({
         to: service.client.phone,
         message: message,
         type: type || 'custom'
       });
+      
+      // Fallback na Twilio ako Messaggio ne radi
+      if (!result.success) {
+        console.log(`[SMS] Messaggio neuspešan, pokušavam sa Twilio...`);
+        result = await newSmsService.sendSms({
+          to: service.client.phone,
+          message: message,
+          type: type || 'custom'
+        });
+      }
       
       if (result.success) {
         console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
