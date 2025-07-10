@@ -21,11 +21,14 @@ export class MessaggioSmsService {
 
   constructor() {
     this.apiKey = process.env.MESSAGGIO_API_KEY || '';
-    this.senderId = process.env.MESSAGGIO_SENDER_ID || 'Frigo Sistem';
+    // Koristimo vaš specifični broj telefona kao sender ID
+    this.senderId = '+38267051141'; // Vaš broj sa Telekom mreže
     
     if (!this.apiKey) {
       console.warn('[MESSAGGIO] API key nije konfigurisan');
     }
+    
+    console.log(`[MESSAGGIO] Konfigurisani sender ID: ${this.senderId}`);
   }
 
   /**

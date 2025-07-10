@@ -10,6 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MessageSquare, Smartphone, Send, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MessaggioTest } from "@/components/messaggio-test";
+import { TelekomSmsTest } from "@/components/telekom-sms-test";
 
 interface SmsProvider {
   provider: string;
@@ -299,6 +300,12 @@ export default function SmsSettings() {
               </CardContent>
             </Card>
           )}
+
+          {/* Telekom SMS Test */}
+          <TelekomSmsTest />
+
+          {/* Messaggio Test */}
+          <MessaggioTest />
 
           {/* Informacije o SMS notifikacijama */}
           <Card>

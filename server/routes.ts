@@ -8,6 +8,7 @@ import { excelService } from "./excel-service";
 import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
 import { messaggioSmsService } from "./messaggio-sms";
+import { telekomSmsService } from "./telekom-sms";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -3290,14 +3291,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
         
-        // Pokušaj prvo sa Messaggio
-        let smsResult = await messaggioSmsService.sendSms({
+        // Pokušaj prvo sa Telekom SMS (vaš broj 067051141)
+        let smsResult = await telekomSmsService.sendSms({
           to: service.client.phone,
           message: smsMessage,
           type: 'status_update'
         });
         
-        // Fallback na Twilio ako Messaggio ne radi
+        // Fallback na Messaggio ako Telekom ne radi
+        if (!smsResult.success) {
+          console.log(`[SMS] Telekom neuspešan za status update, pokušavam sa Messaggio...`);
+          smsResult = await messaggioSmsService.sendSms({
+            to: service.client.phone,
+            message: smsMessage,
+            type: 'status_update'
+          });
+        }
+        
+        // Treći fallback na Twilio ako ni Messaggio ne radi
         if (!smsResult.success) {
           console.log(`[SMS] Messaggio neuspešan za status update, pokušavam sa Twilio...`);
           smsResult = await newSmsService.sendSms({
@@ -3328,6 +3339,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Greška pri ažuriranju statusa:", error);
       res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
+    }
+  });
+
+  // Test Telekom SMS connection endpoint
+  app.get("/api/telekom/test", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
+      }
+      
+      console.log("[TELEKOM SMS] Admin testira konekciju...");
+      
+      const connectionTest = await telekomSmsService.testConnection();
+      
+      res.json({
+        success: true,
+        connection: connectionTest,
+        service: 'Telekom SMS',
+        senderNumber: '+38267051141',
+        message: connectionTest ? 'Telekom SMS servis je dostupan' : 'Telekom SMS servis nije dostupan'
+      });
+    } catch (error: any) {
+      console.error("[TELEKOM SMS] Greška pri testiranju:", error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri testiranju Telekom SMS servisa",
+        details: error.message 
+      });
     }
   });
 
@@ -3506,14 +3546,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      // Pokušaj prvo sa Messaggio servisom
-      let result = await messaggioSmsService.sendSms({
+      // Pokušaj prvo sa Telekom SMS (vaš broj 067051141)
+      let result = await telekomSmsService.sendSms({
         to: service.client.phone,
         message: message,
         type: type || 'custom'
       });
       
-      // Fallback na Twilio ako Messaggio ne radi
+      // Fallback na Messaggio ako Telekom ne radi
+      if (!result.success) {
+        console.log(`[SMS] Telekom neuspešan, pokušavam sa Messaggio...`);
+        result = await messaggioSmsService.sendSms({
+          to: service.client.phone,
+          message: message,
+          type: type || 'custom'
+        });
+      }
+      
+      // Treći fallback na Twilio ako ni Messaggio ne radi
       if (!result.success) {
         console.log(`[SMS] Messaggio neuspešan, pokušavam sa Twilio...`);
         result = await newSmsService.sendSms({
