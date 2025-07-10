@@ -3371,6 +3371,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test GSM modem endpoint
+  app.post("/api/gsm/test", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
+      }
+      
+      const { recipient } = z.object({
+        recipient: z.string().min(1)
+      }).parse(req.body);
+      
+      console.log("[GSM TEST] Admin testira slanje SMS-a preko GSM modem-a...");
+      
+      const result = await telekomSmsService.sendSms({
+        to: recipient,
+        message: 'Test SMS sa GSM modem-a - Frigo Sistem Todosijević',
+        type: 'custom'
+      });
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: "Test SMS uspešno poslat preko GSM modem-a",
+          messageId: result.messageId,
+          method: result.method,
+          details: result.details
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error,
+          method: result.method,
+          details: result.details
+        });
+      }
+    } catch (error: any) {
+      console.error("[GSM TEST] Greška:", error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri testiranju GSM modem-a",
+        details: error.message 
+      });
+    }
+  });
+
   // Test Messaggio connection endpoint
   app.get("/api/messaggio/test", async (req, res) => {
     try {

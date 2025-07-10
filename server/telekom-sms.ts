@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
+import { SerialPort } from 'serialport';
+import { ReadlineParser } from '@serialport/parser-readline';
 
 export interface TelekomSmsOptions {
   to: string;
@@ -150,28 +152,49 @@ export class TelekomSmsService {
    */
   private async checkGsmModemAvailability(): Promise<boolean> {
     try {
-      // Pokušaj da pronađeš GSM modem uređaje
-      const process = spawn('ls', ['/dev/ttyUSB*'], { stdio: 'pipe' });
+      console.log(`[GSM MODEM] Proverava dostupnost GSM modem uređaja...`);
       
-      return new Promise((resolve) => {
-        let output = '';
+      // Proverava više mogućih putanja za GSM modem
+      const modemPaths = [
+        '/dev/ttyUSB0', '/dev/ttyUSB1', '/dev/ttyUSB2', '/dev/ttyUSB3',
+        '/dev/ttyACM0', '/dev/ttyACM1', '/dev/ttyACM2', '/dev/ttyACM3',
+        '/dev/ttyAMA0', '/dev/ttyS0', '/dev/ttyS1'
+      ];
+      
+      for (const path of modemPaths) {
+        const process = spawn('ls', [path], { stdio: 'pipe' });
         
-        process.stdout.on('data', (data) => {
-          output += data.toString();
+        const exists = await new Promise<boolean>((resolve) => {
+          process.on('close', (code) => {
+            resolve(code === 0);
+          });
+          
+          process.on('error', () => {
+            resolve(false);
+          });
+          
+          // Timeout nakon 2 sekunde
+          setTimeout(() => {
+            process.kill();
+            resolve(false);
+          }, 2000);
         });
         
-        process.on('close', (code) => {
-          const hasUsbModem = output.includes('/dev/ttyUSB');
-          console.log(`[GSM MODEM] Proverava dostupnost: ${hasUsbModem ? 'dostupan' : 'nedostupan'}`);
-          resolve(hasUsbModem);
-        });
-        
-        // Timeout nakon 5 sekundi
-        setTimeout(() => {
-          process.kill();
-          resolve(false);
-        }, 5000);
-      });
+        if (exists) {
+          console.log(`[GSM MODEM] ✅ Pronađen GSM modem na: ${path}`);
+          this.modemPath = path;
+          
+          // Testira komunikaciju sa modemom
+          const isResponding = await this.testModemCommunication(path);
+          if (isResponding) {
+            console.log(`[GSM MODEM] ✅ GSM modem odgovara na AT komande`);
+            return true;
+          }
+        }
+      }
+      
+      console.log(`[GSM MODEM] ❌ GSM modem nije pronađen`);
+      return false;
 
     } catch (error) {
       console.log(`[GSM MODEM] Greška pri proveri dostupnosti: ${error}`);
@@ -179,34 +202,166 @@ export class TelekomSmsService {
     }
   }
 
+  private modemPath: string | null = null;
+
+  /**
+   * Testira komunikaciju sa GSM modemom
+   */
+  private async testModemCommunication(devicePath: string): Promise<boolean> {
+    try {
+      console.log(`[GSM MODEM] Testira komunikaciju sa ${devicePath}...`);
+      
+      // Pokušava da pošalje AT komandu za test
+      const result = await this.sendAtCommand(devicePath, 'AT');
+      return result.success && result.response.includes('OK');
+      
+    } catch (error) {
+      console.log(`[GSM MODEM] Greška pri testiranju komunikacije: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje AT komandu na GSM modem koristeći serijsku komunikaciju
+   */
+  private async sendAtCommand(devicePath: string, command: string): Promise<{ success: boolean; response: string; error?: string }> {
+    return new Promise((resolve) => {
+      try {
+        console.log(`[AT KOMANDE] Otvara serijsku konekciju na ${devicePath}...`);
+        
+        // Kreira serijsku konekciju sa modemom
+        const port = new SerialPort({ 
+          path: devicePath, 
+          baudRate: 115200,
+          dataBits: 8,
+          parity: 'none',
+          stopBits: 1,
+          flowControl: false
+        });
+        
+        const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+        let response = '';
+        let timeoutId: NodeJS.Timeout;
+        
+        // Slušaj odgovore
+        parser.on('data', (data) => {
+          response += data.toString() + '\n';
+          console.log(`[AT KOMANDE] Odgovor: ${data.toString()}`);
+          
+          // Proverava da li je odgovor završen
+          if (data.toString().includes('OK') || data.toString().includes('ERROR') || data.toString().includes('>')) {
+            clearTimeout(timeoutId);
+            port.close();
+            resolve({ success: true, response: response.trim() });
+          }
+        });
+        
+        // Greška pri otvaranju porta
+        port.on('error', (error) => {
+          clearTimeout(timeoutId);
+          console.log(`[AT KOMANDE] Greška porta: ${error.message}`);
+          resolve({ success: false, response: '', error: error.message });
+        });
+        
+        // Kada je port otvoren, pošalji komandu
+        port.on('open', () => {
+          console.log(`[AT KOMANDE] Port otvoren, šalje komandu: ${command}`);
+          
+          // Dodaj carriage return i line feed
+          const commandWithCr = command + '\r\n';
+          port.write(commandWithCr, (error) => {
+            if (error) {
+              clearTimeout(timeoutId);
+              port.close();
+              resolve({ success: false, response: '', error: error.message });
+            }
+          });
+        });
+        
+        // Timeout nakon 10 sekundi
+        timeoutId = setTimeout(() => {
+          console.log(`[AT KOMANDE] Timeout za komandu: ${command}`);
+          port.close();
+          resolve({ success: false, response: response || '', error: 'Timeout' });
+        }, 10000);
+        
+      } catch (error: any) {
+        console.log(`[AT KOMANDE] Greška: ${error.message}`);
+        resolve({ success: false, response: '', error: error.message });
+      }
+    });
+  }
+
   /**
    * Šalje SMS preko AT komandi
    */
   private async sendSmsViaAtCommands(phone: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string; details?: any }> {
     try {
-      // Ovo je pojednostavljena implementacija
-      // U stvarnoj implementaciji bi trebalo:
-      // 1. Otvoriti serijsku konekciju sa modemom
-      // 2. Poslati AT komande za slanje SMS-a
-      // 3. Pročitati odgovor i verifikovati uspešnost
-
-      console.log(`[AT KOMANDE] Simulacija slanja SMS-a na ${phone}: ${message.substring(0, 50)}...`);
-      
-      // Simulacija - u stvarnoj implementaciji bi ovo bilo stvarno slanje
-      const success = Math.random() > 0.3; // 70% šanse za uspeh (simulacija)
-      
-      if (success) {
-        return {
-          success: true,
-          messageId: `AT_${Date.now()}`,
-          details: { method: 'AT_Commands', device: '/dev/ttyUSB0' }
-        };
-      } else {
+      if (!this.modemPath) {
         return {
           success: false,
-          error: 'AT komanda neuspešna'
+          error: 'GSM modem nije dostupan'
         };
       }
+
+      console.log(`[AT KOMANDE] Šalje SMS na ${phone} preko ${this.modemPath}: ${message.substring(0, 50)}...`);
+      
+      // Koraci za slanje SMS-a preko AT komandi:
+      // 1. Postavi modem u text mode
+      // 2. Definiši broj telefona
+      // 3. Pošalji sadržaj poruke
+      // 4. Pošalji Ctrl+Z za završetak
+      
+      const steps = [
+        { command: 'AT', expectedResponse: 'OK' },
+        { command: 'AT+CMGF=1', expectedResponse: 'OK' }, // Text mode
+        { command: `AT+CMGS="${phone}"`, expectedResponse: '>' }, // Destination number
+        { command: message + '\x1A', expectedResponse: 'OK' } // Message + Ctrl+Z
+      ];
+      
+      for (const step of steps) {
+        console.log(`[AT KOMANDE] Izvršava: ${step.command.replace('\x1A', '<Ctrl+Z>')}`);
+        
+        const result = await this.sendAtCommand(this.modemPath, step.command);
+        
+        if (!result.success) {
+          return {
+            success: false,
+            error: `AT komanda neuspešna: ${result.error}`,
+            details: { step: step.command, modemPath: this.modemPath }
+          };
+        }
+        
+        // Proveri da li je odgovor očekivan
+        if (!result.response.includes(step.expectedResponse)) {
+          console.log(`[AT KOMANDE] Neočekivan odgovor: ${result.response}`);
+          if (step.expectedResponse === 'OK' && !result.response.includes('ERROR')) {
+            // Nastavi ako nema greške
+            continue;
+          }
+          return {
+            success: false,
+            error: `Neočekivan odgovor: ${result.response}`,
+            details: { expected: step.expectedResponse, received: result.response }
+          };
+        }
+        
+        // Kratka pauza između komandi
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      console.log(`[AT KOMANDE] ✅ SMS uspešno poslat na ${phone}`);
+      
+      return {
+        success: true,
+        messageId: `GSM_${Date.now()}`,
+        details: { 
+          method: 'AT_Commands', 
+          device: this.modemPath,
+          phone: phone,
+          messageLength: message.length
+        }
+      };
 
     } catch (error: any) {
       return {

@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, Phone, Smartphone } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, CheckCircle, XCircle, Phone, Smartphone, Router, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -13,6 +16,9 @@ interface TelekomSmsTestProps {
 export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [gsmTestPhone, setGsmTestPhone] = useState('+38267051141');
+  const [isGsmTesting, setIsGsmTesting] = useState(false);
+  const [gsmTestResult, setGsmTestResult] = useState<any>(null);
   const { toast } = useToast();
 
   const testConnection = async () => {
@@ -62,6 +68,54 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const testGsmModem = async () => {
+    setIsGsmTesting(true);
+    setGsmTestResult(null);
+    
+    try {
+      const response = await apiRequest("POST", "/api/gsm/test", {
+        recipient: gsmTestPhone
+      });
+      const data = await response.json();
+      
+      setGsmTestResult(data);
+      
+      if (data.success) {
+        toast({
+          title: "GSM test uspešan",
+          description: `SMS uspešno poslat preko ${data.method} na ${gsmTestPhone}`,
+        });
+      } else {
+        toast({
+          title: "GSM test neuspešan",
+          description: data.error || "Neuspešno slanje test SMS-a",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Greška pri testiranju GSM modem:", error);
+      
+      let errorMessage = "Neuspešno testiranje GSM modem-a.";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setGsmTestResult({
+        success: false,
+        error: errorMessage,
+        details: error.response?.data
+      });
+      
+      toast({
+        title: "Greška",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGsmTesting(false);
     }
   };
 
@@ -134,17 +188,92 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
                 )}
               </div>
             </div>
-
-            <div className="text-xs text-gray-500">
-              <p>Metode slanja SMS-a (u redosledu):</p>
-              <ul className="list-disc list-inside mt-1">
-                <li>Telekom Crne Gore API</li>
-                <li>GSM modem (ako je povezan)</li>
-                <li>Fallback na Messaggio</li>
-              </ul>
-            </div>
           </div>
         )}
+
+        <Separator className="my-4" />
+
+        {/* GSM Modem Test */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Router className="h-4 w-4 text-blue-600" />
+            <span className="font-medium text-sm">GSM Modem Test</span>
+          </div>
+          
+          <div>
+            <Label htmlFor="gsmTestPhone">Test SMS na broj:</Label>
+            <Input
+              id="gsmTestPhone"
+              type="tel"
+              value={gsmTestPhone}
+              onChange={(e) => setGsmTestPhone(e.target.value)}
+              placeholder="+38267051141"
+              className="mt-1"
+            />
+          </div>
+
+          <Button 
+            onClick={testGsmModem}
+            disabled={isGsmTesting || !gsmTestPhone}
+            variant="outline"
+            className="w-full"
+          >
+            {isGsmTesting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Šalje test SMS...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Pošalji test SMS
+              </>
+            )}
+          </Button>
+
+          {gsmTestResult && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {gsmTestResult.success ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    SMS poslat
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">
+                    <XCircle className="mr-1 h-3 w-3" />
+                    SMS neuspešan
+                  </Badge>
+                )}
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                <div className="space-y-1">
+                  <p><strong>Metoda:</strong> {gsmTestResult.method || 'Nepoznato'}</p>
+                  {gsmTestResult.messageId && (
+                    <p><strong>ID poruke:</strong> {gsmTestResult.messageId}</p>
+                  )}
+                  
+                  {gsmTestResult.error && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                      <p className="text-red-800 font-medium">Greška:</p>
+                      <p className="text-red-700 text-xs">{gsmTestResult.error}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-xs text-gray-500 mt-4">
+          <p>Metode slanja SMS-a (u redosledu):</p>
+          <ul className="list-disc list-inside mt-1">
+            <li>Telekom Crne Gore API</li>
+            <li>GSM modem (ako je povezan)</li>
+            <li>Fallback na Messaggio</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );
