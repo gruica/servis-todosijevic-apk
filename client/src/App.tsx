@@ -41,6 +41,8 @@ import BusinessDashboard from "@/pages/business";
 import BusinessProfile from "@/pages/business/profile";
 import BusinessServices from "@/pages/business/services";
 import NewBusinessServiceRequest from "@/pages/business/services/new";
+import BusinessClientsIndex from "@/pages/business/clients";
+import NewBusinessClient from "@/pages/business/clients/new";
 
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
@@ -103,6 +105,8 @@ function Router() {
       <RoleProtectedRoute path="/business/profile" component={BusinessProfile} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/services" component={BusinessServices} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/services/new" component={NewBusinessServiceRequest} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/clients" component={BusinessClientsIndex} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/clients/new" component={NewBusinessClient} allowedRoles={["business_partner", "business"]} />
       
       <Route component={NotFound} />
     </Switch>

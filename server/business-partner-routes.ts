@@ -31,6 +31,85 @@ export function registerBusinessPartnerRoutes(app: Express) {
     next();
   };
 
+  // Dodavanje novog klijenta od strane poslovnog partnera
+  app.post("/api/business/clients", isBusinessPartner, async (req, res) => {
+    try {
+      console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      console.log("Korisnik:", req.user);
+      
+      // Validacija podataka o klijentu
+      const validationResult = insertClientSchema.safeParse(req.body);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci klijenta", 
+          details: validationResult.error.format(),
+          message: "Svi podaci o klijentu moraju biti pravilno uneti. Proverite podatke i pokušajte ponovo."
+        });
+      }
+      
+      const validatedData = validationResult.data;
+      
+      // Provera duplikata po email adresi ako je uneta
+      if (validatedData.email) {
+        try {
+          const existingClient = await storage.getClientByEmail(validatedData.email);
+          if (existingClient) {
+            return res.status(400).json({
+              error: "Duplikat email adrese",
+              message: `Klijent sa email adresom '${validatedData.email}' već postoji u bazi. Koristite funkciju pretrage da pronađete postojećeg klijenta.`
+            });
+          }
+        } catch (emailCheckError) {
+          console.error("Greška pri proveri duplikata email adrese:", emailCheckError);
+        }
+      }
+      
+      // Formatiranje telefonskog broja
+      if (validatedData.phone) {
+        if (!validatedData.phone.startsWith('+')) {
+          const numberOnly = validatedData.phone.replace(/\D/g, '');
+          
+          if (numberOnly.startsWith('0')) {
+            validatedData.phone = '+382' + numberOnly.substring(1);
+          } else {
+            validatedData.phone = '+382' + numberOnly;
+          }
+        }
+      }
+      
+      // Kreiranje klijenta
+      const client = await storage.createClient(validatedData);
+      
+      res.status(201).json({
+        success: true,
+        message: "Klijent je uspešno kreiran",
+        data: client
+      });
+    } catch (error) {
+      console.error("Greška pri kreiranju klijenta:", error);
+      res.status(500).json({ 
+        error: "Greška pri kreiranju klijenta", 
+        message: error.message 
+      });
+    }
+  });
+
+  // Dobijanje klijenata za poslovnog partnera
+  app.get("/api/business/clients", isBusinessPartner, async (req, res) => {
+    try {
+      const clients = await storage.getAllClients();
+      res.json(clients);
+    } catch (error) {
+      console.error("Greška pri dobijanju klijenata:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri dobijanju klijenata." 
+      });
+    }
+  });
+
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
     try {

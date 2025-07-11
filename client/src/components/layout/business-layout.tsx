@@ -8,7 +8,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Building
+  Building,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -48,10 +49,16 @@ export default function BusinessLayout({ children }: BusinessLayoutProps) {
       current: location === "/business",
     },
     {
+      name: "Klijenti",
+      href: "/business/clients",
+      icon: Users,
+      current: location.startsWith("/business/clients"),
+    },
+    {
       name: "Servisni zahtevi",
       href: "/business/services",
       icon: ClipboardList,
-      current: location === "/business/services",
+      current: location.startsWith("/business/services"),
     },
     {
       name: "Moj profil",
