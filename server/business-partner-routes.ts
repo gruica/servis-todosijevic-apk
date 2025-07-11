@@ -261,33 +261,38 @@ export function registerBusinessPartnerRoutes(app: Express) {
       
       console.log("Servis uspešno kreiran sa ID:", newService.id);
 
-      // Slanje obaveštenja administratorima o novom servisu
+      // Slanje obaveštenja administratorima i klijentu o novom servisu
       try {
-        // Šaljemo email svim administratorima o novom zahtevu
-        const adminUsers = await storage.getAllUsers();
-        const admins = adminUsers.filter(user => user.role === "admin");
-        
         // Dobavljanje detalja klijenta
         const client = await storage.getClient(finalClientId);
         const clientName = client?.fullName || "Klijent";
         
-        // Ako ima administratora, šaljemo email
-        if (admins.length > 0) {
-          // Email za administratore
-          for (const admin of admins) {
-            if (admin.email) {
-              await emailService.sendEmail({
-                to: admin.email,
-                subject: `Novi servisni zahtev #${newService.id} od partnera ${partnerCompanyName}`,
-                html: `
-                  <h2>Novi servisni zahtev #${newService.id}</h2>
-                  <p><strong>Partner:</strong> ${partnerCompanyName}</p>
-                  <p><strong>Klijent:</strong> ${clientName}</p>
-                  <p><strong>Opis:</strong> ${description}</p>
-                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
-                `
-              });
-            }
+        // Šaljemo email administratorima
+        await emailService.sendNewServiceNotification(
+          client || { id: finalClientId, fullName: clientName, email: "", phone: "" },
+          {
+            id: newService.id,
+            description: description.trim(),
+            status: "pending",
+            createdAt: today,
+            applianceInfo: "Uređaj partnera",
+            technicianName: "Nije dodeljen",
+            creatorInfo: ` (kreator: ${partnerCompanyName})`
+          }
+        );
+        
+        // Šaljemo email klijentu (ako ima email)
+        if (client && client.email) {
+          const clientEmailSent = await emailService.sendServiceStatusUpdate(
+            client,
+            newService.id,
+            "Na čekanju",
+            description.trim(),
+            "Nije dodeljen"
+          );
+          
+          if (clientEmailSent) {
+            console.log(`Email obaveštenje poslato klijentu ${client.fullName} za novi servis #${newService.id}`);
           }
         }
       } catch (emailError) {

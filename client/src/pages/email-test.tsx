@@ -139,6 +139,7 @@ export default function EmailTestPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="test-email">Test slanja email-a</TabsTrigger>
+            <TabsTrigger value="service-notifications">Obaveštenja servisa</TabsTrigger>
             <TabsTrigger value="settings-info">Informacije o postavkama</TabsTrigger>
           </TabsList>
 
@@ -246,6 +247,68 @@ export default function EmailTestPage() {
                   </div>
                 )}
               </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="service-notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle>Test email obaveštenja servisa</CardTitle>
+                <CardDescription>
+                  Testirajte automatska email obaveštenja za operacije sa servisima
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
+                    <h3 className="font-medium text-blue-900 mb-2">Aktivna email obaveštenja</h3>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Kreiranje novog servisa - šalje se administratorima i klijentu</li>
+                      <li>• Dodela tehničara - šalje se klijentu i tehničaru</li>
+                      <li>• Promena statusa - šalje se klijentu</li>
+                      <li>• Ažuriranje servisa - šalje se klijentu ako je status promenjen</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-md border border-green-200">
+                    <h3 className="font-medium text-green-900 mb-2">✅ Implementirana obaveštenja</h3>
+                    <div className="text-sm text-green-800 space-y-2">
+                      <div>
+                        <strong>Kreiranje servisa:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          <li>- Admin ruta: Šalje administratorima + klijentu</li>
+                          <li>- Klijent ruta: Šalje administratorima + klijentu potvrdu</li>
+                          <li>- Poslovni partner ruta: Šalje administratorima + klijentu</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <strong>Dodela tehničara:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          <li>- Šalje klijentu obaveštenje o dodeli</li>
+                          <li>- Šalje tehničaru obaveštenje o novom servisu</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <strong>Promena statusa:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          <li>- Šalje klijentu obaveštenje o promeni statusa</li>
+                          <li>- Koristi se u PUT /api/services/:id i PUT /api/services/:id/update-status</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+                    <h3 className="font-medium text-yellow-900 mb-2">📋 Kako testirati</h3>
+                    <div className="text-sm text-yellow-800 space-y-1">
+                      <p>1. Kreirajte novi servis preko bilo koje rute</p>
+                      <p>2. Dodelite tehničara servisu</p>
+                      <p>3. Promenite status servisa</p>
+                      <p>4. Proverite email inboxe administratora, klijenta i tehničara</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 

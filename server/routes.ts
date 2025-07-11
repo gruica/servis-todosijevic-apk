@@ -1026,12 +1026,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (service.clientId) {
           const client = await storage.getClient(service.clientId);
+          const technician = service.technicianId ? 
+            await storage.getTechnician(service.technicianId) : null;
+          const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+          
+          // Šaljemo obaveštenje klijentu (ako ima email)
           if (client && client.email) {
-            const technician = service.technicianId ? 
-              await storage.getTechnician(service.technicianId) : null;
-            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
-            
-            // Šaljemo obaveštenje klijentu
             const statusText = STATUS_DESCRIPTIONS[service.status] || service.status;
             const clientEmailSent = await emailService.sendServiceStatusUpdate(
               client,
@@ -1052,38 +1052,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 `Poslato obaveštenje klijentu ${client.fullName} o novom servisu #${service.id} sa statusom ${service.status}`
               );
             }
+          }
+          
+          // Šaljemo obaveštenje administratorima o novom servisu
+          const adminUsers = await storage.getAllUsers();
+          const admins = adminUsers.filter(user => user.role === "admin");
+          
+          if (admins.length > 0) {
+            const creatorInfo = req.user ? ` (kreator: ${req.user.fullName || req.user.username})` : "";
+            const appliance = await storage.getAppliance(service.applianceId);
+            const applianceInfo = appliance ? `${appliance.model} (${appliance.category})` : "Nepoznat uređaj";
             
-            // Ako je dodeljen serviser, obavesti i njega
-            if (technician && service.technicianId) {
-              // Dobavljamo korisnika iz baze koji je vezan za tehničara
-              const techUser = await storage.getUserByTechnicianId(service.technicianId);
-              const techEmail = techUser?.email || technician.email;
-              
-              if (techEmail) {
-                const techEmailSent = await emailService.sendNewServiceAssignment(
-                  techEmail,
-                  technician.fullName,
-                  service.id,
-                  client.fullName,
-                  service.scheduledDate || service.createdAt,
-                  `${client.address}, ${client.city}`,
-                  service.description || ""
-                );
-                
-                if (techEmailSent) {
-                  console.log(`Email obaveštenje poslato serviseru ${technician.fullName} na adresu ${techEmail} za novi servis #${service.id}`);
-                  
-                  // Obavesti administratore o poslatom mail-u serviseru
-                  await emailService.notifyAdminAboutEmail(
-                    "Dodela servisa serviseru",
-                    techEmail || technician.email || "",
-                    service.id,
-                    `Poslato obaveštenje serviseru ${technician.fullName} o dodeli novog servisa #${service.id}`
-                  );
-                }
-              } else {
-                console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
+            await emailService.sendNewServiceNotification(
+              client || { id: service.clientId, fullName: "Nepoznat klijent", email: "", phone: "" },
+              {
+                id: service.id,
+                description: service.description || "",
+                status: service.status,
+                createdAt: service.createdAt,
+                applianceInfo,
+                technicianName,
+                creatorInfo
               }
+            );
+          }
+          
+          // Ako je dodeljen serviser, obavesti i njega
+          if (technician && service.technicianId) {
+            // Dobavljamo korisnika iz baze koji je vezan za tehničara
+            const techUser = await storage.getUserByTechnicianId(service.technicianId);
+            const techEmail = techUser?.email || technician.email;
+            
+            if (techEmail) {
+              const techEmailSent = await emailService.sendNewServiceAssignment(
+                techEmail,
+                technician.fullName,
+                service.id,
+                client?.fullName || "Nepoznat klijent",
+                service.scheduledDate || service.createdAt,
+                `${client?.address || ""}, ${client?.city || ""}`,
+                service.description || ""
+              );
+              
+              if (techEmailSent) {
+                console.log(`Email obaveštenje poslato serviseru ${technician.fullName} na adresu ${techEmail} za novi servis #${service.id}`);
+                
+                // Obavesti administratore o poslatom mail-u serviseru
+                await emailService.notifyAdminAboutEmail(
+                  "Dodela servisa serviseru",
+                  techEmail || technician.email || "",
+                  service.id,
+                  `Poslato obaveštenje serviseru ${technician.fullName} o dodeli novog servisa #${service.id}`
+                );
+              }
+            } else {
+              console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
             }
           } else {
             console.warn(`Klijent ${client?.fullName || service.clientId} nema email adresu, obaveštenje nije poslato`);
@@ -3127,29 +3150,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date().toISOString().split('T')[0] // Dodajem createdAt
       });
 
-      // Slanje email notifikacije administratorima
+      // Slanje email notifikacije administratorima i klijentu
       try {
         const client = await storage.getClient(clientId);
         if (client) {
-          // Koristim postojeću email funkcionalnost
-          const adminUsers = await storage.getAllUsers();
-          const admins = adminUsers.filter(user => user.role === "admin");
-          
-          for (const admin of admins) {
-            if (admin.email) {
-              await emailService.sendEmail({
-                to: admin.email,
-                subject: `Novi zahtev za servis #${newService.id} od klijenta ${client.fullName}`,
-                html: `
-                  <h2>Novi zahtev za servis #${newService.id}</h2>
-                  <p><strong>Klijent:</strong> ${client.fullName}</p>
-                  <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
-                  <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
-                  <p><strong>Opis:</strong> ${newService.description}</p>
-                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
-                `
-              });
+          // Šaljemo email administratorima
+          await emailService.sendNewServiceNotification(
+            client,
+            {
+              id: newService.id,
+              description: newService.description,
+              status: "pending",
+              createdAt: newService.createdAt,
+              applianceInfo: "Uređaj klijenta",
+              technicianName: "Nije dodeljen",
+              creatorInfo: " (kreator: klijent)"
             }
+          );
+          
+          // Potvrda klijentu da je servis kreiran
+          if (client.email) {
+            await emailService.sendServiceStatusUpdate(
+              client,
+              newService.id,
+              "Na čekanju",
+              newService.description,
+              "Nije dodeljen"
+            );
           }
         }
       } catch (emailError) {
@@ -3232,6 +3259,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
       
+      // Pošalji email obaveštenja o dodeljivanju servisera
+      try {
+        const client = await storage.getClient(service.clientId);
+        
+        // Email klijentu o dodeljivanju servisera
+        if (client && client.email) {
+          await emailService.sendServiceStatusUpdate(
+            client,
+            serviceId,
+            "Dodeljen serviser",
+            service.description || "",
+            technician.fullName
+          );
+        }
+        
+        // Email serviseru o novom servisu
+        const techUser = await storage.getUserByTechnicianId(technicianId);
+        const techEmail = techUser?.email || technician.email;
+        
+        if (techEmail) {
+          await emailService.sendNewServiceAssignment(
+            techEmail,
+            technician.fullName,
+            serviceId,
+            client?.fullName || "Nepoznat klijent",
+            service.scheduledDate || service.createdAt,
+            `${client?.address || ""}, ${client?.city || ""}`,
+            service.description || ""
+          );
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+      }
+      
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
@@ -3290,6 +3351,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedService = await storage.updateService(serviceId, { status });
       
       console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
+      
+      // Pošalji email obaveštenje klijentu o promenama statusa
+      try {
+        const client = await storage.getClient(service.clientId);
+        const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+        const technicianName = technician ? technician.fullName : "Nije dodeljen";
+        
+        if (client && client.email) {
+          const statusText = STATUS_DESCRIPTIONS[status] || status;
+          await emailService.sendServiceStatusUpdate(
+            client,
+            serviceId,
+            statusText,
+            service.description || "",
+            technicianName
+          );
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+      }
       
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {
