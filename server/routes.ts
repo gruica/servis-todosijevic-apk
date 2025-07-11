@@ -2808,8 +2808,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nedozvoljeni pristup tuđim servisima" });
       }
       
-      // Dohvatanje klijenta po email-u (username korisnika)
-      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.username));
+      // Dohvatanje klijenta po email-u korisnika
+      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.email));
       const client = clients.length > 0 ? clients[0] : null;
       
       if (!client) {

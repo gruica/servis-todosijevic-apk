@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useLocation } from "wouter";
@@ -13,14 +13,29 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
-  // Stanje mobilnog sidebar-a
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  
   const toggleSidebar = () => {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-      sidebar.classList.toggle('hidden');
-      sidebar.classList.toggle('block');
-    }
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
   };
   
   if (isLoading) {
@@ -41,10 +56,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <Header toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar isMobileOpen={false} closeMobileMenu={() => {}} />
+        <Sidebar isMobileOpen={isMobileMenuOpen} closeMobileMenu={closeMobileMenu} />
         
-        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10">
-          {children}
+        {/* Mobilni overlay */}
+        {isMobile && isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+            onClick={closeMobileMenu}
+          />
+        )}
+        
+        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10 px-4 md:px-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

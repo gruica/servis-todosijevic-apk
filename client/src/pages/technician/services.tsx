@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin } from "lucide-react";
 import { useState } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -43,7 +43,7 @@ type TechnicianService = Service & {
 export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   // Uvek proveriti mobilno okruženje (mobile web i APK)
   const isMobileDevice = isMobileEnvironment();
   const [activeTab, setActiveTab] = useState<string>("active");

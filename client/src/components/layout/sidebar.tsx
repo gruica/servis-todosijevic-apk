@@ -1,6 +1,21 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { 
+  Home, 
+  Users, 
+  Settings, 
+  MessageSquare, 
+  Mail, 
+  Database, 
+  Download, 
+  User,
+  Wrench,
+  Shield,
+  X,
+  LogOut
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -9,29 +24,28 @@ interface SidebarProps {
 
 export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
 
   // Define menu items based on user role
-  // Verzija 2 - Samo najbitnije opcije
   const adminMenuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "dashboard", highlight: true },
-    { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/admin/services", label: "Servisi", icon: "build" },
-    { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
-    { path: "/appliances", label: "Bela tehnika", icon: "home_repair_service" },
-    { path: "/users", label: "Korisnici", icon: "group" },
-    { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: "verified_user" },
-    { path: "/admin/sms", label: "SMS poruke", icon: "sms", highlight: true },
-    { path: "/email-settings", label: "Email postavke", icon: "mail" },
-    { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
-    { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
-    { path: "/excel", label: "Excel izvoz", icon: "download" },
-    { path: "/profile", label: "Moj profil", icon: "person" },
+    { path: "/", label: "Kontrolna tabla", icon: Home, highlight: true },
+    { path: "/clients", label: "Klijenti", icon: Users },
+    { path: "/admin/services", label: "Servisi", icon: Wrench },
+    { path: "/technician-services", label: "Servisi po serviserima", icon: Users },
+    { path: "/appliances", label: "Bela tehnika", icon: Settings },
+    { path: "/users", label: "Korisnici", icon: Users },
+    { path: "/admin/user-verification", label: "Verifikacija korisnika", icon: Shield },
+    { path: "/admin/sms", label: "SMS poruke", icon: MessageSquare, highlight: true },
+    { path: "/email-settings", label: "Email postavke", icon: Mail },
+    { path: "/email-test", label: "Testiranje email-a", icon: Mail },
+    { path: "/sql-admin", label: "SQL upravljač", icon: Database },
+    { path: "/excel", label: "Excel izvoz", icon: Download },
+    { path: "/profile", label: "Moj profil", icon: User },
   ];
   
   const technicianMenuItems = [
-    { path: "/tech", label: "Moji servisi", icon: "build" },
-    { path: "/tech/profile", label: "Moj profil", icon: "person" },
+    { path: "/tech", label: "Moji servisi", icon: Wrench },
+    { path: "/tech/profile", label: "Moj profil", icon: User },
   ];
   
   // Use the appropriate menu based on user role
@@ -58,20 +72,31 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
           : "hidden md:flex md:relative"
       )}
     >
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <h1 className="text-xl font-medium text-primary">Frigo Sistem Todosijević</h1>
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <h1 className="text-lg font-medium text-primary">Frigo Sistem</h1>
+        {isMobileOpen && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={closeMobileMenu}
+            className="md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
+      
       <div className="py-4 flex-1">
         <div className="px-4 mb-6">
           {user && (
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                <span className="font-medium">
+                <span className="font-medium text-sm">
                   {getInitials(user.fullName)}
                 </span>
               </div>
-              <div>
-                <p className="font-medium text-gray-800">{user.fullName}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-800 truncate">{user.fullName}</p>
                 <p className="text-sm text-gray-500">
                   {user.role === "admin" 
                     ? "Administrator" 
@@ -83,95 +108,49 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
             </div>
           )}
         </div>
-        <nav>
-          <ul>
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  href={item.path}
-                  onClick={() => closeMobileMenu()}
-                >
-                  <div 
-                    className={cn(
-                      "flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100",
-                      location === item.path 
-                        ? "bg-blue-50 border-l-4 border-primary text-primary" 
-                        : "",
-                      (item as any).highlight
-                        ? "font-medium text-blue-700"
-                        : ""
-                    )}
+        
+        <nav className="flex-1">
+          <ul className="space-y-1">
+            {menuItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <li key={item.path}>
+                  <Link
+                    href={item.path}
+                    onClick={() => closeMobileMenu()}
                   >
-                    {item.icon && (
-                      <span className="material-symbols-outlined mr-3">{item.icon}</span>
-                    )}
-                    <span>{item.label}</span>
-                    {(item.path === "/admin/services" || item.path === "/admin/user-verification" || item.path === "/admin/sms") && (
-                      <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Novo</span>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            ))}
+                    <div 
+                      className={cn(
+                        "flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg mx-2 transition-colors",
+                        location === item.path 
+                          ? "bg-blue-50 border-l-4 border-primary text-primary" 
+                          : "",
+                        (item as any).highlight
+                          ? "font-medium text-blue-700"
+                          : ""
+                      )}
+                    >
+                      <IconComponent className="h-5 w-5 mr-3 flex-shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
-          
-          {/* Posebna sekcija za verifikaciju korisnika (prikazuje se samo za admin) */}
-          {user?.role === "admin" && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="px-4 text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2">
-                ADMINISTRACIJA
-              </h3>
-              <ul>
-                <li>
-                  <Link href="/admin/user-verification" onClick={() => closeMobileMenu()}>
-                    <div className={cn(
-                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
-                      location === "/admin/user-verification" 
-                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
-                        : "border-l-4 border-transparent"
-                    )}>
-                      <span className="material-symbols-outlined mr-3">verified_user</span>
-                      <span>Verifikacija korisnika</span>
-                    </div>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/admin/sms-settings" onClick={() => closeMobileMenu()}>
-                    <div className={cn(
-                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
-                      location === "/admin/sms-settings" 
-                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
-                        : "border-l-4 border-transparent"
-                    )}>
-                      <span className="material-symbols-outlined mr-3">sms</span>
-                      <span>SMS Notifikacije</span>
-                    </div>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
         </nav>
       </div>
       
       {/* Logout button at the bottom */}
       <div className="p-4 border-t border-gray-200">
-        <LogoutButton />
+        <button 
+          onClick={() => logoutMutation.mutate()}
+          className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          <span>Odjava</span>
+        </button>
       </div>
     </div>
-  );
-}
-
-function LogoutButton() {
-  const { logoutMutation } = useAuth();
-  
-  return (
-    <button 
-      onClick={() => logoutMutation.mutate()}
-      className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
-      disabled={logoutMutation.isPending}
-    >
-      <span>Odjavi se</span>
-    </button>
   );
 }
