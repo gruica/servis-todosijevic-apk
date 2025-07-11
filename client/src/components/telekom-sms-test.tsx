@@ -19,6 +19,9 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
   const [gsmTestPhone, setGsmTestPhone] = useState('+38267051141');
   const [isGsmTesting, setIsGsmTesting] = useState(false);
   const [gsmTestResult, setGsmTestResult] = useState<any>(null);
+  const [infobipTestPhone, setInfobipTestPhone] = useState('+38267051141');
+  const [isInfobipTesting, setIsInfobipTesting] = useState(false);
+  const [infobipTestResult, setInfobipTestResult] = useState<any>(null);
   const { toast } = useToast();
 
   const testConnection = async () => {
@@ -116,6 +119,54 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
       });
     } finally {
       setIsGsmTesting(false);
+    }
+  };
+
+  const testInfobipSms = async () => {
+    setIsInfobipTesting(true);
+    setInfobipTestResult(null);
+    
+    try {
+      const response = await apiRequest("POST", "/api/new-sms/test", {
+        recipient: infobipTestPhone
+      });
+      const data = await response.json();
+      
+      setInfobipTestResult(data);
+      
+      if (data.success) {
+        toast({
+          title: "Infobip test uspešan",
+          description: `SMS uspešno poslat preko Infobip-a na ${infobipTestPhone}`,
+        });
+      } else {
+        toast({
+          title: "Infobip test neuspešan",
+          description: data.error || "Neuspešno slanje test SMS-a preko Infobip-a",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Greška pri testiranju Infobip:", error);
+      
+      let errorMessage = "Neuspešno testiranje Infobip SMS-a.";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setInfobipTestResult({
+        success: false,
+        error: errorMessage,
+        details: error.response?.data
+      });
+      
+      toast({
+        title: "Greška",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsInfobipTesting(false);
     }
   };
 
@@ -266,11 +317,90 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
           )}
         </div>
 
+        <Separator className="my-4" />
+
+        {/* Infobip SMS Test */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-purple-600" />
+            <span className="font-medium text-sm">Infobip SMS Test</span>
+          </div>
+          
+          <div>
+            <Label htmlFor="infobipTestPhone">Test SMS na broj:</Label>
+            <Input
+              id="infobipTestPhone"
+              type="tel"
+              value={infobipTestPhone}
+              onChange={(e) => setInfobipTestPhone(e.target.value)}
+              placeholder="+38267051141"
+              className="mt-1"
+            />
+          </div>
+
+          <Button 
+            onClick={testInfobipSms}
+            disabled={isInfobipTesting || !infobipTestPhone}
+            variant="outline"
+            className="w-full"
+          >
+            {isInfobipTesting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Šalje preko Infobip-a...
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                Pošalji preko Infobip-a
+              </>
+            )}
+          </Button>
+
+          {infobipTestResult && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {infobipTestResult.success ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    Infobip SMS poslat
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">
+                    <XCircle className="mr-1 h-3 w-3" />
+                    Infobip SMS neuspešan
+                  </Badge>
+                )}
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                <div className="space-y-1">
+                  <p><strong>Platforma:</strong> {infobipTestResult.method || 'Infobip'}</p>
+                  {infobipTestResult.messageId && (
+                    <p><strong>Message ID:</strong> {infobipTestResult.messageId}</p>
+                  )}
+                  {infobipTestResult.cost && (
+                    <p><strong>Cena:</strong> {infobipTestResult.cost}</p>
+                  )}
+                  
+                  {infobipTestResult.error && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                      <p className="text-red-800 font-medium">Greška:</p>
+                      <p className="text-red-700 text-xs">{infobipTestResult.error}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="text-xs text-gray-500 mt-4">
           <p>Metode slanja SMS-a (u redosledu):</p>
           <ul className="list-disc list-inside mt-1">
             <li>Telekom Crne Gore API</li>
             <li>GSM modem (ako je povezan)</li>
+            <li><strong>Infobip SMS platforma</strong></li>
             <li>Fallback na Messaggio</li>
           </ul>
         </div>

@@ -9,6 +9,7 @@ import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
 import { messaggioSmsService } from "./messaggio-sms";
 import { telekomSmsService } from "./telekom-sms";
+import { newSmsService } from "./new-sms-platform";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -3649,6 +3650,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: "Greška pri slanju SMS obaveštenja", 
         message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
+  // Test nove SMS platforme endpoint
+  app.post("/api/new-sms/test", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
+      }
+      
+      const { recipient } = z.object({
+        recipient: z.string().min(1)
+      }).parse(req.body);
+      
+      console.log("[NOVA SMS] Admin testira slanje SMS-a preko nove platforme...");
+      
+      const result = await newSmsService.sendSms({
+        to: recipient,
+        message: 'Test SMS sa nove platforme - Frigo Sistem Todosijević',
+        from: '+38267051141',
+        type: 'custom'
+      });
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: "Test SMS uspešno poslat preko nove platforme",
+          messageId: result.messageId,
+          method: result.method,
+          cost: result.cost,
+          details: result.details
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: result.error,
+          method: result.method,
+          details: result.details
+        });
+      }
+    } catch (error: any) {
+      console.error("[NOVA SMS] Greška:", error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri testiranju nove SMS platforme",
+        details: error.message 
+      });
+    }
+  });
+
+  // Test konekcije sa novom SMS platformom
+  app.get("/api/new-sms/status", async (req, res) => {
+    try {
+      // Proveri da li je korisnik admin
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
+      }
+      
+      const connectionStatus = await newSmsService.testConnection();
+      const balance = await newSmsService.getBalance();
+      
+      res.json({
+        success: true,
+        connection: connectionStatus,
+        balance: balance,
+        service: 'Nova SMS platforma',
+        message: connectionStatus ? 'Nova SMS platforma je dostupna' : 'Nova SMS platforma nije dostupna'
+      });
+    } catch (error: any) {
+      console.error("[NOVA SMS] Greška pri proveri statusa:", error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri proveri statusa nove SMS platforme",
+        details: error.message 
       });
     }
   });

@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
+import { newSmsService, NewSmsOptions } from './new-sms-platform';
 
 export interface TelekomSmsOptions {
   to: string;
@@ -389,7 +390,26 @@ export class TelekomSmsService {
       return gsmResult;
     }
 
-    // Pokušaj 3: Fallback na postojeći sistem
+    // Pokušaj 3: Vaša nova SMS platforma
+    console.log(`[TELEKOM SMS] Pokušava novu SMS platformu...`);
+    const newPlatformResult = await newSmsService.sendSms({
+      to: options.to,
+      message: options.message,
+      from: '+38267051141',
+      type: options.type
+    });
+    if (newPlatformResult.success) {
+      console.log(`[TELEKOM SMS] Uspešno poslano preko nove SMS platforme`);
+      return {
+        success: true,
+        messageId: newPlatformResult.messageId,
+        cost: newPlatformResult.cost,
+        method: 'Nova SMS platforma',
+        details: newPlatformResult.details
+      };
+    }
+
+    // Pokušaj 4: Fallback na postojeći sistem
     console.log(`[TELEKOM SMS] Sve metode neuspešne, koristim fallback`);
     return {
       success: false,
@@ -397,7 +417,8 @@ export class TelekomSmsService {
       method: 'fallback',
       details: {
         telekomError: telekomResult.error,
-        gsmError: gsmResult.error
+        gsmError: gsmResult.error,
+        newPlatformError: newPlatformResult.error
       }
     };
   }
