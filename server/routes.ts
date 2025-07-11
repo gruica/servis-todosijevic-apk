@@ -758,6 +758,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint za dobijanje servisa sa detaljima (klijent, serviser, uređaj)
+  app.get("/api/services-with-details", async (req, res) => {
+    try {
+      const services = await storage.getAllServices();
+      
+      // Dodaj detalje za svaki servis
+      const servicesWithDetails = await Promise.all(
+        services.map(async (service) => {
+          const client = await storage.getClient(service.clientId);
+          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          const appliance = await storage.getAppliance(service.applianceId);
+          
+          return {
+            ...service,
+            client,
+            technician,
+            appliance: appliance ? {
+              category: {
+                name: appliance.category || 'Nepoznato'
+              }
+            } : null
+          };
+        })
+      );
+
+      res.json(servicesWithDetails);
+    } catch (error) {
+      console.error("Greška pri dobijanju servisa sa detaljima:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa sa detaljima" });
+    }
+  });
+
   app.get("/api/clients/:clientId/services", async (req, res) => {
     try {
       const services = await storage.getServicesByClient(parseInt(req.params.clientId));

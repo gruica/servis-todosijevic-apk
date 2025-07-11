@@ -13,7 +13,8 @@ import {
   Wrench,
   Shield,
   X,
-  LogOut
+  LogOut,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +32,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/", label: "Kontrolna tabla", icon: Home, highlight: true },
     { path: "/clients", label: "Klijenti", icon: Users },
     { path: "/admin/services", label: "Servisi", icon: Wrench },
+    { path: "/admin/service-management", label: "Upravljanje servisima", icon: ClipboardList, highlight: true },
     { path: "/technician-services", label: "Servisi po serviserima", icon: Users },
     { path: "/appliances", label: "Bela tehnika", icon: Settings },
     { path: "/users", label: "Korisnici", icon: Users },
