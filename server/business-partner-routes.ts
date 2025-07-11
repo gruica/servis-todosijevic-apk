@@ -110,6 +110,53 @@ export function registerBusinessPartnerRoutes(app: Express) {
     }
   });
 
+  // Kreiranje novog klijenta od strane poslovnog partnera
+  app.post("/api/business/clients", isBusinessPartner, async (req, res) => {
+    try {
+      console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      
+      const { fullName, phone, email, address, city, companyName } = req.body;
+      
+      // Osnovna validacija
+      if (!fullName || !phone) {
+        return res.status(400).json({
+          error: "Nedostaju obavezna polja",
+          message: "Ime i prezime i telefon su obavezna polja."
+        });
+      }
+      
+      // Proveravamo da li već postoji klijent sa istim telefonom
+      const existingClient = await storage.getClientByPhone(phone);
+      if (existingClient) {
+        return res.status(409).json({
+          error: "Klijent već postoji",
+          message: `Klijent sa telefonom ${phone} već postoji u sistemu.`
+        });
+      }
+      
+      // Kreiramo novog klijenta
+      const newClient = await storage.createClient({
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email?.trim() || null,
+        address: address?.trim() || null,
+        city: city?.trim() || null,
+        companyName: companyName?.trim() || null
+      });
+      
+      console.log("Novi klijent uspešno kreiran:", newClient);
+      res.status(201).json(newClient);
+      
+    } catch (error) {
+      console.error("Greška pri kreiranju klijenta:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri kreiranju klijenta." 
+      });
+    }
+  });
+
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
     try {

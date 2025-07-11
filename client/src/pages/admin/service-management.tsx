@@ -13,12 +13,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Clock, User, MapPin, Phone, Mail, Settings, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Mail, Settings, CheckCircle, XCircle, Search, Plus } from "lucide-react";
 import { Service, Client, Technician, SelectUser } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
+import { ClientSearchDialog } from "@/components/admin/ClientSearchDialog";
+import { CreateClientDialog } from "@/components/admin/CreateClientDialog";
 
 // Status descriptions
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -73,6 +75,10 @@ export default function ServiceManagementPage() {
   const [selectedTechnician, setSelectedTechnician] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [scheduledDate, setScheduledDate] = useState<string>("");
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [createClientOpen, setCreateClientOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [technicianNotes, setTechnicianNotes] = useState<string>("");
   const [technicianNotes, setTechnicianNotes] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -232,6 +238,15 @@ export default function ServiceManagementPage() {
             </p>
           </div>
           <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setClientSearchOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Pretraži klijente
+            </Button>
             <Badge variant="outline">
               Ukupno servisa: {services?.length || 0}
             </Badge>
@@ -533,6 +548,31 @@ export default function ServiceManagementPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Client Search Dialog */}
+        <ClientSearchDialog
+          open={clientSearchOpen}
+          onOpenChange={setClientSearchOpen}
+          onClientSelect={(client) => {
+            setSelectedClient(client);
+            // Možda dodamo dodatnu logiku za kreiranje servisa
+          }}
+          onCreateNew={() => {
+            setClientSearchOpen(false);
+            setCreateClientOpen(true);
+          }}
+          title="Pretraži klijente"
+        />
+
+        {/* Create Client Dialog */}
+        <CreateClientDialog
+          open={createClientOpen}
+          onOpenChange={setCreateClientOpen}
+          onClientCreated={(client) => {
+            setSelectedClient(client);
+          }}
+          title="Kreiraj novog klijenta"
+        />
       </div>
     </AdminLayout>
   );

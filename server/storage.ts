@@ -68,6 +68,7 @@ export interface IStorage {
   getAllClients(): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   getClientByEmail(email: string): Promise<Client | undefined>; // Nova metoda za pretragu po emailu
+  getClientByPhone(phone: string): Promise<Client | undefined>; // Nova metoda za pretragu po telefonu
   getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
@@ -1635,6 +1636,11 @@ export class DatabaseStorage implements IStorage {
   
   async getClientByEmail(email: string): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.email, email));
+    return client;
+  }
+  
+  async getClientByPhone(phone: string): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.phone, phone));
     return client;
   }
 

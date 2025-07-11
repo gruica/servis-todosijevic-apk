@@ -14,7 +14,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Search, Users } from "lucide-react";
+import { ClientSearchDialog } from "@/components/admin/ClientSearchDialog";
+import { CreateClientDialog } from "@/components/admin/CreateClientDialog";
+import { Client } from "@shared/schema";
 import {
   Select,
   SelectContent,
@@ -65,6 +68,9 @@ export default function NewBusinessServiceRequest() {
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [createClientOpen, setCreateClientOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
   // Dohvatanje kategorija uređaja
   const { data: categories, isLoading: isLoadingCategories } = useQuery<ApplianceCategory[]>({
@@ -111,6 +117,16 @@ export default function NewBusinessServiceRequest() {
       saveClientData: true,
     },
   });
+  
+  // Ažuriranje forme kada se odabere klijent
+  const handleClientSelect = (client: Client) => {
+    setSelectedClient(client);
+    form.setValue("clientFullName", client.fullName);
+    form.setValue("clientPhone", client.phone);
+    form.setValue("clientEmail", client.email || "");
+    form.setValue("clientAddress", client.address || "");
+    form.setValue("clientCity", client.city || "");
+  };
   
   // Mutacija za kreiranje servisa putem business partner API-ja
   const createServiceMutation = useMutation({
@@ -253,10 +269,36 @@ export default function NewBusinessServiceRequest() {
             {/* Podaci o klijentu */}
             <Card>
               <CardHeader>
-                <CardTitle>Podaci o klijentu</CardTitle>
-                <CardDescription>
-                  Unesite informacije o klijentu za koga se kreira servisni zahtev
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Podaci o klijentu</CardTitle>
+                    <CardDescription>
+                      Unesite informacije o klijentu za koga se kreira servisni zahtev
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClientSearchOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Search className="h-4 w-4" />
+                      Pretraži
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCreateClientOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      Novi
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -584,6 +626,26 @@ export default function NewBusinessServiceRequest() {
             </Card>
           </form>
         </Form>
+
+        {/* Client Search Dialog */}
+        <ClientSearchDialog
+          open={clientSearchOpen}
+          onOpenChange={setClientSearchOpen}
+          onClientSelect={handleClientSelect}
+          onCreateNew={() => {
+            setClientSearchOpen(false);
+            setCreateClientOpen(true);
+          }}
+          title="Pretraži postojeće klijente"
+        />
+
+        {/* Create Client Dialog */}
+        <CreateClientDialog
+          open={createClientOpen}
+          onOpenChange={setCreateClientOpen}
+          onClientCreated={handleClientSelect}
+          title="Kreiraj novog klijenta"
+        />
       </div>
     </BusinessLayout>
   );
