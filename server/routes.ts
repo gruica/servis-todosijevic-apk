@@ -5,11 +5,7 @@ import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
-import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
-import { smsService } from "./sms-service";
-import { messaggioSmsService } from "./messaggio-sms";
-import { telekomSmsService } from "./telekom-sms";
-import { newSmsService } from "./new-sms-platform";
+import { infobipSms } from "./infobip-sms";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -1448,41 +1444,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Šaljemo SMS klijentu preko novog SMS servisa
               const smsMessage = generateStatusUpdateMessage(serviceId, statusDescription, additionalInfo);
-              const clientSmsSent = await newSmsService.sendSms({
+              const clientSmsSent = await infobipSms.sendSms({
                 to: client.phone || '',
                 message: smsMessage,
                 type: 'status_update'
               });
               
               if (clientSmsSent.success) {
-                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko ${newSmsService.getConfigInfo()?.provider || 'novog SMS servisa'}`);
+                console.log(`[INFOBIP SMS] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName}`);
                 emailInfo.smsSent = true;
                 if (clientSmsSent.messageId) {
-                  console.log(`[SMS SISTEM] Message ID: ${clientSmsSent.messageId}`);
+                  console.log(`[INFOBIP SMS] Message ID: ${clientSmsSent.messageId}`);
                 }
               } else {
-                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
-                
-                // Fallback na postojeći Twilio SMS servis
-                console.log(`[SMS SISTEM] Pokušavam fallback na Twilio SMS servis...`);
-                try {
-                  const fallbackSent = await smsService.sendServiceStatusUpdate(
-                    client,
-                    { id: serviceId, description: statusDescription, status: statusDescription },
-                    statusDescription,
-                    additionalInfo
-                  );
-                  
-                  if (fallbackSent) {
-                    console.log(`[SMS SISTEM] ✅ Fallback SMS uspešno poslat preko Twilio`);
-                    emailInfo.smsSent = true;
-                  } else {
-                    emailInfo.smsError = "Neuspešno slanje SMS poruke preko oba servisa. Proverite SMS postavke.";
-                  }
-                } catch (fallbackError) {
-                  console.error(`[SMS SISTEM] ❌ Fallback SMS takođe neuspešan:`, fallbackError);
-                  emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
-                }
+                console.error(`[INFOBIP SMS] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
+                emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
               }
             } else {
               console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
@@ -2937,38 +2913,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(configInfo);
   });
   
-  // Ruta za slanje test SMS poruke
-  app.post("/api/sms/test", async (req, res) => {
+  // Infobip SMS endpoint-i
+  app.post("/api/infobip/test", async (req, res) => {
     if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.status(401).json({ error: "Nemate dozvolu za slanje test poruka" });
     }
     
     try {
-      const validationResult = testSmsSchema.safeParse(req.body);
+      const { recipient } = req.body;
       
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Nevažeći podaci za SMS", 
-          details: validationResult.error.format() 
-        });
+      if (!recipient) {
+        return res.status(400).json({ error: "Broj telefona je obavezan" });
       }
       
-      const { recipient, message } = validationResult.data;
-      
-      // Slanje test poruke
-      const result = await smsService.sendSms({
+      // Slanje test poruke preko Infobip servisa
+      const result = await infobipSms.sendSms({
         to: recipient,
-        body: message
+        message: "Test SMS poruka iz Frigo Sistem aplikacije. Infobip SMS je uspešno konfigurisan!",
+        type: 'test'
       });
       
-      if (result) {
-        res.json({ success: true, message: "SMS poruka je uspešno poslata" });
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: "SMS poruka je uspešno poslata",
+          messageId: result.messageId,
+          cost: result.cost
+        });
       } else {
-        res.status(500).json({ error: "Greška pri slanju SMS poruke" });
+        res.status(500).json({ 
+          success: false,
+          error: result.error || "Greška pri slanju SMS poruke"
+        });
       }
     } catch (error) {
       console.error("Greška pri slanju test SMS poruke:", error);
-      res.status(500).json({ error: "Greška pri slanju test SMS poruke", details: error.message });
+      res.status(500).json({ 
+        success: false,
+        error: "Greška pri slanju test SMS poruke", 
+        details: error.message 
+      });
+    }
+  });
+
+  app.get("/api/infobip/status", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(401).json({ error: "Nemate dozvolu za pristup statusu SMS servisa" });
+    }
+    
+    try {
+      const status = await infobipSms.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Greška pri proveri statusa Infobip servisa:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Greška pri proveri statusa", 
+        details: error.message 
+      });
     }
   });
   
@@ -2996,17 +2998,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Slanje SMS obaveštenja o promeni statusa
-      const result = await smsService.sendServiceStatusUpdate(
-        client,
-        serviceId,
-        STATUS_DESCRIPTIONS[service.status] || service.status,
-        req.body.additionalInfo
-      );
+      const statusMessage = generateStatusUpdateMessage(serviceId, STATUS_DESCRIPTIONS[service.status] || service.status);
+      const result = await infobipSms.sendSms({
+        to: client.phone,
+        message: statusMessage,
+        type: 'status_update'
+      });
       
-      if (result) {
+      if (result.success) {
         res.json({ success: true, message: "SMS obaveštenje je uspešno poslato" });
       } else {
-        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja" });
+        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja", details: result.error });
       }
     } catch (error) {
       console.error("Greška pri slanju SMS obaveštenja o servisu:", error);
@@ -3051,15 +3053,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          const result = await smsService.sendSms({
+          const result = await infobipSms.sendSms({
             to: client.phone,
-            body: `Frigo Sistem Todosijević: ${message}`
+            message: `Frigo Sistem Todosijević: ${message}`,
+            type: 'custom'
           });
           
-          if (result) {
+          if (result.success) {
             results.push({ clientId, success: true });
           } else {
-            errors.push({ clientId, error: "Greška pri slanju SMS poruke" });
+            errors.push({ clientId, error: result.error || "Greška pri slanju SMS poruke" });
           }
         } catch (error) {
           errors.push({ clientId, error: error.message });
@@ -3593,32 +3596,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      // Pokušaj prvo sa Telekom SMS (vaš broj 067051141)
-      let result = await telekomSmsService.sendSms({
+      // Šalje SMS preko Infobip platforme
+      const result = await infobipSms.sendSms({
         to: service.client.phone,
         message: message,
         type: type || 'custom'
       });
-      
-      // Fallback na Messaggio ako Telekom ne radi
-      if (!result.success) {
-        console.log(`[SMS] Telekom neuspešan, pokušavam sa Messaggio...`);
-        result = await messaggioSmsService.sendSms({
-          to: service.client.phone,
-          message: message,
-          type: type || 'custom'
-        });
-      }
-      
-      // Treći fallback na Twilio ako ni Messaggio ne radi
-      if (!result.success) {
-        console.log(`[SMS] Messaggio neuspešan, pokušavam sa Twilio...`);
-        result = await newSmsService.sendSms({
-          to: service.client.phone,
-          message: message,
-          type: type || 'custom'
-        });
-      }
       
       if (result.success) {
         console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
@@ -3702,29 +3685,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test konekcije sa novom SMS platformom
-  app.get("/api/new-sms/status", async (req, res) => {
+  // Test konekcije sa Infobip SMS platformom
+  app.get("/api/infobip/status", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
-      const connectionStatus = await newSmsService.testConnection();
-      const balance = await newSmsService.getBalance();
+      const connectionStatus = await infobipSms.testConnection();
+      const balance = await infobipSms.getBalance();
       
       res.json({
         success: true,
         connection: connectionStatus,
         balance: balance,
-        service: 'Nova SMS platforma',
-        message: connectionStatus ? 'Nova SMS platforma je dostupna' : 'Nova SMS platforma nije dostupna'
+        service: 'Infobip SMS platforma',
+        message: connectionStatus ? 'Infobip SMS platforma je dostupna' : 'Infobip SMS platforma nije dostupna'
       });
     } catch (error: any) {
-      console.error("[NOVA SMS] Greška pri proveri statusa:", error.message);
+      console.error("[INFOBIP] Greška pri proveri statusa:", error.message);
       res.status(500).json({ 
         success: false, 
-        error: "Greška pri proveri statusa nove SMS platforme",
+        error: "Greška pri proveri statusa Infobip platforme",
         details: error.message 
       });
     }

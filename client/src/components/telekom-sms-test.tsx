@@ -127,7 +127,7 @@ export function TelekomSmsTest({ className }: TelekomSmsTestProps) {
     setInfobipTestResult(null);
     
     try {
-      const response = await apiRequest("POST", "/api/new-sms/test", {
+      const response = await apiRequest("POST", "/api/infobip/test", {
         recipient: infobipTestPhone
       });
       const data = await response.json();
