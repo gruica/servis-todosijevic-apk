@@ -140,6 +140,71 @@ export class InfobipSmsService {
   }
 
   /**
+   * Dohvata status i informacije o Infobip nalogu
+   */
+  public async getStatus(): Promise<{
+    success: boolean;
+    connection: boolean;
+    balance?: number;
+    message: string;
+    error?: string;
+  }> {
+    if (!this.apiKey) {
+      return {
+        success: false,
+        connection: false,
+        message: 'INFOBIP_API_KEY nije konfigurisan',
+        error: 'API ključ nije dostupan'
+      };
+    }
+
+    try {
+      // Pokušaj osnovnu proveru konekcije
+      const response = await axios.get(`${this.baseUrl}/account/1/balance`, {
+        headers: {
+          'Authorization': `App ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.status === 200) {
+        const balance = response.data?.balance || 0;
+        return {
+          success: true,
+          connection: true,
+          balance: balance,
+          message: 'Infobip platforma je dostupna'
+        };
+      }
+
+      return {
+        success: false,
+        connection: false,
+        message: 'Neočekivan odgovor od Infobip API-ja',
+        error: 'API je odgovorio sa neočekivanim statusom'
+      };
+
+    } catch (error: any) {
+      console.error('[INFOBIP] Greška pri proveri statusa:', error.message);
+      
+      let errorMessage = 'Greška pri proveri statusa Infobip platforme';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Neispravni Infobip kredencijali';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Nemate dozvolu za pristup Infobip API-ju';
+      }
+      
+      return {
+        success: false,
+        connection: false,
+        message: errorMessage,
+        error: error.response?.data || error.message
+      };
+    }
+  }
+
+  /**
    * Testira konekciju sa Infobip API-jem
    */
   public async testConnection(): Promise<boolean> {
