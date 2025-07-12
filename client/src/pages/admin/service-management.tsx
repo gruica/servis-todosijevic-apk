@@ -79,7 +79,6 @@ export default function ServiceManagementPage() {
   const [createClientOpen, setCreateClientOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [technicianNotes, setTechnicianNotes] = useState<string>("");
-  const [technicianNotes, setTechnicianNotes] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
