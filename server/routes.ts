@@ -3,7 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
+import OpenAI from "openai";
 import { emailService } from "./email-service";
+
+// OpenAI konfiguracija za prepoznavanje teksta sa slika
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
 import { excelService } from "./excel-service";
 import { infobipSms } from "./infobip-sms";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
@@ -3822,6 +3828,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: "Greška pri proveri statusa Infobip platforme",
         details: error.message 
+      });
+    }
+  });
+
+  // API endpoint za prepoznavanje nalepnica uređaja
+  app.post("/api/scan-appliance-label", async (req, res) => {
+    try {
+      // Proveravamo da li je korisnik ulogovan i da li je serviser
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Molimo da se prijavite" 
+        });
+      }
+
+      if (req.user?.role !== "technician") {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Samo serviseri mogu koristiti ovu funkcionalnost" 
+        });
+      }
+
+      const { image, mimeType } = req.body;
+      
+      if (!image) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Nedostaje slika" 
+        });
+      }
+
+      console.log("=== PREPOZNAVANJE NALEPNICE UREĐAJA ===");
+      console.log("Korisnik:", req.user?.fullName);
+      console.log("Tip slike:", mimeType);
+      
+      // Pozivamo OpenAI Vision API za prepoznavanje teksta
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // gpt-4o je najnoviji model sa podrškom za slike
+        messages: [
+          {
+            role: "system",
+            content: `Ti si ekspert za prepoznavanje nalepnica i oznaka na kućnim aparatima. Tvoj zadatak je da iz slike nalepnice prepoznaš sledeće informacije:
+            
+            1. Model uređaja (obično kombinacija slova i brojeva)
+            2. Serijski broj (Serial Number, S/N, SN)
+            3. Proizvođač/brend (Bosch, Samsung, LG, Gorenje, itd.)
+            
+            Odgovori SAMO JSON formatom:
+            {
+              "model": "prepoznati model ili null",
+              "serialNumber": "prepoznati serijski broj ili null", 
+              "manufacturer": "prepoznati proizvođač ili null",
+              "confidence": broj_između_0_i_1,
+              "rawText": "sav prepoznati tekst"
+            }
+            
+            Pravila:
+            - Budi precizan i konzervativniji u prepoznavanju
+            - Ako nisi siguran, stavi null umesto pogrešne informacije
+            - Confidence treba da odražava tvoju sigurnost u prepoznavanje
+            - U rawText stavi sav tekst koji si prepoznao sa nalepnice`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Molim te prepoznaj informacije sa ove nalepnice kućnog aparata:"
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${mimeType};base64,${image}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500,
+        response_format: { type: "json_object" }
+      });
+
+      const result = response.choices[0].message.content;
+      
+      if (!result) {
+        return res.status(500).json({ 
+          success: false, 
+          message: "Greška pri prepoznavanju nalepnice" 
+        });
+      }
+
+      const parsedResult = JSON.parse(result);
+      
+      console.log("OpenAI rezultat:", parsedResult);
+      
+      // Validiramo rezultat
+      if (parsedResult.confidence < 0.3) {
+        return res.json({
+          success: false,
+          message: "Nije moguće pouzdano prepoznati informacije sa nalepnice. Molimo pokušajte sa jasnijom slikom."
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          model: parsedResult.model,
+          serialNumber: parsedResult.serialNumber,
+          manufacturer: parsedResult.manufacturer,
+          confidence: parsedResult.confidence,
+          rawText: parsedResult.rawText
+        }
+      });
+
+    } catch (error) {
+      console.error("Greška pri prepoznavanju nalepnice:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Došlo je do greške pri prepoznavanju nalepnice" 
       });
     }
   });

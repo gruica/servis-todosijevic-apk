@@ -402,16 +402,16 @@ export function registerBusinessPartnerRoutes(app: Express) {
       const appliance = await storage.getAppliance(service.applianceId);
       const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
       const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+      const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
       
       // Vraćanje kompletnih podataka
       res.json({
         ...service,
         client,
-        appliance: appliance ? {
-          ...appliance,
-          category,
-          manufacturer
-        } : null
+        appliance,
+        category,
+        manufacturer,
+        technician
       });
     } catch (error: unknown) {
       console.error("Greška pri dobijanju detalja servisa:", error);
