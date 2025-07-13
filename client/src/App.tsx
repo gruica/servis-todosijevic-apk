@@ -21,6 +21,7 @@ import Customer from "@/pages/customer";
 import Business from "@/pages/business";
 import CustomerServiceCreate from "@/pages/customer/services/new";
 import BusinessServiceCreate from "@/pages/business/services/new";
+import AdminServiceCreate from "@/pages/admin/services/new";
 import AdminSMS from "@/pages/admin/sms-settings";
 import AdminUserVerification from "@/pages/admin/user-verification";
 import AdminWebsiteSecurity from "@/pages/admin/website-security";
@@ -92,6 +93,7 @@ function App() {
         <Route path="/customer/new-service" component={CustomerServiceCreate} />
         <Route path="/business" component={isMobile || isMobileDevice ? BusinessServicesMobile : Business} />
         <Route path="/business/new-service" component={BusinessServiceCreate} />
+        <Route path="/services/new" component={AdminServiceCreate} />
       </Switch>
       <Toaster />
     </QueryClientProvider>
