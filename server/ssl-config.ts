@@ -133,10 +133,12 @@ export function configureSSL(app: Express, config: SSLConfig = defaultSSLConfig)
   app.use(compression());
   console.log('[SSL] Kompresija aktivirana');
 
-  // Rate limiting
-  if (config.enableRateLimit) {
+  // Rate limiting (isključeno za development)
+  if (config.enableRateLimit && process.env.NODE_ENV !== 'development') {
     app.use(getRateLimitConfig(config));
     console.log('[SSL] Rate limiting aktiviran');
+  } else {
+    console.log('[SSL] Rate limiting isključen za development');
   }
 
   // Custom security headers
