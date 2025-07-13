@@ -174,6 +174,16 @@ export default function HomePage() {
           </div>
           <div className="mt-6 text-center text-blue-200">
             <p>&copy; {new Date().getFullYear()} Frigo Sistem Todosijević. Sva prava zadržana.</p>
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/email-verification-demo")}
+                className="text-blue-200 border-blue-200 hover:bg-blue-800"
+              >
+                Test Email Verifikacije
+              </Button>
+            </div>
           </div>
         </div>
       </footer>
