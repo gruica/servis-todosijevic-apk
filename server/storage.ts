@@ -93,8 +93,26 @@ export interface IStorage {
   updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;
   getApplianceStats(): Promise<{categoryId: number, count: number}[]>;
   
-  // Service methods - optimizirana verzija
+  // Service methods - optimizirana verzija sa paginacijom
   getAllServices(limit?: number): Promise<Service[]>;
+  getServicesPaginated(options: {
+    page?: number;
+    limit?: number;
+    status?: ServiceStatus;
+    technicianId?: number;
+    clientId?: number;
+    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
+    sortOrder?: 'asc' | 'desc';
+    search?: string;
+  }): Promise<{
+    services: Service[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }>;
   getService(id: number): Promise<Service | undefined>;
   getServicesByClient(clientId: number): Promise<Service[]>;
   getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]>;
@@ -755,6 +773,86 @@ export class MemStorage implements IStorage {
     return Array.from(this.services.values())
       .slice(-limit)
       .reverse();
+  }
+
+  // Paginacija za MemStorage (jednostavna implementacija)
+  async getServicesPaginated(options: {
+    page?: number;
+    limit?: number;
+    status?: ServiceStatus;
+    technicianId?: number;
+    clientId?: number;
+    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
+    sortOrder?: 'asc' | 'desc';
+    search?: string;
+  }): Promise<{
+    services: Service[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }> {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      technicianId,
+      clientId,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search
+    } = options;
+
+    let allServices = Array.from(this.services.values());
+
+    // Filtriranje
+    if (status) {
+      allServices = allServices.filter(service => service.status === status);
+    }
+    
+    if (technicianId) {
+      allServices = allServices.filter(service => service.technicianId === technicianId);
+    }
+    
+    if (clientId) {
+      allServices = allServices.filter(service => service.clientId === clientId);
+    }
+    
+    if (search) {
+      allServices = allServices.filter(service => 
+        service.description?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Sortiranje
+    allServices.sort((a, b) => {
+      const aValue = a[sortBy] || '';
+      const bValue = b[sortBy] || '';
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    // Paginacija
+    const total = allServices.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const services = allServices.slice(offset, offset + limit);
+
+    return {
+      services,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    };
   }
   
   // Business partner methods
@@ -1932,6 +2030,144 @@ export class DatabaseStorage implements IStorage {
       .from(services)
       .orderBy(desc(services.createdAt))
       .limit(limit);
+  }
+
+  // Paginacija metoda za servise
+  async getServicesPaginated(options: {
+    page?: number;
+    limit?: number;
+    status?: ServiceStatus;
+    technicianId?: number;
+    clientId?: number;
+    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
+    sortOrder?: 'asc' | 'desc';
+    search?: string;
+  }): Promise<{
+    services: Service[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }> {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      technicianId,
+      clientId,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search
+    } = options;
+
+    try {
+      console.log(`Dohvatanje servisa sa paginacijom: page=${page}, limit=${limit}, status=${status || 'all'}`);
+
+      // Osnovni query sa join-ovima za validaciju
+      let baseQuery = db
+        .select({
+          id: services.id,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          technicianId: services.technicianId,
+          description: services.description,
+          status: services.status,
+          createdAt: services.createdAt,
+          scheduledDate: services.scheduledDate,
+          completedDate: services.completedDate,
+          technicianNotes: services.technicianNotes,
+          cost: services.cost,
+          usedParts: services.usedParts,
+          machineNotes: services.machineNotes,
+          isCompletelyFixed: services.isCompletelyFixed,
+          businessPartnerId: services.businessPartnerId,
+          partnerCompanyName: services.partnerCompanyName
+        })
+        .from(services)
+        .innerJoin(clients, eq(services.clientId, clients.id))
+        .innerJoin(appliances, eq(services.applianceId, appliances.id));
+
+      // Kreiranje WHERE uslova
+      const whereConditions = [];
+      
+      if (status) {
+        whereConditions.push(eq(services.status, status));
+      }
+      
+      if (technicianId) {
+        whereConditions.push(eq(services.technicianId, technicianId));
+      }
+      
+      if (clientId) {
+        whereConditions.push(eq(services.clientId, clientId));
+      }
+      
+      if (search) {
+        whereConditions.push(sql`${services.description} ILIKE ${'%' + search + '%'}`);
+      }
+
+      // Dodavanje WHERE uslova
+      if (whereConditions.length > 0) {
+        baseQuery = baseQuery.where(
+          whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
+        );
+      }
+
+      // Sorting
+      const sortColumn = sortBy === 'createdAt' ? services.createdAt :
+                        sortBy === 'scheduledDate' ? services.scheduledDate :
+                        services.completedDate;
+      
+      const sortDirection = sortOrder === 'asc' ? sortColumn : desc(sortColumn);
+      
+      // Count query za ukupan broj rezultata
+      const countQuery = db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(services)
+        .innerJoin(clients, eq(services.clientId, clients.id))
+        .innerJoin(appliances, eq(services.applianceId, appliances.id));
+
+      // Dodavanje istih WHERE uslova za count
+      if (whereConditions.length > 0) {
+        countQuery.where(
+          whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
+        );
+      }
+
+      // Izvršavanje count upita
+      const [{ count: total }] = await countQuery;
+
+      // Glavna paginacija query
+      const offset = (page - 1) * limit;
+      const servicesQuery = baseQuery
+        .orderBy(sortDirection)
+        .limit(limit)
+        .offset(offset);
+
+      const servicesData = await servicesQuery;
+
+      // Kalkulacija metapodataka
+      const totalPages = Math.ceil(total / limit);
+      const hasNext = page < totalPages;
+      const hasPrev = page > 1;
+
+      console.log(`Paginacija: ${servicesData.length} servisa na stranici ${page} od ${totalPages} (ukupno ${total})`);
+
+      return {
+        services: servicesData,
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNext,
+        hasPrev
+      };
+    } catch (error) {
+      console.error("Greška pri paginaciji servisa:", error);
+      throw error;
+    }
   }
   
   // Business Partner methods

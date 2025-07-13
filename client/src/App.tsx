@@ -62,6 +62,7 @@ function Router() {
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
       <Route path="/system-diagnostics" component={SystemDiagnostics} />
       <Route path="/services-debug" component={React.lazy(() => import('@/pages/services-debug'))} />
+      <Route path="/services-pagination-test" component={React.lazy(() => import('@/pages/services-pagination-test'))} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />

@@ -685,6 +685,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
+
+  // Novi paginacijski endpoint za servise
+  app.get("/api/services/paginated", async (req, res) => {
+    try {
+      const startTime = Date.now();
+      
+      // Parsiranje query parametara
+      const {
+        page = "1",
+        limit = "20",
+        status,
+        technicianId,
+        clientId,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+        search
+      } = req.query;
+
+      // Validacija parametara
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      
+      if (isNaN(pageNum) || pageNum < 1) {
+        return res.status(400).json({ error: "Neispravna stranica" });
+      }
+      
+      if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+        return res.status(400).json({ error: "Neispravna veličina stranice (1-100)" });
+      }
+
+      // Validacija status-a
+      let validStatus = undefined;
+      if (status && typeof status === 'string' && status !== 'all') {
+        try {
+          validStatus = serviceStatusEnum.parse(status);
+        } catch {
+          return res.status(400).json({ error: "Nevažeći status servisa" });
+        }
+      }
+
+      // Validacija technicianId
+      let technicianIdNum = undefined;
+      if (technicianId && typeof technicianId === 'string') {
+        const parsed = parseInt(technicianId);
+        if (isNaN(parsed)) {
+          return res.status(400).json({ error: "Nevažeći ID tehničara" });
+        }
+        technicianIdNum = parsed;
+      }
+
+      // Validacija clientId
+      let clientIdNum = undefined;
+      if (clientId && typeof clientId === 'string') {
+        const parsed = parseInt(clientId);
+        if (isNaN(parsed)) {
+          return res.status(400).json({ error: "Nevažeći ID klijenta" });
+        }
+        clientIdNum = parsed;
+      }
+
+      // Validacija sortBy
+      const validSortBy = ['createdAt', 'scheduledDate', 'completedDate'];
+      if (!validSortBy.includes(sortBy as string)) {
+        return res.status(400).json({ error: "Neispravno sortiranje" });
+      }
+
+      // Validacija sortOrder
+      if (sortOrder !== 'asc' && sortOrder !== 'desc') {
+        return res.status(400).json({ error: "Neispravni redosled sortiranja" });
+      }
+
+      // Poziv paginacije metode
+      const result = await storage.getServicesPaginated({
+        page: pageNum,
+        limit: limitNum,
+        status: validStatus,
+        technicianId: technicianIdNum,
+        clientId: clientIdNum,
+        sortBy: sortBy as 'createdAt' | 'scheduledDate' | 'completedDate',
+        sortOrder: sortOrder as 'asc' | 'desc',
+        search: search as string
+      });
+
+      const endTime = Date.now();
+      const executionTime = endTime - startTime;
+
+      console.log(`Paginacija API: ${result.services.length} servisa na stranici ${result.page}/${result.totalPages} (${executionTime}ms)`);
+
+      // Dodavanje metapodataka u zaglavlja
+      res.setHeader('X-Execution-Time', executionTime.toString());
+      res.setHeader('X-Total-Count', result.total.toString());
+      res.setHeader('X-Total-Pages', result.totalPages.toString());
+
+      res.json(result);
+    } catch (error) {
+      console.error("Greška pri paginaciji servisa:", error);
+      res.status(500).json({ error: "Greška pri paginaciji servisa" });
+    }
+  });
   
   // Business Partner API Endpoints
   app.get("/api/business/services", async (req, res) => {
