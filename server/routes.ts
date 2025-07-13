@@ -17,6 +17,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
+import { emailVerificationService } from "./email-verification";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -71,6 +72,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/security/bot-challenge", getBotChallenge);
   app.post("/api/security/verify-bot", verifyBotAnswer);
   app.get("/api/security/rate-limit-status", getRateLimitStatus);
+  
+  // Email verification routes
+  app.post("/api/email/send-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email adresa je obavezna." 
+        });
+      }
+
+      const result = await emailVerificationService.sendVerificationEmail(email);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Greška pri slanju verifikacijskog email-a:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Greška servera pri slanju verifikacijskog koda." 
+      });
+    }
+  });
+
+  app.post("/api/email/verify-code", async (req, res) => {
+    try {
+      const { email, code } = req.body;
+      
+      if (!email || !code) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email adresa i kod su obavezni." 
+        });
+      }
+
+      const result = await emailVerificationService.verifyEmail(email, code);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Greška pri verifikaciji email-a:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Greška servera pri verifikaciji koda." 
+      });
+    }
+  });
+
+  app.get("/api/email/verify-status/:email", async (req, res) => {
+    try {
+      const { email } = req.params;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email adresa je obavezna." 
+        });
+      }
+
+      const isVerified = await emailVerificationService.isEmailVerified(email);
+      
+      res.json({ 
+        success: true, 
+        isVerified 
+      });
+    } catch (error) {
+      console.error("Greška pri proveri verifikacije:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Greška servera pri proveri verifikacije." 
+      });
+    }
+  });
   
   // Registruj rute za poslovne partnere
   registerBusinessPartnerRoutes(app);

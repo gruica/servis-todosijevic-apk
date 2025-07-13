@@ -488,6 +488,28 @@ export const insertBotVerificationSchema = createInsertSchema(botVerification).p
 export type InsertBotVerification = z.infer<typeof insertBotVerificationSchema>;
 export type BotVerification = typeof botVerification.$inferSelect;
 
+// Tabela za email verifikaciju
+export const emailVerification = pgTable("email_verification", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  verificationCode: text("verification_code").notNull(), // Nasumični kod (6 cifara)
+  used: boolean("used").default(false).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(), // Važi 15 minuta
+});
+
+export const insertEmailVerificationSchema = createInsertSchema(emailVerification).pick({
+  email: true,
+  verificationCode: true,
+  used: true,
+  attempts: true,
+  expiresAt: true
+});
+
+export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
+export type EmailVerification = typeof emailVerification.$inferSelect;
+
 // Dodatne relacije
 export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
   user: one(users, {

@@ -11,10 +11,11 @@ import {
   MaintenanceAlert, InsertMaintenanceAlert,
   RequestTracking, InsertRequestTracking,
   BotVerification, InsertBotVerification,
+  EmailVerification, InsertEmailVerification,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
-  requestTracking, botVerification
+  requestTracking, botVerification, emailVerification
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -122,6 +123,13 @@ export interface IStorage {
   createBotVerification(verification: InsertBotVerification): Promise<BotVerification>;
   updateBotVerification(sessionId: string, update: Partial<BotVerification>): Promise<BotVerification | undefined>;
   cleanupExpiredBotVerifications(): Promise<void>;
+  
+  // Email verification methods
+  getEmailVerification(email: string): Promise<EmailVerification | undefined>;
+  createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification>;
+  updateEmailVerification(id: number, update: Partial<EmailVerification>): Promise<EmailVerification | undefined>;
+  validateEmailVerification(email: string, code: string): Promise<boolean>;
+  cleanupExpiredEmailVerifications(): Promise<void>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -1119,6 +1127,37 @@ export class MemStorage implements IStorage {
   }
 
   async cleanupExpiredBotVerifications(): Promise<void> {
+    // No-op for in-memory implementation
+  }
+
+  // Email verification methods (stubbed for MemStorage)
+  async getEmailVerification(email: string): Promise<EmailVerification | undefined> {
+    return undefined; // In-memory implementation doesn't support email verification
+  }
+
+  async createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification> {
+    // Create a mock email verification object
+    const mockVerification: EmailVerification = {
+      id: 1,
+      email: verification.email,
+      verificationCode: verification.verificationCode,
+      used: false,
+      attempts: 0,
+      expiresAt: verification.expiresAt,
+      createdAt: new Date()
+    };
+    return mockVerification;
+  }
+
+  async updateEmailVerification(id: number, update: Partial<EmailVerification>): Promise<EmailVerification | undefined> {
+    return undefined; // In-memory implementation doesn't support email verification updates
+  }
+
+  async validateEmailVerification(email: string, code: string): Promise<boolean> {
+    return true; // In-memory implementation always returns true for testing
+  }
+
+  async cleanupExpiredEmailVerifications(): Promise<void> {
     // No-op for in-memory implementation
   }
 }
@@ -2373,6 +2412,78 @@ export class DatabaseStorage implements IStorage {
         .where(lte(botVerification.expiresAt, now));
     } catch (error) {
       console.error('Greška pri čišćenju isteklih bot verifikacija:', error);
+    }
+  }
+
+  // Email verification methods
+  async getEmailVerification(email: string): Promise<EmailVerification | undefined> {
+    try {
+      const [verification] = await db
+        .select()
+        .from(emailVerification)
+        .where(and(
+          eq(emailVerification.email, email),
+          eq(emailVerification.used, false),
+          gte(emailVerification.expiresAt, new Date())
+        ))
+        .orderBy(desc(emailVerification.createdAt));
+      return verification;
+    } catch (error) {
+      console.error('Greška pri dohvatanju email verifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async createEmailVerification(verification: InsertEmailVerification): Promise<EmailVerification> {
+    const [newVerification] = await db
+      .insert(emailVerification)
+      .values(verification)
+      .returning();
+    return newVerification;
+  }
+
+  async updateEmailVerification(id: number, update: Partial<EmailVerification>): Promise<EmailVerification | undefined> {
+    try {
+      const [updatedVerification] = await db
+        .update(emailVerification)
+        .set(update)
+        .where(eq(emailVerification.id, id))
+        .returning();
+      return updatedVerification;
+    } catch (error) {
+      console.error('Greška pri ažuriranju email verifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async validateEmailVerification(email: string, code: string): Promise<boolean> {
+    try {
+      const verification = await this.getEmailVerification(email);
+      if (!verification) return false;
+      
+      if (verification.verificationCode === code) {
+        await this.updateEmailVerification(verification.id, { used: true });
+        return true;
+      } else {
+        await this.updateEmailVerification(verification.id, { 
+          attempts: verification.attempts + 1 
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Greška pri validaciji email verifikacije:', error);
+      return false;
+    }
+  }
+
+  async cleanupExpiredEmailVerifications(): Promise<void> {
+    try {
+      const now = new Date();
+      await db
+        .delete(emailVerification)
+        .where(lte(emailVerification.expiresAt, now));
+    } catch (error) {
+      console.error('Greška pri čišćenju isteklih email verifikacija:', error);
     }
   }
 }

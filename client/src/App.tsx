@@ -47,6 +47,7 @@ import HomePage from "@/pages/home-page";
 import DiagnosticsPage from "@/pages/diagnostics";
 import DiagnosticServicesPage from "@/pages/diagnostic-services";
 import SystemDiagnostics from "@/pages/system-diagnostics";
+import EmailVerificationDemo from "@/pages/email-verification-demo";
 
 function Router() {
   return (
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
       <Route path="/system-diagnostics" component={SystemDiagnostics} />
       <Route path="/services-debug" component={React.lazy(() => import('@/pages/services-debug'))} />
+      <Route path="/email-verification-demo" component={EmailVerificationDemo} />
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
