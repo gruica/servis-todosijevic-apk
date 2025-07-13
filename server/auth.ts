@@ -92,7 +92,7 @@ export function setupAuth(app: Express) {
           
           // Dodatna provera: da li je korisnik verifikovan
           // Administratori i poslovni partneri mogu da se prijave uvek, ostali korisnici moraju biti verifikovani
-          if (user.role !== 'administrator' && user.role !== 'poslovni_partner' && !user.isVerified) {
+          if (user.role !== 'admin' && user.role !== 'business_partner' && !user.isVerified) {
             console.log(`User ${username} is not verified`);
             return done(null, false, { message: 'Vaš nalog nije još verifikovan od strane administratora. Molimo sačekajte potvrdu.' });
           }
@@ -186,12 +186,12 @@ export function setupAuth(app: Express) {
         companyName: req.body.companyName || null,
         companyId: req.body.companyId || null,
         technicianId: req.body.technicianId || null,
-        isVerified: req.body.role === 'administrator', 
+        isVerified: req.body.role === 'admin', 
         registeredAt: new Date().toISOString()
       };
       
       // Posebni slučaj za poslovne partnere
-      if (req.body.role === 'poslovni_partner') {
+      if (req.body.role === 'business') {
         console.log("Registracija poslovnog partnera - obrađeni podaci:", {
           username: userData.username,
           fullName: userData.fullName,
@@ -213,7 +213,7 @@ export function setupAuth(app: Express) {
       console.log(`Korisnik ${user.username} registrovan sa ulogom ${user.role}, status verifikacije: ${user.isVerified}`);
       
       // Administrator može odmah da se prijavi, ostali korisnici dobijaju poruku o potrebnoj verifikaciji
-      if (user.role === 'administrator') {
+      if (user.role === 'admin') {
         req.login(user, (err) => {
           if (err) return next(err);
           res.status(201).json({
@@ -224,7 +224,7 @@ export function setupAuth(app: Express) {
       } else {
         // Za obične korisnike vraćamo samo podatke bez prijave
         // Posebna poruka za poslovne partnere
-        if (user.role === 'poslovni_partner') {
+        if (user.role === 'business') {
           res.status(201).json({
             ...userWithoutPassword,
             message: "Registracija uspešna! Vaš zahtev je prosleđen administratoru na pregled. Bićete obavešteni putem email-a kada je nalog aktiviran."
@@ -319,7 +319,7 @@ export function setupAuth(app: Express) {
       }
       
       // Provera da li je prijavljeni korisnik administrator
-      if (req.user.role !== 'administrator') {
+      if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "Pristup zabranjen. Potrebna je administratorska uloga." });
       }
       
@@ -347,7 +347,7 @@ export function setupAuth(app: Express) {
       }
       
       // Provera da li je prijavljeni korisnik administrator
-      if (req.user.role !== 'administrator') {
+      if (req.user.role !== 'admin') {
         return res.status(403).json({ error: "Pristup zabranjen. Potrebna je administratorska uloga." });
       }
       

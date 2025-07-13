@@ -62,7 +62,7 @@ export default function NewBusinessClient() {
   // Mutacija za kreiranje klijenta
   const createClientMutation = useMutation({
     mutationFn: async (values: NewClientFormValues) => {
-      const response = await apiRequest("POST", "/api/business/clients", values);
+      const response = await apiRequest("POST", "/api/clients", values);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);

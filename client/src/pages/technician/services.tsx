@@ -2,12 +2,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Service, ServiceStatus } from "@shared/schema";
-import { useMobile, useMobileEnvironment } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth";
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
-import MobileAppLayout from "@/components/mobile/MobileAppLayout";
-import MobileServiceManager from "@/components/mobile/MobileServiceManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Camera, Plus, RefreshCw } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin } from "lucide-react";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 import { CallClientButton } from "@/components/ui/call-client-button";
-import { callPhoneNumber, openMapWithAddress } from "@/lib/mobile-utils";
-import { ApplianceLabelScanner } from "@/components/technician/ApplianceLabelScanner";
+import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 
 type TechnicianService = Service & {
   client?: {
@@ -48,9 +43,9 @@ type TechnicianService = Service & {
 export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
-  const isMobile = useMobile();
-  const isMobileDevice = useMobileEnvironment();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
+  // Uvek proveriti mobilno okruženje (mobile web i APK)
+  const isMobileDevice = isMobileEnvironment();
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -60,33 +55,6 @@ export default function TechnicianServices() {
   const [machineNotes, setMachineNotes] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [selectedServiceForScanner, setSelectedServiceForScanner] = useState<TechnicianService | null>(null);
-
-  // Handler funkcija za prepoznavanje nalepnica
-  const handleApplianceScanned = (data: { 
-    model?: string; 
-    serialNumber?: string; 
-    manufacturer?: string; 
-    confidence: number; 
-    rawText?: string; 
-  }) => {
-    if (!selectedServiceForScanner) return;
-    
-    toast({
-      title: "Podaci prepoznati",
-      description: `Model: ${data.model || 'Nije prepoznat'}, Serijski broj: ${data.serialNumber || 'Nije prepoznat'}`,
-      variant: "default"
-    });
-    
-    console.log("Prepoznati podaci:", data);
-    
-    // Ovde možete dodati logiku za ažuriranje servisa sa prepoznatim podacima
-    // Na primer, možete poslati zahtev za ažuriranje appliance informacija
-    
-    setScannerOpen(false);
-    setSelectedServiceForScanner(null);
-  };
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -364,23 +332,9 @@ export default function TechnicianServices() {
                             <CardTitle className="text-lg">
                               {service.client?.fullName}
                             </CardTitle>
-                            <div className="flex items-center gap-2">
-                              <CardDescription>
-                                {service.appliance?.category?.name} {service.appliance?.model}
-                              </CardDescription>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedServiceForScanner(service);
-                                  setScannerOpen(true);
-                                }}
-                                className="text-xs h-6 px-2"
-                              >
-                                <Camera className="h-3 w-3 mr-1" />
-                                Skeniraj
-                              </Button>
-                            </div>
+                            <CardDescription>
+                              {service.appliance?.category?.name} {service.appliance?.model}
+                            </CardDescription>
                           </div>
                           <div>{getStatusBadge(service.status)}</div>
                         </div>
@@ -597,14 +551,6 @@ export default function TechnicianServices() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Appliance Label Scanner */}
-      <ApplianceLabelScanner 
-        open={scannerOpen}
-        onOpenChange={setScannerOpen}
-        onDataScanned={handleApplianceScanned}
-        title="Skeniraj nalepnicu uređaja"
-      />
     </div>
   );
 }

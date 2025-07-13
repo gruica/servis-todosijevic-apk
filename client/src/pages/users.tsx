@@ -77,10 +77,8 @@ import { Badge } from "@/components/ui/badge";
 
 // Define user roles for dropdown
 const userRoles = [
-  { value: "administrator", label: "Administrator" },
-  { value: "serviser", label: "Serviser" },
-  { value: "klijent", label: "Klijent" },
-  { value: "poslovni_partner", label: "Poslovni partner" }
+  { value: "admin", label: "Administrator" },
+  { value: "technician", label: "Serviser" }
 ];
 
 // Define the form schema for user creation/editing
@@ -89,7 +87,7 @@ const userFormSchema = z.object({
   username: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
-  role: z.enum(["administrator", "serviser", "klijent", "poslovni_partner"], { 
+  role: z.enum(["admin", "technician"], { 
     required_error: "Uloga je obavezna"
   }),
   technicianId: z.number().nullable().optional()
@@ -108,7 +106,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  role: "administrator" | "serviser" | "klijent" | "poslovni_partner";
+  role: "admin" | "technician";
   technicianId: number | null;
 }
 
@@ -157,7 +155,7 @@ export default function Users() {
       username: "",
       password: "",
       fullName: "",
-      role: "administrator",
+      role: "admin",
       technicianId: null
     },
   });
@@ -277,7 +275,7 @@ export default function Users() {
       username: "",
       password: "",
       fullName: "",
-      role: "administrator",
+      role: "admin",
       technicianId: null
     });
     setIsFormOpen(true);
@@ -297,7 +295,7 @@ export default function Users() {
   );
 
   // Check if current user has permission to access this page
-  if (!user || user.role !== "administrator") {
+  if (!user || user.role !== "admin") {
     return (
       <div className="container mx-auto py-8 px-4">
         <Card>
@@ -370,19 +368,8 @@ export default function Users() {
                     <TableCell className="font-medium">{user.fullName}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>
-                      <Badge variant={
-                        user.role === "administrator" ? "default" : 
-                        user.role === "serviser" ? "secondary" :
-                        user.role === "poslovni_partner" ? "outline" :
-                        "secondary"
-                      }>
-                        {
-                          user.role === "administrator" ? "Administrator" :
-                          user.role === "serviser" ? "Serviser" :
-                          user.role === "klijent" ? "Klijent" :
-                          user.role === "poslovni_partner" ? "Poslovni partner" :
-                          user.role
-                        }
+                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                        {user.role === "admin" ? "Administrator" : "Serviser"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -525,7 +512,7 @@ export default function Users() {
               />
 
               {/* Conditionally show technician selection if role is technician */}
-              {watchRole === "serviser" && (
+              {watchRole === "technician" && (
                 <FormField
                   control={form.control}
                   name="technicianId"
@@ -582,4 +569,3 @@ export default function Users() {
     </div>
   );
 }
-

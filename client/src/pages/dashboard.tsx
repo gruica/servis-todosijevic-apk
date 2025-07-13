@@ -87,8 +87,13 @@ export default function Dashboard() {
       // Osvežimo statistiku kada se prikaže dashboard
       refetchStats();
       
-      // Ne postavljamo automatsko osvežavanje jer može da prouzrokuje nestabilnost
-      // Korisnik može ručno osvežiti stranicu ako je potrebno
+      // Postavimo interval za osvežavanje na svakih 5 sekundi
+      const intervalId = setInterval(() => {
+        refetchStats();
+      }, 5000);
+      
+      // Čistimo interval pri demontiranju
+      return () => clearInterval(intervalId);
     } catch (err) {
       console.error("Greška u useEffect:", err);
     }
@@ -135,12 +140,6 @@ export default function Dashboard() {
                   <p className="text-blue-600 text-sm">Koristite brze linkove za pristup administrativnim funkcijama</p>
                 </div>
                 <div className="flex gap-2">
-                  <Link href="/services/new">
-                    <Button size="sm" className="text-sm bg-green-600 hover:bg-green-700 text-white">
-                      <span className="material-symbols-outlined mr-2">add</span>
-                      Napravi servis
-                    </Button>
-                  </Link>
                   <Link href="/admin/user-verification">
                     <Button size="sm" className="text-sm bg-blue-600 hover:bg-blue-700 text-white">
                       <span className="material-symbols-outlined mr-2">verified_user</span>

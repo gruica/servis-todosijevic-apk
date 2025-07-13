@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode } from "react";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useLocation } from "wouter";
@@ -13,29 +13,14 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-  
+  // Stanje mobilnog sidebar-a
   const toggleSidebar = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-  
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('hidden');
+      sidebar.classList.toggle('block');
+    }
   };
   
   if (isLoading) {
@@ -46,8 +31,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
   
-  // Proveri da li je korisnik admin ili administrator
-  if (!user || (user.role !== "admin" && user.role !== "administrator")) {
+  // Proveri da li je korisnik admin
+  if (!user || user.role !== "admin") {
     return <Redirect to="/auth" />;
   }
   
@@ -56,20 +41,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <Header toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar isMobileOpen={isMobileMenuOpen} closeMobileMenu={closeMobileMenu} />
+        <Sidebar isMobileOpen={false} closeMobileMenu={() => {}} />
         
-        {/* Mobilni overlay */}
-        {isMobile && isMobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
-            onClick={closeMobileMenu}
-          />
-        )}
-        
-        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10 px-4 md:px-6">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10">
+          {children}
         </main>
       </div>
     </div>

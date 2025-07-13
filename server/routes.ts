@@ -3,15 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
-import OpenAI from "openai";
 import { emailService } from "./email-service";
-
-// OpenAI konfiguracija za prepoznavanje teksta sa slika
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-}) : null;
 import { excelService } from "./excel-service";
-import { infobipSms } from "./infobip-sms";
+import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
+import { smsService } from "./sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -97,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:id/details", async (req, res) => {
     try {
       // Provera autentifikacije - samo admin može da vidi detalje klijenta
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(401).json({ error: "Nemate dozvolu za pristup detaljima klijenta" });
       }
       
@@ -685,105 +680,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
-
-  // Novi paginacijski endpoint za servise
-  app.get("/api/services/paginated", async (req, res) => {
-    try {
-      const startTime = Date.now();
-      
-      // Parsiranje query parametara
-      const {
-        page = "1",
-        limit = "20",
-        status,
-        technicianId,
-        clientId,
-        sortBy = "createdAt",
-        sortOrder = "desc",
-        search
-      } = req.query;
-
-      // Validacija parametara
-      const pageNum = parseInt(page as string);
-      const limitNum = parseInt(limit as string);
-      
-      if (isNaN(pageNum) || pageNum < 1) {
-        return res.status(400).json({ error: "Neispravna stranica" });
-      }
-      
-      if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-        return res.status(400).json({ error: "Neispravna veličina stranice (1-100)" });
-      }
-
-      // Validacija status-a
-      let validStatus = undefined;
-      if (status && typeof status === 'string' && status !== 'all') {
-        try {
-          validStatus = serviceStatusEnum.parse(status);
-        } catch {
-          return res.status(400).json({ error: "Nevažeći status servisa" });
-        }
-      }
-
-      // Validacija technicianId
-      let technicianIdNum = undefined;
-      if (technicianId && typeof technicianId === 'string') {
-        const parsed = parseInt(technicianId);
-        if (isNaN(parsed)) {
-          return res.status(400).json({ error: "Nevažeći ID tehničara" });
-        }
-        technicianIdNum = parsed;
-      }
-
-      // Validacija clientId
-      let clientIdNum = undefined;
-      if (clientId && typeof clientId === 'string') {
-        const parsed = parseInt(clientId);
-        if (isNaN(parsed)) {
-          return res.status(400).json({ error: "Nevažeći ID klijenta" });
-        }
-        clientIdNum = parsed;
-      }
-
-      // Validacija sortBy
-      const validSortBy = ['createdAt', 'scheduledDate', 'completedDate'];
-      if (!validSortBy.includes(sortBy as string)) {
-        return res.status(400).json({ error: "Neispravno sortiranje" });
-      }
-
-      // Validacija sortOrder
-      if (sortOrder !== 'asc' && sortOrder !== 'desc') {
-        return res.status(400).json({ error: "Neispravni redosled sortiranja" });
-      }
-
-      // Poziv paginacije metode
-      const result = await storage.getServicesPaginated({
-        page: pageNum,
-        limit: limitNum,
-        status: validStatus,
-        technicianId: technicianIdNum,
-        clientId: clientIdNum,
-        sortBy: sortBy as 'createdAt' | 'scheduledDate' | 'completedDate',
-        sortOrder: sortOrder as 'asc' | 'desc',
-        search: search as string
-      });
-
-      const endTime = Date.now();
-      const executionTime = endTime - startTime;
-
-      console.log(`Paginacija API: ${result.services.length} servisa na stranici ${result.page}/${result.totalPages} (${executionTime}ms)`);
-
-      // Dodavanje metapodataka u zaglavlja
-      res.setHeader('X-Execution-Time', executionTime.toString());
-      res.setHeader('X-Total-Count', result.total.toString());
-      res.setHeader('X-Total-Pages', result.totalPages.toString());
-
-      res.json(result);
-    } catch (error) {
-      console.error("Greška pri paginaciji servisa:", error);
-      res.status(500).json({ error: "Greška pri paginaciji servisa" });
-    }
-  });
   
   // Business Partner API Endpoints
   app.get("/api/business/services", async (req, res) => {
@@ -863,38 +759,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API endpoint za dobijanje servisa sa detaljima (klijent, serviser, uređaj)
-  app.get("/api/services-with-details", async (req, res) => {
-    try {
-      const services = await storage.getAllServices();
-      
-      // Dodaj detalje za svaki servis
-      const servicesWithDetails = await Promise.all(
-        services.map(async (service) => {
-          const client = await storage.getClient(service.clientId);
-          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
-          const appliance = await storage.getAppliance(service.applianceId);
-          
-          return {
-            ...service,
-            client,
-            technician,
-            appliance: appliance ? {
-              category: {
-                name: appliance.category || 'Nepoznato'
-              }
-            } : null
-          };
-        })
-      );
-
-      res.json(servicesWithDetails);
-    } catch (error) {
-      console.error("Greška pri dobijanju servisa sa detaljima:", error);
-      res.status(500).json({ error: "Greška pri dobijanju servisa sa detaljima" });
-    }
-  });
-
   app.get("/api/clients/:clientId/services", async (req, res) => {
     try {
       const services = await storage.getServicesByClient(parseInt(req.params.clientId));
@@ -906,11 +770,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/services", async (req, res) => {
     try {
-      // Provera autentifikacije - samo admin može da kreira servise
-      if (!req.isAuthenticated() || (req.user?.role !== "administrator" && req.user?.role !== "admin")) {
-        return res.status(401).json({ error: "Nemate dozvolu za kreiranje servisa" });
-      }
-      
       console.log("=== KREIRANJE NOVOG SERVISA ===");
       console.log("Podaci iz frontend forme:", req.body);
       
@@ -1044,14 +903,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const partnerByUsername = await storage.getUserByUsername(usernameFormat);
             console.log(`Rezultat pretrage po korisničkom imenu ${usernameFormat}:`, partnerByUsername ? `Pronađen korisnik (uloga: ${partnerByUsername.role})` : "Nije pronađen");
             
-            if (!partnerByUsername || (partnerByUsername.role !== 'poslovni_partner')) {
+            if (!partnerByUsername || (partnerByUsername.role !== 'partner' && partnerByUsername.role !== 'business')) {
               return res.status(400).json({
                 error: "Poslovni partner ne postoji",
                 message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
               });
             }
-          } else if (partner.role !== 'poslovni_partner') {
-            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'poslovni_partner'`);
+          } else if (partner.role !== 'partner' && partner.role !== 'business') {
+            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'partner' ili 'business'`);
             
             return res.status(400).json({
               error: "Korisniku nedostaju prava",
@@ -1168,12 +1027,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         if (service.clientId) {
           const client = await storage.getClient(service.clientId);
-          const technician = service.technicianId ? 
-            await storage.getTechnician(service.technicianId) : null;
-          const technicianName = technician ? technician.fullName : "Nepoznat serviser";
-          
-          // Šaljemo obaveštenje klijentu (ako ima email)
           if (client && client.email) {
+            const technician = service.technicianId ? 
+              await storage.getTechnician(service.technicianId) : null;
+            const technicianName = technician ? technician.fullName : "Nepoznat serviser";
+            
+            // Šaljemo obaveštenje klijentu
             const statusText = STATUS_DESCRIPTIONS[service.status] || service.status;
             const clientEmailSent = await emailService.sendServiceStatusUpdate(
               client,
@@ -1194,61 +1053,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 `Poslato obaveštenje klijentu ${client.fullName} o novom servisu #${service.id} sa statusom ${service.status}`
               );
             }
-          }
-          
-          // Šaljemo obaveštenje administratorima o novom servisu
-          const adminUsers = await storage.getAllUsers();
-          const admins = adminUsers.filter(user => user.role === "administrator");
-          
-          if (admins.length > 0) {
-            const creatorInfo = req.user ? ` (kreator: ${req.user.fullName || req.user.username})` : "";
-            const appliance = await storage.getAppliance(service.applianceId);
-            const applianceInfo = appliance ? `${appliance.model} (${appliance.category})` : "Nepoznat uređaj";
             
-            await emailService.sendNewServiceNotification(
-              client || { id: service.clientId, fullName: "Nepoznat klijent", email: "", phone: "" },
-              {
-                id: service.id,
-                description: service.description || "",
-                status: service.status,
-                createdAt: service.createdAt,
-                applianceInfo,
-                technicianName,
-                creatorInfo
-              }
-            );
-          }
-          
-          // Ako je dodeljen serviser, obavesti i njega
-          if (technician && service.technicianId) {
-            // Dobavljamo korisnika iz baze koji je vezan za tehničara
-            const techUser = await storage.getUserByTechnicianId(service.technicianId);
-            const techEmail = techUser?.email || technician.email;
-            
-            if (techEmail) {
-              const techEmailSent = await emailService.sendNewServiceAssignment(
-                techEmail,
-                technician.fullName,
-                service.id,
-                client?.fullName || "Nepoznat klijent",
-                service.scheduledDate || service.createdAt,
-                `${client?.address || ""}, ${client?.city || ""}`,
-                service.description || ""
-              );
+            // Ako je dodeljen serviser, obavesti i njega
+            if (technician && service.technicianId) {
+              // Dobavljamo korisnika iz baze koji je vezan za tehničara
+              const techUser = await storage.getUserByTechnicianId(service.technicianId);
+              const techEmail = techUser?.email || technician.email;
               
-              if (techEmailSent) {
-                console.log(`Email obaveštenje poslato serviseru ${technician.fullName} na adresu ${techEmail} za novi servis #${service.id}`);
-                
-                // Obavesti administratore o poslatom mail-u serviseru
-                await emailService.notifyAdminAboutEmail(
-                  "Dodela servisa serviseru",
-                  techEmail || technician.email || "",
+              if (techEmail) {
+                const techEmailSent = await emailService.sendNewServiceAssignment(
+                  techEmail,
+                  technician.fullName,
                   service.id,
-                  `Poslato obaveštenje serviseru ${technician.fullName} o dodeli novog servisa #${service.id}`
+                  client.fullName,
+                  service.scheduledDate || service.createdAt,
+                  `${client.address}, ${client.city}`,
+                  service.description || ""
                 );
+                
+                if (techEmailSent) {
+                  console.log(`Email obaveštenje poslato serviseru ${technician.fullName} na adresu ${techEmail} za novi servis #${service.id}`);
+                  
+                  // Obavesti administratore o poslatom mail-u serviseru
+                  await emailService.notifyAdminAboutEmail(
+                    "Dodela servisa serviseru",
+                    techEmail || technician.email || "",
+                    service.id,
+                    `Poslato obaveštenje serviseru ${technician.fullName} o dodeli novog servisa #${service.id}`
+                  );
+                }
+              } else {
+                console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
               }
-            } else {
-              console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
             }
           } else {
             console.warn(`Klijent ${client?.fullName || service.clientId} nema email adresu, obaveštenje nije poslato`);
@@ -1497,7 +1333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If user is a technician, verify they can modify this service
-      if (req.user?.role === "serviser") {
+      if (req.user?.role === "technician") {
         const technicianId = req.user.technicianId;
         
         // Check if technicianId matches service's technicianId
@@ -1609,21 +1445,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Šaljemo SMS klijentu preko novog SMS servisa
               const smsMessage = generateStatusUpdateMessage(serviceId, statusDescription, additionalInfo);
-              const clientSmsSent = await infobipSms.sendSms({
+              const clientSmsSent = await newSmsService.sendSms({
                 to: client.phone || '',
                 message: smsMessage,
                 type: 'status_update'
               });
               
               if (clientSmsSent.success) {
-                console.log(`[INFOBIP SMS] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName}`);
+                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko ${newSmsService.getConfigInfo()?.provider || 'novog SMS servisa'}`);
                 emailInfo.smsSent = true;
                 if (clientSmsSent.messageId) {
-                  console.log(`[INFOBIP SMS] Message ID: ${clientSmsSent.messageId}`);
+                  console.log(`[SMS SISTEM] Message ID: ${clientSmsSent.messageId}`);
                 }
               } else {
-                console.error(`[INFOBIP SMS] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
-                emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
+                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
+                
+                // Fallback na postojeći Twilio SMS servis
+                console.log(`[SMS SISTEM] Pokušavam fallback na Twilio SMS servis...`);
+                try {
+                  const fallbackSent = await smsService.sendServiceStatusUpdate(
+                    client,
+                    { id: serviceId, description: statusDescription, status: statusDescription },
+                    statusDescription,
+                    additionalInfo
+                  );
+                  
+                  if (fallbackSent) {
+                    console.log(`[SMS SISTEM] ✅ Fallback SMS uspešno poslat preko Twilio`);
+                    emailInfo.smsSent = true;
+                  } else {
+                    emailInfo.smsError = "Neuspešno slanje SMS poruke preko oba servisa. Proverite SMS postavke.";
+                  }
+                } catch (fallbackError) {
+                  console.error(`[SMS SISTEM] ❌ Fallback SMS takođe neuspešan:`, fallbackError);
+                  emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
+                }
               }
             } else {
               console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
@@ -1737,7 +1593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/technician-users", async (req, res) => {
     try {
       // Verify that user is admin or has permission
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -1760,7 +1616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password,
         fullName: fullName || technician.fullName,
-        role: "serviser",
+        role: "technician",
         technicianId: technician.id
       });
       
@@ -1838,7 +1694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users management routes
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
       }
       
@@ -1864,7 +1720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Autorizacija korisnika:", req.isAuthenticated() ? `Autentifikovan (${req.user?.username}, uloga: ${req.user?.role})` : "Nije autentifikovan");
       
       // Osiguramo da je korisnik autorizovan - samo admin može da vidi neverifikovane korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         console.log("Neautorizovan pristup endpoint-u za neverifikovane korisnike");
         return res.status(403).json({ 
           error: "Nemate dozvolu za pristup neverifikovanim korisnicima",
@@ -1901,7 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Pokušaj verifikacije korisnika sa ID ${req.params.id}`);
       
       // Osiguramo da je korisnik autorizovan - samo admin može da verifikuje korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         console.log("Verifikacija neuspešna - korisnik nije admin");
         return res.status(403).json({ 
           error: "Nemate dozvolu za verifikaciju korisnika", 
@@ -1966,7 +1822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za kreiranje korisnika" });
       }
       
@@ -2003,7 +1859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put("/api/users/:id", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ažuriranje korisnika" });
       }
       
@@ -2070,7 +1926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete("/api/users/:id", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za brisanje korisnika" });
       }
       
@@ -2102,7 +1958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the user is a technician
-      if (req.user?.role !== "serviser" || !req.user?.technicianId) {
+      if (req.user?.role !== "technician" || !req.user?.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
@@ -2132,7 +1988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`my-services API pristup - user: ${JSON.stringify(req.user || {})}`);
       
       // Check if the user is a technician
-      if (req.user?.role !== "serviser" || !req.user?.technicianId) {
+      if (req.user?.role !== "technician" || !req.user?.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
@@ -2419,7 +2275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za upravljanje email postavkama" });
       }
 
@@ -2456,7 +2312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/send-test-email", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za slanje test email-a" });
       }
 
@@ -2584,7 +2440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/email-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za pregled email postavki" });
       }
       
@@ -2618,7 +2474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("[TEST EMAIL] Zahtev za testiranje email-a primljen.");
       
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         console.log("[TEST EMAIL] Zahtev odbijen - korisnik nije administrator.");
         return res.status(403).json({ error: "Nemate dozvolu za testiranje email sistema" });
       }
@@ -2691,7 +2547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/execute-sql", async (req, res) => {
     try {
       // Provera da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Samo administrator ima pristup SQL upravljaču" });
       }
       
@@ -2757,7 +2613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel export endpoints
   app.get("/api/excel/clients", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2776,7 +2632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/technicians", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2795,7 +2651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/appliances", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2814,7 +2670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/services", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2833,7 +2689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/maintenance", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2853,7 +2709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel import endpoints
   app.post("/api/excel/import/clients", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2876,7 +2732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/excel/import/appliances", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2899,7 +2755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/excel/import/services", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2973,8 +2829,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nedozvoljeni pristup tuđim servisima" });
       }
       
-      // Dohvatanje klijenta po email-u korisnika
-      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.email));
+      // Dohvatanje klijenta po email-u (username korisnika)
+      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.username));
       const client = clients.length > 0 ? clients[0] : null;
       
       if (!client) {
@@ -3037,7 +2893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta za proveru konfiguracije SMS servisa
   app.get("/api/sms/config", (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.status(401).json({ error: "Nemate dozvolu za pristup konfiguraciji SMS servisa" });
     }
     
@@ -3078,70 +2934,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(configInfo);
   });
   
-  // Infobip SMS endpoint-i
-  app.post("/api/infobip/test", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+  // Ruta za slanje test SMS poruke
+  app.post("/api/sms/test", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.status(401).json({ error: "Nemate dozvolu za slanje test poruka" });
     }
     
     try {
-      const { recipient } = req.body;
+      const validationResult = testSmsSchema.safeParse(req.body);
       
-      if (!recipient) {
-        return res.status(400).json({ error: "Broj telefona je obavezan" });
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci za SMS", 
+          details: validationResult.error.format() 
+        });
       }
       
-      // Slanje test poruke preko Infobip servisa
-      const result = await infobipSms.sendSms({
+      const { recipient, message } = validationResult.data;
+      
+      // Slanje test poruke
+      const result = await smsService.sendSms({
         to: recipient,
-        message: "Test SMS poruka iz Frigo Sistem aplikacije. Infobip SMS je uspešno konfigurisan!",
-        type: 'test'
+        body: message
       });
       
-      if (result.success) {
-        res.json({ 
-          success: true, 
-          message: "SMS poruka je uspešno poslata",
-          messageId: result.messageId,
-          cost: result.cost
-        });
+      if (result) {
+        res.json({ success: true, message: "SMS poruka je uspešno poslata" });
       } else {
-        res.status(500).json({ 
-          success: false,
-          error: result.error || "Greška pri slanju SMS poruke"
-        });
+        res.status(500).json({ error: "Greška pri slanju SMS poruke" });
       }
     } catch (error) {
       console.error("Greška pri slanju test SMS poruke:", error);
-      res.status(500).json({ 
-        success: false,
-        error: "Greška pri slanju test SMS poruke", 
-        details: error.message 
-      });
-    }
-  });
-
-  app.get("/api/infobip/status", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-      return res.status(401).json({ error: "Nemate dozvolu za pristup statusu SMS servisa" });
-    }
-    
-    try {
-      const status = await infobipSms.getStatus();
-      res.json(status);
-    } catch (error) {
-      console.error("Greška pri proveri statusa Infobip servisa:", error);
-      res.status(500).json({ 
-        success: false,
-        error: "Greška pri proveri statusa", 
-        details: error.message 
-      });
+      res.status(500).json({ error: "Greška pri slanju test SMS poruke", details: error.message });
     }
   });
   
   // Ruta za slanje SMS obaveštenja klijentu o promeni statusa servisa
   app.post("/api/sms/service-update/:serviceId", async (req, res) => {
-    if (!req.isAuthenticated() || (req.user?.role !== "administrator" && req.user?.role !== "serviser")) {
+    if (!req.isAuthenticated() || (req.user?.role !== "admin" && req.user?.role !== "technician")) {
       return res.status(401).json({ error: "Nemate dozvolu za slanje obaveštenja" });
     }
     
@@ -3163,17 +2993,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Slanje SMS obaveštenja o promeni statusa
-      const statusMessage = generateStatusUpdateMessage(serviceId, STATUS_DESCRIPTIONS[service.status] || service.status);
-      const result = await infobipSms.sendSms({
-        to: client.phone,
-        message: statusMessage,
-        type: 'status_update'
-      });
+      const result = await smsService.sendServiceStatusUpdate(
+        client,
+        serviceId,
+        STATUS_DESCRIPTIONS[service.status] || service.status,
+        req.body.additionalInfo
+      );
       
-      if (result.success) {
+      if (result) {
         res.json({ success: true, message: "SMS obaveštenje je uspešno poslato" });
       } else {
-        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja", details: result.error });
+        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja" });
       }
     } catch (error) {
       console.error("Greška pri slanju SMS obaveštenja o servisu:", error);
@@ -3183,7 +3013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta za masovno slanje SMS poruka izabranim klijentima
   app.post("/api/sms/bulk", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.status(401).json({ error: "Nemate dozvolu za slanje masovnih poruka" });
     }
     
@@ -3218,16 +3048,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          const result = await infobipSms.sendSms({
+          const result = await smsService.sendSms({
             to: client.phone,
-            message: `Frigo Sistem Todosijević: ${message}`,
-            type: 'custom'
+            body: `Frigo Sistem Todosijević: ${message}`
           });
           
-          if (result.success) {
+          if (result) {
             results.push({ clientId, success: true });
           } else {
-            errors.push({ clientId, error: result.error || "Greška pri slanju SMS poruke" });
+            errors.push({ clientId, error: "Greška pri slanju SMS poruke" });
           }
         } catch (error) {
           errors.push({ clientId, error: error.message });
@@ -3292,33 +3121,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date().toISOString().split('T')[0] // Dodajem createdAt
       });
 
-      // Slanje email notifikacije administratorima i klijentu
+      // Slanje email notifikacije administratorima
       try {
         const client = await storage.getClient(clientId);
         if (client) {
-          // Šaljemo email administratorima
-          await emailService.sendNewServiceNotification(
-            client,
-            {
-              id: newService.id,
-              description: newService.description,
-              status: "pending",
-              createdAt: newService.createdAt,
-              applianceInfo: "Uređaj klijenta",
-              technicianName: "Nije dodeljen",
-              creatorInfo: " (kreator: klijent)"
-            }
-          );
+          // Koristim postojeću email funkcionalnost
+          const adminUsers = await storage.getAllUsers();
+          const admins = adminUsers.filter(user => user.role === "admin");
           
-          // Potvrda klijentu da je servis kreiran
-          if (client.email) {
-            await emailService.sendServiceStatusUpdate(
-              client,
-              newService.id,
-              "Na čekanju",
-              newService.description,
-              "Nije dodeljen"
-            );
+          for (const admin of admins) {
+            if (admin.email) {
+              await emailService.sendEmail({
+                to: admin.email,
+                subject: `Novi zahtev za servis #${newService.id} od klijenta ${client.fullName}`,
+                html: `
+                  <h2>Novi zahtev za servis #${newService.id}</h2>
+                  <p><strong>Klijent:</strong> ${client.fullName}</p>
+                  <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
+                  <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
+                  <p><strong>Opis:</strong> ${newService.description}</p>
+                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
+                `
+              });
+            }
           }
         }
       } catch (emailError) {
@@ -3370,7 +3195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/services/:id/assign-technician", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za dodeljivanje servisera" });
       }
       
@@ -3400,40 +3225,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
-      
-      // Pošalji email obaveštenja o dodeljivanju servisera
-      try {
-        const client = await storage.getClient(service.clientId);
-        
-        // Email klijentu o dodeljivanju servisera
-        if (client && client.email) {
-          await emailService.sendServiceStatusUpdate(
-            client,
-            serviceId,
-            "Dodeljen serviser",
-            service.description || "",
-            technician.fullName
-          );
-        }
-        
-        // Email serviseru o novom servisu
-        const techUser = await storage.getUserByTechnicianId(technicianId);
-        const techEmail = techUser?.email || technician.email;
-        
-        if (techEmail) {
-          await emailService.sendNewServiceAssignment(
-            techEmail,
-            technician.fullName,
-            serviceId,
-            client?.fullName || "Nepoznat klijent",
-            service.scheduledDate || service.createdAt,
-            `${client?.address || ""}, ${client?.city || ""}`,
-            service.description || ""
-          );
-        }
-      } catch (emailError) {
-        console.error("Greška pri slanju email obaveštenja:", emailError);
-      }
       
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
@@ -3494,62 +3285,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
       
-      // Pošalji email obaveštenje klijentu o promenama statusa
-      try {
-        const client = await storage.getClient(service.clientId);
-        const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
-        const technicianName = technician ? technician.fullName : "Nije dodeljen";
-        
-        if (client && client.email) {
-          const statusText = STATUS_DESCRIPTIONS[status] || status;
-          await emailService.sendServiceStatusUpdate(
-            client,
-            serviceId,
-            statusText,
-            service.description || "",
-            technicianName
-          );
-        }
-      } catch (emailError) {
-        console.error("Greška pri slanju email obaveštenja:", emailError);
-      }
-      
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
-        
-        // Pokušaj prvo sa Telekom SMS (vaš broj 067051141)
-        let smsResult = await telekomSmsService.sendSms({
+        const smsResult = await newSmsService.sendSms({
           to: service.client.phone,
           message: smsMessage,
           type: 'status_update'
         });
         
-        // Fallback na Messaggio ako Telekom ne radi
-        if (!smsResult.success) {
-          console.log(`[SMS] Telekom neuspešan za status update, pokušavam sa Messaggio...`);
-          smsResult = await messaggioSmsService.sendSms({
-            to: service.client.phone,
-            message: smsMessage,
-            type: 'status_update'
-          });
-        }
-        
-        // Treći fallback na Twilio ako ni Messaggio ne radi
-        if (!smsResult.success) {
-          console.log(`[SMS] Messaggio neuspešan za status update, pokušavam sa Twilio...`);
-          smsResult = await newSmsService.sendSms({
-            to: service.client.phone,
-            message: smsMessage,
-            type: 'status_update'
-          });
-        }
-        
         if (smsResult.success) {
           console.log(`[SMS] ✅ SMS obaveštenje o statusu poslato klijentu ${service.client.fullName}`);
         } else {
           console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
-          // Poslednji fallback na originalni sms-service
+          // Fallback na Twilio
           await smsService.sendServiceStatusUpdate(
             service.client,
             { id: serviceId, description: service.description, status: status },
@@ -3569,114 +3318,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test Telekom SMS connection endpoint
-  app.get("/api/telekom/test", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
-      }
-      
-      console.log("[TELEKOM SMS] Admin testira konekciju...");
-      
-      const connectionTest = await telekomSmsService.testConnection();
-      
-      res.json({
-        success: true,
-        connection: connectionTest,
-        service: 'Telekom SMS',
-        senderNumber: '+38267051141',
-        message: connectionTest ? 'Telekom SMS servis je dostupan' : 'Telekom SMS servis nije dostupan'
-      });
-    } catch (error: any) {
-      console.error("[TELEKOM SMS] Greška pri testiranju:", error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri testiranju Telekom SMS servisa",
-        details: error.message 
-      });
-    }
-  });
-
-  // Test GSM modem endpoint
-  app.post("/api/gsm/test", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
-      }
-      
-      const { recipient } = z.object({
-        recipient: z.string().min(1)
-      }).parse(req.body);
-      
-      console.log("[GSM TEST] Admin testira slanje SMS-a preko GSM modem-a...");
-      
-      const result = await telekomSmsService.sendSms({
-        to: recipient,
-        message: 'Test SMS sa GSM modem-a - Frigo Sistem Todosijević',
-        type: 'custom'
-      });
-      
-      if (result.success) {
-        res.json({
-          success: true,
-          message: "Test SMS uspešno poslat preko GSM modem-a",
-          messageId: result.messageId,
-          method: result.method,
-          details: result.details
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          error: result.error,
-          method: result.method,
-          details: result.details
-        });
-      }
-    } catch (error: any) {
-      console.error("[GSM TEST] Greška:", error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri testiranju GSM modem-a",
-        details: error.message 
-      });
-    }
-  });
-
-  // Test Messaggio connection endpoint
-  app.get("/api/messaggio/test", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
-      }
-      
-      console.log("[MESSAGGIO] Admin testira konekciju...");
-      
-      const connectionTest = await messaggioSmsService.testConnection();
-      const balanceInfo = await messaggioSmsService.getBalance();
-      
-      res.json({
-        success: true,
-        connection: connectionTest,
-        balance: balanceInfo
-      });
-    } catch (error: any) {
-      console.error("[MESSAGGIO] Greška pri testiranju:", error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri testiranju Messaggio servisa",
-        details: error.message 
-      });
-    }
-  });
-
   // SMS Configuration endpoints
   app.post("/api/admin/sms-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju SMS-a" });
       }
       
@@ -3710,7 +3356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/sms-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
       }
       
@@ -3744,7 +3390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/test-sms", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za testiranje SMS-a" });
       }
       
@@ -3819,8 +3465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      // Šalje SMS preko Infobip platforme
-      const result = await infobipSms.sendSms({
+      const result = await newSmsService.sendSms({
         to: service.client.phone,
         message: message,
         type: type || 'custom'
@@ -3856,201 +3501,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: "Greška pri slanju SMS obaveštenja", 
         message: error instanceof Error ? error.message : "Nepoznata greška" 
-      });
-    }
-  });
-
-  // Test nove SMS platforme endpoint
-  app.post("/api/new-sms/test", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
-      }
-      
-      const { recipient } = z.object({
-        recipient: z.string().min(1)
-      }).parse(req.body);
-      
-      console.log("[NOVA SMS] Admin testira slanje SMS-a preko nove platforme...");
-      
-      const result = await newSmsService.sendSms({
-        to: recipient,
-        message: 'Test SMS sa nove platforme - Frigo Sistem Todosijević',
-        from: '+38267051141',
-        type: 'custom'
-      });
-      
-      if (result.success) {
-        res.json({
-          success: true,
-          message: "Test SMS uspešno poslat preko nove platforme",
-          messageId: result.messageId,
-          method: result.method,
-          cost: result.cost,
-          details: result.details
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          error: result.error,
-          method: result.method,
-          details: result.details
-        });
-      }
-    } catch (error: any) {
-      console.error("[NOVA SMS] Greška:", error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri testiranju nove SMS platforme",
-        details: error.message 
-      });
-    }
-  });
-
-  // Test konekcije sa Infobip SMS platformom
-  app.get("/api/infobip/status", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
-      }
-      
-      const connectionStatus = await infobipSms.testConnection();
-      const balance = await infobipSms.getBalance();
-      
-      res.json({
-        success: true,
-        connection: connectionStatus,
-        balance: balance,
-        service: 'Infobip SMS platforma',
-        message: connectionStatus ? 'Infobip SMS platforma je dostupna' : 'Infobip SMS platforma nije dostupna'
-      });
-    } catch (error: any) {
-      console.error("[INFOBIP] Greška pri proveri statusa:", error.message);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri proveri statusa Infobip platforme",
-        details: error.message 
-      });
-    }
-  });
-
-  // API endpoint za prepoznavanje nalepnica uređaja
-  app.post("/api/scan-appliance-label", async (req, res) => {
-    try {
-      // Proveravamo da li je korisnik ulogovan i da li je serviser
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ 
-          success: false, 
-          message: "Molimo da se prijavite" 
-        });
-      }
-
-      if (req.user?.role !== "serviser") {
-        return res.status(403).json({ 
-          success: false, 
-          message: "Samo serviseri mogu koristiti ovu funkcionalnost" 
-        });
-      }
-
-      const { image, mimeType } = req.body;
-      
-      if (!image) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Nedostaje slika" 
-        });
-      }
-
-      console.log("=== PREPOZNAVANJE NALEPNICE UREĐAJA ===");
-      console.log("Korisnik:", req.user?.fullName);
-      console.log("Tip slike:", mimeType);
-      
-      // Pozivamo OpenAI Vision API za prepoznavanje teksta
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // gpt-4o je najnoviji model sa podrškom za slike
-        messages: [
-          {
-            role: "system",
-            content: `Ti si ekspert za prepoznavanje nalepnica i oznaka na kućnim aparatima. Tvoj zadatak je da iz slike nalepnice prepoznaš sledeće informacije:
-            
-            1. Model uređaja (obično kombinacija slova i brojeva)
-            2. Serijski broj (Serial Number, S/N, SN)
-            3. Proizvođač/brend (Bosch, Samsung, LG, Gorenje, itd.)
-            
-            Odgovori SAMO JSON formatom:
-            {
-              "model": "prepoznati model ili null",
-              "serialNumber": "prepoznati serijski broj ili null", 
-              "manufacturer": "prepoznati proizvođač ili null",
-              "confidence": broj_između_0_i_1,
-              "rawText": "sav prepoznati tekst"
-            }
-            
-            Pravila:
-            - Budi precizan i konzervativniji u prepoznavanju
-            - Ako nisi siguran, stavi null umesto pogrešne informacije
-            - Confidence treba da odražava tvoju sigurnost u prepoznavanje
-            - U rawText stavi sav tekst koji si prepoznao sa nalepnice`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Molim te prepoznaj informacije sa ove nalepnice kućnog aparata:"
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${image}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 500,
-        response_format: { type: "json_object" }
-      });
-
-      const result = response.choices[0].message.content;
-      
-      if (!result) {
-        return res.status(500).json({ 
-          success: false, 
-          message: "Greška pri prepoznavanju nalepnice" 
-        });
-      }
-
-      const parsedResult = JSON.parse(result);
-      
-      console.log("OpenAI rezultat:", parsedResult);
-      
-      // Validiramo rezultat
-      if (parsedResult.confidence < 0.3) {
-        return res.json({
-          success: false,
-          message: "Nije moguće pouzdano prepoznati informacije sa nalepnice. Molimo pokušajte sa jasnijom slikom."
-        });
-      }
-
-      res.json({
-        success: true,
-        data: {
-          model: parsedResult.model,
-          serialNumber: parsedResult.serialNumber,
-          manufacturer: parsedResult.manufacturer,
-          confidence: parsedResult.confidence,
-          rawText: parsedResult.rawText
-        }
-      });
-
-    } catch (error) {
-      console.error("Greška pri prepoznavanju nalepnice:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Došlo je do greške pri prepoznavanju nalepnice" 
       });
     }
   });

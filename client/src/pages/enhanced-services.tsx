@@ -1819,7 +1819,5 @@ const SmsDialog = ({
       </DialogContent>
     </Dialog>
   );
-}
-
-
+};
 

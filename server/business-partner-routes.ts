@@ -20,8 +20,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
       });
     }
 
-    // Provera uloge - prihvatamo samo "poslovni_partner"
-    if (req.user?.role !== "poslovni_partner") {
+    // Provera uloge - prihvatamo i "business" i "business_partner"
+    if (req.user?.role !== "business_partner" && req.user?.role !== "business") {
       return res.status(403).json({
         error: "Nemate dozvolu",
         message: "Samo poslovni partneri mogu pristupiti ovom resursu."
@@ -30,132 +30,6 @@ export function registerBusinessPartnerRoutes(app: Express) {
 
     next();
   };
-
-  // Dodavanje novog klijenta od strane poslovnog partnera
-  app.post("/api/business/clients", isBusinessPartner, async (req, res) => {
-    try {
-      console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
-      console.log("Podaci iz frontend forme:", req.body);
-      console.log("Korisnik:", req.user);
-      
-      // Validacija podataka o klijentu
-      const validationResult = insertClientSchema.safeParse(req.body);
-      
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Nevažeći podaci klijenta", 
-          details: validationResult.error.format(),
-          message: "Svi podaci o klijentu moraju biti pravilno uneti. Proverite podatke i pokušajte ponovo."
-        });
-      }
-      
-      const validatedData = validationResult.data;
-      
-      // Provera duplikata po email adresi ako je uneta
-      if (validatedData.email) {
-        try {
-          const existingClient = await storage.getClientByEmail(validatedData.email);
-          if (existingClient) {
-            return res.status(400).json({
-              error: "Duplikat email adrese",
-              message: `Klijent sa email adresom '${validatedData.email}' već postoji u bazi. Koristite funkciju pretrage da pronađete postojećeg klijenta.`
-            });
-          }
-        } catch (emailCheckError) {
-          console.error("Greška pri proveri duplikata email adrese:", emailCheckError);
-        }
-      }
-      
-      // Formatiranje telefonskog broja
-      if (validatedData.phone) {
-        if (!validatedData.phone.startsWith('+')) {
-          const numberOnly = validatedData.phone.replace(/\D/g, '');
-          
-          if (numberOnly.startsWith('0')) {
-            validatedData.phone = '+382' + numberOnly.substring(1);
-          } else {
-            validatedData.phone = '+382' + numberOnly;
-          }
-        }
-      }
-      
-      // Kreiranje klijenta
-      const client = await storage.createClient(validatedData);
-      
-      res.status(201).json({
-        success: true,
-        message: "Klijent je uspešno kreiran",
-        data: client
-      });
-    } catch (error) {
-      console.error("Greška pri kreiranju klijenta:", error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju klijenta", 
-        message: error.message 
-      });
-    }
-  });
-
-  // Dobijanje klijenata za poslovnog partnera
-  app.get("/api/business/clients", isBusinessPartner, async (req, res) => {
-    try {
-      const clients = await storage.getAllClients();
-      res.json(clients);
-    } catch (error) {
-      console.error("Greška pri dobijanju klijenata:", error);
-      res.status(500).json({ 
-        error: "Greška servera", 
-        message: "Došlo je do greške pri dobijanju klijenata." 
-      });
-    }
-  });
-
-  // Kreiranje novog klijenta od strane poslovnog partnera
-  app.post("/api/business/clients", isBusinessPartner, async (req, res) => {
-    try {
-      console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
-      console.log("Podaci iz frontend forme:", req.body);
-      
-      const { fullName, phone, email, address, city, companyName } = req.body;
-      
-      // Osnovna validacija
-      if (!fullName || !phone) {
-        return res.status(400).json({
-          error: "Nedostaju obavezna polja",
-          message: "Ime i prezime i telefon su obavezna polja."
-        });
-      }
-      
-      // Proveravamo da li već postoji klijent sa istim telefonom
-      const existingClient = await storage.getClientByPhone(phone);
-      if (existingClient) {
-        return res.status(409).json({
-          error: "Klijent već postoji",
-          message: `Klijent sa telefonom ${phone} već postoji u sistemu.`
-        });
-      }
-      
-      // Kreiramo novog klijenta
-      const newClient = await storage.createClient({
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        email: email?.trim() || null,
-        address: address?.trim() || null,
-        city: city?.trim() || null,
-        companyName: companyName?.trim() || null
-      });
-      
-      console.log("Novi klijent uspešno kreiran:", newClient);
-      res.status(201).json(newClient);
-      
-    } catch (error) {
-      console.error("Greška pri kreiranju klijenta:", error);
-      res.status(500).json({ 
-        error: "Greška servera", 
-        message: "Došlo je do greške pri kreiranju klijenta." 
-      });
-    }
-  });
 
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
@@ -308,38 +182,33 @@ export function registerBusinessPartnerRoutes(app: Express) {
       
       console.log("Servis uspešno kreiran sa ID:", newService.id);
 
-      // Slanje obaveštenja administratorima i klijentu o novom servisu
+      // Slanje obaveštenja administratorima o novom servisu
       try {
+        // Šaljemo email svim administratorima o novom zahtevu
+        const adminUsers = await storage.getAllUsers();
+        const admins = adminUsers.filter(user => user.role === "admin");
+        
         // Dobavljanje detalja klijenta
         const client = await storage.getClient(finalClientId);
         const clientName = client?.fullName || "Klijent";
         
-        // Šaljemo email administratorima
-        await emailService.sendNewServiceNotification(
-          client || { id: finalClientId, fullName: clientName, email: "", phone: "" },
-          {
-            id: newService.id,
-            description: description.trim(),
-            status: "pending",
-            createdAt: today,
-            applianceInfo: "Uređaj partnera",
-            technicianName: "Nije dodeljen",
-            creatorInfo: ` (kreator: ${partnerCompanyName})`
-          }
-        );
-        
-        // Šaljemo email klijentu (ako ima email)
-        if (client && client.email) {
-          const clientEmailSent = await emailService.sendServiceStatusUpdate(
-            client,
-            newService.id,
-            "Na čekanju",
-            description.trim(),
-            "Nije dodeljen"
-          );
-          
-          if (clientEmailSent) {
-            console.log(`Email obaveštenje poslato klijentu ${client.fullName} za novi servis #${newService.id}`);
+        // Ako ima administratora, šaljemo email
+        if (admins.length > 0) {
+          // Email za administratore
+          for (const admin of admins) {
+            if (admin.email) {
+              await emailService.sendEmail({
+                to: admin.email,
+                subject: `Novi servisni zahtev #${newService.id} od partnera ${partnerCompanyName}`,
+                html: `
+                  <h2>Novi servisni zahtev #${newService.id}</h2>
+                  <p><strong>Partner:</strong> ${partnerCompanyName}</p>
+                  <p><strong>Klijent:</strong> ${clientName}</p>
+                  <p><strong>Opis:</strong> ${description}</p>
+                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
+                `
+              });
+            }
           }
         }
       } catch (emailError) {
@@ -402,16 +271,16 @@ export function registerBusinessPartnerRoutes(app: Express) {
       const appliance = await storage.getAppliance(service.applianceId);
       const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
       const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
-      const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
       
       // Vraćanje kompletnih podataka
       res.json({
         ...service,
         client,
-        appliance,
-        category,
-        manufacturer,
-        technician
+        appliance: appliance ? {
+          ...appliance,
+          category,
+          manufacturer
+        } : null
       });
     } catch (error: unknown) {
       console.error("Greška pri dobijanju detalja servisa:", error);

@@ -2,20 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
-import { configureSSL, securityLogger, configureSSLCORS } from "./ssl-config";
-import { configureSEO } from "./seo-config";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// SSL/TLS bezbednost i SEO konfiguracija
-configureSSL(app);
-configureSEO(app);
-configureSSLCORS(app);
-
-// Security logging
-app.use(securityLogger);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -48,24 +38,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Add health check endpoints - but NOT on root path to avoid conflicts with frontend
-  app.get("/api/health", (req, res) => {
-    res.status(200).json({ 
-      status: "OK", 
-      message: "Frigo Sistem Todosijević Service Management API", 
-      timestamp: new Date().toISOString(),
-      version: "1.0.0"
-    });
-  });
-
-  app.get("/health", (req, res) => {
-    res.status(200).json({ 
-      status: "OK", 
-      message: "Service is running", 
-      timestamp: new Date().toISOString() 
-    });
-  });
-
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

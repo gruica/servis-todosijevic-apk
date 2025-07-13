@@ -68,7 +68,6 @@ export interface IStorage {
   getAllClients(): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   getClientByEmail(email: string): Promise<Client | undefined>; // Nova metoda za pretragu po emailu
-  getClientByPhone(phone: string): Promise<Client | undefined>; // Nova metoda za pretragu po telefonu
   getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
@@ -93,26 +92,8 @@ export interface IStorage {
   updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;
   getApplianceStats(): Promise<{categoryId: number, count: number}[]>;
   
-  // Service methods - optimizirana verzija sa paginacijom
+  // Service methods - optimizirana verzija
   getAllServices(limit?: number): Promise<Service[]>;
-  getServicesPaginated(options: {
-    page?: number;
-    limit?: number;
-    status?: ServiceStatus;
-    technicianId?: number;
-    clientId?: number;
-    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
-    sortOrder?: 'asc' | 'desc';
-    search?: string;
-  }): Promise<{
-    services: Service[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  }>;
   getService(id: number): Promise<Service | undefined>;
   getServicesByClient(clientId: number): Promise<Service[]>;
   getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]>;
@@ -219,7 +200,7 @@ export class MemStorage implements IStorage {
     const id = this.userId++;
     const user: User = { 
       id, 
-      role: "administrator", 
+      role: "admin", 
       username: "admin", 
       fullName: "Jelena Todosijević", 
       password: hashedPassword,
@@ -235,7 +216,7 @@ export class MemStorage implements IStorage {
       username: "serviser@example.com",
       password: "serviser123",
       fullName: "Jovan Todosijević",
-      role: "serviser",
+      role: "technician",
       technicianId: 1, // First technician
       email: "jovan@frigosistemtodosijevic.com"
     });
@@ -292,7 +273,7 @@ export class MemStorage implements IStorage {
   
   async getUnverifiedUsers(): Promise<User[]> {
     return Array.from(this.users.values()).filter(
-      (user) => user.role !== 'administrator' && !user.isVerified
+      (user) => user.role !== 'admin' && !user.isVerified
     ).sort((a, b) => {
       // Sortiraj po datumu registracije (noviji prvo)
       const dateA = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
@@ -332,7 +313,7 @@ export class MemStorage implements IStorage {
     
     const now = new Date();
     // Administratori i serviseri (techniciani) su automatski verifikovani
-    const isVerified = role === "administrator" || role === "serviser" || !!insertUser.isVerified;
+    const isVerified = role === "admin" || role === "technician" || !!insertUser.isVerified;
     
     const user: User = { 
       id, 
@@ -350,7 +331,7 @@ export class MemStorage implements IStorage {
       isVerified: isVerified,
       registeredAt: now.toISOString(),
       verifiedAt: isVerified ? now.toISOString() : null,
-      verifiedBy: isVerified && role === "administrator" ? id : null // samoodobravanje za administratore
+      verifiedBy: isVerified && role === "admin" ? id : null // samoodobravanje za administratore
     };
     
     this.users.set(id, user);
@@ -773,86 +754,6 @@ export class MemStorage implements IStorage {
     return Array.from(this.services.values())
       .slice(-limit)
       .reverse();
-  }
-
-  // Paginacija za MemStorage (jednostavna implementacija)
-  async getServicesPaginated(options: {
-    page?: number;
-    limit?: number;
-    status?: ServiceStatus;
-    technicianId?: number;
-    clientId?: number;
-    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
-    sortOrder?: 'asc' | 'desc';
-    search?: string;
-  }): Promise<{
-    services: Service[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  }> {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      technicianId,
-      clientId,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      search
-    } = options;
-
-    let allServices = Array.from(this.services.values());
-
-    // Filtriranje
-    if (status) {
-      allServices = allServices.filter(service => service.status === status);
-    }
-    
-    if (technicianId) {
-      allServices = allServices.filter(service => service.technicianId === technicianId);
-    }
-    
-    if (clientId) {
-      allServices = allServices.filter(service => service.clientId === clientId);
-    }
-    
-    if (search) {
-      allServices = allServices.filter(service => 
-        service.description?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // Sortiranje
-    allServices.sort((a, b) => {
-      const aValue = a[sortBy] || '';
-      const bValue = b[sortBy] || '';
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    // Paginacija
-    const total = allServices.length;
-    const totalPages = Math.ceil(total / limit);
-    const offset = (page - 1) * limit;
-    const services = allServices.slice(offset, offset + limit);
-
-    return {
-      services,
-      total,
-      page,
-      limit,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1
-    };
   }
   
   // Business partner methods
@@ -1437,7 +1338,7 @@ export class DatabaseStorage implements IStorage {
         username: "admin@example.com",
         password: hashedPassword,
         fullName: "Jelena Todosijević",
-        role: "administrator"
+        role: "admin"
       });
       console.log("Admin user created: admin@example.com");
       
@@ -1452,7 +1353,7 @@ export class DatabaseStorage implements IStorage {
           username: "serviser@example.com",
           password: hashedServiserPassword,
           fullName: firstTech.fullName,
-          role: "serviser",
+          role: "technician",
           technicianId: firstTech.id
         });
         console.log("Technician user created: serviser@example.com");
@@ -1494,12 +1395,12 @@ export class DatabaseStorage implements IStorage {
         .from(users)
         .where(and(
           eq(users.isVerified, false),
-          sql`${users.role} != 'administrator'` // Administrator je uvek verifikovan
+          sql`${users.role} != 'admin'` // Administrator je uvek verifikovan
         ))
         .orderBy(desc(users.registeredAt));
       
       // Posebno pronađimo poslovne partnere radi logovanja
-      const businessPartners = result.filter(user => user.role === 'poslovni_partner');
+      const businessPartners = result.filter(user => user.role === 'business');
       console.log(`Pronađeno ${result.length} neverifikovanih korisnika, od toga ${businessPartners.length} poslovnih partnera`);
       
       if (businessPartners.length > 0) {
@@ -1559,7 +1460,7 @@ export class DatabaseStorage implements IStorage {
       const email = insertUser.email || insertUser.username;
       
       // Za poslovne partnere, isVerified je uvek false na početku
-      const isVerified = insertUser.role === "administrator" || insertUser.role === "serviser";
+      const isVerified = insertUser.role === "admin" || insertUser.role === "technician";
       
       // Konvertujemo stringove datuma u Date objekte za ispravno skladištenje
       const now = new Date();
@@ -1734,11 +1635,6 @@ export class DatabaseStorage implements IStorage {
   
   async getClientByEmail(email: string): Promise<Client | undefined> {
     const [client] = await db.select().from(clients).where(eq(clients.email, email));
-    return client;
-  }
-  
-  async getClientByPhone(phone: string): Promise<Client | undefined> {
-    const [client] = await db.select().from(clients).where(eq(clients.phone, phone));
     return client;
   }
 
@@ -2030,144 +1926,6 @@ export class DatabaseStorage implements IStorage {
       .from(services)
       .orderBy(desc(services.createdAt))
       .limit(limit);
-  }
-
-  // Paginacija metoda za servise
-  async getServicesPaginated(options: {
-    page?: number;
-    limit?: number;
-    status?: ServiceStatus;
-    technicianId?: number;
-    clientId?: number;
-    sortBy?: 'createdAt' | 'scheduledDate' | 'completedDate';
-    sortOrder?: 'asc' | 'desc';
-    search?: string;
-  }): Promise<{
-    services: Service[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  }> {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      technicianId,
-      clientId,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-      search
-    } = options;
-
-    try {
-      console.log(`Dohvatanje servisa sa paginacijom: page=${page}, limit=${limit}, status=${status || 'all'}`);
-
-      // Osnovni query sa join-ovima za validaciju
-      let baseQuery = db
-        .select({
-          id: services.id,
-          clientId: services.clientId,
-          applianceId: services.applianceId,
-          technicianId: services.technicianId,
-          description: services.description,
-          status: services.status,
-          createdAt: services.createdAt,
-          scheduledDate: services.scheduledDate,
-          completedDate: services.completedDate,
-          technicianNotes: services.technicianNotes,
-          cost: services.cost,
-          usedParts: services.usedParts,
-          machineNotes: services.machineNotes,
-          isCompletelyFixed: services.isCompletelyFixed,
-          businessPartnerId: services.businessPartnerId,
-          partnerCompanyName: services.partnerCompanyName
-        })
-        .from(services)
-        .innerJoin(clients, eq(services.clientId, clients.id))
-        .innerJoin(appliances, eq(services.applianceId, appliances.id));
-
-      // Kreiranje WHERE uslova
-      const whereConditions = [];
-      
-      if (status) {
-        whereConditions.push(eq(services.status, status));
-      }
-      
-      if (technicianId) {
-        whereConditions.push(eq(services.technicianId, technicianId));
-      }
-      
-      if (clientId) {
-        whereConditions.push(eq(services.clientId, clientId));
-      }
-      
-      if (search) {
-        whereConditions.push(sql`${services.description} ILIKE ${'%' + search + '%'}`);
-      }
-
-      // Dodavanje WHERE uslova
-      if (whereConditions.length > 0) {
-        baseQuery = baseQuery.where(
-          whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-        );
-      }
-
-      // Sorting
-      const sortColumn = sortBy === 'createdAt' ? services.createdAt :
-                        sortBy === 'scheduledDate' ? services.scheduledDate :
-                        services.completedDate;
-      
-      const sortDirection = sortOrder === 'asc' ? sortColumn : desc(sortColumn);
-      
-      // Count query za ukupan broj rezultata
-      const countQuery = db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(services)
-        .innerJoin(clients, eq(services.clientId, clients.id))
-        .innerJoin(appliances, eq(services.applianceId, appliances.id));
-
-      // Dodavanje istih WHERE uslova za count
-      if (whereConditions.length > 0) {
-        countQuery.where(
-          whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-        );
-      }
-
-      // Izvršavanje count upita
-      const [{ count: total }] = await countQuery;
-
-      // Glavna paginacija query
-      const offset = (page - 1) * limit;
-      const servicesQuery = baseQuery
-        .orderBy(sortDirection)
-        .limit(limit)
-        .offset(offset);
-
-      const servicesData = await servicesQuery;
-
-      // Kalkulacija metapodataka
-      const totalPages = Math.ceil(total / limit);
-      const hasNext = page < totalPages;
-      const hasPrev = page > 1;
-
-      console.log(`Paginacija: ${servicesData.length} servisa na stranici ${page} od ${totalPages} (ukupno ${total})`);
-
-      return {
-        services: servicesData,
-        total,
-        page,
-        limit,
-        totalPages,
-        hasNext,
-        hasPrev
-      };
-    } catch (error) {
-      console.error("Greška pri paginaciji servisa:", error);
-      throw error;
-    }
   }
   
   // Business Partner methods

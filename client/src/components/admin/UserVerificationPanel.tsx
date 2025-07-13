@@ -94,13 +94,13 @@ const UserVerificationPanel: React.FC = () => {
   // Funkcija za prikaz rola na srpskom jeziku
   const getRoleName = (role: string): string => {
     switch (role) {
-      case "administrator":
+      case "admin":
         return "Administrator";
-      case "serviser":
+      case "technician":
         return "Serviser";
-      case "poslovni_partner":
+      case "business_partner":
         return "Poslovni partner";
-      case "klijent":
+      case "client":
         return "Klijent";
       default:
         return "Nepoznata uloga";
@@ -110,13 +110,13 @@ const UserVerificationPanel: React.FC = () => {
   // Funkcija za stilizovanje bedža uloge
   const getRoleVariant = (role: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (role) {
-      case "administrator":
+      case "admin":
         return "destructive";
-      case "serviser":
+      case "technician":
         return "default";
-      case "poslovni_partner":
+      case "business_partner":
         return "secondary";
-      case "klijent":
+      case "client":
         return "outline";
       default:
         return "outline";
