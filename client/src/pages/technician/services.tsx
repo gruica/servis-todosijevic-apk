@@ -2,6 +2,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Service, ServiceStatus } from "@shared/schema";
+import { useMobile, useMobileEnvironment } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/use-auth";
+import { Header } from "@/components/layout/header";
+import { Sidebar } from "@/components/layout/sidebar";
+import MobileAppLayout from "@/components/mobile/MobileAppLayout";
+import MobileServiceManager from "@/components/mobile/MobileServiceManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,15 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Camera } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Camera, Plus, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { useMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 import { CallClientButton } from "@/components/ui/call-client-button";
-import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
+import { callPhoneNumber, openMapWithAddress } from "@/lib/mobile-utils";
 import { ApplianceLabelScanner } from "@/components/technician/ApplianceLabelScanner";
 
 type TechnicianService = Service & {
@@ -45,8 +49,8 @@ export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
   const isMobile = useMobile();
-  // Uvek proveriti mobilno okruženje (mobile web i APK)
-  const isMobileDevice = isMobileEnvironment();
+  const isMobileDevice = useMobileEnvironment();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
