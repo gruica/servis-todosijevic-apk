@@ -40,7 +40,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: z.string().min(3, "Korisničko ime mora imati najmanje 3 karaktera").max(50, "Korisničko ime je predugačko"),
   password: z.string().min(6, "Lozinka mora imati najmanje 6 karaktera"),
   fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime i prezime je predugačko"),
-  email: z.string().email("Unesite validnu email adresu").or(z.literal("")).optional(),
+  email: z.string().email("Unesite validnu email adresu").min(1, "Email adresa je obavezna"),
   phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
     .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-")
     .or(z.literal("")).optional(),
@@ -435,5 +435,63 @@ export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one })
   schedule: one(maintenanceSchedules, {
     fields: [maintenanceAlerts.scheduleId],
     references: [maintenanceSchedules.id],
+  })
+}));
+
+// Tabela za praćenje zahteva korisnika (rate limiting)
+export const requestTracking = pgTable("request_tracking", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  requestType: text("request_type").notNull(), // "service_request", "registration", etc.
+  ipAddress: text("ip_address").notNull(),
+  userAgent: text("user_agent"),
+  requestDate: timestamp("request_date").defaultNow().notNull(),
+  successful: boolean("successful").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertRequestTrackingSchema = createInsertSchema(requestTracking).pick({
+  userId: true,
+  requestType: true,
+  ipAddress: true,
+  userAgent: true,
+  requestDate: true,
+  successful: true
+});
+
+export type InsertRequestTracking = z.infer<typeof insertRequestTrackingSchema>;
+export type RequestTracking = typeof requestTracking.$inferSelect;
+
+// Tabela za anti-bot mehanizam (jednostavan matematički zadatak)
+export const botVerification = pgTable("bot_verification", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  question: text("question").notNull(), // "5 + 3 = ?"
+  correctAnswer: integer("correct_answer").notNull(), // 8
+  userAnswer: integer("user_answer"),
+  verified: boolean("verified").default(false).notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(), // Važi 10 minuta
+});
+
+export const insertBotVerificationSchema = createInsertSchema(botVerification).pick({
+  sessionId: true,
+  question: true,
+  correctAnswer: true,
+  userAnswer: true,
+  verified: true,
+  attempts: true,
+  expiresAt: true
+});
+
+export type InsertBotVerification = z.infer<typeof insertBotVerificationSchema>;
+export type BotVerification = typeof botVerification.$inferSelect;
+
+// Dodatne relacije
+export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
+  user: one(users, {
+    fields: [requestTracking.userId],
+    references: [users.id],
   })
 }));

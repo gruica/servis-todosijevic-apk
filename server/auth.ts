@@ -141,12 +141,22 @@ export function setupAuth(app: Express) {
         phone: req.body.phone
       });
       
-      // Validacija obaveznih polja
-      if (!req.body.username || !req.body.password || !req.body.fullName) {
+      // Validacija obaveznih polja - dodato je email kao obavezno polje
+      if (!req.body.username || !req.body.password || !req.body.fullName || !req.body.email) {
         console.log("Registracija neuspešna: nedostaju obavezna polja");
         return res.status(400).json({
           error: "Nepotpuni podaci",
-          message: "Korisničko ime, lozinka i ime su obavezna polja."
+          message: "Korisničko ime, lozinka, ime i email adresa su obavezna polja."
+        });
+      }
+
+      // Validacija email formata
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(req.body.email)) {
+        console.log("Registracija neuspešna: nevalidan email format");
+        return res.status(400).json({
+          error: "Nevalidan email",
+          message: "Molimo unesite validnu email adresu."
         });
       }
       

@@ -15,6 +15,8 @@ import path from "path";
 import { promises as fs } from "fs";
 import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
+import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
+import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -64,6 +66,11 @@ const testEmailSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Security routes - Bot verification and rate limiting
+  app.get("/api/security/bot-challenge", getBotChallenge);
+  app.post("/api/security/verify-bot", verifyBotAnswer);
+  app.get("/api/security/rate-limit-status", getRateLimitStatus);
   
   // Registruj rute za poslovne partnere
   registerBusinessPartnerRoutes(app);
@@ -3078,8 +3085,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer routes - kreiranje servisa
-  app.post("/api/customer/services", async (req, res) => {
+  // Customer routes - kreiranje servisa (sa rate limiting i bot verification)
+  app.post("/api/customer/services", checkBotVerification, checkServiceRequestRateLimit, async (req, res) => {
     try {
       // Proveravamo da li je korisnik prijavljen i da li je klijent
       if (!req.isAuthenticated() || req.user?.role !== "customer") {

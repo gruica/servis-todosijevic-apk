@@ -9,9 +9,12 @@ import {
   Technician, InsertTechnician,
   MaintenanceSchedule, InsertMaintenanceSchedule,
   MaintenanceAlert, InsertMaintenanceAlert,
+  RequestTracking, InsertRequestTracking,
+  BotVerification, InsertBotVerification,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
-  appliances, services, maintenanceSchedules, maintenanceAlerts
+  appliances, services, maintenanceSchedules, maintenanceAlerts,
+  requestTracking, botVerification
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -108,6 +111,17 @@ export interface IStorage {
   getServicesByPartner(partnerId: number): Promise<Service[]>;
   getServiceWithDetails(serviceId: number): Promise<any>;
   getServiceStatusHistory(serviceId: number): Promise<any[]>;
+  
+  // Request tracking methods (rate limiting)
+  getRequestCount(userId: number, requestType: string, windowStart: Date): Promise<number>;
+  addRequestTracking(tracking: InsertRequestTracking): Promise<RequestTracking>;
+  getRequestHistory(userId: number, limit?: number): Promise<RequestTracking[]>;
+  
+  // Bot verification methods
+  getBotVerification(sessionId: string): Promise<BotVerification | undefined>;
+  createBotVerification(verification: InsertBotVerification): Promise<BotVerification>;
+  updateBotVerification(sessionId: string, update: Partial<BotVerification>): Promise<BotVerification | undefined>;
+  cleanupExpiredBotVerifications(): Promise<void>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -1054,6 +1068,58 @@ export class MemStorage implements IStorage {
     alert.isRead = true;
     this.maintenanceAlerts.set(id, alert);
     return alert;
+  }
+
+  // Request tracking methods (stubbed for MemStorage)
+  async getRequestCount(userId: number, requestType: string, windowStart: Date): Promise<number> {
+    return 0; // In-memory implementation doesn't track requests
+  }
+
+  async addRequestTracking(tracking: InsertRequestTracking): Promise<RequestTracking> {
+    // Create a mock request tracking object
+    const mockTracking: RequestTracking = {
+      id: 1,
+      userId: tracking.userId,
+      requestType: tracking.requestType,
+      ipAddress: tracking.ipAddress,
+      userAgent: tracking.userAgent,
+      requestDate: tracking.requestDate,
+      successful: tracking.successful
+    };
+    return mockTracking;
+  }
+
+  async getRequestHistory(userId: number, limit: number = 50): Promise<RequestTracking[]> {
+    return []; // In-memory implementation doesn't store history
+  }
+
+  // Bot verification methods (stubbed for MemStorage)
+  async getBotVerification(sessionId: string): Promise<BotVerification | undefined> {
+    return undefined; // In-memory implementation doesn't support bot verification
+  }
+
+  async createBotVerification(verification: InsertBotVerification): Promise<BotVerification> {
+    // Create a mock bot verification object
+    const mockVerification: BotVerification = {
+      id: 1,
+      sessionId: verification.sessionId,
+      question: verification.question,
+      correctAnswer: verification.correctAnswer,
+      userAnswer: null,
+      attempts: 0,
+      verified: false,
+      expiresAt: verification.expiresAt,
+      createdAt: new Date()
+    };
+    return mockVerification;
+  }
+
+  async updateBotVerification(sessionId: string, update: Partial<BotVerification>): Promise<BotVerification | undefined> {
+    return undefined; // In-memory implementation doesn't support bot verification updates
+  }
+
+  async cleanupExpiredBotVerifications(): Promise<void> {
+    // No-op for in-memory implementation
   }
 }
 
@@ -2224,6 +2290,90 @@ export class DatabaseStorage implements IStorage {
       .where(eq(maintenanceAlerts.id, id))
       .returning();
     return updatedAlert;
+  }
+
+  // Request tracking methods (rate limiting)
+  async getRequestCount(userId: number, requestType: string, windowStart: Date): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(requestTracking)
+        .where(
+          and(
+            eq(requestTracking.userId, userId),
+            eq(requestTracking.requestType, requestType),
+            gte(requestTracking.requestDate, windowStart)
+          )
+        );
+      return result.count;
+    } catch (error) {
+      console.error('Greška pri brojanju zahteva:', error);
+      return 0;
+    }
+  }
+
+  async addRequestTracking(tracking: InsertRequestTracking): Promise<RequestTracking> {
+    const [newTracking] = await db
+      .insert(requestTracking)
+      .values(tracking)
+      .returning();
+    return newTracking;
+  }
+
+  async getRequestHistory(userId: number, limit: number = 50): Promise<RequestTracking[]> {
+    return await db
+      .select()
+      .from(requestTracking)
+      .where(eq(requestTracking.userId, userId))
+      .orderBy(desc(requestTracking.requestDate))
+      .limit(limit);
+  }
+
+  // Bot verification methods
+  async getBotVerification(sessionId: string): Promise<BotVerification | undefined> {
+    try {
+      const [verification] = await db
+        .select()
+        .from(botVerification)
+        .where(eq(botVerification.sessionId, sessionId));
+      return verification;
+    } catch (error) {
+      console.error('Greška pri dohvatanju bot verifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async createBotVerification(verification: InsertBotVerification): Promise<BotVerification> {
+    const [newVerification] = await db
+      .insert(botVerification)
+      .values(verification)
+      .returning();
+    return newVerification;
+  }
+
+  async updateBotVerification(sessionId: string, update: Partial<BotVerification>): Promise<BotVerification | undefined> {
+    try {
+      const [updatedVerification] = await db
+        .update(botVerification)
+        .set(update)
+        .where(eq(botVerification.sessionId, sessionId))
+        .returning();
+      return updatedVerification;
+    } catch (error) {
+      console.error('Greška pri ažuriranju bot verifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async cleanupExpiredBotVerifications(): Promise<void> {
+    try {
+      const now = new Date();
+      await db
+        .delete(botVerification)
+        .where(lte(botVerification.expiresAt, now));
+    } catch (error) {
+      console.error('Greška pri čišćenju isteklih bot verifikacija:', error);
+    }
   }
 }
 
