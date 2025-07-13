@@ -92,14 +92,15 @@ function getRateLimitConfig(config: SSLConfig) {
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Excluduj Vite dev server zahteve
+    // Excluduj Vite dev server zahteve i API pozive za development
     skip: (req) => {
       return isDevelopment && (
         req.url?.includes('/@vite/') ||
         req.url?.includes('/@fs/') ||
         req.url?.includes('/@id/') ||
         req.url?.includes('/src/') ||
-        req.url?.includes('/node_modules/')
+        req.url?.includes('/node_modules/') ||
+        req.url?.startsWith('/api/')
       );
     },
     handler: (req: Request, res: Response) => {

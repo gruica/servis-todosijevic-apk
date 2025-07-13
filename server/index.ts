@@ -48,8 +48,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Add health check endpoints BEFORE all other routes and middleware
-  app.get("/", (req, res) => {
+  // Add health check endpoints - but NOT on root path to avoid conflicts with frontend
+  app.get("/api/health", (req, res) => {
     res.status(200).json({ 
       status: "OK", 
       message: "Frigo Sistem Todosijević Service Management API", 
