@@ -78,9 +78,9 @@ function getHelmetConfig() {
  * Rate Limiting konfiguracija
  */
 function getRateLimitConfig(config: SSLConfig) {
-  // Više limite za development
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const maxRequests = isDevelopment ? 1000 : (config.maxRequests || 100);
+  // Potpuno ugasi rate limiting u developmentu
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const maxRequests = isDevelopment ? 10000 : (config.maxRequests || 100);
   const windowMs = isDevelopment ? 60 * 1000 : (config.windowMs || 15 * 60 * 1000);
   
   return rateLimit({
@@ -92,16 +92,9 @@ function getRateLimitConfig(config: SSLConfig) {
     },
     standardHeaders: true,
     legacyHeaders: false,
-    // Excluduj Vite dev server zahteve i API pozive za development
+    // Kompletno preskoči sve zahteve u developmentu
     skip: (req) => {
-      return isDevelopment && (
-        req.url?.includes('/@vite/') ||
-        req.url?.includes('/@fs/') ||
-        req.url?.includes('/@id/') ||
-        req.url?.includes('/src/') ||
-        req.url?.includes('/node_modules/') ||
-        req.url?.startsWith('/api/')
-      );
+      return isDevelopment; // Preskoči sve u developmentu
     },
     handler: (req: Request, res: Response) => {
       res.status(429).json({
