@@ -906,6 +906,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/services", async (req, res) => {
     try {
+      // Provera autentifikacije - samo admin može da kreira servise
+      if (!req.isAuthenticated() || (req.user?.role !== "administrator" && req.user?.role !== "admin")) {
+        return res.status(401).json({ error: "Nemate dozvolu za kreiranje servisa" });
+      }
+      
       console.log("=== KREIRANJE NOVOG SERVISA ===");
       console.log("Podaci iz frontend forme:", req.body);
       

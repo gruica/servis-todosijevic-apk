@@ -234,7 +234,7 @@ export function AdminServiceCreate() {
     ? appliances.filter((appliance: any) => appliance.clientId === selectedClientId)
     : appliances;
 
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "administrator")) {
     return <div>Nemate dozvolu za pristup ovoj stranici</div>;
   }
 

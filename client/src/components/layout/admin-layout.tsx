@@ -46,8 +46,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
   
-  // Proveri da li je korisnik admin
-  if (!user || user.role !== "admin") {
+  // Proveri da li je korisnik admin ili administrator
+  if (!user || (user.role !== "admin" && user.role !== "administrator")) {
     return <Redirect to="/auth" />;
   }
   
