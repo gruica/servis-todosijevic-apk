@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").default("customer").notNull(), // Promenjen default na customer
+  role: text("role").default("klijent").notNull(), // Promenjen default na klijent
   technicianId: integer("technician_id"), // Reference to technician if user is a technician
   email: text("email"), // Email adresa korisnika
   phone: text("phone"), // Broj telefona korisnika

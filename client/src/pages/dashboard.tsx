@@ -87,13 +87,8 @@ export default function Dashboard() {
       // Osvežimo statistiku kada se prikaže dashboard
       refetchStats();
       
-      // Postavimo interval za osvežavanje na svakih 5 sekundi
-      const intervalId = setInterval(() => {
-        refetchStats();
-      }, 5000);
-      
-      // Čistimo interval pri demontiranju
-      return () => clearInterval(intervalId);
+      // Ne postavljamo automatsko osvežavanje jer može da prouzrokuje nestabilnost
+      // Korisnik može ručno osvežiti stranicu ako je potrebno
     } catch (err) {
       console.error("Greška u useEffect:", err);
     }

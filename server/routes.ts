@@ -97,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/clients/:id/details", async (req, res) => {
     try {
       // Provera autentifikacije - samo admin može da vidi detalje klijenta
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(401).json({ error: "Nemate dozvolu za pristup detaljima klijenta" });
       }
       
@@ -1039,14 +1039,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const partnerByUsername = await storage.getUserByUsername(usernameFormat);
             console.log(`Rezultat pretrage po korisničkom imenu ${usernameFormat}:`, partnerByUsername ? `Pronađen korisnik (uloga: ${partnerByUsername.role})` : "Nije pronađen");
             
-            if (!partnerByUsername || (partnerByUsername.role !== 'partner' && partnerByUsername.role !== 'business')) {
+            if (!partnerByUsername || (partnerByUsername.role !== 'poslovni_partner')) {
               return res.status(400).json({
                 error: "Poslovni partner ne postoji",
                 message: "Izabrani poslovni partner nije pronađen u bazi podataka ili nema odgovarajuća prava."
               });
             }
-          } else if (partner.role !== 'partner' && partner.role !== 'business') {
-            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'partner' ili 'business'`);
+          } else if (partner.role !== 'poslovni_partner') {
+            console.log(`Korisnik sa ID=${validatedData.businessPartnerId} ima ulogu ${partner.role}, ali je potrebna uloga 'poslovni_partner'`);
             
             return res.status(400).json({
               error: "Korisniku nedostaju prava",
@@ -1193,7 +1193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Šaljemo obaveštenje administratorima o novom servisu
           const adminUsers = await storage.getAllUsers();
-          const admins = adminUsers.filter(user => user.role === "admin");
+          const admins = adminUsers.filter(user => user.role === "administrator");
           
           if (admins.length > 0) {
             const creatorInfo = req.user ? ` (kreator: ${req.user.fullName || req.user.username})` : "";
@@ -1492,7 +1492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If user is a technician, verify they can modify this service
-      if (req.user?.role === "technician") {
+      if (req.user?.role === "serviser") {
         const technicianId = req.user.technicianId;
         
         // Check if technicianId matches service's technicianId
@@ -1732,7 +1732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/technician-users", async (req, res) => {
     try {
       // Verify that user is admin or has permission
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -1755,7 +1755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password,
         fullName: fullName || technician.fullName,
-        role: "technician",
+        role: "serviser",
         technicianId: technician.id
       });
       
@@ -1833,7 +1833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Users management routes
   app.get("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
       }
       
@@ -1859,7 +1859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Autorizacija korisnika:", req.isAuthenticated() ? `Autentifikovan (${req.user?.username}, uloga: ${req.user?.role})` : "Nije autentifikovan");
       
       // Osiguramo da je korisnik autorizovan - samo admin može da vidi neverifikovane korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         console.log("Neautorizovan pristup endpoint-u za neverifikovane korisnike");
         return res.status(403).json({ 
           error: "Nemate dozvolu za pristup neverifikovanim korisnicima",
@@ -1896,7 +1896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Pokušaj verifikacije korisnika sa ID ${req.params.id}`);
       
       // Osiguramo da je korisnik autorizovan - samo admin može da verifikuje korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         console.log("Verifikacija neuspešna - korisnik nije admin");
         return res.status(403).json({ 
           error: "Nemate dozvolu za verifikaciju korisnika", 
@@ -1961,7 +1961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/users", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za kreiranje korisnika" });
       }
       
@@ -1998,7 +1998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.put("/api/users/:id", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ažuriranje korisnika" });
       }
       
@@ -2065,7 +2065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete("/api/users/:id", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za brisanje korisnika" });
       }
       
@@ -2097,7 +2097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the user is a technician
-      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+      if (req.user?.role !== "serviser" || !req.user?.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
@@ -2127,7 +2127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`my-services API pristup - user: ${JSON.stringify(req.user || {})}`);
       
       // Check if the user is a technician
-      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+      if (req.user?.role !== "serviser" || !req.user?.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
@@ -2414,7 +2414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za upravljanje email postavkama" });
       }
 
@@ -2451,7 +2451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/send-test-email", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za slanje test email-a" });
       }
 
@@ -2579,7 +2579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/email-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pregled email postavki" });
       }
       
@@ -2613,7 +2613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("[TEST EMAIL] Zahtev za testiranje email-a primljen.");
       
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         console.log("[TEST EMAIL] Zahtev odbijen - korisnik nije administrator.");
         return res.status(403).json({ error: "Nemate dozvolu za testiranje email sistema" });
       }
@@ -2686,7 +2686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/execute-sql", async (req, res) => {
     try {
       // Provera da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Samo administrator ima pristup SQL upravljaču" });
       }
       
@@ -2752,7 +2752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel export endpoints
   app.get("/api/excel/clients", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2771,7 +2771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/technicians", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2790,7 +2790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/appliances", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2809,7 +2809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/services", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2828,7 +2828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/maintenance", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2848,7 +2848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel import endpoints
   app.post("/api/excel/import/clients", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2871,7 +2871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/excel/import/appliances", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2894,7 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/excel/import/services", upload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -3032,7 +3032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta za proveru konfiguracije SMS servisa
   app.get("/api/sms/config", (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
       return res.status(401).json({ error: "Nemate dozvolu za pristup konfiguraciji SMS servisa" });
     }
     
@@ -3075,7 +3075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Infobip SMS endpoint-i
   app.post("/api/infobip/test", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
       return res.status(401).json({ error: "Nemate dozvolu za slanje test poruka" });
     }
     
@@ -3117,7 +3117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/infobip/status", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
       return res.status(401).json({ error: "Nemate dozvolu za pristup statusu SMS servisa" });
     }
     
@@ -3136,7 +3136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta za slanje SMS obaveštenja klijentu o promeni statusa servisa
   app.post("/api/sms/service-update/:serviceId", async (req, res) => {
-    if (!req.isAuthenticated() || (req.user?.role !== "admin" && req.user?.role !== "technician")) {
+    if (!req.isAuthenticated() || (req.user?.role !== "administrator" && req.user?.role !== "serviser")) {
       return res.status(401).json({ error: "Nemate dozvolu za slanje obaveštenja" });
     }
     
@@ -3178,7 +3178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta za masovno slanje SMS poruka izabranim klijentima
   app.post("/api/sms/bulk", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "administrator") {
       return res.status(401).json({ error: "Nemate dozvolu za slanje masovnih poruka" });
     }
     
@@ -3365,7 +3365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/services/:id/assign-technician", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za dodeljivanje servisera" });
       }
       
@@ -3568,7 +3568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/telekom/test", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
@@ -3597,7 +3597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/gsm/test", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
@@ -3643,7 +3643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messaggio/test", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
@@ -3671,7 +3671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/sms-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju SMS-a" });
       }
       
@@ -3705,7 +3705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/sms-settings", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
       }
       
@@ -3739,7 +3739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/test-sms", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za testiranje SMS-a" });
       }
       
@@ -3859,7 +3859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/new-sms/test", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
@@ -3907,7 +3907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/infobip/status", async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || req.user?.role !== "administrator") {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovom endpointu" });
       }
       
@@ -3942,7 +3942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (req.user?.role !== "technician") {
+      if (req.user?.role !== "serviser") {
         return res.status(403).json({ 
           success: false, 
           message: "Samo serviseri mogu koristiti ovu funkcionalnost" 

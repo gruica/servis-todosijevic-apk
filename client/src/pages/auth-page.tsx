@@ -38,8 +38,23 @@ const registerSchema = insertUserSchema.extend({
   path: ["confirmPassword"],
 });
 
+const businessRegisterSchema = insertUserSchema.extend({
+  password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }),
+  confirmPassword: z.string(),
+  phone: z.string().min(1, { message: "Broj telefona je obavezan" }),
+  address: z.string().min(1, { message: "Adresa je obavezna" }),
+  city: z.string().min(1, { message: "Grad je obavezan" }),
+  companyName: z.string().min(1, { message: "Naziv firme je obavezan" }),
+  companyId: z.string().min(1, { message: "PIB firme je obavezan" }),
+  email: z.string().email({ message: "Email mora biti valjan" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Lozinke se ne podudaraju",
+  path: ["confirmPassword"],
+});
+
 type LoginValues = z.infer<typeof loginSchema>;
 type RegisterValues = z.infer<typeof registerSchema>;
+type BusinessRegisterValues = z.infer<typeof businessRegisterSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
@@ -51,13 +66,13 @@ export default function AuthPage() {
     if (user) {
       console.log("Auth page: User already logged in, redirecting based on role:", user.role);
       // Redirect to different pages based on user role
-      if (user.role === "technician") {
+      if (user.role === "serviser") {
         navigate("/tech");
-      } else if (user.role === "customer") {
+      } else if (user.role === "klijent") {
         navigate("/customer");
-      } else if (user.role === "admin") {
+      } else if (user.role === "administrator") {
         navigate("/admin");
-      } else if (user.role === "business_partner") {
+      } else if (user.role === "poslovni_partner") {
         navigate("/business");
       } else {
         navigate("/");
@@ -108,7 +123,25 @@ export default function AuthPage() {
       phone: "",
       address: "",
       city: "",
-      role: "customer", // Postavljamo role na customer za registraciju
+      role: "klijent", // Postavljamo role na klijent za registraciju
+    },
+  });
+
+  // Business partner registration form
+  const businessRegisterForm = useForm<BusinessRegisterValues>({
+    resolver: zodResolver(businessRegisterSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+      fullName: "",
+      phone: "",
+      address: "",
+      city: "",
+      companyName: "",
+      companyId: "",
+      email: "",
+      role: "poslovni_partner", // Postavljamo role na poslovni_partner za poslovne partnere
     },
   });
 
@@ -133,7 +166,22 @@ export default function AuthPage() {
       phone: values.phone,
       address: values.address,
       city: values.city,
-      role: "customer", // Uvek postavljamo rolu na customer
+      role: "klijent", // Uvek postavljamo rolu na klijent
+    });
+  }
+
+  function onBusinessRegisterSubmit(values: BusinessRegisterValues) {
+    registerMutation.mutate({
+      username: values.username,
+      password: values.password,
+      fullName: values.fullName,
+      phone: values.phone,
+      address: values.address,
+      city: values.city,
+      companyName: values.companyName,
+      companyId: values.companyId,
+      email: values.email,
+      role: "poslovni_partner", // Uvek postavljamo rolu na poslovni_partner
     });
   }
 
@@ -150,9 +198,10 @@ export default function AuthPage() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="login">Prijava</TabsTrigger>
                 <TabsTrigger value="register">Registracija</TabsTrigger>
+                <TabsTrigger value="business">Poslovni partner</TabsTrigger>
               </TabsList>
 
               {/* Login Form */}
@@ -329,6 +378,156 @@ export default function AuthPage() {
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending ? "Registracija..." : "Registruj se"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+
+              {/* Business Partner Registration Form */}
+              <TabsContent value="business">
+                <Form {...businessRegisterForm}>
+                  <form onSubmit={businessRegisterForm.handleSubmit(onBusinessRegisterSubmit)} className="space-y-4">
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ime i prezime predstavnika</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Petar Petrović" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Naziv firme</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ABC d.o.o." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="companyId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>PIB firme</FormLabel>
+                          <FormControl>
+                            <Input placeholder="12345678" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="firma@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Korisničko ime</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Unesite korisničko ime" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Broj telefona</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+38269123456" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Adresa firme</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ulica i broj" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grad</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Podgorica" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lozinka</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="********" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessRegisterForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Potvrdite lozinku</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="********" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {registerMutation.isError && (
+                      <div className="bg-red-50 p-3 rounded-md text-red-500 text-sm mb-2">
+                        <p>Greška pri registraciji. Korisničko ime možda već postoji.</p>
+                      </div>
+                    )}
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? "Registracija..." : "Registruj se kao poslovni partner"}
                     </Button>
                   </form>
                 </Form>

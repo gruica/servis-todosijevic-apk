@@ -37,13 +37,13 @@ export function RoleProtectedRoute({
     // Redirect based on user role
     let redirectPath = "/";
     
-    if (user.role === "technician") {
+    if (user.role === "serviser") {
       redirectPath = "/tech";
-    } else if (user.role === "customer") {
+    } else if (user.role === "klijent") {
       redirectPath = "/customer";
-    } else if (user.role === "admin") {
+    } else if (user.role === "administrator") {
       redirectPath = "/admin";
-    } else if (user.role === "business" || user.role === "partner") {
+    } else if (user.role === "poslovni_partner") {
       redirectPath = "/business";
     }
     

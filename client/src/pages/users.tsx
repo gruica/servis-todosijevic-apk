@@ -77,8 +77,8 @@ import { Badge } from "@/components/ui/badge";
 
 // Define user roles for dropdown
 const userRoles = [
-  { value: "admin", label: "Administrator" },
-  { value: "technician", label: "Serviser" }
+  { value: "administrator", label: "Administrator" },
+  { value: "serviser", label: "Serviser" }
 ];
 
 // Define the form schema for user creation/editing
@@ -87,7 +87,7 @@ const userFormSchema = z.object({
   username: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
-  role: z.enum(["admin", "technician"], { 
+  role: z.enum(["administrator", "serviser"], { 
     required_error: "Uloga je obavezna"
   }),
   technicianId: z.number().nullable().optional()
@@ -106,7 +106,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  role: "admin" | "technician";
+  role: "administrator" | "serviser";
   technicianId: number | null;
 }
 
@@ -155,7 +155,7 @@ export default function Users() {
       username: "",
       password: "",
       fullName: "",
-      role: "admin",
+      role: "administrator",
       technicianId: null
     },
   });
@@ -275,7 +275,7 @@ export default function Users() {
       username: "",
       password: "",
       fullName: "",
-      role: "admin",
+      role: "administrator",
       technicianId: null
     });
     setIsFormOpen(true);
@@ -295,7 +295,7 @@ export default function Users() {
   );
 
   // Check if current user has permission to access this page
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== "administrator") {
     return (
       <div className="container mx-auto py-8 px-4">
         <Card>
@@ -512,7 +512,7 @@ export default function Users() {
               />
 
               {/* Conditionally show technician selection if role is technician */}
-              {watchRole === "technician" && (
+              {watchRole === "serviser" && (
                 <FormField
                   control={form.control}
                   name="technicianId"

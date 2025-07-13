@@ -219,7 +219,7 @@ export class MemStorage implements IStorage {
     const id = this.userId++;
     const user: User = { 
       id, 
-      role: "admin", 
+      role: "administrator", 
       username: "admin", 
       fullName: "Jelena Todosijević", 
       password: hashedPassword,
@@ -235,7 +235,7 @@ export class MemStorage implements IStorage {
       username: "serviser@example.com",
       password: "serviser123",
       fullName: "Jovan Todosijević",
-      role: "technician",
+      role: "serviser",
       technicianId: 1, // First technician
       email: "jovan@frigosistemtodosijevic.com"
     });
@@ -292,7 +292,7 @@ export class MemStorage implements IStorage {
   
   async getUnverifiedUsers(): Promise<User[]> {
     return Array.from(this.users.values()).filter(
-      (user) => user.role !== 'admin' && !user.isVerified
+      (user) => user.role !== 'administrator' && !user.isVerified
     ).sort((a, b) => {
       // Sortiraj po datumu registracije (noviji prvo)
       const dateA = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
@@ -332,7 +332,7 @@ export class MemStorage implements IStorage {
     
     const now = new Date();
     // Administratori i serviseri (techniciani) su automatski verifikovani
-    const isVerified = role === "admin" || role === "technician" || !!insertUser.isVerified;
+    const isVerified = role === "administrator" || role === "serviser" || !!insertUser.isVerified;
     
     const user: User = { 
       id, 
@@ -350,7 +350,7 @@ export class MemStorage implements IStorage {
       isVerified: isVerified,
       registeredAt: now.toISOString(),
       verifiedAt: isVerified ? now.toISOString() : null,
-      verifiedBy: isVerified && role === "admin" ? id : null // samoodobravanje za administratore
+      verifiedBy: isVerified && role === "administrator" ? id : null // samoodobravanje za administratore
     };
     
     this.users.set(id, user);
@@ -1437,7 +1437,7 @@ export class DatabaseStorage implements IStorage {
         username: "admin@example.com",
         password: hashedPassword,
         fullName: "Jelena Todosijević",
-        role: "admin"
+        role: "administrator"
       });
       console.log("Admin user created: admin@example.com");
       
@@ -1452,7 +1452,7 @@ export class DatabaseStorage implements IStorage {
           username: "serviser@example.com",
           password: hashedServiserPassword,
           fullName: firstTech.fullName,
-          role: "technician",
+          role: "serviser",
           technicianId: firstTech.id
         });
         console.log("Technician user created: serviser@example.com");
@@ -1494,12 +1494,12 @@ export class DatabaseStorage implements IStorage {
         .from(users)
         .where(and(
           eq(users.isVerified, false),
-          sql`${users.role} != 'admin'` // Administrator je uvek verifikovan
+          sql`${users.role} != 'administrator'` // Administrator je uvek verifikovan
         ))
         .orderBy(desc(users.registeredAt));
       
       // Posebno pronađimo poslovne partnere radi logovanja
-      const businessPartners = result.filter(user => user.role === 'business');
+      const businessPartners = result.filter(user => user.role === 'poslovni_partner');
       console.log(`Pronađeno ${result.length} neverifikovanih korisnika, od toga ${businessPartners.length} poslovnih partnera`);
       
       if (businessPartners.length > 0) {
@@ -1559,7 +1559,7 @@ export class DatabaseStorage implements IStorage {
       const email = insertUser.email || insertUser.username;
       
       // Za poslovne partnere, isVerified je uvek false na početku
-      const isVerified = insertUser.role === "admin" || insertUser.role === "technician";
+      const isVerified = insertUser.role === "administrator" || insertUser.role === "serviser";
       
       // Konvertujemo stringove datuma u Date objekte za ispravno skladištenje
       const now = new Date();

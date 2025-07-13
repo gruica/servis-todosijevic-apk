@@ -62,7 +62,7 @@ export function MobileAppLayout({
     ];
 
     switch (user.role) {
-      case 'admin':
+      case 'administrator':
         return [
           ...baseItems,
           { path: "/clients", label: "Klijenti", icon: Users },
@@ -77,19 +77,19 @@ export function MobileAppLayout({
           { path: "/sql-admin", label: "SQL", icon: Database },
           { path: "/excel", label: "Excel", icon: Download },
         ];
-      case 'technician':
+      case 'serviser':
         return [
           ...baseItems,
           { path: "/tech", label: "Moji servisi", icon: Wrench },
           { path: "/tech/profile", label: "Moj profil", icon: User },
         ];
-      case 'customer':
+      case 'klijent':
         return [
           ...baseItems,
           { path: "/customer", label: "Moji servisi", icon: Wrench },
           { path: "/customer/new-service", label: "Novi servis", icon: Plus },
         ];
-      case 'business_partner':
+      case 'poslovni_partner':
         return [
           ...baseItems,
           { path: "/business", label: "Servisi", icon: Wrench },
