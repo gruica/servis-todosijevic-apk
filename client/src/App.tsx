@@ -1,22 +1,22 @@
-import { Routes, Route } from "wouter";
+import { Route, Switch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile, useMobileEnvironment } from "@/hooks/use-mobile";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AuthPage from "@/pages/auth-page";
-import { Dashboard } from "@/pages/dashboard";
-import { Clients } from "@/pages/clients";
+import Dashboard from "@/pages/dashboard";
+import Clients from "@/pages/clients";
 import Appliances from "@/pages/appliances";
-import { Users } from "@/pages/users";
-import { EmailSettings } from "@/pages/email-settings";
-import { EmailTest } from "@/pages/email-test";
-import { SqlAdmin } from "@/pages/sql-admin";
+import Users from "@/pages/users";
+import EmailSettings from "@/pages/email-settings";
+import EmailTest from "@/pages/email-test";
+import SqlAdmin from "@/pages/sql-admin";
 import UserProfile from "@/pages/user-profile";
 import ExcelImport from "@/pages/admin/excel-import";
-import { Services } from "@/pages/services";
-import { EnhancedServices } from "@/pages/enhanced-services";
+import Services from "@/pages/services";
+import EnhancedServices from "@/pages/enhanced-services";
 import AdminServiceManagement from "@/pages/admin/service-management";
-import { TechnicianServices } from "@/pages/technician/services";
+import TechnicianServices from "@/pages/technician/services";
 import Customer from "@/pages/customer";
 import Business from "@/pages/business";
 import CustomerServiceCreate from "@/pages/customer/services/new";
@@ -24,9 +24,9 @@ import BusinessServiceCreate from "@/pages/business/services/new";
 import AdminSMS from "@/pages/admin/sms-settings";
 import AdminUserVerification from "@/pages/admin/user-verification";
 import AdminWebsiteSecurity from "@/pages/admin/website-security";
-import { TechnicianProfile } from "@/pages/technician/profile";
-import { TechnicianServicesList } from "@/pages/technician-services";
-import { TechnicianServicesAdmin } from "@/pages/admin/technician-services";
+import TechnicianProfile from "@/pages/technician/profile";
+import TechnicianServicesList from "@/pages/technician-services";
+import TechnicianServicesAdmin from "@/pages/admin/technician-services";
 
 // Mobile-optimized components
 import TechnicianServicesMobile from "@/pages/technician/services-mobile";
@@ -67,7 +67,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
+      <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/clients" component={Clients} />
         <Route path="/appliances" component={Appliances} />
@@ -92,7 +92,7 @@ function App() {
         <Route path="/customer/new-service" component={CustomerServiceCreate} />
         <Route path="/business" component={isMobile || isMobileDevice ? BusinessServicesMobile : Business} />
         <Route path="/business/new-service" component={BusinessServiceCreate} />
-      </Routes>
+      </Switch>
       <Toaster />
     </QueryClientProvider>
   );
