@@ -40,6 +40,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/admin/sms", label: "SMS poruke", icon: MessageSquare, highlight: true },
     { path: "/email-settings", label: "Email postavke", icon: Mail },
     { path: "/email-test", label: "Testiranje email-a", icon: Mail },
+    { path: "/admin/website-security", label: "Bezbednost sajta", icon: Shield },
     { path: "/sql-admin", label: "SQL upravljač", icon: Database },
     { path: "/excel", label: "Excel izvoz", icon: Download },
     { path: "/profile", label: "Moj profil", icon: User },

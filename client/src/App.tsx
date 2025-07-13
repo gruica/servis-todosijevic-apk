@@ -70,6 +70,7 @@ function Router() {
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/service-management" component={React.lazy(() => import("@/pages/admin/service-management"))} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/website-security" component={React.lazy(() => import("@/pages/admin/website-security"))} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       {/* Admin verzija servisa - zaštićena */}
