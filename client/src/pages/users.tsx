@@ -78,7 +78,9 @@ import { Badge } from "@/components/ui/badge";
 // Define user roles for dropdown
 const userRoles = [
   { value: "admin", label: "Administrator" },
-  { value: "technician", label: "Serviser" }
+  { value: "technician", label: "Serviser" },
+  { value: "business_partner", label: "Poslovni korisnik" },
+  { value: "customer", label: "Klijent" }
 ];
 
 // Define the form schema for user creation/editing
@@ -87,7 +89,7 @@ const userFormSchema = z.object({
   username: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
-  role: z.enum(["admin", "technician"], { 
+  role: z.enum(["admin", "technician", "business_partner", "customer"], { 
     required_error: "Uloga je obavezna"
   }),
   technicianId: z.number().nullable().optional()
@@ -106,8 +108,12 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  role: "admin" | "technician";
+  role: "admin" | "technician" | "business_partner" | "customer";
   technicianId: number | null;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  isVerified?: boolean;
 }
 
 // Technician interface for dropdown
@@ -115,6 +121,38 @@ interface Technician {
   id: number;
   fullName: string;
   specialization: string | null;
+}
+
+// Function to format role names for display
+function getRoleName(role: string): string {
+  switch (role) {
+    case "admin":
+      return "Administrator";
+    case "technician":
+      return "Serviser";
+    case "business_partner":
+      return "Poslovni korisnik";
+    case "customer":
+      return "Klijent";
+    default:
+      return role;
+  }
+}
+
+// Function to get role badge variant
+function getRoleBadgeVariant(role: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (role) {
+    case "admin":
+      return "destructive";
+    case "technician":
+      return "default";
+    case "business_partner":
+      return "secondary";
+    case "customer":
+      return "outline";
+    default:
+      return "default";
+  }
 }
 
 export default function Users() {
@@ -368,8 +406,8 @@ export default function Users() {
                     <TableCell className="font-medium">{user.fullName}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role === "admin" ? "Administrator" : "Serviser"}
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {getRoleName(user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell>

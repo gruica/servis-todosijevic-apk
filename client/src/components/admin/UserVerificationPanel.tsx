@@ -99,8 +99,8 @@ const UserVerificationPanel: React.FC = () => {
       case "technician":
         return "Serviser";
       case "business_partner":
-        return "Poslovni partner";
-      case "client":
+        return "Poslovni korisnik";
+      case "customer":
         return "Klijent";
       default:
         return "Nepoznata uloga";
@@ -116,7 +116,7 @@ const UserVerificationPanel: React.FC = () => {
         return "default";
       case "business_partner":
         return "secondary";
-      case "client":
+      case "customer":
         return "outline";
       default:
         return "outline";
