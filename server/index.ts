@@ -48,6 +48,24 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Add health check endpoints BEFORE all other routes and middleware
+  app.get("/", (req, res) => {
+    res.status(200).json({ 
+      status: "OK", 
+      message: "Frigo Sistem Todosijević Service Management API", 
+      timestamp: new Date().toISOString(),
+      version: "1.0.0"
+    });
+  });
+
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "OK", 
+      message: "Service is running", 
+      timestamp: new Date().toISOString() 
+    });
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
