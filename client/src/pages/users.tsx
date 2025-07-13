@@ -78,7 +78,9 @@ import { Badge } from "@/components/ui/badge";
 // Define user roles for dropdown
 const userRoles = [
   { value: "administrator", label: "Administrator" },
-  { value: "serviser", label: "Serviser" }
+  { value: "serviser", label: "Serviser" },
+  { value: "klijent", label: "Klijent" },
+  { value: "poslovni_partner", label: "Poslovni partner" }
 ];
 
 // Define the form schema for user creation/editing
@@ -87,7 +89,7 @@ const userFormSchema = z.object({
   username: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
-  role: z.enum(["administrator", "serviser"], { 
+  role: z.enum(["administrator", "serviser", "klijent", "poslovni_partner"], { 
     required_error: "Uloga je obavezna"
   }),
   technicianId: z.number().nullable().optional()
@@ -106,7 +108,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  role: "administrator" | "serviser";
+  role: "administrator" | "serviser" | "klijent" | "poslovni_partner";
   technicianId: number | null;
 }
 
@@ -368,8 +370,19 @@ export default function Users() {
                     <TableCell className="font-medium">{user.fullName}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role === "admin" ? "Administrator" : "Serviser"}
+                      <Badge variant={
+                        user.role === "administrator" ? "default" : 
+                        user.role === "serviser" ? "secondary" :
+                        user.role === "poslovni_partner" ? "outline" :
+                        "secondary"
+                      }>
+                        {
+                          user.role === "administrator" ? "Administrator" :
+                          user.role === "serviser" ? "Serviser" :
+                          user.role === "klijent" ? "Klijent" :
+                          user.role === "poslovni_partner" ? "Poslovni partner" :
+                          user.role
+                        }
                       </Badge>
                     </TableCell>
                     <TableCell>

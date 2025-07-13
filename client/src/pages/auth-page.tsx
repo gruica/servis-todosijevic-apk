@@ -186,9 +186,9 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row overflow-y-auto">
       {/* Left side - Auth Form */}
-      <div className="w-full md:w-2/5 flex items-center justify-center p-4 md:p-10">
+      <div className="w-full md:w-2/5 flex items-center justify-center p-4 md:p-10 overflow-y-auto">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Frigo Sistem Todosijević</CardTitle>
