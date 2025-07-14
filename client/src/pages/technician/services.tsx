@@ -187,6 +187,26 @@ export default function TechnicianServices() {
     }
   });
 
+  // Group services by city for better organization
+  const groupedServices = filteredServices.reduce((groups, service) => {
+    const city = service.client?.city || "Nepoznat grad";
+    if (!groups[city]) {
+      groups[city] = [];
+    }
+    groups[city].push(service);
+    return groups;
+  }, {} as Record<string, TechnicianService[]>);
+
+  // Sort cities alphabetically and services within each city by date
+  const sortedCities = Object.keys(groupedServices).sort();
+  sortedCities.forEach(city => {
+    groupedServices[city].sort((a, b) => {
+      const dateA = new Date(a.scheduledDate || a.createdAt);
+      const dateB = new Date(b.scheduledDate || b.createdAt);
+      return dateA.getTime() - dateB.getTime();
+    });
+  });
+
   // Function to get status badge
   function getStatusBadge(status: string) {
     switch (status) {
@@ -293,91 +313,102 @@ export default function TechnicianServices() {
               </div>
             ) : (
               <ScrollArea className="h-[calc(100vh-220px)]">
-                <div className="space-y-4 pr-4">
-                  {filteredServices.map((service) => (
-                    <Card key={service.id} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">
-                              {service.client?.fullName}
-                            </CardTitle>
-                            <CardDescription>
-                              {service.appliance?.category?.name} {service.appliance?.model}
-                            </CardDescription>
-                          </div>
-                          <div>{getStatusBadge(service.status)}</div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="space-y-2">
-                          <div className="flex items-center">
-                            <ClipboardList className="h-4 w-4 mr-2 opacity-70" />
-                            <span className="text-sm">{service.description}</span>
-                          </div>
-                          {service.client?.address && (
-                            <div className="flex items-center">
-                              <Package className="h-4 w-4 mr-2 opacity-70" />
-                              <span className="text-sm">{service.client.address}, {service.client.city}</span>
+                <div className="space-y-6 pr-4">
+                  {sortedCities.map((city) => (
+                    <div key={city} className="space-y-3">
+                      <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        <h3 className="font-semibold text-lg text-primary">{city}</h3>
+                        <Badge variant="outline" className="ml-2">
+                          {groupedServices[city].length} servis{groupedServices[city].length === 1 ? '' : 'a'}
+                        </Badge>
+                      </div>
+                      {groupedServices[city].map((service) => (
+                        <Card key={service.id} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg">
+                                  {service.client?.fullName}
+                                </CardTitle>
+                                <CardDescription>
+                                  {service.appliance?.category?.name} {service.appliance?.model}
+                                </CardDescription>
+                              </div>
+                              <div>{getStatusBadge(service.status)}</div>
                             </div>
-                          )}
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 opacity-70" />
-                            <span className="text-sm">Kreiran: {formatDate(service.createdAt)}</span>
-                          </div>
-                          {service.scheduledDate && (
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-2 opacity-70" />
-                              <span className="text-sm">Zakazan: {formatDate(service.scheduledDate)}</span>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="space-y-2">
+                              <div className="flex items-center">
+                                <ClipboardList className="h-4 w-4 mr-2 opacity-70" />
+                                <span className="text-sm">{service.description}</span>
+                              </div>
+                              {service.client?.address && (
+                                <div className="flex items-center">
+                                  <Package className="h-4 w-4 mr-2 opacity-70" />
+                                  <span className="text-sm">{service.client.address}, {service.client.city}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2 opacity-70" />
+                                <span className="text-sm">Kreiran: {formatDate(service.createdAt)}</span>
+                              </div>
+                              {service.scheduledDate && (
+                                <div className="flex items-center">
+                                  <Clock className="h-4 w-4 mr-2 opacity-70" />
+                                  <span className="text-sm">Zakazan: {formatDate(service.scheduledDate)}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between pt-2">
-                        <div className="flex gap-2">
-                          <CallClientButton 
-                            phoneNumber={service.client?.phone || ""}
-                            clientName={service.client?.fullName}
-                            variant="secondary" 
-                            size="sm"
-                            disabled={!service.client?.phone}
-                          />
-                          
-                          {service.client?.address && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openClientLocation(service.client?.address || "", service.client?.city || null)}
-                            >
-                              <MapPin className="h-4 w-4 mr-2" />
-                              Mapa
-                            </Button>
-                          )}
-                        </div>
+                          </CardContent>
+                          <CardFooter className="flex justify-between pt-2">
+                            <div className="flex gap-2">
+                              <CallClientButton 
+                                phoneNumber={service.client?.phone || ""}
+                                clientName={service.client?.fullName}
+                                variant="secondary" 
+                                size="sm"
+                                disabled={!service.client?.phone}
+                              />
+                              
+                              {service.client?.address && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => openClientLocation(service.client?.address || "", service.client?.city || null)}
+                                >
+                                  <MapPin className="h-4 w-4 mr-2" />
+                                  Mapa
+                                </Button>
+                              )}
+                            </div>
 
-                        {(service.status === "pending" || service.status === "scheduled") && (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => openStatusDialog(service, "in_progress")}
-                          >
-                            <ClipboardCheck className="h-4 w-4 mr-2" />
-                            Započni servis
-                          </Button>
-                        )}
-                        
-                        {service.status === "in_progress" && (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => openStatusDialog(service, "completed")}
-                          >
-                            <ClipboardCheck className="h-4 w-4 mr-2" />
-                            Završi servis
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
+                            {(service.status === "pending" || service.status === "scheduled") && (
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                onClick={() => openStatusDialog(service, "in_progress")}
+                              >
+                                <ClipboardCheck className="h-4 w-4 mr-2" />
+                                Započni servis
+                              </Button>
+                            )}
+                            
+                            {service.status === "in_progress" && (
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                onClick={() => openStatusDialog(service, "completed")}
+                              >
+                                <ClipboardCheck className="h-4 w-4 mr-2" />
+                                Završi servis
+                              </Button>
+                            )}
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
