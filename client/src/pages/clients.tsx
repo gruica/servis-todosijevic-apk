@@ -304,6 +304,20 @@ export default function Clients() {
   const onApplianceSubmit = (data: ApplianceFormValues) => {
     console.log("DEBUG: onApplianceSubmit pozvan sa podacima:", data);
     console.log("DEBUG: Forma greške:", applianceForm.formState.errors);
+    console.log("DEBUG: Forma stanje:", applianceForm.formState);
+    console.log("DEBUG: Forma validna:", applianceForm.formState.isValid);
+    
+    // Proveri da li su obavezna polja popunjena
+    if (!data.categoryId || data.categoryId === 0) {
+      console.log("DEBUG: Greška - kategorija nije izabrana");
+      return;
+    }
+    if (!data.manufacturerId || data.manufacturerId === 0) {
+      console.log("DEBUG: Greška - proizvođač nije izabran");
+      return;
+    }
+    
+    console.log("DEBUG: Pozivam mutation...");
     applianceMutation.mutate(data);
   };
   
@@ -580,6 +594,13 @@ export default function Clients() {
           
           <Form {...applianceForm}>
             <form onSubmit={applianceForm.handleSubmit(onApplianceSubmit)} className="space-y-4">
+              <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
+                <p><strong>Debug info:</strong></p>
+                <p>NewClientId: {newClientId}</p>
+                <p>Categories loaded: {categories?.length || 0}</p>
+                <p>Manufacturers loaded: {manufacturers?.length || 0}</p>
+                <p>Form valid: {applianceForm.formState.isValid ? 'Yes' : 'No'}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={applianceForm.control}
@@ -588,8 +609,8 @@ export default function Clients() {
                     <FormItem>
                       <FormLabel>Tip uređaja</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        value={field.value > 0 ? field.value.toString() : ""}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -597,11 +618,17 @@ export default function Clients() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories?.map((category: ApplianceCategory) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
+                          {categories?.length ? (
+                            categories.map((category: ApplianceCategory) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="" disabled>
+                              Učitavanje kategorija...
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -616,8 +643,8 @@ export default function Clients() {
                     <FormItem>
                       <FormLabel>Proizvođač</FormLabel>
                       <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        value={field.value > 0 ? field.value.toString() : ""}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -625,11 +652,17 @@ export default function Clients() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {manufacturers?.map((manufacturer: Manufacturer) => (
-                            <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
-                              {manufacturer.name}
+                          {manufacturers?.length ? (
+                            manufacturers.map((manufacturer: Manufacturer) => (
+                              <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                                {manufacturer.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="" disabled>
+                              Učitavanje proizvođača...
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
