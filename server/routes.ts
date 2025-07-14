@@ -1412,14 +1412,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isCompletelyFixed
       } = req.body;
       
+      console.log(`[STATUS UPDATE] Korisnik ${req.user?.username} (${req.user?.role}) ažurira servis #${serviceId} sa statusom: ${status}`);
+      
       // Validate status
       const validStatus = serviceStatusEnum.parse(status);
       
       // Get the service
       const service = await storage.getService(serviceId);
       if (!service) {
+        console.log(`[STATUS UPDATE] Servis #${serviceId} nije pronađen`);
         return res.status(404).json({ error: "Servis nije pronađen" });
       }
+      
+      console.log(`[STATUS UPDATE] Trenutni status servisa #${serviceId}: ${service.status} -> ${validStatus}`);
       
       // If user is a technician, verify they can modify this service
       if (req.user?.role === "technician") {
@@ -1446,8 +1451,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (!updatedService) {
+        console.log(`[STATUS UPDATE] Greška pri ažuriranju servisa #${serviceId} u bazi podataka`);
         return res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
       }
+      
+      console.log(`[STATUS UPDATE] Servis #${serviceId} uspešno ažuriran. Novi status: ${updatedService.status}`);
       
       // Informacije o slanju emaila i SMS-a koje će biti vraćene klijentu
       const emailInfo: {

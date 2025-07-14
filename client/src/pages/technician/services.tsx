@@ -93,6 +93,8 @@ export default function TechnicianServices() {
       cost?: string;
       isCompletelyFixed?: boolean;
     }) => {
+      console.log(`[MUTATION] Pozivam API za servis ${serviceId} sa statusom: ${status}`);
+      
       const res = await apiRequest("PUT", `/api/services/${serviceId}/status`, { 
         status, 
         technicianNotes: notes,
@@ -101,7 +103,11 @@ export default function TechnicianServices() {
         cost,
         isCompletelyFixed
       });
-      return await res.json();
+      
+      const result = await res.json();
+      console.log(`[MUTATION] API odgovor za servis ${serviceId}:`, result);
+      
+      return result;
     },
     onSuccess: (data) => {
       // Poziv invalidacije queryCache-a za osvežavanje liste
