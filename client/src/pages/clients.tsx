@@ -306,14 +306,25 @@ export default function Clients() {
     console.log("DEBUG: Forma greške:", applianceForm.formState.errors);
     console.log("DEBUG: Forma stanje:", applianceForm.formState);
     console.log("DEBUG: Forma validna:", applianceForm.formState.isValid);
+    console.log("DEBUG: Mutation pending:", applianceMutation.isPending);
     
     // Proveri da li su obavezna polja popunjena
     if (!data.categoryId || data.categoryId === 0) {
       console.log("DEBUG: Greška - kategorija nije izabrana");
+      toast({
+        title: "Greška",
+        description: "Morate izabrati kategoriju uređaja",
+        variant: "destructive",
+      });
       return;
     }
     if (!data.manufacturerId || data.manufacturerId === 0) {
       console.log("DEBUG: Greška - proizvođač nije izabran");
+      toast({
+        title: "Greška", 
+        description: "Morate izabrati proizvođača",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -600,6 +611,9 @@ export default function Clients() {
                 <p>Categories loaded: {categories?.length || 0}</p>
                 <p>Manufacturers loaded: {manufacturers?.length || 0}</p>
                 <p>Form valid: {applianceForm.formState.isValid ? 'Yes' : 'No'}</p>
+                <p>Current values: {JSON.stringify(applianceForm.getValues())}</p>
+                <p>Errors: {JSON.stringify(applianceForm.formState.errors)}</p>
+                <p>Mutation pending: {applianceMutation.isPending ? 'Yes' : 'No'}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -740,6 +754,12 @@ export default function Clients() {
                 <Button 
                   type="submit" 
                   disabled={applianceMutation.isPending}
+                  onClick={(e) => {
+                    console.log("DEBUG: Button clicked");
+                    console.log("DEBUG: Current form values:", applianceForm.getValues());
+                    console.log("DEBUG: Form errors:", applianceForm.formState.errors);
+                    console.log("DEBUG: Form state:", applianceForm.formState);
+                  }}
                 >
                   {applianceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
                 </Button>
