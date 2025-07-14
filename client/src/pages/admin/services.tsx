@@ -289,6 +289,13 @@ export default function AdminServices() {
               Kompletan pregled i upravljanje svim servisima
             </p>
           </div>
+          <Button 
+            onClick={() => window.location.href = '/admin/create-service'} 
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Dodaj novi servis
+          </Button>
         </div>
 
         {/* Statistics */}
