@@ -1828,6 +1828,10 @@ export class DatabaseStorage implements IStorage {
     return updatedClient;
   }
 
+  async deleteClient(id: number): Promise<void> {
+    await db.delete(clients).where(eq(clients.id, id));
+  }
+
   async getRecentClients(limit: number): Promise<Client[]> {
     return await db.select().from(clients).orderBy(desc(clients.id)).limit(limit);
   }
