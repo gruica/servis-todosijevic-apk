@@ -478,14 +478,9 @@ export default function EnhancedServices() {
     onSuccess: (data) => {
       console.log("Uspešno sačuvan servis:", data);
       
-      // Invalidate service queries
+      // Optimizovana batch invalidacija
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      
-      // Invalidate stats and force refetch
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/stats"],
-        refetchType: 'all'
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       
       // Show success toast with email notification info
       if (data?.emailSent) {
@@ -533,7 +528,7 @@ export default function EnhancedServices() {
     onSuccess: (data) => {
       console.log("Uspešno dodeljen serviser:", data);
       
-      // Invalidate service queries
+      // Optimizovana invalidacija samo za servise
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       
       toast({
@@ -560,7 +555,7 @@ export default function EnhancedServices() {
     onSuccess: (data) => {
       console.log("Uspešno ažuriran status:", data);
       
-      // Invalidate service queries
+      // Optimizovana invalidacija samo za servise
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       
       toast({

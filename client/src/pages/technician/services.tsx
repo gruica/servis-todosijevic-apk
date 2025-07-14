@@ -110,38 +110,28 @@ export default function TechnicianServices() {
       return result;
     },
     onSuccess: (data) => {
-      // Poziv invalidacije queryCache-a za osvežavanje liste
+      // Jedina cache invalidacija - uklanjamo duplu cache invalidaciju
       queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
       
-      // Notifikacije se prikazuju samo u pozadini, nakon zatvaranja dijaloga
-      // Ovo omogućava da se korisnik odmah vrati na listu servisa
-      // Za mobilne korisnike, glavni dijalog se zatvara u handleStatusChange
-      // Za web korisnike, dijalog se zatvara ovde
-      if (isMobileEnvironment()) {
-        // Za mobilne korisnike, ne prikazujemo nikakvu poruku o uspešnosti
-        // pošto je već prikazana "Slanje zahteva..." poruka
-        console.log("Mobilni korisnik: status servisa uspešno ažuriran, bez prikazivanja toasta.");
+      // Zatvaramo dijalog za sve korisnike
+      setStatusDialogOpen(false);
+      
+      // Prikazujemo poruku o uspešnosti
+      if (data?.emailSent) {
+        toast({
+          title: "✅ Status uspješno ažuriran",
+          description: `Status servisa je uspješno promijenjen. 📧 Email obaveštenje je poslato klijentu ${data.clientName || 'i serviseru'}. ${data.emailDetails || ''}`,
+          variant: "default",
+          duration: 5000,
+        });
       } else {
-        // Za web korisnike, prikazujemo standardnu poruku i zatvaramo dijalog
-        if (data?.emailSent) {
-          toast({
-            title: "✅ Status uspješno ažuriran",
-            description: `Status servisa je uspješno promijenjen. 📧 Email obaveštenje je poslato klijentu ${data.clientName || 'i serviseru'}. ${data.emailDetails || ''}`,
-            variant: "default",
-            duration: 5000,
-          });
-        } else {
-          toast({
-            title: data?.emailError ? "⚠️ Status ažuriran, slanje email-a nije uspelo" : "✅ Status uspješno ažuriran",
-            description: "Status servisa je uspješno promijenjen. " + 
-              (data?.emailError ? `⚠️ Email obaveštenje NIJE poslato: ${data.emailError}` : "📧 Email obaveštenja nisu konfigurisana."),
-            variant: data?.emailError ? "destructive" : "default",
-            duration: 7000,
-          });
-        }
-        
-        // Zatvaramo dijalog samo za web korisnike
-        setStatusDialogOpen(false);
+        toast({
+          title: data?.emailError ? "⚠️ Status ažuriran, slanje email-a nije uspelo" : "✅ Status uspješno ažuriran",
+          description: "Status servisa je uspješno promijenjen. " + 
+            (data?.emailError ? `⚠️ Email obaveštenje NIJE poslato: ${data.emailError}` : "📧 Email obaveštenja nisu konfigurisana."),
+          variant: data?.emailError ? "destructive" : "default",
+          duration: 7000,
+        });
       }
     },
     onError: (error: Error) => {
@@ -152,47 +142,24 @@ export default function TechnicianServices() {
         variant: "destructive",
       });
       
-      // Zatvaramo dijalog samo za web korisnike, ako je još uvek otvoren
-      if (!isMobileEnvironment() && statusDialogOpen) {
-        setStatusDialogOpen(false);
-      }
+      // Zatvaramo dijalog u slučaju greške
+      setStatusDialogOpen(false);
     },
   });
 
   const handleStatusChange = () => {
     if (!selectedService || !newStatus) return;
     
-    // Za mobilne korisnike, koristimo optimizovanu verziju sa async/await koji se odmah vraća
-    // bez čekanja na kompletno slanje email-a i ažuriranje u bazi
-    const updateService = async () => {
-      try {
-        // Zatvaramo dijalog odmah, pre nego što se izvrši API poziv
-        setStatusDialogOpen(false);
-        
-        // Toast notifikacija da je zahtev poslat
-        toast({
-          title: "Slanje zahteva...",
-          description: "Ažuriranje statusa servisa. Molimo sačekajte.",
-        });
-        
-        // Poziv mutacije nakon što je korisniku dato obaveštenje
-        // Cache invalidacija se automatski poziva u onSuccess callback-u
-        updateStatusMutation.mutate({
-          serviceId: selectedService.id,
-          status: newStatus,
-          notes: technicianNotes,
-          usedParts: usedParts,
-          machineNotes: machineNotes,
-          cost: cost,
-          isCompletelyFixed: isCompletelyFixed
-        });
-      } catch (error) {
-        console.error("Greška pri ažuriranju statusa:", error);
-      }
-    };
-    
-    // Pokreni async funkciju
-    updateService();
+    // Jednostavno pozivamo mutaciju - cache invalidacija se automatski poziva u onSuccess callback-u
+    updateStatusMutation.mutate({
+      serviceId: selectedService.id,
+      status: newStatus,
+      notes: technicianNotes,
+      usedParts: usedParts,
+      machineNotes: machineNotes,
+      cost: cost,
+      isCompletelyFixed: isCompletelyFixed
+    });
   };
 
   const openStatusDialog = (service: TechnicianService, status: ServiceStatus) => {
