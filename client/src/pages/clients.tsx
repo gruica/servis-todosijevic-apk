@@ -24,7 +24,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Pencil, Plus, Search, User, AlertCircle, ArrowRight, ExternalLink, Eye } from "lucide-react";
+import { Pencil, Plus, Search, User, AlertCircle, ArrowRight, ExternalLink, Eye, Trash2 } from "lucide-react";
 
 const clientFormSchema = insertClientSchema.extend({
   fullName: z.string().min(1, "Obavezno polje"),
@@ -56,6 +56,7 @@ export default function Clients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showAddAppliancePrompt, setShowAddAppliancePrompt] = useState(false);
   const [newClientId, setNewClientId] = useState<number | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const { toast } = useToast();
   
 
@@ -145,6 +146,29 @@ export default function Clients() {
       });
     },
   });
+
+  // Delete client mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      const res = await apiRequest("DELETE", `/api/clients/${clientId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Klijent uspešno obrisan",
+        description: "Klijent je uklonjen iz sistema",
+      });
+      setClientToDelete(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri brisanju klijenta",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Open dialog for adding new client
   const handleAddClient = () => {
@@ -164,6 +188,18 @@ export default function Clients() {
       city: client.city || "",
     });
     setIsDialogOpen(true);
+  };
+
+  // Handle delete client
+  const handleDeleteClient = (client: Client) => {
+    setClientToDelete(client);
+  };
+
+  // Confirm delete client
+  const confirmDeleteClient = () => {
+    if (clientToDelete) {
+      deleteMutation.mutate(clientToDelete.id);
+    }
   };
   
   // Submit client form
@@ -455,6 +491,15 @@ export default function Clients() {
                                 >
                                   <Pencil className="h-4 w-4 text-primary" />
                                 </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => handleDeleteClient(client)}
+                                  title="Obriši"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -728,6 +773,37 @@ export default function Clients() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!clientToDelete} onOpenChange={() => setClientToDelete(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Brisanje klijenta</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Da li ste sigurni da želite da obrišete klijenta "{clientToDelete?.fullName}"?</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Ova akcija je nepovratna. Klijent će biti uklonjen iz sistema.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setClientToDelete(null)}
+              disabled={deleteMutation.isPending}
+            >
+              Odustani
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteClient}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Brisanje..." : "Obriši"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

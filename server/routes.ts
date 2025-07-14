@@ -298,6 +298,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/clients/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Provera da li klijent postoji
+      const client = await storage.getClient(id);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+      
+      // Brisanje klijenta
+      await storage.deleteClient(id);
+      
+      res.json({ 
+        success: true, 
+        message: "Klijent je uspešno obrisan" 
+      });
+    } catch (error) {
+      console.error("Greška pri brisanju klijenta:", error);
+      res.status(500).json({ error: "Greška pri brisanju klijenta", message: error.message });
+    }
+  });
+
   // Appliance Categories routes
   app.get("/api/categories", async (req, res) => {
     try {

@@ -578,6 +578,10 @@ export class MemStorage implements IStorage {
     this.clients.set(id, updatedClient);
     return updatedClient;
   }
+
+  async deleteClient(id: number): Promise<void> {
+    this.clients.delete(id);
+  }
   
   async getRecentClients(limit: number): Promise<Client[]> {
     return Array.from(this.clients.values())
