@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Calendar as CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Eye, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Wrench, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale/sr";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,8 @@ export default function TechnicianServicesList() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dateString, setDateString] = useState<string>("");
   const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Učitavanje servisera
   const { data: technicians } = useQuery<any[]>({
@@ -143,6 +146,11 @@ export default function TechnicianServicesList() {
     if (!id) return "Nije dodeljen";
     const tech = technicians?.find((t) => t.id === id);
     return tech ? tech.fullName : "Nije dodeljen";
+  };
+
+  const handleViewDetails = (service: any) => {
+    setSelectedService(service);
+    setIsDetailsOpen(true);
   };
 
   return (
@@ -300,6 +308,7 @@ export default function TechnicianServicesList() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => handleViewDetails(service)}
                             >
                               <Eye className="h-4 w-4 mr-1" />
                               Detalji
@@ -315,6 +324,75 @@ export default function TechnicianServicesList() {
           </div>
         </main>
       </div>
+
+      {/* Dialog za detalje servisa */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
+            <DialogDescription>
+              Kompletne informacije o servisu
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-6">
+              {/* Status i osnovne informacije */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-600 mb-2">Status</h3>
+                  <StatusBadge status={selectedService.status} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-600 mb-2">Datum kreiranja</h3>
+                  <p className="text-sm">{formatDate(selectedService.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Opis problema */}
+              <div>
+                <h3 className="font-semibold text-sm text-gray-600 mb-2">Opis problema</h3>
+                <p className="text-sm bg-gray-50 p-3 rounded">{selectedService.description}</p>
+              </div>
+
+              {/* Informacije o klijentu */}
+              <div>
+                <h3 className="font-semibold text-sm text-gray-600 mb-2">Informacije o klijentu</h3>
+                <div className="bg-blue-50 p-3 rounded space-y-2">
+                  <p className="text-sm"><strong>Ime:</strong> {selectedService.clientName || "N/A"}</p>
+                  <p className="text-sm"><strong>Telefon:</strong> {selectedService.clientPhone || "N/A"}</p>
+                  <p className="text-sm"><strong>Email:</strong> {selectedService.clientEmail || "N/A"}</p>
+                  <p className="text-sm"><strong>Adresa:</strong> {selectedService.clientAddress || "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Informacije o serviseru */}
+              <div>
+                <h3 className="font-semibold text-sm text-gray-600 mb-2">Dodeljeni serviser</h3>
+                <div className="bg-green-50 p-3 rounded">
+                  <p className="text-sm"><strong>Serviser:</strong> {getTechnicianName(selectedService.technicianId)}</p>
+                </div>
+              </div>
+
+              {/* Napomene servisera */}
+              {selectedService.technicianNotes && (
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-600 mb-2">Napomene servisera</h3>
+                  <p className="text-sm bg-yellow-50 p-3 rounded">{selectedService.technicianNotes}</p>
+                </div>
+              )}
+
+              {/* Troškovi */}
+              {selectedService.cost && (
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-600 mb-2">Troškovi</h3>
+                  <p className="text-sm font-semibold text-green-600">{selectedService.cost} €</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
