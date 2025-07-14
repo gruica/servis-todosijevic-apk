@@ -2035,11 +2035,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentServices(limit: number): Promise<Service[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: services.id,
+        clientId: services.clientId,
+        applianceId: services.applianceId,
+        technicianId: services.technicianId,
+        description: services.description,
+        status: services.status,
+        createdAt: services.createdAt,
+        scheduledDate: services.scheduledDate,
+        completedDate: services.completedDate,
+        technicianNotes: services.technicianNotes,
+        cost: services.cost,
+        usedParts: services.usedParts,
+        machineNotes: services.machineNotes,
+        isCompletelyFixed: services.isCompletelyFixed,
+        businessPartnerId: services.businessPartnerId,
+        partnerCompanyName: services.partnerCompanyName,
+        warrantyStatus: services.warrantyStatus,
+        // Client information
+        clientFullName: clients.fullName,
+        clientPhone: clients.phone,
+        clientEmail: clients.email,
+        clientAddress: clients.address,
+        clientCity: clients.city,
+        // Appliance information
+        applianceModel: appliances.model,
+        applianceSerialNumber: appliances.serialNumber,
+        // Category information
+        categoryName: applianceCategories.name,
+        categoryIcon: applianceCategories.icon,
+        // Manufacturer information
+        manufacturerName: manufacturers.name
+      })
       .from(services)
+      .leftJoin(clients, eq(services.clientId, clients.id))
+      .leftJoin(appliances, eq(services.applianceId, appliances.id))
+      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
       .orderBy(desc(services.createdAt))
       .limit(limit);
+
+    // Transform the results to match the expected format
+    return results.map(row => ({
+      id: row.id,
+      clientId: row.clientId,
+      applianceId: row.applianceId,
+      technicianId: row.technicianId,
+      description: row.description,
+      status: row.status,
+      createdAt: row.createdAt,
+      scheduledDate: row.scheduledDate,
+      completedDate: row.completedDate,
+      technicianNotes: row.technicianNotes,
+      cost: row.cost,
+      usedParts: row.usedParts,
+      machineNotes: row.machineNotes,
+      isCompletelyFixed: row.isCompletelyFixed,
+      businessPartnerId: row.businessPartnerId,
+      partnerCompanyName: row.partnerCompanyName,
+      warrantyStatus: row.warrantyStatus,
+      // Nested client object
+      client: row.clientFullName ? {
+        id: row.clientId,
+        fullName: row.clientFullName,
+        phone: row.clientPhone,
+        email: row.clientEmail,
+        address: row.clientAddress,
+        city: row.clientCity
+      } : undefined,
+      // Nested appliance object with category
+      appliance: row.applianceModel || row.categoryName ? {
+        id: row.applianceId,
+        model: row.applianceModel,
+        serialNumber: row.applianceSerialNumber,
+        category: row.categoryName ? {
+          id: row.applianceId, // This will be overridden by actual category ID if needed
+          name: row.categoryName,
+          icon: row.categoryIcon
+        } : undefined,
+        manufacturer: row.manufacturerName ? {
+          name: row.manufacturerName
+        } : undefined
+      } : undefined
+    })) as Service[];
   }
   
   // Business Partner methods
