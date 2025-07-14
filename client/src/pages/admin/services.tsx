@@ -246,8 +246,10 @@ export default function AdminServices() {
 
   // Handle service details
   const handleViewDetails = (service: AdminService) => {
+    console.log("handleViewDetails called for service:", service.id);
     setSelectedService(service);
     setIsDetailsOpen(true);
+    console.log("isDetailsOpen set to true");
   };
 
   // Handle edit service
