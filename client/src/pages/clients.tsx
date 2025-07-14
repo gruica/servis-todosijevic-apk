@@ -38,9 +38,9 @@ type ClientFormValues = z.infer<typeof clientFormSchema>;
 
 // Form schema za dodavanje novog uređaja
 const applianceFormSchema = insertApplianceSchema.extend({
-  clientId: z.coerce.number().min(1, "Obavezno polje"),
-  categoryId: z.coerce.number().min(1, "Obavezno polje"),
-  manufacturerId: z.coerce.number().min(1, "Obavezno polje"),
+  clientId: z.coerce.number(),
+  categoryId: z.coerce.number(),
+  manufacturerId: z.coerce.number(),
   model: z.string().optional(),
   serialNumber: z.string().optional(),
   purchaseDate: z.string().optional(),
