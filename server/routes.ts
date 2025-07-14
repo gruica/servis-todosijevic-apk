@@ -675,6 +675,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete appliance endpoint
+  app.delete("/api/appliances/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || (req.user?.role !== "admin" && req.user?.role !== "technician")) {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje uređaja" });
+      }
+
+      const applianceId = parseInt(req.params.id);
+      if (isNaN(applianceId)) {
+        return res.status(400).json({ error: "Neispravan ID uređaja" });
+      }
+
+      // Check if appliance exists
+      const existingAppliance = await storage.getAppliance(applianceId);
+      if (!existingAppliance) {
+        return res.status(404).json({ error: "Uređaj nije pronađen" });
+      }
+
+      // Check if appliance has any services
+      const services = await storage.getServicesByAppliance(applianceId);
+      if (services.length > 0) {
+        return res.status(400).json({ 
+          error: "Uređaj ima aktivne servise", 
+          message: "Prvo obriši sve servise povezane sa ovim uređajem" 
+        });
+      }
+
+      // Delete appliance
+      await storage.deleteAppliance(applianceId);
+
+      res.json({ 
+        success: true, 
+        message: "Uređaj je uspešno obrisan"
+      });
+    } catch (error) {
+      console.error("Greška pri brisanju uređaja:", error);
+      res.status(500).json({ error: "Greška pri brisanju uređaja" });
+    }
+  });
+
   // Services routes - optimizovana verzija
   app.get("/api/services", async (req, res) => {
     try {

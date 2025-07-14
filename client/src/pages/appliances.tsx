@@ -16,7 +16,7 @@ import { Appliance, ApplianceCategory, Client, Manufacturer, insertApplianceSche
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 const applianceFormSchema = insertApplianceSchema.extend({
   clientId: z.coerce.number().min(1, "Obavezno polje"),
@@ -119,6 +119,28 @@ export default function Appliances() {
       });
     },
   });
+
+  // Delete appliance mutation
+  const deleteApplianceMutation = useMutation({
+    mutationFn: async (applianceId: number) => {
+      const res = await apiRequest("DELETE", `/api/appliances/${applianceId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
+      toast({
+        title: "Uređaj uspešno obrisan",
+        description: "Uređaj je uklonjen iz sistema",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri brisanju uređaja",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Open dialog for adding new appliance
   const handleAddAppliance = () => {
@@ -149,6 +171,13 @@ export default function Appliances() {
     });
     setIsDialogOpen(true);
   };
+
+  // Handle deleting appliance
+  const handleDeleteAppliance = (appliance: Appliance) => {
+    if (window.confirm(`Da li ste sigurni da želite da obrišete uređaj "${appliance.model || appliance.categoryName}"?`)) {
+      deleteApplianceMutation.mutate(appliance.id);
+    }
+  };
   
   // Submit appliance form
   const onSubmit = (data: ApplianceFormValues) => {
@@ -172,7 +201,7 @@ export default function Appliances() {
           <div className="container mx-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-medium text-gray-800">Bela tehnika</h2>
+                <h2 className="text-2xl font-medium text-gray-800">Bijela tehnika</h2>
                 <p className="text-gray-600">Upravljanje uređajima</p>
               </div>
               <Button onClick={handleAddAppliance}>
@@ -251,14 +280,25 @@ export default function Appliances() {
                             <TableCell>{appliance.serialNumber || <span className="text-gray-400">Nije definisano</span>}</TableCell>
                             <TableCell>{appliance.clientName}</TableCell>
                             <TableCell className="text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                onClick={() => handleEditAppliance(appliance)}
-                              >
-                                <Pencil className="h-4 w-4 text-primary" />
-                              </Button>
+                              <div className="flex gap-2 justify-end">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => handleEditAppliance(appliance)}
+                                >
+                                  <Pencil className="h-4 w-4 text-primary" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => handleDeleteAppliance(appliance)}
+                                  disabled={deleteApplianceMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}

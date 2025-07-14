@@ -94,12 +94,14 @@ export interface IStorage {
   getAppliancesByClient(clientId: number): Promise<Appliance[]>;
   createAppliance(appliance: InsertAppliance): Promise<Appliance>;
   updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;
+  deleteAppliance(id: number): Promise<void>;
   getApplianceStats(): Promise<{categoryId: number, count: number}[]>;
   
   // Service methods - optimizirana verzija
   getAllServices(limit?: number): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   getServicesByClient(clientId: number): Promise<Service[]>;
+  getServicesByAppliance(applianceId: number): Promise<Service[]>;
   getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]>;
   getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]>;
   // Već postoji
@@ -671,6 +673,10 @@ export class MemStorage implements IStorage {
     this.appliances.set(id, updatedAppliance);
     return updatedAppliance;
   }
+
+  async deleteAppliance(id: number): Promise<void> {
+    this.appliances.delete(id);
+  }
   
   async getApplianceStats(): Promise<{categoryId: number, count: number}[]> {
     const categoryCountMap = new Map<number, number>();
@@ -707,6 +713,12 @@ export class MemStorage implements IStorage {
   async getServicesByClient(clientId: number): Promise<Service[]> {
     return Array.from(this.services.values()).filter(
       (service) => service.clientId === clientId,
+    );
+  }
+
+  async getServicesByAppliance(applianceId: number): Promise<Service[]> {
+    return Array.from(this.services.values()).filter(
+      (service) => service.applianceId === applianceId,
     );
   }
 
@@ -1882,6 +1894,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appliances.id, id))
       .returning();
     return updatedAppliance;
+  }
+
+  async deleteAppliance(id: number): Promise<void> {
+    await db.delete(appliances).where(eq(appliances.id, id));
+  }
+
+  async getServicesByAppliance(applianceId: number): Promise<Service[]> {
+    return await db.select().from(services).where(eq(services.applianceId, applianceId));
   }
 
   async getApplianceStats(): Promise<{categoryId: number, count: number}[]> {
