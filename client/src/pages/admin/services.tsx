@@ -791,14 +791,14 @@ export default function AdminServices() {
                   <div>
                     <Label htmlFor="technician">Serviser</Label>
                     <Select 
-                      value={selectedService.technicianId?.toString() || ""} 
-                      onValueChange={(value) => setSelectedService({...selectedService, technicianId: value ? parseInt(value) : null})}
+                      value={selectedService.technicianId?.toString() || "none"} 
+                      onValueChange={(value) => setSelectedService({...selectedService, technicianId: value === "none" ? null : parseInt(value)})}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Izaberi servisera..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Bez servisera</SelectItem>
+                        <SelectItem value="none">Bez servisera</SelectItem>
                         {technicians.map((tech) => (
                           <SelectItem key={tech.id} value={tech.id.toString()}>
                             {tech.fullName} - {tech.specialization}
