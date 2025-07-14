@@ -48,6 +48,7 @@ import DiagnosticsPage from "@/pages/diagnostics";
 import DiagnosticServicesPage from "@/pages/diagnostic-services";
 import SystemDiagnostics from "@/pages/system-diagnostics";
 import EmailVerificationDemo from "@/pages/email-verification-demo";
+import AdminCleanup from "@/pages/admin-cleanup";
 
 function Router() {
   return (
@@ -89,6 +90,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-settings" component={SmsSettings} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
       {/* Technician routes */}

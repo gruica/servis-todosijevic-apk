@@ -3602,6 +3602,290 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin delete routes for invalid/expired clients and services
+  app.delete("/api/admin/clients/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje klijenata" });
+      }
+
+      const clientId = parseInt(req.params.id);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ error: "Neispravan ID klijenta" });
+      }
+
+      // Check if client has any services
+      const services = await db.select()
+        .from(schema.services)
+        .where(eq(schema.services.clientId, clientId));
+
+      if (services.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima aktivne servise", 
+          message: "Prvo obriši sve servise povezane sa ovim klijentom" 
+        });
+      }
+
+      // Check if client has any appliances
+      const appliances = await db.select()
+        .from(schema.appliances)
+        .where(eq(schema.appliances.clientId, clientId));
+
+      if (appliances.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima registrovane uređaje", 
+          message: "Prvo obriši sve uređaje povezane sa ovim klijentom" 
+        });
+      }
+
+      // Delete client
+      const deletedClient = await db.delete(schema.clients)
+        .where(eq(schema.clients.id, clientId))
+        .returning();
+
+      if (deletedClient.length === 0) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Klijent je uspešno obrisan",
+        deletedClient: deletedClient[0]
+      });
+    } catch (error) {
+      console.error("Greška pri brisanju klijenta:", error);
+      res.status(500).json({ error: "Greška pri brisanju klijenta" });
+    }
+  });
+
+  app.delete("/api/admin/services/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje servisa" });
+      }
+
+      const serviceId = parseInt(req.params.id);
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Neispravan ID servisa" });
+      }
+
+      // Delete service
+      const deletedService = await db.delete(schema.services)
+        .where(eq(schema.services.id, serviceId))
+        .returning();
+
+      if (deletedService.length === 0) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Servis je uspešno obrisan",
+        deletedService: deletedService[0]
+      });
+    } catch (error) {
+      console.error("Greška pri brisanju servisa:", error);
+      res.status(500).json({ error: "Greška pri brisanju servisa" });
+    }
+  });
+
+  app.delete("/api/admin/appliances/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje uređaja" });
+      }
+
+      const applianceId = parseInt(req.params.id);
+      if (isNaN(applianceId)) {
+        return res.status(400).json({ error: "Neispravan ID uređaja" });
+      }
+
+      // Check if appliance has any services
+      const services = await db.select()
+        .from(schema.services)
+        .where(eq(schema.services.applianceId, applianceId));
+
+      if (services.length > 0) {
+        return res.status(400).json({ 
+          error: "Uređaj ima aktivne servise", 
+          message: "Prvo obriši sve servise povezane sa ovim uređajem" 
+        });
+      }
+
+      // Check if appliance has any maintenance schedules
+      const maintenanceSchedules = await db.select()
+        .from(schema.maintenanceSchedules)
+        .where(eq(schema.maintenanceSchedules.applianceId, applianceId));
+
+      if (maintenanceSchedules.length > 0) {
+        // Delete maintenance schedules first
+        await db.delete(schema.maintenanceSchedules)
+          .where(eq(schema.maintenanceSchedules.applianceId, applianceId));
+      }
+
+      // Delete appliance
+      const deletedAppliance = await db.delete(schema.appliances)
+        .where(eq(schema.appliances.id, applianceId))
+        .returning();
+
+      if (deletedAppliance.length === 0) {
+        return res.status(404).json({ error: "Uređaj nije pronađen" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Uređaj je uspešno obrisan",
+        deletedAppliance: deletedAppliance[0]
+      });
+    } catch (error) {
+      console.error("Greška pri brisanju uređaja:", error);
+      res.status(500).json({ error: "Greška pri brisanju uređaja" });
+    }
+  });
+
+  // Bulk delete operations for admin
+  app.post("/api/admin/bulk-delete", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za masovno brisanje" });
+      }
+
+      const { type, ids } = req.body;
+      
+      if (!type || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "Neispravni parametri za masovno brisanje" });
+      }
+
+      const deletedCount = { clients: 0, services: 0, appliances: 0 };
+
+      if (type === "clients") {
+        // Delete clients that don't have services or appliances
+        for (const id of ids) {
+          const clientId = parseInt(id);
+          if (isNaN(clientId)) continue;
+
+          const services = await db.select()
+            .from(schema.services)
+            .where(eq(schema.services.clientId, clientId));
+
+          const appliances = await db.select()
+            .from(schema.appliances)
+            .where(eq(schema.appliances.clientId, clientId));
+
+          if (services.length === 0 && appliances.length === 0) {
+            await db.delete(schema.clients)
+              .where(eq(schema.clients.id, clientId));
+            deletedCount.clients++;
+          }
+        }
+      } else if (type === "services") {
+        // Delete services
+        for (const id of ids) {
+          const serviceId = parseInt(id);
+          if (isNaN(serviceId)) continue;
+
+          await db.delete(schema.services)
+            .where(eq(schema.services.id, serviceId));
+          deletedCount.services++;
+        }
+      } else if (type === "appliances") {
+        // Delete appliances that don't have services
+        for (const id of ids) {
+          const applianceId = parseInt(id);
+          if (isNaN(applianceId)) continue;
+
+          const services = await db.select()
+            .from(schema.services)
+            .where(eq(schema.services.applianceId, applianceId));
+
+          if (services.length === 0) {
+            // Delete maintenance schedules first
+            await db.delete(schema.maintenanceSchedules)
+              .where(eq(schema.maintenanceSchedules.applianceId, applianceId));
+            
+            await db.delete(schema.appliances)
+              .where(eq(schema.appliances.id, applianceId));
+            deletedCount.appliances++;
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Masovno brisanje završeno",
+        deletedCount
+      });
+    } catch (error) {
+      console.error("Greška pri masovnom brisanju:", error);
+      res.status(500).json({ error: "Greška pri masovnom brisanju" });
+    }
+  });
+
+  // Get orphaned/invalid data for cleanup
+  app.get("/api/admin/orphaned-data", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pregled neispravnih podataka" });
+      }
+
+      const orphanedData = {
+        clientsWithoutData: [],
+        servicesWithoutClients: [],
+        appliancesWithoutClients: [],
+        expiredServices: []
+      };
+
+      // Find clients without phone or with invalid data
+      const clients = await db.select().from(schema.clients);
+      orphanedData.clientsWithoutData = clients.filter(client => 
+        !client.phone || 
+        !client.fullName || 
+        client.fullName.trim() === "" ||
+        client.phone.trim() === "" ||
+        client.fullName.includes("Klijent ")
+      );
+
+      // Find services without valid clients
+      const services = await db.select().from(schema.services);
+      for (const service of services) {
+        const [client] = await db.select()
+          .from(schema.clients)
+          .where(eq(schema.clients.id, service.clientId));
+        
+        if (!client) {
+          orphanedData.servicesWithoutClients.push(service);
+        }
+      }
+
+      // Find appliances without valid clients
+      const appliances = await db.select().from(schema.appliances);
+      for (const appliance of appliances) {
+        const [client] = await db.select()
+          .from(schema.clients)
+          .where(eq(schema.clients.id, appliance.clientId));
+        
+        if (!client) {
+          orphanedData.appliancesWithoutClients.push(appliance);
+        }
+      }
+
+      // Find expired/old services (older than 2 years and completed)
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+      
+      orphanedData.expiredServices = services.filter(service => 
+        service.status === "completed" && 
+        service.createdAt && 
+        new Date(service.createdAt) < twoYearsAgo
+      );
+
+      res.json(orphanedData);
+    } catch (error) {
+      console.error("Greška pri dobijanju neispravnih podataka:", error);
+      res.status(500).json({ error: "Greška pri dobijanju neispravnih podataka" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
