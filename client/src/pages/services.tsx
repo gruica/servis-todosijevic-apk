@@ -434,6 +434,7 @@ export default function Services() {
                         <TableRow>
                           <TableHead>ID</TableHead>
                           <TableHead>Klijent</TableHead>
+                          <TableHead>Mjesto (grad)</TableHead>
                           <TableHead>Uređaj</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Kreirao</TableHead>
@@ -445,7 +446,7 @@ export default function Services() {
                       <TableBody>
                         {filteredServices?.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                            <TableCell colSpan={9} className="text-center py-6 text-gray-500">
                               {searchQuery || statusFilter !== "all"
                                 ? "Nema rezultata za vašu pretragu" 
                                 : "Nema servisa za prikaz"}
@@ -469,6 +470,14 @@ export default function Services() {
                                     </span>
                                   )}
                                 </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{service.clientCity || "Nepoznato"}</span>
+                                {service.clientAddress && (
+                                  <span className="text-xs text-gray-500 mt-1">{service.clientAddress}</span>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>

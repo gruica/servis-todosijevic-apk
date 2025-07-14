@@ -1865,7 +1865,16 @@ export class DatabaseStorage implements IStorage {
         machineNotes: services.machineNotes,
         isCompletelyFixed: services.isCompletelyFixed,
         businessPartnerId: services.businessPartnerId,
-        partnerCompanyName: services.partnerCompanyName
+        partnerCompanyName: services.partnerCompanyName,
+        // Dodajemo podatke o klijentu za prikaz u tabeli
+        clientName: clients.fullName,
+        clientCity: clients.city,
+        clientAddress: clients.address,
+        clientPhone: clients.phone,
+        clientEmail: clients.email,
+        // Dodajemo podatke o uređaju za prikaz
+        applianceName: appliances.model,
+        applianceSerialNumber: appliances.serialNumber
       })
       .from(services)
       .innerJoin(clients, eq(services.clientId, clients.id))
