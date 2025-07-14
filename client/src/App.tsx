@@ -11,6 +11,7 @@ import Services from "@/pages/services";
 import SimplifiedServices from "@/pages/simplified-services";
 import BasicServicesPage from "@/pages/basic/services";
 import EnhancedServices from "@/pages/enhanced-services";
+import AdminServices from "@/pages/admin/services";
 import Appliances from "@/pages/appliances";
 import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
@@ -71,7 +72,7 @@ function Router() {
       <RoleProtectedRoute path="/clients" component={Clients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       {/* Admin verzija servisa - zaštićena */}
-      <RoleProtectedRoute path="/admin/services" component={EnhancedServices} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/services" component={AdminServices} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
       <Route path="/services" component={EnhancedServices} />
       <Route path="/services-basic" component={BasicServicesPage} />

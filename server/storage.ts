@@ -131,6 +131,13 @@ export interface IStorage {
   validateEmailVerification(email: string, code: string): Promise<boolean>;
   cleanupExpiredEmailVerifications(): Promise<void>;
   
+  // Admin service methods
+  getAdminServices(): Promise<any[]>;
+  getAdminServiceById(id: number): Promise<any | undefined>;
+  updateAdminService(id: number, updates: any): Promise<any | undefined>;
+  deleteAdminService(id: number): Promise<boolean>;
+  assignTechnicianToService(serviceId: number, technicianId: number): Promise<any | undefined>;
+  
   // Session store
   sessionStore: any; // Express session store
 }
@@ -1159,6 +1166,53 @@ export class MemStorage implements IStorage {
 
   async cleanupExpiredEmailVerifications(): Promise<void> {
     // No-op for in-memory implementation
+  }
+
+  // Admin service methods
+  async getAdminServices(): Promise<any[]> {
+    // Return all services with detailed information
+    return Array.from(this.services.values()).map(service => ({
+      ...service,
+      client: this.clients.get(service.clientId),
+      appliance: this.appliances.get(service.applianceId),
+      technician: service.technicianId ? this.technicians.get(service.technicianId) : null
+    }));
+  }
+
+  async getAdminServiceById(id: number): Promise<any | undefined> {
+    const service = this.services.get(id);
+    if (!service) return undefined;
+    
+    return {
+      ...service,
+      client: this.clients.get(service.clientId),
+      appliance: this.appliances.get(service.applianceId),
+      technician: service.technicianId ? this.technicians.get(service.technicianId) : null
+    };
+  }
+
+  async updateAdminService(id: number, updates: any): Promise<any | undefined> {
+    const service = this.services.get(id);
+    if (!service) return undefined;
+    
+    const updatedService = { ...service, ...updates };
+    this.services.set(id, updatedService);
+    
+    return this.getAdminServiceById(id);
+  }
+
+  async deleteAdminService(id: number): Promise<boolean> {
+    return this.services.delete(id);
+  }
+
+  async assignTechnicianToService(serviceId: number, technicianId: number): Promise<any | undefined> {
+    const service = this.services.get(serviceId);
+    if (!service) return undefined;
+    
+    const updatedService = { ...service, technicianId, status: 'assigned' };
+    this.services.set(serviceId, updatedService);
+    
+    return this.getAdminServiceById(serviceId);
   }
 }
 
@@ -2573,6 +2627,267 @@ export class DatabaseStorage implements IStorage {
         .where(lte(emailVerification.expiresAt, now));
     } catch (error) {
       console.error('Greška pri čišćenju isteklih email verifikacija:', error);
+    }
+  }
+
+  // Admin service methods
+  async getAdminServices(): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: services.id,
+          status: services.status,
+          description: services.description,
+          createdAt: services.createdAt,
+          updatedAt: services.updatedAt,
+          scheduledDate: services.scheduledDate,
+          technicianId: services.technicianId,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          priority: services.priority,
+          notes: services.notes,
+          technicianNotes: services.technicianNotes,
+          usedParts: services.usedParts,
+          machineNotes: services.machineNotes,
+          cost: services.cost,
+          isCompletelyFixed: services.isCompletelyFixed,
+          // Client information
+          clientFullName: clients.fullName,
+          clientPhone: clients.phone,
+          clientEmail: clients.email,
+          clientAddress: clients.address,
+          clientCity: clients.city,
+          clientCompanyName: clients.companyName,
+          // Appliance information
+          applianceModel: appliances.model,
+          applianceSerialNumber: appliances.serialNumber,
+          categoryName: applianceCategories.name,
+          categoryIcon: applianceCategories.icon,
+          manufacturerName: manufacturers.name,
+          // Technician information
+          technicianFullName: technicians.fullName,
+          technicianEmail: technicians.email,
+          technicianPhone: technicians.phone,
+          technicianSpecialization: technicians.specialization,
+        })
+        .from(services)
+        .leftJoin(clients, eq(services.clientId, clients.id))
+        .leftJoin(appliances, eq(services.applianceId, appliances.id))
+        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .leftJoin(technicians, eq(services.technicianId, technicians.id))
+        .orderBy(desc(services.createdAt));
+
+      return result.map(row => ({
+        id: row.id,
+        status: row.status,
+        description: row.description,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        scheduledDate: row.scheduledDate,
+        technicianId: row.technicianId,
+        clientId: row.clientId,
+        applianceId: row.applianceId,
+        priority: row.priority || 'medium',
+        notes: row.notes,
+        technicianNotes: row.technicianNotes,
+        usedParts: row.usedParts,
+        machineNotes: row.machineNotes,
+        cost: row.cost,
+        isCompletelyFixed: row.isCompletelyFixed,
+        client: {
+          id: row.clientId,
+          fullName: row.clientFullName,
+          phone: row.clientPhone,
+          email: row.clientEmail,
+          address: row.clientAddress,
+          city: row.clientCity,
+          companyName: row.clientCompanyName,
+        },
+        appliance: {
+          id: row.applianceId,
+          model: row.applianceModel,
+          serialNumber: row.applianceSerialNumber,
+          category: {
+            id: row.applianceId,
+            name: row.categoryName,
+            icon: row.categoryIcon,
+          },
+          manufacturer: {
+            id: row.applianceId,
+            name: row.manufacturerName,
+          },
+        },
+        technician: row.technicianId ? {
+          id: row.technicianId,
+          fullName: row.technicianFullName,
+          email: row.technicianEmail,
+          phone: row.technicianPhone,
+          specialization: row.technicianSpecialization,
+        } : null,
+      }));
+    } catch (error) {
+      console.error('Greška pri dohvatanju admin servisa:', error);
+      return [];
+    }
+  }
+
+  async getAdminServiceById(id: number): Promise<any | undefined> {
+    try {
+      const result = await db
+        .select({
+          id: services.id,
+          status: services.status,
+          description: services.description,
+          createdAt: services.createdAt,
+          updatedAt: services.updatedAt,
+          scheduledDate: services.scheduledDate,
+          technicianId: services.technicianId,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          priority: services.priority,
+          notes: services.notes,
+          technicianNotes: services.technicianNotes,
+          usedParts: services.usedParts,
+          machineNotes: services.machineNotes,
+          cost: services.cost,
+          isCompletelyFixed: services.isCompletelyFixed,
+          // Client information
+          clientFullName: clients.fullName,
+          clientPhone: clients.phone,
+          clientEmail: clients.email,
+          clientAddress: clients.address,
+          clientCity: clients.city,
+          clientCompanyName: clients.companyName,
+          // Appliance information
+          applianceModel: appliances.model,
+          applianceSerialNumber: appliances.serialNumber,
+          categoryName: applianceCategories.name,
+          categoryIcon: applianceCategories.icon,
+          manufacturerName: manufacturers.name,
+          // Technician information
+          technicianFullName: technicians.fullName,
+          technicianEmail: technicians.email,
+          technicianPhone: technicians.phone,
+          technicianSpecialization: technicians.specialization,
+        })
+        .from(services)
+        .leftJoin(clients, eq(services.clientId, clients.id))
+        .leftJoin(appliances, eq(services.applianceId, appliances.id))
+        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .leftJoin(technicians, eq(services.technicianId, technicians.id))
+        .where(eq(services.id, id));
+
+      if (result.length === 0) return undefined;
+
+      const row = result[0];
+      return {
+        id: row.id,
+        status: row.status,
+        description: row.description,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        scheduledDate: row.scheduledDate,
+        technicianId: row.technicianId,
+        clientId: row.clientId,
+        applianceId: row.applianceId,
+        priority: row.priority || 'medium',
+        notes: row.notes,
+        technicianNotes: row.technicianNotes,
+        usedParts: row.usedParts,
+        machineNotes: row.machineNotes,
+        cost: row.cost,
+        isCompletelyFixed: row.isCompletelyFixed,
+        client: {
+          id: row.clientId,
+          fullName: row.clientFullName,
+          phone: row.clientPhone,
+          email: row.clientEmail,
+          address: row.clientAddress,
+          city: row.clientCity,
+          companyName: row.clientCompanyName,
+        },
+        appliance: {
+          id: row.applianceId,
+          model: row.applianceModel,
+          serialNumber: row.applianceSerialNumber,
+          category: {
+            id: row.applianceId,
+            name: row.categoryName,
+            icon: row.categoryIcon,
+          },
+          manufacturer: {
+            id: row.applianceId,
+            name: row.manufacturerName,
+          },
+        },
+        technician: row.technicianId ? {
+          id: row.technicianId,
+          fullName: row.technicianFullName,
+          email: row.technicianEmail,
+          phone: row.technicianPhone,
+          specialization: row.technicianSpecialization,
+        } : null,
+      };
+    } catch (error) {
+      console.error('Greška pri dohvatanju admin servisa:', error);
+      return undefined;
+    }
+  }
+
+  async updateAdminService(id: number, updates: any): Promise<any | undefined> {
+    try {
+      const [updated] = await db
+        .update(services)
+        .set({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(services.id, id))
+        .returning();
+
+      if (!updated) return undefined;
+
+      return this.getAdminServiceById(id);
+    } catch (error) {
+      console.error('Greška pri ažuriranju admin servisa:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAdminService(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(services)
+        .where(eq(services.id, id))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error('Greška pri brisanju admin servisa:', error);
+      return false;
+    }
+  }
+
+  async assignTechnicianToService(serviceId: number, technicianId: number): Promise<any | undefined> {
+    try {
+      const [updated] = await db
+        .update(services)
+        .set({
+          technicianId,
+          status: 'assigned',
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(services.id, serviceId))
+        .returning();
+
+      if (!updated) return undefined;
+
+      return this.getAdminServiceById(serviceId);
+    } catch (error) {
+      console.error('Greška pri dodeli servisera:', error);
+      return undefined;
     }
   }
 }

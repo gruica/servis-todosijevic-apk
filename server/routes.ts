@@ -3889,6 +3889,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin services API endpoints
+  app.get("/api/admin/services", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const services = await storage.getAdminServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching admin services:", error);
+      res.status(500).json({ error: "Failed to fetch services" });
+    }
+  });
+
+  app.get("/api/admin/services/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const service = await storage.getAdminServiceById(parseInt(req.params.id));
+      if (!service) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      console.error("Error fetching service:", error);
+      res.status(500).json({ error: "Failed to fetch service" });
+    }
+  });
+
+  app.put("/api/admin/services/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedService = await storage.updateAdminService(serviceId, updates);
+      if (!updatedService) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error updating service:", error);
+      res.status(500).json({ error: "Failed to update service" });
+    }
+  });
+
+  app.delete("/api/admin/services/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const deleted = await storage.deleteAdminService(serviceId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ error: "Failed to delete service" });
+    }
+  });
+
+  app.put("/api/admin/services/:id/assign-technician", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { technicianId } = req.body;
+      
+      const updatedService = await storage.assignTechnicianToService(serviceId, technicianId);
+      if (!updatedService) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error assigning technician:", error);
+      res.status(500).json({ error: "Failed to assign technician" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
