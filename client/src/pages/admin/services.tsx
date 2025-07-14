@@ -523,7 +523,12 @@ export default function AdminServices() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleViewDetails(service)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log("Button clicked!");
+                              handleViewDetails(service);
+                            }}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             Detalji
