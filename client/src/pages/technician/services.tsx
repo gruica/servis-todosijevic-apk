@@ -170,6 +170,7 @@ export default function TechnicianServices() {
         });
         
         // Poziv mutacije nakon što je korisniku dato obaveštenje
+        // Cache invalidacija se automatski poziva u onSuccess callback-u
         updateStatusMutation.mutate({
           serviceId: selectedService.id,
           status: newStatus,
@@ -179,10 +180,6 @@ export default function TechnicianServices() {
           cost: cost,
           isCompletelyFixed: isCompletelyFixed
         });
-        
-        // Odmah vratimo korisnika na listu servisa
-        // Ne čekamo da se mutacija završi
-        queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
       } catch (error) {
         console.error("Greška pri ažuriranju statusa:", error);
       }
