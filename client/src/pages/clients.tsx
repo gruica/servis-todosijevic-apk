@@ -132,8 +132,9 @@ export default function Clients() {
       form.reset();
       
       // Ako je novi klijent, prikaži prompt za dodavanje uređaja
-      if (!selectedClient && data) {
-        setNewClientId(data.id);
+      if (!selectedClient && data && data.data) {
+        console.log("DEBUG: Postavlja se newClientId na:", data.data.id);
+        setNewClientId(data.data.id);
         setShowAddAppliancePrompt(true);
       }
       
