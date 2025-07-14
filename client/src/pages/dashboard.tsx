@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ApplianceCategory, Client, Service } from "@shared/schema";
 
 // Get icon for service status
@@ -61,6 +61,7 @@ type DashboardStats = {
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [, setLocation] = useLocation();
   
   console.log("Dashboard komponenta se renderuje");
   
@@ -73,6 +74,21 @@ export default function Dashboard() {
   } = useQuery<DashboardStats>({
     queryKey: ["/api/stats"]
   });
+
+  // Handler za pregled detalja servisa
+  const handleServiceDetails = (serviceId: number) => {
+    setLocation(`/admin/services?serviceId=${serviceId}`);
+  };
+
+  // Handler za izmenu servisa
+  const handleServiceEdit = (serviceId: number) => {
+    setLocation(`/admin/services?edit=${serviceId}`);
+  };
+
+  // Handler za pregled detalja klijenta
+  const handleClientDetails = (clientId: number) => {
+    setLocation(`/clients/${clientId}`);
+  };
   
   // Dohvatamo kategorije
   const { data: categories, error: categoriesError } = useQuery<ApplianceCategory[]>({
@@ -282,10 +298,19 @@ export default function Dashboard() {
                           <TableCell>{getStatusBadge(service.status)}</TableCell>
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" className="mr-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mr-2"
+                              onClick={() => handleServiceDetails(service.id)}
+                            >
                               Detalji
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleServiceEdit(service.id)}
+                            >
                               Izmeni
                             </Button>
                           </TableCell>
@@ -351,7 +376,11 @@ export default function Dashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="sm">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleClientDetails(client.id)}
+                              >
                                 Detalji
                               </Button>
                             </TableCell>
