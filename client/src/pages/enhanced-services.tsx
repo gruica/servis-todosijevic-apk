@@ -30,7 +30,8 @@ import {
   Technician,
   insertServiceSchema, 
   insertApplianceSchema,
-  serviceStatusEnum 
+  serviceStatusEnum,
+  warrantyStatusEnum 
 } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -63,6 +64,7 @@ const serviceFormSchema = insertServiceSchema.extend({
   applianceId: z.coerce.number().min(1, "Obavezno polje"),
   description: z.string().min(1, "Obavezno polje"),
   status: z.string(),
+  warrantyStatus: warrantyStatusEnum,
   createdAt: z.string(),
   technicianId: z.coerce.number().optional(),
   scheduledDate: z.string().optional().nullable(),
@@ -127,6 +129,30 @@ function getStatusBadge(status: string) {
   };
 
   const config = statusConfig[status] || { label: status, variant: "outline", icon: null };
+  
+  return (
+    <Badge variant={config.variant as any} className="flex items-center">
+      {config.icon}
+      {config.label}
+    </Badge>
+  );
+}
+
+function getWarrantyStatusBadge(warrantyStatus: string) {
+  const statusConfig: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success", icon: React.ReactNode }> = {
+    in_warranty: { 
+      label: "U garanciji", 
+      variant: "success", 
+      icon: <Check className="h-3 w-3 mr-1" />
+    },
+    out_of_warranty: { 
+      label: "Van garancije", 
+      variant: "destructive", 
+      icon: <X className="h-3 w-3 mr-1" />
+    },
+  };
+
+  const config = statusConfig[warrantyStatus] || { label: warrantyStatus, variant: "outline", icon: null };
   
   return (
     <Badge variant={config.variant as any} className="flex items-center">
@@ -401,6 +427,7 @@ export default function EnhancedServices() {
       applianceId: 0,
       description: "",
       status: "pending",
+      warrantyStatus: "out_of_warranty",
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
@@ -664,6 +691,7 @@ export default function EnhancedServices() {
       applianceId: 0,
       description: "",
       status: "pending",
+      warrantyStatus: "out_of_warranty",
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: null,
@@ -691,6 +719,7 @@ export default function EnhancedServices() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
+      warrantyStatus: service.warrantyStatus || "out_of_warranty",
       technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || null,
@@ -920,6 +949,7 @@ export default function EnhancedServices() {
                           <TableHead>Klijent</TableHead>
                           <TableHead>Uređaj</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Garancija</TableHead>
                           <TableHead>Serviser</TableHead>
                           <TableHead>Kreirao</TableHead>
                           <TableHead>Datum prijave</TableHead>
@@ -958,6 +988,9 @@ export default function EnhancedServices() {
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(service.status)}
+                            </TableCell>
+                            <TableCell>
+                              {getWarrantyStatusBadge(service.warrantyStatus || "out_of_warranty")}
                             </TableCell>
                             <TableCell>
                               {service.technicianName ? (
@@ -1156,7 +1189,26 @@ export default function EnhancedServices() {
                 />
               </div>
               
-              {/* Status and Dates */}
+              {/* Problem description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Opis problema</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Opišite problem sa uređajem"
+                        {...field}
+                        className="min-h-20"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Status, Warranty Status and Dates */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
@@ -1177,6 +1229,33 @@ export default function EnhancedServices() {
                               {getStatusBadge(status)}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="warrantyStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status garancije</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Izaberite status garancije" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="in_warranty">
+                            {getWarrantyStatusBadge("in_warranty")}
+                          </SelectItem>
+                          <SelectItem value="out_of_warranty">
+                            {getWarrantyStatusBadge("out_of_warranty")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

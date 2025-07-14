@@ -893,6 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceId: parseInt(applianceId),
         description: description.trim(),
         status: req.body.status || "pending",
+        warrantyStatus: req.body.warrantyStatus || "out_of_warranty",
         createdAt: req.body.createdAt || new Date().toISOString().split('T')[0],
         technicianId: req.body.technicianId && req.body.technicianId > 0 ? parseInt(req.body.technicianId) : null,
         scheduledDate: req.body.scheduledDate || null,
@@ -1088,6 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         technicianId: validatedData.technicianId || null,
         description: validatedData.description,
         status: validatedData.status || "pending",
+        warrantyStatus: validatedData.warrantyStatus || "out_of_warranty",
         createdAt: validatedData.createdAt || new Date().toISOString().split('T')[0],
         scheduledDate: validatedData.scheduledDate || null,
         completedDate: validatedData.completedDate || null,
@@ -1220,6 +1222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceId: applianceId ? parseInt(applianceId) : originalService.applianceId,
         description: description ? description.trim() : originalService.description,
         status: req.body.status || originalService.status,
+        warrantyStatus: req.body.warrantyStatus || originalService.warrantyStatus || "out_of_warranty",
         createdAt: req.body.createdAt || originalService.createdAt,
         technicianId: req.body.technicianId !== undefined ? 
           (req.body.technicianId && req.body.technicianId > 0 ? parseInt(req.body.technicianId) : null) : 

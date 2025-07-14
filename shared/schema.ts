@@ -203,6 +203,14 @@ export const serviceStatusEnum = z.enum([
 
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 
+// Warranty status enum
+export const warrantyStatusEnum = z.enum([
+  "in_warranty", // u garanciji
+  "out_of_warranty", // van garancije
+]);
+
+export type WarrantyStatus = z.infer<typeof warrantyStatusEnum>;
+
 // Services
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
@@ -211,6 +219,7 @@ export const services = pgTable("services", {
   technicianId: integer("technician_id"),
   description: text("description").notNull(),
   status: text("status").notNull().default("pending"),
+  warrantyStatus: text("warranty_status").notNull(), // u garanciji ili van garancije
   createdAt: text("created_at").notNull(),
   scheduledDate: text("scheduled_date"),
   completedDate: text("completed_date"),
@@ -230,6 +239,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   technicianId: true,
   description: true,
   status: true,
+  warrantyStatus: true,
   createdAt: true,
   scheduledDate: true,
   completedDate: true,
@@ -246,6 +256,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").nullable().optional(),
   description: z.string().min(5, "Opis problema mora biti detaljniji (min. 5 karaktera)").max(1000, "Opis je predugačak"),
   status: serviceStatusEnum.default("pending"),
+  warrantyStatus: warrantyStatusEnum,
   createdAt: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
     .refine(val => {
