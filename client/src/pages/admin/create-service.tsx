@@ -184,7 +184,7 @@ export default function CreateService() {
                     value={watchedClientId}
                     onValueChange={(value) => {
                       setValue("clientId", value);
-                      setValue("applianceId", ""); // Reset appliance when client changes
+                      setValue("applianceId", undefined); // Reset appliance when client changes
                     }}
                   >
                     <SelectTrigger>

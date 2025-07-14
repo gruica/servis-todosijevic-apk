@@ -624,7 +624,7 @@ export default function Clients() {
                       <FormLabel>Tip uređaja</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
-                        value={field.value > 0 ? field.value.toString() : ""}
+                        value={field.value > 0 ? field.value.toString() : undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -639,7 +639,7 @@ export default function Clients() {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="" disabled>
+                            <SelectItem value="loading" disabled>
                               Učitavanje kategorija...
                             </SelectItem>
                           )}
@@ -658,7 +658,7 @@ export default function Clients() {
                       <FormLabel>Proizvođač</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))} 
-                        value={field.value > 0 ? field.value.toString() : ""}
+                        value={field.value > 0 ? field.value.toString() : undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -673,7 +673,7 @@ export default function Clients() {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="" disabled>
+                            <SelectItem value="loading" disabled>
                               Učitavanje proizvođača...
                             </SelectItem>
                           )}
