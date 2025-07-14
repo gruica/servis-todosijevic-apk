@@ -65,10 +65,7 @@ export default function Clients() {
     queryKey: ["/api/clients"]
   });
   
-  // Log stanje podataka
-  useEffect(() => {
-    console.log("Stanje klijenata:", { clients, isLoading, error: clientsError });
-  }, [clients, isLoading, clientsError]);
+
   
   // Filter clients based on search query
   const filteredClients = clients?.filter((client: Client) => {
@@ -133,7 +130,7 @@ export default function Clients() {
       
       // Ako je novi klijent, prikaži prompt za dodavanje uređaja
       if (!selectedClient && data && data.data) {
-        console.log("DEBUG: Postavlja se newClientId na:", data.data.id);
+
         setNewClientId(data.data.id);
         setShowAddAppliancePrompt(true);
       }
@@ -215,19 +212,9 @@ export default function Clients() {
     queryKey: ["/api/categories"]
   });
   
-  // Log kategorija
-  useEffect(() => {
-    console.log("Stanje kategorija:", { categories, error: categoriesError });
-  }, [categories, categoriesError]);
-  
   const { data: manufacturers, error: manufacturersError } = useQuery<Manufacturer[]>({
     queryKey: ["/api/manufacturers"]
   });
-  
-  // Log proizvođača
-  useEffect(() => {
-    console.log("Stanje proizvođača:", { manufacturers, error: manufacturersError });
-  }, [manufacturers, manufacturersError]);
   
   // Form za dodavanje uređaja
   const applianceForm = useForm<ApplianceFormValues>({
@@ -246,10 +233,8 @@ export default function Clients() {
   // Mutation za dodavanje novog uređaja
   const applianceMutation = useMutation({
     mutationFn: async (data: ApplianceFormValues) => {
-      console.log("DEBUG: Mutation pozvan sa podacima:", data);
       const res = await apiRequest("POST", "/api/appliances", data);
       const result = await res.json();
-      console.log("DEBUG: API odgovor:", result);
       return result;
     },
     onSuccess: () => {
@@ -303,15 +288,8 @@ export default function Clients() {
   
   // Submit forme za uređaj
   const onApplianceSubmit = (data: ApplianceFormValues) => {
-    console.log("DEBUG: onApplianceSubmit pozvan sa podacima:", data);
-    console.log("DEBUG: Forma greške:", applianceForm.formState.errors);
-    console.log("DEBUG: Forma stanje:", applianceForm.formState);
-    console.log("DEBUG: Forma validna:", applianceForm.formState.isValid);
-    console.log("DEBUG: Mutation pending:", applianceMutation.isPending);
-    
     // Proveri da li su obavezna polja popunjena
     if (!data.categoryId || data.categoryId === 0) {
-      console.log("DEBUG: Greška - kategorija nije izabrana");
       toast({
         title: "Greška",
         description: "Morate izabrati kategoriju uređaja",
@@ -320,7 +298,6 @@ export default function Clients() {
       return;
     }
     if (!data.manufacturerId || data.manufacturerId === 0) {
-      console.log("DEBUG: Greška - proizvođač nije izabran");
       toast({
         title: "Greška", 
         description: "Morate izabrati proizvođača",
@@ -329,7 +306,6 @@ export default function Clients() {
       return;
     }
     
-    console.log("DEBUG: Pozivam mutation...");
     applianceMutation.mutate(data);
   };
   
@@ -606,16 +582,7 @@ export default function Clients() {
           
           <Form {...applianceForm}>
             <form onSubmit={applianceForm.handleSubmit(onApplianceSubmit)} className="space-y-4">
-              <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-                <p><strong>Debug info:</strong></p>
-                <p>NewClientId: {newClientId}</p>
-                <p>Categories loaded: {categories?.length || 0}</p>
-                <p>Manufacturers loaded: {manufacturers?.length || 0}</p>
-                <p>Form valid: {applianceForm.formState.isValid ? 'Yes' : 'No'}</p>
-                <p>Current values: {JSON.stringify(applianceForm.getValues())}</p>
-                <p>Errors: {JSON.stringify(applianceForm.formState.errors)}</p>
-                <p>Mutation pending: {applianceMutation.isPending ? 'Yes' : 'No'}</p>
-              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={applianceForm.control}
@@ -755,12 +722,6 @@ export default function Clients() {
                 <Button 
                   type="submit" 
                   disabled={applianceMutation.isPending}
-                  onClick={(e) => {
-                    console.log("DEBUG: Button clicked");
-                    console.log("DEBUG: Current form values:", applianceForm.getValues());
-                    console.log("DEBUG: Form errors:", applianceForm.formState.errors);
-                    console.log("DEBUG: Form state:", applianceForm.formState);
-                  }}
                 >
                   {applianceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
                 </Button>
