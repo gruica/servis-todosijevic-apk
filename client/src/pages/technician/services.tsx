@@ -17,6 +17,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 import { CallClientButton } from "@/components/ui/call-client-button";
+import { ServiceDetailsFloat } from "@/components/technician/service-details-float";
+import { QuickActionsFloat } from "@/components/technician/quick-actions-float";
 import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 
 type TechnicianService = Service & {
@@ -55,6 +57,12 @@ export default function TechnicianServices() {
   const [machineNotes, setMachineNotes] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
+  
+  // State za plutajuće prozore
+  const [floatingServiceOpen, setFloatingServiceOpen] = useState(false);
+  const [floatingSelectedService, setFloatingSelectedService] = useState<TechnicianService | null>(null);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>("Svi gradovi");
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -253,6 +261,45 @@ export default function TechnicianServices() {
     }
   };
 
+  // Funkcija za otvaranje plutajućeg prozora sa detaljima servisa
+  const openFloatingService = (service: TechnicianService) => {
+    setFloatingSelectedService(service);
+    setFloatingServiceOpen(true);
+  };
+
+  // Funkcija za ažuriranje statusa iz plutajućeg prozora
+  const handleFloatingStatusUpdate = async (serviceId: number, status: string, data: any) => {
+    await updateStatusMutation.mutateAsync({
+      serviceId,
+      status,
+      notes: data.technicianNotes,
+      usedParts: data.usedParts,
+      machineNotes: data.machineNotes,
+      cost: data.cost?.toString(),
+      isCompletelyFixed: true
+    });
+    setFloatingServiceOpen(false);
+  };
+
+  // Funkcija za otvaranje brzih akcija
+  const openQuickActions = (city: string = "Svi gradovi") => {
+    setSelectedCity(city);
+    setQuickActionsOpen(true);
+  };
+
+  // Funkcija za brzu promenu statusa
+  const handleQuickStatusUpdate = async (serviceId: number, status: string) => {
+    await updateStatusMutation.mutateAsync({
+      serviceId,
+      status,
+      notes: `Brza akcija: ${status === "in_progress" ? "Započet" : "Završen"} servis`,
+      usedParts: "",
+      machineNotes: "",
+      cost: "",
+      isCompletelyFixed: status === "completed"
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -266,6 +313,14 @@ export default function TechnicianServices() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Moji servisi</h1>
         <div className="flex gap-2 items-center">
+          <Button 
+            variant="outline" 
+            onClick={() => openQuickActions()}
+            className="hidden sm:flex"
+          >
+            <Package className="mr-2 h-4 w-4" />
+            Brze akcije
+          </Button>
           <TechnicianProfileWidget />
           <Button 
             variant="destructive" 
@@ -316,12 +371,22 @@ export default function TechnicianServices() {
                 <div className="space-y-6 pr-4">
                   {sortedCities.map((city) => (
                     <div key={city} className="space-y-3">
-                      <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <h3 className="font-semibold text-lg text-primary">{city}</h3>
-                        <Badge variant="outline" className="ml-2">
-                          {groupedServices[city].length} servis{groupedServices[city].length === 1 ? '' : 'a'}
-                        </Badge>
+                      <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <h3 className="font-semibold text-lg text-primary">{city}</h3>
+                          <Badge variant="outline" className="ml-2">
+                            {groupedServices[city].length} servis{groupedServices[city].length === 1 ? '' : 'a'}
+                          </Badge>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => openQuickActions(city)}
+                          className="h-8 px-2"
+                        >
+                          <Package className="h-3 w-3" />
+                        </Button>
                       </div>
                       {groupedServices[city].map((service) => (
                         <Card key={service.id} className="overflow-hidden">
@@ -382,6 +447,16 @@ export default function TechnicianServices() {
                                   Mapa
                                 </Button>
                               )}
+                              
+                              {/* Plutajući prozor dugme */}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openFloatingService(service)}
+                              >
+                                <Package className="h-4 w-4 mr-2" />
+                                Detalji
+                              </Button>
                             </div>
 
                             {(service.status === "pending" || service.status === "scheduled") && (
@@ -552,6 +627,26 @@ export default function TechnicianServices() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plutajući prozor za detalje servisa */}
+      <ServiceDetailsFloat
+        isOpen={floatingServiceOpen}
+        onClose={() => setFloatingServiceOpen(false)}
+        service={floatingSelectedService}
+        onStatusUpdate={handleFloatingStatusUpdate}
+        getStatusBadge={getStatusBadge}
+      />
+
+      {/* Plutajući prozor za brze akcije */}
+      <QuickActionsFloat
+        isOpen={quickActionsOpen}
+        onClose={() => setQuickActionsOpen(false)}
+        services={selectedCity === "Svi gradovi" ? filteredServices : groupedServices[selectedCity] || []}
+        onServiceSelect={openFloatingService}
+        onStatusUpdate={handleQuickStatusUpdate}
+        getStatusBadge={getStatusBadge}
+        activeCity={selectedCity}
+      />
     </div>
   );
 }
