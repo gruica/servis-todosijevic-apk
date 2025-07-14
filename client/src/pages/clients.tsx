@@ -245,8 +245,11 @@ export default function Clients() {
   // Mutation za dodavanje novog uređaja
   const applianceMutation = useMutation({
     mutationFn: async (data: ApplianceFormValues) => {
+      console.log("DEBUG: Mutation pozvan sa podacima:", data);
       const res = await apiRequest("POST", "/api/appliances", data);
-      return await res.json();
+      const result = await res.json();
+      console.log("DEBUG: API odgovor:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
@@ -299,6 +302,8 @@ export default function Clients() {
   
   // Submit forme za uređaj
   const onApplianceSubmit = (data: ApplianceFormValues) => {
+    console.log("DEBUG: onApplianceSubmit pozvan sa podacima:", data);
+    console.log("DEBUG: Forma greške:", applianceForm.formState.errors);
     applianceMutation.mutate(data);
   };
   
