@@ -26,8 +26,10 @@ import {
   Client, 
   Appliance, 
   ApplianceCategory, 
+  Manufacturer,
   Technician,
   insertServiceSchema, 
+  insertApplianceSchema,
   serviceStatusEnum 
 } from "@shared/schema";
 import { z } from "zod";
@@ -75,6 +77,19 @@ const serviceFormSchema = insertServiceSchema.extend({
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+// Schema for new appliance form
+const applianceFormSchema = insertApplianceSchema.extend({
+  clientId: z.coerce.number().min(1, "Obavezno polje"),
+  categoryId: z.coerce.number().min(1, "Obavezno polje"),
+  manufacturerId: z.coerce.number().min(1, "Obavezno polje"),
+  model: z.string().min(1, "Obavezno polje"),
+  serialNumber: z.string().optional(),
+  purchaseDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type ApplianceFormValues = z.infer<typeof applianceFormSchema>;
 
 // Get badge variant based on status
 function getStatusBadge(status: string) {
@@ -218,6 +233,8 @@ export default function EnhancedServices() {
   const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
   const [selectedServiceForSms, setSelectedServiceForSms] = useState<Service | null>(null);
   const [smsMessage, setSmsMessage] = useState("");
+  const [isNewApplianceDialogOpen, setIsNewApplianceDialogOpen] = useState(false);
+  const [applianceCreatedFromService, setApplianceCreatedFromService] = useState<number | null>(null);
   const { toast } = useToast();
   // Proveravamo ulogu korisnika kroz useAuth hook
   const { isAdmin, isTechnician, isBusinessPartner, isClient } = useAuth();
@@ -240,6 +257,10 @@ export default function EnhancedServices() {
   
   const { data: categories, isLoading: isCategoriesLoading } = useQuery<ApplianceCategory[]>({
     queryKey: ["/api/appliance-categories"],
+  });
+
+  const { data: manufacturers, isLoading: isManufacturersLoading } = useQuery<Manufacturer[]>({
+    queryKey: ["/api/manufacturers"],
   });
   
   const isDataLoading = 
@@ -393,6 +414,20 @@ export default function EnhancedServices() {
       partnerCompanyName: null,
     },
   });
+
+  // Appliance form
+  const applianceForm = useForm<ApplianceFormValues>({
+    resolver: zodResolver(applianceFormSchema),
+    defaultValues: {
+      clientId: 0,
+      categoryId: 0,
+      manufacturerId: 0,
+      model: "",
+      serialNumber: "",
+      purchaseDate: "",
+      notes: "",
+    },
+  });
   
   // Create/Update service mutation
   const serviceMutation = useMutation({
@@ -516,6 +551,43 @@ export default function EnhancedServices() {
     },
   });
   
+  // Create appliance mutation
+  const createApplianceMutation = useMutation({
+    mutationFn: async (data: ApplianceFormValues) => {
+      const res = await apiRequest("POST", "/api/appliances", data);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Uspešno kreiran aparat:", data);
+      
+      // Invalidate appliance queries
+      queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
+      
+      toast({
+        title: "✅ Aparat uspešno kreiran",
+        description: "Podaci o aparatu su sačuvani.",
+      });
+      
+      // Zatvori aparat dialog
+      setIsNewApplianceDialogOpen(false);
+      applianceForm.reset();
+      
+      // Postavi kreiran aparat u service formi
+      if (data.data && data.data.id) {
+        setApplianceCreatedFromService(data.data.id);
+        form.setValue("applianceId", data.data.id);
+      }
+    },
+    onError: (error) => {
+      console.error("Greška pri kreiranju aparata:", error);
+      toast({
+        title: "Greška",
+        description: error.message || "Došlo je do greške pri kreiranju aparata",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Send SMS mutation
   const sendSmsMutation = useMutation({
     mutationFn: async ({ serviceId, message }: { serviceId: number, message: string }) => {
@@ -676,6 +748,21 @@ export default function EnhancedServices() {
     
     // Set client ID in form
     form.setValue("clientId", clientIdNum, { shouldValidate: true });
+  };
+
+  // Handle appliance selection
+  const handleApplianceChange = (applianceId: string) => {
+    if (applianceId === "new_appliance") {
+      // Open new appliance dialog
+      if (selectedClient) {
+        applianceForm.setValue("clientId", selectedClient);
+        setIsNewApplianceDialogOpen(true);
+      }
+      return;
+    }
+    
+    const applianceIdNum = parseInt(applianceId);
+    form.setValue("applianceId", applianceIdNum, { shouldValidate: true });
   };
   
   // Assign technician to service
@@ -1040,7 +1127,7 @@ export default function EnhancedServices() {
                       <FormLabel>Uređaj</FormLabel>
                       <Select
                         value={field.value.toString()}
-                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        onValueChange={handleApplianceChange}
                         disabled={!selectedClient || selectedService !== null}
                       >
                         <SelectTrigger>
@@ -1048,6 +1135,11 @@ export default function EnhancedServices() {
                         </SelectTrigger>
                         <SelectContent className="max-h-80">
                           <SelectItem value="0">Izaberite uređaj</SelectItem>
+                          {selectedClient && (
+                            <SelectItem value="new_appliance" className="text-blue-600 font-medium">
+                              + Dodaj novi uređaj
+                            </SelectItem>
+                          )}
                           {filteredAppliances?.map((appliance) => {
                             const category = categories?.find(c => c.id === appliance.categoryId);
                             return (
@@ -1685,6 +1777,145 @@ export default function EnhancedServices() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Appliance Dialog */}
+      <Dialog open={isNewApplianceDialogOpen} onOpenChange={setIsNewApplianceDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Dodaj novi uređaj</DialogTitle>
+            <DialogDescription>
+              Uređaj će nakon dodavanja biti dostupan za izbor u formi za servis.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...applianceForm}>
+            <form onSubmit={applianceForm.handleSubmit((data) => createApplianceMutation.mutate(data))} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={applianceForm.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kategorija</FormLabel>
+                      <Select
+                        value={field.value.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Izaberite kategoriju" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Izaberite kategoriju</SelectItem>
+                          {categories?.map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={applianceForm.control}
+                  name="manufacturerId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Proizvođač</FormLabel>
+                      <Select
+                        value={field.value.toString()}
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Izaberite proizvođača" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Izaberite proizvođača</SelectItem>
+                          {manufacturers?.map((manufacturer) => (
+                            <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                              {manufacturer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={applianceForm.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Unesite model uređaja" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={applianceForm.control}
+                  name="serialNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Serijski broj</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Unesite serijski broj" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={applianceForm.control}
+                  name="purchaseDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Datum kupovine</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={applianceForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Napomene</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Dodatne napomene o uređaju" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsNewApplianceDialogOpen(false)}>
+                  Otkaži
+                </Button>
+                <Button type="submit" disabled={createApplianceMutation.isPending}>
+                  {createApplianceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
       
