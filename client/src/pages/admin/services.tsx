@@ -520,19 +520,16 @@ export default function AdminServices() {
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log("Button clicked!");
-                              handleViewDetails(service);
+                          <button
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            onClick={() => {
+                              console.log("Native button clicked for service:", service.id);
+                              setSelectedService(service);
+                              setIsDetailsOpen(true);
                             }}
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Detalji
-                          </Button>
+                            👁️ Detalji
+                          </button>
                           <Button
                             variant="outline"
                             size="sm"
