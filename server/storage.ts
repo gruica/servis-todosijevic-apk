@@ -23,7 +23,7 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
 import { pool, db } from "./db";
-import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
@@ -2633,99 +2633,104 @@ export class DatabaseStorage implements IStorage {
   // Admin service methods
   async getAdminServices(): Promise<any[]> {
     try {
-      const result = await db
-        .select({
-          id: services.id,
-          status: services.status,
-          description: services.description,
-          createdAt: services.createdAt,
-          updatedAt: services.updatedAt,
-          scheduledDate: services.scheduledDate,
-          technicianId: services.technicianId,
-          clientId: services.clientId,
-          applianceId: services.applianceId,
-          priority: services.priority,
-          notes: services.notes,
-          technicianNotes: services.technicianNotes,
-          usedParts: services.usedParts,
-          machineNotes: services.machineNotes,
-          cost: services.cost,
-          isCompletelyFixed: services.isCompletelyFixed,
-          // Client information
-          clientFullName: clients.fullName,
-          clientPhone: clients.phone,
-          clientEmail: clients.email,
-          clientAddress: clients.address,
-          clientCity: clients.city,
-          clientCompanyName: clients.companyName,
-          // Appliance information
-          applianceModel: appliances.model,
-          applianceSerialNumber: appliances.serialNumber,
-          categoryName: applianceCategories.name,
-          categoryIcon: applianceCategories.icon,
-          manufacturerName: manufacturers.name,
-          // Technician information
-          technicianFullName: technicians.fullName,
-          technicianEmail: technicians.email,
-          technicianPhone: technicians.phone,
-          technicianSpecialization: technicians.specialization,
-        })
-        .from(services)
-        .leftJoin(clients, eq(services.clientId, clients.id))
-        .leftJoin(appliances, eq(services.applianceId, appliances.id))
-        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-        .leftJoin(technicians, eq(services.technicianId, technicians.id))
-        .orderBy(desc(services.createdAt));
-
-      return result.map(row => ({
-        id: row.id,
-        status: row.status,
-        description: row.description,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-        scheduledDate: row.scheduledDate,
-        technicianId: row.technicianId,
-        clientId: row.clientId,
-        applianceId: row.applianceId,
-        priority: row.priority || 'medium',
-        notes: row.notes,
-        technicianNotes: row.technicianNotes,
-        usedParts: row.usedParts,
-        machineNotes: row.machineNotes,
-        cost: row.cost,
-        isCompletelyFixed: row.isCompletelyFixed,
-        client: {
-          id: row.clientId,
-          fullName: row.clientFullName,
-          phone: row.clientPhone,
-          email: row.clientEmail,
-          address: row.clientAddress,
-          city: row.clientCity,
-          companyName: row.clientCompanyName,
-        },
-        appliance: {
-          id: row.applianceId,
-          model: row.applianceModel,
-          serialNumber: row.applianceSerialNumber,
-          category: {
-            id: row.applianceId,
-            name: row.categoryName,
-            icon: row.categoryIcon,
-          },
-          manufacturer: {
-            id: row.applianceId,
-            name: row.manufacturerName,
-          },
-        },
-        technician: row.technicianId ? {
-          id: row.technicianId,
-          fullName: row.technicianFullName,
-          email: row.technicianEmail,
-          phone: row.technicianPhone,
-          specialization: row.technicianSpecialization,
-        } : null,
-      }));
+      // Get all services
+      const allServices = await db.select().from(services);
+      console.log('Services found:', allServices.length);
+      
+      const result = [];
+      
+      for (const service of allServices) {
+        // Get client
+        const [client] = await db
+          .select()
+          .from(clients)
+          .where(eq(clients.id, service.clientId));
+        
+        // Get appliance
+        const [appliance] = await db
+          .select()
+          .from(appliances)
+          .where(eq(appliances.id, service.applianceId));
+        
+        // Get technician if assigned
+        let technician = null;
+        if (service.technicianId) {
+          [technician] = await db
+            .select()
+            .from(technicians)
+            .where(eq(technicians.id, service.technicianId));
+        }
+        
+        // Get category and manufacturer for appliance
+        let category = null;
+        let manufacturer = null;
+        if (appliance) {
+          [category] = await db
+            .select()
+            .from(applianceCategories)
+            .where(eq(applianceCategories.id, appliance.categoryId));
+          
+          [manufacturer] = await db
+            .select()
+            .from(manufacturers)
+            .where(eq(manufacturers.id, appliance.manufacturerId));
+        }
+        
+        result.push({
+          id: service.id,
+          status: service.status,
+          description: service.description,
+          createdAt: service.createdAt,
+          updatedAt: service.createdAt,
+          scheduledDate: service.scheduledDate,
+          completedDate: service.completedDate,
+          technicianId: service.technicianId,
+          clientId: service.clientId,
+          applianceId: service.applianceId,
+          priority: 'medium',
+          notes: null,
+          technicianNotes: service.technicianNotes,
+          usedParts: service.usedParts,
+          machineNotes: service.machineNotes,
+          cost: service.cost,
+          isCompletelyFixed: service.isCompletelyFixed,
+          warrantyStatus: service.warrantyStatus,
+          businessPartnerId: service.businessPartnerId,
+          partnerCompanyName: service.partnerCompanyName,
+          client: client ? {
+            id: client.id,
+            fullName: client.fullName,
+            phone: client.phone,
+            email: client.email,
+            address: client.address,
+            city: client.city,
+            companyName: client.companyName,
+          } : null,
+          appliance: appliance ? {
+            id: appliance.id,
+            model: appliance.model,
+            serialNumber: appliance.serialNumber,
+            category: category ? {
+              id: category.id,
+              name: category.name,
+              icon: category.icon,
+            } : null,
+            manufacturer: manufacturer ? {
+              id: manufacturer.id,
+              name: manufacturer.name,
+            } : null,
+          } : null,
+          technician: technician ? {
+            id: technician.id,
+            fullName: technician.fullName,
+            email: technician.email,
+            phone: technician.phone,
+            specialization: technician.specialization,
+          } : null,
+        });
+      }
+      
+      return result;
     } catch (error) {
       console.error('Greška pri dohvatanju admin servisa:', error);
       return [];
@@ -2740,18 +2745,19 @@ export class DatabaseStorage implements IStorage {
           status: services.status,
           description: services.description,
           createdAt: services.createdAt,
-          updatedAt: services.updatedAt,
           scheduledDate: services.scheduledDate,
+          completedDate: services.completedDate,
           technicianId: services.technicianId,
           clientId: services.clientId,
           applianceId: services.applianceId,
-          priority: services.priority,
-          notes: services.notes,
           technicianNotes: services.technicianNotes,
           usedParts: services.usedParts,
           machineNotes: services.machineNotes,
           cost: services.cost,
           isCompletelyFixed: services.isCompletelyFixed,
+          warrantyStatus: services.warrantyStatus,
+          businessPartnerId: services.businessPartnerId,
+          partnerCompanyName: services.partnerCompanyName,
           // Client information
           clientFullName: clients.fullName,
           clientPhone: clients.phone,
@@ -2787,18 +2793,22 @@ export class DatabaseStorage implements IStorage {
         status: row.status,
         description: row.description,
         createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
+        updatedAt: row.createdAt, // Use createdAt as fallback
         scheduledDate: row.scheduledDate,
+        completedDate: row.completedDate,
         technicianId: row.technicianId,
         clientId: row.clientId,
         applianceId: row.applianceId,
-        priority: row.priority || 'medium',
-        notes: row.notes,
+        priority: 'medium', // Default priority
+        notes: null, // No notes field in current schema
         technicianNotes: row.technicianNotes,
         usedParts: row.usedParts,
         machineNotes: row.machineNotes,
         cost: row.cost,
         isCompletelyFixed: row.isCompletelyFixed,
+        warrantyStatus: row.warrantyStatus,
+        businessPartnerId: row.businessPartnerId,
+        partnerCompanyName: row.partnerCompanyName,
         client: {
           id: row.clientId,
           fullName: row.clientFullName,

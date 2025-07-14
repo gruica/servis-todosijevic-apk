@@ -757,6 +757,154 @@ export default function AdminServices() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Service Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Izmeni servis #{selectedService?.id}</DialogTitle>
+            </DialogHeader>
+            
+            {selectedService && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select 
+                      value={selectedService.status} 
+                      onValueChange={(value) => setSelectedService({...selectedService, status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Na čekanju</SelectItem>
+                        <SelectItem value="assigned">Dodeljeno</SelectItem>
+                        <SelectItem value="scheduled">Zakazano</SelectItem>
+                        <SelectItem value="in_progress">U toku</SelectItem>
+                        <SelectItem value="completed">Završeno</SelectItem>
+                        <SelectItem value="cancelled">Otkazano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="technician">Serviser</Label>
+                    <Select 
+                      value={selectedService.technicianId?.toString() || ""} 
+                      onValueChange={(value) => setSelectedService({...selectedService, technicianId: value ? parseInt(value) : null})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Izaberi servisera..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Bez servisera</SelectItem>
+                        {technicians.map((tech) => (
+                          <SelectItem key={tech.id} value={tech.id.toString()}>
+                            {tech.fullName} - {tech.specialization}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Opis problema</Label>
+                  <Textarea 
+                    id="description"
+                    value={selectedService.description}
+                    onChange={(e) => setSelectedService({...selectedService, description: e.target.value})}
+                    placeholder="Opis problema..."
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="technicianNotes">Napomene servisera</Label>
+                  <Textarea 
+                    id="technicianNotes"
+                    value={selectedService.technicianNotes || ""}
+                    onChange={(e) => setSelectedService({...selectedService, technicianNotes: e.target.value})}
+                    placeholder="Napomene servisera..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cost">Cena (€)</Label>
+                    <Input 
+                      id="cost"
+                      type="number"
+                      value={selectedService.cost || ""}
+                      onChange={(e) => setSelectedService({...selectedService, cost: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="scheduledDate">Zakazano za</Label>
+                    <Input 
+                      id="scheduledDate"
+                      type="datetime-local"
+                      value={selectedService.scheduledDate?.slice(0, 16) || ""}
+                      onChange={(e) => setSelectedService({...selectedService, scheduledDate: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="usedParts">Korišćeni delovi</Label>
+                  <Textarea 
+                    id="usedParts"
+                    value={selectedService.usedParts || ""}
+                    onChange={(e) => setSelectedService({...selectedService, usedParts: e.target.value})}
+                    placeholder="Lista korišćenih delova..."
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="machineNotes">Napomene o uređaju</Label>
+                  <Textarea 
+                    id="machineNotes"
+                    value={selectedService.machineNotes || ""}
+                    onChange={(e) => setSelectedService({...selectedService, machineNotes: e.target.value})}
+                    placeholder="Napomene o uređaju..."
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isCompletelyFixed"
+                    checked={selectedService.isCompletelyFixed}
+                    onChange={(e) => setSelectedService({...selectedService, isCompletelyFixed: e.target.checked})}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="isCompletelyFixed">Potpuno ispravljen</Label>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                Otkaži
+              </Button>
+              <Button 
+                onClick={() => selectedService && updateServiceMutation.mutate({
+                  id: selectedService.id,
+                  updates: selectedService
+                })}
+                disabled={updateServiceMutation.isPending}
+              >
+                {updateServiceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
