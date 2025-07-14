@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -554,6 +554,9 @@ export default function AdminServices() {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
+              <DialogDescription>
+                Pregledajte kompletne detalje o servisu uključujući informacije o klijentu, uređaju i statusu.
+              </DialogDescription>
             </DialogHeader>
             
             {selectedService && (
@@ -741,8 +744,10 @@ export default function AdminServices() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Potvrda brisanja</DialogTitle>
+              <DialogDescription>
+                Da li ste sigurni da želite da obrišete ovaj servis? Ova akcija se ne može poništiti.
+              </DialogDescription>
             </DialogHeader>
-            <p>Da li ste sigurni da želite da obrišete ovaj servis? Ova akcija se ne može poništiti.</p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
                 Otkaži
@@ -763,6 +768,9 @@ export default function AdminServices() {
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Izmeni servis #{selectedService?.id}</DialogTitle>
+              <DialogDescription>
+                Ažurirajte informacije o servisu uključujući status, dodeljenog servisera i tehnički detalje.
+              </DialogDescription>
             </DialogHeader>
             
             {selectedService && (
