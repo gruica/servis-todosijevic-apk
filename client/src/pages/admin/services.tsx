@@ -523,21 +523,24 @@ export default function AdminServices() {
                             size="sm"
                             onClick={() => handleViewDetails(service)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 mr-1" />
+                            Detalji
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditService(service)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-1" />
+                            Izmeni
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteService(service)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Obriši
                           </Button>
                         </div>
                       </div>
