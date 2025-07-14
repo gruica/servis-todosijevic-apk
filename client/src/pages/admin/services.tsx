@@ -109,9 +109,17 @@ export default function AdminServices() {
   const { toast } = useToast();
 
   // Fetch services
-  const { data: services = [], isLoading: loadingServices, refetch } = useQuery<AdminService[]>({
+  const { data: services = [], isLoading: loadingServices, refetch, error } = useQuery<AdminService[]>({
     queryKey: ["/api/admin/services"],
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Log services data for debugging
+  console.log("Admin Services Debug:", {
+    services,
+    isLoading: loadingServices,
+    error,
+    servicesCount: services.length
   });
 
   // Fetch technicians
@@ -188,20 +196,25 @@ export default function AdminServices() {
     },
   });
 
-  // Filter services
+  // Filter services with safe property access
   const filteredServices = services.filter((service) => {
-    const matchesSearch = searchQuery === "" || 
-      service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.client.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.appliance.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.id.toString().includes(searchQuery);
-    
-    const matchesStatus = statusFilter === "all" || service.status === statusFilter;
-    const matchesTechnician = technicianFilter === "all" || 
-      (technicianFilter === "unassigned" && !service.technicianId) ||
-      service.technicianId?.toString() === technicianFilter;
-    
-    return matchesSearch && matchesStatus && matchesTechnician;
+    try {
+      const matchesSearch = searchQuery === "" || 
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.client?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.appliance?.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.id?.toString().includes(searchQuery);
+      
+      const matchesStatus = statusFilter === "all" || service.status === statusFilter;
+      const matchesTechnician = technicianFilter === "all" || 
+        (technicianFilter === "unassigned" && !service.technicianId) ||
+        service.technicianId?.toString() === technicianFilter;
+      
+      return matchesSearch && matchesStatus && matchesTechnician;
+    } catch (error) {
+      console.error("Error filtering service:", service.id, error);
+      return false;
+    }
   });
 
   // Get status badge
@@ -268,6 +281,42 @@ export default function AdminServices() {
   const handleAssignTechnician = (serviceId: number, technicianId: number) => {
     assignTechnicianMutation.mutate({ serviceId, technicianId });
   };
+
+  // Handle loading state
+  if (loadingServices) {
+    return (
+      <AdminLayout>
+        <div className="container mx-auto py-6 px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Učitavanje servisa...</p>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="container mx-auto py-6 px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-lg font-medium text-red-600 mb-2">Greška pri učitavanju servisa</p>
+              <p className="text-muted-foreground mb-4">Molimo pokušajte ponovo.</p>
+              <Button onClick={() => refetch()} variant="outline">
+                Pokušaj ponovo
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   // Statistics
   const stats = {
