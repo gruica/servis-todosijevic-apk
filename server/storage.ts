@@ -75,6 +75,7 @@ export interface IStorage {
   getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
+  deleteClient(id: number): Promise<void>;
   getRecentClients(limit: number): Promise<Client[]>;
   
   // Appliance Category methods
