@@ -87,6 +87,7 @@ const userRoles = [
 const userFormSchema = z.object({
   id: z.number().optional(),
   username: z.string().email({ message: "Unesite validnu email adresu" }),
+  email: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
   role: z.enum(["admin", "technician", "business_partner", "customer"], { 
@@ -191,6 +192,7 @@ export default function Users() {
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       fullName: "",
       role: "admin",
@@ -298,6 +300,7 @@ export default function Users() {
     form.reset({
       id: user.id,
       username: user.username,
+      email: user.email || user.username, // Use email if available, otherwise username
       password: "", // Leave password empty when editing
       fullName: user.fullName,
       role: user.role,
@@ -311,6 +314,7 @@ export default function Users() {
     setEditingUser(null);
     form.reset({
       username: "",
+      email: "",
       password: "",
       fullName: "",
       role: "admin",
@@ -490,6 +494,20 @@ export default function Users() {
               <FormField
                 control={form.control}
                 name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Korisničko ime</FormLabel>
+                    <FormControl>
+                      <Input placeholder="korisnicko.ime@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email adresa</FormLabel>
