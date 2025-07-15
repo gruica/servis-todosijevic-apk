@@ -57,6 +57,8 @@ interface AdminService {
   machineNotes: string | null;
   cost: string | null;
   isCompletelyFixed: boolean;
+  businessPartnerId: number | null;
+  partnerCompanyName: string | null;
   client: {
     id: number;
     fullName: string;
@@ -101,6 +103,7 @@ export default function AdminServices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [partnerFilter, setPartnerFilter] = useState("all");
   const [selectedService, setSelectedService] = useState<AdminService | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -211,7 +214,11 @@ export default function AdminServices() {
         (technicianFilter === "unassigned" && !service.technicianId) ||
         service.technicianId?.toString() === technicianFilter;
       
-      return matchesSearch && matchesStatus && matchesTechnician;
+      const matchesPartner = partnerFilter === "all" || 
+        (partnerFilter === "business" && service.businessPartnerId) ||
+        (partnerFilter === "direct" && !service.businessPartnerId);
+      
+      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner;
     } catch (error) {
       console.error("Error filtering service:", service.id, error);
       return false;
@@ -422,7 +429,7 @@ export default function AdminServices() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="space-y-2">
                 <Label>Pretraga</Label>
                 <div className="relative">
@@ -473,6 +480,20 @@ export default function AdminServices() {
               </div>
               
               <div className="space-y-2">
+                <Label>Kreirao</Label>
+                <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Svi servisi</SelectItem>
+                    <SelectItem value="direct">Direktno (admin)</SelectItem>
+                    <SelectItem value="business">Poslovni partneri</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
                 <Label>Rezultati</Label>
                 <p className="text-sm text-muted-foreground pt-2">
                   Prikazano {filteredServices.length} od {services.length} servisa
@@ -503,6 +524,11 @@ export default function AdminServices() {
                             <Badge variant="outline">#{service.id}</Badge>
                             {getStatusBadge(service.status)}
                             {getPriorityBadge(service.priority)}
+                            {service.businessPartnerId && service.partnerCompanyName && (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
+                                Partner: {service.partnerCompanyName}
+                              </Badge>
+                            )}
                             {service.scheduledDate && (
                               <Badge variant="outline" className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
@@ -525,6 +551,12 @@ export default function AdminServices() {
                                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
                                   {service.client.city}
+                                </p>
+                              )}
+                              {service.businessPartnerId && service.partnerCompanyName && (
+                                <p className="text-xs text-blue-600 font-medium flex items-center gap-1 mt-1">
+                                  <User className="h-3 w-3" />
+                                  Kreirao: {service.partnerCompanyName}
                                 </p>
                               )}
                             </div>
