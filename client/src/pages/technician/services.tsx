@@ -120,6 +120,19 @@ export default function TechnicianServices() {
     staleTime: 5000,
   });
 
+  // Automatski otvara detalje servisa kada se dolazi sa notifikacije
+  useEffect(() => {
+    const state = history.state;
+    if (state && state.highlightServiceId && services.length > 0) {
+      const targetService = services.find(service => service.id === state.highlightServiceId);
+      if (targetService) {
+        // Automatski otvara floating servis prozor za highlighted servis
+        setFloatingSelectedService(targetService);
+        setFloatingServiceOpen(true);
+      }
+    }
+  }, [services, location]);
+
   // Mutation for updating service status
   const updateStatusMutation = useMutation({
     mutationFn: async ({ 
