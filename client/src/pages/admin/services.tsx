@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { 
   Plus, 
   Search, 
@@ -103,6 +104,7 @@ interface Technician {
 }
 
 export default function AdminServices() {
+  const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
@@ -112,6 +114,9 @@ export default function AdminServices() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  // State za highlighting servisa iz notifikacije
+  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
   
   // Check URL parameters for automatic filtering
   useEffect(() => {
@@ -123,6 +128,21 @@ export default function AdminServices() {
     }
   }, []);
   
+  // Proverava da li je stranica otvorena sa notifikacijom
+  useEffect(() => {
+    const state = history.state;
+    if (state && state.highlightServiceId) {
+      setHighlightedServiceId(state.highlightServiceId);
+      
+      // Automatski uklanja highlighting posle 5 sekundi
+      const timer = setTimeout(() => {
+        setHighlightedServiceId(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+  
   const { toast } = useToast();
 
   // Fetch services
@@ -131,6 +151,19 @@ export default function AdminServices() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
+
+  // Automatski otvara detalje servisa kada se dolazi sa notifikacije
+  useEffect(() => {
+    const state = history.state;
+    if (state && state.highlightServiceId && services.length > 0) {
+      const targetService = services.find(service => service.id === state.highlightServiceId);
+      if (targetService) {
+        // Automatski otvara servis detalje
+        setSelectedService(targetService);
+        setIsDetailsOpen(true);
+      }
+    }
+  }, [services, location]);
 
   // Log services data for debugging
   console.log("Admin Services Debug:", {
@@ -568,7 +601,14 @@ export default function AdminServices() {
               <ScrollArea className="h-[600px]">
                 <div className="space-y-4">
                   {filteredServices.map((service) => (
-                    <Card key={service.id} className="p-4">
+                    <Card 
+                      key={service.id} 
+                      className={`p-4 ${
+                        highlightedServiceId === service.id 
+                          ? 'ring-2 ring-blue-500 ring-offset-2' 
+                          : ''
+                      }`}
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
