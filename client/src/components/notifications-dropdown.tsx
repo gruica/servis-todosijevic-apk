@@ -15,6 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { sr } from "date-fns/locale";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Notification {
   id: number;
@@ -46,6 +48,8 @@ const typeIcons = {
 export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
 
   // Dobijanje notifikacija
   const { data: notifications = [], isLoading } = useQuery({
@@ -85,6 +89,30 @@ export function NotificationsDropdown() {
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
+  };
+
+  // Funkcija za navigaciju na servis
+  const handleNotificationClick = (notification: Notification) => {
+    // Označava notifikaciju kao pročitanu
+    if (!notification.isRead) {
+      markAsReadMutation.mutate(notification.id);
+    }
+    
+    // Navigacija bazirana na tipu notifikacije i ulozi korisnika
+    if (notification.relatedServiceId) {
+      if (user?.role === 'technician') {
+        navigate('/technician');
+      } else if (user?.role === 'admin') {
+        navigate('/admin');
+      } else if (user?.role === 'customer') {
+        navigate('/customer');
+      } else if (user?.role === 'business_partner') {
+        navigate('/business');
+      }
+    }
+    
+    // Zatvaranje dropdown-a
+    setIsOpen(false);
   };
 
   const getRelativeTime = (date: string) => {
@@ -148,7 +176,7 @@ export function NotificationsDropdown() {
               <DropdownMenuItem
                 key={notification.id}
                 className="flex flex-col items-start p-3 cursor-pointer hover:bg-muted/50"
-                onClick={() => handleMarkAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start justify-between w-full">
                   <div className="flex items-start space-x-3 flex-1">
