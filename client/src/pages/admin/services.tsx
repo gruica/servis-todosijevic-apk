@@ -59,6 +59,9 @@ interface AdminService {
   isCompletelyFixed: boolean;
   businessPartnerId: number | null;
   partnerCompanyName: string | null;
+  devicePickedUp?: boolean;
+  pickupDate?: string | null;
+  pickupNotes?: string | null;
   client: {
     id: number;
     fullName: string;
@@ -104,6 +107,7 @@ export default function AdminServices() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
+  const [pickupFilter, setPickupFilter] = useState("all");
   const [selectedService, setSelectedService] = useState<AdminService | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -218,7 +222,11 @@ export default function AdminServices() {
         (partnerFilter === "business" && service.businessPartnerId) ||
         (partnerFilter === "direct" && !service.businessPartnerId);
       
-      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner;
+      const matchesPickup = pickupFilter === "all" || 
+        (pickupFilter === "picked_up" && service.devicePickedUp) ||
+        (pickupFilter === "not_picked_up" && !service.devicePickedUp);
+      
+      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner && matchesPickup;
     } catch (error) {
       console.error("Error filtering service:", service.id, error);
       return false;
@@ -335,6 +343,7 @@ export default function AdminServices() {
     inProgress: services.filter(s => s.status === "in_progress").length,
     completed: services.filter(s => s.status === "completed").length,
     unassigned: services.filter(s => !s.technicianId).length,
+    pickedUp: services.filter(s => s.devicePickedUp).length,
   };
 
   return (
@@ -358,7 +367,7 @@ export default function AdminServices() {
         </div>
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -367,6 +376,18 @@ export default function AdminServices() {
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
                 <Wrench className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setPickupFilter(pickupFilter === "picked_up" ? "all" : "picked_up")}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Preuzeti</p>
+                  <p className="text-2xl font-bold">{stats.pickedUp}</p>
+                </div>
+                <Package className="h-8 w-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -429,7 +450,7 @@ export default function AdminServices() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="space-y-2">
                 <Label>Pretraga</Label>
                 <div className="relative">
@@ -492,6 +513,20 @@ export default function AdminServices() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label>Preuzimanje uređaja</Label>
+                <Select value={pickupFilter} onValueChange={setPickupFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Svi uređaji</SelectItem>
+                    <SelectItem value="picked_up">Preuzeti</SelectItem>
+                    <SelectItem value="not_picked_up">Nisu preuzeti</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="space-y-2">
                 <Label>Rezultati</Label>
@@ -535,6 +570,12 @@ export default function AdminServices() {
                                 {formatDate(service.scheduledDate)}
                               </Badge>
                             )}
+                            {service.devicePickedUp && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 flex items-center gap-1">
+                                <Package className="h-3 w-3" />
+                                Preuzet
+                              </Badge>
+                            )}
                           </div>
                           
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
@@ -567,6 +608,12 @@ export default function AdminServices() {
                               <p className="text-xs text-muted-foreground">
                                 {service.appliance.manufacturer.name} {service.appliance.model}
                               </p>
+                              {service.devicePickedUp && service.pickupDate && (
+                                <p className="text-xs text-green-600 font-medium flex items-center gap-1 mt-1">
+                                  <Package className="h-3 w-3" />
+                                  Preuzet: {formatDate(service.pickupDate)}
+                                </p>
+                              )}
                             </div>
                             
                             <div>
