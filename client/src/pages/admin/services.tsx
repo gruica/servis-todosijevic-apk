@@ -111,7 +111,8 @@ export default function AdminServices() {
   // Fetch services
   const { data: services = [], isLoading: loadingServices, refetch, error } = useQuery<AdminService[]>({
     queryKey: ["/api/admin/services"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Log services data for debugging
@@ -138,7 +139,7 @@ export default function AdminServices() {
         title: "Uspešno ažuriran",
         description: "Servis je uspešno ažuriran.",
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       setIsEditOpen(false);
     },
     onError: (error: any) => {
@@ -160,7 +161,7 @@ export default function AdminServices() {
         title: "Uspešno obrisano",
         description: "Servis je uspešno obrisan.",
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       setIsDeleteOpen(false);
     },
     onError: (error: any) => {

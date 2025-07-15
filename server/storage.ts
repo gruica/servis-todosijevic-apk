@@ -2662,116 +2662,118 @@ export class DatabaseStorage implements IStorage {
   // Admin service methods
   async getAdminServices(): Promise<any[]> {
     try {
-      // First, get all services with minimal data to reduce complexity
-      const allServices = await db
-        .select()
-        .from(services)
-        .orderBy(desc(services.createdAt));
+      console.time('getAdminServices');
       
-      if (allServices.length === 0) {
-        return [];
-      }
-
-      // Get all related data with bulk queries
-      const clientIds = [...new Set(allServices.map(s => s.clientId))];
-      const applianceIds = [...new Set(allServices.map(s => s.applianceId))];
-      const technicianIds = [...new Set(allServices.map(s => s.technicianId).filter(id => id !== null))];
-
-      // Bulk fetch all clients
-      const clientsData = await db
-        .select()
-        .from(clients)
-        .where(inArray(clients.id, clientIds));
-
-      // Bulk fetch all appliances with their categories and manufacturers
-      const appliancesData = await db
+      // Use a single complex query with all JOINs
+      const result = await db
         .select({
-          id: appliances.id,
-          model: appliances.model,
-          serialNumber: appliances.serialNumber,
-          categoryId: appliances.categoryId,
-          manufacturerId: appliances.manufacturerId,
+          // Service fields
+          serviceId: services.id,
+          status: services.status,
+          description: services.description,
+          createdAt: services.createdAt,
+          scheduledDate: services.scheduledDate,
+          completedDate: services.completedDate,
+          technicianId: services.technicianId,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          technicianNotes: services.technicianNotes,
+          usedParts: services.usedParts,
+          machineNotes: services.machineNotes,
+          cost: services.cost,
+          isCompletelyFixed: services.isCompletelyFixed,
+          warrantyStatus: services.warrantyStatus,
+          businessPartnerId: services.businessPartnerId,
+          partnerCompanyName: services.partnerCompanyName,
+          // Client fields
+          clientFullName: clients.fullName,
+          clientPhone: clients.phone,
+          clientEmail: clients.email,
+          clientAddress: clients.address,
+          clientCity: clients.city,
+          clientCompanyName: clients.companyName,
+          // Appliance fields
+          applianceModel: appliances.model,
+          applianceSerialNumber: appliances.serialNumber,
+          // Category fields
+          categoryId: applianceCategories.id,
           categoryName: applianceCategories.name,
           categoryIcon: applianceCategories.icon,
+          // Manufacturer fields
+          manufacturerId: manufacturers.id,
           manufacturerName: manufacturers.name,
+          // Technician fields
+          technicianFullName: technicians.fullName,
+          technicianEmail: technicians.email,
+          technicianPhone: technicians.phone,
+          technicianSpecialization: technicians.specialization,
         })
-        .from(appliances)
+        .from(services)
+        .innerJoin(clients, eq(services.clientId, clients.id))
+        .innerJoin(appliances, eq(services.applianceId, appliances.id))
         .innerJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
         .innerJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-        .where(inArray(appliances.id, applianceIds));
+        .leftJoin(technicians, eq(services.technicianId, technicians.id))
+        .orderBy(desc(services.createdAt));
 
-      // Bulk fetch all technicians
-      const techniciansData = technicianIds.length > 0 
-        ? await db
-            .select()
-            .from(technicians)
-            .where(inArray(technicians.id, technicianIds))
-        : [];
+      console.timeEnd('getAdminServices');
+      
+      // Transform to expected format
+      const finalResult = result.map(row => ({
+        id: row.serviceId,
+        status: row.status,
+        description: row.description,
+        createdAt: row.createdAt,
+        updatedAt: row.createdAt,
+        scheduledDate: row.scheduledDate,
+        completedDate: row.completedDate,
+        technicianId: row.technicianId,
+        clientId: row.clientId,
+        applianceId: row.applianceId,
+        priority: 'medium',
+        notes: null,
+        technicianNotes: row.technicianNotes,
+        usedParts: row.usedParts,
+        machineNotes: row.machineNotes,
+        cost: row.cost,
+        isCompletelyFixed: row.isCompletelyFixed,
+        warrantyStatus: row.warrantyStatus,
+        businessPartnerId: row.businessPartnerId,
+        partnerCompanyName: row.partnerCompanyName,
+        client: {
+          id: row.clientId,
+          fullName: row.clientFullName,
+          phone: row.clientPhone,
+          email: row.clientEmail,
+          address: row.clientAddress,
+          city: row.clientCity,
+          companyName: row.clientCompanyName,
+        },
+        appliance: {
+          id: row.applianceId,
+          model: row.applianceModel,
+          serialNumber: row.applianceSerialNumber,
+          category: {
+            id: row.categoryId,
+            name: row.categoryName,
+            icon: row.categoryIcon,
+          },
+          manufacturer: {
+            id: row.manufacturerId,
+            name: row.manufacturerName,
+          },
+        },
+        technician: row.technicianId ? {
+          id: row.technicianId,
+          fullName: row.technicianFullName,
+          email: row.technicianEmail,
+          phone: row.technicianPhone,
+          specialization: row.technicianSpecialization,
+        } : null,
+      }));
 
-      // Create maps for fast lookups
-      const clientsMap = new Map(clientsData.map(c => [c.id, c]));
-      const appliancesMap = new Map(appliancesData.map(a => [a.id, a]));
-      const techniciansMap = new Map(techniciansData.map(t => [t.id, t]));
-
-      // Assemble the final result
-      return allServices.map(service => {
-        const client = clientsMap.get(service.clientId);
-        const appliance = appliancesMap.get(service.applianceId);
-        const technician = service.technicianId ? techniciansMap.get(service.technicianId) : null;
-
-        return {
-          id: service.id,
-          status: service.status,
-          description: service.description,
-          createdAt: service.createdAt,
-          updatedAt: service.createdAt,
-          scheduledDate: service.scheduledDate,
-          completedDate: service.completedDate,
-          technicianId: service.technicianId,
-          clientId: service.clientId,
-          applianceId: service.applianceId,
-          priority: 'medium',
-          notes: null,
-          technicianNotes: service.technicianNotes,
-          usedParts: service.usedParts,
-          machineNotes: service.machineNotes,
-          cost: service.cost,
-          isCompletelyFixed: service.isCompletelyFixed,
-          warrantyStatus: service.warrantyStatus,
-          businessPartnerId: service.businessPartnerId,
-          partnerCompanyName: service.partnerCompanyName,
-          client: client ? {
-            id: client.id,
-            fullName: client.fullName,
-            phone: client.phone,
-            email: client.email,
-            address: client.address,
-            city: client.city,
-            companyName: client.companyName,
-          } : null,
-          appliance: appliance ? {
-            id: appliance.id,
-            model: appliance.model,
-            serialNumber: appliance.serialNumber,
-            category: {
-              id: appliance.categoryId,
-              name: appliance.categoryName,
-              icon: appliance.categoryIcon,
-            },
-            manufacturer: {
-              id: appliance.manufacturerId,
-              name: appliance.manufacturerName,
-            },
-          } : null,
-          technician: technician ? {
-            id: technician.id,
-            fullName: technician.fullName,
-            email: technician.email,
-            phone: technician.phone,
-            specialization: technician.specialization,
-          } : null,
-        };
-      });
+      console.log(`getAdminServices: Vraćam ${finalResult.length} servisa`);
+      return finalResult;
     } catch (error) {
       console.error('Greška pri dohvatanju admin servisa:', error);
       return [];
