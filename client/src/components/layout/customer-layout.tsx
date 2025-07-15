@@ -113,24 +113,38 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Mobile header */}
-      {isMobile && (
-        <header className="bg-white border-b border-gray-200">
-          <div className="px-4 py-4 flex items-center justify-between">
+      {/* Header (always visible) */}
+      <header className="bg-white border-b border-gray-200 z-50">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center">
             <h1 className="text-lg font-semibold">Frigo Sistem</h1>
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[250px]">
-                <SidebarContent />
-              </SheetContent>
-            </Sheet>
+            <span className="ml-2 text-sm text-gray-500">| Klijent</span>
           </div>
-        </header>
-      )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Odjavi se
+            </Button>
+            {isMobile && (
+              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-[250px]">
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
+        </div>
+      </header>
 
       <div className="flex flex-1">
         {/* Desktop sidebar */}

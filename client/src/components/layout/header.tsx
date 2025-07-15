@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useMobile } from "@/hooks/use-mobile";
 import { AdminProfileWidget } from "@/components/admin/profile-widget";
+import { useAuth } from "@/hooks/use-auth";
+import { LogOut } from "lucide-react";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -12,6 +14,7 @@ interface HeaderProps {
 export function Header({ toggleSidebar }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useMobile();
+  const { logoutMutation } = useAuth();
   
   return (
     <header className="bg-white shadow-sm flex-shrink-0">
@@ -44,6 +47,15 @@ export function Header({ toggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => logoutMutation.mutate()}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Odjavi se
+          </Button>
           <AdminProfileWidget />
         </div>
       </div>

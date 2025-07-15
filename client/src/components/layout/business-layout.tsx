@@ -127,27 +127,39 @@ export default function BusinessLayout({ children }: BusinessLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Mobile header */}
-      {isMobile && (
-        <header className="bg-white border-b border-gray-200">
-          <div className="px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center">
-              <Building className="h-5 w-5 text-blue-600 mr-2" />
-              <h1 className="text-lg font-semibold">Frigo Sistem</h1>
-            </div>
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[280px]">
-                <SidebarContent />
-              </SheetContent>
-            </Sheet>
+      {/* Header (always visible) */}
+      <header className="bg-white border-b border-gray-200 z-50">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <Building className="h-5 w-5 text-blue-600 mr-2" />
+            <h1 className="text-lg font-semibold">Frigo Sistem</h1>
+            <span className="ml-2 text-sm text-gray-500">| Poslovni partner</span>
           </div>
-        </header>
-      )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Odjavi se
+            </Button>
+            {isMobile && (
+              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-[280px]">
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
+        </div>
+      </header>
 
       <div className="flex flex-1">
         {/* Desktop sidebar */}
