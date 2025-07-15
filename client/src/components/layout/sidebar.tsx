@@ -41,7 +41,8 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
     { path: "/appliances", label: "Bijela tehnika", icon: "home_repair_service" },
-    { path: "/users", label: "Korisnici", icon: "group" },
+    { path: "/users", label: "Upravljaj korisnicima", icon: "group" },
+    { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: "verified_user" },
     { path: "/admin/sms", label: "SMS poruke", icon: "sms", highlight: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
@@ -142,42 +143,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
             ))}
           </ul>
           
-          {/* Posebna sekcija za verifikaciju korisnika (prikazuje se samo za admin) */}
-          {user?.role === "admin" && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="px-4 text-xs font-semibold text-blue-500 uppercase tracking-wider mb-2">
-                ADMINISTRACIJA
-              </h3>
-              <ul>
-                <li>
-                  <Link href="/admin/user-verification" onClick={() => closeMobileMenu()}>
-                    <div className={cn(
-                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
-                      location === "/admin/user-verification" 
-                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
-                        : "border-l-4 border-transparent"
-                    )}>
-                      <span className="material-symbols-outlined mr-3">verified_user</span>
-                      <span>Verifikacija korisnika</span>
-                    </div>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/admin/sms-settings" onClick={() => closeMobileMenu()}>
-                    <div className={cn(
-                      "flex items-center px-4 py-3 text-blue-700 font-medium hover:bg-blue-50",
-                      location === "/admin/sms-settings" 
-                        ? "bg-blue-100 border-l-4 border-blue-600 text-blue-800" 
-                        : "border-l-4 border-transparent"
-                    )}>
-                      <span className="material-symbols-outlined mr-3">sms</span>
-                      <span>SMS Notifikacije</span>
-                    </div>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          )}
+
         </nav>
       </div>
       
