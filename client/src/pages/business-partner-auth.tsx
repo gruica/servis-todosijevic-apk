@@ -47,7 +47,7 @@ export default function BusinessPartnerAuthPage() {
   useEffect(() => {
     if (user) {
       // Redirect to different pages based on user role
-      if (user.role === "business") {
+      if (user.role === "business" || user.role === "business_partner") {
         navigate("/business");
       } else if (user.role === "admin") {
         navigate("/"); // Admin always goes to dashboard

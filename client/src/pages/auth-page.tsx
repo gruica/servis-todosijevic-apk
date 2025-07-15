@@ -57,7 +57,7 @@ export default function AuthPage() {
         navigate("/customer");
       } else if (user.role === "admin") {
         navigate("/admin");
-      } else if (user.role === "business_partner") {
+      } else if (user.role === "business_partner" || user.role === "business") {
         navigate("/business");
       } else {
         navigate("/");
