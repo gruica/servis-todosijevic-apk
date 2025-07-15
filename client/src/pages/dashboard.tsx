@@ -149,29 +149,6 @@ export default function Dashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                <div className="mb-2 sm:mb-0">
-                  <h3 className="text-blue-800 font-medium">Administrativni alati</h3>
-                  <p className="text-blue-600 text-sm">Koristite brze linkove za pristup administrativnim funkcijama</p>
-                </div>
-                <div className="flex gap-2">
-                  <Link href="/admin/user-verification">
-                    <Button size="sm" className="text-sm bg-blue-600 hover:bg-blue-700 text-white">
-                      <span className="material-symbols-outlined mr-2">verified_user</span>
-                      Verifikacija korisnika
-                    </Button>
-                  </Link>
-                  <Link href="/users">
-                    <Button variant="outline" size="sm" className="text-sm text-blue-600 border-blue-300">
-                      <span className="material-symbols-outlined mr-2">group</span>
-                      Upravljanje korisnicima
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-                
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {isLoading ? (
                 <>
