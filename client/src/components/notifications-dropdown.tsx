@@ -48,6 +48,12 @@ export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  
+  // Dobijanje korisničkih podataka iz query cache-a
+  const { data: user } = useQuery({
+    queryKey: ["/api/user"],
+    enabled: false, // Ne treba da se izvršava automatski
+  });
 
   // Dobijanje notifikacija
   const { data: notifications = [], isLoading } = useQuery({
@@ -96,8 +102,27 @@ export function NotificationsDropdown() {
       markAsReadMutation.mutate(notification.id);
     }
     
-    // Jednostavna navigacija za test - samo navigiraj na home stranicu
-    navigate('/');
+    // Navigacija na osnovu korisničke uloge
+    if (user) {
+      switch (user.role) {
+        case 'technician':
+          navigate('/technician');
+          break;
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'customer':
+          navigate('/customer');
+          break;
+        case 'business_partner':
+          navigate('/business');
+          break;
+        default:
+          navigate('/');
+      }
+    } else {
+      navigate('/');
+    }
     
     // Zatvaranje dropdown-a
     setIsOpen(false);
