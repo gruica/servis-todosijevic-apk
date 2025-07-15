@@ -523,10 +523,102 @@ export const insertEmailVerificationSchema = createInsertSchema(emailVerificatio
 export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
 export type EmailVerification = typeof emailVerification.$inferSelect;
 
+// Tabela za rezervne delove (spare parts orders)
+export const sparePartOrders = pgTable("spare_part_orders", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  technicianId: integer("technician_id").notNull(),
+  applianceId: integer("appliance_id").notNull(),
+  partName: text("part_name").notNull(),
+  partNumber: text("part_number"), // Kataloški broj dela
+  quantity: integer("quantity").notNull().default(1),
+  description: text("description"), // Dodatni opis potrebe
+  urgency: text("urgency").notNull().default("normal"), // normal, high, urgent
+  status: text("status").notNull().default("pending"), // pending, approved, ordered, received, cancelled
+  estimatedCost: text("estimated_cost"), // Procenjena cena
+  actualCost: text("actual_cost"), // Stvarna cena
+  supplierName: text("supplier_name"), // Dobavljač
+  orderDate: timestamp("order_date"),
+  expectedDelivery: timestamp("expected_delivery"),
+  receivedDate: timestamp("received_date"),
+  adminNotes: text("admin_notes"), // Napomene administratora
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Status enums za rezervne delove
+export const sparePartUrgencyEnum = z.enum([
+  "normal", // normalno
+  "high", // visoko
+  "urgent", // hitno
+]);
+
+export const sparePartStatusEnum = z.enum([
+  "pending", // čeka odobrenje
+  "approved", // odobreno
+  "ordered", // poručeno
+  "received", // primljeno
+  "cancelled", // otkazano
+]);
+
+export type SparePartUrgency = z.infer<typeof sparePartUrgencyEnum>;
+export type SparePartStatus = z.infer<typeof sparePartStatusEnum>;
+
+export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pick({
+  serviceId: true,
+  technicianId: true,
+  applianceId: true,
+  partName: true,
+  partNumber: true,
+  quantity: true,
+  description: true,
+  urgency: true,
+  status: true,
+  estimatedCost: true,
+  actualCost: true,
+  supplierName: true,
+  orderDate: true,
+  expectedDelivery: true,
+  receivedDate: true,
+  adminNotes: true,
+}).extend({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj"),
+  applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
+  partNumber: z.string().max(100, "Kataloški broj je predugačak").or(z.literal("")).optional(),
+  quantity: z.number().int().positive("Količina mora biti pozitivan broj"),
+  description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
+  urgency: sparePartUrgencyEnum.default("normal"),
+  status: sparePartStatusEnum.default("pending"),
+  estimatedCost: z.string().max(50, "Procenjena cena je predugačka").or(z.literal("")).optional(),
+  actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
+  supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
+  adminNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+});
+
+export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
+export type SparePartOrder = typeof sparePartOrders.$inferSelect;
+
 // Dodatne relacije
 export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
   user: one(users, {
     fields: [requestTracking.userId],
     references: [users.id],
   })
+}));
+
+export const sparePartOrderRelations = relations(sparePartOrders, ({ one }) => ({
+  service: one(services, {
+    fields: [sparePartOrders.serviceId],
+    references: [services.id],
+  }),
+  technician: one(users, {
+    fields: [sparePartOrders.technicianId],
+    references: [users.id],
+  }),
+  appliance: one(appliances, {
+    fields: [sparePartOrders.applianceId],
+    references: [appliances.id],
+  }),
 }));

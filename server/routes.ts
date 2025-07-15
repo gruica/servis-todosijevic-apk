@@ -7,7 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -4068,6 +4068,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error assigning technician:", error);
       res.status(500).json({ error: "Failed to assign technician" });
+    }
+  });
+
+  // Spare parts API endpoints
+  
+  // Get all spare part orders (admin only)
+  app.get("/api/admin/spare-parts", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orders = await storage.getAllSparePartOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching spare part orders:", error);
+      res.status(500).json({ error: "Failed to fetch spare part orders" });
+    }
+  });
+
+  // Get pending spare part orders (admin only)
+  app.get("/api/admin/spare-parts/pending", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orders = await storage.getPendingSparePartOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching pending spare part orders:", error);
+      res.status(500).json({ error: "Failed to fetch pending spare part orders" });
+    }
+  });
+
+  // Get spare part order by ID
+  app.get("/api/spare-parts/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const order = await storage.getSparePartOrder(parseInt(req.params.id));
+      if (!order) {
+        return res.status(404).json({ error: "Spare part order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching spare part order:", error);
+      res.status(500).json({ error: "Failed to fetch spare part order" });
+    }
+  });
+
+  // Get spare part orders by service ID
+  app.get("/api/services/:id/spare-parts", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orders = await storage.getSparePartOrdersByService(parseInt(req.params.id));
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching spare part orders for service:", error);
+      res.status(500).json({ error: "Failed to fetch spare part orders for service" });
+    }
+  });
+
+  // Get spare part orders by technician ID
+  app.get("/api/technician/spare-parts", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "technician") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const technicianId = req.user.technicianId;
+      if (!technicianId) {
+        return res.status(400).json({ error: "Technician ID not found" });
+      }
+      
+      const orders = await storage.getSparePartOrdersByTechnician(technicianId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching technician spare part orders:", error);
+      res.status(500).json({ error: "Failed to fetch technician spare part orders" });
+    }
+  });
+
+  // Create new spare part order (technician only)
+  app.post("/api/spare-parts", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "technician") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const technicianId = req.user.technicianId;
+      if (!technicianId) {
+        return res.status(400).json({ error: "Technician ID not found" });
+      }
+
+      const validatedData = insertSparePartOrderSchema.parse({
+        ...req.body,
+        technicianId,
+        status: 'pending'
+      });
+
+      const order = await storage.createSparePartOrder(validatedData);
+      res.status(201).json(order);
+    } catch (error) {
+      console.error("Error creating spare part order:", error);
+      res.status(500).json({ error: "Failed to create spare part order" });
+    }
+  });
+
+  // Update spare part order (admin only)
+  app.put("/api/admin/spare-parts/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orderId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedOrder = await storage.updateSparePartOrder(orderId, updates);
+      if (!updatedOrder) {
+        return res.status(404).json({ error: "Spare part order not found" });
+      }
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating spare part order:", error);
+      res.status(500).json({ error: "Failed to update spare part order" });
+    }
+  });
+
+  // Delete spare part order (admin only)
+  app.delete("/api/admin/spare-parts/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orderId = parseInt(req.params.id);
+      const deleted = await storage.deleteSparePartOrder(orderId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Spare part order not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting spare part order:", error);
+      res.status(500).json({ error: "Failed to delete spare part order" });
     }
   });
 

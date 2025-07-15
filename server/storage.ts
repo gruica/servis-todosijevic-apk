@@ -12,10 +12,12 @@ import {
   RequestTracking, InsertRequestTracking,
   BotVerification, InsertBotVerification,
   EmailVerification, InsertEmailVerification,
+  SparePartOrder, InsertSparePartOrder,
+  SparePartUrgency, SparePartStatus,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
-  requestTracking, botVerification, emailVerification
+  requestTracking, botVerification, emailVerification, sparePartOrders
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -140,6 +142,17 @@ export interface IStorage {
   updateAdminService(id: number, updates: any): Promise<any | undefined>;
   deleteAdminService(id: number): Promise<boolean>;
   assignTechnicianToService(serviceId: number, technicianId: number): Promise<any | undefined>;
+  
+  // Spare parts methods
+  getAllSparePartOrders(): Promise<SparePartOrder[]>;
+  getSparePartOrder(id: number): Promise<SparePartOrder | undefined>;
+  getSparePartOrdersByService(serviceId: number): Promise<SparePartOrder[]>;
+  getSparePartOrdersByTechnician(technicianId: number): Promise<SparePartOrder[]>;
+  getSparePartOrdersByStatus(status: SparePartStatus): Promise<SparePartOrder[]>;
+  getPendingSparePartOrders(): Promise<SparePartOrder[]>;
+  createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
+  updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
+  deleteSparePartOrder(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -2939,6 +2952,129 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri dodeli servisera:', error);
       return undefined;
+    }
+  }
+
+  // Spare parts methods
+  async getAllSparePartOrders(): Promise<SparePartOrder[]> {
+    try {
+      const orders = await db
+        .select()
+        .from(sparePartOrders)
+        .orderBy(desc(sparePartOrders.createdAt));
+      return orders;
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih porudžbina rezervnih delova:', error);
+      throw error;
+    }
+  }
+
+  async getSparePartOrder(id: number): Promise<SparePartOrder | undefined> {
+    try {
+      const [order] = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, id));
+      return order;
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbine rezervnog dela:', error);
+      throw error;
+    }
+  }
+
+  async getSparePartOrdersByService(serviceId: number): Promise<SparePartOrder[]> {
+    try {
+      const orders = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.serviceId, serviceId))
+        .orderBy(desc(sparePartOrders.createdAt));
+      return orders;
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbina po servisu:', error);
+      throw error;
+    }
+  }
+
+  async getSparePartOrdersByTechnician(technicianId: number): Promise<SparePartOrder[]> {
+    try {
+      const orders = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.technicianId, technicianId))
+        .orderBy(desc(sparePartOrders.createdAt));
+      return orders;
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbina po tehničaru:', error);
+      throw error;
+    }
+  }
+
+  async getSparePartOrdersByStatus(status: SparePartStatus): Promise<SparePartOrder[]> {
+    try {
+      const orders = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.status, status))
+        .orderBy(desc(sparePartOrders.createdAt));
+      return orders;
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbina po statusu:', error);
+      throw error;
+    }
+  }
+
+  async getPendingSparePartOrders(): Promise<SparePartOrder[]> {
+    try {
+      const orders = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.status, 'pending'))
+        .orderBy(desc(sparePartOrders.createdAt));
+      return orders;
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbina na čekanju:', error);
+      throw error;
+    }
+  }
+
+  async createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder> {
+    try {
+      const [newOrder] = await db
+        .insert(sparePartOrders)
+        .values(order)
+        .returning();
+      return newOrder;
+    } catch (error) {
+      console.error('Greška pri kreiranju porudžbine rezervnog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined> {
+    try {
+      const [updatedOrder] = await db
+        .update(sparePartOrders)
+        .set(order)
+        .where(eq(sparePartOrders.id, id))
+        .returning();
+      return updatedOrder;
+    } catch (error) {
+      console.error('Greška pri ažuriranju porudžbine rezervnog dela:', error);
+      throw error;
+    }
+  }
+
+  async deleteSparePartOrder(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(sparePartOrders)
+        .where(eq(sparePartOrders.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Greška pri brisanju porudžbine rezervnog dela:', error);
+      return false;
     }
   }
 }

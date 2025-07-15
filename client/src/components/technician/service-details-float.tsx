@@ -19,6 +19,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { CallClientButton } from "@/components/ui/call-client-button";
 import { openMapWithAddress } from "@/lib/mobile-utils";
+import { SparePartsOrderForm } from "@/components/spare-parts/SparePartsOrderForm";
 
 type ServiceDetailsFloatProps = {
   isOpen: boolean;
@@ -377,6 +378,19 @@ export function ServiceDetailsFloat({
             )}
           </CardContent>
         </Card>
+
+        {/* Spare Parts Order Form */}
+        {(service.status === "pending" || service.status === "scheduled" || service.status === "in_progress") && (
+          <SparePartsOrderForm
+            serviceId={service.id}
+            onSuccess={() => {
+              // Optional: refresh service data or show success message
+            }}
+            onCancel={() => {
+              // Optional: handle cancel action
+            }}
+          />
+        )}
       </div>
     </FloatingSheet>
   );
