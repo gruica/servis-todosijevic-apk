@@ -373,7 +373,7 @@ export default function TechnicianServices() {
               </div>
             ) : (
               <ScrollArea className="h-[calc(100vh-220px)]">
-                <div className="space-y-6 pr-4">
+                <div className="space-y-6 pr-2 pb-4">
                   {sortedCities.map((city) => (
                     <div key={city} className="space-y-3">
                       <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
@@ -394,120 +394,165 @@ export default function TechnicianServices() {
                         </Button>
                       </div>
                       {groupedServices[city].map((service) => (
-                        <Card key={service.id} className="overflow-hidden">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <CardTitle className="text-lg">
+                        <Card key={service.id} className="overflow-hidden mb-4">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                <CardTitle className="text-lg font-semibold leading-tight">
                                   {service.client?.fullName}
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-sm mt-1">
                                   {service.appliance?.category?.name} {service.appliance?.model}
                                 </CardDescription>
                               </div>
-                              <div>{getStatusBadge(service.status)}</div>
+                              <div className="flex-shrink-0">
+                                {getStatusBadge(service.status)}
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent className="pb-2">
                             <div className="space-y-2">
-                              <div className="flex items-center">
-                                <ClipboardList className="h-4 w-4 mr-2 opacity-70" />
+                              {/* Opis problema */}
+                              <div className="flex items-start">
+                                <ClipboardList className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
                                 <span className="text-sm">{service.description}</span>
                               </div>
-                              {service.client?.address && (
+
+                              {/* Kontakt klijenta */}
+                              {service.client?.phone && (
                                 <div className="flex items-center">
-                                  <Package className="h-4 w-4 mr-2 opacity-70" />
+                                  <Phone className="h-4 w-4 mr-2 opacity-70" />
+                                  <span className="text-sm font-medium">{service.client.phone}</span>
+                                </div>
+                              )}
+
+                              {/* Adresa klijenta */}
+                              {service.client?.address && (
+                                <div className="flex items-start">
+                                  <MapPin className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
                                   <span className="text-sm">{service.client.address}, {service.client.city}</span>
                                 </div>
                               )}
+
+                              {/* Datum kreiranja */}
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-2 opacity-70" />
                                 <span className="text-sm">Kreiran: {formatDate(service.createdAt)}</span>
                               </div>
+
+                              {/* Zakazan datum */}
                               {service.scheduledDate && (
                                 <div className="flex items-center">
                                   <Clock className="h-4 w-4 mr-2 opacity-70" />
                                   <span className="text-sm">Zakazan: {formatDate(service.scheduledDate)}</span>
                                 </div>
                               )}
+
+                              {/* Napomene servisera ako postoje */}
+                              {service.technicianNotes && (
+                                <div className="flex items-start">
+                                  <User className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
+                                  <span className="text-sm text-muted-foreground">
+                                    <strong>Napomena:</strong> {service.technicianNotes}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Cena ako je definisana */}
+                              {service.cost && (
+                                <div className="flex items-center">
+                                  <Package className="h-4 w-4 mr-2 opacity-70" />
+                                  <span className="text-sm font-medium text-green-600">
+                                    Cena: {service.cost}€
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
-                          <CardFooter className="flex justify-between pt-2">
-                            <div className="flex gap-2">
+                          <CardFooter className="flex flex-col gap-3 pt-3">
+                            {/* Prva grupa - Kontakt i informacije */}
+                            <div className="flex gap-2 w-full">
                               <CallClientButton 
                                 phoneNumber={service.client?.phone || ""}
                                 clientName={service.client?.fullName}
                                 variant="secondary" 
-                                size="sm"
+                                size="default"
                                 disabled={!service.client?.phone}
+                                className="flex-1 h-10"
                               />
                               
                               {service.client?.address && (
                                 <Button 
                                   variant="outline" 
-                                  size="sm"
+                                  size="default"
                                   onClick={() => openClientLocation(service.client?.address || "", service.client?.city || null)}
+                                  className="flex-1 h-10"
                                 >
-                                  <MapPin className="h-4 w-4 mr-2" />
+                                  <MapPin className="h-4 w-4 mr-1" />
                                   Mapa
                                 </Button>
                               )}
                               
-                              {/* Plutajući prozor dugme */}
                               <Button 
                                 variant="outline" 
-                                size="sm"
+                                size="default"
                                 onClick={() => openFloatingService(service)}
+                                className="flex-1 h-10"
                               >
-                                <Package className="h-4 w-4 mr-2" />
+                                <Package className="h-4 w-4 mr-1" />
                                 Detalji
                               </Button>
                             </div>
 
-                            <div className="flex gap-2">
-                              {(service.status === "pending" || service.status === "scheduled") && (
-                                <>
-                                  <Button 
-                                    variant="default" 
-                                    size="sm"
-                                    onClick={() => openStatusDialog(service, "in_progress")}
-                                  >
-                                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                                    Započni servis
-                                  </Button>
-                                  
-                                  {/* Quick buttons for client issues */}
+                            {/* Druga grupa - Status akcije */}
+                            {(service.status === "pending" || service.status === "scheduled") && (
+                              <div className="flex flex-col gap-2 w-full">
+                                <Button 
+                                  variant="default" 
+                                  size="default"
+                                  onClick={() => openStatusDialog(service, "in_progress")}
+                                  className="w-full h-12 text-base font-medium"
+                                >
+                                  <ClipboardCheck className="h-5 w-5 mr-2" />
+                                  Započni servis
+                                </Button>
+                                
+                                {/* Quick buttons for client issues */}
+                                <div className="flex gap-2 w-full">
                                   <Button 
                                     variant="outline" 
-                                    size="sm"
+                                    size="default"
                                     onClick={() => openStatusDialog(service, "client_not_home")}
-                                    className="bg-orange-50 hover:bg-orange-100 text-orange-700"
+                                    className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 flex-1 h-11"
                                   >
+                                    <MapPin className="h-4 w-4 mr-1" />
                                     Nije kući
                                   </Button>
                                   
                                   <Button 
                                     variant="outline" 
-                                    size="sm"
+                                    size="default"
                                     onClick={() => openStatusDialog(service, "client_not_answering")}
-                                    className="bg-red-50 hover:bg-red-100 text-red-700"
+                                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 flex-1 h-11"
                                   >
+                                    <Phone className="h-4 w-4 mr-1" />
                                     Ne javlja se
                                   </Button>
-                                </>
-                              )}
-                              
-                              {service.status === "in_progress" && (
-                                <Button 
-                                  variant="default" 
-                                  size="sm"
-                                  onClick={() => openStatusDialog(service, "completed")}
-                                >
-                                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                                  Završi servis
-                                </Button>
-                              )}
-                            </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {service.status === "in_progress" && (
+                              <Button 
+                                variant="default" 
+                                size="default"
+                                onClick={() => openStatusDialog(service, "completed")}
+                                className="w-full h-12 text-base font-medium"
+                              >
+                                <ClipboardCheck className="h-5 w-5 mr-2" />
+                                Završi servis
+                              </Button>
+                            )}
                           </CardFooter>
                         </Card>
                       ))}
