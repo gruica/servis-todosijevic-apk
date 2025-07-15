@@ -17,11 +17,18 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const { data: pendingSparePartsCount = 0 } = useQuery({
     queryKey: ['/api/admin/spare-parts/pending'],
     queryFn: async () => {
-      const data = await apiRequest('/api/admin/spare-parts/pending');
-      return data.length;
+      try {
+        const response = await apiRequest('GET', '/api/admin/spare-parts/pending');
+        const data = await response.json();
+        return Array.isArray(data) ? data.length : 0;
+      } catch (error) {
+        console.error('Error fetching pending spare parts count:', error);
+        return 0;
+      }
     },
     enabled: user?.role === 'admin',
     refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 1,
   });
 
   // Define menu items based on user role
