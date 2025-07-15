@@ -62,9 +62,7 @@ export function NotificationsDropdown() {
   // Označavanje notifikacije kao pročitane
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: number) => 
-      apiRequest(`/api/notifications/${notificationId}/mark-read`, {
-        method: "POST",
-      }),
+      apiRequest("POST", `/api/notifications/${notificationId}/mark-read`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
@@ -74,9 +72,7 @@ export function NotificationsDropdown() {
   // Označavanje svih notifikacija kao pročitane
   const markAllAsReadMutation = useMutation({
     mutationFn: () => 
-      apiRequest("/api/notifications/mark-all-read", {
-        method: "POST",
-      }),
+      apiRequest("POST", "/api/notifications/mark-all-read"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
