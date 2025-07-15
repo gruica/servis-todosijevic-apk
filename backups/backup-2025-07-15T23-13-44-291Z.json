@@ -1,0 +1,303 @@
+{
+  "timestamp": "2025-07-15T23:13:44.291Z",
+  "version": "1.0.0",
+  "tables": {
+    "users": [
+      {
+        "id": 10,
+        "username": "jelena@frigosistemtodosijevic.me",
+        "password": "257424858fdd79f541390c10ea5bba82da2b76c0d169a0b40ead1bfba09cc9ac0e8b3e04aea97317cc5d92c9d0fdea3c910290e0498ae9b1d97392c280e66598.581dbc96a8061708bf4b8d67ec088439",
+        "fullName": "Jelena Todosijević",
+        "role": "admin",
+        "technicianId": null,
+        "email": "jelena@frigosistemtodosijevic.com",
+        "phone": null,
+        "address": null,
+        "city": null,
+        "companyName": null,
+        "companyId": null,
+        "isVerified": true,
+        "registeredAt": "2025-04-12T16:29:55.251Z",
+        "verifiedAt": "2025-04-12T16:29:55.368Z",
+        "verifiedBy": null
+      },
+      {
+        "id": 2,
+        "username": "jovan@frigosistemtodosijevic.com",
+        "password": "223a1fa5b8987729c65ac9b914a5b04da0e8fce459c428c80dc452312bf9d523546d1ccbf048d247d0f12734c911f8d9033f0835432f593e92103335ffa2717a.84e6f4ed97b6ac75b91cdbaed1ea9dbf",
+        "fullName": "Jovan Todosijević",
+        "role": "technician",
+        "technicianId": 1,
+        "email": "jovan@frigosistemtodosijevic.com",
+        "phone": null,
+        "address": null,
+        "city": null,
+        "companyName": null,
+        "companyId": null,
+        "isVerified": true,
+        "registeredAt": "2025-04-12T16:29:55.251Z",
+        "verifiedAt": "2025-04-12T16:29:55.418Z",
+        "verifiedBy": null
+      },
+      {
+        "id": 12,
+        "username": "gruica@frigosistemtodosijevic.com",
+        "password": "011e709c9ea768c724b1f835268c143e399a10074a2961652a92da39d4a2b58955bcde66abaa661b4712c3ca7b3e94c7292636157ac40e26a49bb3cd648df604.4b6a5764a04949a59c45628e246af249",
+        "fullName": "Gruica Todosijević",
+        "role": "technician",
+        "technicianId": 2,
+        "email": "gruica@frigosistemtodosijevic.com",
+        "phone": null,
+        "address": null,
+        "city": null,
+        "companyName": null,
+        "companyId": null,
+        "isVerified": true,
+        "registeredAt": "2025-04-12T16:29:55.251Z",
+        "verifiedAt": "2025-04-12T16:29:55.418Z",
+        "verifiedBy": null
+      },
+      {
+        "id": 4,
+        "username": "petar@frigosistemtodosijevic.com",
+        "password": "9428e8eb15475d7661f9aa33f0425c459c508e96ea02d7bd7b66e0d15c3b8625fd0f658f19cba055316e0db84cb4da715ea24779537e20eb96aef7a56f954396.31fcbced8ecf8ac6cd07a8e7f2961a41",
+        "fullName": "Petar Vulović",
+        "role": "technician",
+        "technicianId": 4,
+        "email": "petar@frigosistemtodosijevic.com",
+        "phone": null,
+        "address": null,
+        "city": null,
+        "companyName": null,
+        "companyId": null,
+        "isVerified": true,
+        "registeredAt": "2025-04-12T16:29:55.251Z",
+        "verifiedAt": "2025-04-12T16:29:55.418Z",
+        "verifiedBy": null
+      },
+      {
+        "id": 8,
+        "username": "nikola@frigosistemtodosijevic.com",
+        "password": "e93fbc8b8aafb545f14909a58d54a4479e0ba95c6b50b97715a35eb3c62176632292027c7b652a7b351dfc8e653223f6f7363cd330cd327ccc1a0f468403ca02.30164893db62b6beafa908e85beacf33",
+        "fullName": "Nikola Ćetković",
+        "role": "technician",
+        "technicianId": 3,
+        "email": "nikola@frigosistemtodosijevic.com",
+        "phone": null,
+        "address": null,
+        "city": null,
+        "companyName": null,
+        "companyId": null,
+        "isVerified": true,
+        "registeredAt": "2025-04-12T16:29:55.251Z",
+        "verifiedAt": "2025-04-12T16:29:55.418Z",
+        "verifiedBy": null
+      },
+      {
+        "id": 19,
+        "username": "robert.ivezic@tehnoplus.me",
+        "password": "160bf3466530e6390ece662407c8c54512bfc66adaa6473942f7d4b6a2a4d0ac47a50304c19d81c43376ce10c46f7eaf17623af74dffcb79b4324b4d3c151cf0.1a94e53e00fd2e08d8b7cbbde5c920ab",
+        "fullName": "Robert Ivezić",
+        "role": "business_partner",
+        "technicianId": null,
+        "email": "robert.ivezic@tehnoplus.me",
+        "phone": "068039039",
+        "address": "Bulevar Josipa Broza Tita 67",
+        "city": "Podgorica",
+        "companyName": "Tehnoplus doo",
+        "companyId": "tehnoplusdoo",
+        "isVerified": true,
+        "registeredAt": "2025-04-14T09:45:00.476Z",
+        "verifiedAt": "2025-04-14T09:57:17.927Z",
+        "verifiedBy": 10
+      }
+    ],
+    "clients": [
+      {
+        "id": 1,
+        "fullName": "Marko Petrović",
+        "email": "marko.petrovic@gmail.com",
+        "phone": "+382 67 123 456",
+        "address": "Njegoševa 15",
+        "city": "Podgorica"
+      },
+      {
+        "id": 2,
+        "fullName": "Ana Janković",
+        "email": "ana.jankovic@gmail.com",
+        "phone": "+382 69 234 567",
+        "address": "Bulevar Svetog Petra Cetinjskog 22",
+        "city": "Podgorica"
+      },
+      {
+        "id": 3,
+        "fullName": "Stefan Miličević",
+        "email": "stefan.milicevic@gmail.com",
+        "phone": "+382 68 345 678",
+        "address": "Ulica Slobode 8",
+        "city": "Nikšić"
+      },
+      {
+        "id": 4,
+        "fullName": "Milica Vukčević",
+        "email": "milica.vukcevic@gmail.com",
+        "phone": "+382 67 456 789",
+        "address": "Trg Nezavisnosti 3",
+        "city": "Cetinje"
+      },
+      {
+        "id": 5,
+        "fullName": "Aleksandar Đukanović",
+        "email": "aleksandar.djukanovic@gmail.com",
+        "phone": "+382 69 567 890",
+        "address": "Ulica Marka Miljanova 12",
+        "city": "Pljevlja"
+      }
+    ],
+    "appliances": [],
+    "services": [],
+    "notifications": [],
+    "applianceCategories": [
+      {
+        "id": 1,
+        "name": "Mašina za veš",
+        "icon": "veš_mašina"
+      },
+      {
+        "id": 2,
+        "name": "Frižider",
+        "icon": "frižider"
+      },
+      {
+        "id": 3,
+        "name": "Šporet",
+        "icon": "šporet"
+      },
+      {
+        "id": 4,
+        "name": "Mašina za sudove",
+        "icon": "sudopera"
+      },
+      {
+        "id": 5,
+        "name": "Klima uređaj",
+        "icon": "klima"
+      },
+      {
+        "id": 6,
+        "name": "Bojler",
+        "icon": "hot_tub"
+      },
+      {
+        "id": 8,
+        "name": "Ugradni set (Rerna i Ploča)",
+        "icon": "kitchen"
+      },
+      {
+        "id": 9,
+        "name": "Ugradna Rerna",
+        "icon": "oven"
+      },
+      {
+        "id": 10,
+        "name": "Mašina za sušenje veša",
+        "icon": "local_laundry_service"
+      },
+      {
+        "id": 11,
+        "name": "Dispanzer",
+        "icon": "local_drink"
+      },
+      {
+        "id": 12,
+        "name": "Ugradna sudo mašina",
+        "icon": "sudopera"
+      },
+      {
+        "id": 13,
+        "name": "Aspirator",
+        "icon": "wind_power"
+      },
+      {
+        "id": 14,
+        "name": "Indukciona ploča",
+        "icon": "electric_bolt"
+      },
+      {
+        "id": 15,
+        "name": "Plinska ploča",
+        "icon": "local_fire_department"
+      },
+      {
+        "id": 16,
+        "name": "Mikrotalasna rerna",
+        "icon": "microwave"
+      },
+      {
+        "id": 17,
+        "name": "Kombinovani frižider",
+        "icon": "kitchen_dining"
+      }
+    ],
+    "manufacturers": [
+      {
+        "id": 1,
+        "name": "Bosch"
+      },
+      {
+        "id": 2,
+        "name": "Samsung"
+      },
+      {
+        "id": 3,
+        "name": "Gorenje"
+      },
+      {
+        "id": 4,
+        "name": "Beko"
+      },
+      {
+        "id": 5,
+        "name": "LG"
+      },
+      {
+        "id": 6,
+        "name": "Whirlpool"
+      },
+      {
+        "id": 7,
+        "name": "Electrolux"
+      },
+      {
+        "id": 8,
+        "name": "Candy"
+      },
+      {
+        "id": 9,
+        "name": "Lobod"
+      },
+      {
+        "id": 10,
+        "name": "Alfa Plam"
+      },
+      {
+        "id": 11,
+        "name": "Novel"
+      },
+      {
+        "id": 12,
+        "name": "Sharp"
+      },
+      {
+        "id": 13,
+        "name": "Arieli"
+      },
+      {
+        "id": 14,
+        "name": "Grund"
+      }
+    ],
+    "maintenanceSchedules": [],
+    "sparePartOrders": []
+  }
+}
