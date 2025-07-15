@@ -655,3 +655,48 @@ export const sparePartOrderRelations = relations(sparePartOrders, ({ one }) => (
     references: [appliances.id],
   }),
 }));
+
+// Tabela za notifikacije i alarme
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id), // Korisnik koji prima notifikaciju
+  type: text("type").notNull(), // "service_assigned", "service_created", "service_status_changed", "spare_part_ordered"
+  title: text("title").notNull(), // Naslov notifikacije
+  message: text("message").notNull(), // Poruka notifikacije
+  relatedServiceId: integer("related_service_id").references(() => services.id), // Povezani servis (opciono)
+  relatedUserId: integer("related_user_id").references(() => users.id), // Povezani korisnik (opciono)
+  isRead: boolean("is_read").default(false).notNull(), // Da li je pročitana
+  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"), // Kada je pročitana
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  type: true,
+  title: true,
+  message: true,
+  relatedServiceId: true,
+  relatedUserId: true,
+  isRead: true,
+  priority: true,
+});
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// Relacije za notifikacije
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  relatedService: one(services, {
+    fields: [notifications.relatedServiceId],
+    references: [services.id],
+  }),
+  relatedUser: one(users, {
+    fields: [notifications.relatedUserId],
+    references: [users.id],
+  }),
+}));

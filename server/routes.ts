@@ -18,6 +18,7 @@ import * as schema from "@shared/schema";
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
+import { NotificationService } from "./notification-service";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -3323,6 +3324,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =====================================
+  // NOTIFICATIONS API ENDPOINTS
+  // =====================================
+
+  // Dobijanje notifikacija za trenutno ulogovanog korisnika
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Morate biti ulogovani" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const notifications = await NotificationService.getUserNotifications(req.user.id, limit);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Greška pri dobijanju notifikacija:", error);
+      res.status(500).json({ error: "Greška pri dobijanju notifikacija" });
+    }
+  });
+
+  // Dobijanje broja nepročitanih notifikacija
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Morate biti ulogovani" });
+      }
+
+      const count = await NotificationService.getUnreadCount(req.user.id);
+      res.json({ count });
+    } catch (error) {
+      console.error("Greška pri dobijanju broja nepročitanih notifikacija:", error);
+      res.status(500).json({ error: "Greška pri dobijanju broja nepročitanih notifikacija" });
+    }
+  });
+
+  // Označavanje notifikacije kao pročitane
+  app.post("/api/notifications/:id/mark-read", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Morate biti ulogovani" });
+      }
+
+      const notificationId = parseInt(req.params.id);
+      await NotificationService.markAsRead(notificationId, req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju notifikacije kao pročitane:", error);
+      res.status(500).json({ error: "Greška pri označavanju notifikacije kao pročitane" });
+    }
+  });
+
+  // Označavanje svih notifikacija kao pročitane
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Morate biti ulogovani" });
+      }
+
+      await NotificationService.markAllAsRead(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju svih notifikacija kao pročitane:", error);
+      res.status(500).json({ error: "Greška pri označavanju svih notifikacija kao pročitane" });
+    }
+  });
+
   // Customer routes - kreiranje servisa (sa rate limiting i bot verification)
   app.post("/api/customer/services", checkBotVerification, checkServiceRequestRateLimit, async (req, res) => {
     try {
@@ -3471,6 +3538,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
       
+      // Pošalji notifikaciju serviseru o dodeljenom servisu
+      try {
+        await NotificationService.notifyServiceAssigned(serviceId, technicianId, req.user.id);
+      } catch (notificationError) {
+        console.error("Greška pri slanju notifikacije serviseru:", notificationError);
+      }
+      
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
@@ -3529,6 +3603,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedService = await storage.updateService(serviceId, { status });
       
       console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
+      
+      // Pošalji notifikaciju o promeni statusa
+      try {
+        await NotificationService.notifyServiceStatusChanged(serviceId, status, req.user.id);
+      } catch (notificationError) {
+        console.error("Greška pri slanju notifikacije o promeni statusa:", notificationError);
+      }
       
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {

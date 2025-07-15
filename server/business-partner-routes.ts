@@ -8,6 +8,7 @@ import * as schema from "@shared/schema";
 import { emailService } from "./email-service";
 import { smsService } from "./sms-service";
 import { smsService as newSmsService } from "./twilio-sms";
+import { NotificationService } from "./notification-service";
 
 export function registerBusinessPartnerRoutes(app: Express) {
   // Middleware za proveru da li je korisnik poslovni partner
@@ -184,6 +185,9 @@ export function registerBusinessPartnerRoutes(app: Express) {
 
       // Slanje obaveštenja administratorima o novom servisu
       try {
+        // Šaljemo notifikacije administratorima
+        await NotificationService.notifyServiceCreatedByPartner(newService.id, partnerId);
+        
         // Šaljemo email svim administratorima o novom zahtevu
         const adminUsers = await storage.getAllUsers();
         const admins = adminUsers.filter(user => user.role === "admin");

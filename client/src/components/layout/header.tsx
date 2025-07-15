@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMobile } from "@/hooks/use-mobile";
 import { AdminProfileWidget } from "@/components/admin/profile-widget";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { LogOut } from "lucide-react";
 
 interface HeaderProps {
@@ -47,6 +48,7 @@ export function Header({ toggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
+          <NotificationsDropdown />
           <Button
             variant="outline"
             size="sm"
