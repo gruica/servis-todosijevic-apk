@@ -57,23 +57,19 @@ export function SparePartsManagement() {
   // Fetch all spare part orders
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/admin/spare-parts'],
-    queryFn: () => apiRequest('/api/admin/spare-parts'),
   });
 
   // Fetch pending orders count for notification
   const { data: pendingOrders = [] } = useQuery({
     queryKey: ['/api/admin/spare-parts/pending'],
-    queryFn: () => apiRequest('/api/admin/spare-parts/pending'),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Update order mutation
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest(`/api/admin/spare-parts/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest('PUT', `/api/admin/spare-parts/${id}`, data);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -97,9 +93,8 @@ export function SparePartsManagement() {
   // Delete order mutation
   const deleteOrderMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/spare-parts/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await apiRequest('DELETE', `/api/admin/spare-parts/${id}`);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -120,9 +115,9 @@ export function SparePartsManagement() {
 
   // Filter orders based on search and filters
   const filteredOrders = orders.filter((order: any) => {
-    const matchesSearch = order.partName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = order.partName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.partNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.technician?.fullName?.toLowerCase().includes(searchTerm.toLowerCase());
+                         order.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesUrgency = urgencyFilter === 'all' || order.urgency === urgencyFilter;
