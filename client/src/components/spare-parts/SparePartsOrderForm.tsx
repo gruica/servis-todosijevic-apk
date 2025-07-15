@@ -40,7 +40,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return await apiRequest('/api/spare-parts/orders', {
+      return await apiRequest('/api/spare-parts', {
         method: 'POST',
         body: JSON.stringify({
           ...orderData,
@@ -66,8 +66,9 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
       setIsOpen(false);
       
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/spare-parts/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/spare-parts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
       
       onSuccess?.();
     },

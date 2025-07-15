@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -10,6 +12,17 @@ interface SidebarProps {
 export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
+
+  // Fetch pending spare parts orders count for admin users
+  const { data: pendingSparePartsCount = 0 } = useQuery({
+    queryKey: ['/api/admin/spare-parts/pending'],
+    queryFn: async () => {
+      const data = await apiRequest('/api/admin/spare-parts/pending');
+      return data.length;
+    },
+    enabled: user?.role === 'admin',
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   // Define menu items based on user role
   // Verzija 2 - Samo najbitnije opcije
@@ -110,6 +123,11 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                     <span>{item.label}</span>
                     {(item.path === "/admin/services" || item.path === "/admin/user-verification" || item.path === "/admin/sms" || item.path === "/admin/cleanup") && (
                       <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Novo</span>
+                    )}
+                    {item.path === "/admin/spare-parts" && pendingSparePartsCount > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded animate-pulse">
+                        {pendingSparePartsCount}
+                      </span>
                     )}
                   </div>
                 </Link>
