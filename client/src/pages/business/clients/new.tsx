@@ -17,25 +17,25 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 // Validaciona šema za novog klijenta
 const newClientSchema = z.object({
   fullName: z.string()
-    .min(3, "Ime i prezime klijenta je obavezno (min. 3 karaktera)")
-    .max(100, "Ime i prezime je predugačko (maks. 100 karaktera)")
-    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime i prezime (samo slova, razmaci i crtice)"),
+    .min(3, "Ime i prezime klijenta je obavezno - minimum 3 karaktera")
+    .max(100, "Ime i prezime je predugačko - maksimum 100 karaktera")
+    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Ime i prezime može sadržavati samo slova, razmake i crtice"),
   phone: z.string()
-    .min(6, "Telefon klijenta je obavezan (min. 6 cifara)")
-    .regex(/^[0-9+\s()-]{6,20}$/, "Unesite ispravan format telefona, npr. '067123456' ili '+382 67 123 456'"),
+    .min(6, "Telefon klijenta je obavezan - minimum 6 cifara")
+    .regex(/^[0-9+\s()-]{6,20}$/, "Unesite ispravan format telefona"),
   email: z.string()
-    .email("Unesite važeću email adresu, npr. 'klijent@example.com'")
+    .email("Unesite važeću email adresu")
     .optional()
     .or(z.literal("")),
   address: z.string()
-    .min(5, "Adresa klijenta je obavezna (min. 5 karaktera)")
-    .max(100, "Adresa je predugačka (maks. 100 karaktera)")
-    .refine(val => val.trim().length > 0, "Adresa ne može sadržati samo prazan prostor"),
+    .min(5, "Adresa klijenta je obavezna - minimum 5 karaktera")
+    .max(100, "Adresa je predugačka - maksimum 100 karaktera")
+    .refine(val => val.trim().length > 0, "Adresa ne može biti prazna"),
   city: z.string()
-    .min(2, "Grad klijenta je obavezan (min. 2 karaktera)")
-    .max(50, "Ime grada je predugačko")
-    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Unesite ispravno ime grada (samo slova, razmaci i crtice)"),
-  notes: z.string().max(500, "Napomene su predugačke").optional().or(z.literal(""))
+    .min(2, "Grad klijenta je obavezan - minimum 2 karaktera")
+    .max(50, "Ime grada je predugačko - maksimum 50 karaktera")
+    .regex(/^[a-zA-ZčćžšđČĆŽŠĐ\s-]+$/, "Grad može sadržavati samo slova, razmake i crtice"),
+  notes: z.string().max(500, "Napomene su predugačke - maksimum 500 karaktera").optional().or(z.literal(""))
 });
 
 type NewClientFormValues = z.infer<typeof newClientSchema>;
@@ -76,7 +76,7 @@ export default function NewBusinessClient() {
       return await response.json();
     },
     onSuccess: (data) => {
-      setCreatedClient(data.data);
+      setCreatedClient(data);
       setSubmitSuccess(true);
       toast({
         title: "Klijent uspešno kreiran",
