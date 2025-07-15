@@ -39,7 +39,7 @@ type RegisterValues = z.infer<typeof registerSchema>;
 
 export default function BusinessPartnerAuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -50,7 +50,8 @@ export default function BusinessPartnerAuthPage() {
       if (user.role === "business" || user.role === "business_partner") {
         navigate("/business");
       } else if (user.role === "admin") {
-        navigate("/"); // Admin always goes to dashboard
+        // Don't redirect admin - show logout option instead
+        console.log("Admin korisnik pokušava pristup business partner stranici");
       } else {
         navigate("/auth"); // Others go to regular auth
       }
@@ -105,6 +106,50 @@ export default function BusinessPartnerAuthPage() {
       companyId: values.companyName.toLowerCase().replace(/[^a-z0-9]/g, ""), // Generišemo companyId iz imena kompanije
       email: values.username, // Koristimo username kao email jer je već validiran kao email
     });
+  }
+
+  // Ako je admin korisnik već ulogovan, prikaži logout opciju
+  if (user && user.role === "admin") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">
+              Pristup poslovnih partnera
+            </CardTitle>
+            <CardDescription className="text-center">
+              Već ste ulogovani kao administrator
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Ulogovani ste kao:</strong> {user.fullName} ({user.role})
+              </p>
+              <p className="text-sm text-blue-600 mt-2">
+                Da biste pristupili kao poslovni partner, molimo izlogujte se iz admin naloga.
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/")}
+                className="flex-1"
+              >
+                Nazad na admin panel
+              </Button>
+              <Button
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="flex-1"
+              >
+                {logoutMutation.isPending ? "Izlogovanje..." : "Izloguj se"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
