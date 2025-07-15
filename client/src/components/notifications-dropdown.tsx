@@ -95,33 +95,77 @@ export function NotificationsDropdown() {
     markAllAsReadMutation.mutate();
   };
 
-  // Funkcija za navigaciju na servis
+  // Funkcija za navigaciju na detalje notifikacije
   const handleNotificationClick = (notification: Notification) => {
     // Označava notifikaciju kao pročitanu
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification.id);
     }
     
-    // Navigacija na osnovu korisničke uloge
-    if (user) {
+    // Navigacija na osnovu tipa notifikacije i korisničke uloge
+    if (user && notification.relatedServiceId) {
       switch (user.role) {
         case 'technician':
-          navigate('/tech');
+          // Za tehničare - navigacija na stranicu servisa sa fokusiranim servisom
+          navigate('/tech', { 
+            state: { 
+              highlightServiceId: notification.relatedServiceId,
+              notificationId: notification.id 
+            }
+          });
           break;
         case 'admin':
-          navigate('/admin');
+          // Za adminiastratore - navigacija na admin servise sa fokusiranim servisom
+          navigate('/admin/services', { 
+            state: { 
+              highlightServiceId: notification.relatedServiceId,
+              notificationId: notification.id 
+            }
+          });
           break;
         case 'customer':
-          navigate('/customer');
+          // Za klijente - navigacija na svoje servise
+          navigate('/customer/services', { 
+            state: { 
+              highlightServiceId: notification.relatedServiceId,
+              notificationId: notification.id 
+            }
+          });
           break;
         case 'business_partner':
-          navigate('/business');
+          // Za poslovne partnere - navigacija na svoje servise
+          navigate('/business/services', { 
+            state: { 
+              highlightServiceId: notification.relatedServiceId,
+              notificationId: notification.id 
+            }
+          });
           break;
         default:
           navigate('/');
       }
     } else {
-      navigate('/');
+      // Fallback navigacija bez specifičnog servisa
+      if (user) {
+        switch (user.role) {
+          case 'technician':
+            navigate('/tech');
+            break;
+          case 'admin':
+            navigate('/admin');
+            break;
+          case 'customer':
+            navigate('/customer');
+            break;
+          case 'business_partner':
+            navigate('/business');
+            break;
+          default:
+            navigate('/');
+        }
+      } else {
+        navigate('/');
+      }
     }
     
     // Zatvaranje dropdown-a

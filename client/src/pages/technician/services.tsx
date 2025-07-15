@@ -11,11 +11,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { TechnicianProfileWidget } from "@/components/technician/profile-widget";
 import { CallClientButton } from "@/components/ui/call-client-button";
 import { ServiceDetailsFloat } from "@/components/technician/service-details-float";
@@ -51,6 +51,7 @@ type TechnicianService = Service & {
 export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
+  const [location, navigate] = useLocation();
   const isMobile = useIsMobile();
   // Uvek proveriti mobilno okruženje (mobile web i APK)
   const isMobileDevice = isMobileEnvironment();
@@ -63,6 +64,9 @@ export default function TechnicianServices() {
   const [machineNotes, setMachineNotes] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
+  
+  // State za highlighting servisa iz notifikacije
+  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
   
   // State za označavanje klijenta kao nedostupnog
   const [clientUnavailableDialogOpen, setClientUnavailableDialogOpen] = useState(false);
@@ -82,6 +86,21 @@ export default function TechnicianServices() {
   // State za zahtev rezervnih delova
   const [sparePartsOrderOpen, setSparePartsOrderOpen] = useState(false);
   const [sparePartsService, setSparePartsService] = useState<TechnicianService | null>(null);
+
+  // Proverava da li je stranica otvorena sa notifikacijom
+  useEffect(() => {
+    const state = history.state;
+    if (state && state.highlightServiceId) {
+      setHighlightedServiceId(state.highlightServiceId);
+      
+      // Automatski uklanja highlighting posle 5 sekundi
+      const timer = setTimeout(() => {
+        setHighlightedServiceId(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -592,7 +611,14 @@ export default function TechnicianServices() {
                         </Button>
                       </div>
                       {groupedServices[city].map((service) => (
-                        <Card key={service.id} className="overflow-hidden mb-4">
+                        <Card 
+                          key={service.id} 
+                          className={`overflow-hidden mb-4 ${
+                            highlightedServiceId === service.id 
+                              ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50 border-blue-200' 
+                              : ''
+                          }`}
+                        >
                           <CardHeader className="pb-3">
                             <div className="flex justify-between items-start gap-3">
                               <div className="flex-1 min-w-0">
