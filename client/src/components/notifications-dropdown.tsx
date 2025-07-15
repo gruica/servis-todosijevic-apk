@@ -16,7 +16,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { sr } from "date-fns/locale";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 
 interface Notification {
   id: number;
@@ -49,7 +48,6 @@ export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-  const { user } = useAuth();
 
   // Dobijanje notifikacija
   const { data: notifications = [], isLoading } = useQuery({
@@ -98,18 +96,8 @@ export function NotificationsDropdown() {
       markAsReadMutation.mutate(notification.id);
     }
     
-    // Navigacija bazirana na tipu notifikacije i ulozi korisnika
-    if (notification.relatedServiceId) {
-      if (user?.role === 'technician') {
-        navigate('/technician');
-      } else if (user?.role === 'admin') {
-        navigate('/admin');
-      } else if (user?.role === 'customer') {
-        navigate('/customer');
-      } else if (user?.role === 'business_partner') {
-        navigate('/business');
-      }
-    }
+    // Jednostavna navigacija za test - samo navigiraj na home stranicu
+    navigate('/');
     
     // Zatvaranje dropdown-a
     setIsOpen(false);
