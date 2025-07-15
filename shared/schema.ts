@@ -232,6 +232,9 @@ export const services = pgTable("services", {
   isCompletelyFixed: boolean("is_completely_fixed"),
   businessPartnerId: integer("business_partner_id"), // ID korisnika poslovnog partnera
   partnerCompanyName: text("partner_company_name"), // Naziv kompanije poslovnog partnera
+  clientUnavailableReason: text("client_unavailable_reason"), // Razlog nedostupnosti klijenta
+  needsRescheduling: boolean("needs_rescheduling").default(false), // Da li treba ponovno zakazivanje
+  reschedulingNotes: text("rescheduling_notes"), // Napomene za ponovno zakazivanje
 });
 
 // Osnovni schema za validaciju servisa - samo obavezna polja
@@ -252,6 +255,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: true,
   businessPartnerId: true,
   partnerCompanyName: true,
+  clientUnavailableReason: true,
+  needsRescheduling: true,
+  reschedulingNotes: true,
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),
@@ -306,6 +312,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
     }).transform(val => parseInt(val))
   ]).nullable().optional(),
   partnerCompanyName: z.string().max(100, "Naziv kompanije je predugačak").or(z.literal("")).nullable().optional(),
+  clientUnavailableReason: z.string().max(500, "Razlog nedostupnosti je predugačak").or(z.literal("")).nullable().optional(),
+  needsRescheduling: z.boolean().nullable().optional(),
+  reschedulingNotes: z.string().max(1000, "Napomene za ponovno zakazivanje su predugačke").or(z.literal("")).nullable().optional(),
 }).partial({
   // Ova polja su opciona za osnovnu formu za kreiranje servisa
   technicianId: true,
@@ -318,6 +327,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   isCompletelyFixed: true,
   businessPartnerId: true,
   partnerCompanyName: true,
+  clientUnavailableReason: true,
+  needsRescheduling: true,
+  reschedulingNotes: true,
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;

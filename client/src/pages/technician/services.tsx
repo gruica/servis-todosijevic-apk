@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -58,6 +59,11 @@ export default function TechnicianServices() {
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
   
+  // State za označavanje klijenta kao nedostupnog
+  const [clientUnavailableDialogOpen, setClientUnavailableDialogOpen] = useState(false);
+  const [unavailableReason, setUnavailableReason] = useState<string>("");
+  const [reschedulingNotes, setReschedulingNotes] = useState<string>("");
+  
   // State za plutajuće prozore
   const [floatingServiceOpen, setFloatingServiceOpen] = useState(false);
   const [floatingSelectedService, setFloatingSelectedService] = useState<TechnicianService | null>(null);
@@ -91,7 +97,10 @@ export default function TechnicianServices() {
       usedParts, 
       machineNotes, 
       cost, 
-      isCompletelyFixed 
+      isCompletelyFixed,
+      clientUnavailableReason,
+      needsRescheduling,
+      reschedulingNotes
     }: { 
       serviceId: number; 
       status: string; 
@@ -100,6 +109,9 @@ export default function TechnicianServices() {
       machineNotes?: string;
       cost?: string;
       isCompletelyFixed?: boolean;
+      clientUnavailableReason?: string;
+      needsRescheduling?: boolean;
+      reschedulingNotes?: string;
     }) => {
       console.log(`[MUTATION] Pozivam API za servis ${serviceId} sa statusom: ${status}`);
       
@@ -109,7 +121,10 @@ export default function TechnicianServices() {
         usedParts,
         machineNotes,
         cost,
-        isCompletelyFixed
+        isCompletelyFixed,
+        clientUnavailableReason,
+        needsRescheduling,
+        reschedulingNotes
       });
       
       const result = await res.json();
@@ -182,6 +197,28 @@ export default function TechnicianServices() {
     setIsCompletelyFixed(service.isCompletelyFixed !== false);
     
     setStatusDialogOpen(true);
+  };
+
+  const openClientUnavailableDialog = (service: TechnicianService) => {
+    setSelectedService(service);
+    setUnavailableReason("");
+    setReschedulingNotes("");
+    setClientUnavailableDialogOpen(true);
+  };
+
+  const handleClientUnavailable = (status: "client_not_home" | "client_not_answering") => {
+    if (!selectedService) return;
+    
+    updateStatusMutation.mutate({
+      serviceId: selectedService.id,
+      status: status,
+      notes: selectedService.technicianNotes || "",
+      clientUnavailableReason: unavailableReason,
+      needsRescheduling: true,
+      reschedulingNotes: reschedulingNotes
+    });
+    
+    setClientUnavailableDialogOpen(false);
   };
 
   // Filter services based on active tab
@@ -553,21 +590,11 @@ export default function TechnicianServices() {
                                   <Button 
                                     variant="outline" 
                                     size="default"
-                                    onClick={() => openStatusDialog(service, "client_not_home")}
+                                    onClick={() => openClientUnavailableDialog(service)}
                                     className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 flex-1 h-11"
                                   >
                                     <MapPin className="h-4 w-4 mr-1" />
-                                    Nije kući
-                                  </Button>
-                                  
-                                  <Button 
-                                    variant="outline" 
-                                    size="default"
-                                    onClick={() => openStatusDialog(service, "client_not_answering")}
-                                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 flex-1 h-11"
-                                  >
-                                    <Phone className="h-4 w-4 mr-1" />
-                                    Ne javlja se
+                                    Klijent nedostupan
                                   </Button>
                                 </div>
                               </div>
@@ -775,6 +802,67 @@ export default function TechnicianServices() {
         getStatusBadge={getStatusBadge}
         activeCity={selectedCity}
       />
+
+      {/* Dialog za označavanje klijenta kao nedostupnog */}
+      <Dialog open={clientUnavailableDialogOpen} onOpenChange={setClientUnavailableDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Klijent nedostupan</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Razlog nedostupnosti:</Label>
+              <Textarea
+                value={unavailableReason}
+                onChange={(e) => setUnavailableReason(e.target.value)}
+                placeholder="Opišite razlog zašto klijent nije dostupan..."
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Napomene za ponovno zakazivanje:</Label>
+              <Textarea
+                value={reschedulingNotes}
+                onChange={(e) => setReschedulingNotes(e.target.value)}
+                placeholder="Dodatne napomene za administratora o ponovnom zakazivanju..."
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <Button 
+              variant="outline" 
+              onClick={() => setClientUnavailableDialogOpen(false)}
+              className="flex-1"
+            >
+              Otkaži
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleClientUnavailable("client_not_home")}
+              disabled={!unavailableReason.trim()}
+              className="flex-1"
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Nije kući
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleClientUnavailable("client_not_answering")}
+              disabled={!unavailableReason.trim()}
+              className="flex-1"
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              Ne javlja se
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
