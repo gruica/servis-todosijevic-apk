@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
@@ -41,6 +41,9 @@ type TechnicianService = Service & {
       icon: string;
     };
   };
+  devicePickedUp?: boolean;
+  pickupDate?: string | null;
+  pickupNotes?: string | null;
 };
 
 export default function TechnicianServices() {
@@ -63,6 +66,10 @@ export default function TechnicianServices() {
   const [clientUnavailableDialogOpen, setClientUnavailableDialogOpen] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<string>("");
   const [reschedulingNotes, setReschedulingNotes] = useState<string>("");
+  
+  // State za preuzimanje uređaja
+  const [devicePickupDialogOpen, setDevicePickupDialogOpen] = useState(false);
+  const [pickupNotes, setPickupNotes] = useState<string>("");
   
   // State za plutajuće prozore
   const [floatingServiceOpen, setFloatingServiceOpen] = useState(false);
@@ -219,6 +226,29 @@ export default function TechnicianServices() {
     });
     
     setClientUnavailableDialogOpen(false);
+  };
+
+  const openDevicePickupDialog = (service: TechnicianService) => {
+    setSelectedService(service);
+    setPickupNotes("");
+    setDevicePickupDialogOpen(true);
+  };
+
+  const handleDevicePickup = () => {
+    if (!selectedService) return;
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    updateStatusMutation.mutate({
+      serviceId: selectedService.id,
+      status: selectedService.status, // Zadržava trenutni status
+      notes: selectedService.technicianNotes || "",
+      devicePickedUp: true,
+      pickupDate: today,
+      pickupNotes: pickupNotes
+    });
+    
+    setDevicePickupDialogOpen(false);
   };
 
   // Filter services based on active tab
@@ -535,6 +565,16 @@ export default function TechnicianServices() {
                                   </span>
                                 </div>
                               )}
+
+                              {/* Indikator da je uređaj preuzet */}
+                              {service.devicePickedUp && (
+                                <div className="flex items-center">
+                                  <Truck className="h-4 w-4 mr-2 text-blue-600" />
+                                  <span className="text-sm font-medium text-blue-600">
+                                    Uređaj preuzet {service.pickupDate ? `(${formatDate(service.pickupDate)})` : ''}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                           <CardFooter className="flex flex-col gap-3 pt-3">
@@ -596,6 +636,18 @@ export default function TechnicianServices() {
                                     <MapPin className="h-4 w-4 mr-1" />
                                     Klijent nedostupan
                                   </Button>
+                                  
+                                  {!service.devicePickedUp && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="default"
+                                      onClick={() => openDevicePickupDialog(service)}
+                                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 flex-1 h-11"
+                                    >
+                                      <Truck className="h-4 w-4 mr-1" />
+                                      Preuzmi uređaj
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -859,6 +911,63 @@ export default function TechnicianServices() {
             >
               <Phone className="h-4 w-4 mr-2" />
               Ne javlja se
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog za preuzimanje uređaja */}
+      <Dialog open={devicePickupDialogOpen} onOpenChange={setDevicePickupDialogOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Preuzimanje uređaja</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-2 sm:py-4">
+            <p className="mb-4 text-sm sm:text-base text-gray-700">
+              Označite da je uređaj preuzet za popravku. Ovo će omogućiti lakše praćenje stanja servisa.
+            </p>
+            
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-700">
+                <strong>Klijent:</strong> {selectedService?.client?.fullName}<br />
+                <strong>Uređaj:</strong> {selectedService?.appliance?.category?.name} {selectedService?.appliance?.model}<br />
+                <strong>Problem:</strong> {selectedService?.description}
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="pickup-notes" className="text-sm font-medium">
+                  Napomene o preuzimanju (opciono)
+                </Label>
+                <Textarea
+                  id="pickup-notes"
+                  placeholder="Opišite stanje uređaja, kako je preuzet, ili bilo koje druge važne napomene..."
+                  value={pickupNotes}
+                  onChange={(e) => setPickupNotes(e.target.value)}
+                  className="mt-1 text-sm resize-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <Button 
+              variant="outline" 
+              onClick={() => setDevicePickupDialogOpen(false)}
+              className="flex-1"
+            >
+              Otkaži
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleDevicePickup}
+              className="flex-1"
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Potvrdi preuzimanje
             </Button>
           </DialogFooter>
         </DialogContent>

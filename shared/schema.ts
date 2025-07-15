@@ -235,6 +235,9 @@ export const services = pgTable("services", {
   clientUnavailableReason: text("client_unavailable_reason"), // Razlog nedostupnosti klijenta
   needsRescheduling: boolean("needs_rescheduling").default(false), // Da li treba ponovno zakazivanje
   reschedulingNotes: text("rescheduling_notes"), // Napomene za ponovno zakazivanje
+  devicePickedUp: boolean("device_picked_up").default(false), // Da li je uređaj preuzet
+  pickupDate: text("pickup_date"), // Datum preuzimanja uređaja
+  pickupNotes: text("pickup_notes"), // Napomene o preuzimanju
 });
 
 // Osnovni schema za validaciju servisa - samo obavezna polja
@@ -258,6 +261,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   clientUnavailableReason: true,
   needsRescheduling: true,
   reschedulingNotes: true,
+  devicePickedUp: true,
+  pickupDate: true,
+  pickupNotes: true,
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),
@@ -315,6 +321,18 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   clientUnavailableReason: z.string().max(500, "Razlog nedostupnosti je predugačak").or(z.literal("")).nullable().optional(),
   needsRescheduling: z.boolean().nullable().optional(),
   reschedulingNotes: z.string().max(1000, "Napomene za ponovno zakazivanje su predugačke").or(z.literal("")).nullable().optional(),
+  devicePickedUp: z.boolean().nullable().optional(),
+  pickupDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .or(z.literal(""))
+    .nullable()
+    .optional()
+    .refine(val => {
+      if (!val || val === "") return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, "Nevažeći datum preuzimanja"),
+  pickupNotes: z.string().max(1000, "Napomene o preuzimanju su predugačke").or(z.literal("")).nullable().optional(),
 }).partial({
   // Ova polja su opciona za osnovnu formu za kreiranje servisa
   technicianId: true,
@@ -330,6 +348,9 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   clientUnavailableReason: true,
   needsRescheduling: true,
   reschedulingNotes: true,
+  devicePickedUp: true,
+  pickupDate: true,
+  pickupNotes: true,
 });
 
 export type InsertService = z.infer<typeof insertServiceSchema>;

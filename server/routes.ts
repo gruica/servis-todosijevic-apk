@@ -1503,7 +1503,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isCompletelyFixed,
         clientUnavailableReason,
         needsRescheduling,
-        reschedulingNotes
+        reschedulingNotes,
+        devicePickedUp,
+        pickupDate,
+        pickupNotes
       } = req.body;
       
       console.log(`[STATUS UPDATE] Korisnik ${req.user?.username} (${req.user?.role}) ažurira servis #${serviceId} sa statusom: ${status}`);
@@ -1544,7 +1547,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedDate: validStatus === "completed" ? new Date().toISOString() : service.completedDate,
         clientUnavailableReason: clientUnavailableReason !== undefined ? clientUnavailableReason : service.clientUnavailableReason,
         needsRescheduling: needsRescheduling !== undefined ? needsRescheduling : service.needsRescheduling,
-        reschedulingNotes: reschedulingNotes !== undefined ? reschedulingNotes : service.reschedulingNotes
+        reschedulingNotes: reschedulingNotes !== undefined ? reschedulingNotes : service.reschedulingNotes,
+        devicePickedUp: devicePickedUp !== undefined ? devicePickedUp : service.devicePickedUp,
+        pickupDate: pickupDate !== undefined ? pickupDate : service.pickupDate,
+        pickupNotes: pickupNotes !== undefined ? pickupNotes : service.pickupNotes
       });
       
       if (!updatedService) {
