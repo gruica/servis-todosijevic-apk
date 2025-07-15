@@ -274,16 +274,29 @@ export default function TechnicianServices() {
 
   // Funkcija za ažuriranje statusa iz plutajućeg prozora
   const handleFloatingStatusUpdate = async (serviceId: number, status: string, data: any) => {
-    await updateStatusMutation.mutateAsync({
-      serviceId,
-      status,
-      notes: data.technicianNotes,
-      usedParts: data.usedParts,
-      machineNotes: data.machineNotes,
-      cost: data.cost?.toString(),
-      isCompletelyFixed: true
-    });
-    setFloatingServiceOpen(false);
+    try {
+      await updateStatusMutation.mutateAsync({
+        serviceId,
+        status,
+        notes: data.technicianNotes,
+        usedParts: data.usedParts,
+        machineNotes: data.machineNotes,
+        cost: data.cost?.toString(),
+        isCompletelyFixed: true
+      });
+      
+      // Eksplicitno invalidiramo cache jer mutateAsync ne poziva onSuccess callback
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+      
+      setFloatingServiceOpen(false);
+    } catch (error) {
+      console.error("Greška pri ažuriranju statusa iz plutajućeg prozora:", error);
+      toast({
+        title: "Greška pri ažuriranju statusa",
+        description: "Pokušajte ponovo",
+        variant: "destructive",
+      });
+    }
   };
 
   // Funkcija za otvaranje brzih akcija
@@ -294,15 +307,33 @@ export default function TechnicianServices() {
 
   // Funkcija za brzu promenu statusa
   const handleQuickStatusUpdate = async (serviceId: number, status: string) => {
-    await updateStatusMutation.mutateAsync({
-      serviceId,
-      status,
-      notes: `Brza akcija: ${status === "in_progress" ? "Započet" : "Završen"} servis`,
-      usedParts: "",
-      machineNotes: "",
-      cost: "",
-      isCompletelyFixed: status === "completed"
-    });
+    try {
+      await updateStatusMutation.mutateAsync({
+        serviceId,
+        status,
+        notes: `Brza akcija: ${status === "in_progress" ? "Započet" : "Završen"} servis`,
+        usedParts: "",
+        machineNotes: "",
+        cost: "",
+        isCompletelyFixed: status === "completed"
+      });
+      
+      // Eksplicitno invalidiramo cache jer mutateAsync ne poziva onSuccess callback
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+      
+      toast({
+        title: "✅ Status uspešno ažuriran",
+        description: "Status servisa je uspešno promenjen.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Greška pri brzom ažuriranju statusa:", error);
+      toast({
+        title: "Greška pri ažuriranju statusa",
+        description: "Pokušajte ponovo",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
