@@ -153,6 +153,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Spare parts order endpoint
+  app.post("/api/spare-parts/order", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { serviceId, technicianId, parts, urgency, supplierNotes, totalValue, clientName, applianceModel } = req.body;
+
+      // Validacija podataka
+      if (!serviceId || !technicianId || !parts || !Array.isArray(parts) || parts.length === 0) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // Kreiraj zahtev za rezervne delove
+      const orderData = {
+        serviceId: parseInt(serviceId),
+        technicianId: parseInt(technicianId),
+        parts: JSON.stringify(parts),
+        urgency: urgency || "medium",
+        supplierNotes: supplierNotes || "",
+        totalValue: parseFloat(totalValue) || 0,
+        clientName: clientName || "",
+        applianceModel: applianceModel || "",
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        requestedBy: req.user.id
+      };
+
+      console.log("Creating spare parts order:", orderData);
+
+      // Dodaj u bazu podataka (za sada simulacija)
+      // TODO: Implementirati stvarno čuvanje u bazu
+      
+      res.json({ 
+        message: "Zahtev za rezervne delove je uspešno kreiran",
+        orderId: Date.now(),
+        ...orderData
+      });
+    } catch (error) {
+      console.error("Error creating spare parts order:", error);
+      res.status(500).json({ error: "Failed to create spare parts order" });
+    }
+  });
   
   // Registruj rute za poslovne partnere
   registerBusinessPartnerRoutes(app);

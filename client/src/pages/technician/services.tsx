@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
@@ -21,6 +21,7 @@ import { CallClientButton } from "@/components/ui/call-client-button";
 import { ServiceDetailsFloat } from "@/components/technician/service-details-float";
 import { QuickActionsFloat } from "@/components/technician/quick-actions-float";
 import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
+import SparePartsOrderForm from "@/components/spare-parts-order-form";
 
 type TechnicianService = Service & {
   client?: {
@@ -76,6 +77,10 @@ export default function TechnicianServices() {
   const [floatingSelectedService, setFloatingSelectedService] = useState<TechnicianService | null>(null);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<string>("Svi gradovi");
+  
+  // State za zahtev rezervnih delova
+  const [sparePartsOrderOpen, setSparePartsOrderOpen] = useState(false);
+  const [sparePartsService, setSparePartsService] = useState<TechnicianService | null>(null);
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -251,12 +256,53 @@ export default function TechnicianServices() {
     setDevicePickupDialogOpen(false);
   };
 
+  // Mutation za vraćanje servisa administratoru
+  const returnToAdminMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      const res = await apiRequest("PUT", `/api/services/${serviceId}`, {
+        status: "pending",
+        technicianId: null,
+        technicianNotes: `Servis vraćen administratoru zbog problema sa klijentom`
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+      toast({
+        title: "Servis vraćen",
+        description: "Servis je uspešno vraćen administratoru zbog problema sa klijentom.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Greška",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Funkcija za vraćanje servisa administratoru
+  const handleReturnToAdmin = (service: TechnicianService) => {
+    returnToAdminMutation.mutate(service.id);
+  };
+
+  // Funkcija za otvaranje forme za rezervne delove
+  const openSparePartsOrder = (service: TechnicianService) => {
+    setSparePartsService(service);
+    setSparePartsOrderOpen(true);
+  };
+
   // Filter services based on active tab
   const filteredServices = services.filter((service) => {
     if (activeTab === "active") {
       return service.status === "pending" || service.status === "scheduled" || service.status === "in_progress";
     } else if (activeTab === "completed") {
       return service.status === "completed";
+    } else if (activeTab === "picked_up") {
+      return service.devicePickedUp === true;
+    } else if (activeTab === "problematic") {
+      return service.status === "client_not_home" || service.status === "client_not_answering";
     } else {
       return service.status === "waiting_parts" || service.status === "cancelled" || 
              service.status === "client_not_home" || service.status === "client_not_answering";
@@ -424,6 +470,22 @@ export default function TechnicianServices() {
             <Package className="mr-2 h-4 w-4" />
             Brze akcije
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveTab("picked_up")}
+            className="hidden sm:flex"
+          >
+            <Truck className="mr-2 h-4 w-4" />
+            Preuzeti
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setActiveTab("problematic")}
+            className="hidden sm:flex"
+          >
+            <AlertCircle className="mr-2 h-4 w-4" />
+            Problematični
+          </Button>
           <TechnicianProfileWidget />
           <Button 
             variant="destructive" 
@@ -454,6 +516,42 @@ export default function TechnicianServices() {
             Odjavi se
           </Button>
         </div>
+      </div>
+
+      {/* Mobile prečice za filtriranje */}
+      <div className="sm:hidden mb-4">
+        <div className="flex gap-2 justify-center">
+          <Button 
+            variant={activeTab === "picked_up" ? "default" : "outline"}
+            onClick={() => setActiveTab("picked_up")}
+            className="flex-1"
+            size="sm"
+          >
+            <Truck className="mr-2 h-4 w-4" />
+            Preuzeti
+          </Button>
+          <Button 
+            variant={activeTab === "problematic" ? "default" : "outline"}
+            onClick={() => setActiveTab("problematic")}
+            className="flex-1"
+            size="sm"
+          >
+            <AlertCircle className="mr-2 h-4 w-4" />
+            Problematični
+          </Button>
+        </div>
+        {/* Povratak na osnovne tab-ove */}
+        {(activeTab === "picked_up" || activeTab === "problematic") && (
+          <div className="flex justify-center mt-2">
+            <Button 
+              variant="ghost"
+              onClick={() => setActiveTab("active")}
+              size="sm"
+            >
+              ← Nazad na osnovne servise
+            </Button>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="active" className="w-full" onValueChange={setActiveTab}>
@@ -663,6 +761,19 @@ export default function TechnicianServices() {
                                 Završi servis
                               </Button>
                             )}
+                            
+                            {/* Opcija za vraćanje problematičnih servisa */}
+                            {(service.status === "client_not_home" || service.status === "client_not_answering") && (
+                              <Button 
+                                variant="outline" 
+                                size="default"
+                                onClick={() => handleReturnToAdmin(service)}
+                                className="w-full h-12 text-base font-medium border-red-200 text-red-700 hover:bg-red-50"
+                              >
+                                <AlertCircle className="h-5 w-5 mr-2" />
+                                Vrati administratoru
+                              </Button>
+                            )}
                           </CardFooter>
                         </Card>
                       ))}
@@ -737,11 +848,27 @@ export default function TechnicianServices() {
               {(newStatus !== "client_not_home" && newStatus !== "client_not_answering") && (
                 <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-1 sm:space-y-2">
-                  <label htmlFor="usedParts" className="text-sm font-medium flex items-center">
-                    Ugrađeni rezervni delovi: 
-                    <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
-                      {newStatus === "completed" ? "*" : "(opciono)"}
+                  <label htmlFor="usedParts" className="text-sm font-medium flex items-center justify-between">
+                    <span>
+                      Ugrađeni rezervni delovi: 
+                      <span className={newStatus === "completed" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                        {newStatus === "completed" ? "*" : "(opciono)"}
+                      </span>
                     </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedService) {
+                          openSparePartsOrder(selectedService);
+                        }
+                      }}
+                      className="flex items-center gap-1 h-8"
+                    >
+                      <Package className="h-3 w-3" />
+                      Naruči delove
+                    </Button>
                   </label>
                   <Textarea
                     id="usedParts"
@@ -972,6 +1099,21 @@ export default function TechnicianServices() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog za naručivanje rezervnih delova */}
+      {sparePartsService && (
+        <SparePartsOrderForm
+          isOpen={sparePartsOrderOpen}
+          onClose={() => {
+            setSparePartsOrderOpen(false);
+            setSparePartsService(null);
+          }}
+          serviceId={sparePartsService.id}
+          clientName={sparePartsService.client?.fullName || ""}
+          applianceModel={`${sparePartsService.appliance?.category?.name} ${sparePartsService.appliance?.model}` || ""}
+          technicianId={sparePartsService.technicianId || 0}
+        />
+      )}
     </div>
   );
 }
