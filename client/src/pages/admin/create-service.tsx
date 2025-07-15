@@ -85,13 +85,20 @@ export default function CreateService() {
 
   const watchedClientId = watch("clientId");
 
+  // Debug logging
+  console.log("CreateService Debug:", {
+    watchedClientId,
+    clientIdType: typeof watchedClientId,
+    watchedClientIdEmpty: !watchedClientId,
+  });
+
   // Fetch clients
-  const { data: clients = [] } = useQuery<Client[]>({
+  const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
 
   // Fetch appliances for selected client
-  const { data: appliances = [] } = useQuery<Appliance[]>({
+  const { data: appliances = [], isLoading: appliancesLoading } = useQuery<Appliance[]>({
     queryKey: ["/api/appliances", watchedClientId],
     queryFn: async () => {
       if (!watchedClientId) return [];
@@ -99,6 +106,14 @@ export default function CreateService() {
       return response.json();
     },
     enabled: !!watchedClientId,
+  });
+
+  // More debug logging
+  console.log("CreateService Appliances Debug:", {
+    appliances,
+    appliancesLength: appliances.length,
+    appliancesLoading,
+    watchedClientId,
   });
 
   // Fetch technicians
