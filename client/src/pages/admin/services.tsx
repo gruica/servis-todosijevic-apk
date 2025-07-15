@@ -113,6 +113,16 @@ export default function AdminServices() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   
+  // Check URL parameters for automatic filtering
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filterParam = params.get('filter');
+    
+    if (filterParam === 'picked_up') {
+      setPickupFilter('picked_up');
+    }
+  }, []);
+  
   const { toast } = useToast();
 
   // Fetch services
@@ -380,15 +390,21 @@ export default function AdminServices() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setPickupFilter(pickupFilter === "picked_up" ? "all" : "picked_up")}>
+          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${pickupFilter === "picked_up" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => setPickupFilter(pickupFilter === "picked_up" ? "all" : "picked_up")}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Preuzeti</p>
-                  <p className="text-2xl font-bold">{stats.pickedUp}</p>
+                  <p className={`text-sm ${pickupFilter === "picked_up" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Preuzeti</p>
+                  <p className={`text-2xl font-bold ${pickupFilter === "picked_up" ? "text-blue-800" : ""}`}>{stats.pickedUp}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
+                <Package className={`h-8 w-8 ${pickupFilter === "picked_up" ? "text-blue-800" : "text-blue-600"}`} />
               </div>
+              {pickupFilter === "picked_up" && (
+                <div className="mt-2 text-xs text-blue-700 font-medium">
+                  <Filter className="h-3 w-3 inline mr-1" />
+                  Aktivno filtriranje
+                </div>
+              )}
             </CardContent>
           </Card>
           
