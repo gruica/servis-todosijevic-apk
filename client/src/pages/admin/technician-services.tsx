@@ -41,7 +41,7 @@ function formatDate(dateString: string) {
 
 export default function TechnicianServicesAdmin() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("");
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -58,7 +58,7 @@ export default function TechnicianServicesAdmin() {
   // Simple filtering function
   const filteredServices = services?.filter((service: any) => {
     // Filter by technician
-    if (selectedTechnicianId && service.technicianId !== parseInt(selectedTechnicianId)) {
+    if (selectedTechnicianId && selectedTechnicianId !== "all" && service.technicianId !== parseInt(selectedTechnicianId)) {
       return false;
     }
     
@@ -114,7 +114,7 @@ export default function TechnicianServicesAdmin() {
                         <SelectValue placeholder="Serviser" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Svi serviseri</SelectItem>
+                        <SelectItem value="all">Svi serviseri</SelectItem>
                         {technicians?.map((tech: any) => (
                           <SelectItem key={tech.id} value={tech.id.toString()}>
                             {tech.fullName}

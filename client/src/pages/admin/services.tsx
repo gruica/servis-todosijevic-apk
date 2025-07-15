@@ -279,6 +279,8 @@ export default function AdminServices() {
 
   // Handle assign technician
   const handleAssignTechnician = (serviceId: number, technicianId: number) => {
+    // Don't assign if placeholder value is selected
+    if (technicianId === 0) return;
     assignTechnicianMutation.mutate({ serviceId, technicianId });
   };
 
@@ -552,6 +554,7 @@ export default function AdminServices() {
                                     <SelectValue placeholder="Dodeli servisera..." />
                                   </SelectTrigger>
                                   <SelectContent>
+                                    <SelectItem value="0">Dodeli servisera...</SelectItem>
                                     {technicians.map((tech) => (
                                       <SelectItem key={tech.id} value={tech.id.toString()}>
                                         {tech.fullName} - {tech.specialization}

@@ -296,7 +296,7 @@ export default function CreateService() {
                       <SelectValue placeholder="Izaberite servisera..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Bez servisera</SelectItem>
+                      <SelectItem value="none">Bez servisera</SelectItem>
                       {technicians.filter(t => t.active).map((tech) => (
                         <SelectItem key={tech.id} value={tech.id.toString()}>
                           {tech.fullName} - {tech.specialization}
