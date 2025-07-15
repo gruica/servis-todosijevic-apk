@@ -484,9 +484,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/clients/:clientId/appliances", async (req, res) => {
     try {
-      const appliances = await storage.getAppliancesByClient(parseInt(req.params.clientId));
+      const clientId = parseInt(req.params.clientId);
+      
+      // Directly query database with JOIN to get category and manufacturer data
+      const appliances = await db.select({
+        id: schema.appliances.id,
+        clientId: schema.appliances.clientId,
+        model: schema.appliances.model,
+        serialNumber: schema.appliances.serialNumber,
+        purchaseDate: schema.appliances.purchaseDate,
+        notes: schema.appliances.notes,
+        category: {
+          id: schema.applianceCategories.id,
+          name: schema.applianceCategories.name,
+          icon: schema.applianceCategories.icon,
+        },
+        manufacturer: {
+          id: schema.manufacturers.id,
+          name: schema.manufacturers.name,
+        },
+      })
+      .from(schema.appliances)
+      .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+      .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+      .where(eq(schema.appliances.clientId, clientId));
+      
       res.json(appliances);
     } catch (error) {
+      console.error("Error fetching client appliances:", error);
       res.status(500).json({ error: "Greška pri dobijanju uređaja klijenta" });
     }
   });

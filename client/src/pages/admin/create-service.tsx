@@ -78,12 +78,18 @@ export default function CreateService() {
   } = useForm<CreateServiceFormData>({
     resolver: zodResolver(createServiceSchema),
     defaultValues: {
+      clientId: "",
+      applianceId: "",
+      description: "",
       status: "pending",
       priority: "medium",
+      technicianId: "",
+      scheduledDate: "",
+      notes: "",
     },
   });
 
-  const watchedClientId = watch("clientId");
+  const watchedClientId = watch("clientId") || "";
 
   // Debug logging
   console.log("CreateService Debug:", {
@@ -124,12 +130,17 @@ export default function CreateService() {
   // Create service mutation
   const createServiceMutation = useMutation({
     mutationFn: async (data: CreateServiceFormData) => {
+      // Validate required fields
+      if (!data.clientId || !data.applianceId) {
+        throw new Error("Klijent i uređaj su obavezni");
+      }
+
       const serviceData = {
         clientId: parseInt(data.clientId),
         applianceId: parseInt(data.applianceId),
         description: data.description,
         status: data.status,
-        technicianId: data.technicianId ? parseInt(data.technicianId) : null,
+        technicianId: data.technicianId && data.technicianId !== "" ? parseInt(data.technicianId) : null,
         scheduledDate: data.scheduledDate || null,
         priority: data.priority,
         notes: data.notes || null,
@@ -200,6 +211,7 @@ export default function CreateService() {
                     onValueChange={(value) => {
                       setValue("clientId", value);
                       setValue("applianceId", ""); // Reset appliance when client changes
+                      setSelectedClientId(value); // Update local state too
                     }}
                   >
                     <SelectTrigger>
