@@ -123,12 +123,17 @@ export default function TechnicianServices() {
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     const state = history.state;
+    console.log("[TECHNICIAN] Proverava state za auto-opening:", state);
     if (state && state.highlightServiceId && services.length > 0) {
+      console.log("[TECHNICIAN] Pokušava da pronađe servis sa ID:", state.highlightServiceId);
       const targetService = services.find(service => service.id === state.highlightServiceId);
       if (targetService) {
+        console.log("[TECHNICIAN] Pronašao servis, otvara floating prozor:", targetService);
         // Automatski otvara floating servis prozor za highlighted servis
         setFloatingSelectedService(targetService);
         setFloatingServiceOpen(true);
+      } else {
+        console.log("[TECHNICIAN] Nije pronašao servis sa ID:", state.highlightServiceId, "u servistima:", services.map(s => s.id));
       }
     }
   }, [services, location]);

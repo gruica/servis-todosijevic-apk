@@ -97,6 +97,7 @@ export function NotificationsDropdown() {
 
   // Funkcija za navigaciju na detalje notifikacije
   const handleNotificationClick = (notification: Notification) => {
+    console.log("[NOTIFICATIONS] Kliknuto na notifikaciju:", notification);
     // Označava notifikaciju kao pročitanu
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification.id);
@@ -104,9 +105,14 @@ export function NotificationsDropdown() {
     
     // Navigacija na osnovu tipa notifikacije i korisničke uloge
     if (user && notification.relatedServiceId) {
+      console.log("[NOTIFICATIONS] Navigacija za korisnika:", user.role, "sa serviceId:", notification.relatedServiceId);
       switch (user.role) {
         case 'technician':
           // Za tehničare - navigacija na stranicu servisa sa fokusiranim servisom
+          console.log("[NOTIFICATIONS] Navigacija na /tech sa state:", { 
+            highlightServiceId: notification.relatedServiceId,
+            notificationId: notification.id 
+          });
           navigate('/tech', { 
             state: { 
               highlightServiceId: notification.relatedServiceId,
