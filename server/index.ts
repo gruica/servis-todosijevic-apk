@@ -1,53 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
-import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
-import { 
-  generalRateLimit, 
-  sanitizeInput, 
-  sqlInjectionProtection, 
-  csrfProtection, 
-  securityLogging,
-  sensitiveOperationProtection
-} from "./security-middleware";
 
 const app = express();
-
-// Bezbednosna zaštita - Helmet za osnovne sigurnosne zaglavlja
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
-}));
-
-// Opšte rate limiting za sve zahteve
-app.use(generalRateLimit);
-
-// Sigurnosno logovanje
-app.use(securityLogging);
-
-// Sanitizacija input podataka
-app.use(sanitizeInput);
-
-// Zaštita od SQL injection napada
-app.use(sqlInjectionProtection);
-
-// CSRF zaštita
-app.use(csrfProtection);
-
-app.use(express.json({ limit: '10mb' })); // Ograničavanje veličine JSON zahteva
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -80,9 +38,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Zaštita za osetljive operacije
-  app.use(sensitiveOperationProtection);
-  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
