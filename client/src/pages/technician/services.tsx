@@ -191,7 +191,8 @@ export default function TechnicianServices() {
     } else if (activeTab === "completed") {
       return service.status === "completed";
     } else {
-      return service.status === "waiting_parts" || service.status === "cancelled";
+      return service.status === "waiting_parts" || service.status === "cancelled" || 
+             service.status === "client_not_home" || service.status === "client_not_answering";
     }
   });
 
@@ -230,6 +231,10 @@ export default function TechnicianServices() {
         return <Badge className="bg-green-600">Završeno</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Otkazano</Badge>;
+      case "client_not_home":
+        return <Badge className="bg-orange-500">Klijent nije kući</Badge>;
+      case "client_not_answering":
+        return <Badge className="bg-red-500">Klijent se ne javlja</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -459,27 +464,50 @@ export default function TechnicianServices() {
                               </Button>
                             </div>
 
-                            {(service.status === "pending" || service.status === "scheduled") && (
-                              <Button 
-                                variant="default" 
-                                size="sm"
-                                onClick={() => openStatusDialog(service, "in_progress")}
-                              >
-                                <ClipboardCheck className="h-4 w-4 mr-2" />
-                                Započni servis
-                              </Button>
-                            )}
-                            
-                            {service.status === "in_progress" && (
-                              <Button 
-                                variant="default" 
-                                size="sm"
-                                onClick={() => openStatusDialog(service, "completed")}
-                              >
-                                <ClipboardCheck className="h-4 w-4 mr-2" />
-                                Završi servis
-                              </Button>
-                            )}
+                            <div className="flex gap-2">
+                              {(service.status === "pending" || service.status === "scheduled") && (
+                                <>
+                                  <Button 
+                                    variant="default" 
+                                    size="sm"
+                                    onClick={() => openStatusDialog(service, "in_progress")}
+                                  >
+                                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                                    Započni servis
+                                  </Button>
+                                  
+                                  {/* Quick buttons for client issues */}
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openStatusDialog(service, "client_not_home")}
+                                    className="bg-orange-50 hover:bg-orange-100 text-orange-700"
+                                  >
+                                    Nije kući
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openStatusDialog(service, "client_not_answering")}
+                                    className="bg-red-50 hover:bg-red-100 text-red-700"
+                                  >
+                                    Ne javlja se
+                                  </Button>
+                                </>
+                              )}
+                              
+                              {service.status === "in_progress" && (
+                                <Button 
+                                  variant="default" 
+                                  size="sm"
+                                  onClick={() => openStatusDialog(service, "completed")}
+                                >
+                                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                                  Završi servis
+                                </Button>
+                              )}
+                            </div>
                           </CardFooter>
                         </Card>
                       ))}
@@ -497,7 +525,11 @@ export default function TechnicianServices() {
         <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
-              {newStatus === "in_progress" ? "Započni servis" : "Završi servis"}
+              {newStatus === "in_progress" ? "Započni servis" : 
+               newStatus === "completed" ? "Završi servis" :
+               newStatus === "client_not_home" ? "Klijent nije kući" :
+               newStatus === "client_not_answering" ? "Klijent se ne javlja" :
+               "Ažuriraj status"}
             </DialogTitle>
           </DialogHeader>
           
@@ -505,11 +537,23 @@ export default function TechnicianServices() {
             <p className="mb-2 sm:mb-4 text-sm sm:text-base">
               {newStatus === "in_progress" 
                 ? "Da li ste sigurni da želite da označite servis kao započet? Možete odmah uneti i podatke za završetak servisa ili sačekati da ih unesete pri završetku." 
-                : "Da li ste sigurni da želite da označite servis kao završen? Molimo popunite sledeća polja:"}
+                : newStatus === "completed"
+                  ? "Da li ste sigurni da želite da označite servis kao završen? Molimo popunite sledeća polja:"
+                  : newStatus === "client_not_home"
+                    ? "Prijavite da klijent nije bio kući na adresi. Dodajte napomenu sa detaljima:"
+                    : newStatus === "client_not_answering"
+                      ? "Prijavite da se klijent ne javlja na telefon. Dodajte napomenu sa detaljima:"
+                      : "Ažurirajte status servisa:"}
             </p>
             {newStatus === "in_progress" && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-3 text-blue-700 text-xs sm:text-sm">
                 <p>Napomena: Polja ispod su obavezna samo pri završetku servisa. Ako samo započinjete servis, možete ih popuniti kasnije.</p>
+              </div>
+            )}
+            
+            {(newStatus === "client_not_home" || newStatus === "client_not_answering") && (
+              <div className="bg-orange-50 border border-orange-200 rounded-md p-2 mb-3 text-orange-700 text-xs sm:text-sm">
+                <p>Ova prijava će obavestiti administratora da klijent nije dostupan. Servis će biti označen kao privremeno zaustavljen.</p>
               </div>
             )}
             
@@ -522,14 +566,21 @@ export default function TechnicianServices() {
                   id="technicianNotes"
                   value={technicianNotes}
                   onChange={(e) => setTechnicianNotes(e.target.value)}
-                  placeholder={newStatus === "in_progress" ? "Unesite napomenu o početku servisa..." : "Unesite napomenu o servisu i izvršenim radovima..."}
+                  placeholder={
+                    newStatus === "in_progress" ? "Unesite napomenu o početku servisa..." :
+                    newStatus === "completed" ? "Unesite napomenu o servisu i izvršenim radovima..." :
+                    newStatus === "client_not_home" ? "Npr. Pozvonio sam na adresu, nema nikoga. Proverio sam sa komšijama..." :
+                    newStatus === "client_not_answering" ? "Npr. Pozvao sam tri puta, telefon zvoni ali se ne javlja..." :
+                    "Unesite napomenu o servisu..."
+                  }
                   className="min-h-[70px] sm:min-h-[80px] text-sm sm:text-base"
                   required
                 />
               </div>
 
-              {/* Prikazujemo uvek sva polja za završetak servisa čak i ako je trenutni status "započni servis" - zbog mobilnih korisnika */}
-              <>
+              {/* Prikazujemo ostala polja samo ako nije brza prijava problema sa klijentom */}
+              {(newStatus !== "client_not_home" && newStatus !== "client_not_answering") && (
+                <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-1 sm:space-y-2">
                   <label htmlFor="usedParts" className="text-sm font-medium flex items-center">
                     Ugrađeni rezervni delovi: 
@@ -598,7 +649,8 @@ export default function TechnicianServices() {
                     </span>
                   </label>
                 </div>
-              </>
+                </div>
+              )}
             </div>
           </div>
           

@@ -85,6 +85,44 @@ export function ServiceDetailsFloat({
     }
   };
 
+  const handleClientNotHome = async () => {
+    const note = technicianNotes.trim() || "Klijent nije bio kući na adresi";
+    
+    setIsUpdating(true);
+    try {
+      await onStatusUpdate(service.id, "client_not_home", {
+        technicianNotes: note,
+        usedParts: null,
+        machineNotes: null,
+        cost: null
+      });
+      onClose();
+    } catch (error) {
+      console.error("Greška pri prijavi:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleClientNotAnswering = async () => {
+    const note = technicianNotes.trim() || "Klijent se ne javlja na telefon";
+    
+    setIsUpdating(true);
+    try {
+      await onStatusUpdate(service.id, "client_not_answering", {
+        technicianNotes: note,
+        usedParts: null,
+        machineNotes: null,
+        cost: null
+      });
+      onClose();
+    } catch (error) {
+      console.error("Greška pri prijavi:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const openClientLocation = (address: string, city: string | null) => {
     const fullAddress = city ? `${address}, ${city}` : address;
     openMapWithAddress(fullAddress);
@@ -271,27 +309,60 @@ export function ServiceDetailsFloat({
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="space-y-2 pt-2">
                   {(service.status === "pending" || service.status === "scheduled") && (
-                    <Button 
-                      onClick={handleStartService}
-                      disabled={isUpdating}
-                      className="flex-1"
-                    >
-                      {isUpdating ? (
-                        <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
-                      ) : (
-                        <ClipboardCheck className="h-4 w-4 mr-2" />
-                      )}
-                      Započni servis
-                    </Button>
+                    <>
+                      <Button 
+                        onClick={handleStartService}
+                        disabled={isUpdating}
+                        className="w-full"
+                      >
+                        {isUpdating ? (
+                          <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                        ) : (
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                        )}
+                        Započni servis
+                      </Button>
+                      
+                      {/* Quick client issue buttons */}
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleClientNotHome}
+                          disabled={isUpdating}
+                          variant="outline"
+                          className="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+                        >
+                          {isUpdating ? (
+                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-orange-600 rounded-full" />
+                          ) : (
+                            <MapPin className="h-4 w-4 mr-2" />
+                          )}
+                          Nije kući
+                        </Button>
+                        
+                        <Button 
+                          onClick={handleClientNotAnswering}
+                          disabled={isUpdating}
+                          variant="outline"
+                          className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                        >
+                          {isUpdating ? (
+                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-red-600 rounded-full" />
+                          ) : (
+                            <Phone className="h-4 w-4 mr-2" />
+                          )}
+                          Ne javlja se
+                        </Button>
+                      </div>
+                    </>
                   )}
                   
                   {service.status === "in_progress" && (
                     <Button 
                       onClick={handleCompleteService}
                       disabled={isUpdating}
-                      className="flex-1"
+                      className="w-full"
                     >
                       {isUpdating ? (
                         <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
