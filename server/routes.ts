@@ -19,6 +19,7 @@ import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-ve
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
+import { requireAuth, requireRole, validateRouteParams } from "./security-middleware";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -518,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/appliances/:id", async (req, res) => {
+  app.get("/api/appliances/:id", validateRouteParams, async (req, res) => {
     try {
       const appliance = await storage.getAppliance(parseInt(req.params.id));
       if (!appliance) return res.status(404).json({ error: "Uređaj nije pronađen" });
@@ -528,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/clients/:clientId/appliances", async (req, res) => {
+  app.get("/api/clients/:clientId/appliances", validateRouteParams, async (req, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
       
@@ -562,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/appliances", async (req, res) => {
+  app.post("/api/appliances", requireAuth, async (req, res) => {
     try {
       // Koristimo safeParse umesto parse za detaljniju kontrolu grešaka
       const validationResult = insertApplianceSchema.safeParse(req.body);
@@ -991,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", async (req, res) => {
+  app.post("/api/services", requireAuth, async (req, res) => {
     try {
       console.log("=== KREIRANJE NOVOG SERVISA ===");
       console.log("Podaci iz frontend forme:", req.body);
@@ -1890,7 +1891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/technicians/:id", async (req, res) => {
+  app.get("/api/technicians/:id", validateRouteParams, async (req, res) => {
     try {
       const technician = await storage.getTechnician(parseInt(req.params.id));
       if (!technician) return res.status(404).json({ error: "Serviser nije pronađen" });
@@ -1900,7 +1901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/technicians", async (req, res) => {
+  app.post("/api/technicians", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const validatedData = insertTechnicianSchema.parse(req.body);
       const technician = await storage.createTechnician(validatedData);
@@ -1913,7 +1914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/technicians/:id", async (req, res) => {
+  app.put("/api/technicians/:id", validateRouteParams, requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertTechnicianSchema.parse(req.body);
@@ -1928,7 +1929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/technicians/:technicianId/services", async (req, res) => {
+  app.get("/api/technicians/:technicianId/services", validateRouteParams, requireAuth, async (req, res) => {
     try {
       const services = await storage.getServicesByTechnician(parseInt(req.params.technicianId));
       res.json(services);
@@ -1938,12 +1939,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Users management routes
-  app.get("/api/users", async (req, res) => {
+  app.get("/api/users", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
-      }
-      
       // Get all users but don't return their passwords
       const users = await Promise.all(
         Array.from((await storage.getAllUsers()) || []).map(user => {
@@ -2308,13 +2305,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Get services for the logged-in technician (legacy endpoint)
-  app.get("/api/my-services", getTechnicianServices);
+  app.get("/api/my-services", requireAuth, getTechnicianServices);
 
   // Get services for the logged-in technician (new endpoint)
-  app.get("/api/technician/services", getTechnicianServices);
+  app.get("/api/technician/services", requireAuth, getTechnicianServices);
 
   // Dashboard stats route
-  app.get("/api/stats", async (req, res) => {
+  app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const activeServices = await storage.getServicesByStatus("in_progress");
       const completedServices = await storage.getServicesByStatus("completed");
@@ -2344,7 +2341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Maintenance Schedule routes
-  app.get("/api/maintenance-schedules", async (req, res) => {
+  app.get("/api/maintenance-schedules", requireAuth, async (req, res) => {
     try {
       const schedules = await storage.getAllMaintenanceSchedules();
       res.json(schedules);
@@ -2353,7 +2350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/maintenance-schedules/:id", async (req, res) => {
+  app.get("/api/maintenance-schedules/:id", validateRouteParams, requireAuth, async (req, res) => {
     try {
       const schedule = await storage.getMaintenanceSchedule(parseInt(req.params.id));
       if (!schedule) return res.status(404).json({ error: "Plan održavanja nije pronađen" });
@@ -2363,7 +2360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/appliances/:applianceId/maintenance-schedules", async (req, res) => {
+  app.get("/api/appliances/:applianceId/maintenance-schedules", validateRouteParams, requireAuth, async (req, res) => {
     try {
       const schedules = await storage.getMaintenanceSchedulesByAppliance(parseInt(req.params.applianceId));
       res.json(schedules);
@@ -2372,7 +2369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/maintenance-schedules/upcoming/:days", async (req, res) => {
+  app.get("/api/maintenance-schedules/upcoming/:days", validateRouteParams, requireAuth, async (req, res) => {
     try {
       const days = parseInt(req.params.days);
       if (isNaN(days)) {
@@ -2386,7 +2383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/maintenance-schedules", async (req, res) => {
+  app.post("/api/maintenance-schedules", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const validatedData = insertMaintenanceScheduleSchema.parse(req.body);
       const schedule = await storage.createMaintenanceSchedule(validatedData);
@@ -2399,7 +2396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/maintenance-schedules/:id", async (req, res) => {
+  app.put("/api/maintenance-schedules/:id", validateRouteParams, requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertMaintenanceScheduleSchema.parse(req.body);
@@ -2414,7 +2411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/maintenance-schedules/:id", async (req, res) => {
+  app.delete("/api/maintenance-schedules/:id", validateRouteParams, requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteMaintenanceSchedule(id);
@@ -2790,13 +2787,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SQL Admin panel endpoint
-  app.post("/api/admin/execute-sql", async (req, res) => {
+  app.post("/api/admin/execute-sql", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      // Provera da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Samo administrator ima pristup SQL upravljaču" });
-      }
-      
       const { query } = req.body;
       
       if (!query || typeof query !== "string") {
@@ -2808,11 +2800,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isDestructive = 
         lowerQuery.includes("drop table") || 
         lowerQuery.includes("drop database") ||
-        lowerQuery.includes("truncate table");
+        lowerQuery.includes("truncate table") ||
+        lowerQuery.includes("alter table") ||
+        lowerQuery.includes("create table") ||
+        lowerQuery.includes("delete from") ||
+        lowerQuery.includes("update");
       
       if (isDestructive) {
         return res.status(400).json({
-          error: "Destruktivni upiti nisu dozvoljeni (DROP TABLE, DROP DATABASE, TRUNCATE)",
+          error: "Destruktivni upiti nisu dozvoljeni iz sigurnosnih razloga",
+          query
+        });
+      }
+      
+      // Dodatna zaštita - dozvolavamo samo SELECT upite
+      if (!lowerQuery.trim().startsWith("select")) {
+        return res.status(400).json({
+          error: "Dozvoljeni su samo SELECT upiti",
           query
         });
       }
@@ -2857,12 +2861,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const upload = multer({ storage: uploadStorage });
 
   // Excel export endpoints
-  app.get("/api/excel/clients", async (req, res) => {
+  app.get("/api/excel/clients", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
       const buffer = await excelService.exportClients();
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2876,12 +2876,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/excel/technicians", async (req, res) => {
+  app.get("/api/excel/technicians", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
       const buffer = await excelService.exportTechnicians();
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2895,12 +2891,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/excel/appliances", async (req, res) => {
+  app.get("/api/excel/appliances", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
       const buffer = await excelService.exportAppliances();
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2914,12 +2906,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/excel/services", async (req, res) => {
+  app.get("/api/excel/services", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
-      }
-      
       const buffer = await excelService.exportServices();
       
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

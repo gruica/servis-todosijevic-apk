@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { authRateLimit } from "./security-middleware";
 
 declare global {
   namespace Express {
@@ -47,7 +48,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret",
+    secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret-" + Math.random().toString(36),
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -56,11 +57,15 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production', 
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 dana
+      maxAge: 8 * 60 * 60 * 1000 // 8 sati umesto 30 dana za veću bezbednost
     }
   };
 
   app.set("trust proxy", 1);
+  
+  // Rate limiting za login endpoint
+  app.use('/api/auth/login', authRateLimit);
+  
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
