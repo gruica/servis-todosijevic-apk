@@ -12,6 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Loader2, Lock, User, CheckCircle2, Phone, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 // Šema za validaciju promjene šifre
 const changePasswordSchema = z.object({
@@ -125,35 +126,38 @@ export default function TechnicianProfilePage() {
     <div className="container mx-auto py-4 px-4 md:px-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Moj profil</h1>
-        <Button 
-          variant="destructive" 
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                toast({
-                  title: "Odjava uspješna",
-                  description: "Uspješno ste se odjavili.",
-                });
-                navigate("/auth");
-              },
-              onError: (error: Error) => {
-                toast({
-                  title: "Greška pri odjavi",
-                  description: error.message,
-                  variant: "destructive",
-                });
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          {logoutMutation.isPending ? (
-            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
-          ) : (
-            <LogOut className="mr-2 h-4 w-4" />
-          )}
-          Odjavi se
-        </Button>
+        <div className="flex items-center gap-4">
+          <NotificationsDropdown />
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              logoutMutation.mutate(undefined, {
+                onSuccess: () => {
+                  toast({
+                    title: "Odjava uspješna",
+                    description: "Uspješno ste se odjavili.",
+                  });
+                  navigate("/auth");
+                },
+                onError: (error: Error) => {
+                  toast({
+                    title: "Greška pri odjavi",
+                    description: error.message,
+                    variant: "destructive",
+                  });
+                },
+              });
+            }}
+            disabled={logoutMutation.isPending}
+          >
+            {logoutMutation.isPending ? (
+              <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+            ) : (
+              <LogOut className="mr-2 h-4 w-4" />
+            )}
+            Odjavi se
+          </Button>
+        </div>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">

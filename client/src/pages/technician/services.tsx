@@ -20,6 +20,7 @@ import { TechnicianProfileWidget } from "@/components/technician/profile-widget"
 import { CallClientButton } from "@/components/ui/call-client-button";
 import { ServiceDetailsFloat } from "@/components/technician/service-details-float";
 import { QuickActionsFloat } from "@/components/technician/quick-actions-float";
+import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 import SparePartsOrderForm from "@/components/spare-parts-order-form";
 
@@ -486,6 +487,7 @@ export default function TechnicianServices() {
             <AlertCircle className="mr-2 h-4 w-4" />
             Problematični
           </Button>
+          <NotificationsDropdown />
           <TechnicianProfileWidget />
           <Button 
             variant="destructive" 
