@@ -181,10 +181,10 @@ export default function CreateService() {
                 <div>
                   <Label htmlFor="clientId">Klijent *</Label>
                   <Select
-                    value={watchedClientId}
+                    value={watchedClientId || ""}
                     onValueChange={(value) => {
                       setValue("clientId", value);
-                      setValue("applianceId", undefined); // Reset appliance when client changes
+                      setValue("applianceId", ""); // Reset appliance when client changes
                     }}
                   >
                     <SelectTrigger>
@@ -218,7 +218,7 @@ export default function CreateService() {
                 <div>
                   <Label htmlFor="applianceId">Uređaj *</Label>
                   <Select
-                    value={watch("applianceId")}
+                    value={watch("applianceId") || ""}
                     onValueChange={(value) => setValue("applianceId", value)}
                     disabled={!watchedClientId}
                   >
@@ -253,7 +253,7 @@ export default function CreateService() {
                 <div>
                   <Label htmlFor="status">Status</Label>
                   <Select
-                    value={watch("status")}
+                    value={watch("status") || "pending"}
                     onValueChange={(value) => setValue("status", value)}
                   >
                     <SelectTrigger>
@@ -271,7 +271,7 @@ export default function CreateService() {
                 <div>
                   <Label htmlFor="priority">Prioritet</Label>
                   <Select
-                    value={watch("priority")}
+                    value={watch("priority") || "medium"}
                     onValueChange={(value) => setValue("priority", value)}
                   >
                     <SelectTrigger>
@@ -289,7 +289,7 @@ export default function CreateService() {
                 <div>
                   <Label htmlFor="technicianId">Serviser</Label>
                   <Select
-                    value={watch("technicianId")}
+                    value={watch("technicianId") || ""}
                     onValueChange={(value) => setValue("technicianId", value)}
                   >
                     <SelectTrigger>
