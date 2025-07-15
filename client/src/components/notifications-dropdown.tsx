@@ -106,7 +106,7 @@ export function NotificationsDropdown() {
     if (user) {
       switch (user.role) {
         case 'technician':
-          navigate('/technician');
+          navigate('/tech');
           break;
         case 'admin':
           navigate('/admin');
