@@ -311,63 +311,51 @@ export default function ExcelImportExport() {
             </TabsContent>
             
             <TabsContent value="import">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Uvoz podataka iz Excel fajla</CardTitle>
-                  <CardDescription className="text-sm">
-                    Odaberite tip podataka i priložite Excel fajl. Sistem automatski prepoznaje nazive kolona i mapira skraćenice.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="max-h-[40vh] overflow-y-auto py-4">
-                  <div className="space-y-2">
-                    <div>
-                      <Label htmlFor="import-type" className="text-sm">Tip podataka za uvoz</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-1">
-                        <Button 
-                          variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
-                          onClick={() => setSelectedImportType('legacy-complete')}
-                          className="justify-start col-span-2 h-8 text-sm"
-                        >
-                          🔄 Kompletna migracija (stari sistem)
-                        </Button>
-                        {selectedImportType === 'legacy-complete' && (
-                          <div className="col-span-2 mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                            <p className="text-xs text-blue-700 dark:text-blue-300">
-                              <strong>Kompletna migracija:</strong> Čita jednu Excel tabelu sa svim podacima. Prepoznaje TV→Tivat, BD→Budva, VM→Veš mašina, SM→Sudo mašina.
-                            </p>
-                          </div>
-                        )}
-                        <Button 
-                          variant={selectedImportType === 'clients' ? 'default' : 'outline'}
-                          onClick={() => setSelectedImportType('clients')}
-                          className="justify-start h-8 text-sm"
-                        >
-                          Klijenti
-                        </Button>
-                        <Button 
-                          variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
-                          onClick={() => setSelectedImportType('appliances')}
-                          className="justify-start h-8 text-sm"
-                        >
-                          Uređaji
-                        </Button>
-                        <Button 
-                          variant={selectedImportType === 'services' ? 'default' : 'outline'}
-                          onClick={() => setSelectedImportType('services')}
-                          className="justify-start h-8 text-sm"
-                        >
-                          Servisi
-                        </Button>
+              <div className="space-y-4">
+                {/* Sekcija za uvoz - na vrhu */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Učitaj Excel fajl</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-4">
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="import-type" className="text-sm">Tip podataka za uvoz</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          <Button 
+                            variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
+                            onClick={() => setSelectedImportType('legacy-complete')}
+                            className="justify-start col-span-2 h-8 text-sm"
+                          >
+                            🔄 Kompletna migracija (stari sistem)
+                          </Button>
+                          <Button 
+                            variant={selectedImportType === 'clients' ? 'default' : 'outline'}
+                            onClick={() => setSelectedImportType('clients')}
+                            className="justify-start h-8 text-sm"
+                          >
+                            Klijenti
+                          </Button>
+                          <Button 
+                            variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
+                            onClick={() => setSelectedImportType('appliances')}
+                            className="justify-start h-8 text-sm"
+                          >
+                            Uređaji
+                          </Button>
+                          <Button 
+                            variant={selectedImportType === 'services' ? 'default' : 'outline'}
+                            onClick={() => setSelectedImportType('services')}
+                            className="justify-start h-8 text-sm"
+                          >
+                            Servisi
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <Separator className="my-2" />
-                    
-                    <div>
-                      <Label className="text-sm">Učitaj Excel fajl</Label>
+                      
                       <div 
                         {...getRootProps()} 
-                        className="border-2 border-dashed rounded-md p-3 mt-1 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                        className="border-2 border-dashed rounded-md p-3 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
                       >
                         <input {...getInputProps()} />
                         <UploadCloud className="h-6 w-6 mx-auto text-slate-400" />
@@ -376,16 +364,39 @@ export default function ExcelImportExport() {
                           Podržani formati: .xlsx, .xls
                         </p>
                       </div>
+                      
+                      {isUploading && (
+                        <div className="space-y-1">
+                          <p className="text-sm">Učitavanje i obrada fajla...</p>
+                          <Progress value={undefined} className="h-2" />
+                        </div>
+                      )}
                     </div>
-                    
-                    {isUploading && (
-                      <div className="space-y-1">
-                        <p className="text-sm">Učitavanje i obrada fajla...</p>
-                        <Progress value={undefined} className="h-2" />
-                      </div>
-                    )}
-                    
-                    {importResult && (
+                  </CardContent>
+                </Card>
+
+                {/* Sekcija sa objašnjenjima - na dnu */}
+                {selectedImportType === 'legacy-complete' && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Kompletna migracija</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Ova opcija automatski čita jednu Excel tabelu koja sadrži sve podatke (klijenti, uređaji, servisi) i kreira sve entitete odjednom. 
+                        Prepoznaje skraćenice gradova (TV→Tivat, BD→Budva) i tipova aparata (VM→Veš mašina, SM→Sudo mašina).
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Rezultati uvoza */}
+                {importResult && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Rezultat uvoza</CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <div className="space-y-3">
                         <Alert variant={importResult.failed > 0 ? "destructive" : "default"}>
                           <CheckCircle2 className="h-4 w-4" />
@@ -414,10 +425,10 @@ export default function ExcelImportExport() {
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
