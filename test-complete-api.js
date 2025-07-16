@@ -77,9 +77,21 @@ async function testCompleteAPI() {
 
     // 4. Kreiraj test servis
     console.log('\n4. Kreiranje test servisa...');
+    
+    // Pronađi bilo koji uređaj i njegov odgovarajući klijent
+    const anyAppliance = appliancesResponse.data[0];
+    const matchingClient = clientsResponse.data.find(c => c.id === anyAppliance.clientId);
+    
+    if (!matchingClient) {
+      console.log('❌ Ne mogu pronaći odgovarajući par klijent-uređaj');
+      return;
+    }
+    
+    console.log(`Koristim klijenta ID: ${matchingClient.id}, uređaj ID: ${anyAppliance.id}`);
+    
     const serviceResponse = await axios.post(`${BASE_URL}/api/services`, {
-      clientId: 1,
-      applianceId: 1,
+      clientId: matchingClient.id,
+      applianceId: anyAppliance.id,
       technicianId: 1,
       description: 'Test servis za rezervne delove',
       status: 'in_progress',
@@ -93,7 +105,7 @@ async function testCompleteAPI() {
     });
     
     if (serviceResponse.status === 201) {
-      serviceId = serviceResponse.data.id;
+      serviceId = serviceResponse.data.data.id;
       console.log(`✅ Test servis kreiran (ID: ${serviceId})`);
     } else {
       console.log('❌ Greška pri kreiranju servisa:', serviceResponse.status, serviceResponse.data);

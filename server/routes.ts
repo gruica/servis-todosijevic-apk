@@ -4195,17 +4195,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get services waiting for parts (admin only)
   app.get("/api/admin/services/waiting-for-parts", async (req, res) => {
-    console.log("=== WAITING FOR PARTS ENDPOINT CALLED ===");
     if (!req.isAuthenticated() || req.user.role !== "admin") {
-      console.log("=== UNAUTHORIZED ACCESS ===");
       return res.sendStatus(401);
     }
 
     try {
-      // Temporary: Return empty array while debugging Drizzle ORM issues
-      console.log("=== RETURNING EMPTY ARRAY ===");
-      res.json([]);
-      console.log("=== ENDPOINT FINISHED SUCCESSFULLY ===");
+      const waitingServices = await storage.getServicesByStatus('waiting_parts');
+      res.json(waitingServices);
     } catch (error) {
       console.error("Error fetching waiting services:", error);
       res.status(500).json({ error: "Failed to fetch waiting services" });
@@ -4353,6 +4349,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching spare part orders for service:", error);
       res.status(500).json({ error: "Failed to fetch spare part orders for service" });
+    }
+  });
+
+  // Test endpoint to verify routing
+  app.post("/api/test-spare-parts", async (req, res) => {
+    console.log("🔍 TEST endpoint called");
+    res.json({ message: "Test endpoint working", auth: req.isAuthenticated() });
+  });
+
+  // Create spare part order for specific service (admin or technician)
+  app.post("/api/services/:id/spare-parts", async (req, res) => {
+    console.log("🔍 POST /api/services/:id/spare-parts called");
+    console.log("Auth status:", req.isAuthenticated());
+    console.log("User:", req.user);
+    
+    if (!req.isAuthenticated()) {
+      console.log("❌ User not authenticated");
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { partName, catalogNumber, urgency, description } = req.body;
+
+      if (!partName || !catalogNumber) {
+        return res.status(400).json({ error: "Part name and catalog number are required" });
+      }
+
+      // Get service to extract appliance ID and technician ID
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+
+      console.log("Service data:", service);
+      console.log("Service appliance ID:", service.applianceId);
+
+      // Determine technician ID
+      let technicianId = null;
+      if (req.user.role === "technician") {
+        technicianId = req.user.technicianId;
+      } else if (req.user.role === "admin") {
+        // For admin, get technician from service
+        if (service.technicianId) {
+          technicianId = service.technicianId;
+        } else {
+          technicianId = 1; // Default technician for testing
+        }
+      }
+
+      if (!technicianId) {
+        return res.status(400).json({ error: "Technician ID not found" });
+      }
+
+      if (!service.applianceId) {
+        return res.status(400).json({ error: "Service has no appliance ID" });
+      }
+
+      const validatedData = {
+        serviceId,
+        technicianId,
+        applianceId: service.applianceId, // Add appliance ID from service
+        partName,
+        partNumber: catalogNumber, // Use partNumber instead of catalogNumber
+        urgency: urgency || 'medium',
+        description: description || '',
+        status: 'pending'
+      };
+
+      console.log("Validated data for spare part order:", validatedData);
+
+      const order = await storage.createSparePartOrder(validatedData);
+      
+      // Automatski kreiraj obaveštenje za administratore
+      await NotificationService.notifySparePartOrdered(order.id, technicianId);
+      
+      // Automatski premesti servis u "waiting_parts" status
+      const currentService = await storage.getService(serviceId);
+      if (currentService) {
+        await storage.updateService(serviceId, {
+          status: 'waiting_parts',
+          technicianNotes: (currentService.technicianNotes || '') + 
+            `\n[${new Date().toLocaleDateString('sr-RS')}] Servis pauziran - čeka rezervni deo: ${partName}`
+        });
+      }
+      
+      res.status(201).json({
+        success: true,
+        message: "Spare part order created successfully",
+        data: order
+      });
+    } catch (error) {
+      console.error("Error creating spare part order:", error);
+      res.status(500).json({ error: "Failed to create spare part order" });
     }
   });
 
