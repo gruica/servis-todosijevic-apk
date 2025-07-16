@@ -131,7 +131,9 @@ export default function AdminServices() {
   // Proverava da li je stranica otvorena sa notifikacijom
   useEffect(() => {
     const state = history.state;
+    console.log("Admin Services - History State:", state);
     if (state && state.highlightServiceId) {
+      console.log("Admin Services - Highlighting service ID:", state.highlightServiceId);
       setHighlightedServiceId(state.highlightServiceId);
       
       // Automatski uklanja highlighting posle 5 sekundi

@@ -119,12 +119,14 @@ export function NotificationsDropdown() {
           break;
         case 'admin':
           // Za adminiastratore - navigacija na admin servise sa fokusiranim servisom
-          navigate('/admin/services', { 
-            state: { 
-              highlightServiceId: notification.relatedServiceId,
-              notificationId: notification.id 
-            }
-          });
+          console.log("Navigating to admin services with highlight ID:", notification.relatedServiceId);
+          navigate('/admin/services');
+          // Postavljamo state podatke koje admin stranica očekuje
+          history.replaceState({ 
+            highlightServiceId: notification.relatedServiceId,
+            notificationId: notification.id 
+          }, '', '/admin/services');
+          console.log("History state set:", history.state);
           break;
         case 'customer':
           // Za klijente - navigacija na svoje servise
