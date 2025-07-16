@@ -3033,8 +3033,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nije priložen fajl" });
       }
       
+      console.log("Kompletna migracija - početak obrade fajla:", req.file.filename);
+      
       const buffer = await fs.readFile(req.file.path);
       const result = await excelService.importLegacyComplete(buffer);
+      
+      console.log("Kompletna migracija - rezultat:", {
+        total: result.total,
+        imported: result.imported,
+        failed: result.failed,
+        summary: result.summary
+      });
       
       // Obriši privremeni fajl
       fs.unlink(req.file.path).catch(err => console.error("Greška pri brisanju privremenog fajla:", err));
@@ -3042,7 +3051,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Greška pri kompletnoj migraciji:", error);
-      res.status(500).json({ error: "Greška pri kompletnoj migraciji iz starog sistema" });
+      console.error("Stack trace:", error instanceof Error ? error.stack : 'Nema stack trace');
+      res.status(500).json({ 
+        error: "Greška pri kompletnoj migraciji iz starog sistema",
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
     }
   });
   

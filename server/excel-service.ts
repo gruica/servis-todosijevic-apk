@@ -628,57 +628,87 @@ export class ExcelService {
       
       try {
         // Ekstraktuj podatke iz reda (fleksibilno mapiranje naziva kolona)
-        const clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || '').trim();
-        const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || '').trim();
-        const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || '').trim());
+        const clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || '').trim();
+        const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || '').trim();
+        const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || row['mjesto'] || '').trim());
         
-        const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || '').trim();
-        const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || '').trim();
-        const model = String(row['Model'] || row['model'] || '').trim();
-        const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || '').trim();
+        const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || row['kategorija'] || '').trim();
+        const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || row['brand'] || '').trim();
+        const model = String(row['Model'] || row['model'] || row['tip'] || '').trim();
+        const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || row['sn'] || '').trim();
         
         const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || '').trim();
-        const registrationDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'] || new Date().toISOString();
+        
+        // Bezbednije parsiranje datuma
+        let registrationDate = new Date().toISOString();
+        const rawDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'];
+        if (rawDate) {
+          try {
+            const parsedDate = new Date(rawDate);
+            if (!isNaN(parsedDate.getTime())) {
+              registrationDate = parsedDate.toISOString();
+            }
+          } catch (error) {
+            // Ako parsiranje datuma ne uspe, koristi trenutni datum
+            console.warn(`Neispravan datum: ${rawDate}, koristim trenutni datum`);
+          }
+        }
+        
         const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 'ne').toLowerCase() === 'da' ? 'warranty' : 'out_of_warranty';
         
-        if (!clientName || !clientPhone) {
+        // Preskačemo redove koji nemaju osnovne podatke
+        if (!clientName && !clientPhone) {
           throw new Error('Nedostaju osnovni podaci o klijentu (ime ili telefon)');
         }
         
+        // Ako nema ime, generiši ga iz telefona
+        const finalClientName = clientName || `Klijent ${clientPhone}`;
+        
+        // Ako nema telefon, generiši ga
+        const finalClientPhone = clientPhone || '000-000-000';
+        
         // 1. Kreiraj ili pronađi klijenta
-        let clientId = clientMap.get(clientName.toLowerCase()) || clientMap.get(clientPhone.toLowerCase());
+        let clientId = clientMap.get(finalClientName.toLowerCase()) || clientMap.get(finalClientPhone.toLowerCase());
         
         if (!clientId) {
           const clientData = {
-            fullName: clientName,
-            phone: clientPhone,
-            city: clientCity,
+            fullName: finalClientName,
+            phone: finalClientPhone,
+            city: clientCity || 'Nepoznat grad',
             address: '', // Nema adrese u starom sistemu
             email: '' // Nema email-a u starom sistemu
           };
           
-          const validatedClientData = insertClientSchema.parse(clientData);
-          const newClient = await storage.createClient(validatedClientData);
-          clientId = newClient.id;
-          clientMap.set(clientName.toLowerCase(), clientId);
-          clientMap.set(clientPhone.toLowerCase(), clientId);
-          result.summary.clientsCreated++;
+          try {
+            const validatedClientData = insertClientSchema.parse(clientData);
+            const newClient = await storage.createClient(validatedClientData);
+            clientId = newClient.id;
+            clientMap.set(finalClientName.toLowerCase(), clientId);
+            clientMap.set(finalClientPhone.toLowerCase(), clientId);
+            result.summary.clientsCreated++;
+          } catch (clientError) {
+            throw new Error(`Greška pri kreiranju klijenta: ${clientError instanceof Error ? clientError.message : 'Nepoznata greška'}`);
+          }
         }
         
         // 2. Kreiraj ili pronađi kategoriju aparata
-        const mappedApplianceType = this.mapApplianceTypeCode(applianceType);
+        const mappedApplianceType = this.mapApplianceTypeCode(applianceType) || 'Nepoznat uređaj';
         let categoryId = categoryMap.get(mappedApplianceType.toLowerCase());
         
         if (!categoryId) {
           const categoryData = {
             name: mappedApplianceType,
-            icon: 'device_unknown'
+            icon: this.getIconForCategory(mappedApplianceType)
           };
           
-          const validatedCategoryData = insertApplianceCategorySchema.parse(categoryData);
-          const newCategory = await storage.createCategory(validatedCategoryData);
-          categoryId = newCategory.id;
-          categoryMap.set(mappedApplianceType.toLowerCase(), categoryId);
+          try {
+            const validatedCategoryData = insertApplianceCategorySchema.parse(categoryData);
+            const newCategory = await storage.createCategory(validatedCategoryData);
+            categoryId = newCategory.id;
+            categoryMap.set(mappedApplianceType.toLowerCase(), categoryId);
+          } catch (categoryError) {
+            throw new Error(`Greška pri kreiranju kategorije: ${categoryError instanceof Error ? categoryError.message : 'Nepoznata greška'}`);
+          }
         }
         
         // 3. Kreiraj ili pronađi proizvođača
@@ -696,23 +726,27 @@ export class ExcelService {
         }
         
         // 4. Kreiraj ili pronađi uređaj
-        let applianceId = applianceMap.get(serialNumber.toLowerCase());
+        let applianceId = serialNumber ? applianceMap.get(serialNumber.toLowerCase()) : undefined;
         
         if (!applianceId && serialNumber) {
           const applianceData = {
-            model: model,
+            model: model || 'Nepoznat model',
             serialNumber: serialNumber,
             clientId: clientId,
             categoryId: categoryId || 0,
             manufacturerId: manufacturerId || 0,
-            notes: `Migrirano iz starog sistema - ${registrationDate}`
+            notes: `Migrirano iz starog sistema - ${new Date(registrationDate).toLocaleDateString('sr-RS')}`
           };
           
-          const validatedApplianceData = insertApplianceSchema.parse(applianceData);
-          const newAppliance = await storage.createAppliance(validatedApplianceData);
-          applianceId = newAppliance.id;
-          applianceMap.set(serialNumber.toLowerCase(), applianceId);
-          result.summary.appliancesCreated++;
+          try {
+            const validatedApplianceData = insertApplianceSchema.parse(applianceData);
+            const newAppliance = await storage.createAppliance(validatedApplianceData);
+            applianceId = newAppliance.id;
+            applianceMap.set(serialNumber.toLowerCase(), applianceId);
+            result.summary.appliancesCreated++;
+          } catch (applianceError) {
+            throw new Error(`Greška pri kreiranju uređaja: ${applianceError instanceof Error ? applianceError.message : 'Nepoznata greška'}`);
+          }
         }
         
         // 5. Kreiraj servis
@@ -723,9 +757,9 @@ export class ExcelService {
             warrantyStatus: warrantyStatus as 'warranty' | 'out_of_warranty',
             clientId: clientId,
             applianceId: applianceId,
-            createdAt: new Date(registrationDate).toISOString(),
-            completedDate: new Date(registrationDate).toISOString(),
-            technicianNotes: `Migrirano iz starog sistema - ${registrationDate}`
+            createdAt: registrationDate,
+            completedDate: registrationDate,
+            technicianNotes: `Migrirano iz starog sistema - ${new Date(registrationDate).toLocaleDateString('sr-RS')}`
           };
           
           const validatedServiceData = insertServiceSchema.parse(serviceData);
