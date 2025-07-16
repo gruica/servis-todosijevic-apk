@@ -171,6 +171,68 @@ export class ExcelService {
   }
 
   /**
+   * Mapiranje skraćenica tipova aparata iz starog sistema u pun naziv kategorije
+   */
+  private mapApplianceTypeCode(typeCode: string): string {
+    const typeMap: Record<string, string> = {
+      'SM': 'Sudo mašina',
+      'VM': 'Veš mašina',
+      'VM KOMB': 'Kombinovana veš mašina',
+      'VM KOMB.': 'Kombinovana veš mašina',
+      'VM komb': 'Kombinovana veš mašina',
+      'VM komb.': 'Kombinovana veš mašina',
+      'SM UG': 'Ugradna sudo mašina',
+      'SM UG.': 'Ugradna sudo mašina',
+      'SM ug': 'Ugradna sudo mašina',
+      'SM ug.': 'Ugradna sudo mašina',
+      'frižider': 'Frižider',
+      'FRIŽIDER': 'Frižider',
+      'frizider': 'Frižider',
+      'FRIZIDER': 'Frižider',
+      'šporet': 'Šporet',
+      'ŠPORET': 'Šporet',
+      'sporet': 'Šporet',
+      'SPORET': 'Šporet',
+      'rerka': 'Rerka',
+      'RERKA': 'Rerka',
+      'RERNA': 'Rerka',
+      'rerna': 'Rerka',
+      'TA': 'Toster aparat',
+      'toster': 'Toster aparat',
+      'TOSTER': 'Toster aparat',
+      'klimu': 'Klima uređaj',
+      'KLIMU': 'Klima uređaj',
+      'klima': 'Klima uređaj',
+      'KLIMA': 'Klima uređaj',
+      'inverter': 'Inverter klima',
+      'INVERTER': 'Inverter klima'
+    };
+    
+    const trimmedCode = typeCode.trim();
+    return typeMap[trimmedCode] || typeMap[trimmedCode.toUpperCase()] || trimmedCode;
+  }
+
+  /**
+   * Odabir odgovarajuće ikone za kategoriju na osnovu naziva
+   */
+  private getIconForCategory(categoryName: string): string {
+    const iconMap: Record<string, string> = {
+      'Sudo mašina': 'dishwasher',
+      'Ugradna sudo mašina': 'dishwasher',
+      'Veš mašina': 'washing-machine',
+      'Kombinovana veš mašina': 'washing-machine',
+      'Frižider': 'refrigerator',
+      'Šporet': 'stove',
+      'Rerka': 'oven',
+      'Toster aparat': 'toaster',
+      'Klima uređaj': 'air-conditioner',
+      'Inverter klima': 'air-conditioner'
+    };
+    
+    return iconMap[categoryName] || 'devices';
+  }
+
+  /**
    * Uvozi klijente iz Excel fajla
    */
   public async importClients(buffer: Buffer): Promise<{ 
@@ -267,20 +329,23 @@ export class ExcelService {
     for (let i = 0; i < data.length; i++) {
       const row = data[i] as Record<string, any>;
       try {
-        // Pronađi ili kreiraj kategoriju
+        // Pronađi ili kreiraj kategoriju sa mapiranjem tipova aparata
         let categoryId: number | null = null;
-        const categoryName = row.category || row.kategorija || row.tip || '';
+        const rawCategoryName = row.category || row.kategorija || row.tip || row.tip_aparata || '';
         
-        if (categoryName) {
-          const categoryNameLower = String(categoryName).toLowerCase();
+        if (rawCategoryName) {
+          // Primeni mapiranje skraćenica tipova aparata
+          const mappedCategoryName = this.mapApplianceTypeCode(String(rawCategoryName));
+          const categoryNameLower = mappedCategoryName.toLowerCase();
+          
           if (categoryMap.has(categoryNameLower)) {
             categoryId = categoryMap.get(categoryNameLower) || null;
           } else {
-            // Kreiraj novu kategoriju
+            // Kreiraj novu kategoriju sa mapiranim nazivom
             try {
               const newCategory = await storage.createApplianceCategory({
-                name: String(categoryName),
-                icon: 'devices' // Default icon
+                name: mappedCategoryName,
+                icon: this.getIconForCategory(mappedCategoryName)
               });
               categoryId = newCategory.id;
               categoryMap.set(categoryNameLower, newCategory.id);

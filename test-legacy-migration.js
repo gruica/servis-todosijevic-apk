@@ -6,57 +6,67 @@
 import * as XLSX from 'xlsx';
 import fs from 'fs';
 
-// Simulacija podataka iz Excel tabele sa slike
+// Simulacija podataka iz Excel tabele sa slike - prošireno sa tipovima aparata
 const testData = [
   {
-    'Klijent': 'Darko Bogdan',
+    'Ime i prezime klijenta': 'Darko Bogdan',
     'Telefon': '067/156-607',
     'Grad': 'TV',
-    'Uređaj': 'frižider',
+    'Tip aparata': 'SM',
     'Proizvođač': 'Samsung',
-    'Model': 'RF50K',
+    'Model': 'DW50K',
     'Serijski broj': '12345',
-    'Napomena': 'redovan pregled'
+    'Opis kvara': 'ne pere kako treba'
   },
   {
-    'Klijent': 'Božidar Lakovic',
+    'Ime i prezime klijenta': 'Božidar Lakovic',
     'Telefon': '069/195-955',
     'Grad': 'TV',
-    'Uređaj': 'frižider',
+    'Tip aparata': 'VM',
     'Proizvođač': 'LG',
-    'Model': 'GR-B459',
+    'Model': 'WM-5000',
     'Serijski broj': '67890',
-    'Napomena': 'potrebna servis'
+    'Opis kvara': 'ne centrifugira'
   },
   {
-    'Klijent': 'Ivan Rabasevic',
+    'Ime i prezime klijenta': 'Ivan Rabasevic',
     'Telefon': '069/567-789',
     'Grad': 'KO',
-    'Uređaj': 'frižider',
+    'Tip aparata': 'VM KOMB',
     'Proizvođač': 'Bosch',
-    'Model': 'KGV',
+    'Model': 'WKD-300',
     'Serijski broj': '54321',
-    'Napomena': 'kvar kompresora'
+    'Opis kvara': 'ne suši'
   },
   {
-    'Klijent': 'Nikola Kuzmanović',
+    'Ime i prezime klijenta': 'Nikola Kuzmanović',
     'Telefon': '067/567-789',
     'Grad': 'BD',
-    'Uređaj': 'frižider',
+    'Tip aparata': 'SM UG',
     'Proizvođač': 'Whirlpool',
-    'Model': 'WBA',
+    'Model': 'WDI-60',
     'Serijski broj': '98765',
-    'Napomena': 'ne hladi'
+    'Opis kvara': 'ne radi'
   },
   {
-    'Klijent': 'Milica Kuzmanović',
+    'Ime i prezime klijenta': 'Milica Kuzmanović',
     'Telefon': '069/123-456',
     'Grad': 'BD',
-    'Uređaj': 'frižider',
+    'Tip aparata': 'frižider',
     'Proizvođač': 'Candy',
     'Model': 'CFBD',
     'Serijski broj': '13579',
-    'Napomena': 'promena filtera'
+    'Opis kvara': 'ne hladi'
+  },
+  {
+    'Ime i prezime klijenta': 'Marko Petrović',
+    'Telefon': '069/987-654',
+    'Grad': 'KO',
+    'Tip aparata': 'šporet',
+    'Proizvođač': 'Gorenje',
+    'Model': 'G-500',
+    'Serijski broj': '11111',
+    'Opis kvara': 'ne radi ploca'
   }
 ];
 
@@ -75,6 +85,33 @@ function mapCityCode(cityCode) {
     'CT': 'Cetinje'
   };
   return cityMap[cityCode] || cityCode;
+}
+
+// Funkcija za mapiranje tipova aparata
+function mapApplianceTypeCode(typeCode) {
+  const typeMap = {
+    'SM': 'Sudo mašina',
+    'VM': 'Veš mašina',
+    'VM KOMB': 'Kombinovana veš mašina',
+    'VM KOMB.': 'Kombinovana veš mašina',
+    'VM komb': 'Kombinovana veš mašina',
+    'VM komb.': 'Kombinovana veš mašina',
+    'SM UG': 'Ugradna sudo mašina',
+    'SM UG.': 'Ugradna sudo mašina',
+    'SM ug': 'Ugradna sudo mašina',
+    'SM ug.': 'Ugradna sudo mašina',
+    'frižider': 'Frižider',
+    'FRIŽIDER': 'Frižider',
+    'frizider': 'Frižider',
+    'FRIZIDER': 'Frižider',
+    'šporet': 'Šporet',
+    'ŠPORET': 'Šporet',
+    'sporet': 'Šporet',
+    'SPORET': 'Šporet'
+  };
+  
+  const trimmedCode = typeCode.trim();
+  return typeMap[trimmedCode] || typeMap[trimmedCode.toUpperCase()] || trimmedCode;
 }
 
 // Kreiranje Excel fajla sa test podacima
@@ -100,7 +137,7 @@ function createTestExcelFile() {
 // Priprema podataka za uvoz klijenata
 function prepareClientsData() {
   const clientsData = testData.map(row => ({
-    fullName: row.Klijent,
+    fullName: row['Ime i prezime klijenta'],
     phone: row.Telefon,
     city: mapCityCode(row.Grad),
     address: '', // Nema adrese u test podacima
@@ -132,12 +169,12 @@ function prepareClientsData() {
 // Priprema podataka za uvoz uređaja
 function prepareAppliancesData() {
   const appliancesData = testData.map(row => ({
-    client: row.Klijent,
-    category: row.Uređaj,
+    client: row['Ime i prezime klijenta'],
+    category: mapApplianceTypeCode(row['Tip aparata']),
     manufacturer: row.Proizvođač,
     model: row.Model,
     serialNumber: row['Serijski broj'],
-    notes: row.Napomena
+    notes: row['Opis kvara']
   }));
   
   const workbook = XLSX.utils.book_new();
@@ -152,7 +189,7 @@ function prepareAppliancesData() {
   appliancesData.forEach((appliance, index) => {
     console.log(`${index + 1}. ${appliance.manufacturer} ${appliance.model}`);
     console.log(`   Vlasnik: ${appliance.client}`);
-    console.log(`   Kategorija: ${appliance.category}`);
+    console.log(`   Kategorija: ${appliance.category} (${testData[index]['Tip aparata']} → ${appliance.category})`);
     console.log(`   Serijski broj: ${appliance.serialNumber}`);
     console.log(`   Napomena: ${appliance.notes}`);
     console.log('');
@@ -185,5 +222,7 @@ console.log('   2. Uvezite klijente iz test-klijenti-za-uvoz.xlsx');
 console.log('   3. Uvezite uređaje iz test-uredjaji-za-uvoz.xlsx');
 console.log('   4. Proverite da li su svi podaci uspešno uvezeni');
 console.log('');
-console.log('🌍 Automatsko mapiranje gradova:');
-console.log('   TV → Tivat, KO → Kotor, BD → Budva');
+console.log('🌍 Automatsko mapiranje:');
+console.log('   Gradovi: TV → Tivat, KO → Kotor, BD → Budva');
+console.log('   Aparati: SM → Sudo mašina, VM → Veš mašina, VM KOMB → Kombinovana veš mašina');
+console.log('   Aparati: SM UG → Ugradna sudo mašina, frižider → Frižider, šporet → Šporet');

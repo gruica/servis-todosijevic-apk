@@ -18,6 +18,7 @@ const LEGACY_COLUMN_MAPPING: Record<string, string> = {
   'Ime i prezime': 'fullName',
   'Vlasnik': 'fullName',
   'Ime': 'fullName',
+  'Ime i prezime klijenta': 'fullName',
   
   // Telefoni
   'Telefon': 'phone',
@@ -40,6 +41,7 @@ const LEGACY_COLUMN_MAPPING: Record<string, string> = {
   'Tip uređaja': 'category',
   'Aparat': 'category',
   'Kategorija': 'category',
+  'Tip aparata': 'category',
   
   // Modeli
   'Model': 'model',
@@ -60,11 +62,17 @@ const LEGACY_COLUMN_MAPPING: Record<string, string> = {
   'Opis': 'notes',
   'Kvar': 'notes',
   'Problem': 'notes',
+  'Opis kvara': 'notes',
   
   // Datumi
   'Datum': 'purchaseDate',
   'Datum kupovine': 'purchaseDate',
   'Kupovno': 'purchaseDate',
+  'Datum prijave': 'createdDate',
+  
+  // Garancija
+  'Garancija': 'warranty',
+  'Garantni period': 'warranty',
 };
 
 class LegacyDataImporter {
@@ -72,6 +80,82 @@ class LegacyDataImporter {
 
   constructor() {
     this.excelService = ExcelService.getInstance();
+  }
+
+  /**
+   * Mapiranje skraćenica gradova iz starog sistema u pun naziv
+   */
+  private mapCityCode(cityCode: string): string {
+    const cityMap: Record<string, string> = {
+      'TV': 'Tivat',
+      'KO': 'Kotor',
+      'BD': 'Budva',
+      'PG': 'Podgorica',
+      'NK': 'Nikšić',
+      'PL': 'Pljevlja',
+      'HN': 'Herceg Novi',
+      'BA': 'Bar',
+      'UL': 'Ulcinj',
+      'CT': 'Cetinje',
+      'BJ': 'Bijelo Polje',
+      'RO': 'Rožaje',
+      'PV': 'Plav',
+      'ZB': 'Žabljak',
+      'DG': 'Danilovgrad',
+      'MK': 'Mojkovac',
+      'KL': 'Kolašin',
+      'BE': 'Berane',
+      'AN': 'Andrijevica',
+      'PZ': 'Plužine',
+      'SA': 'Šavnik',
+      'GO': 'Gusinje',
+      'PE': 'Petnjica'
+    };
+    
+    const upperCode = cityCode.toUpperCase().trim();
+    return cityMap[upperCode] || cityCode;
+  }
+
+  /**
+   * Mapiranje skraćenica tipova aparata iz starog sistema u pun naziv kategorije
+   */
+  private mapApplianceTypeCode(typeCode: string): string {
+    const typeMap: Record<string, string> = {
+      'SM': 'Sudo mašina',
+      'VM': 'Veš mašina',
+      'VM KOMB': 'Kombinovana veš mašina',
+      'VM KOMB.': 'Kombinovana veš mašina',
+      'VM komb': 'Kombinovana veš mašina',
+      'VM komb.': 'Kombinovana veš mašina',
+      'SM UG': 'Ugradna sudo mašina',
+      'SM UG.': 'Ugradna sudo mašina',
+      'SM ug': 'Ugradna sudo mašina',
+      'SM ug.': 'Ugradna sudo mašina',
+      'frižider': 'Frižider',
+      'FRIŽIDER': 'Frižider',
+      'frizider': 'Frižider',
+      'FRIZIDER': 'Frižider',
+      'šporet': 'Šporet',
+      'ŠPORET': 'Šporet',
+      'sporet': 'Šporet',
+      'SPORET': 'Šporet',
+      'rerka': 'Rerka',
+      'RERKA': 'Rerka',
+      'RERNA': 'Rerka',
+      'rerna': 'Rerka',
+      'TA': 'Toster aparat',
+      'toster': 'Toster aparat',
+      'TOSTER': 'Toster aparat',
+      'klimu': 'Klima uređaj',
+      'KLIMU': 'Klima uređaj',
+      'klima': 'Klima uređaj',
+      'KLIMA': 'Klima uređaj',
+      'inverter': 'Inverter klima',
+      'INVERTER': 'Inverter klima'
+    };
+    
+    const trimmedCode = typeCode.trim();
+    return typeMap[trimmedCode] || typeMap[trimmedCode.toUpperCase()] || trimmedCode;
   }
 
   /**
@@ -170,10 +254,13 @@ class LegacyDataImporter {
     const data = XLSX.utils.sheet_to_json(worksheet);
 
     const clientData = data.map((row: any) => {
+      const rawCity = row['Grad'] || row['Mesto'] || row['Lokacija'] || '';
+      const mappedCity = rawCity ? this.mapCityCode(String(rawCity)) : '';
+      
       return {
-        fullName: row['Klijent'] || row['Ime i prezime'] || row['Vlasnik'] || '',
+        fullName: row['Klijent'] || row['Ime i prezime'] || row['Ime i prezime klijenta'] || row['Vlasnik'] || '',
         phone: row['Telefon'] || row['Broj telefona'] || row['Mob'] || row['Tel'] || '',
-        city: row['Grad'] || row['Mesto'] || row['Lokacija'] || '',
+        city: mappedCity,
         address: row['Adresa'] || row['Ulica'] || '',
         email: row['Email'] || row['E-mail'] || ''
       };
@@ -186,6 +273,17 @@ class LegacyDataImporter {
 
     console.log(`Ukupno redova: ${data.length}`);
     console.log(`Jedinstvenih klijenata: ${uniqueClients.length}`);
+
+    // Prikaži mapiranje gradova
+    const cityMappings = new Set<string>();
+    uniqueClients.forEach(client => {
+      if (client.city) cityMappings.add(client.city);
+    });
+    
+    console.log('\nMapiranje gradova:');
+    Array.from(cityMappings).sort().forEach(city => {
+      console.log(`- ${city}`);
+    });
 
     // Kreiraj novi Excel fajl
     const newWorkbook = XLSX.utils.book_new();
@@ -208,23 +306,37 @@ class LegacyDataImporter {
     const data = XLSX.utils.sheet_to_json(worksheet);
 
     const applianceData = data.map((row: any) => {
+      const rawCategory = row['Uređaj'] || row['Tip uređaja'] || row['Tip aparata'] || row['Aparat'] || '';
+      const mappedCategory = rawCategory ? this.mapApplianceTypeCode(String(rawCategory)) : 'Nepoznat';
+      
       return {
-        client: row['Klijent'] || row['Ime i prezime'] || row['Vlasnik'] || '',
-        category: row['Uređaj'] || row['Tip uređaja'] || row['Aparat'] || 'Frižider',
+        client: row['Klijent'] || row['Ime i prezime'] || row['Ime i prezime klijenta'] || row['Vlasnik'] || '',
+        category: mappedCategory,
         manufacturer: row['Proizvođač'] || row['Marka'] || row['Brend'] || 'Nepoznat',
         model: row['Model'] || row['Tip'] || '',
         serialNumber: row['Serijski broj'] || row['SN'] || row['Serial'] || '',
-        notes: row['Napomena'] || row['Opis'] || row['Kvar'] || row['Problem'] || ''
+        notes: row['Napomena'] || row['Opis'] || row['Opis kvara'] || row['Kvar'] || row['Problem'] || ''
       };
     });
 
     // Filtriranje redova sa validnim podacima
     const validAppliances = applianceData.filter(appliance => 
-      appliance.client && (appliance.model || appliance.serialNumber)
+      appliance.client && (appliance.model || appliance.serialNumber || appliance.category !== 'Nepoznat')
     );
 
     console.log(`Ukupno redova: ${data.length}`);
     console.log(`Validnih uređaja: ${validAppliances.length}`);
+
+    // Prikaži mapiranje tipova aparata
+    const categoryMappings = new Set<string>();
+    validAppliances.forEach(appliance => {
+      if (appliance.category) categoryMappings.add(appliance.category);
+    });
+    
+    console.log('\nMapiranje tipova aparata:');
+    Array.from(categoryMappings).sort().forEach(category => {
+      console.log(`- ${category}`);
+    });
 
     // Kreiraj novi Excel fajl
     const newWorkbook = XLSX.utils.book_new();

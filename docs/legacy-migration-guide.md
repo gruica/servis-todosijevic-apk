@@ -34,6 +34,25 @@ Sistem automatski konvertuje sledeće skraćenice:
 | GO         | Gusinje       |
 | PE         | Petnjica      |
 
+## Podržane skraćenice tipova aparata
+
+Sistem automatski konvertuje sledeće skraćenice za tipove aparata:
+
+| Skraćenica | Pun naziv                |
+|------------|--------------------------|
+| SM         | Sudo mašina              |
+| VM         | Veš mašina               |
+| VM KOMB    | Kombinovana veš mašina   |
+| SM UG      | Ugradna sudo mašina      |
+| frižider   | Frižider                 |
+| šporet     | Šporet                   |
+| rerka      | Rerka                    |
+| toster     | Toster aparat            |
+| klima      | Klima uređaj             |
+| inverter   | Inverter klima           |
+
+*Napomena: Sistem prepoznaje i različite varijante pisanja (velikim slovima, sa/bez tačaka, kratice).*
+
 ## Korak po korak migracija
 
 ### 1. Priprema Excel fajla
@@ -52,7 +71,8 @@ Sistem automatski konvertuje sledeće skraćenice:
 ```
 | Klijent | Uređaj/Tip | Proizvođač/Marka | Model | Serijski broj | Napomena |
 |---------|------------|------------------|-------|---------------|----------|
-| Marko   | Frižider   | Samsung          | RF50  | ABC123        | Kvar     |
+| Marko   | SM         | Samsung          | DW50K | ABC123        | Ne pere  |
+| Ana     | VM KOMB    | Bosch            | WKD   | DEF456        | Ne suši  |
 ```
 
 ### 2. Analiza postojećeg fajla
@@ -106,11 +126,11 @@ Sistem prepoznaje različite nazive kolona:
 - **Adresa**: Adresa, Ulica
 
 ### Uređaji:
-- **Kategorija**: Uređaj, Tip uređaja, Aparat, Kategorija
+- **Kategorija**: Uređaj, Tip uređaja, Aparat, Kategorija, Tip aparata
 - **Proizvođač**: Proizvođač, Marka, Brend
 - **Model**: Model, Tip
 - **Serijski broj**: Serijski broj, SN, Serial
-- **Napomene**: Napomena, Opis, Kvar, Problem
+- **Napomene**: Napomena, Opis, Kvar, Problem, Opis kvara
 
 ## Napredne funkcionalnosti
 
@@ -118,6 +138,12 @@ Sistem prepoznaje različite nazive kolona:
 - Sistem automatski kreira nove kategorije uređaja
 - Proizvođači se dodaju ako ne postoje
 - Nema potrebe za unapred pripremom
+
+### Inteligentno mapiranje tipova aparata
+- Sistem prepoznaje skraćenice (SM → Sudo mašina)
+- Razlikuje slične tipove (VM vs VM KOMB)
+- Rešava varijante pisanja (velikim/malim slovima)
+- Automatski mapira česte nazive (frižider → Frižider)
 
 ### Validacija podataka
 - Telefon mora imati minimalno 6 cifara
@@ -158,11 +184,13 @@ tsx scripts/import-legacy-data.ts appliances stari_sistem.xlsx uredjaji.xlsx
 - **"Klijent nije pronađen"** - prvo uvezite klijente
 - **"Broj telefona nije valjan"** - proverite format telefona
 - **"Grad nije mapiran"** - dodaćemo novu skraćenicu
+- **"Tip aparata nepoznat"** - proverite mapiranje tipova u dokumentaciji
 
 ### Dobijanje podrške:
 - Poslati možete primer Excel fajla za analizu
-- Možemo dodati nove skraćenice gradova
+- Možemo dodati nove skraćenice gradova i tipova aparata
 - Možemo prilagoditi mapiranje kolona
+- Možemo dodati nova mapiranja za specijalne tipove aparata
 
 ## Zaključak
 
