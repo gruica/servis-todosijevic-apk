@@ -319,11 +319,11 @@ export default function ExcelImportExport() {
                     Sistem automatski prepoznaje različite nazive kolona i mapira skraćenice iz starog sistema.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="max-h-[60vh] overflow-y-auto">
-                  <div className="space-y-4">
+                <CardContent className="max-h-[50vh] overflow-y-auto">
+                  <div className="space-y-3">
                     <div>
-                      <Label htmlFor="import-type">Tip podataka za uvoz</Label>
-                      <div className="grid grid-cols-2 gap-4 mt-2">
+                      <Label htmlFor="import-type" className="text-sm">Tip podataka za uvoz</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
                         <Button 
                           variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('legacy-complete')}
@@ -332,11 +332,9 @@ export default function ExcelImportExport() {
                           🔄 Kompletna migracija (stari sistem)
                         </Button>
                         {selectedImportType === 'legacy-complete' && (
-                          <div className="col-span-2 mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              <strong>Kompletna migracija:</strong> Ova opcija automatski čita jednu Excel tabelu koja sadrži sve podatke 
-                              (klijenti, uređaji, servisi) i kreira sve entitete odjednom. Prepoznaje skraćenice gradova 
-                              (TV→Tivat, BD→Budva) i tipova aparata (VM→Veš mašina, SM→Sudo mašina).
+                          <div className="col-span-2 mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Kompletna migracija:</strong> Čita jednu Excel tabelu sa svim podacima. Prepoznaje TV→Tivat, BD→Budva, VM→Veš mašina, SM→Sudo mašina.
                             </p>
                           </div>
                         )}
@@ -364,17 +362,17 @@ export default function ExcelImportExport() {
                       </div>
                     </div>
                     
-                    <Separator />
+                    <Separator className="my-2" />
                     
                     <div>
-                      <Label>Učitaj Excel fajl</Label>
+                      <Label className="text-sm">Učitaj Excel fajl</Label>
                       <div 
                         {...getRootProps()} 
-                        className="border-2 border-dashed rounded-md p-4 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                        className="border-2 border-dashed rounded-md p-3 mt-1 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
                       >
                         <input {...getInputProps()} />
-                        <UploadCloud className="h-8 w-8 mx-auto text-slate-400" />
-                        <p className="mt-1 text-sm">Prevucite Excel fajl ovde ili kliknite za odabir</p>
+                        <UploadCloud className="h-6 w-6 mx-auto text-slate-400" />
+                        <p className="mt-1 text-xs">Prevucite Excel fajl ovde ili kliknite za odabir</p>
                         <p className="text-xs text-muted-foreground">
                           Podržani formati: .xlsx, .xls
                         </p>
@@ -382,8 +380,8 @@ export default function ExcelImportExport() {
                     </div>
                     
                     {isUploading && (
-                      <div className="space-y-2">
-                        <p>Učitavanje i obrada fajla...</p>
+                      <div className="space-y-1">
+                        <p className="text-sm">Učitavanje i obrada fajla...</p>
                         <Progress value={undefined} className="h-2" />
                       </div>
                     )}
