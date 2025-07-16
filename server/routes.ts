@@ -3950,36 +3950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/services/:id", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za brisanje servisa" });
-      }
 
-      const serviceId = parseInt(req.params.id);
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Neispravan ID servisa" });
-      }
-
-      // Delete service
-      const deletedService = await db.delete(schema.services)
-        .where(eq(schema.services.id, serviceId))
-        .returning();
-
-      if (deletedService.length === 0) {
-        return res.status(404).json({ error: "Servis nije pronađen" });
-      }
-
-      res.json({ 
-        success: true, 
-        message: "Servis je uspešno obrisan",
-        deletedService: deletedService[0]
-      });
-    } catch (error) {
-      console.error("Greška pri brisanju servisa:", error);
-      res.status(500).json({ error: "Greška pri brisanju servisa" });
-    }
-  });
 
   app.delete("/api/admin/appliances/:id", async (req, res) => {
     try {
@@ -4226,7 +4197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/admin/services/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.sendStatus(401);
     }
 
@@ -4247,7 +4218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/admin/services/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
       return res.sendStatus(401);
     }
 

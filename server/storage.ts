@@ -14,10 +14,12 @@ import {
   EmailVerification, InsertEmailVerification,
   SparePartOrder, InsertSparePartOrder,
   SparePartUrgency, SparePartStatus,
+  Notification, InsertNotification,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
-  requestTracking, botVerification, emailVerification, sparePartOrders
+  requestTracking, botVerification, emailVerification, sparePartOrders,
+  notifications
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -2927,6 +2929,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAdminService(id: number): Promise<boolean> {
     try {
+      // Prvo obriši sve povezane notifikacije
+      await db
+        .delete(notifications)
+        .where(eq(notifications.relatedServiceId, id));
+
+      // Zatim obriši sam servis
       const result = await db
         .delete(services)
         .where(eq(services.id, id))
