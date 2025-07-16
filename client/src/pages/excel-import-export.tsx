@@ -320,7 +320,7 @@ export default function ExcelImportExport() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <Label htmlFor="import-type">Tip podataka za uvoz</Label>
                       <div className="grid grid-cols-2 gap-4 mt-2">
@@ -370,12 +370,12 @@ export default function ExcelImportExport() {
                       <Label>Učitaj Excel fajl</Label>
                       <div 
                         {...getRootProps()} 
-                        className="border-2 border-dashed rounded-md p-8 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                        className="border-2 border-dashed rounded-md p-4 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
                       >
                         <input {...getInputProps()} />
-                        <UploadCloud className="h-12 w-12 mx-auto text-slate-400" />
-                        <p className="mt-2">Prevucite Excel fajl ovde ili kliknite za odabir</p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <UploadCloud className="h-8 w-8 mx-auto text-slate-400" />
+                        <p className="mt-1 text-sm">Prevucite Excel fajl ovde ili kliknite za odabir</p>
+                        <p className="text-xs text-muted-foreground">
                           Podržani formati: .xlsx, .xls
                         </p>
                       </div>
@@ -389,21 +389,16 @@ export default function ExcelImportExport() {
                     )}
                     
                     {importResult && (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <Alert variant={importResult.failed > 0 ? "destructive" : "default"}>
                           <CheckCircle2 className="h-4 w-4" />
                           <AlertTitle>Rezultat uvoza</AlertTitle>
-                          <AlertDescription>
-                            Ukupno zapisa: {importResult.total}<br />
-                            Uspešno uvezeno: {importResult.imported}<br />
-                            Neuspešno: {importResult.failed}
+                          <AlertDescription className="text-sm">
+                            Ukupno: {importResult.total} | Uspešno: {importResult.imported} | Neuspešno: {importResult.failed}
                             {importResult.summary && (
                               <>
-                                <br /><br />
-                                <strong>Kreirani entiteti:</strong><br />
-                                • Novi klijenti: {importResult.summary.clientsCreated}<br />
-                                • Novi uređaji: {importResult.summary.appliancesCreated}<br />
-                                • Novi servisi: {importResult.summary.servicesCreated}
+                                <br />
+                                <strong>Kreirani:</strong> {importResult.summary.clientsCreated} klijenata, {importResult.summary.appliancesCreated} uređaja, {importResult.summary.servicesCreated} servisa
                               </>
                             )}
                           </AlertDescription>
@@ -411,14 +406,12 @@ export default function ExcelImportExport() {
                         
                         {importResult.errors.length > 0 && (
                           <div>
-                            <h3 className="text-lg font-semibold mb-2">Detalji grešaka:</h3>
-                            <div className="max-h-60 overflow-y-auto rounded border p-4">
+                            <h4 className="text-sm font-semibold mb-1">Greške ({importResult.errors.length}):</h4>
+                            <div className="max-h-40 overflow-y-auto rounded border p-2 bg-red-50 dark:bg-red-900/20">
                               {importResult.errors.map((error, index) => (
-                                <Alert key={index} variant="destructive" className="mb-2">
-                                  <XCircle className="h-4 w-4" />
-                                  <AlertTitle>Red {error.row}</AlertTitle>
-                                  <AlertDescription>{error.error}</AlertDescription>
-                                </Alert>
+                                <div key={index} className="text-xs text-red-700 dark:text-red-300 mb-1">
+                                  Red {error.row}: {error.error}
+                                </div>
                               ))}
                             </div>
                           </div>
