@@ -680,27 +680,38 @@ export class ExcelService {
       }
     }
     
-    // Obradi svaki red iz Excel tabele
+    // Obradi svaki red iz Excel tabele, preskačemo header red
     for (let i = 0; i < data.length; i++) {
       const row = data[i] as any;
       
+      // Preskačemo header red (prvi red koji sadrži nazive kolona)
+      if (i === 0 && (
+        row['SERVISI-SEPTEMBAR'] === 'Datum' ||
+        row['__EMPTY'] === 'Grad' ||
+        row['__EMPTY_1'] === 'Ime I prezime'
+      )) {
+        console.log('Preskačemo header red:', row);
+        continue;
+      }
+      
       try {
         // Ekstraktuj podatke iz reda na osnovu pozicije kolona
-        // Kolone: Datum, Grad, Ime i prezime, Aparat, Opis kvara, Dio, Broj telefona, Proizvođač, Garancija, [prazna], Datum servisa, Gotovina, Kupon, Virman
+        // Struktura: SERVISI-SEPTEMBAR, __EMPTY, __EMPTY_1, __EMPTY_2, __EMPTY_3, __EMPTY_4, __EMPTY_5, __EMPTY_6, __EMPTY_7, __EMPTY_9, __EMPTY_10, __EMPTY_11, __EMPTY_12
+        // Značenje: Datum, Grad, Ime i prezime, Aparat, Opis kvara, Dio, Broj telefona, Proizvođač, Garancija, Datum servisa, Gotovina, Kupon, Virman
         const allKeys = Object.keys(row);
         const allValues = Object.values(row);
         
-        // Mapiranje na osnovu pozicije u tabeli
-        const registrationDateRaw = allValues[0]; // Kolona 1: Datum
-        const clientCity = this.mapCityCode(String(allValues[1] || '').trim()); // Kolona 2: Grad
-        const clientName = String(allValues[2] || '').trim(); // Kolona 3: Ime i prezime
-        const applianceType = String(allValues[3] || '').trim(); // Kolona 4: Aparat
-        const serviceDescription = String(allValues[4] || '').trim(); // Kolona 5: Opis kvara
-        // Kolona 6: Dio - zanemarujemo
-        const clientPhone = String(allValues[6] || '').trim(); // Kolona 7: Broj telefona
-        const manufacturer = String(allValues[7] || '').trim(); // Kolona 8: Proizvođač
-        const warrantyStatusRaw = String(allValues[8] || '').trim(); // Kolona 9: Garancija
-        // Kolone 10+ zanemarujemo (prazna, datum servisa, gotovina, kupon, virman)
+        // Mapiranje na osnovu pozicije u tabeli (prema strukturi iz analize)
+        const registrationDateRaw = row['SERVISI-SEPTEMBAR'] || allValues[0]; // Kolona 1: Datum
+        const clientCity = this.mapCityCode(String(row['__EMPTY'] || allValues[1] || '').trim()); // Kolona 2: Grad
+        const clientName = String(row['__EMPTY_1'] || allValues[2] || '').trim(); // Kolona 3: Ime i prezime
+        const applianceType = String(row['__EMPTY_2'] || allValues[3] || '').trim(); // Kolona 4: Aparat
+        const serviceDescription = String(row['__EMPTY_3'] || allValues[4] || '').trim(); // Kolona 5: Opis kvara
+        // Kolona 6: Dio - zanemarujemo (row['__EMPTY_4'])
+        const clientPhone = String(row['__EMPTY_5'] || allValues[6] || '').trim(); // Kolona 7: Broj telefona
+        const manufacturer = String(row['__EMPTY_6'] || allValues[7] || '').trim(); // Kolona 8: Proizvođač
+        const warrantyStatusRaw = String(row['__EMPTY_7'] || allValues[8] || '').trim(); // Kolona 9: Garancija
+        // Kolone 10+ zanemarujemo (datum servisa, gotovina, kupon, virman)
         
         // Fallback na mapiranje po nazivima kolona ako pozicijski pristup ne radi
         let fallbackClientName = clientName;
@@ -738,8 +749,32 @@ export class ExcelService {
         let registrationDate = new Date().toISOString().split('T')[0];
         if (registrationDateRaw) {
           try {
-            const parsedDate = new Date(registrationDateRaw);
-            if (!isNaN(parsedDate.getTime())) {
+            let parsedDate;
+            
+            // Ako je broj (Excel serijski datum), konvertuj ga
+            if (typeof registrationDateRaw === 'number') {
+              // Excel serijski datum počinje od 1900-01-01
+              parsedDate = new Date((registrationDateRaw - 25569) * 86400 * 1000);
+            } else {
+              // Ako je string, pokušaj da parsiraš
+              const dateStr = String(registrationDateRaw);
+              
+              // Prepoznavanje različitih formata datuma
+              if (dateStr.includes('.')) {
+                // Format: dd.mm.yyyy
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                  const day = parseInt(parts[0]);
+                  const month = parseInt(parts[1]) - 1; // JavaScript meseci su 0-based
+                  const year = parseInt(parts[2]);
+                  parsedDate = new Date(year, month, day);
+                }
+              } else {
+                parsedDate = new Date(dateStr);
+              }
+            }
+            
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
               registrationDate = parsedDate.toISOString().split('T')[0];
             }
           } catch (error) {
@@ -771,11 +806,18 @@ export class ExcelService {
           // Pokušaj da pronađe bilo koju kolonu sa tekstom
           const allValues = Object.values(row).filter(val => val && String(val).trim() !== '');
           if (allValues.length === 0) {
-            throw new Error('Prazan red - nema podataka');
+            console.log(`Preskačemo prazan red ${i + 1}`);
+            result.failed++;
+            result.errors.push({
+              row: i + 2,
+              error: 'Prazan red - nema podataka'
+            });
+            continue; // Preskačemo umesto da bacamo greška
           }
           
           // Ako ima podataka ali ne prepoznaje kolone, prikaži dostupne kolone
           const availableColumns = Object.keys(row).filter(key => row[key] && String(row[key]).trim() !== '');
+          console.log(`Red ${i + 1} - Nedostaju osnovni podaci o klijentu (ime ili telefon). Dostupne kolone: ${availableColumns.join(', ')}`);
           throw new Error(`Nedostaju osnovni podaci o klijentu (ime ili telefon). Dostupne kolone: ${availableColumns.join(', ')}`);
         }
         
