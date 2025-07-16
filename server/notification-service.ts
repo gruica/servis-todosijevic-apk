@@ -39,6 +39,73 @@ export class NotificationService {
     }
   }
 
+  // Kreiranje notifikacije za servis koji čeka rezervne delove
+  static async notifyServiceWaitingForParts(serviceId: number, technicianId: number, partName: string) {
+    try {
+      const serviceData = await db
+        .select({
+          id: services.id,
+          description: services.description,
+          clientId: services.clientId,
+        })
+        .from(services)
+        .where(eq(services.id, serviceId))
+        .limit(1);
+
+      if (!serviceData.length) {
+        throw new Error(`Servis sa ID ${serviceId} nije pronađen`);
+      }
+
+      const service = serviceData[0];
+
+      await this.createNotification({
+        userId: technicianId,
+        type: "service_waiting_for_parts",
+        title: "Servis pauziran - čeka rezervni deo",
+        message: `Servis #${serviceId} je premešten u folder "Čeka rezervne delove" jer je zahtevana rezervna deo: ${partName}`,
+        relatedServiceId: serviceId,
+        priority: "normal",
+      });
+    } catch (error) {
+      console.error("Greška pri kreiranju notifikacije za servis koji čeka deo:", error);
+      throw error;
+    }
+  }
+
+  // Kreiranje notifikacije za vraćanje servisa iz čekanja
+  static async notifyServiceReturnedFromWaiting(serviceId: number, technicianId: number, adminId: number) {
+    try {
+      const serviceData = await db
+        .select({
+          id: services.id,
+          description: services.description,
+          clientId: services.clientId,
+        })
+        .from(services)
+        .where(eq(services.id, serviceId))
+        .limit(1);
+
+      if (!serviceData.length) {
+        throw new Error(`Servis sa ID ${serviceId} nije pronađen`);
+      }
+
+      const service = serviceData[0];
+
+      await this.createNotification({
+        userId: technicianId,
+        type: "service_returned_from_waiting",
+        title: "Servis vraćen u realizaciju",
+        message: `Servis #${serviceId} je vraćen u realizaciju. Rezervni deo je dostupan i možete nastaviti rad.`,
+        relatedServiceId: serviceId,
+        relatedUserId: adminId,
+        priority: "high",
+      });
+    } catch (error) {
+      console.error("Greška pri kreiranju notifikacije za vraćanje servisa iz čekanja:", error);
+      throw error;
+    }
+  }
+
   // Kreiranje notifikacije za dodeljeni servis
   static async notifyServiceAssigned(serviceId: number, technicianId: number, assignedBy: number) {
     try {

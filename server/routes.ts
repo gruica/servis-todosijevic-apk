@@ -4304,6 +4304,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get services waiting for parts (admin only)
+  app.get("/api/admin/services/waiting-for-parts", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const waitingServices = await storage.getServicesByStatusDetailed('waiting_parts');
+      res.json(waitingServices);
+    } catch (error) {
+      console.error("Error fetching waiting services:", error);
+      res.status(500).json({ error: "Failed to fetch waiting services" });
+    }
+  });
+
   // Get spare part order by ID
   app.get("/api/spare-parts/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -4380,6 +4395,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Automatski kreiraj obaveštenje za administratore
       await NotificationService.notifySparePartOrdered(order.id, technicianId);
       
+      // Automatski premesti servis u "waiting_parts" status
+      await storage.updateService(validatedData.serviceId, {
+        status: 'waiting_parts',
+        technicianNotes: (await storage.getService(validatedData.serviceId))?.technicianNotes + 
+          `\n[${new Date().toLocaleDateString('sr-RS')}] Servis pauziran - čeka rezervni deo: ${validatedData.partName}`
+      });
+      
+      // Kreiraj obaveštenje za tehničara da je servis premešten u folder čekanja
+      await NotificationService.notifyServiceWaitingForParts(
+        validatedData.serviceId,
+        req.user.id,
+        validatedData.partName
+      );
+      
       res.status(201).json(order);
     } catch (error) {
       console.error("Error creating spare part order:", error);
@@ -4427,6 +4456,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating spare part order:", error);
       res.status(500).json({ error: "Failed to update spare part order" });
+    }
+  });
+
+  // Return service from waiting_parts to active status (admin only)
+  app.post("/api/admin/services/:id/return-from-waiting", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { newStatus = 'in_progress', adminNotes = '' } = req.body;
+      
+      // Dobij podatke o servisu
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      if (service.status !== 'waiting_parts') {
+        return res.status(400).json({ error: "Service is not in waiting_parts status" });
+      }
+      
+      // Ažuriraj servis
+      const updatedService = await storage.updateService(serviceId, {
+        status: newStatus,
+        technicianNotes: service.technicianNotes + 
+          `\n[${new Date().toLocaleDateString('sr-RS')}] Servis vraćen u realizaciju - rezervni deo dostupan. ${adminNotes}`
+      });
+      
+      // Obavesti servisera da može da nastavi rad
+      if (service.technicianId) {
+        const technicianUser = await storage.getUserByTechnicianId(service.technicianId);
+        if (technicianUser) {
+          await NotificationService.notifyServiceReturnedFromWaiting(
+            serviceId,
+            technicianUser.id,
+            req.user.id
+          );
+        }
+      }
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error returning service from waiting:", error);
+      res.status(500).json({ error: "Failed to return service from waiting" });
     }
   });
 

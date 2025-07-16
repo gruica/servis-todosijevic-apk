@@ -23,6 +23,7 @@ import { QuickActionsFloat } from "@/components/technician/quick-actions-float";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 import SparePartsOrderForm from "@/components/spare-parts-order-form";
+import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFolder";
 
 type TechnicianService = Service & {
   client?: {
@@ -589,11 +590,17 @@ export default function TechnicianServices() {
       </div>
 
       <Tabs defaultValue="active" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="active">Aktivni</TabsTrigger>
+          <TabsTrigger value="waiting_parts">Čeka delove</TabsTrigger>
           <TabsTrigger value="completed">Završeni</TabsTrigger>
           <TabsTrigger value="other">Ostalo</TabsTrigger>
         </TabsList>
+
+        {/* Waiting Parts Tab */}
+        <TabsContent value="waiting_parts" className="space-y-4">
+          <WaitingForPartsFolder />
+        </TabsContent>
 
         {["active", "completed", "other"].map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-4">

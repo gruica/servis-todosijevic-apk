@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { ApplianceCategory, Client, Service } from "@shared/schema";
+import { WaitingForPartsSection } from "@/components/admin/WaitingForPartsSection";
 
 // Get icon for service status
 function getStatusBadge(status: string) {
@@ -414,6 +415,11 @@ export default function Dashboard() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+            
+            {/* Waiting for Parts Section */}
+            <div className="mb-6">
+              <WaitingForPartsSection />
             </div>
           </div>
         </main>
