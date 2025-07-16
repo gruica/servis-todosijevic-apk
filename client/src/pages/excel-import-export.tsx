@@ -312,22 +312,21 @@ export default function ExcelImportExport() {
             
             <TabsContent value="import">
               <Card>
-                <CardHeader>
-                  <CardTitle>Uvoz podataka iz Excel fajla</CardTitle>
-                  <CardDescription>
-                    Odaberite tip podataka koji želite da uvezete i priložite Excel fajl. 
-                    Sistem automatski prepoznaje različite nazive kolona i mapira skraćenice iz starog sistema.
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Uvoz podataka iz Excel fajla</CardTitle>
+                  <CardDescription className="text-sm">
+                    Odaberite tip podataka i priložite Excel fajl. Sistem automatski prepoznaje nazive kolona i mapira skraćenice.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="max-h-[50vh] overflow-y-auto">
-                  <div className="space-y-3">
+                <CardContent className="max-h-[40vh] overflow-y-auto py-4">
+                  <div className="space-y-2">
                     <div>
                       <Label htmlFor="import-type" className="text-sm">Tip podataka za uvoz</Label>
                       <div className="grid grid-cols-2 gap-2 mt-1">
                         <Button 
                           variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('legacy-complete')}
-                          className="justify-start col-span-2"
+                          className="justify-start col-span-2 h-8 text-sm"
                         >
                           🔄 Kompletna migracija (stari sistem)
                         </Button>
@@ -341,21 +340,21 @@ export default function ExcelImportExport() {
                         <Button 
                           variant={selectedImportType === 'clients' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('clients')}
-                          className="justify-start"
+                          className="justify-start h-8 text-sm"
                         >
                           Klijenti
                         </Button>
                         <Button 
                           variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('appliances')}
-                          className="justify-start"
+                          className="justify-start h-8 text-sm"
                         >
                           Uređaji
                         </Button>
                         <Button 
                           variant={selectedImportType === 'services' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('services')}
-                          className="justify-start"
+                          className="justify-start h-8 text-sm"
                         >
                           Servisi
                         </Button>
