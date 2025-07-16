@@ -2805,105 +2805,98 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminServiceById(id: number): Promise<any | undefined> {
     try {
-      const result = await db
-        .select({
-          id: services.id,
-          status: services.status,
-          description: services.description,
-          createdAt: services.createdAt,
-          scheduledDate: services.scheduledDate,
-          completedDate: services.completedDate,
-          technicianId: services.technicianId,
-          clientId: services.clientId,
-          applianceId: services.applianceId,
-          technicianNotes: services.technicianNotes,
-          usedParts: services.usedParts,
-          machineNotes: services.machineNotes,
-          cost: services.cost,
-          isCompletelyFixed: services.isCompletelyFixed,
-          warrantyStatus: services.warrantyStatus,
-          businessPartnerId: services.businessPartnerId,
-          partnerCompanyName: services.partnerCompanyName,
-          // Client information
-          clientFullName: clients.fullName,
-          clientPhone: clients.phone,
-          clientEmail: clients.email,
-          clientAddress: clients.address,
-          clientCity: clients.city,
-          clientCompanyName: clients.companyName,
-          // Appliance information
-          applianceModel: appliances.model,
-          applianceSerialNumber: appliances.serialNumber,
-          categoryName: applianceCategories.name,
-          categoryIcon: applianceCategories.icon,
-          manufacturerName: manufacturers.name,
-          // Technician information
-          technicianFullName: technicians.fullName,
-          technicianEmail: technicians.email,
-          technicianPhone: technicians.phone,
-          technicianSpecialization: technicians.specialization,
-        })
+      // First get the service
+      const [service] = await db
+        .select()
         .from(services)
-        .leftJoin(clients, eq(services.clientId, clients.id))
-        .leftJoin(appliances, eq(services.applianceId, appliances.id))
-        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-        .leftJoin(technicians, eq(services.technicianId, technicians.id))
         .where(eq(services.id, id));
 
-      if (result.length === 0) return undefined;
+      if (!service) return undefined;
 
-      const row = result[0];
+      // Then get related data separately to avoid complex joins
+      const [client] = service.clientId ? await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, service.clientId)) : [null];
+
+      const [appliance] = service.applianceId ? await db
+        .select()
+        .from(appliances)
+        .where(eq(appliances.id, service.applianceId)) : [null];
+
+      const [technician] = service.technicianId ? await db
+        .select()
+        .from(technicians)
+        .where(eq(technicians.id, service.technicianId)) : [null];
+
+      // Get category and manufacturer for appliance if it exists
+      let category = null;
+      let manufacturer = null;
+      if (appliance) {
+        if (appliance.categoryId) {
+          [category] = await db
+            .select()
+            .from(applianceCategories)
+            .where(eq(applianceCategories.id, appliance.categoryId));
+        }
+        if (appliance.manufacturerId) {
+          [manufacturer] = await db
+            .select()
+            .from(manufacturers)
+            .where(eq(manufacturers.id, appliance.manufacturerId));
+        }
+      }
+
       return {
-        id: row.id,
-        status: row.status,
-        description: row.description,
-        createdAt: row.createdAt,
-        updatedAt: row.createdAt, // Use createdAt as fallback
-        scheduledDate: row.scheduledDate,
-        completedDate: row.completedDate,
-        technicianId: row.technicianId,
-        clientId: row.clientId,
-        applianceId: row.applianceId,
-        priority: 'medium', // Default priority
-        notes: null, // No notes field in current schema
-        technicianNotes: row.technicianNotes,
-        usedParts: row.usedParts,
-        machineNotes: row.machineNotes,
-        cost: row.cost,
-        isCompletelyFixed: row.isCompletelyFixed,
-        warrantyStatus: row.warrantyStatus,
-        businessPartnerId: row.businessPartnerId,
-        partnerCompanyName: row.partnerCompanyName,
-        client: {
-          id: row.clientId,
-          fullName: row.clientFullName,
-          phone: row.clientPhone,
-          email: row.clientEmail,
-          address: row.clientAddress,
-          city: row.clientCity,
-          companyName: row.clientCompanyName,
-        },
-        appliance: {
-          id: row.applianceId,
-          model: row.applianceModel,
-          serialNumber: row.applianceSerialNumber,
-          category: {
-            id: row.applianceId,
-            name: row.categoryName,
-            icon: row.categoryIcon,
-          },
-          manufacturer: {
-            id: row.applianceId,
-            name: row.manufacturerName,
-          },
-        },
-        technician: row.technicianId ? {
-          id: row.technicianId,
-          fullName: row.technicianFullName,
-          email: row.technicianEmail,
-          phone: row.technicianPhone,
-          specialization: row.technicianSpecialization,
+        id: service.id,
+        status: service.status,
+        description: service.description,
+        createdAt: service.createdAt,
+        updatedAt: service.createdAt,
+        scheduledDate: service.scheduledDate,
+        completedDate: service.completedDate,
+        technicianId: service.technicianId,
+        clientId: service.clientId,
+        applianceId: service.applianceId,
+        priority: 'medium',
+        notes: null,
+        technicianNotes: service.technicianNotes,
+        usedParts: service.usedParts,
+        machineNotes: service.machineNotes,
+        cost: service.cost,
+        isCompletelyFixed: service.isCompletelyFixed,
+        warrantyStatus: service.warrantyStatus,
+        businessPartnerId: service.businessPartnerId,
+        partnerCompanyName: service.partnerCompanyName,
+        client: client ? {
+          id: client.id,
+          fullName: client.fullName,
+          phone: client.phone,
+          email: client.email,
+          address: client.address,
+          city: client.city,
+          companyName: client.companyName,
+        } : null,
+        appliance: appliance ? {
+          id: appliance.id,
+          model: appliance.model,
+          serialNumber: appliance.serialNumber,
+          category: category ? {
+            id: category.id,
+            name: category.name,
+            icon: category.icon,
+          } : null,
+          manufacturer: manufacturer ? {
+            id: manufacturer.id,
+            name: manufacturer.name,
+          } : null,
+        } : null,
+        technician: technician ? {
+          id: technician.id,
+          fullName: technician.fullName,
+          email: technician.email,
+          phone: technician.phone,
+          specialization: technician.specialization,
         } : null,
       };
     } catch (error) {

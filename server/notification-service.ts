@@ -137,8 +137,24 @@ export class NotificationService {
 
       const adminName = adminData[0]?.fullName || "Administrator";
 
+      // Pronađemo user_id za servisera na osnovu technician_id
+      const technicianUserData = await db
+        .select({
+          id: users.id,
+        })
+        .from(users)
+        .where(eq(users.technicianId, technicianId))
+        .limit(1);
+
+      if (!technicianUserData.length) {
+        console.error(`Korisnik sa technician_id ${technicianId} nije pronađen`);
+        return;
+      }
+
+      const technicianUserId = technicianUserData[0].id;
+
       await this.createNotification({
-        userId: technicianId,
+        userId: technicianUserId,
         type: "service_assigned",
         title: "Novi servis dodešen",
         message: `${adminName} vam je dodelio novi servis: ${service.description}`,
@@ -147,7 +163,7 @@ export class NotificationService {
         priority: "high",
       });
 
-      console.log(`Notifikacija o dodeljenom servisu poslana serviseru ${technicianId}`);
+      console.log(`Notifikacija o dodeljenom servisu poslana serviseru ${technicianId} (user_id: ${technicianUserId})`);
     } catch (error) {
       console.error("Greška pri slanju notifikacije o dodeljenom servisu:", error);
     }
