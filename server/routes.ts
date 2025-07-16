@@ -3036,6 +3036,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Kompletna migracija - početak obrade fajla:", req.file.filename);
       
       const buffer = await fs.readFile(req.file.path);
+      
+      // Debug: Analiziraj Excel fajl pre pozivanja importLegacyComplete
+      const XLSX = require('xlsx');
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+      
+      console.log("🔍 DEBUG: Analiziram Excel fajl...");
+      console.log("Sheet name:", sheetName);
+      console.log("Total rows:", data.length);
+      
+      if (data.length > 0) {
+        console.log("🔍 Kolone u Excel tabeli:", Object.keys(data[0]));
+        console.log("🔍 Primer prvog reda:", data[0]);
+        if (data.length > 1) {
+          console.log("🔍 Primer drugog reda:", data[1]);
+        }
+      }
+      
       const result = await excelService.importLegacyComplete(buffer);
       
       console.log("Kompletna migracija - rezultat:", {
