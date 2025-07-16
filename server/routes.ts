@@ -3021,6 +3021,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri uvozu servisa" });
     }
   });
+
+  // Kompletna migracija iz starog sistema
+  app.post("/api/excel/import/legacy-complete", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Nije priložen fajl" });
+      }
+      
+      const buffer = await fs.readFile(req.file.path);
+      const result = await excelService.importLegacyComplete(buffer);
+      
+      // Obriši privremeni fajl
+      fs.unlink(req.file.path).catch(err => console.error("Greška pri brisanju privremenog fajla:", err));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Greška pri kompletnoj migraciji:", error);
+      res.status(500).json({ error: "Greška pri kompletnoj migraciji iz starog sistema" });
+    }
+  });
   
   // Korisničke API rute
   // Dohvatanje servisa za korisnika po userId

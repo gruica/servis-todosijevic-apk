@@ -33,13 +33,18 @@ type ImportResult = {
   imported: number;
   failed: number;
   errors: Array<{ row: number; error: string }>;
+  summary?: {
+    clientsCreated: number;
+    appliancesCreated: number;
+    servicesCreated: number;
+  };
 };
 
 export default function ExcelImportExport() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('export');
-  const [selectedImportType, setSelectedImportType] = useState<'clients' | 'appliances' | 'services'>('clients');
+  const [selectedImportType, setSelectedImportType] = useState<'clients' | 'appliances' | 'services' | 'legacy-complete'>('clients');
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -318,7 +323,23 @@ export default function ExcelImportExport() {
                   <div className="space-y-6">
                     <div>
                       <Label htmlFor="import-type">Tip podataka za uvoz</Label>
-                      <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <Button 
+                          variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
+                          onClick={() => setSelectedImportType('legacy-complete')}
+                          className="justify-start col-span-2"
+                        >
+                          🔄 Kompletna migracija (stari sistem)
+                        </Button>
+                        {selectedImportType === 'legacy-complete' && (
+                          <div className="col-span-2 mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              <strong>Kompletna migracija:</strong> Ova opcija automatski čita jednu Excel tabelu koja sadrži sve podatke 
+                              (klijenti, uređaji, servisi) i kreira sve entitete odjednom. Prepoznaje skraćenice gradova 
+                              (TV→Tivat, BD→Budva) i tipova aparata (VM→Veš mašina, SM→Sudo mašina).
+                            </p>
+                          </div>
+                        )}
                         <Button 
                           variant={selectedImportType === 'clients' ? 'default' : 'outline'}
                           onClick={() => setSelectedImportType('clients')}
@@ -376,6 +397,15 @@ export default function ExcelImportExport() {
                             Ukupno zapisa: {importResult.total}<br />
                             Uspešno uvezeno: {importResult.imported}<br />
                             Neuspešno: {importResult.failed}
+                            {importResult.summary && (
+                              <>
+                                <br /><br />
+                                <strong>Kreirani entiteti:</strong><br />
+                                • Novi klijenti: {importResult.summary.clientsCreated}<br />
+                                • Novi uređaji: {importResult.summary.appliancesCreated}<br />
+                                • Novi servisi: {importResult.summary.servicesCreated}
+                              </>
+                            )}
                           </AlertDescription>
                         </Alert>
                         
