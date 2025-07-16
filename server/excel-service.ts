@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+// XLSX će biti importovan dinamički da se izbegnu ES module problemi
 import { storage } from './storage';
 import {
   Client,
@@ -42,7 +42,7 @@ export class ExcelService {
    */
   public async exportClients(): Promise<Buffer> {
     const clients = await storage.getAllClients();
-    return this.createExcelBuffer(clients, 'Klijenti');
+    return await this.createExcelBuffer(clients, 'Klijenti');
   }
 
   /**
@@ -50,7 +50,7 @@ export class ExcelService {
    */
   public async exportTechnicians(): Promise<Buffer> {
     const technicians = await storage.getAllTechnicians();
-    return this.createExcelBuffer(technicians, 'Serviseri');
+    return await this.createExcelBuffer(technicians, 'Serviseri');
   }
 
   /**
@@ -73,7 +73,7 @@ export class ExcelService {
       })
     );
     
-    return this.createExcelBuffer(enrichedAppliances, 'Uređaji');
+    return await this.createExcelBuffer(enrichedAppliances, 'Uređaji');
   }
 
   /**
@@ -96,7 +96,7 @@ export class ExcelService {
       })
     );
     
-    return this.createExcelBuffer(enrichedServices, 'Servisi');
+    return await this.createExcelBuffer(enrichedServices, 'Servisi');
   }
 
   /**
@@ -121,13 +121,14 @@ export class ExcelService {
       })
     );
     
-    return this.createExcelBuffer(enrichedSchedules, 'Planovi Održavanja');
+    return await this.createExcelBuffer(enrichedSchedules, 'Planovi Održavanja');
   }
 
   /**
    * Kreira Excel buffer iz podataka
    */
-  private createExcelBuffer(data: any[], sheetName: string): Buffer {
+  private async createExcelBuffer(data: any[], sheetName: string): Promise<Buffer> {
+    const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -245,6 +246,7 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -299,6 +301,7 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -435,6 +438,7 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -575,6 +579,7 @@ export class ExcelService {
       servicesCreated: number;
     };
   }> {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
