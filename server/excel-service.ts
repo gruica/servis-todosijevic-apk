@@ -138,6 +138,38 @@ export class ExcelService {
   }
 
   /**
+   * Čisti i normalizuje broj telefona da prođe validaciju
+   */
+  private cleanPhoneNumber(phone: string): string {
+    if (!phone) return '000-000-000';
+    
+    // Ukloni sve što nije broj, razmak, ili dozvoljen znak
+    let cleaned = phone.replace(/[^\d\s()\-+]/g, '');
+    
+    // Ako je prazan nakon čišćenja, vrati default
+    if (!cleaned || cleaned.length < 6) {
+      return '000-000-000';
+    }
+    
+    // Ako nema početnog znaka +, dodaj ga za međunarodne brojeve
+    if (cleaned.match(/^38[0-9]/)) {
+      cleaned = '+' + cleaned;
+    }
+    
+    // Dodaj razmake za čitljivost ako je potrebno
+    if (cleaned.length >= 9 && !cleaned.includes(' ') && !cleaned.includes('-')) {
+      // Format: +382 XX XXX XXX ili XXX XXX XXX
+      if (cleaned.startsWith('+382')) {
+        cleaned = cleaned.replace(/(\+382)(\d{2})(\d{3})(\d{3})/, '$1 $2 $3 $4');
+      } else if (cleaned.length === 9) {
+        cleaned = cleaned.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+      }
+    }
+    
+    return cleaned;
+  }
+
+  /**
    * Mapiranje skraćenica gradova iz starog sistema u pun naziv
    */
   private mapCityCode(cityCode: string): string {
@@ -266,9 +298,11 @@ export class ExcelService {
         const rawCity = row.city || row.grad || row.mesto || '';
         const mappedCity = rawCity ? this.mapCityCode(String(rawCity)) : undefined;
         
+        let rawPhone = String(row.phone || row.telefon || row.phoneNumber || row.broj_telefona || '');
+        
         const clientData = {
           fullName: String(row.fullName || row.full_name || row.ime_prezime || row.imePrezime || ''),
-          phone: String(row.phone || row.telefon || row.phoneNumber || row.broj_telefona || ''),
+          phone: this.cleanPhoneNumber(rawPhone),
           email: row.email ? String(row.email || row.e_mail || row.e_posta || '') : undefined,
           address: row.address ? String(row.address || row.adresa || '') : undefined,
           city: mappedCity,
@@ -748,8 +782,11 @@ export class ExcelService {
         // Ako nema ime, generiši ga iz telefona
         const processedClientName = finalClientName || `Klijent ${finalClientPhone}`;
         
-        // Ako nema telefon, generiši ga
-        const processedClientPhone = finalClientPhone || '000-000-000';
+        // Ako nema telefon, generiši ga ili čisti postojeći
+        let processedClientPhone = finalClientPhone || '000-000-000';
+        
+        // Čisti i normalizuje telefon da prođe validaciju
+        processedClientPhone = this.cleanPhoneNumber(processedClientPhone);
         
         // 1. Kreiraj ili pronađi klijenta
         let clientId = clientMap.get(processedClientName.toLowerCase()) || clientMap.get(processedClientPhone.toLowerCase());
