@@ -3044,17 +3044,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const worksheet = workbook.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(worksheet);
       
-      console.log("🔍 DEBUG: Analiziram Excel fajl...");
+      console.log("=".repeat(60));
+      console.log("🔍 DEBUG: ANALIZA EXCEL FAJLA");
+      console.log("=".repeat(60));
       console.log("Sheet name:", sheetName);
       console.log("Total rows:", data.length);
       
       if (data.length > 0) {
-        console.log("🔍 Kolone u Excel tabeli:", Object.keys(data[0]));
-        console.log("🔍 Primer prvog reda:", data[0]);
+        console.log("🔍 KOLONE U EXCEL TABELI:");
+        console.log(Object.keys(data[0]));
+        console.log("🔍 PRIMER PRVOG REDA:");
+        console.log(JSON.stringify(data[0], null, 2));
         if (data.length > 1) {
-          console.log("🔍 Primer drugog reda:", data[1]);
+          console.log("🔍 PRIMER DRUGOG REDA:");
+          console.log(JSON.stringify(data[1], null, 2));
         }
       }
+      console.log("=".repeat(60));
       
       const result = await excelService.importLegacyComplete(buffer);
       
