@@ -595,7 +595,7 @@ export class ExcelService {
     // Učitaj postojeće podatke
     const existingClients = await storage.getAllClients();
     const existingAppliances = await storage.getAllAppliances();
-    const categories = await storage.getAllCategories();
+    const categories = await storage.getAllApplianceCategories();
     const manufacturers = await storage.getAllManufacturers();
     
     // Kreira mape za brže pretraživanje
@@ -639,14 +639,14 @@ export class ExcelService {
         
         const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || '').trim();
         
-        // Bezbednije parsiranje datuma
-        let registrationDate = new Date().toISOString();
+        // Bezbednije parsiranje datuma - format YYYY-MM-DD
+        let registrationDate = new Date().toISOString().split('T')[0];
         const rawDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'];
         if (rawDate) {
           try {
             const parsedDate = new Date(rawDate);
             if (!isNaN(parsedDate.getTime())) {
-              registrationDate = parsedDate.toISOString();
+              registrationDate = parsedDate.toISOString().split('T')[0];
             }
           } catch (error) {
             // Ako parsiranje datuma ne uspe, koristi trenutni datum
@@ -654,7 +654,7 @@ export class ExcelService {
           }
         }
         
-        const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 'ne').toLowerCase() === 'da' ? 'warranty' : 'out_of_warranty';
+        const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
         
         // Preskačemo redove koji nemaju osnovne podatke
         if (!clientName && !clientPhone) {
@@ -703,7 +703,7 @@ export class ExcelService {
           
           try {
             const validatedCategoryData = insertApplianceCategorySchema.parse(categoryData);
-            const newCategory = await storage.createCategory(validatedCategoryData);
+            const newCategory = await storage.createApplianceCategory(validatedCategoryData);
             categoryId = newCategory.id;
             categoryMap.set(mappedApplianceType.toLowerCase(), categoryId);
           } catch (categoryError) {
@@ -754,7 +754,7 @@ export class ExcelService {
           const serviceData = {
             description: serviceDescription,
             status: 'completed' as const, // Stari servisi su obično završeni
-            warrantyStatus: warrantyStatus as 'warranty' | 'out_of_warranty',
+            warrantyStatus: warrantyStatus as 'in_warranty' | 'out_of_warranty',
             clientId: clientId,
             applianceId: applianceId,
             createdAt: registrationDate,

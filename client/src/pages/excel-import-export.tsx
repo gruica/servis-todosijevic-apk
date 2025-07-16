@@ -117,6 +117,7 @@ export default function ExcelImportExport() {
   // Mutacija za uvoz Excel datoteke
   const importMutation = useMutation({
     mutationFn: async (file: File) => {
+      console.log('Početak uvoza fajla:', file.name, 'Tip:', selectedImportType);
       const formData = new FormData();
       formData.append('file', file);
       
@@ -126,17 +127,25 @@ export default function ExcelImportExport() {
         body: formData
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`Greška ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`Greška ${response.status}: ${errorText}`);
       }
       
-      return await response.json() as ImportResult;
+      const result = await response.json() as ImportResult;
+      console.log('Rezultat uvoza:', result);
+      return result;
     },
     onMutate: () => {
+      console.log('Početak mutacije - postavljanje loading stanja');
       setIsUploading(true);
       setImportResult(null);
     },
     onSuccess: (data) => {
+      console.log('Uspešan uvoz:', data);
       setImportResult(data);
       toast({
         title: 'Uvoz završen',
@@ -145,6 +154,7 @@ export default function ExcelImportExport() {
       });
     },
     onError: (error) => {
+      console.error('Greška pri uvozu:', error);
       toast({
         title: 'Greška pri uvozu',
         description: error instanceof Error ? error.message : 'Došlo je do greške prilikom uvoza fajla.',
@@ -152,6 +162,7 @@ export default function ExcelImportExport() {
       });
     },
     onSettled: () => {
+      console.log('Završetak mutacije - uklanjanje loading stanja');
       setIsUploading(false);
     }
   });
