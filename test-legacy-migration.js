@@ -67,6 +67,16 @@ const testData = [
     'Model': 'G-500',
     'Serijski broj': '11111',
     'Opis kvara': 'ne radi ploca'
+  },
+  {
+    'Ime i prezime klijenta': 'Ana Milic',
+    'Telefon': '067/777-888',
+    'Grad': 'TV',
+    'Tip aparata': 'frižider komb',
+    'Proizvođač': 'Samsung',
+    'Model': 'RF-850',
+    'Serijski broj': '22222',
+    'Opis kvara': 'ne hladi zamrzivač'
   }
 ];
 
@@ -104,6 +114,10 @@ function mapApplianceTypeCode(typeCode) {
     'FRIŽIDER': 'Frižider',
     'frizider': 'Frižider',
     'FRIZIDER': 'Frižider',
+    'frižider komb': 'Kombinovan frižider',
+    'FRIŽIDER KOMB': 'Kombinovan frižider',
+    'frizider komb': 'Kombinovan frižider',
+    'FRIZIDER KOMB': 'Kombinovan frižider',
     'šporet': 'Šporet',
     'ŠPORET': 'Šporet',
     'sporet': 'Šporet',

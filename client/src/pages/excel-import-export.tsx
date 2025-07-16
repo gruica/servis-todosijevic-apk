@@ -190,7 +190,7 @@ export default function ExcelImportExport() {
             <p className="text-blue-800">
               Sistem automatski prepoznaje i mapira podatke iz starog sistema:
               <strong className="mx-2">TV → Tivat, KO → Kotor, BD → Budva</strong> |
-              <strong className="mx-2">SM → Sudo mašina, VM → Veš mašina, VM KOMB → Kombinovana veš mašina</strong>
+              <strong className="mx-2">SM → Sudo mašina, VM → Veš mašina, VM KOMB → Kombinovana veš mašina, frižider komb → Kombinovan frižider</strong>
             </p>
           </div>
           
