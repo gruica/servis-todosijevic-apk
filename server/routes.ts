@@ -4376,6 +4376,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const order = await storage.createSparePartOrder(validatedData);
+      
+      // Automatski kreiraj obaveštenje za administratore
+      await NotificationService.notifySparePartOrdered(order.id, technicianId);
+      
       res.status(201).json(order);
     } catch (error) {
       console.error("Error creating spare part order:", error);
@@ -4393,9 +4397,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
       const updates = req.body;
       
+      // Dobijamo stari status pre ažuriranja
+      const existingOrder = await storage.getSparePartOrder(orderId);
+      if (!existingOrder) {
+        return res.status(404).json({ error: "Spare part order not found" });
+      }
+      
       const updatedOrder = await storage.updateSparePartOrder(orderId, updates);
       if (!updatedOrder) {
         return res.status(404).json({ error: "Spare part order not found" });
+      }
+      
+      // Ako je status promenjen, pošaljemo obaveštenje
+      if (updates.status && updates.status !== existingOrder.status) {
+        await NotificationService.notifySparePartStatusChanged(
+          orderId, 
+          existingOrder.status, 
+          updates.status, 
+          req.user.id
+        );
+        
+        // Posebno obaveštenje za "delivered" status
+        if (updates.status === 'delivered') {
+          await NotificationService.notifySparePartReceived(orderId, req.user.id);
+        }
       }
       
       res.json(updatedOrder);

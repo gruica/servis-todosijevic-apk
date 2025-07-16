@@ -1,6 +1,7 @@
 import { db } from "./db";
-import { notifications, users, services } from "@shared/schema";
+import { notifications, users, services, sparePartOrders } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { emailService } from "./email-service";
 
 export interface NotificationData {
   userId: number;
@@ -82,6 +83,255 @@ export class NotificationService {
       console.log(`Notifikacija o dodeljenom servisu poslana serviseru ${technicianId}`);
     } catch (error) {
       console.error("Greška pri slanju notifikacije o dodeljenom servisu:", error);
+    }
+  }
+
+  // Kreiranje notifikacije za novi zahtev za rezervnim delom
+  static async notifySparePartOrdered(orderId: number, technicianId: number) {
+    try {
+      // Dobijamo podatke o porudžbini
+      const orderData = await db
+        .select({
+          id: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          urgency: sparePartOrders.urgency,
+          serviceId: sparePartOrders.serviceId,
+          quantity: sparePartOrders.quantity,
+          description: sparePartOrders.description,
+        })
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, orderId))
+        .limit(1);
+
+      if (!orderData.length) {
+        throw new Error(`Porudžbina sa ID ${orderId} nije pronađena`);
+      }
+
+      const order = orderData[0];
+
+      // Dobijamo podatke o serviseru
+      const technicianData = await db
+        .select({
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.technicianId, technicianId))
+        .limit(1);
+
+      const technicianName = technicianData[0]?.fullName || "Serviser";
+
+      // Dobijamo sve administratore
+      const admins = await db
+        .select({
+          id: users.id,
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.role, "admin"));
+
+      // Kreiramo notifikaciju za svakog administratora
+      for (const admin of admins) {
+        await this.createNotification({
+          userId: admin.id,
+          type: "spare_part_requested",
+          title: "Novi zahtev za rezervnim delom",
+          message: `${technicianName} zahteva rezervni deo: ${order.partName}${order.partNumber ? ` (${order.partNumber})` : ''} - ${order.urgency === 'urgent' ? 'HITNO' : order.urgency === 'high' ? 'VISOKA PRIORITET' : 'STANDARDNO'}`,
+          relatedServiceId: order.serviceId,
+          relatedUserId: technicianId,
+          priority: order.urgency === 'urgent' ? 'urgent' : order.urgency === 'high' ? 'high' : 'normal',
+        });
+      }
+
+      console.log(`Notifikacija o zahtevu za rezervnim delom poslana administratorima`);
+      
+      // Pošaljemo email obaveštenje administratorima
+      try {
+        const emailSubject = `Novi zahtev za rezervnim delom - ${order.urgency === 'urgent' ? 'HITNO' : 'PRIORITET: ' + order.urgency}`;
+        const emailBody = `
+          Serviser ${technicianName} je zahtevao rezervni deo:
+          
+          Deo: ${order.partName}
+          Kataloški broj: ${order.partNumber || 'Nije naveden'}
+          Količina: ${order.quantity}
+          Prioritet: ${order.urgency === 'urgent' ? 'HITNO' : order.urgency === 'high' ? 'VISOK' : 'STANDARDNO'}
+          Servis ID: #${order.serviceId}
+          ${order.description ? `Opis: ${order.description}` : ''}
+          
+          Molimo da pregledate zahtev u admin panelu.
+          
+          Frigo Sistem Todosijević
+        `;
+        
+        for (const admin of admins) {
+          await emailService.sendEmail(
+            admin.email || 'admin@frigosistemtodosijevic.com',
+            emailSubject,
+            emailBody
+          );
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+      }
+    } catch (error) {
+      console.error("Greška pri slanju notifikacije o zahtevu za rezervnim delom:", error);
+    }
+  }
+
+  // Kreiranje notifikacije za prispeli rezervni deo
+  static async notifySparePartReceived(orderId: number, adminId: number) {
+    try {
+      // Dobijamo podatke o porudžbini
+      const orderData = await db
+        .select({
+          id: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          serviceId: sparePartOrders.serviceId,
+          technicianId: sparePartOrders.technicianId,
+          quantity: sparePartOrders.quantity,
+          supplierName: sparePartOrders.supplierName,
+          actualCost: sparePartOrders.actualCost,
+        })
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, orderId))
+        .limit(1);
+
+      if (!orderData.length) {
+        throw new Error(`Porudžbina sa ID ${orderId} nije pronađena`);
+      }
+
+      const order = orderData[0];
+
+      // Dobijamo podatke o administratoru
+      const adminData = await db
+        .select({
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.id, adminId))
+        .limit(1);
+
+      const adminName = adminData[0]?.fullName || "Administrator";
+
+      // Dobijamo podatke o serviseru
+      const technicianData = await db
+        .select({
+          id: users.id,
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.technicianId, order.technicianId))
+        .limit(1);
+
+      if (technicianData.length > 0) {
+        const technician = technicianData[0];
+        
+        await this.createNotification({
+          userId: technician.id,
+          type: "spare_part_received",
+          title: "Rezervni deo je stigao",
+          message: `${adminName} je potvrdio da je rezervni deo "${order.partName}"${order.partNumber ? ` (${order.partNumber})` : ''} stigao${order.supplierName ? ` od ${order.supplierName}` : ''}. Možete preuzeti deo za servis #${order.serviceId}.`,
+          relatedServiceId: order.serviceId,
+          relatedUserId: adminId,
+          priority: "high",
+        });
+      }
+
+      console.log(`Notifikacija o prispeću rezervnog dela poslana serviseru ${order.technicianId}`);
+    } catch (error) {
+      console.error("Greška pri slanju notifikacije o prispeću rezervnog dela:", error);
+    }
+  }
+
+  // Kreiranje notifikacije za ažuriranje statusa rezervnog dela
+  static async notifySparePartStatusChanged(orderId: number, oldStatus: string, newStatus: string, adminId: number) {
+    try {
+      // Dobijamo podatke o porudžbini
+      const orderData = await db
+        .select({
+          id: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          serviceId: sparePartOrders.serviceId,
+          technicianId: sparePartOrders.technicianId,
+          urgency: sparePartOrders.urgency,
+          supplierName: sparePartOrders.supplierName,
+          expectedDelivery: sparePartOrders.expectedDelivery,
+        })
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, orderId))
+        .limit(1);
+
+      if (!orderData.length) {
+        throw new Error(`Porudžbina sa ID ${orderId} nije pronađena`);
+      }
+
+      const order = orderData[0];
+
+      // Dobijamo podatke o administratoru
+      const adminData = await db
+        .select({
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.id, adminId))
+        .limit(1);
+
+      const adminName = adminData[0]?.fullName || "Administrator";
+
+      // Dobijamo podatke o serviseru
+      const technicianData = await db
+        .select({
+          id: users.id,
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.technicianId, order.technicianId))
+        .limit(1);
+
+      if (technicianData.length > 0) {
+        const technician = technicianData[0];
+        
+        // Kreiramo poruku na osnovu statusa
+        let message = '';
+        let priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal';
+        
+        switch (newStatus) {
+          case 'approved':
+            message = `${adminName} je odobrio zahtev za rezervni deo "${order.partName}"${order.partNumber ? ` (${order.partNumber})` : ''}.`;
+            priority = 'normal';
+            break;
+          case 'ordered':
+            message = `${adminName} je poručio rezervni deo "${order.partName}"${order.partNumber ? ` (${order.partNumber})` : ''}${order.supplierName ? ` od ${order.supplierName}` : ''}${order.expectedDelivery ? `. Očekivana dostava: ${new Date(order.expectedDelivery).toLocaleDateString('sr-RS')}` : ''}.`;
+            priority = 'normal';
+            break;
+          case 'delivered':
+            message = `Rezervni deo "${order.partName}"${order.partNumber ? ` (${order.partNumber})` : ''} je dostavljen. Možete preuzeti deo za servis #${order.serviceId}.`;
+            priority = 'high';
+            break;
+          case 'cancelled':
+            message = `${adminName} je otkazao zahtev za rezervni deo "${order.partName}"${order.partNumber ? ` (${order.partNumber})` : ''}.`;
+            priority = 'high';
+            break;
+          default:
+            message = `Status rezervnog dela "${order.partName}" je promenjen sa "${oldStatus}" na "${newStatus}".`;
+        }
+        
+        await this.createNotification({
+          userId: technician.id,
+          type: "spare_part_status_changed",
+          title: "Ažuriranje rezervnog dela",
+          message: message,
+          relatedServiceId: order.serviceId,
+          relatedUserId: adminId,
+          priority: priority,
+        });
+      }
+
+      console.log(`Notifikacija o promeni statusa rezervnog dela poslana serviseru ${order.technicianId}`);
+    } catch (error) {
+      console.error("Greška pri slanju notifikacije o promeni statusa rezervnog dela:", error);
     }
   }
 

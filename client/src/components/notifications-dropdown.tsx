@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, CheckCheck, X, AlertCircle, User, Settings, Clock } from "lucide-react";
+import { Bell, Check, CheckCheck, X, AlertCircle, User, Settings, Clock, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,6 +42,9 @@ const typeIcons = {
   service_created_by_partner: AlertCircle,
   service_status_changed: Settings,
   spare_part_ordered: Settings,
+  spare_part_requested: Package,
+  spare_part_received: Package,
+  spare_part_status_changed: Package,
 };
 
 export function NotificationsDropdown() {
