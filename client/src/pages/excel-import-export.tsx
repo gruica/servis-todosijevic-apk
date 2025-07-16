@@ -190,6 +190,68 @@ export default function ExcelImportExport() {
         <div className="container mx-auto py-6">
           <h1 className="text-3xl font-bold mb-6">Excel Uvoz/Izvoz Podataka</h1>
           
+          {/* Drop zona uvek na vrhu stranice */}
+          <div className="bg-white border rounded-lg p-4 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Brzi uvoz podataka</h2>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="import-type" className="text-sm font-medium">Tip podataka za uvoz</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button 
+                    variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
+                    onClick={() => setSelectedImportType('legacy-complete')}
+                    className="justify-start col-span-2 h-8 text-sm"
+                  >
+                    🔄 Kompletna migracija (stari sistem)
+                  </Button>
+                  <Button 
+                    variant={selectedImportType === 'clients' ? 'default' : 'outline'}
+                    onClick={() => setSelectedImportType('clients')}
+                    className="justify-start h-8 text-sm"
+                  >
+                    Klijenti
+                  </Button>
+                  <Button 
+                    variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
+                    onClick={() => setSelectedImportType('appliances')}
+                    className="justify-start h-8 text-sm"
+                  >
+                    Uređaji
+                  </Button>
+                  <Button 
+                    variant={selectedImportType === 'services' ? 'default' : 'outline'}
+                    onClick={() => setSelectedImportType('services')}
+                    className="justify-start h-8 text-sm"
+                  >
+                    Servisi
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Učitaj Excel fajl</Label>
+                <div 
+                  {...getRootProps()} 
+                  className="border-2 border-dashed rounded-md p-4 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                >
+                  <input {...getInputProps()} />
+                  <UploadCloud className="h-8 w-8 mx-auto text-slate-400" />
+                  <p className="mt-2 text-sm">Prevucite Excel fajl ovde ili kliknite za odabir</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Podržani formati: .xlsx, .xls
+                  </p>
+                </div>
+              </div>
+              
+              {isUploading && (
+                <div className="space-y-2">
+                  <p className="text-sm">Učitavanje i obrada fajla...</p>
+                  <Progress value={undefined} className="h-2" />
+                </div>
+              )}
+            </div>
+          </div>
+          
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <h2 className="text-lg font-semibold text-blue-900 mb-2">🔄 Migracija iz starog sistema</h2>
             <p className="text-blue-800">
@@ -312,79 +374,28 @@ export default function ExcelImportExport() {
             
             <TabsContent value="import">
               <div className="space-y-4">
-                {/* Drop zona na vrhu - bez card wrappera */}
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="import-type" className="text-sm font-medium">Tip podataka za uvoz</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <Button 
-                        variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
-                        onClick={() => setSelectedImportType('legacy-complete')}
-                        className="justify-start col-span-2 h-8 text-sm"
-                      >
-                        🔄 Kompletna migracija (stari sistem)
-                      </Button>
-                      <Button 
-                        variant={selectedImportType === 'clients' ? 'default' : 'outline'}
-                        onClick={() => setSelectedImportType('clients')}
-                        className="justify-start h-8 text-sm"
-                      >
-                        Klijenti
-                      </Button>
-                      <Button 
-                        variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
-                        onClick={() => setSelectedImportType('appliances')}
-                        className="justify-start h-8 text-sm"
-                      >
-                        Uređaji
-                      </Button>
-                      <Button 
-                        variant={selectedImportType === 'services' ? 'default' : 'outline'}
-                        onClick={() => setSelectedImportType('services')}
-                        className="justify-start h-8 text-sm"
-                      >
-                        Servisi
-                      </Button>
+                {/* Dodatne informacije o uvozima */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dodatne opcije uvoza</CardTitle>
+                    <CardDescription>
+                      Koristite dugmad na vrhu za brži uvoz ili ovde za napredne opcije.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="text-sm">
+                        <strong>Dostupni tipovi uvoza:</strong>
+                        <ul className="list-disc pl-5 mt-2 space-y-1">
+                          <li><strong>Kompletna migracija:</strong> Uvoz svih podataka iz jedne Excel tabele</li>
+                          <li><strong>Klijenti:</strong> Uvoz samo klijenata</li>
+                          <li><strong>Uređaji:</strong> Uvoz samo uređaja</li>
+                          <li><strong>Servisi:</strong> Uvoz samo servisa</li>
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium">Učitaj Excel fajl</Label>
-                    <div 
-                      {...getRootProps()} 
-                      className="border-2 border-dashed rounded-md p-4 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
-                    >
-                      <input {...getInputProps()} />
-                      <UploadCloud className="h-8 w-8 mx-auto text-slate-400" />
-                      <p className="mt-2 text-sm">Prevucite Excel fajl ovde ili kliknite za odabir</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Podržani formati: .xlsx, .xls
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {isUploading && (
-                    <div className="space-y-2">
-                      <p className="text-sm">Učitavanje i obrada fajla...</p>
-                      <Progress value={undefined} className="h-2" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Sekcija sa objašnjenjima - na dnu */}
-                {selectedImportType === 'legacy-complete' && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Kompletna migracija</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Ova opcija automatski čita jednu Excel tabelu koja sadrži sve podatke (klijenti, uređaji, servisi) i kreira sve entitete odjednom. 
-                        Prepoznaje skraćenice gradova (TV→Tivat, BD→Budva) i tipova aparata (VM→Veš mašina, SM→Sudo mašina).
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+                  </CardContent>
+                </Card>
 
                 {/* Rezultati uvoza */}
                 {importResult && (
