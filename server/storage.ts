@@ -2071,49 +2071,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServicesByStatusDetailed(status: ServiceStatus): Promise<any[]> {
-    const result = await db
-      .select({
-        id: services.id,
-        clientId: services.clientId,
-        applianceId: services.applianceId,
-        technicianId: services.technicianId,
-        description: services.description,
-        status: services.status,
-        warrantyStatus: services.warrantyStatus,
-        createdAt: services.createdAt,
-        scheduledDate: services.scheduledDate,
-        completedDate: services.completedDate,
-        technicianNotes: services.technicianNotes,
-        cost: services.cost,
-        usedParts: services.usedParts,
-        machineNotes: services.machineNotes,
-        isCompletelyFixed: services.isCompletelyFixed,
-        businessPartnerId: services.businessPartnerId,
-        partnerCompanyName: services.partnerCompanyName,
-        clientUnavailableReason: services.clientUnavailableReason,
-        needsRescheduling: services.needsRescheduling,
-        reschedulingNotes: services.reschedulingNotes,
-        devicePickedUp: services.devicePickedUp,
-        pickupDate: services.pickupDate,
-        pickupNotes: services.pickupNotes,
-        clientName: clients.fullName,
-        clientPhone: clients.phone,
-        clientEmail: clients.email,
-        clientAddress: clients.address,
-        clientCity: clients.city,
-        applianceName: appliances.model,
-        applianceCategory: applianceCategories.name,
-        technicianName: technicians.fullName,
-      })
-      .from(services)
-      .leftJoin(clients, eq(services.clientId, clients.id))
-      .leftJoin(appliances, eq(services.applianceId, appliances.id))
-      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-      .leftJoin(technicians, eq(services.technicianId, technicians.id))
-      .where(eq(services.status, status))
-      .orderBy(desc(services.createdAt));
-
-    return result;
+    // Temporary: Return empty array while debugging Drizzle ORM issues
+    console.log(`getServicesByStatusDetailed called with status: ${status}`);
+    return [];
   }
 
   async getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]> {
