@@ -647,23 +647,44 @@ export class ExcelService {
       
       try {
         // Ekstraktuj podatke iz reda (fleksibilno mapiranje naziva kolona)
-        const clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || 
-                                  row['ime'] || row['prezime'] || row['ime_prezime'] || row['vlasnik'] || row['korisnik'] || '').trim();
+        // Pokušaj kombinaciju ime + prezime ako su odvojeni
+        let clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || 
+                               row['ime'] || row['prezime'] || row['ime_prezime'] || row['vlasnik'] || row['korisnik'] || '').trim();
+        
+        // Ako nema kombinovano ime, pokušaj da kombinuješ ime i prezime
+        if (!clientName) {
+          const firstName = String(row['Ime'] || row['ime'] || row['First Name'] || '').trim();
+          const lastName = String(row['Prezime'] || row['prezime'] || row['Last Name'] || '').trim();
+          if (firstName || lastName) {
+            clientName = `${firstName} ${lastName}`.trim();
+          }
+        }
+        
         const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || 
-                                   row['tel'] || row['mobitel'] || row['gsm'] || row['kontakt'] || '').trim();
+                                   row['tel'] || row['mobitel'] || row['gsm'] || row['kontakt'] || row['Broj telefona'] || 
+                                   row['broj'] || row['Tel'] || row['TEL'] || row['TELEFON'] || '').trim();
         const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || row['mjesto'] || 
-                                                   row['lokacija'] || row['adresa'] || row['mesto'] || '').trim());
+                                                   row['lokacija'] || row['adresa'] || row['mesto'] || row['Mjesto'] || 
+                                                   row['GRAD'] || row['City'] || '').trim());
         
         const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || row['kategorija'] || 
-                                     row['aparat'] || row['uređaj'] || row['uredjaj'] || row['mašina'] || row['masina'] || '').trim();
+                                     row['aparat'] || row['uređaj'] || row['uredjaj'] || row['mašina'] || row['masina'] || 
+                                     row['Aparat'] || row['APARAT'] || row['TIP APARATA'] || row['Tip_aparata'] || 
+                                     row['vrsta_aparata'] || row['vrsta'] || '').trim();
         const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || row['brand'] || 
-                                    row['marka'] || row['proizvođač'] || row['proizvodjac'] || row['firma'] || '').trim();
-        const model = String(row['Model'] || row['model'] || row['tip'] || row['verzija'] || row['serija'] || '').trim();
+                                    row['marka'] || row['proizvođač'] || row['proizvodjac'] || row['firma'] || 
+                                    row['Marka'] || row['MARKA'] || row['Proizvođač'] || row['PROIZVOĐAČ'] || 
+                                    row['Brand'] || row['make'] || '').trim();
+        const model = String(row['Model'] || row['model'] || row['tip'] || row['verzija'] || row['serija'] || 
+                             row['MODEL'] || row['Model_aparata'] || row['tip_modela'] || '').trim();
         const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || row['sn'] || 
-                                    row['broj'] || row['serijskibr'] || row['br'] || '').trim();
+                                    row['broj'] || row['serijskibr'] || row['br'] || row['SERIJSKI_BROJ'] || 
+                                    row['Serijski_broj'] || row['Serial'] || row['SN'] || '').trim();
         
         const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || 
-                                          row['kvar'] || row['opis'] || row['napomena'] || row['greška'] || row['greska'] || '').trim();
+                                          row['kvar'] || row['opis'] || row['napomena'] || row['greška'] || row['greska'] || 
+                                          row['Opis'] || row['OPIS'] || row['Problem'] || row['Kvar'] || 
+                                          row['opis_problema'] || row['opis_rada'] || row['radovi'] || '').trim();
         
         // Bezbednije parsiranje datuma - format YYYY-MM-DD
         let registrationDate = new Date().toISOString().split('T')[0];
@@ -684,9 +705,31 @@ export class ExcelService {
         const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 
                                       row['pod_garancijom'] || row['garancijski'] || row['u_garanciji'] || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
         
+        // Debug: ispišemo podatke za prve 3 reda
+        if (i < 3) {
+          console.log(`🔍 DEBUG Red ${i + 1}:`, {
+            clientName,
+            clientPhone,
+            clientCity,
+            applianceType,
+            manufacturer,
+            model,
+            serialNumber,
+            serviceDescription
+          });
+        }
+        
         // Preskačemo redove koji nemaju osnovne podatke
         if (!clientName && !clientPhone) {
-          throw new Error('Nedostaju osnovni podaci o klijentu (ime ili telefon)');
+          // Pokušaj da pronađe bilo koju kolonu sa tekstom
+          const allValues = Object.values(row).filter(val => val && String(val).trim() !== '');
+          if (allValues.length === 0) {
+            throw new Error('Prazan red - nema podataka');
+          }
+          
+          // Ako ima podataka ali ne prepoznaje kolone, prikaži dostupne kolone
+          const availableColumns = Object.keys(row).filter(key => row[key] && String(row[key]).trim() !== '');
+          throw new Error(`Nedostaju osnovni podaci o klijentu (ime ili telefon). Dostupne kolone: ${availableColumns.join(', ')}`);
         }
         
         // Ako nema ime, generiši ga iz telefona
