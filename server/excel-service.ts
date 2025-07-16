@@ -137,6 +137,40 @@ export class ExcelService {
   }
 
   /**
+   * Mapiranje skraćenica gradova iz starog sistema u pun naziv
+   */
+  private mapCityCode(cityCode: string): string {
+    const cityMap: Record<string, string> = {
+      'TV': 'Tivat',
+      'KO': 'Kotor',
+      'BD': 'Budva',
+      'PG': 'Podgorica',
+      'NK': 'Nikšić',
+      'PL': 'Pljevlja',
+      'HN': 'Herceg Novi',
+      'BA': 'Bar',
+      'UL': 'Ulcinj',
+      'CT': 'Cetinje',
+      'BJ': 'Bijelo Polje',
+      'RO': 'Rožaje',
+      'PV': 'Plav',
+      'ZB': 'Žabljak',
+      'DG': 'Danilovgrad',
+      'MK': 'Mojkovac',
+      'KL': 'Kolašin',
+      'BE': 'Berane',
+      'AN': 'Andrijevica',
+      'PZ': 'Plužine',
+      'SA': 'Šavnik',
+      'GO': 'Gusinje',
+      'PE': 'Petnjica'
+    };
+    
+    const upperCode = cityCode.toUpperCase().trim();
+    return cityMap[upperCode] || cityCode; // Vraća originalni string ako nije pronađeno mapiranje
+  }
+
+  /**
    * Uvozi klijente iz Excel fajla
    */
   public async importClients(buffer: Buffer): Promise<{ 
@@ -161,12 +195,15 @@ export class ExcelService {
       const row = data[i] as Record<string, any>;
       try {
         // Pripremi podatke za validaciju kroz Zod schemu
+        const rawCity = row.city || row.grad || row.mesto || '';
+        const mappedCity = rawCity ? this.mapCityCode(String(rawCity)) : undefined;
+        
         const clientData = {
           fullName: String(row.fullName || row.full_name || row.ime_prezime || row.imePrezime || ''),
           phone: String(row.phone || row.telefon || row.phoneNumber || row.broj_telefona || ''),
           email: row.email ? String(row.email || row.e_mail || row.e_posta || '') : undefined,
           address: row.address ? String(row.address || row.adresa || '') : undefined,
-          city: row.city ? String(row.city || row.grad || row.mesto || '') : undefined,
+          city: mappedCity,
         };
         
         // Validiraj podatke
