@@ -312,68 +312,64 @@ export default function ExcelImportExport() {
             
             <TabsContent value="import">
               <div className="space-y-4">
-                {/* Sekcija za uvoz - na vrhu */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Učitaj Excel fajl</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-4">
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="import-type" className="text-sm">Tip podataka za uvoz</Label>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                          <Button 
-                            variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
-                            onClick={() => setSelectedImportType('legacy-complete')}
-                            className="justify-start col-span-2 h-8 text-sm"
-                          >
-                            🔄 Kompletna migracija (stari sistem)
-                          </Button>
-                          <Button 
-                            variant={selectedImportType === 'clients' ? 'default' : 'outline'}
-                            onClick={() => setSelectedImportType('clients')}
-                            className="justify-start h-8 text-sm"
-                          >
-                            Klijenti
-                          </Button>
-                          <Button 
-                            variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
-                            onClick={() => setSelectedImportType('appliances')}
-                            className="justify-start h-8 text-sm"
-                          >
-                            Uređaji
-                          </Button>
-                          <Button 
-                            variant={selectedImportType === 'services' ? 'default' : 'outline'}
-                            onClick={() => setSelectedImportType('services')}
-                            className="justify-start h-8 text-sm"
-                          >
-                            Servisi
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div 
-                        {...getRootProps()} 
-                        className="border-2 border-dashed rounded-md p-3 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                {/* Drop zona na vrhu - bez card wrappera */}
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="import-type" className="text-sm font-medium">Tip podataka za uvoz</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <Button 
+                        variant={selectedImportType === 'legacy-complete' ? 'default' : 'outline'}
+                        onClick={() => setSelectedImportType('legacy-complete')}
+                        className="justify-start col-span-2 h-8 text-sm"
                       >
-                        <input {...getInputProps()} />
-                        <UploadCloud className="h-6 w-6 mx-auto text-slate-400" />
-                        <p className="mt-1 text-xs">Prevucite Excel fajl ovde ili kliknite za odabir</p>
-                        <p className="text-xs text-muted-foreground">
-                          Podržani formati: .xlsx, .xls
-                        </p>
-                      </div>
-                      
-                      {isUploading && (
-                        <div className="space-y-1">
-                          <p className="text-sm">Učitavanje i obrada fajla...</p>
-                          <Progress value={undefined} className="h-2" />
-                        </div>
-                      )}
+                        🔄 Kompletna migracija (stari sistem)
+                      </Button>
+                      <Button 
+                        variant={selectedImportType === 'clients' ? 'default' : 'outline'}
+                        onClick={() => setSelectedImportType('clients')}
+                        className="justify-start h-8 text-sm"
+                      >
+                        Klijenti
+                      </Button>
+                      <Button 
+                        variant={selectedImportType === 'appliances' ? 'default' : 'outline'}
+                        onClick={() => setSelectedImportType('appliances')}
+                        className="justify-start h-8 text-sm"
+                      >
+                        Uređaji
+                      </Button>
+                      <Button 
+                        variant={selectedImportType === 'services' ? 'default' : 'outline'}
+                        onClick={() => setSelectedImportType('services')}
+                        className="justify-start h-8 text-sm"
+                      >
+                        Servisi
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium">Učitaj Excel fajl</Label>
+                    <div 
+                      {...getRootProps()} 
+                      className="border-2 border-dashed rounded-md p-4 mt-2 text-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
+                    >
+                      <input {...getInputProps()} />
+                      <UploadCloud className="h-8 w-8 mx-auto text-slate-400" />
+                      <p className="mt-2 text-sm">Prevucite Excel fajl ovde ili kliknite za odabir</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Podržani formati: .xlsx, .xls
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <p className="text-sm">Učitavanje i obrada fajla...</p>
+                      <Progress value={undefined} className="h-2" />
+                    </div>
+                  )}
+                </div>
 
                 {/* Sekcija sa objašnjenjima - na dnu */}
                 {selectedImportType === 'legacy-complete' && (
