@@ -185,6 +185,15 @@ export default function ExcelImportExport() {
         <div className="container mx-auto py-6">
           <h1 className="text-3xl font-bold mb-6">Excel Uvoz/Izvoz Podataka</h1>
           
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h2 className="text-lg font-semibold text-blue-900 mb-2">🔄 Migracija iz starog sistema</h2>
+            <p className="text-blue-800">
+              Sistem automatski prepoznaje i mapira podatke iz starog sistema:
+              <strong className="mx-2">TV → Tivat, KO → Kotor, BD → Budva</strong> |
+              <strong className="mx-2">SM → Sudo mašina, VM → Veš mašina, VM KOMB → Kombinovana veš mašina</strong>
+            </p>
+          </div>
+          
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="export">
@@ -301,7 +310,8 @@ export default function ExcelImportExport() {
                 <CardHeader>
                   <CardTitle>Uvoz podataka iz Excel fajla</CardTitle>
                   <CardDescription>
-                    Odaberite tip podataka koji želite da uvezete i priložite Excel fajl
+                    Odaberite tip podataka koji želite da uvezete i priložite Excel fajl. 
+                    Sistem automatski prepoznaje različite nazive kolona i mapira skraćenice iz starog sistema.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
