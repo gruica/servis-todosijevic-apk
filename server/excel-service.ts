@@ -622,26 +622,53 @@ export class ExcelService {
       manufacturerMap.set(man.name.toLowerCase(), man.id);
     });
     
+    // Debug: Ispiši nazive kolona iz prve 3 reda
+    if (data.length > 0) {
+      console.log('🔍 Debug: Nazivi kolona u Excel tabeli:');
+      console.log('Kolone u prvom redu:', Object.keys(data[0]));
+      if (data.length > 1) {
+        console.log('Primer vrednosti iz reda 2:', data[1]);
+      }
+      
+      // Dodatni debug za prve 5 redova
+      console.log('🔍 Debug: Analiza prvih 5 redova:');
+      for (let debugI = 0; debugI < Math.min(5, data.length); debugI++) {
+        const debugRow = data[debugI];
+        console.log(`Red ${debugI + 1}:`, {
+          allKeys: Object.keys(debugRow),
+          sampleValues: Object.fromEntries(Object.entries(debugRow).slice(0, 10))
+        });
+      }
+    }
+    
     // Obradi svaki red iz Excel tabele
     for (let i = 0; i < data.length; i++) {
       const row = data[i] as any;
       
       try {
         // Ekstraktuj podatke iz reda (fleksibilno mapiranje naziva kolona)
-        const clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || '').trim();
-        const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || '').trim();
-        const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || row['mjesto'] || '').trim());
+        const clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || 
+                                  row['ime'] || row['prezime'] || row['ime_prezime'] || row['vlasnik'] || row['korisnik'] || '').trim();
+        const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || 
+                                   row['tel'] || row['mobitel'] || row['gsm'] || row['kontakt'] || '').trim();
+        const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || row['mjesto'] || 
+                                                   row['lokacija'] || row['adresa'] || row['mesto'] || '').trim());
         
-        const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || row['kategorija'] || '').trim();
-        const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || row['brand'] || '').trim();
-        const model = String(row['Model'] || row['model'] || row['tip'] || '').trim();
-        const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || row['sn'] || '').trim();
+        const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || row['kategorija'] || 
+                                     row['aparat'] || row['uređaj'] || row['uredjaj'] || row['mašina'] || row['masina'] || '').trim();
+        const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || row['brand'] || 
+                                    row['marka'] || row['proizvođač'] || row['proizvodjac'] || row['firma'] || '').trim();
+        const model = String(row['Model'] || row['model'] || row['tip'] || row['verzija'] || row['serija'] || '').trim();
+        const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || row['sn'] || 
+                                    row['broj'] || row['serijskibr'] || row['br'] || '').trim();
         
-        const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || '').trim();
+        const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || 
+                                          row['kvar'] || row['opis'] || row['napomena'] || row['greška'] || row['greska'] || '').trim();
         
         // Bezbednije parsiranje datuma - format YYYY-MM-DD
         let registrationDate = new Date().toISOString().split('T')[0];
-        const rawDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'];
+        const rawDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'] || 
+                        row['datum_rada'] || row['datum_servisa'] || row['datum_prijave'] || row['date'];
         if (rawDate) {
           try {
             const parsedDate = new Date(rawDate);
@@ -654,7 +681,8 @@ export class ExcelService {
           }
         }
         
-        const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
+        const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 
+                                      row['pod_garancijom'] || row['garancijski'] || row['u_garanciji'] || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
         
         // Preskačemo redove koji nemaju osnovne podatke
         if (!clientName && !clientPhone) {
