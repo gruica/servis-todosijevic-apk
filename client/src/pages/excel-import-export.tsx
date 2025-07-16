@@ -319,7 +319,7 @@ export default function ExcelImportExport() {
                     Sistem automatski prepoznaje različite nazive kolona i mapira skraćenice iz starog sistema.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="max-h-[60vh] overflow-y-auto">
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="import-type">Tip podataka za uvoz</Label>
