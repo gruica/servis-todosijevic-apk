@@ -646,81 +646,89 @@ export class ExcelService {
       const row = data[i] as any;
       
       try {
-        // Ekstraktuj podatke iz reda (fleksibilno mapiranje naziva kolona)
-        // Pokušaj kombinaciju ime + prezime ako su odvojeni
-        let clientName = String(row['Ime i prezime klijenta'] || row['ime_klijenta'] || row['klijent'] || row['client'] || row['name'] || 
-                               row['ime'] || row['prezime'] || row['ime_prezime'] || row['vlasnik'] || row['korisnik'] || '').trim();
+        // Ekstraktuj podatke iz reda na osnovu pozicije kolona
+        // Kolone: Datum, Grad, Ime i prezime, Aparat, Opis kvara, Dio, Broj telefona, Proizvođač, Garancija, [prazna], Datum servisa, Gotovina, Kupon, Virman
+        const allKeys = Object.keys(row);
+        const allValues = Object.values(row);
         
-        // Ako nema kombinovano ime, pokušaj da kombinuješ ime i prezime
-        if (!clientName) {
-          const firstName = String(row['Ime'] || row['ime'] || row['First Name'] || '').trim();
-          const lastName = String(row['Prezime'] || row['prezime'] || row['Last Name'] || '').trim();
-          if (firstName || lastName) {
-            clientName = `${firstName} ${lastName}`.trim();
-          }
+        // Mapiranje na osnovu pozicije u tabeli
+        const registrationDateRaw = allValues[0]; // Kolona 1: Datum
+        const clientCity = this.mapCityCode(String(allValues[1] || '').trim()); // Kolona 2: Grad
+        const clientName = String(allValues[2] || '').trim(); // Kolona 3: Ime i prezime
+        const applianceType = String(allValues[3] || '').trim(); // Kolona 4: Aparat
+        const serviceDescription = String(allValues[4] || '').trim(); // Kolona 5: Opis kvara
+        // Kolona 6: Dio - zanemarujemo
+        const clientPhone = String(allValues[6] || '').trim(); // Kolona 7: Broj telefona
+        const manufacturer = String(allValues[7] || '').trim(); // Kolona 8: Proizvođač
+        const warrantyStatusRaw = String(allValues[8] || '').trim(); // Kolona 9: Garancija
+        // Kolone 10+ zanemarujemo (prazna, datum servisa, gotovina, kupon, virman)
+        
+        // Fallback na mapiranje po nazivima kolona ako pozicijski pristup ne radi
+        let fallbackClientName = clientName;
+        let fallbackClientPhone = clientPhone;
+        let fallbackClientCity = clientCity || this.mapCityCode('');
+        let fallbackApplianceType = applianceType;
+        let fallbackServiceDescription = serviceDescription;
+        let fallbackManufacturer = manufacturer;
+        let fallbackWarrantyStatus = warrantyStatusRaw;
+        
+        if (!fallbackClientName || !fallbackClientPhone) {
+          // Pokušaj mapiranje po nazivima kolona
+          fallbackClientName = fallbackClientName || String(row['Ime i prezime'] || row['ime_prezime'] || row['ime'] || row['name'] || '').trim();
+          fallbackClientPhone = fallbackClientPhone || String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || '').trim();
+          fallbackClientCity = fallbackClientCity || this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || '').trim());
+          fallbackApplianceType = fallbackApplianceType || String(row['Aparat'] || row['aparat'] || row['tip_aparata'] || '').trim();
+          fallbackServiceDescription = fallbackServiceDescription || String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || '').trim();
+          fallbackManufacturer = fallbackManufacturer || String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || '').trim();
+          fallbackWarrantyStatus = fallbackWarrantyStatus || String(row['Garancija'] || row['garancija'] || row['warranty'] || '').trim();
         }
         
-        const clientPhone = String(row['Telefon'] || row['telefon'] || row['phone'] || row['broj_telefona'] || 
-                                   row['tel'] || row['mobitel'] || row['gsm'] || row['kontakt'] || row['Broj telefona'] || 
-                                   row['broj'] || row['Tel'] || row['TEL'] || row['TELEFON'] || '').trim();
-        const clientCity = this.mapCityCode(String(row['Grad'] || row['grad'] || row['city'] || row['mjesto'] || 
-                                                   row['lokacija'] || row['adresa'] || row['mesto'] || row['Mjesto'] || 
-                                                   row['GRAD'] || row['City'] || '').trim());
+        // Koristi finalne vrijednosti
+        const finalClientName = fallbackClientName;
+        const finalClientPhone = fallbackClientPhone;
+        const finalClientCity = fallbackClientCity;
+        const finalApplianceType = fallbackApplianceType;
+        const finalServiceDescription = fallbackServiceDescription;
+        const finalManufacturer = fallbackManufacturer;
         
-        const applianceType = String(row['Tip aparata'] || row['tip_aparata'] || row['type'] || row['kategorija'] || 
-                                     row['aparat'] || row['uređaj'] || row['uredjaj'] || row['mašina'] || row['masina'] || 
-                                     row['Aparat'] || row['APARAT'] || row['TIP APARATA'] || row['Tip_aparata'] || 
-                                     row['vrsta_aparata'] || row['vrsta'] || '').trim();
-        const manufacturer = String(row['Proizvođač'] || row['proizvodjac'] || row['manufacturer'] || row['brand'] || 
-                                    row['marka'] || row['proizvođač'] || row['proizvodjac'] || row['firma'] || 
-                                    row['Marka'] || row['MARKA'] || row['Proizvođač'] || row['PROIZVOĐAČ'] || 
-                                    row['Brand'] || row['make'] || '').trim();
-        const model = String(row['Model'] || row['model'] || row['tip'] || row['verzija'] || row['serija'] || 
-                             row['MODEL'] || row['Model_aparata'] || row['tip_modela'] || '').trim();
-        const serialNumber = String(row['Serijski broj'] || row['serijski_broj'] || row['serial'] || row['sn'] || 
-                                    row['broj'] || row['serijskibr'] || row['br'] || row['SERIJSKI_BROJ'] || 
-                                    row['Serijski_broj'] || row['Serial'] || row['SN'] || '').trim();
-        
-        const serviceDescription = String(row['Opis kvara'] || row['opis_kvara'] || row['problem'] || 
-                                          row['kvar'] || row['opis'] || row['napomena'] || row['greška'] || row['greska'] || 
-                                          row['Opis'] || row['OPIS'] || row['Problem'] || row['Kvar'] || 
-                                          row['opis_problema'] || row['opis_rada'] || row['radovi'] || '').trim();
+        // Obradi ostale vrijednosti
+        const model = ''; // Nema model u legacy tabeli
+        const serialNumber = ''; // Nema serijski broj u legacy tabeli
         
         // Bezbednije parsiranje datuma - format YYYY-MM-DD
         let registrationDate = new Date().toISOString().split('T')[0];
-        const rawDate = row['Datum registracije'] || row['datum_registracije'] || row['datum'] || 
-                        row['datum_rada'] || row['datum_servisa'] || row['datum_prijave'] || row['date'];
-        if (rawDate) {
+        if (registrationDateRaw) {
           try {
-            const parsedDate = new Date(rawDate);
+            const parsedDate = new Date(registrationDateRaw);
             if (!isNaN(parsedDate.getTime())) {
               registrationDate = parsedDate.toISOString().split('T')[0];
             }
           } catch (error) {
             // Ako parsiranje datuma ne uspe, koristi trenutni datum
-            console.warn(`Neispravan datum: ${rawDate}, koristim trenutni datum`);
+            console.warn(`Neispravan datum: ${registrationDateRaw}, koristim trenutni datum`);
           }
         }
         
-        const warrantyStatus = String(row['Garancija'] || row['garancija'] || row['warranty'] || 
-                                      row['pod_garancijom'] || row['garancijski'] || row['u_garanciji'] || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
+        const warrantyStatus = String(fallbackWarrantyStatus || 'ne').toLowerCase() === 'da' ? 'in_warranty' : 'out_of_warranty';
         
         // Debug: ispišemo podatke za prve 3 reda
         if (i < 3) {
           console.log(`🔍 DEBUG Red ${i + 1}:`, {
-            clientName,
-            clientPhone,
-            clientCity,
-            applianceType,
-            manufacturer,
+            finalClientName,
+            finalClientPhone,
+            finalClientCity,
+            finalApplianceType,
+            finalManufacturer,
             model,
             serialNumber,
-            serviceDescription
+            finalServiceDescription,
+            registrationDate,
+            warrantyStatus
           });
         }
         
         // Preskačemo redove koji nemaju osnovne podatke
-        if (!clientName && !clientPhone) {
+        if (!finalClientName && !finalClientPhone) {
           // Pokušaj da pronađe bilo koju kolonu sa tekstom
           const allValues = Object.values(row).filter(val => val && String(val).trim() !== '');
           if (allValues.length === 0) {
@@ -733,19 +741,19 @@ export class ExcelService {
         }
         
         // Ako nema ime, generiši ga iz telefona
-        const finalClientName = clientName || `Klijent ${clientPhone}`;
+        const processedClientName = finalClientName || `Klijent ${finalClientPhone}`;
         
         // Ako nema telefon, generiši ga
-        const finalClientPhone = clientPhone || '000-000-000';
+        const processedClientPhone = finalClientPhone || '000-000-000';
         
         // 1. Kreiraj ili pronađi klijenta
-        let clientId = clientMap.get(finalClientName.toLowerCase()) || clientMap.get(finalClientPhone.toLowerCase());
+        let clientId = clientMap.get(processedClientName.toLowerCase()) || clientMap.get(processedClientPhone.toLowerCase());
         
         if (!clientId) {
           const clientData = {
-            fullName: finalClientName,
-            phone: finalClientPhone,
-            city: clientCity || 'Nepoznat grad',
+            fullName: processedClientName,
+            phone: processedClientPhone,
+            city: finalClientCity || 'Nepoznat grad',
             address: '', // Nema adrese u starom sistemu
             email: '' // Nema email-a u starom sistemu
           };
@@ -754,8 +762,8 @@ export class ExcelService {
             const validatedClientData = insertClientSchema.parse(clientData);
             const newClient = await storage.createClient(validatedClientData);
             clientId = newClient.id;
-            clientMap.set(finalClientName.toLowerCase(), clientId);
-            clientMap.set(finalClientPhone.toLowerCase(), clientId);
+            clientMap.set(processedClientName.toLowerCase(), clientId);
+            clientMap.set(processedClientPhone.toLowerCase(), clientId);
             result.summary.clientsCreated++;
           } catch (clientError) {
             throw new Error(`Greška pri kreiranju klijenta: ${clientError instanceof Error ? clientError.message : 'Nepoznata greška'}`);
@@ -763,7 +771,7 @@ export class ExcelService {
         }
         
         // 2. Kreiraj ili pronađi kategoriju aparata
-        const mappedApplianceType = this.mapApplianceTypeCode(applianceType) || 'Nepoznat uređaj';
+        const mappedApplianceType = this.mapApplianceTypeCode(finalApplianceType) || 'Nepoznat uređaj';
         let categoryId = categoryMap.get(mappedApplianceType.toLowerCase());
         
         if (!categoryId) {
@@ -783,17 +791,17 @@ export class ExcelService {
         }
         
         // 3. Kreiraj ili pronađi proizvođača
-        let manufacturerId = manufacturerMap.get(manufacturer.toLowerCase());
+        let manufacturerId = manufacturerMap.get(finalManufacturer.toLowerCase());
         
-        if (!manufacturerId && manufacturer) {
+        if (!manufacturerId && finalManufacturer) {
           const manufacturerData = {
-            name: manufacturer
+            name: finalManufacturer
           };
           
           const validatedManufacturerData = insertManufacturerSchema.parse(manufacturerData);
           const newManufacturer = await storage.createManufacturer(validatedManufacturerData);
           manufacturerId = newManufacturer.id;
-          manufacturerMap.set(manufacturer.toLowerCase(), manufacturerId);
+          manufacturerMap.set(finalManufacturer.toLowerCase(), manufacturerId);
         }
         
         // 4. Kreiraj ili pronađi uređaj
@@ -821,9 +829,9 @@ export class ExcelService {
         }
         
         // 5. Kreiraj servis
-        if (serviceDescription && applianceId) {
+        if (finalServiceDescription && applianceId) {
           const serviceData = {
-            description: serviceDescription,
+            description: finalServiceDescription,
             status: 'completed' as const, // Stari servisi su obično završeni
             warrantyStatus: warrantyStatus as 'in_warranty' | 'out_of_warranty',
             clientId: clientId,
