@@ -6,8 +6,9 @@ import { setupAuth } from "./auth";
 
 const app = express();
 
-// PRVO postavi session middleware
-setupAuth(app);
+// PRVO postavi JSON body parser middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
@@ -28,8 +29,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// NAKON body parser-a postavi session middleware
+setupAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
