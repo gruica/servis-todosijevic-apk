@@ -2940,7 +2940,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAdminService(id: number): Promise<boolean> {
     try {
-      // Prvo obriši sve povezane notifikacije
+      // Validacija da li je ID valjan
+      if (isNaN(id) || id <= 0) {
+        console.error('Nevaljan ID servisa za brisanje:', id);
+        return false;
+      }
+
+      // Prvo obriši sve povezane notifikacije samo ako postoje
       await db
         .delete(notifications)
         .where(eq(notifications.relatedServiceId, id));
