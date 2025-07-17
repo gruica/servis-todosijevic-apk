@@ -40,13 +40,25 @@ export function FloatingSheet({
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  // Handle Android keyboard on mobile devices
+  // Handle Android keyboard on mobile devices with drag functionality
   useEffect(() => {
     if (!isOpen || !isMobile) return;
     
     const handleViewportChange = () => {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
+      
+      // Auto-adjust position when keyboard opens/closes
+      const currentHeight = window.innerHeight;
+      const keyboardHeight = window.screen.height - currentHeight;
+      
+      if (keyboardHeight > 200) {
+        // Keyboard is open - move dialog up
+        setPosition(prev => ({
+          ...prev,
+          y: Math.max(20, prev.y - keyboardHeight * 0.3)
+        }));
+      }
     };
     
     const handleResize = () => {
@@ -60,11 +72,41 @@ export function FloatingSheet({
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
     
-    // Smooth scrolling for input focus
+    // Enhanced input focus handling with drag hint
     const handleInputFocus = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         setTimeout(() => {
+          // Check if input is visible
+          const rect = target.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          if (rect.bottom > viewportHeight * 0.7) {
+            // Input is too low - show drag hint
+            const dragHint = document.createElement('div');
+            dragHint.className = 'drag-hint-mobile';
+            dragHint.textContent = '↕️ Povucite dialog da vidite polje';
+            dragHint.style.cssText = `
+              position: fixed;
+              top: 20px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #333;
+              color: white;
+              padding: 8px 16px;
+              border-radius: 20px;
+              font-size: 14px;
+              z-index: 10000;
+              animation: fadeInOut 3s ease-in-out;
+            `;
+            
+            document.body.appendChild(dragHint);
+            
+            setTimeout(() => {
+              dragHint.remove();
+            }, 3000);
+          }
+          
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 300);
       }
