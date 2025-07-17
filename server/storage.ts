@@ -1615,8 +1615,10 @@ export class DatabaseStorage implements IStorage {
       // jer username mora biti email adresa
       const email = insertUser.email || insertUser.username;
       
-      // Za poslovne partnere, isVerified je uvek false na početku
-      const isVerified = insertUser.role === "admin" || insertUser.role === "technician";
+      // Korisnici kreirani od strane administratora su automatski verifikovani
+      // jer administrator ima potpunu kontrolu nad kreiranjem naloga
+      // Ili ako je eksplicitno postavljen isVerified u insertUser podacima
+      const isVerified = insertUser.isVerified !== undefined ? insertUser.isVerified : true;
       
       // Konvertujemo stringove datuma u Date objekte za ispravno skladištenje
       const now = new Date();
