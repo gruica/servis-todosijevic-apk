@@ -10,4 +10,132 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Android keyboard optimization */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  body {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+  
+  #root {
+    height: calc(var(--vh, 1vh) * 100);
+    overflow: hidden;
+  }
+  
+  /* Prevent viewport shift on mobile keyboard */
+  @supports (-webkit-touch-callout: none) {
+    html {
+      height: -webkit-fill-available;
+    }
+    
+    body {
+      height: -webkit-fill-available;
+    }
+    
+    #root {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Mobile textarea optimization */
+  textarea {
+    resize: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  
+  /* Prevent zoom on input focus for mobile */
+  @media screen and (max-width: 768px) {
+    input[type="text"], 
+    input[type="number"], 
+    input[type="email"], 
+    input[type="password"],
+    textarea {
+      font-size: 16px;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+  }
+  
+  /* Mobile keyboard handling for floating components */
+  @media screen and (max-width: 768px) {
+    .floating-sheet-mobile {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: calc(var(--vh, 1vh) * 100) !important;
+      max-height: calc(var(--vh, 1vh) * 100) !important;
+      border-radius: 0 !important;
+      z-index: 9999 !important;
+    }
+    
+    .floating-sheet-mobile .scrollable-content {
+      height: calc(var(--vh, 1vh) * 100 - 60px) !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  
+  /* Keyboard adaptation for Android */
+  @supports (height: 100dvh) {
+    @media screen and (max-width: 768px) {
+      .floating-sheet-mobile {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+      }
+      
+      .floating-sheet-mobile .scrollable-content {
+        height: calc(100dvh - 60px) !important;
+      }
+    }
+  }
+  
+  /* Specific Android keyboard fixes */
+  @media screen and (max-width: 768px) {
+    /* Prevent content jump when keyboard opens */
+    .floating-sheet-mobile {
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: transform;
+    }
+    
+    /* Ensure textarea visibility when keyboard is open */
+    .floating-sheet-mobile textarea:focus,
+    .floating-sheet-mobile input:focus {
+      position: relative;
+      z-index: 1;
+      transform: translateZ(0);
+    }
+    
+    /* Fix for Samsung devices */
+    .floating-sheet-mobile .scrollable-content {
+      min-height: calc(100vh - 60px);
+      padding-bottom: 20px;
+    }
+  }
+  
+  /* Additional Android Chrome fixes */
+  @supports (env(keyboard-inset-height)) {
+    @media screen and (max-width: 768px) {
+      .floating-sheet-mobile {
+        height: calc(100vh - env(keyboard-inset-height, 0px)) !important;
+        max-height: calc(100vh - env(keyboard-inset-height, 0px)) !important;
+      }
+      
+      .floating-sheet-mobile .scrollable-content {
+        height: calc(100vh - env(keyboard-inset-height, 0px) - 60px) !important;
+      }
+    }
+  }
 }

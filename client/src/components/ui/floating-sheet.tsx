@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Maximize2, Minimize2, Move } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMobile } from "@/hooks/use-mobile";
 
 interface FloatingSheetProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function FloatingSheet({
   resizable = true,
   draggable = true,
 }: FloatingSheetProps) {
+  const isMobile = useMobile();
   const [position, setPosition] = useState(defaultPosition);
   const [size, setSize] = useState(defaultSize);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -38,9 +40,48 @@ export function FloatingSheet({
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // Handle Android keyboard on mobile devices
+  useEffect(() => {
+    if (!isOpen || !isMobile) return;
+    
+    const handleViewportChange = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    const handleResize = () => {
+      handleViewportChange();
+    };
+    
+    // Set initial viewport height
+    handleViewportChange();
+    
+    // Listen for viewport changes (keyboard open/close)
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Smooth scrolling for input focus
+    const handleInputFocus = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    };
+    
+    document.addEventListener('focusin', handleInputFocus);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      document.removeEventListener('focusin', handleInputFocus);
+    };
+  }, [isOpen, isMobile]);
+
   // Ensure sheet stays within viewport bounds
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isMobile) return;
 
     const constrainPosition = () => {
       const viewportWidth = window.innerWidth;
@@ -114,9 +155,12 @@ export function FloatingSheet({
       className={cn(
         "fixed z-50 bg-background border border-border rounded-lg shadow-xl",
         isDragging && "cursor-grabbing",
+        // Mobile keyboard optimization
+        isMobile && "floating-sheet-mobile",
+        !isMobile && "max-h-[calc(100vh-2rem)]",
         className
       )}
-      style={{
+      style={isMobile ? {} : {
         left: position.x,
         top: position.y,
         width: size.width,
@@ -131,17 +175,17 @@ export function FloatingSheet({
       <div
         className={cn(
           "flex items-center justify-between p-3 border-b bg-muted/50 rounded-t-lg",
-          draggable && "cursor-grab active:cursor-grabbing"
+          draggable && !isMobile && "cursor-grab active:cursor-grabbing"
         )}
-        onMouseDown={handleMouseDown}
+        onMouseDown={!isMobile ? handleMouseDown : undefined}
       >
         <div className="flex items-center gap-2">
-          <Move className="h-4 w-4 text-muted-foreground" />
+          {!isMobile && <Move className="h-4 w-4 text-muted-foreground" />}
           <h3 className="text-sm font-semibold truncate">{title}</h3>
         </div>
         
         <div className="flex items-center gap-1">
-          {resizable && (
+          {resizable && !isMobile && (
             <Button
               variant="ghost"
               size="sm"
@@ -168,7 +212,9 @@ export function FloatingSheet({
       </div>
 
       {/* Content */}
-      <ScrollArea className="h-[calc(100%-49px)]">
+      <ScrollArea className={cn(
+        isMobile ? "scrollable-content" : "h-[calc(100%-49px)]"
+      )}>
         <div className="p-4">
           {children}
         </div>
