@@ -411,97 +411,97 @@ export default function AdminServices() {
           </Button>
         </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+        {/* Kompaktne Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Ukupno</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs text-muted-foreground">Ukupno</p>
+                  <p className="text-lg font-bold">{stats.total}</p>
                 </div>
-                <Wrench className="h-8 w-8 text-primary" />
+                <Wrench className="h-5 w-5 text-primary" />
               </div>
             </CardContent>
           </Card>
           
           <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${pickupFilter === "picked_up" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => setPickupFilter(pickupFilter === "picked_up" ? "all" : "picked_up")}>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`text-sm ${pickupFilter === "picked_up" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Preuzeti</p>
-                  <p className={`text-2xl font-bold ${pickupFilter === "picked_up" ? "text-blue-800" : ""}`}>{stats.pickedUp}</p>
+                  <p className={`text-xs ${pickupFilter === "picked_up" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Preuzeti</p>
+                  <p className={`text-lg font-bold ${pickupFilter === "picked_up" ? "text-blue-800" : ""}`}>{stats.pickedUp}</p>
                 </div>
-                <Package className={`h-8 w-8 ${pickupFilter === "picked_up" ? "text-blue-800" : "text-blue-600"}`} />
+                <Package className={`h-5 w-5 ${pickupFilter === "picked_up" ? "text-blue-800" : "text-blue-600"}`} />
               </div>
               {pickupFilter === "picked_up" && (
-                <div className="mt-2 text-xs text-blue-700 font-medium">
+                <div className="mt-1 text-xs text-blue-700 font-medium">
                   <Filter className="h-3 w-3 inline mr-1" />
-                  Aktivno filtriranje
+                  Filtriranje
                 </div>
               )}
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Na čekanju</p>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
+                  <p className="text-xs text-muted-foreground">Na čekanju</p>
+                  <p className="text-lg font-bold">{stats.pending}</p>
                 </div>
-                <Clock className="h-8 w-8 text-orange-500" />
+                <Clock className="h-5 w-5 text-orange-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">U toku</p>
-                  <p className="text-2xl font-bold">{stats.inProgress}</p>
+                  <p className="text-xs text-muted-foreground">U toku</p>
+                  <p className="text-lg font-bold">{stats.inProgress}</p>
                 </div>
-                <Play className="h-8 w-8 text-blue-500" />
+                <Play className="h-5 w-5 text-blue-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Završeno</p>
-                  <p className="text-2xl font-bold">{stats.completed}</p>
+                  <p className="text-xs text-muted-foreground">Završeno</p>
+                  <p className="text-lg font-bold">{stats.completed}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-green-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Nedodeljena</p>
-                  <p className="text-2xl font-bold">{stats.unassigned}</p>
+                  <p className="text-xs text-muted-foreground">Nedodeljena</p>
+                  <p className="text-lg font-bold">{stats.unassigned}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-red-500" />
+                <AlertCircle className="h-5 w-5 text-red-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+        {/* Kompaktni Filters */}
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Filter className="h-4 w-4" />
               Filteri
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <CardContent className="pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
               <div className="space-y-2">
                 <Label>Pretraga</Label>
                 <div className="relative">
@@ -589,10 +589,10 @@ export default function AdminServices() {
           </CardContent>
         </Card>
 
-        {/* Services Table */}
+        {/* Kompaktni Services Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Servisi</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Servisi</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingServices ? (
@@ -600,149 +600,116 @@ export default function AdminServices() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : (
-              <ScrollArea className="h-[600px]">
-                <div className="space-y-4">
+              <ScrollArea className="h-[700px]">
+                <div className="space-y-2">
                   {filteredServices.map((service) => (
                     <Card 
                       key={service.id} 
-                      className={`p-4 ${
+                      className={`p-3 hover:bg-gray-50 transition-colors ${
                         highlightedServiceId === service.id 
                           ? 'ring-2 ring-blue-500 ring-offset-2' 
                           : ''
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Badge variant="outline">#{service.id}</Badge>
+                      <div className="flex items-center justify-between">
+                        {/* Kompaktni prikaz osnovnih informacija */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                          {/* ID i Status */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs">#{service.id}</Badge>
                             {getStatusBadge(service.status)}
-                            {getPriorityBadge(service.priority)}
-                            {service.businessPartnerId && service.partnerCompanyName && (
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-300">
-                                Partner: {service.partnerCompanyName}
-                              </Badge>
-                            )}
-                            {service.scheduledDate && (
-                              <Badge variant="outline" className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {formatDate(service.scheduledDate)}
-                              </Badge>
-                            )}
                             {service.devicePickedUp && (
-                              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 flex items-center gap-1">
-                                <Package className="h-3 w-3" />
+                              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-xs">
+                                <Package className="h-3 w-3 mr-1" />
                                 Preuzet
                               </Badge>
                             )}
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                            <div>
-                              <h4 className="font-semibold mb-1">Klijent</h4>
-                              <p className="text-sm">{service.client.fullName}</p>
-                              {service.client.phone && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {service.client.phone}
-                                </p>
-                              )}
-                              {service.client.city && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {service.client.city}
-                                </p>
-                              )}
-                              {service.businessPartnerId && service.partnerCompanyName && (
-                                <p className="text-xs text-blue-600 font-medium flex items-center gap-1 mt-1">
-                                  <User className="h-3 w-3" />
-                                  Kreirao: {service.partnerCompanyName}
-                                </p>
-                              )}
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-semibold mb-1">Uređaj</h4>
-                              <p className="text-sm">{service.appliance.category.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {service.appliance.manufacturer.name} {service.appliance.model}
+                          {/* Klijent */}
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{service.client.fullName}</p>
+                            {service.client.city && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {service.client.city}
                               </p>
-                              {service.devicePickedUp && service.pickupDate && (
-                                <p className="text-xs text-green-600 font-medium flex items-center gap-1 mt-1">
-                                  <Package className="h-3 w-3" />
-                                  Preuzet: {formatDate(service.pickupDate)}
+                            )}
+                          </div>
+                          
+                          {/* Uređaj */}
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{service.appliance.category.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {service.appliance.manufacturer.name} {service.appliance.model}
+                            </p>
+                          </div>
+                          
+                          {/* Serviser */}
+                          <div className="min-w-0">
+                            {service.technician ? (
+                              <div>
+                                <p className="text-sm truncate">{service.technician.fullName}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {service.technician.specialization}
                                 </p>
-                              )}
-                            </div>
-                            
-                            <div>
-                              <h4 className="font-semibold mb-1">Serviser</h4>
-                              {service.technician ? (
-                                <div>
-                                  <p className="text-sm">{service.technician.fullName}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {service.technician.specialization}
-                                  </p>
-                                </div>
-                              ) : (
-                                <Select
-                                  value=""
-                                  onValueChange={(value) => handleAssignTechnician(service.id, parseInt(value))}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Dodeli servisera..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="0">Dodeli servisera...</SelectItem>
-                                    {technicians.map((tech) => (
-                                      <SelectItem key={tech.id} value={tech.id.toString()}>
-                                        {tech.fullName} - {tech.specialization}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <Select
+                                value=""
+                                onValueChange={(value) => handleAssignTechnician(service.id, parseInt(value))}
+                              >
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                  <SelectValue placeholder="Dodeli..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="0">Dodeli servisera...</SelectItem>
+                                  {technicians.map((tech) => (
+                                    <SelectItem key={tech.id} value={tech.id.toString()}>
+                                      {tech.fullName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </div>
                           
-                          <div className="mb-3">
-                            <h4 className="font-semibold mb-1">Opis problema</h4>
-                            <p className="text-sm text-muted-foreground">{service.description}</p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Kreiran: {formatDate(service.createdAt)}</span>
-                            <span>•</span>
-                            <span>Ažuriran: {formatDate(service.updatedAt)}</span>
+                          {/* Opis problema - skraćeno */}
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{service.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(service.createdAt)}
+                            </p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
+                        {/* Kompaktni action buttons */}
+                        <div className="flex items-center gap-1 ml-4">
                           <button
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                             onClick={() => {
                               console.log("Native button clicked for service:", service.id);
                               setSelectedService(service);
                               setIsDetailsOpen(true);
                             }}
+                            title="Pogledaj detalje"
                           >
-                            👁️ Detalji
+                            <Eye className="h-3 w-3" />
                           </button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
+                            className="p-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                             onClick={() => handleEditService(service)}
+                            title="Uredi servis"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Izmeni
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
+                            <Edit className="h-3 w-3" />
+                          </button>
+                          <button
+                            className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                             onClick={() => handleDeleteService(service)}
+                            title="Obriši servis"
                           >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Obriši
-                          </Button>
+                            <Trash2 className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     </Card>
