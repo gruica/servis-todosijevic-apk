@@ -38,7 +38,8 @@ import {
   CheckSquare,
   Play,
   Pause,
-  Filter
+  Filter,
+  Building
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 
@@ -372,6 +373,7 @@ export default function AdminServices() {
     completed: services.filter(s => s.status === "completed").length,
     unassigned: services.filter(s => !s.technicianId).length,
     pickedUp: services.filter(s => s.devicePickedUp).length,
+    businessPartner: services.filter(s => s.businessPartnerId).length,
   };
 
   return (
@@ -395,7 +397,7 @@ export default function AdminServices() {
         </div>
 
         {/* Kompaktne Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-2 mb-4">
           <Card>
             <CardContent className="p-2">
               <div className="flex items-center justify-between">
@@ -471,6 +473,24 @@ export default function AdminServices() {
                 </div>
                 <AlertCircle className="h-5 w-5 text-red-500" />
               </div>
+            </CardContent>
+          </Card>
+          
+          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${partnerFilter === "business" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => setPartnerFilter(partnerFilter === "business" ? "all" : "business")}>
+            <CardContent className="p-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-xs ${partnerFilter === "business" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Poslovni P.</p>
+                  <p className={`text-lg font-bold ${partnerFilter === "business" ? "text-blue-800" : ""}`}>{stats.businessPartner}</p>
+                </div>
+                <Building className={`h-5 w-5 ${partnerFilter === "business" ? "text-blue-800" : "text-blue-600"}`} />
+              </div>
+              {partnerFilter === "business" && (
+                <div className="mt-1 text-xs text-blue-700 font-medium">
+                  <Filter className="h-3 w-3 inline mr-1" />
+                  Filtriranje
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -595,7 +615,7 @@ export default function AdminServices() {
                     >
                       <div className="flex items-center justify-between">
                         {/* Kompaktni prikaz osnovnih informacija */}
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
                           {/* ID i Status */}
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="text-xs">#{service.id}</Badge>
@@ -616,6 +636,29 @@ export default function AdminServices() {
                                 <MapPin className="h-3 w-3" />
                                 {service.client.city}
                               </p>
+                            )}
+                          </div>
+                          
+                          {/* Poslovni partner */}
+                          <div className="min-w-0">
+                            {service.businessPartnerId ? (
+                              <div>
+                                <p className="text-sm truncate font-medium text-blue-600">
+                                  {service.partnerCompanyName || "Poslovni partner"}
+                                </p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Building className="h-3 w-3" />
+                                  Partner ID: {service.businessPartnerId}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Direktan zahtev</p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  Admin kreiran
+                                </p>
+                              </div>
                             )}
                           </div>
                           
@@ -740,6 +783,34 @@ export default function AdminServices() {
                   <div>
                     <Label className="text-sm font-medium">Opis problema</Label>
                     <p className="mt-1 text-sm">{selectedService.description}</p>
+                  </div>
+                  
+                  {/* Informacije o poslovnom partneru */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Kreiran od strane</Label>
+                      <div className="mt-1">
+                        {selectedService.businessPartnerId ? (
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-600">
+                              {selectedService.partnerCompanyName || "Poslovni partner"}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-600" />
+                            <span className="text-sm text-gray-600">Direktan admin zahtev</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {selectedService.businessPartnerId && (
+                      <div>
+                        <Label className="text-sm font-medium">Partner ID</Label>
+                        <p className="mt-1 text-sm">{selectedService.businessPartnerId}</p>
+                      </div>
+                    )}
                   </div>
                   
                   {selectedService.notes && (
