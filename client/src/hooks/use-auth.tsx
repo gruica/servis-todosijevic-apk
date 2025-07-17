@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data: any) => {
       // Ako je korisnik poslovni partner, ne postavljamo ga u queryClient
       // jer mora biti verifikovan pre pristupa
-      if (data.role === "business") {
+      if (data.role === "business_partner") {
         toast({
           title: "Uspešna registracija",
           description: data.message || "Zahtev za registraciju je uspešno poslat. Administrator će uskoro verifikovati vaš nalog.",

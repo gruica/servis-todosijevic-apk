@@ -21,8 +21,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
       });
     }
 
-    // Provera uloge - prihvatamo i "business" i "business_partner"
-    if (req.user?.role !== "business_partner" && req.user?.role !== "business") {
+    // Provera uloge - samo "business_partner" uloga je dozvoljena
+    if (req.user?.role !== "business_partner") {
       return res.status(403).json({
         error: "Nemate dozvolu",
         message: "Samo poslovni partneri mogu pristupiti ovom resursu."
@@ -262,8 +262,10 @@ export function registerBusinessPartnerRoutes(app: Express) {
         });
       }
       
-      // Provera da li servis pripada ovom poslovnom partneru
-      if (service.businessPartnerId !== partnerId) {
+      // Poboljšana provjera vlasništva servisa
+      const partnerIdNum = parseInt(partnerId.toString());
+      if (!service.businessPartnerId || service.businessPartnerId !== partnerIdNum) {
+        console.log(`BEZBEDNOSNA GREŠKA: Poslovni partner ${partnerId} pokušava pristup servisu ${serviceId} koji ne pripada njemu`);
         return res.status(403).json({
           error: "Nemate dozvolu",
           message: "Nemate dozvolu da pristupite detaljima ovog servisa."
@@ -357,8 +359,13 @@ export function registerBusinessPartnerRoutes(app: Express) {
   // Endpoint za dobijanje svih klijenata poslovnog partnera
   app.get("/api/business/clients", isBusinessPartner, async (req, res) => {
     try {
-      // Za sada vraćamo sve klijente - možda treba filtrirati po business partner-u u budućnosti
+      // Za sada vraćamo sve klijente - PAŽNJA: možda treba filtrirati po business partner-u u budućnosti
+      // Ovo može biti bezbednosni problem jer poslovni partneri mogu videti sve klijente
       const clients = await storage.getAllClients();
+      
+      // Dodajemo log za evidenciju pristupa
+      console.log(`Poslovni partner ${req.user!.id} (${req.user!.companyName}) je pristupio listi klijenata`);
+      
       res.json(clients);
     } catch (error) {
       console.error("Greška pri dohvatanju klijenata za poslovnog partnera:", error);

@@ -47,7 +47,7 @@ export default function BusinessPartnerAuthPage() {
   useEffect(() => {
     if (user) {
       // Redirect to different pages based on user role
-      if (user.role === "business" || user.role === "business_partner") {
+      if (user.role === "business_partner") {
         navigate("/business");
       } else if (user.role === "admin") {
         // Don't redirect admin - show logout option instead
@@ -102,7 +102,7 @@ export default function BusinessPartnerAuthPage() {
       phone: values.phone,
       address: values.address,
       city: values.city,
-      role: "business", // Postavljamo role na business
+      role: "business_partner", // Postavljamo role na business_partner
       companyId: values.companyName.toLowerCase().replace(/[^a-z0-9]/g, ""), // Generišemo companyId iz imena kompanije
       email: values.username, // Koristimo username kao email jer je već validiran kao email
     });

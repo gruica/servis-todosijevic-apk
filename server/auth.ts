@@ -91,8 +91,8 @@ export function setupAuth(app: Express) {
           }
           
           // Dodatna provera: da li je korisnik verifikovan
-          // Administratori i poslovni partneri mogu da se prijave uvek, ostali korisnici moraju biti verifikovani
-          if (user.role !== 'admin' && user.role !== 'business_partner' && !user.isVerified) {
+          // Administratori mogu da se prijave uvek, ostali korisnici moraju biti verifikovani
+          if (user.role !== 'admin' && !user.isVerified) {
             console.log(`User ${username} is not verified`);
             return done(null, false, { message: 'Vaš nalog nije još verifikovan od strane administratora. Molimo sačekajte potvrdu.' });
           }
@@ -201,7 +201,7 @@ export function setupAuth(app: Express) {
       };
       
       // Posebni slučaj za poslovne partnere
-      if (req.body.role === 'business') {
+      if (req.body.role === 'business_partner') {
         console.log("Registracija poslovnog partnera - obrađeni podaci:", {
           username: userData.username,
           fullName: userData.fullName,
@@ -234,7 +234,7 @@ export function setupAuth(app: Express) {
       } else {
         // Za obične korisnike vraćamo samo podatke bez prijave
         // Posebna poruka za poslovne partnere
-        if (user.role === 'business') {
+        if (user.role === 'business_partner') {
           res.status(201).json({
             ...userWithoutPassword,
             message: "Registracija uspešna! Vaš zahtev je prosleđen administratoru na pregled. Bićete obavešteni putem email-a kada je nalog aktiviran."
