@@ -16,6 +16,7 @@ import { sr } from "date-fns/locale/sr";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNotification } from "@/contexts/notification-context";
 
 // Jednostavna komponenta za status servisa
 const StatusBadge = ({ status }: { status: string }) => {
@@ -51,8 +52,8 @@ export default function TechnicianServicesList() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
-  // State za highlighting servisa iz notifikacije
-  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
+  // Koristi notification context
+  const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
 
   // Učitavanje servisera
   const { data: technicians } = useQuery<any[]>({
@@ -71,31 +72,32 @@ export default function TechnicianServicesList() {
     if (state && state.highlightServiceId) {
       console.log("Technician Services - Highlighting service ID:", state.highlightServiceId);
       setHighlightedServiceId(state.highlightServiceId);
+      setShouldAutoOpen(true);
       
       // Produžen timeout sa 5 na 15 sekundi
       const timer = setTimeout(() => {
-        setHighlightedServiceId(null);
+        clearHighlight();
       }, 15000);
       
       return () => clearTimeout(timer);
     }
-  }, [location]);
+  }, [location, setHighlightedServiceId, setShouldAutoOpen, clearHighlight]);
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
-    const state = history.state;
-    if (state && state.highlightServiceId && services && services.length > 0) {
-      const targetService = services.find(service => service.id === state.highlightServiceId);
+    if (highlightedServiceId && shouldAutoOpen && services && services.length > 0) {
+      const targetService = services.find(service => service.id === highlightedServiceId);
       if (targetService) {
         // Automatski otvara servis detalje
         setSelectedService(targetService);
         setIsDetailsOpen(true);
         
         // Čisti state posle otvaranja da se izbegnu duplikati
+        setShouldAutoOpen(false);
         history.replaceState(null, '', '/tech');
       }
     }
-  }, [services, location]);
+  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
 
   // Konvertuj string datum u Date objekat ako je izabran
   useEffect(() => {

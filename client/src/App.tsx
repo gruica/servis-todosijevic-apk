@@ -33,6 +33,7 @@ import SMSMessaging from "@/pages/sms-messaging";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 import { initializeCapacitor, isNativeMobile } from "./capacitor";
+import { NotificationProvider } from "@/contexts/notification-context";
 
 // Import customer pages
 import CustomerServiceRequest from "@/pages/customer";
@@ -167,10 +168,10 @@ function App() {
   }, []);
 
   return (
-    <>
+    <NotificationProvider>
       <Router />
       <Toaster />
-    </>
+    </NotificationProvider>
   );
 }
 

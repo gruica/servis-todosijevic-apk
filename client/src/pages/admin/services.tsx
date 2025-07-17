@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useNotification } from "@/contexts/notification-context";
 import { 
   Plus, 
   Search, 
@@ -115,8 +116,8 @@ export default function AdminServices() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   
-  // State za highlighting servisa iz notifikacije
-  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
+  // Koristi notification context
+  const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
   
   // Check URL parameters for automatic filtering
   useEffect(() => {
@@ -135,15 +136,16 @@ export default function AdminServices() {
     if (state && state.highlightServiceId) {
       console.log("Admin Services - Highlighting service ID:", state.highlightServiceId);
       setHighlightedServiceId(state.highlightServiceId);
+      setShouldAutoOpen(true);
       
       // Produžen timeout sa 5 na 15 sekundi
       const timer = setTimeout(() => {
-        setHighlightedServiceId(null);
+        clearHighlight();
       }, 15000);
       
       return () => clearTimeout(timer);
     }
-  }, [location]);
+  }, [location, setHighlightedServiceId, setShouldAutoOpen, clearHighlight]);
   
   const { toast } = useToast();
 
@@ -156,19 +158,19 @@ export default function AdminServices() {
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
-    const state = history.state;
-    if (state && state.highlightServiceId && services.length > 0) {
-      const targetService = services.find(service => service.id === state.highlightServiceId);
+    if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
+      const targetService = services.find(service => service.id === highlightedServiceId);
       if (targetService) {
         // Automatski otvara servis detalje
         setSelectedService(targetService);
         setIsDetailsOpen(true);
         
         // Čisti state posle otvaranja da se izbegnu duplikati
+        setShouldAutoOpen(false);
         history.replaceState(null, '', '/admin/services');
       }
     }
-  }, [services, location]);
+  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
 
   // Log services data for debugging
   console.log("Admin Services Debug:", {
