@@ -13,8 +13,17 @@ import { NotificationService } from "./notification-service";
 export function registerBusinessPartnerRoutes(app: Express) {
   // Middleware za proveru da li je korisnik poslovni partner
   const isBusinessPartner = (req: Request, res: Response, next: NextFunction) => {
+    console.log("=== BUSINESS PARTNER MIDDLEWARE ===");
+    console.log("Request URL:", req.url);
+    console.log("Session ID:", req.sessionID);
+    console.log("Session data:", req.session);
+    console.log("Is authenticated:", req.isAuthenticated());
+    console.log("User data:", req.user);
+    console.log("Cookie header:", req.headers.cookie);
+    
     // Provera autentifikacije
     if (!req.isAuthenticated()) {
+      console.log("Authentication failed - no user session");
       return res.status(401).json({
         error: "Niste prijavljeni",
         message: "Morate biti prijavljeni da biste pristupili ovom resursu."
@@ -23,12 +32,14 @@ export function registerBusinessPartnerRoutes(app: Express) {
 
     // Provera uloge - samo "business_partner" uloga je dozvoljena
     if (req.user?.role !== "business_partner") {
+      console.log("Role check failed - user role:", req.user?.role);
       return res.status(403).json({
         error: "Nemate dozvolu",
         message: "Samo poslovni partneri mogu pristupiti ovom resursu."
       });
     }
 
+    console.log("Business partner authentication successful");
     next();
   };
 
