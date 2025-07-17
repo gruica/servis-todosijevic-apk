@@ -13,13 +13,23 @@ import { NotificationService } from "./notification-service";
 export function registerBusinessPartnerRoutes(app: Express) {
   // Middleware za proveru da li je korisnik poslovni partner
   const isBusinessPartner = (req: Request, res: Response, next: NextFunction) => {
-    console.log("=== BUSINESS PARTNER MIDDLEWARE ===");
-    console.log("Request URL:", req.url);
-    console.log("Session ID:", req.sessionID);
-    console.log("Session data:", req.session);
-    console.log("Is authenticated:", req.isAuthenticated());
-    console.log("User data:", req.user);
-    console.log("Cookie header:", req.headers.cookie);
+    // Debug samo za browser zahteve (ne za curl)
+    if (req.headers['user-agent'] && !req.headers['user-agent'].includes('curl')) {
+      console.log("=== BUSINESS PARTNER MIDDLEWARE ===");
+      console.log("Request URL:", req.url);
+      console.log("Request method:", req.method);
+      console.log("Request headers:", {
+        cookie: req.headers.cookie,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        'user-agent': req.headers['user-agent']
+      });
+      console.log("Session ID:", req.sessionID);
+      console.log("Session data:", req.session);
+      console.log("Is authenticated:", req.isAuthenticated());
+      console.log("User data:", req.user);
+      console.log("Cookie header:", req.headers.cookie);
+    }
     
     // Provera autentifikacije
     if (!req.isAuthenticated()) {
@@ -42,6 +52,17 @@ export function registerBusinessPartnerRoutes(app: Express) {
     console.log("Business partner authentication successful");
     next();
   };
+
+  // DEBUG endpoint za session informacije
+  app.get("/api/debug/session", (req, res) => {
+    res.json({
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated(),
+      user: req.user,
+      headers: req.headers,
+      session: req.session
+    });
+  });
 
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", isBusinessPartner, async (req, res) => {
