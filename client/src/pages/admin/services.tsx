@@ -129,23 +129,10 @@ export default function AdminServices() {
     }
   }, []);
   
-  // Proverava da li je stranica otvorena sa notifikacijom
+  // Dodaj debug log za context
   useEffect(() => {
-    const state = history.state;
-    console.log("Admin Services - History State:", state);
-    if (state && state.highlightServiceId) {
-      console.log("Admin Services - Highlighting service ID:", state.highlightServiceId);
-      setHighlightedServiceId(state.highlightServiceId);
-      setShouldAutoOpen(true);
-      
-      // Produžen timeout sa 5 na 15 sekundi
-      const timer = setTimeout(() => {
-        clearHighlight();
-      }, 15000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [location, setHighlightedServiceId, setShouldAutoOpen, clearHighlight]);
+    console.log("Admin Services - Context state:", { highlightedServiceId, shouldAutoOpen });
+  }, [highlightedServiceId, shouldAutoOpen]);
   
   const { toast } = useToast();
 
@@ -158,8 +145,10 @@ export default function AdminServices() {
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
+    console.log("Auto-open check:", { highlightedServiceId, shouldAutoOpen, servicesLength: services.length });
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
       const targetService = services.find(service => service.id === highlightedServiceId);
+      console.log("Target service found:", targetService);
       if (targetService) {
         // Automatski otvara servis detalje
         setSelectedService(targetService);
@@ -168,6 +157,7 @@ export default function AdminServices() {
         // Čisti state posle otvaranja da se izbegnu duplikati
         setShouldAutoOpen(false);
         history.replaceState(null, '', '/admin/services');
+        console.log("Service details opened automatically for service:", targetService.id);
       }
     }
   }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);

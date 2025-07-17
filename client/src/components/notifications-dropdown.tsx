@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { sr } from "date-fns/locale";
 import { useLocation } from "wouter";
+import { useNotification } from "@/contexts/notification-context";
 
 interface Notification {
   id: number;
@@ -51,6 +52,7 @@ export function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  const { setHighlightedServiceId, setShouldAutoOpen } = useNotification();
   
   // Dobijanje korisničkih podataka iz query cache-a
   const { data: user } = useQuery({
@@ -107,43 +109,27 @@ export function NotificationsDropdown() {
     
     // Navigacija na osnovu tipa notifikacije i korisničke uloge
     if (user && notification.relatedServiceId) {
+      // Postavi highlighted service u context
+      setHighlightedServiceId(notification.relatedServiceId);
+      setShouldAutoOpen(true);
+      
       switch (user.role) {
         case 'technician':
           // Za tehničare - navigacija na stranicu servisa sa fokusiranim servisom
-          navigate('/tech', { 
-            state: { 
-              highlightServiceId: notification.relatedServiceId,
-              notificationId: notification.id 
-            }
-          });
+          navigate('/tech');
           break;
         case 'admin':
           // Za adminiastratore - navigacija na admin servise sa fokusiranim servisom
           console.log("Navigating to admin services with highlight ID:", notification.relatedServiceId);
-          navigate('/admin/services', { 
-            state: { 
-              highlightServiceId: notification.relatedServiceId,
-              notificationId: notification.id 
-            }
-          });
+          navigate('/admin/services');
           break;
         case 'customer':
           // Za klijente - navigacija na svoje servise
-          navigate('/customer/services', { 
-            state: { 
-              highlightServiceId: notification.relatedServiceId,
-              notificationId: notification.id 
-            }
-          });
+          navigate('/customer/services');
           break;
         case 'business_partner':
           // Za poslovne partnere - navigacija na svoje servise
-          navigate('/business/services', { 
-            state: { 
-              highlightServiceId: notification.relatedServiceId,
-              notificationId: notification.id 
-            }
-          });
+          navigate('/business/services');
           break;
         default:
           navigate('/');

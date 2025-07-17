@@ -16,6 +16,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
   const [notificationId, setNotificationId] = useState<number | null>(null);
   const [shouldAutoOpen, setShouldAutoOpen] = useState(false);
+  
+
 
   const clearHighlight = () => {
     setHighlightedServiceId(null);
