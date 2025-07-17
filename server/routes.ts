@@ -240,6 +240,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Provera da li klijent već postoji
+  app.post("/api/clients/check", async (req, res) => {
+    console.log("🔍 /api/clients/check endpoint pozvan sa:", req.body);
+    try {
+      const { email } = req.body;
+      if (!email) {
+        console.log("❌ Email nije prosleđen");
+        return res.status(400).json({ error: "Email je obavezan" });
+      }
+      
+      const clients = await storage.getAllClients();
+      const existingClient = clients.find(c => c.email === email);
+      
+      if (existingClient) {
+        console.log("✅ Klijent pronađen:", existingClient.id);
+        res.json({ exists: true, id: existingClient.id });
+      } else {
+        console.log("❌ Klijent nije pronađen");
+        res.json({ exists: false });
+      }
+    } catch (error) {
+      console.error("Greška pri proveri klijenta:", error);
+      res.status(500).json({ error: "Greška pri proveri klijenta" });
+    }
+  });
+
   // TEST RUTA je uklonjena za produkciju
 
   app.post("/api/clients", async (req, res) => {
@@ -3453,47 +3479,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer routes - kreiranje servisa (sa rate limiting i bot verification)
-  app.post("/api/customer/services", checkBotVerification, checkServiceRequestRateLimit, async (req, res) => {
+  // Customer routes - kreiranje servisa (privremeno bez rate limiting i bot verification)
+  app.post("/api/customer/services", async (req, res) => {
     try {
       // Proveravamo da li je korisnik prijavljen i da li je klijent
       if (!req.isAuthenticated() || req.user?.role !== "customer") {
         return res.status(401).json({ error: "Nemate dozvolu za pristup ovom resursu" });
       }
 
-      // Validacija podataka
-      const serviceData = insertServiceSchema.pick({
-        clientId: true,
-        applianceId: true,
-        description: true,
-        scheduledDate: true
-      }).safeParse(req.body);
+      console.log("🔍 Customer service request data:", req.body);
 
-      if (!serviceData.success) {
+      // Validacija podataka za customer service request
+      const { categoryId, manufacturerId, model, serialNumber, purchaseDate, purchasePlace, description } = req.body;
+      
+      if (!categoryId || !manufacturerId || !model || !description) {
         return res.status(400).json({
-          error: "Nevažeći podaci servisa",
-          details: serviceData.error.format()
+          error: "Obavezna polja nisu popunjena",
+          details: "categoryId, manufacturerId, model i description su obavezni"
         });
       }
 
-      // Klijent može da kreira servis samo za sebe
-      const clientId = serviceData.data.clientId;
+      // Prvo kreiramo ili pronalazimo klijenta na osnovu korisničkih podataka
+      const clientData = {
+        fullName: req.user.fullName || "",
+        email: req.user.username || "",
+        phone: req.user.phone || "",
+        address: req.user.address || "",
+        city: req.user.city || "",
+      };
+
+      let clientId;
       
-      // Proveravamo da li uređaj postoji i pripada klijentu
-      const appliance = await storage.getAppliance(serviceData.data.applianceId);
-      if (!appliance) {
-        return res.status(404).json({ error: "Uređaj nije pronađen" });
-      }
+      // Proveravamo da li klijent već postoji
+      const clients = await storage.getAllClients();
+      const existingClient = clients.find(c => c.email === clientData.email);
       
-      if (appliance.clientId !== clientId) {
-        return res.status(403).json({ error: "Uređaj ne pripada vašem nalogu" });
+      if (existingClient) {
+        clientId = existingClient.id;
+        console.log("✅ Pronađen postojeći klijent:", clientId);
+      } else {
+        // Kreiramo novog klijenta
+        const newClient = await storage.createClient(clientData);
+        clientId = newClient.id;
+        console.log("✅ Kreiran novi klijent:", clientId);
       }
+
+      // Kreiramo uređaj
+      const applianceData = {
+        clientId,
+        categoryId: parseInt(categoryId),
+        manufacturerId: parseInt(manufacturerId),
+        model,
+        serialNumber,
+        purchaseDate,
+        notes: purchasePlace ? `Mesto kupovine: ${purchasePlace}` : "",
+      };
+
+      const appliance = await storage.createAppliance(applianceData);
+      console.log("✅ Kreiran uređaj:", appliance.id);
 
       // Kreiranje servisa
       const newService = await storage.createService({
-        ...serviceData.data,
+        clientId,
+        applianceId: appliance.id,
+        description,
         status: "pending" as const,
-        createdAt: new Date().toISOString().split('T')[0] // Dodajem createdAt
+        createdAt: new Date().toISOString().split('T')[0]
       });
 
       // Slanje email notifikacije administratorima

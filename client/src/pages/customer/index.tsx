@@ -83,54 +83,18 @@ export default function CustomerServiceRequest() {
     mutationFn: async (data: ServiceRequestFormValues) => {
       setIsSubmitting(true);
       
-      // Prvo, kreiramo klijenta ako već ne postoji
-      const clientData = {
-        fullName: user?.fullName || "",
-        email: user?.username || "",
-        phone: user?.phone || "",
-        address: user?.address || "",
-        city: user?.city || "",
-      };
-      
-      let clientId;
-      
-      // Provera korisnika
-      const clientResponse = await apiRequest("POST", "/api/clients/check", { email: user?.username });
-      const clientResult = await clientResponse.json();
-      
-      if (clientResult.exists) {
-        clientId = clientResult.id;
-      } else {
-        // Kreiranje novog klijenta
-        const newClientResponse = await apiRequest("POST", "/api/clients", clientData);
-        const newClient = await newClientResponse.json();
-        clientId = newClient.id;
-      }
-      
-      // Kreiranje uređaja
-      const applianceData = {
-        clientId,
+      // Koristimo direktno /api/customer/services endpoint koji ima integrisanu logiku
+      const serviceData = {
         categoryId: parseInt(data.categoryId),
         manufacturerId: parseInt(data.manufacturerId),
         model: data.model,
         serialNumber: data.serialNumber,
         purchaseDate: data.purchaseDate,
-        notes: `Mesto kupovine: ${data.purchasePlace}`,
-      };
-      
-      const applianceResponse = await apiRequest("POST", "/api/appliances", applianceData);
-      const appliance = await applianceResponse.json();
-      
-      // Kreiranje servisa
-      const serviceData = {
-        clientId,
-        applianceId: appliance.id,
+        purchasePlace: data.purchasePlace,
         description: data.description,
-        status: "pending",
-        createdAt: new Date().toISOString(),
       };
       
-      const serviceResponse = await apiRequest("POST", "/api/services", serviceData);
+      const serviceResponse = await apiRequest("POST", "/api/customer/services", serviceData);
       return await serviceResponse.json();
     },
     onSuccess: () => {
