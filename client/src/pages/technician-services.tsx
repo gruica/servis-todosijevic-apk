@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 // Glavni komponent
 export default function TechnicianServicesList() {
+  const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -48,6 +50,9 @@ export default function TechnicianServicesList() {
   const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  
+  // State za highlighting servisa iz notifikacije
+  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
 
   // Učitavanje servisera
   const { data: technicians } = useQuery<any[]>({
@@ -58,6 +63,39 @@ export default function TechnicianServicesList() {
   const { data: services } = useQuery<any[]>({
     queryKey: ["/api/my-services"],
   });
+
+  // Proverava da li je stranica otvorena sa notifikacijom
+  useEffect(() => {
+    const state = history.state;
+    console.log("Technician Services - History State:", state);
+    if (state && state.highlightServiceId) {
+      console.log("Technician Services - Highlighting service ID:", state.highlightServiceId);
+      setHighlightedServiceId(state.highlightServiceId);
+      
+      // Produžen timeout sa 5 na 15 sekundi
+      const timer = setTimeout(() => {
+        setHighlightedServiceId(null);
+      }, 15000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
+
+  // Automatski otvara detalje servisa kada se dolazi sa notifikacije
+  useEffect(() => {
+    const state = history.state;
+    if (state && state.highlightServiceId && services && services.length > 0) {
+      const targetService = services.find(service => service.id === state.highlightServiceId);
+      if (targetService) {
+        // Automatski otvara servis detalje
+        setSelectedService(targetService);
+        setIsDetailsOpen(true);
+        
+        // Čisti state posle otvaranja da se izbegnu duplikati
+        history.replaceState(null, '', '/tech');
+      }
+    }
+  }, [services, location]);
 
   // Konvertuj string datum u Date objekat ako je izabran
   useEffect(() => {
@@ -294,7 +332,13 @@ export default function TechnicianServicesList() {
                       </TableRow>
                     ) : (
                       filteredServices.map((service) => (
-                        <TableRow key={service.id}>
+                        <TableRow 
+                          key={service.id}
+                          className={cn(
+                            "transition-all duration-500",
+                            highlightedServiceId === service.id && "bg-blue-50 ring-2 ring-blue-200 animate-pulse"
+                          )}
+                        >
                           <TableCell className="font-medium">#{service.id}</TableCell>
                           <TableCell>
                             <StatusBadge status={service.status} />

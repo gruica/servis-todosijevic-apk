@@ -39,7 +39,7 @@ import {
   Pause,
   Filter
 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 
 interface AdminService {
   id: number;
@@ -136,10 +136,10 @@ export default function AdminServices() {
       console.log("Admin Services - Highlighting service ID:", state.highlightServiceId);
       setHighlightedServiceId(state.highlightServiceId);
       
-      // Automatski uklanja highlighting posle 5 sekundi
+      // Produžen timeout sa 5 na 15 sekundi
       const timer = setTimeout(() => {
         setHighlightedServiceId(null);
-      }, 5000);
+      }, 15000);
       
       return () => clearTimeout(timer);
     }
@@ -163,6 +163,9 @@ export default function AdminServices() {
         // Automatski otvara servis detalje
         setSelectedService(targetService);
         setIsDetailsOpen(true);
+        
+        // Čisti state posle otvaranja da se izbegnu duplikati
+        history.replaceState(null, '', '/admin/services');
       }
     }
   }, [services, location]);
@@ -605,11 +608,10 @@ export default function AdminServices() {
                   {filteredServices.map((service) => (
                     <Card 
                       key={service.id} 
-                      className={`p-3 hover:bg-gray-50 transition-colors ${
-                        highlightedServiceId === service.id 
-                          ? 'ring-2 ring-blue-500 ring-offset-2' 
-                          : ''
-                      }`}
+                      className={cn(
+                        "p-3 hover:bg-gray-50 transition-all duration-500",
+                        highlightedServiceId === service.id && "bg-blue-50 ring-2 ring-blue-200 animate-pulse"
+                      )}
                     >
                       <div className="flex items-center justify-between">
                         {/* Kompaktni prikaz osnovnih informacija */}
