@@ -54,9 +54,9 @@ export default function TechnicianServicesList() {
     queryKey: ["/api/technicians"],
   });
 
-  // Učitavanje servisa
+  // Učitavanje servisa dodeljenih trenutnom serviseru
   const { data: services } = useQuery<any[]>({
-    queryKey: ["/api/services"],
+    queryKey: ["/api/my-services"],
   });
 
   // Konvertuj string datum u Date objekat ako je izabran
