@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import BusinessLayout from "@/components/layout/business-layout";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotification } from "@/contexts/notification-context";
 import { 
   Loader2, 
   PlusCircle, 
@@ -34,6 +35,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatDate } from "@/lib/utils";
 
 interface ServiceItem {
   id: number;
@@ -76,16 +79,7 @@ interface ServiceItem {
   };
 }
 
-// Helper funkcija za formatiranje datuma
-function formatDate(dateString: string | null) {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("sr-ME", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(date);
-}
+
 
 // Helper funkcija za prevod statusa
 function translateStatus(status: string) {
@@ -140,6 +134,9 @@ export default function BusinessServices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isMobile, setIsMobile] = useState(false);
+  const { highlightedServiceId, shouldAutoOpen, setShouldAutoOpen } = useNotification();
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
   // Detekcija mobilnog uređaja
   useEffect(() => {
@@ -156,6 +153,18 @@ export default function BusinessServices() {
     // Čišćenje
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Auto-open handling za notification navigaciju
+  useEffect(() => {
+    if (highlightedServiceId && shouldAutoOpen && services && services.length > 0) {
+      const targetService = services.find(service => service.id === highlightedServiceId);
+      if (targetService) {
+        setSelectedService(targetService);
+        setIsDetailsOpen(true);
+        setShouldAutoOpen(false);
+      }
+    }
+  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
   
   // Dohvatanje servisa za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
@@ -276,7 +285,16 @@ export default function BusinessServices() {
                   </TableHeader>
                   <TableBody>
                     {filteredServices.map((service) => (
-                      <TableRow key={service.id}>
+                      <TableRow 
+                        key={service.id} 
+                        className={`cursor-pointer ${
+                          service.id === highlightedServiceId ? 'bg-blue-50 border-blue-200' : ''
+                        }`}
+                        onClick={() => {
+                          setSelectedService(service);
+                          setIsDetailsOpen(true);
+                        }}
+                      >
                         <TableCell className="font-medium">{service.id}</TableCell>
                         <TableCell>
                           {service.client?.fullName || "Nepoznat"}
@@ -304,7 +322,10 @@ export default function BusinessServices() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => navigate(`/business/services/${service.id}`)}
+                            onClick={() => {
+                              setSelectedService(service);
+                              setIsDetailsOpen(true);
+                            }}
                           >
                             Detalji
                           </Button>
@@ -334,7 +355,16 @@ export default function BusinessServices() {
         {/* Responzivni prikaz za mobilne uređaje */}
         <div className="md:hidden space-y-4">
           {filteredServices && filteredServices.length > 0 ? filteredServices.map((service) => (
-            <Card key={service.id} className="overflow-hidden">
+            <Card 
+              key={service.id} 
+              className={`overflow-hidden cursor-pointer ${
+                service.id === highlightedServiceId ? 'border-blue-500 bg-blue-50' : ''
+              }`}
+              onClick={() => {
+                setSelectedService(service);
+                setIsDetailsOpen(true);
+              }}
+            >
               <CardContent className="p-0">
                 <div className="bg-gray-50 flex justify-between items-center p-4 border-b">
                   <div className="flex items-center">
@@ -372,7 +402,10 @@ export default function BusinessServices() {
                     className="w-full" 
                     variant="outline" 
                     size="sm"
-                    onClick={() => navigate(`/business/services/${service.id}`)}
+                    onClick={() => {
+                      setSelectedService(service);
+                      setIsDetailsOpen(true);
+                    }}
                   >
                     Detaljno
                   </Button>
@@ -382,6 +415,96 @@ export default function BusinessServices() {
           )) : null}
         </div>
       </div>
+      
+      {/* Dialog za detalje servisa */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Klijent</h4>
+                  <p className="text-sm text-gray-600">{selectedService.client?.fullName || "Nepoznat"}</p>
+                  <p className="text-sm text-gray-500">{selectedService.client?.email}</p>
+                  <p className="text-sm text-gray-500">{selectedService.client?.phone}</p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Status</h4>
+                  <StatusBadge status={selectedService.status} />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Uređaj</h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedService.manufacturer?.name} {selectedService.appliance?.model}
+                  </p>
+                  <p className="text-sm text-gray-500">{selectedService.category?.name}</p>
+                  <p className="text-sm text-gray-500">
+                    SN: {selectedService.appliance?.serialNumber || "Nije unet"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Serviser</h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedService.technician?.fullName || "Nije dodeljen"}
+                  </p>
+                  {selectedService.technician?.specialization && (
+                    <p className="text-sm text-gray-500">{selectedService.technician.specialization}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Opis problema</h4>
+                <p className="text-sm text-gray-600">{selectedService.description}</p>
+              </div>
+              
+              {selectedService.technicianNotes && (
+                <div>
+                  <h4 className="font-medium mb-2">Napomena servisera</h4>
+                  <p className="text-sm text-gray-600">{selectedService.technicianNotes}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Kreiran</h4>
+                  <p className="text-sm text-gray-600">{formatDate(selectedService.createdAt)}</p>
+                </div>
+                
+                {selectedService.scheduledDate && (
+                  <div>
+                    <h4 className="font-medium mb-2">Zakazano</h4>
+                    <p className="text-sm text-gray-600">{formatDate(selectedService.scheduledDate)}</p>
+                  </div>
+                )}
+                
+                {selectedService.completedDate && (
+                  <div>
+                    <h4 className="font-medium mb-2">Završeno</h4>
+                    <p className="text-sm text-green-600">{formatDate(selectedService.completedDate)}</p>
+                  </div>
+                )}
+              </div>
+              
+              {selectedService.cost && (
+                <div>
+                  <h4 className="font-medium mb-2">Cena servisa</h4>
+                  <p className="text-sm text-gray-600">{selectedService.cost} €</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </BusinessLayout>
   );
 }

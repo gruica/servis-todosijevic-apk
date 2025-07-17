@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Settings, Calendar, Clock } from "lucide-react";
 import { Service, Appliance, Manufacturer, ApplianceCategory } from "@shared/schema";
 import { formatDate } from "@/lib/utils";
+import { useNotification } from "@/contexts/notification-context";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Tip koji kombinuje servis sa detaljima o uređaju
 type ServiceWithDetails = Service & {
@@ -30,6 +33,9 @@ function getStatusInfo(status: string) {
 
 export default function CustomerServices() {
   const { user } = useAuth();
+  const { highlightedServiceId, shouldAutoOpen, setShouldAutoOpen } = useNotification();
+  const [selectedService, setSelectedService] = useState<ServiceWithDetails | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
   // Dohvatanje svih servisa korisnika
   const { data: services, isLoading: isLoadingServices } = useQuery<ServiceWithDetails[]>({
@@ -72,6 +78,18 @@ export default function CustomerServices() {
     };
   }) || [];
   
+  // Auto-open handling za notification navigaciju
+  useEffect(() => {
+    if (highlightedServiceId && shouldAutoOpen && enrichedServices.length > 0) {
+      const targetService = enrichedServices.find(service => service.id === highlightedServiceId);
+      if (targetService) {
+        setSelectedService(targetService);
+        setIsDetailsOpen(true);
+        setShouldAutoOpen(false);
+      }
+    }
+  }, [enrichedServices, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
+
   // Sortiranje servisa - najnoviji prvo
   const sortedServices = [...enrichedServices].sort((a, b) => {
     const dateA = new Date(a.createdAt || "");
@@ -119,7 +137,13 @@ export default function CustomerServices() {
                   return (
                     <div 
                       key={service.id} 
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                      className={`border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                        service.id === highlightedServiceId ? 'border-blue-500 bg-blue-50' : ''
+                      }`}
+                      onClick={() => {
+                        setSelectedService(service);
+                        setIsDetailsOpen(true);
+                      }}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
                         <div>
@@ -176,6 +200,78 @@ export default function CustomerServices() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Dialog za detalje servisa */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalji servisa</DialogTitle>
+          </DialogHeader>
+          
+          {selectedService && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Uređaj</h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedService.category?.name} {selectedService.manufacturer?.name} {selectedService.appliance?.model}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    SN: {selectedService.appliance?.serialNumber || "Nije unet"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Status</h4>
+                  <Badge className={getStatusInfo(selectedService.status).color}>
+                    {getStatusInfo(selectedService.status).label}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Opis problema</h4>
+                <p className="text-sm text-gray-600">{selectedService.description}</p>
+              </div>
+              
+              {selectedService.technicianNotes && (
+                <div>
+                  <h4 className="font-medium mb-2">Napomena servisera</h4>
+                  <p className="text-sm text-gray-600">{selectedService.technicianNotes}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Datum prijave</h4>
+                  <p className="text-sm text-gray-600">{formatDate(selectedService.createdAt || "")}</p>
+                </div>
+                
+                {selectedService.scheduledDate && (
+                  <div>
+                    <h4 className="font-medium mb-2">Zakazano za</h4>
+                    <p className="text-sm text-gray-600">{formatDate(selectedService.scheduledDate)}</p>
+                  </div>
+                )}
+              </div>
+              
+              {selectedService.completedDate && (
+                <div>
+                  <h4 className="font-medium mb-2">Datum završetka</h4>
+                  <p className="text-sm text-green-600">{formatDate(selectedService.completedDate)}</p>
+                </div>
+              )}
+              
+              {selectedService.cost && (
+                <div>
+                  <h4 className="font-medium mb-2">Cena servisa</h4>
+                  <p className="text-sm text-gray-600">{selectedService.cost} €</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </CustomerLayout>
   );
 }

@@ -73,6 +73,8 @@ export default function TechnicianServices() {
   const [unavailableReason, setUnavailableReason] = useState<string>("");
   const [reschedulingNotes, setReschedulingNotes] = useState<string>("");
   
+
+  
   // State za preuzimanje uređaja
   const [devicePickupDialogOpen, setDevicePickupDialogOpen] = useState(false);
   const [pickupNotes, setPickupNotes] = useState<string>("");
@@ -87,21 +89,7 @@ export default function TechnicianServices() {
   const [sparePartsOrderOpen, setSparePartsOrderOpen] = useState(false);
   const [sparePartsService, setSparePartsService] = useState<TechnicianService | null>(null);
 
-  // Proverava da li je stranica otvorena sa notifikacijom
-  useEffect(() => {
-    const state = history.state;
-    if (state && state.highlightServiceId) {
-      setHighlightedServiceId(state.highlightServiceId);
-      setShouldAutoOpen(true);
-      
-      // Automatski uklanja highlighting posle 5 sekundi
-      const timer = setTimeout(() => {
-        clearHighlight();
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [location, setHighlightedServiceId, setShouldAutoOpen, clearHighlight]);
+
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({

@@ -129,10 +129,7 @@ export default function AdminServices() {
     }
   }, []);
   
-  // Dodaj debug log za context
-  useEffect(() => {
-    console.log("Admin Services - Context state:", { highlightedServiceId, shouldAutoOpen });
-  }, [highlightedServiceId, shouldAutoOpen]);
+
   
   const { toast } = useToast();
 
@@ -145,10 +142,8 @@ export default function AdminServices() {
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
-    console.log("Auto-open check:", { highlightedServiceId, shouldAutoOpen, servicesLength: services.length });
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
       const targetService = services.find(service => service.id === highlightedServiceId);
-      console.log("Target service found:", targetService);
       if (targetService) {
         // Automatski otvara servis detalje
         setSelectedService(targetService);
@@ -157,18 +152,11 @@ export default function AdminServices() {
         // Čisti state posle otvaranja da se izbegnu duplikati
         setShouldAutoOpen(false);
         history.replaceState(null, '', '/admin/services');
-        console.log("Service details opened automatically for service:", targetService.id);
       }
     }
   }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
 
-  // Log services data for debugging
-  console.log("Admin Services Debug:", {
-    services,
-    isLoading: loadingServices,
-    error,
-    servicesCount: services.length
-  });
+
 
   // Fetch technicians
   const { data: technicians = [] } = useQuery<Technician[]>({

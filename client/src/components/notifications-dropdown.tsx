@@ -120,7 +120,6 @@ export function NotificationsDropdown() {
           break;
         case 'admin':
           // Za adminiastratore - navigacija na admin servise sa fokusiranim servisom
-          console.log("Navigating to admin services with highlight ID:", notification.relatedServiceId);
           navigate('/admin/services');
           break;
         case 'customer':
