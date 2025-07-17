@@ -14,7 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Tip za kategoriju uređaja
 interface ApplianceCategory {
@@ -65,6 +67,19 @@ export default function NewBusinessServiceRequest() {
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isFloatingMode, setIsFloatingMode] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    client: true,
+    appliance: true,
+    description: true
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
   // Dohvatanje kategorija uređaja
   const { data: categories, isLoading: isLoadingCategories } = useQuery<ApplianceCategory[]>({
@@ -229,9 +244,291 @@ export default function NewBusinessServiceRequest() {
     );
   }
   
+  // Floating modal form component
+  const FloatingForm = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>Novi servisni zahtev</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-full max-h-[80vh] pr-4">
+          <div className="space-y-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Client Section */}
+                <Card>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleSection('client')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Podaci o klijentu</CardTitle>
+                      {expandedSections.client ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </CardHeader>
+                  {expandedSections.client && (
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="clientFullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ime i prezime klijenta</FormLabel>
+                            <FormControl>
+                              <Input placeholder="npr. Marko Petrović" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="clientPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Telefon</FormLabel>
+                              <FormControl>
+                                <Input placeholder="067123456" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="clientEmail"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email (opciono)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="email@example.com" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="clientAddress"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Adresa (opciono)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ulica i broj" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="clientCity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Grad (opciono)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Grad" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Appliance Section */}
+                <Card>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleSection('appliance')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Podaci o uređaju</CardTitle>
+                      {expandedSections.appliance ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </CardHeader>
+                  {expandedSections.appliance && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="categoryId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Kategorija</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Izaberite kategoriju" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {isLoadingCategories ? (
+                                    <div className="flex items-center justify-center p-4">
+                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      <span>Učitavanje...</span>
+                                    </div>
+                                  ) : (
+                                    categories?.map((category) => (
+                                      <SelectItem key={category.id} value={category.id.toString()}>
+                                        {category.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="manufacturerId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Proizvođač</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Izaberite proizvođača" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {isLoadingManufacturers ? (
+                                    <div className="flex items-center justify-center p-4">
+                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      <span>Učitavanje...</span>
+                                    </div>
+                                  ) : (
+                                    manufacturers?.map((manufacturer) => (
+                                      <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                                        {manufacturer.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="model"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Model</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Model uređaja" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="serialNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Serijski broj (opciono)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Serijski broj" {...field} value={field.value || ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="purchaseDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Datum kupovine (opciono)</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Description Section */}
+                <Card>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleSection('description')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Opis problema</CardTitle>
+                      {expandedSections.description ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </CardHeader>
+                  {expandedSections.description && (
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Detaljan opis problema</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Opišite problem što detaljnije..." 
+                                className="min-h-[100px]"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Uključite kako se problem manifestuje, kada je primećen, i druge relevantne informacije.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Submit Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Otkaži
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Kreiranje...
+                      </>
+                    ) : "Kreiraj zahtev"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <BusinessLayout>
-      <div className="space-y-6 max-w-4xl mx-auto pb-20"> {/* Dodat padding na dnu za mobilne uređaje */}
+      <div className="space-y-6 max-w-4xl mx-auto pb-20">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -248,17 +545,98 @@ export default function NewBusinessServiceRequest() {
           </div>
         </div>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Podaci o klijentu */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Podaci o klijentu</CardTitle>
-                <CardDescription>
-                  Unesite informacije o klijentu za koga se kreira servisni zahtev
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {/* Quick access buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setIsFloatingMode(true)}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                Brzi unos kvara
+              </CardTitle>
+              <CardDescription>
+                Kreirajte zahtev za servis kroz optimizovani plutajući prozor
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => setIsFloatingMode(true)}>
+                Otvori plutajući prozor
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Loader2 className="h-5 w-5 text-blue-600" />
+                Standardni unos
+              </CardTitle>
+              <CardDescription>
+                Standardni način unosa kroz običnu formu
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" onClick={() => setIsFloatingMode(false)}>
+                Koristi standardnu formu
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Floating modal form */}
+        <FloatingForm isOpen={isFloatingMode} onClose={() => setIsFloatingMode(false)} />
+
+        {/* Standard form (only show if not in floating mode) */}
+        {!isFloatingMode && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Quick action buttons */}
+              <div className="flex gap-2 mb-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsFloatingMode(true)}
+                >
+                  Prebaci na plutajući prozor
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setExpandedSections({ client: true, appliance: true, description: true });
+                  }}
+                >
+                  Otvori sve sekcije
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setExpandedSections({ client: false, appliance: false, description: true });
+                  }}
+                >
+                  Zatvori sve sekcije
+                </Button>
+              </div>
+
+              {/* Client Section */}
+              <Card>
+                <CardHeader 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleSection('client')}
+                >
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Podaci o klijentu</CardTitle>
+                    {expandedSections.client ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                  <CardDescription>
+                    Unesite informacije o klijentu za koga se kreira servisni zahtev
+                  </CardDescription>
+                </CardHeader>
+                {expandedSections.client && (
+                  <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
                   name="clientFullName"
@@ -373,18 +751,26 @@ export default function NewBusinessServiceRequest() {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
-            
-            {/* Podaci o uređaju */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Podaci o uređaju</CardTitle>
-                <CardDescription>
-                  Unesite informacije o uređaju koji treba servisirati
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                  </CardContent>
+                )}
+              </Card>
+              
+              {/* Appliance Section */}
+              <Card>
+                <CardHeader 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleSection('appliance')}
+                >
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Podaci o uređaju</CardTitle>
+                    {expandedSections.appliance ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                  <CardDescription>
+                    Unesite informacije o uređaju koji treba servisirati
+                  </CardDescription>
+                </CardHeader>
+                {expandedSections.appliance && (
+                  <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -523,18 +909,26 @@ export default function NewBusinessServiceRequest() {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
-            
-            {/* Opis problema */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Opis problema</CardTitle>
-                <CardDescription>
-                  Opišite problem sa uređajem koji treba servisirati
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                  </CardContent>
+                )}
+              </Card>
+              
+              {/* Description Section */}
+              <Card>
+                <CardHeader 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleSection('description')}
+                >
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Opis problema</CardTitle>
+                    {expandedSections.description ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                  <CardDescription>
+                    Opišite problem sa uređajem koji treba servisirati
+                  </CardDescription>
+                </CardHeader>
+                {expandedSections.description && (
+                  <CardContent>
                 <FormField
                   control={form.control}
                   name="description"
@@ -562,28 +956,30 @@ export default function NewBusinessServiceRequest() {
                     </FormItem>
                   )}
                 />
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="text-sm text-gray-500">
-                  * Sva polja označena kao obavezna moraju biti popunjena
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full md:w-auto"
-                  disabled={isSubmitting}
-                  size="lg"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Kreiranje zahteva...
-                    </span>
-                  ) : "Kreiraj servisni zahtev"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-        </Form>
+                  </CardContent>
+                )}
+                <CardFooter className="flex justify-between">
+                  <div className="text-sm text-gray-500">
+                    * Sva polja označena kao obavezna moraju biti popunjena
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full md:w-auto"
+                    disabled={isSubmitting}
+                    size="lg"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Kreiranje zahteva...
+                      </span>
+                    ) : "Kreiraj servisni zahtev"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </Form>
+        )}
       </div>
     </BusinessLayout>
   );
