@@ -65,7 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       console.log("Login successful, user:", user.username);
-      console.log("Cookies after login:", document.cookie);
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Uspešna prijava",
