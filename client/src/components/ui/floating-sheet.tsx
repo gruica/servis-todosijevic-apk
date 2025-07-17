@@ -143,6 +143,7 @@ export function FloatingSheet({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!draggable) return;
     
+    e.preventDefault();
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - position.x,
@@ -150,11 +151,49 @@ export function FloatingSheet({
     });
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!draggable) return;
+    
+    e.preventDefault();
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragOffset({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    });
+  };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (isDragging && draggable) {
+      e.preventDefault();
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      // Constrain to viewport
+      const constrainedX = Math.max(0, Math.min(newX, window.innerWidth - size.width));
+      const constrainedY = Math.max(0, Math.min(newY, window.innerHeight - size.height));
+      
       setPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
+        x: constrainedX,
+        y: constrainedY
+      });
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (isDragging && draggable) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const newX = touch.clientX - dragOffset.x;
+      const newY = touch.clientY - dragOffset.y;
+      
+      // Constrain to viewport
+      const constrainedX = Math.max(0, Math.min(newX, window.innerWidth - size.width));
+      const constrainedY = Math.max(0, Math.min(newY, window.innerHeight - size.height));
+      
+      setPosition({
+        x: constrainedX,
+        y: constrainedY
       });
     }
   };
@@ -164,13 +203,22 @@ export function FloatingSheet({
     setIsResizing(false);
   };
 
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
   useEffect(() => {
     if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleTouchEnd);
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }
   }, [isDragging, isResizing, dragOffset]);
@@ -199,10 +247,14 @@ export function FloatingSheet({
         isDragging && "cursor-grabbing",
         // Mobile keyboard optimization
         isMobile && "floating-sheet-mobile",
+        isMobile && isDragging && "dragging",
         !isMobile && "max-h-[calc(100vh-2rem)]",
         className
       )}
-      style={isMobile ? {} : {
+      style={isMobile ? {
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        transition: isDragging ? 'none' : 'transform 0.2s ease'
+      } : {
         left: position.x,
         top: position.y,
         width: size.width,
@@ -217,13 +269,20 @@ export function FloatingSheet({
       <div
         className={cn(
           "flex items-center justify-between p-3 border-b bg-muted/50 rounded-t-lg",
-          draggable && !isMobile && "cursor-grab active:cursor-grabbing"
+          draggable && "cursor-grab active:cursor-grabbing",
+          isMobile && "touch-manipulation"
         )}
-        onMouseDown={!isMobile ? handleMouseDown : undefined}
+        onMouseDown={draggable ? handleMouseDown : undefined}
+        onTouchStart={draggable ? handleTouchStart : undefined}
       >
         <div className="flex items-center gap-2">
-          {!isMobile && <Move className="h-4 w-4 text-muted-foreground" />}
+          {draggable && <Move className="h-4 w-4 text-muted-foreground" />}
           <h3 className="text-sm font-semibold truncate">{title}</h3>
+          {isMobile && draggable && (
+            <span className="text-xs text-muted-foreground">
+              (povucite za pomeranje)
+            </span>
+          )}
         </div>
         
         <div className="flex items-center gap-1">
