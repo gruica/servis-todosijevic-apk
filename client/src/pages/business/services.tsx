@@ -376,25 +376,55 @@ export default function BusinessServices() {
                   <StatusBadge status={service.status} />
                 </div>
                 <div className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-1">
-                    <div className="text-sm text-gray-500">Klijent:</div>
-                    <div className="text-sm font-medium">{service.client?.fullName || "Nepoznat"}</div>
-                    
-                    <div className="text-sm text-gray-500">Uređaj:</div>
-                    <div className="text-sm font-medium">
-                      {service.manufacturer?.name} {service.appliance?.model}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className="text-sm text-gray-500">Klijent:</div>
+                      <div className="text-sm font-medium">{service.client?.fullName || "Nepoznat"}</div>
                     </div>
                     
-                    <div className="text-sm text-gray-500">Kategorija:</div>
-                    <div className="text-sm font-medium">{service.category?.name}</div>
-                    
-                    <div className="text-sm text-gray-500">Kreiran:</div>
-                    <div className="text-sm font-medium">{formatDate(service.createdAt)}</div>
-                    
-                    <div className="text-sm text-gray-500">Serviser:</div>
-                    <div className="text-sm font-medium">
-                      {service.technician?.fullName || "Nije dodeljen"}
+                    <div className="border-t pt-2">
+                      <div className="text-sm text-gray-500 mb-1">Uređaj:</div>
+                      <div className="text-sm font-medium">
+                        {service.manufacturer?.name} {service.appliance?.model}
+                      </div>
+                      <div className="text-xs text-gray-500">{service.category?.name}</div>
+                      {service.appliance?.serialNumber && (
+                        <div className="text-xs text-gray-500">SN: {service.appliance.serialNumber}</div>
+                      )}
                     </div>
+                    
+                    <div className="border-t pt-2">
+                      <div className="grid grid-cols-2 gap-1">
+                        <div className="text-sm text-gray-500">Kreiran:</div>
+                        <div className="text-sm font-medium">{formatDate(service.createdAt)}</div>
+                        
+                        <div className="text-sm text-gray-500">Serviser:</div>
+                        <div className="text-sm font-medium">
+                          {service.technician?.fullName || "Nije dodeljen"}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {service.description && (
+                      <div className="border-t pt-2">
+                        <div className="text-sm text-gray-500 mb-1">Problem:</div>
+                        <div className="text-sm text-gray-700 max-h-10 overflow-hidden">{service.description}</div>
+                      </div>
+                    )}
+                    
+                    {service.technicianNotes && (
+                      <div className="border-t pt-2">
+                        <div className="text-sm text-gray-500 mb-1">Napomena servisera:</div>
+                        <div className="text-sm text-gray-700 max-h-10 overflow-hidden">{service.technicianNotes}</div>
+                      </div>
+                    )}
+                    
+                    {service.cost && (
+                      <div className="border-t pt-2">
+                        <div className="text-sm text-gray-500">Cena:</div>
+                        <div className="text-sm font-medium text-green-600">{service.cost} €</div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 border-t">
@@ -467,13 +497,13 @@ export default function BusinessServices() {
               
               <div>
                 <h4 className="font-medium mb-2">Opis problema</h4>
-                <p className="text-sm text-gray-600">{selectedService.description}</p>
+                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md border">{selectedService.description}</p>
               </div>
               
               {selectedService.technicianNotes && (
                 <div>
                   <h4 className="font-medium mb-2">Napomena servisera</h4>
-                  <p className="text-sm text-gray-600">{selectedService.technicianNotes}</p>
+                  <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-200">{selectedService.technicianNotes}</p>
                 </div>
               )}
               
@@ -501,7 +531,16 @@ export default function BusinessServices() {
               {selectedService.cost && (
                 <div>
                   <h4 className="font-medium mb-2">Cena servisa</h4>
-                  <p className="text-sm text-gray-600">{selectedService.cost} €</p>
+                  <p className="text-lg font-medium text-green-600">{selectedService.cost} €</p>
+                </div>
+              )}
+              
+              {selectedService.isCompletelyFixed !== null && (
+                <div>
+                  <h4 className="font-medium mb-2">Status popravke</h4>
+                  <p className={`text-sm font-medium ${selectedService.isCompletelyFixed ? 'text-green-600' : 'text-orange-600'}`}>
+                    {selectedService.isCompletelyFixed ? 'Uređaj je potpuno popravljen' : 'Uređaj nije potpuno popravljen'}
+                  </p>
                 </div>
               )}
             </div>
