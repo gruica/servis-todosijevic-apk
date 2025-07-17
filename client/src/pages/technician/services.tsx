@@ -24,6 +24,7 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/mobile-utils";
 import SparePartsOrderForm from "@/components/spare-parts-order-form";
 import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFolder";
+import { useNotification } from "@/contexts/notification-context";
 
 type TechnicianService = Service & {
   client?: {
@@ -53,6 +54,7 @@ export default function TechnicianServices() {
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
   const [location, navigate] = useLocation();
+  const { highlightedServiceId, shouldAutoOpen, setHighlightedServiceId, setShouldAutoOpen, clearHighlight } = useNotification();
   const isMobile = useIsMobile();
   // Uvek proveriti mobilno okruženje (mobile web i APK)
   const isMobileDevice = isMobileEnvironment();
@@ -65,9 +67,6 @@ export default function TechnicianServices() {
   const [machineNotes, setMachineNotes] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
-  
-  // State za highlighting servisa iz notifikacije
-  const [highlightedServiceId, setHighlightedServiceId] = useState<number | null>(null);
   
   // State za označavanje klijenta kao nedostupnog
   const [clientUnavailableDialogOpen, setClientUnavailableDialogOpen] = useState(false);
@@ -93,15 +92,16 @@ export default function TechnicianServices() {
     const state = history.state;
     if (state && state.highlightServiceId) {
       setHighlightedServiceId(state.highlightServiceId);
+      setShouldAutoOpen(true);
       
       // Automatski uklanja highlighting posle 5 sekundi
       const timer = setTimeout(() => {
-        setHighlightedServiceId(null);
+        clearHighlight();
       }, 5000);
       
       return () => clearTimeout(timer);
     }
-  }, [location]);
+  }, [location, setHighlightedServiceId, setShouldAutoOpen, clearHighlight]);
 
   // Fetch services assigned to the logged-in technician
   const { data: services = [], isLoading, refetch } = useQuery<TechnicianService[]>({
@@ -123,16 +123,19 @@ export default function TechnicianServices() {
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
-    const state = history.state;
-    if (state && state.highlightServiceId && services.length > 0) {
-      const targetService = services.find(service => service.id === state.highlightServiceId);
+    if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
+      const targetService = services.find(service => service.id === highlightedServiceId);
       if (targetService) {
         // Automatski otvara floating servis prozor za highlighted servis
         setFloatingSelectedService(targetService);
         setFloatingServiceOpen(true);
+        
+        // Čisti state posle otvaranja da se izbegnu duplikati
+        setShouldAutoOpen(false);
+        history.replaceState(null, '', '/tech');
       }
     }
-  }, [services, location]);
+  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
 
   // Mutation for updating service status
   const updateStatusMutation = useMutation({
