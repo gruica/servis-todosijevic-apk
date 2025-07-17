@@ -14,7 +14,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   
-  console.log(`CORS: origin=${req.headers.origin}, allowedOrigin=${allowedOrigin}`);
+  console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}`);
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
