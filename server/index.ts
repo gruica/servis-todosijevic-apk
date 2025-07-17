@@ -7,10 +7,14 @@ const app = express();
 
 // CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  // Specificno dozvoljavamo origin za Replit
+  const allowedOrigin = req.headers.origin || 'https://5000-manic-donkey-9yxqy86.replit.app';
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  
+  console.log(`CORS: origin=${req.headers.origin}, allowedOrigin=${allowedOrigin}`);
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
