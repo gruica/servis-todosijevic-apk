@@ -48,17 +48,7 @@ export class SmsService {
     console.log(`[SMS] Konfigurisan provajder: ${config.provider}`);
   }
 
-  /**
-   * Dobijanje informacija o konfiguraciji
-   */
-  public getConfigInfo(): { provider: string } | null {
-    if (!this.isConfigured || !this.config) {
-      return null;
-    }
-    return {
-      provider: this.config.provider
-    };
-  }
+
 
   /**
    * Slanje SMS poruke kroz odabrani provajder

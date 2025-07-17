@@ -431,11 +431,7 @@ export class MemStorage implements IStorage {
     return updatedTechnician;
   }
   
-  async getUserByTechnicianId(technicianId: number): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.technicianId === technicianId
-    );
-  }
+
 
   // Client methods
   async getAllClients(): Promise<Client[]> {
@@ -446,13 +442,7 @@ export class MemStorage implements IStorage {
     return this.clients.get(id);
   }
   
-  async getClientByEmail(email: string): Promise<Client | undefined> {
-    if (!email) return undefined;
-    
-    return Array.from(this.clients.values()).find(
-      (client) => client.email === email
-    );
-  }
+
   
   /**
    * Dobavlja detaljne informacije o klijentu sa aparatima i istorijom servisa
@@ -652,13 +642,7 @@ export class MemStorage implements IStorage {
     return this.appliances.get(id);
   }
   
-  async getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined> {
-    if (!serialNumber) return undefined;
-    
-    return Array.from(this.appliances.values()).find(
-      (appliance) => appliance.serialNumber === serialNumber
-    );
-  }
+
 
   async getAppliancesByClient(clientId: number): Promise<Appliance[]> {
     return Array.from(this.appliances.values()).filter(
@@ -1285,42 +1269,14 @@ export class DatabaseStorage implements IStorage {
    * @param email Email adresa klijenta
    * @returns Pronađeni klijent ili undefined
    */
-  async getClientByEmail(email: string): Promise<Client | undefined> {
-    try {
-      // Štiti od nula vrednosti
-      if (!email) return undefined;
-      
-      const [client] = await db.select()
-        .from(clients)
-        .where(eq(clients.email, email));
-      
-      return client || undefined;
-    } catch (error) {
-      console.error("Greška pri dobavljanju klijenta po emailu:", error);
-      return undefined;
-    }
-  }
+
   
   /**
    * Dobavlja uređaj po serijskom broju, koristi se za proveru duplikata
    * @param serialNumber Serijski broj uređaja
    * @returns Pronađeni uređaj ili undefined
    */
-  async getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined> {
-    try {
-      // Štiti od nula vrednosti
-      if (!serialNumber) return undefined;
-      
-      const [appliance] = await db.select()
-        .from(appliances)
-        .where(eq(appliances.serialNumber, serialNumber));
-      
-      return appliance || undefined;
-    } catch (error) {
-      console.error("Greška pri dobavljanju uređaja po serijskom broju:", error);
-      return undefined;
-    }
-  }
+
   
   /**
    * Dobavlja detaljne informacije o klijentu sa aparatima i istorijom servisa
