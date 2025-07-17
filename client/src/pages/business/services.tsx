@@ -35,7 +35,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/utils";
 
 interface ServiceItem {
@@ -421,6 +421,9 @@ export default function BusinessServices() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
+            <DialogDescription>
+              Detaljne informacije o servisnom zahtevu i trenutnom statusu
+            </DialogDescription>
           </DialogHeader>
           
           {selectedService && (
