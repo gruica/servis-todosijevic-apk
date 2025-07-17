@@ -53,16 +53,16 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     name: 'frigosistem_sid', // Specificiramo jedinstveno ime za cookie
     cookie: {
-      secure: true, // Mora biti true za sameSite: "none"
+      secure: process.env.NODE_ENV === 'production', // Vraćen dinamički secure
       httpOnly: true,
-      sameSite: "none", // Promenjen sa "lax" na "none" za Replit
+      sameSite: "lax", // Vraćen na "lax" za bolju kompatibilnost
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined, // Eksplicitno ne postavljamo domain
       path: '/' // Eksplicitno postavljamo path
     }
   };
 
-  app.set("trust proxy", 1);
+  app.set("trust proxy", true); // Promenjen sa 1 na true za bolje proxy handling
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
