@@ -154,18 +154,6 @@ export default function BusinessServices() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-open handling za notification navigaciju
-  useEffect(() => {
-    if (highlightedServiceId && shouldAutoOpen && services && services.length > 0) {
-      const targetService = services.find(service => service.id === highlightedServiceId);
-      if (targetService) {
-        setSelectedService(targetService);
-        setIsDetailsOpen(true);
-        setShouldAutoOpen(false);
-      }
-    }
-  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
-  
   // Dohvatanje servisa za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
     queryKey: ["/api/business/services", user?.id],
@@ -183,6 +171,18 @@ export default function BusinessServices() {
     },
     enabled: !!user?.id,
   });
+
+  // Auto-open handling za notification navigaciju
+  useEffect(() => {
+    if (highlightedServiceId && shouldAutoOpen && services && services.length > 0) {
+      const targetService = services.find(service => service.id === highlightedServiceId);
+      if (targetService) {
+        setSelectedService(targetService);
+        setIsDetailsOpen(true);
+        setShouldAutoOpen(false);
+      }
+    }
+  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
   
   // Filtriranje servisa po statusu i pretrazi
   const filteredServices = services?.filter(service => {
