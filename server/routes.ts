@@ -66,8 +66,8 @@ const testEmailSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes
-  setupAuth(app);
+  // setupAuth se poziva u server/index.ts pre CORS middleware-a
+  const server = createServer(app);
   
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);

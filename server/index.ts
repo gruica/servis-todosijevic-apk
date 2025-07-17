@@ -2,19 +2,23 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
+import { setupAuth } from "./auth";
 
 const app = express();
 
-// CORS middleware za omogućavanje cookies
+// PRVO postavi session middleware
+setupAuth(app);
+
+// ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
   // Specificno dozvoljavamo origin za Replit
-  const allowedOrigin = req.headers.origin || 'https://5000-manic-donkey-9yxqy86.replit.app';
+  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://5000-manic-donkey-9yxqy86.replit.app';
   res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   
-  console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}`);
+  console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);

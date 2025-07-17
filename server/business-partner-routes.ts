@@ -15,11 +15,14 @@ export function registerBusinessPartnerRoutes(app: Express) {
   const isBusinessPartner = (req: Request, res: Response, next: NextFunction) => {
     
     // Provera autentifikacije
+    console.log("=== BUSINESS PARTNER MIDDLEWARE ===");
     console.log("Session data:", req.session);
     console.log("Session ID:", req.sessionID);
     console.log("User data:", req.user);
     console.log("Is authenticated:", req.isAuthenticated());
     console.log("Session passport:", req.session?.passport);
+    console.log("Cookie header:", req.headers.cookie);
+    console.log("Session cookie name:", req.sessionID ? 'present' : 'missing');
     
     if (!req.isAuthenticated()) {
       console.log("Authentication failed - no user session");

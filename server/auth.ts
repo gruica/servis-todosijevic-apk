@@ -57,7 +57,7 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       sameSite: "none", // None za cross-site HTTPS
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
-      domain: ".replit.dev", // Eksplicitno postavljamo Replit domain
+      domain: undefined, // Uklanjamo domain - neka browser odluči
       path: '/' // Eksplicitno postavljamo path
     }
   };
