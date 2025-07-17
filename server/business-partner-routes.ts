@@ -16,8 +16,10 @@ export function registerBusinessPartnerRoutes(app: Express) {
     
     // Provera autentifikacije
     console.log("Session data:", req.session);
+    console.log("Session ID:", req.sessionID);
     console.log("User data:", req.user);
     console.log("Is authenticated:", req.isAuthenticated());
+    console.log("Session passport:", req.session?.passport);
     
     if (!req.isAuthenticated()) {
       console.log("Authentication failed - no user session");
