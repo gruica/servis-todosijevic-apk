@@ -327,7 +327,7 @@ export default function TechnicianServicesList() {
 
       {/* Dialog za detalje servisa */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl technician-dialog-mobile">
           <DialogHeader>
             <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
             <DialogDescription>
@@ -336,7 +336,7 @@ export default function TechnicianServicesList() {
           </DialogHeader>
           
           {selectedService && (
-            <div className="space-y-6">
+            <div className="space-y-6 service-details-mobile">
               {/* Status i osnovne informacije */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

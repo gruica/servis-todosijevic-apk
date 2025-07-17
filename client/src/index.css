@@ -123,6 +123,62 @@
       min-height: calc(100vh - 60px);
       padding-bottom: 20px;
     }
+    
+    /* Technician services mobile optimizations */
+    .technician-services-container {
+      height: calc(var(--vh, 1vh) * 100);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .technician-dialog-mobile {
+      max-height: calc(var(--vh, 1vh) * 85);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .technician-input-mobile {
+      min-height: 44px;
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .technician-button-mobile {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+    
+    /* Service status buttons mobile optimization */
+    .service-status-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+    }
+    
+    .service-status-button {
+      min-height: 44px;
+      flex: 1;
+      min-width: 120px;
+      touch-action: manipulation;
+    }
+    
+    /* Service details mobile layout */
+    .service-details-mobile {
+      padding: 16px;
+      max-height: calc(var(--vh, 1vh) * 75);
+      overflow-y: auto;
+    }
+    
+    .service-details-mobile h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .service-details-mobile p {
+      font-size: 14px;
+      line-height: 1.4;
+    }
   }
   
   /* Additional Android Chrome fixes */
