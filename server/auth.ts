@@ -53,9 +53,9 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     name: 'frigosistem_sid', // Specificiramo jedinstveno ime za cookie
     cookie: {
-      secure: true, // Uvek true za HTTPS Replit
+      secure: true, // True za HTTPS Replit
       httpOnly: true,
-      sameSite: "none", // None za cross-site na Replit
+      sameSite: "none", // None za cross-site HTTPS
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined, // Eksplicitno ne postavljamo domain
       path: '/' // Eksplicitno postavljamo path
@@ -111,6 +111,7 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => {
     console.log(`Serializing user ID: ${user.id}`);
+    console.log(`Session will store passport.user = ${user.id}`);
     done(null, user.id);
   });
   
@@ -276,6 +277,9 @@ export function setupAuth(app: Express) {
         
         // Uspješna prijava - logiram sesiju
         console.log(`Login successful, session established for user ${user.username} (ID: ${user.id}), session ID: ${req.sessionID}`);
+        console.log(`Session after login:`, req.session);
+        console.log(`Session.passport after login:`, req.session?.passport);
+        console.log(`User is authenticated after login:`, req.isAuthenticated());
         
         // Remove password from the response
         const { password, ...userWithoutPassword } = user as SelectUser;
