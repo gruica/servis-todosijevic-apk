@@ -5,10 +5,6 @@ import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
-import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
-import { smsService } from "./sms-service";
-import { hybridSmsService } from "./hybrid-sms-service";
-import { gsmModemService } from "./gsm-modem-service";
 import { gsmOnlySMSService } from "./gsm-only-sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
@@ -33,24 +29,13 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'cancelled': 'Otkazan'
 };
 
-// SMS postavke schema
-const smsSettingsSchema = z.object({
-  provider: z.enum(['messaggio', 'plivo', 'budgetsms', 'viber', 'twilio', 'gsm_modem']),
-  apiKey: z.string().min(1),
-  authToken: z.string().optional(),
-  senderId: z.string().optional()
-});
-
-// GSM Modem postavke schema
+// GSM Modem postavke schema (samo GSM modem)
 const gsmModemSettingsSchema = z.object({
-  provider: z.literal('gsm_modem').optional(),
+  connectionType: z.enum(['usb', 'wifi']).default('wifi'),
   port: z.string().optional(),
-  baudRate: z.number().int().positive().default(9600),
+  baudRate: z.number().int().positive().default(115200),
   phoneNumber: z.string().min(1),
   pin: z.string().optional(),
-  fallbackToTwilio: z.boolean().default(false),
-  // Novi WiFi polja
-  connectionType: z.enum(['usb', 'wifi']).default('usb'),
   wifiHost: z.string().optional(),
   wifiPort: z.number().int().positive().optional()
 }).refine((data) => {

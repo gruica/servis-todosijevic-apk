@@ -46,11 +46,11 @@ export class GSMModemService {
   // Učitaj konfiguraciju iz baze podataka
   async loadConfigFromDatabase() {
     try {
-      const { drizzle } = require('drizzle-orm/neon-http');
-      const { neon } = require('@neondatabase/serverless');
-      const { sql } = require('drizzle-orm');
+      const { drizzle } = await import('drizzle-orm/neon-http');
+      const { neon } = await import('@neondatabase/serverless');
+      const { sql } = await import('drizzle-orm');
       
-      const connection = neon(process.env.DATABASE_URL);
+      const connection = neon(process.env.DATABASE_URL || '');
       const db = drizzle(connection);
       
       console.log('[GSM MODEM] Učitavam konfiguraciju iz baze...');
@@ -60,10 +60,12 @@ export class GSMModemService {
       `);
       
       const config: any = {};
-      settings.forEach((row: any) => {
-        const key = row.key.replace('gsm_', '');
-        config[key] = row.value;
-      });
+      if (settings && Array.isArray(settings)) {
+        settings.forEach((row: any) => {
+          const key = row.key.replace('gsm_', '');
+          config[key] = row.value;
+        });
+      }
       
       if (config.configured === 'true') {
         console.log('[GSM MODEM] Konfiguracija učitana:', config);
