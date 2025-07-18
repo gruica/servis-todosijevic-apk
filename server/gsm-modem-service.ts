@@ -40,6 +40,50 @@ export class GSMModemService {
 
   constructor() {
     console.log("[GSM MODEM] Inicijalizacija GSM Modem servisa");
+    this.loadConfigFromDatabase();
+  }
+
+  // Učitaj konfiguraciju iz baze podataka
+  async loadConfigFromDatabase() {
+    try {
+      const { drizzle } = require('drizzle-orm/neon-http');
+      const { neon } = require('@neondatabase/serverless');
+      const { sql } = require('drizzle-orm');
+      
+      const connection = neon(process.env.DATABASE_URL);
+      const db = drizzle(connection);
+      
+      console.log('[GSM MODEM] Učitavam konfiguraciju iz baze...');
+      
+      const settings = await db.execute(sql`
+        SELECT key, value FROM system_settings WHERE key LIKE 'gsm_%'
+      `);
+      
+      const config: any = {};
+      settings.forEach((row: any) => {
+        const key = row.key.replace('gsm_', '');
+        config[key] = row.value;
+      });
+      
+      if (config.configured === 'true') {
+        console.log('[GSM MODEM] Konfiguracija učitana:', config);
+        
+        this.config = {
+          connectionType: config.connection_type || 'wifi',
+          port: config.usb_port || 'COM3',
+          baudRate: parseInt(config.baud_rate) || 115200,
+          phoneNumber: config.sim_card_number || '067028666',
+          wifiHost: config.wifi_host || '192.168.1.1',
+          wifiPort: parseInt(config.wifi_port) || 23
+        };
+        
+        console.log('[GSM MODEM] Konfiguracija postavljena:', this.config);
+      } else {
+        console.log('[GSM MODEM] Modem nije konfigurisan u bazi');
+      }
+    } catch (error) {
+      console.error('[GSM MODEM] Greška pri učitavanju konfiguracije:', error);
+    }
   }
 
   // Konfiguriši GSM modem

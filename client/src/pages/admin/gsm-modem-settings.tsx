@@ -175,6 +175,45 @@ export default function GSMModemSettings() {
     }
   };
 
+  // Test SMS funkcija
+  const sendTestSMS = async () => {
+    const phoneNumber = prompt("Unesite broj telefona za test SMS (format: +38267123456):");
+    if (!phoneNumber) return;
+
+    const message = prompt("Unesite poruku za test SMS:");
+    if (!message) return;
+
+    try {
+      toast({ title: "Šalje se test SMS...", description: "Molim sačekajte..." });
+      
+      const res = await apiRequest("POST", "/api/gsm-modem/send-test-sms", {
+        phoneNumber: phoneNumber,
+        message: message
+      });
+      const response = await res.json();
+      
+      if (response.success) {
+        toast({ 
+          title: "Test SMS uspešno poslat!", 
+          description: `SMS je poslat na broj ${phoneNumber}`,
+          duration: 5000
+        });
+      } else {
+        toast({ 
+          title: "Greška pri slanju SMS-a", 
+          description: response.error || "Nepoznata greška",
+          variant: "destructive" 
+        });
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Greška pri slanju test SMS-a", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -469,6 +508,14 @@ export default function GSMModemSettings() {
                       className="w-full"
                     >
                       Skeniraj mrežu za GSM modem
+                    </Button>
+                    <Button 
+                      onClick={sendTestSMS} 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                    >
+                      Pošalji test SMS
                     </Button>
                   </div>
                 </>

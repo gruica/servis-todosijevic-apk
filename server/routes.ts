@@ -3684,6 +3684,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test SMS funkcija
+  app.post("/api/gsm-modem/send-test-sms", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za slanje test SMS-a" });
+      }
+
+      const { phoneNumber, message } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ error: "Broj telefona i poruka su obavezni" });
+      }
+
+      console.log(`[GSM MODEM] Slanje test SMS-a na ${phoneNumber}: ${message}`);
+      
+      // Koristi GSM-only SMS servis
+      const result = await gsmOnlySMSService.sendSMS({
+        to: phoneNumber,
+        message: message,
+        type: 'custom'
+      });
+
+      res.json({
+        success: result.success,
+        message: result.success ? "SMS uspešno poslat" : "Greška pri slanju SMS-a",
+        messageId: result.messageId,
+        error: result.error
+      });
+    } catch (error) {
+      console.error("Greška pri slanju test SMS-a:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Greška pri slanju test SMS-a",
+        error: error.message
+      });
+    }
+  });
+
   // Test GSM modema
   app.post("/api/gsm-modem/test", async (req, res) => {
     try {
