@@ -40,10 +40,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <div className="flex flex-col min-h-screen">
       <Header toggleSidebar={toggleSidebar} />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         <Sidebar isMobileOpen={false} closeMobileMenu={() => {}} />
         
-        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10">
+        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10 min-h-0 h-full">
           {children}
         </main>
       </div>

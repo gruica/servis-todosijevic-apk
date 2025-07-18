@@ -212,7 +212,7 @@ export default function CreateService() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
         {/* Header */}
         <div className="flex items-center mb-6">
           <Button 
@@ -231,8 +231,8 @@ export default function CreateService() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-20">
+          <div className="grid grid-cols-1 gap-6">
             {/* Client Selection */}
             <Card>
               <CardHeader>
@@ -417,8 +417,8 @@ export default function CreateService() {
             </CardContent>
           </Card>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-4">
+          {/* Actions - Sticky button at the bottom */}
+          <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex justify-end space-x-4 mt-6">
             <Button
               type="button"
               variant="outline"
@@ -429,6 +429,7 @@ export default function CreateService() {
             <Button
               type="submit"
               disabled={createServiceMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {createServiceMutation.isPending ? "Kreiranje..." : "Kreiraj servis"}
             </Button>
