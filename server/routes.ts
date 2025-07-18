@@ -1034,6 +1034,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("=== KREIRANJE NOVOG SERVISA ===");
       console.log("Podaci iz frontend forme:", req.body);
       
+      // Provera autentifikacije
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ 
+          error: "Neautentifikovani korisnik", 
+          message: "Morate biti ulogovani da biste kreirali servis."
+        });
+      }
+      
+      // Provera dozvola (samo admin ili technician mogu kreirati servise)
+      if (!["admin", "technician"].includes(req.user?.role || "")) {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu", 
+          message: "Samo administratori i serviseri mogu kreirati servise."
+        });
+      }
+      
+      console.log("Korisnik kreira servis:", req.user?.username, "uloga:", req.user?.role);
+      
       // Manuelna validacija osnovnih podataka umesto schema
       const { clientId, applianceId, description } = req.body;
       
