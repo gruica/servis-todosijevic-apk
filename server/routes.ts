@@ -3545,6 +3545,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test konekcije sa GSM modemom
+  app.post("/api/gsm-modem/test-connection", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za testiranje GSM modem konekcije" });
+      }
+
+      const { host, port } = req.body;
+      
+      if (!host || !port) {
+        return res.status(400).json({ error: "Host i port su obavezni za testiranje konekcije" });
+      }
+
+      // Brza provjera konekcije sa kratkim timeout-om
+      const net = require('net');
+      const client = new net.Socket();
+      
+      const testPromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          client.destroy();
+          reject(new Error(`Timeout - modem nije dostupan na ${host}:${port}`));
+        }, 3000); // 3 sekunde timeout
+
+        client.connect(port, host, () => {
+          clearTimeout(timeout);
+          client.destroy();
+          resolve(true);
+        });
+
+        client.on('error', (err) => {
+          clearTimeout(timeout);
+          client.destroy();
+          reject(err);
+        });
+      });
+
+      await testPromise;
+      
+      res.json({ 
+        success: true, 
+        message: `Konekcija sa ${host}:${port} je uspešna`,
+        host,
+        port
+      });
+    } catch (error) {
+      console.error(`Greška pri testiranju konekcije sa ${req.body.host}:${req.body.port}:`, error);
+      res.status(400).json({ 
+        success: false, 
+        message: error.message || "Greška pri testiranju konekcije",
+        host: req.body.host,
+        port: req.body.port
+      });
+    }
+  });
+
   // Test GSM modema
   app.post("/api/gsm-modem/test", async (req, res) => {
     try {

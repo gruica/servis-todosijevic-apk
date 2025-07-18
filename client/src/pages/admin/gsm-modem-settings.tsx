@@ -117,6 +117,27 @@ export default function GSMModemSettings() {
     },
   });
 
+  // Test konekcije
+  const testConnection = async () => {
+    if (gsmConfig.connectionType === 'wifi') {
+      try {
+        const res = await apiRequest("POST", "/api/gsm-modem/test-connection", {
+          host: gsmConfig.wifiHost,
+          port: gsmConfig.wifiPort
+        });
+        const response = await res.json();
+        
+        if (response.success) {
+          toast({ title: "Konekcija uspešna!", description: "Modem je dostupan na datoj IP adresi i portu" });
+        } else {
+          toast({ title: "Konekcija neuspešna", description: response.message, variant: "destructive" });
+        }
+      } catch (error: any) {
+        toast({ title: "Greška pri testiranju konekcije", description: error.message, variant: "destructive" });
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -333,15 +354,48 @@ export default function GSMModemSettings() {
 
                   <div>
                     <Label htmlFor="wifiPort">TCP/IP Port</Label>
-                    <Input
-                      id="wifiPort"
-                      type="number"
-                      value={gsmConfig.wifiPort}
-                      onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiPort: parseInt(e.target.value) || 23 }))}
-                      placeholder="23"
-                    />
+                    <Select 
+                      value={gsmConfig.wifiPort?.toString() || "23"} 
+                      onValueChange={(value) => setGsmConfig(prev => ({ ...prev, wifiPort: parseInt(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Odaberite TCP/IP port" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="23">
+                          <div className="flex items-center space-x-2">
+                            <span>23</span>
+                            <span className="text-sm text-gray-500">(Telnet - najčešći)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="2000">
+                          <div className="flex items-center space-x-2">
+                            <span>2000</span>
+                            <span className="text-sm text-gray-500">(AT komande)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="8080">
+                          <div className="flex items-center space-x-2">
+                            <span>8080</span>
+                            <span className="text-sm text-gray-500">(HTTP port)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="80">
+                          <div className="flex items-center space-x-2">
+                            <span>80</span>
+                            <span className="text-sm text-gray-500">(HTTP default)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="8888">
+                          <div className="flex items-center space-x-2">
+                            <span>8888</span>
+                            <span className="text-sm text-gray-500">(Alternativni port)</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <p className="text-sm text-gray-600 mt-1">
-                      TCP/IP port (obično 23 ili 8080 za AT komande)
+                      Port za AT komande - probajte različite portove
                     </p>
                   </div>
                   
@@ -351,6 +405,17 @@ export default function GSMModemSettings() {
                       Modem komunicira direktno preko mreže na IP adresi (vidim da je vaša 192.168.1.1) 
                       preko TCP/IP protokola. Obično se koristi port 23 za AT komande.
                     </p>
+                  </div>
+
+                  <div className="mt-4">
+                    <Button 
+                      onClick={testConnection} 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                    >
+                      Testiraj konekciju
+                    </Button>
                   </div>
                 </>
               )}
