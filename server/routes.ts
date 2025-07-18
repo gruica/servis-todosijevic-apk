@@ -5,7 +5,7 @@ import { setupAuth } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
-import { gsmOnlySMSService } from "./gsm-only-sms-service";
+import { smsService } from "./sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -29,25 +29,11 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'cancelled': 'Otkazan'
 };
 
-// GSM Modem postavke schema (samo GSM modem)
-const gsmModemSettingsSchema = z.object({
-  connectionType: z.enum(['usb', 'wifi']).default('wifi'),
-  port: z.string().optional(),
-  baudRate: z.number().int().positive().default(115200),
-  phoneNumber: z.string().min(1),
-  pin: z.string().optional(),
-  wifiHost: z.string().optional(),
-  wifiPort: z.number().int().positive().optional()
-}).refine((data) => {
-  // Validacija na osnovu tipa konekcije
-  if (data.connectionType === 'usb') {
-    return data.port && data.port.length > 0;
-  } else if (data.connectionType === 'wifi') {
-    return data.wifiHost && data.wifiHost.length > 0 && data.wifiPort && data.wifiPort > 0;
-  }
-  return true;
-}, {
-  message: "Za USB konekciju je potreban port, a za WiFi su potrebni host i port",
+// Twilio SMS postavke schema
+const twilioSMSSettingsSchema = z.object({
+  accountSid: z.string().min(1),
+  authToken: z.string().min(1),
+  fromNumber: z.string().min(1),
 });
 
 // Funkcija za generisanje SMS poruke na osnovu statusa servisa
@@ -1745,43 +1731,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   : clientSmsContent;
               }
               
-              // Šaljemo SMS klijentu preko novog SMS servisa
+              // Šaljemo SMS klijentu preko Twilio SMS servisa
               const smsMessage = generateStatusUpdateMessage(serviceId, statusDescription, additionalInfo);
-              const clientSmsSent = await newSmsService.sendSms({
-                to: client.phone || '',
-                message: smsMessage,
-                type: 'status_update'
-              });
+              const clientSmsSent = await smsService.sendServiceStatusUpdate(
+                client,
+                { id: serviceId, description: statusDescription, status: statusDescription },
+                statusDescription,
+                additionalInfo
+              );
               
-              if (clientSmsSent.success) {
-                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko ${newSmsService.getConfigInfo()?.provider || 'novog SMS servisa'}`);
+              if (clientSmsSent) {
+                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko Twilio`);
                 emailInfo.smsSent = true;
-                if (clientSmsSent.messageId) {
-                  console.log(`[SMS SISTEM] Message ID: ${clientSmsSent.messageId}`);
-                }
               } else {
-                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke: ${clientSmsSent.error}`);
-                
-                // Fallback na postojeći Twilio SMS servis
-                console.log(`[SMS SISTEM] Pokušavam fallback na Twilio SMS servis...`);
-                try {
-                  const fallbackSent = await smsService.sendServiceStatusUpdate(
-                    client,
-                    { id: serviceId, description: statusDescription, status: statusDescription },
-                    statusDescription,
-                    additionalInfo
-                  );
-                  
-                  if (fallbackSent) {
-                    console.log(`[SMS SISTEM] ✅ Fallback SMS uspešno poslat preko Twilio`);
-                    emailInfo.smsSent = true;
-                  } else {
-                    emailInfo.smsError = "Neuspešno slanje SMS poruke preko oba servisa. Proverite SMS postavke.";
-                  }
-                } catch (fallbackError) {
-                  console.error(`[SMS SISTEM] ❌ Fallback SMS takođe neuspešan:`, fallbackError);
-                  emailInfo.smsError = `Neuspešno slanje SMS poruke. Greška: ${clientSmsSent.error}`;
-                }
+                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke preko Twilio`);
+                emailInfo.smsError = "Neuspešno slanje SMS poruke. Proverite SMS postavke.";
               }
             } else {
               console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
@@ -3444,347 +3408,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =====================================
-  // GSM MODEM API ENDPOINTS
+  // TWILIO SMS API ENDPOINTS
   // =====================================
 
-  // Dobij dostupne serial portove za GSM modem
-  app.get("/api/gsm-modem/ports", async (req, res) => {
+  // Konfiguracija Twilio SMS-a
+  app.post("/api/sms/configure", async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem postavkama" });
+        return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju SMS servisa" });
       }
 
-      const ports = await gsmOnlySMSService.getAvailablePorts();
-      res.json({ ports });
-    } catch (error) {
-      console.error("Greška pri dobijanju portova:", error);
-      res.status(500).json({ error: "Greška pri dobijanju dostupnih portova" });
-    }
-  });
-
-  // Konfiguracija GSM modema
-  app.post("/api/gsm-modem/configure", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju GSM modema" });
-      }
-
-      const config = gsmModemSettingsSchema.parse(req.body);
+      const config = twilioSMSSettingsSchema.parse(req.body);
       
-      if (config.connectionType === 'wifi') {
-        console.log(`[GSM MODEM API] WiFi konfiguracija GSM modema: host=${config.wifiHost}, port=${config.wifiPort}, phone=${config.phoneNumber}`);
-      } else {
-        console.log(`[GSM MODEM API] USB konfiguracija GSM modema: port=${config.port}, baud=${config.baudRate}, phone=${config.phoneNumber}`);
-      }
+      console.log(`[SMS API] Konfiguracija Twilio SMS-a: sid=${config.accountSid.substring(0, 8)}..., phone=${config.fromNumber}`);
       
-      // Konfiguracija GSM-only servisa sa novim poljima
-      const gsmConfig = {
-        port: config.port || '',
-        baudRate: config.baudRate,
-        phoneNumber: config.phoneNumber,
-        connectionType: config.connectionType,
-        wifiHost: config.wifiHost,
-        wifiPort: config.wifiPort
-      };
-
-      const configured = await gsmOnlySMSService.configure(gsmConfig);
+      const configured = await smsService.configure(config);
       
       if (configured) {
         res.json({ 
           success: true, 
-          message: "GSM modem je uspešno konfigurisan",
-          provider: 'gsm_modem',
-          phoneNumber: config.phoneNumber
+          message: "Twilio SMS je uspešno konfigurisan",
+          provider: 'twilio',
+          phoneNumber: config.fromNumber
         });
       } else {
-        res.status(500).json({ error: "Greška pri konfiguraciji GSM modema" });
+        res.status(500).json({ error: "Greška pri konfiguraciji Twilio SMS-a" });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
-          error: "Nevažeći podaci za GSM modem", 
+          error: "Nevažeći podaci za Twilio SMS", 
           details: error.format() 
         });
       }
-      console.error("Greška pri konfiguraciji GSM modema:", error);
+      console.error("Greška pri konfiguraciji Twilio SMS-a:", error);
       res.status(500).json({ 
-        error: "Greška pri konfiguraciji GSM modema", 
+        error: "Greška pri konfiguraciji Twilio SMS-a", 
         message: error instanceof Error ? error.message : "Nepoznata greška"
       });
     }
   });
 
-  // Status GSM modema
-  app.get("/api/gsm-modem/status", async (req, res) => {
+  // Status SMS servisa
+  app.get("/api/sms/status", async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem statusu" });
+        return res.status(403).json({ error: "Nemate dozvolu za pristup SMS statusu" });
       }
 
-      const status = await gsmOnlySMSService.getStatus();
+      const status = await smsService.getStatus();
       
       res.json(status);
     } catch (error) {
-      console.error("Greška pri dobijanju GSM modem statusa:", error);
-      res.status(500).json({ error: "Greška pri dobijanju GSM modem statusa" });
+      console.error("Greška pri dobijanju SMS statusa:", error);
+      res.status(500).json({ error: "Greška pri dobijanju SMS statusa" });
     }
   });
 
-  // Test konekcije sa GSM modemom
-  app.post("/api/gsm-modem/test-connection", async (req, res) => {
+  // Test konekcije sa Twilio
+  app.post("/api/sms/test-connection", async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za testiranje GSM modem konekcije" });
+        return res.status(403).json({ error: "Nemate dozvolu za testiranje SMS konekcije" });
       }
 
-      const { host, port } = req.body;
+      const connected = await smsService.testConnection();
       
-      if (!host || !port) {
-        return res.status(400).json({ error: "Host i port su obavezni za testiranje konekcije" });
+      if (connected) {
+        res.json({ 
+          success: true, 
+          message: "Twilio konekcija je uspešna",
+          provider: 'twilio'
+        });
+      } else {
+        res.status(500).json({ error: "Twilio konekcija nije uspešna" });
       }
-
-      // Brza provjera konekcije sa kratkim timeout-om
-      const net = require('net');
-      const client = new net.Socket();
-      
-      const testPromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          client.destroy();
-          reject(new Error(`Timeout - modem nije dostupan na ${host}:${port}`));
-        }, 3000); // 3 sekunde timeout
-
-        client.connect(port, host, () => {
-          clearTimeout(timeout);
-          client.destroy();
-          resolve(true);
-        });
-
-        client.on('error', (err) => {
-          clearTimeout(timeout);
-          client.destroy();
-          reject(err);
-        });
-      });
-
-      await testPromise;
-      
-      res.json({ 
-        success: true, 
-        message: `Konekcija sa ${host}:${port} je uspešna`,
-        host,
-        port
-      });
     } catch (error) {
-      console.error(`Greška pri testiranju konekcije sa ${req.body.host}:${req.body.port}:`, error);
-      res.status(400).json({ 
-        success: false, 
-        message: error.message || "Greška pri testiranju konekcije",
-        host: req.body.host,
-        port: req.body.port
-      });
+      console.error("Greška pri testiranju konekcije:", error);
+      res.status(500).json({ error: "Greška pri testiranju konekcije" });
     }
   });
 
-  // Skeniranje mreže za GSM modem
-  app.post("/api/gsm-modem/scan-network", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za skeniranje mreže" });
-      }
-
-      console.log("[GSM MODEM] Započinje skeniranje mreže za GSM modem...");
-      
-      const net = require('net');
-      const commonPorts = [23, 2000, 8080, 80, 8888, 443, 1883, 8081, 8082, 8083];
-      const possibleIPs = [
-        '192.168.1.1',
-        '192.168.0.1', 
-        '192.168.1.100',
-        '192.168.0.100',
-        '10.0.0.1',
-        '172.16.0.1'
-      ];
-
-      const devices = [];
-      let scanCount = 0;
-      const totalScans = possibleIPs.length * commonPorts.length;
-
-      for (const ip of possibleIPs) {
-        for (const port of commonPorts) {
-          scanCount++;
-          console.log(`[GSM SCAN] Skeniram ${ip}:${port} (${scanCount}/${totalScans})`);
-          
-          try {
-            const client = new net.Socket();
-            
-            const testPromise = new Promise((resolve, reject) => {
-              const timeout = setTimeout(() => {
-                client.destroy();
-                reject(new Error('timeout'));
-              }, 1000); // 1 sekunda timeout za svaki test
-
-              client.connect(port, ip, () => {
-                clearTimeout(timeout);
-                client.destroy();
-                resolve({ ip, port });
-              });
-
-              client.on('error', (err) => {
-                clearTimeout(timeout);
-                client.destroy();
-                reject(err);
-              });
-            });
-
-            const result = await testPromise;
-            devices.push(result);
-            console.log(`[GSM SCAN] ✓ Pronađen modem na ${ip}:${port}`);
-            
-            // Prekini skeniranje nakon prvog pronađenog uređaja
-            if (devices.length > 0) break;
-          } catch (error) {
-            // Ignorisi greške i nastavi skeniranje
-          }
-        }
-        
-        // Prekini skeniranje nakon prvog pronađenog uređaja
-        if (devices.length > 0) break;
-      }
-
-      console.log(`[GSM SCAN] Završeno skeniranje. Pronađeno ${devices.length} uređaja.`);
-      
-      res.json({ 
-        success: true, 
-        devices,
-        scannedCount: scanCount,
-        totalCount: totalScans
-      });
-    } catch (error) {
-      console.error("Greška pri skeniranju mreže:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Greška pri skeniranju mreže",
-        error: error.message
-      });
-    }
-  });
-
-  // Test SMS funkcija
-  app.post("/api/gsm-modem/send-test-sms", async (req, res) => {
+  // Pošalji test SMS preko Twilio
+  app.post("/api/sms/send-test", async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za slanje test SMS-a" });
       }
 
-      const { phoneNumber, message } = req.body;
+      const { phoneNumber } = req.body;
       
-      if (!phoneNumber || !message) {
-        return res.status(400).json({ error: "Broj telefona i poruka su obavezni" });
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Broj telefona je obavezan" });
       }
 
-      console.log(`[GSM MODEM] Slanje test SMS-a na ${phoneNumber}: ${message}`);
+      console.log(`[SMS] Slanje test SMS-a na ${phoneNumber}`);
       
-      // Koristi GSM-only SMS servis
-      const result = await gsmOnlySMSService.sendSMS({
-        to: phoneNumber,
-        message: message,
-        type: 'custom'
-      });
-
-      res.json({
-        success: result.success,
-        message: result.success ? "SMS uspešno poslat" : "Greška pri slanju SMS-a",
-        messageId: result.messageId,
-        error: result.error
-      });
-    } catch (error) {
-      console.error("Greška pri slanju test SMS-a:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Greška pri slanju test SMS-a",
-        error: error.message
-      });
-    }
-  });
-
-  // Test GSM modema
-  app.post("/api/gsm-modem/test", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za testiranje GSM modema" });
-      }
-
-      const { recipient } = z.object({ recipient: z.string().min(8) }).parse(req.body);
+      const sent = await smsService.sendTestSMS(phoneNumber);
       
-      console.log(`[GSM MODEM TEST] Slanje test SMS-a na: ${recipient}`);
-      
-      const result = await gsmOnlySMSService.testSms(recipient, "Test poruka sa GSM modema - Frigo Sistem Todosijević");
-      
-      if (result.success) {
-        console.log(`[GSM MODEM TEST] ✅ Test SMS uspešno poslat na: ${recipient}`);
-        return res.json({ 
-          success: true, 
-          message: "Test SMS uspešno poslat",
-          messageId: result.messageId,
-          provider: result.provider || 'gsm_modem'
-        });
-      } else {
-        console.error(`[GSM MODEM TEST] ❌ Neuspešno slanje test SMS-a: ${result.error}`);
-        return res.status(500).json({ 
-          success: false, 
-          error: result.error || "Neuspešno slanje test SMS-a"
-        });
-      }
-    } catch (error) {
-      console.error("[GSM MODEM TEST] Greška:", error);
-      
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Nevažeći broj telefona", 
-          details: error.format() 
-        });
-      }
-      
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri slanju test SMS-a", 
-        message: error instanceof Error ? error.message : "Nepoznata greška" 
-      });
-    }
-  });
-
-  // Restart GSM modem konekcije
-  app.post("/api/gsm-modem/restart", async (req, res) => {
-    try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za restartovanje GSM modema" });
-      }
-
-      console.log("[GSM MODEM API] Restartovanje GSM modem konekcije...");
-      
-      const restarted = await gsmOnlySMSService.restart();
-      
-      if (restarted) {
+      if (sent) {
         res.json({ 
           success: true, 
-          message: "GSM modem je uspešno restartovan" 
+          message: "Test SMS je uspešno poslat",
+          phoneNumber: phoneNumber,
+          provider: 'twilio'
         });
       } else {
-        res.status(500).json({ 
-          success: false, 
-          error: "Greška pri restartovanju GSM modema" 
-        });
+        res.status(500).json({ error: "Greška pri slanju test SMS-a" });
       }
     } catch (error) {
-      console.error("Greška pri restartovanju GSM modema:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri restartovanju GSM modema", 
-        message: error instanceof Error ? error.message : "Nepoznata greška" 
-      });
+      console.error("Greška pri slanju test SMS-a:", error);
+      res.status(500).json({ error: "Greška pri slanju test SMS-a" });
     }
   });
+
+
 
   // =====================================
   // NOTIFICATIONS API ENDPOINTS
@@ -4035,23 +3773,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
-        const smsResult = await newSmsService.sendSms({
-          to: service.client.phone,
-          message: smsMessage,
-          type: 'status_update'
-        });
+        const smsResult = await smsService.sendServiceStatusUpdate(
+          service.client,
+          { id: serviceId, description: service.description, status: 'assigned' },
+          'assigned',
+          technician.fullName
+        );
         
-        if (smsResult.success) {
+        if (smsResult) {
           console.log(`[SMS] ✅ SMS obaveštenje o dodeljivanju servisera poslato klijentu ${service.client.fullName}`);
         } else {
-          console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
-          // Fallback na Twilio
-          await smsService.sendServiceStatusUpdate(
-            service.client,
-            { id: serviceId, description: service.description, status: 'assigned' },
-            'assigned',
-            technician.fullName
-          );
+          console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
         }
       }
       
@@ -4101,23 +3833,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
-        const smsResult = await newSmsService.sendSms({
-          to: service.client.phone,
-          message: smsMessage,
-          type: 'status_update'
-        });
+        const smsResult = await smsService.sendServiceStatusUpdate(
+          service.client,
+          { id: serviceId, description: service.description, status: status },
+          status,
+          service.technician?.fullName
+        );
         
-        if (smsResult.success) {
+        if (smsResult) {
           console.log(`[SMS] ✅ SMS obaveštenje o statusu poslato klijentu ${service.client.fullName}`);
         } else {
-          console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${smsResult.error}`);
-          // Fallback na Twilio
-          await smsService.sendServiceStatusUpdate(
-            service.client,
-            { id: serviceId, description: service.description, status: status },
-            status,
-            service.technician?.fullName
-          );
+          console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
         }
       }
       
@@ -4143,8 +3869,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS ADMIN] Konfiguracija SMS provajdera: ${smsConfig.provider}`);
       
-      // Konfiguriši novi SMS servis
-      newSmsService.configure(smsConfig);
+      // Konfiguriši Twilio SMS servis
+      smsService.configure(smsConfig);
       
       res.json({ 
         success: true, 
@@ -4173,23 +3899,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
       }
       
-      const configInfo = newSmsService.getConfigInfo();
+      const configInfo = smsService.getStatus();
       
-      if (!configInfo) {
+      if (!configInfo.isConfigured) {
         return res.json({ 
           configured: false,
           recommendations: [
-            { provider: 'messaggio', description: 'Najbolja opcija za Crnu Goru', price: '€0.025-0.05/SMS' },
-            { provider: 'plivo', description: 'Pouzdana multinacionalna opcija', price: '€0.03-0.08/SMS' },
-            { provider: 'budgetsms', description: 'Najjeftinija opcija', price: '€0.052/SMS' },
-            { provider: 'viber', description: 'Hibridna opcija (Viber + SMS fallback)', price: '€0.0025/Viber + SMS fallback' }
+            { provider: 'twilio', description: 'Preporučena opcija za Crnu Goru', price: 'Zavisi od plana' }
           ]
         });
       }
       
       res.json({
         configured: true,
-        provider: configInfo.provider
+        provider: 'twilio'
       });
     } catch (error) {
       console.error("Greška pri dobijanju SMS postavki:", error);
@@ -4211,48 +3934,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
       
-      // Koristi GSM modem SMS servis
-      const hybridResult = await gsmOnlySMSService.sendSms({
-        to: recipient,
-        message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
-        type: 'custom'
-      });
+      // Koristi Twilio SMS servis
+      const sent = await smsService.sendTestSMS(recipient);
       
-      if (hybridResult.success) {
-        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko ${hybridResult.provider}`);
+      if (sent) {
+        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko Twilio`);
         return res.json({ 
           success: true, 
           message: "Test SMS uspešno poslat",
-          messageId: hybridResult.messageId,
-          cost: hybridResult.cost,
-          provider: hybridResult.provider
+          provider: 'twilio'
         });
       } else {
-        console.error(`[SMS TEST] ❌ Hibridni servis neuspešan: ${hybridResult.error}, pokušavam fallback`);
-        
-        // Fallback na novi SMS servis
-        const fallbackResult = await newSmsService.sendSms({
-          to: recipient,
-          message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
-          type: 'transactional'
+        console.error(`[SMS TEST] ❌ Twilio servis neuspešan`);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Neuspešno slanje test SMS-a"
         });
-        
-        if (fallbackResult.success) {
-          console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko fallback`);
-          return res.json({ 
-            success: true, 
-            message: "Test SMS uspešno poslat (fallback)",
-            messageId: fallbackResult.messageId,
-            cost: fallbackResult.cost,
-            provider: newSmsService.getConfigInfo()?.provider
-          });
-        } else {
-          console.error(`[SMS TEST] ❌ Svi SMS servisi neuspešni: ${fallbackResult.error}`);
-          return res.status(500).json({ 
-            success: false, 
-            error: fallbackResult.error || "Neuspešno slanje test SMS-a"
-          });
-        }
       }
     } catch (error) {
       console.error("[SMS TEST] Greška:", error);
@@ -4299,25 +3996,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      const result = await newSmsService.sendSms({
-        to: service.client.phone,
-        message: message,
-        type: type || 'custom'
-      });
+      const result = await smsService.sendCustomSMS(service.client.phone, message);
       
-      if (result.success) {
+      if (result) {
         console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
         return res.json({ 
           success: true, 
-          message: "SMS obaveštenje uspešno poslato",
-          messageId: result.messageId,
-          cost: result.cost
+          message: "SMS obaveštenje uspešno poslato"
         });
       } else {
-        console.error(`[SMS] ❌ Neuspešno slanje SMS-a: ${result.error}`);
+        console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
         return res.status(500).json({ 
           success: false, 
-          error: result.error || "Neuspešno slanje SMS obaveštenja"
+          error: "Neuspešno slanje SMS obaveštenja"
         });
       }
     } catch (error) {

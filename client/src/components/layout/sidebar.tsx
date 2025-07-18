@@ -43,7 +43,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/appliances", label: "Bijela tehnika", icon: "home_repair_service" },
     { path: "/users", label: "Upravljaj korisnicima", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: "verified_user" },
-    { path: "/admin/gsm-modem", label: "GSM Modem SMS", icon: "sms", highlight: true },
+    { path: "/admin/sms-test", label: "SMS test", icon: "sms", highlight: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },

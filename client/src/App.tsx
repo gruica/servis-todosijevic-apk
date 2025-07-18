@@ -29,7 +29,8 @@ import ExcelImportExport from "@/pages/excel-import-export";
 import ExcelImport from "@/pages/admin/excel-import";
 import UserVerification from "@/pages/admin/user-verification";
 import SmsSettings from "@/pages/admin/sms-settings";
-import GSMModemSettings from "@/pages/admin/gsm-modem-settings";
+import SMSTest from "@/pages/admin/sms-test";
+
 import SMSMessaging from "@/pages/sms-messaging";
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
@@ -97,7 +98,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-settings" component={SmsSettings} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/gsm-modem" component={GSMModemSettings} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
