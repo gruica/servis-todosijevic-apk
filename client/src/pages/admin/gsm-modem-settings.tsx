@@ -28,6 +28,9 @@ export default function GSMModemSettings() {
   // Dohvati dostupne portove
   const { data: portData } = useQuery<{ ports: string[] }>({
     queryKey: ["/api/gsm-modem/ports"],
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 60000, // Podaci su validni 1 minut
   });
 
   // Dohvati status GSM modema
@@ -40,7 +43,9 @@ export default function GSMModemSettings() {
     connectionTest: { gsm_modem: boolean; twilio: boolean };
   }>({
     queryKey: ["/api/gsm-modem/status"],
-    refetchInterval: 5000, // Refetch svakih 5 sekundi
+    refetchInterval: 10000, // Refetch svakih 10 sekundi
+    retry: 1, // Pokušaj samo jednom u slučaju greške
+    retryDelay: 1000, // Čekaj 1 sekund između pokušaja
   });
 
   // Konfiguracija GSM modema
