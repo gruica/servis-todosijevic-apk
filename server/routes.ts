@@ -9,6 +9,7 @@ import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
 import { hybridSmsService } from "./hybrid-sms-service";
 import { gsmModemService } from "./gsm-modem-service";
+import { gsmOnlySMSService } from "./gsm-only-sms-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -3454,7 +3455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem postavkama" });
       }
 
-      const ports = await hybridSmsService.getAvailablePorts();
+      const ports = await gsmOnlySMSService.getAvailablePorts();
       res.json({ ports });
     } catch (error) {
       console.error("Greška pri dobijanju portova:", error);
@@ -3473,18 +3474,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[GSM MODEM API] Konfiguracija GSM modema: port=${config.port}, baud=${config.baudRate}, phone=${config.phoneNumber}`);
       
-      // Konfiguracija hibridnog SMS servisa
-      const hybridConfig = {
-        preferredProvider: 'gsm_modem' as const,
-        fallbackEnabled: config.fallbackToTwilio,
-        gsmModemConfig: {
-          port: config.port,
-          baudRate: config.baudRate,
-          phoneNumber: config.phoneNumber
-        }
+      // Konfiguracija GSM-only servisa
+      const gsmConfig = {
+        port: config.port,
+        baudRate: config.baudRate,
+        phoneNumber: config.phoneNumber
       };
 
-      const configured = await hybridSmsService.configure(hybridConfig);
+      const configured = await gsmOnlySMSService.configure(gsmConfig);
       
       if (configured) {
         res.json({ 
@@ -3518,17 +3515,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem statusu" });
       }
 
-      const configInfo = hybridSmsService.getConfigInfo();
-      const connectionTest = await hybridSmsService.testConnection();
+      const status = await gsmOnlySMSService.getStatus();
       
-      res.json({
-        configured: !!configInfo,
-        provider: configInfo?.provider || null,
-        phoneNumber: configInfo?.phone || null,
-        connected: configInfo?.connected || false,
-        availableProviders: configInfo?.availableProviders || [],
-        connectionTest
-      });
+      res.json(status);
     } catch (error) {
       console.error("Greška pri dobijanju GSM modem statusa:", error);
       res.status(500).json({ error: "Greška pri dobijanju GSM modem statusa" });
@@ -3546,11 +3535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[GSM MODEM TEST] Slanje test SMS-a na: ${recipient}`);
       
-      const result = await hybridSmsService.sendSms({
-        to: recipient,
-        message: "Test poruka sa GSM modema - Frigo Sistem Todosijević",
-        type: 'custom'
-      });
+      const result = await gsmOnlySMSService.testSms(recipient, "Test poruka sa GSM modema - Frigo Sistem Todosijević");
       
       if (result.success) {
         console.log(`[GSM MODEM TEST] ✅ Test SMS uspešno poslat na: ${recipient}`);
@@ -3595,7 +3580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[GSM MODEM API] Restartovanje GSM modem konekcije...");
       
-      const restarted = await hybridSmsService.restartGsmModem();
+      const restarted = await gsmOnlySMSService.restart();
       
       if (restarted) {
         res.json({ 
@@ -4043,11 +4028,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
       
-      // Prvo pokušaj hibridni SMS servis (GSM modem sa fallback)
-      const hybridResult = await hybridSmsService.sendSms({
+      // Koristi GSM modem SMS servis
+      const hybridResult = await gsmOnlySMSService.sendSms({
         to: recipient,
         message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
-        type: 'transactional'
+        type: 'custom'
       });
       
       if (hybridResult.success) {
