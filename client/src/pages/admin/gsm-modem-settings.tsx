@@ -148,7 +148,8 @@ export default function GSMModemSettings() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 max-w-6xl"
+         style={{ minHeight: 'calc(100vh - 120px)' }}>
       <div className="flex items-center space-x-2">
         <Smartphone className="h-8 w-8 text-blue-600" />
         <div>
@@ -200,7 +201,7 @@ export default function GSMModemSettings() {
         </CardContent>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
         {/* Konfiguracija GSM modema */}
         <Card>
           <CardHeader>
