@@ -11,35 +11,34 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 
-  /* Android keyboard optimization */
+  /* Android keyboard optimization - only for technician pages */
   html {
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
   }
   
   body {
     height: 100%;
-    overflow: hidden;
-    position: fixed;
+    overflow: auto;
     width: 100%;
   }
   
   #root {
-    height: calc(var(--vh, 1vh) * 100);
-    overflow: hidden;
+    min-height: 100vh;
+    overflow: auto;
   }
   
-  /* Prevent viewport shift on mobile keyboard */
+  /* Apply fixed positioning only on technician pages */
+  .tech-page-wrapper {
+    position: fixed;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+  }
+  
+  /* Prevent viewport shift on mobile keyboard - only for tech pages */
   @supports (-webkit-touch-callout: none) {
-    html {
-      height: -webkit-fill-available;
-    }
-    
-    body {
-      height: -webkit-fill-available;
-    }
-    
-    #root {
+    .tech-page-wrapper {
       height: -webkit-fill-available;
     }
   }
