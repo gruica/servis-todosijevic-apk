@@ -39,26 +39,14 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface SMSConfigResponse {
-  configured: boolean;
-  phone: string | null;
-  missingCredentials: {
-    accountSid: boolean;
-    authToken: boolean;
-    phoneNumber: boolean;
-  };
-  invalidCredentials: {
-    accountSid: boolean;
-  };
-}
+// Uklanjamo SMSConfigResponse - koristimo samo GSM modem
 
 interface GSMModemStatus {
   configured: boolean;
   provider: string | null;
   phoneNumber: string | null;
   connected: boolean;
-  availableProviders: string[];
-  connectionTest: { gsm_modem: boolean; twilio: boolean };
+  port?: string;
 }
 
 interface Client {
@@ -84,26 +72,11 @@ export default function SMSMessaging() {
   const [gsmConfig, setGsmConfig] = useState({
     port: "",
     baudRate: 9600,
-    phoneNumber: "+38267028666",
-    fallbackToTwilio: true
+    phoneNumber: "+38267028666"
   });
   const [showGsmConfig, setShowGsmConfig] = useState(false);
   
-  // Dohvati konfiguraciju SMS servisa - obavezno osvežiti svaki put
-  const { data: smsConfig, isLoading: configLoading, refetch: refetchSmsConfig } = useQuery<SMSConfigResponse>({
-    queryKey: ["/api/sms/config"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/sms/config");
-      console.log("SMS config response:", res.status);
-      const data = await res.json();
-      console.log("SMS config data:", data);
-      return data;
-    },
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchInterval: 5000, // Osvežavanje svakih 5 sekundi
-    retry: 3,
-  });
+  // Uklanjamo Twilio SMS config - koristimo samo GSM modem status
 
   // Dohvati listu klijenata
   const { data: clients, isLoading: clientsLoading } = useQuery<Client[]>({
@@ -134,20 +107,20 @@ export default function SMSMessaging() {
     retry: 1,
   });
 
-  // Mutacija za slanje test poruke
+  // Mutacija za slanje test poruke preko GSM modema
   const testSendMutation = useMutation({
     mutationFn: async (data: { recipient: string; message: string }) => {
-      const res = await apiRequest("POST", "/api/sms/test", data);
+      const res = await apiRequest("POST", "/api/gsm-modem/send", data);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Greška pri slanju test SMS poruke");
+        throw new Error(errorData.error || "Greška pri slanju SMS poruke preko GSM modema");
       }
       return await res.json();
     },
     onSuccess: () => {
       toast({
         title: "Uspešno",
-        description: "Test SMS poruka je uspešno poslata",
+        description: "SMS poruka je uspešno poslata preko GSM modema",
         variant: "default",
       });
       setTestMessage("");
@@ -162,13 +135,13 @@ export default function SMSMessaging() {
     },
   });
   
-  // Mutacija za slanje grupne poruke
+  // Mutacija za slanje grupne poruke preko GSM modema
   const bulkSendMutation = useMutation({
     mutationFn: async (data: { clientIds: number[]; message: string }) => {
-      const res = await apiRequest("POST", "/api/sms/bulk", data);
+      const res = await apiRequest("POST", "/api/gsm-modem/bulk", data);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Greška pri slanju grupne SMS poruke");
+        throw new Error(errorData.error || "Greška pri slanju grupne SMS poruke preko GSM modema");
       }
       return await res.json();
     },
@@ -176,7 +149,7 @@ export default function SMSMessaging() {
       const { results } = data;
       toast({
         title: "Slanje poruka završeno",
-        description: `Uspešno: ${results.sent}, Neuspešno: ${results.failed} od ukupno ${results.total} poruka`,
+        description: `Uspešno: ${results.sent}, Neuspešno: ${results.failed} od ukupno ${results.total} poruka preko GSM modema`,
         variant: results.failed > 0 ? "destructive" : "default",
       });
       setBulkMessage("");
@@ -337,7 +310,7 @@ export default function SMSMessaging() {
     });
   };
 
-  if (configLoading || clientsLoading) {
+  if (clientsLoading || gsmLoading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -352,36 +325,27 @@ export default function SMSMessaging() {
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold mb-6">SMS Poruke</h1>
 
-        {smsConfig && !smsConfig.configured && (
+        {!gsmStatus?.configured && (
           <Alert variant="destructive" className="mb-6">
             <Info className="h-4 w-4" />
             <AlertTitle>Upozorenje</AlertTitle>
             <AlertDescription>
-              <p>SMS servis nije pravilno konfigurisan. Proverite sledeće kredencijale:</p>
+              <p>GSM modem nije konfigurisan. Potrebno je:</p>
               <ul className="list-disc pl-5 mt-2">
-                {smsConfig.missingCredentials.accountSid && (
-                  <li>Nedostaje Twilio Account SID</li>
-                )}
-                {smsConfig.missingCredentials.authToken && (
-                  <li>Nedostaje Twilio Auth Token</li>
-                )}
-                {smsConfig.missingCredentials.phoneNumber && (
-                  <li>Nedostaje Twilio broj telefona</li>
-                )}
-                {smsConfig.invalidCredentials.accountSid && (
-                  <li>Account SID nije validan (mora početi sa "AC")</li>
-                )}
+                <li>Fizički povezati GSM modem sa USB portom</li>
+                <li>Konfigurirati odgovarajući serial port</li>
+                <li>Verifikovati SIM karticu 067028666</li>
               </ul>
             </AlertDescription>
           </Alert>
         )}
 
-        {smsConfig && smsConfig.configured && (
+        {gsmStatus?.configured && gsmStatus?.connected && (
           <Alert className="mb-6">
             <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>SMS servis je aktivan</AlertTitle>
+            <AlertTitle>GSM modem je aktivan</AlertTitle>
             <AlertDescription>
-              SMS poruke se šalju sa broja: {smsConfig.phone}
+              SMS poruke se šalju sa SIM kartice: +38267028666
             </AlertDescription>
           </Alert>
         )}
@@ -444,37 +408,41 @@ export default function SMSMessaging() {
             </CardFooter>
           </Card>
 
-          {/* SMS Status Card */}
+          {/* GSM Status Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Status SMS servisa</CardTitle>
+              <CardTitle>Status GSM modema</CardTitle>
               <CardDescription>
-                Pregled statusa i konfiguracije Twilio SMS servisa
+                Pregled statusa i konfiguracije GSM modema sa SIM karticom
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={smsConfig?.configured ? "default" : "destructive"}>
-                    {smsConfig?.configured ? "Aktivan" : "Neaktivan"}
+                  <Badge variant={gsmStatus?.connected ? "default" : "destructive"}>
+                    {gsmStatus?.connected ? "Povezan" : "Nije povezan"}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Twilio broj:</span>
-                  <span>{smsConfig?.phone || "Nije konfigurisan"}</span>
+                  <span className="font-medium">SIM kartica:</span>
+                  <span>+38267028666</span>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-md text-sm">
-                  <p className="text-xs text-gray-500 mb-2">Napomena:</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Port:</span>
+                  <span>{gsmStatus?.port || "Nije konfigurisan"}</span>
+                </div>
+                <div className="p-3 bg-green-50 rounded-md text-sm">
+                  <p className="text-xs text-green-600 mb-2">Napomena:</p>
                   <p className="text-xs">
-                    SMS poruke se naplaćuju po poruci. Standardna SMS poruka može sadržati do 160 karaktera.
-                    Poruke se šalju putem Twilio servisa uz obavezan prefiks "Frigo Sistem Todosijević".
+                    SMS poruke se šalju preko lokalne SIM kartice 067028666. Nema dodatnih troškova
+                    osim standardne cene SMS poruka kod mobilnog operatora.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/sms/config"] })}>
+              <Button variant="outline" className="w-full" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/gsm-modem/status"] })}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Osveži status
               </Button>
@@ -579,13 +547,11 @@ export default function SMSMessaging() {
                         />
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="gsm-fallback"
-                          checked={gsmConfig.fallbackToTwilio}
-                          onCheckedChange={(checked) => setGsmConfig({...gsmConfig, fallbackToTwilio: checked as boolean})}
-                        />
-                        <Label htmlFor="gsm-fallback">Fallback na Twilio ako GSM ne radi</Label>
+                      <div className="p-3 bg-yellow-50 rounded-md text-sm">
+                        <p className="text-xs text-yellow-700 mb-1">Važno:</p>
+                        <p className="text-xs">
+                          Sistem koristi isključivo GSM modem sa SIM karticom. Nema fallback opcija.
+                        </p>
                       </div>
                       
                       <div className="flex space-x-2">

@@ -1,5 +1,4 @@
 import { gsmModemService } from './gsm-modem-service';
-import { smsService } from './sms-service';
 
 // Interface za SMS poruku
 interface SMSMessage {
@@ -17,160 +16,96 @@ interface SMSResponse {
   provider?: string;
 }
 
-// Interface za konfiguraciju
-interface HybridSMSConfig {
-  preferredProvider: 'gsm_modem' | 'twilio' | 'auto';
-  fallbackEnabled: boolean;
-  gsmModemConfig?: {
-    port: string;
-    baudRate: number;
-    phoneNumber: string;
-  };
+// Interface za konfiguraciju - samo GSM modem
+interface GSMOnlyConfig {
+  port: string;
+  baudRate: number;
+  phoneNumber: string;
 }
 
-export class HybridSMSService {
-  private config: HybridSMSConfig | null = null;
+export class GSMOnlySMSService {
+  private config: GSMOnlyConfig | null = null;
   private isGsmModemReady: boolean = false;
-  private isTwilioReady: boolean = false;
 
   constructor() {
-    console.log("[HYBRID SMS] Inicijalizacija hibridnog SMS servisa");
-    this.checkTwilioStatus();
+    console.log("[GSM SMS] Inicijalizacija GSM-only SMS servisa");
+    this.checkGsmModemStatus();
   }
 
-  // Proveri status Twilio servisa
-  private checkTwilioStatus(): void {
-    this.isTwilioReady = !!(
-      process.env.TWILIO_ACCOUNT_SID && 
-      process.env.TWILIO_AUTH_TOKEN && 
-      process.env.TWILIO_PHONE_NUMBER
-    );
-    
-    if (this.isTwilioReady) {
-      console.log("[HYBRID SMS] Twilio je dostupan");
-    } else {
-      console.log("[HYBRID SMS] Twilio nije konfigurisan");
+  // Proveri status GSM modema
+  private async checkGsmModemStatus(): Promise<void> {
+    try {
+      // Proveravamo da li je GSM modem konfigurisan preko environment varijabli
+      const gsmPort = process.env.GSM_MODEM_PORT;
+      const gsmPhone = process.env.GSM_MODEM_PHONE;
+      
+      this.isGsmModemReady = !!(gsmPort && gsmPhone);
+      if (this.isGsmModemReady) {
+        console.log("[GSM SMS] GSM modem je konfigurisan");
+      } else {
+        console.log("[GSM SMS] GSM modem nije konfigurisan");
+      }
+    } catch (error) {
+      console.log("[GSM SMS] Greška pri proveri GSM modema:", error);
+      this.isGsmModemReady = false;
     }
   }
 
-  // Konfiguriši hibridni SMS servis
-  async configure(config: HybridSMSConfig): Promise<boolean> {
+  // Konfiguriši GSM modem
+  async configure(config: GSMOnlyConfig): Promise<boolean> {
     try {
       this.config = config;
-      console.log(`[HYBRID SMS] Konfiguracija: preferredProvider=${config.preferredProvider}, fallback=${config.fallbackEnabled}`);
+      console.log(`[GSM SMS] Konfiguracija GSM modema: port=${config.port}, broj=${config.phoneNumber}`);
       
-      // Ako je GSM modem preferovan, pokušaj da ga konfigurišeš
-      if (config.preferredProvider === 'gsm_modem' && config.gsmModemConfig) {
-        const gsmConfigured = await gsmModemService.configure(config.gsmModemConfig);
-        if (gsmConfigured) {
-          this.isGsmModemReady = await gsmModemService.connect();
-          if (this.isGsmModemReady) {
-            console.log("[HYBRID SMS] ✅ GSM modem uspešno konfigurisan i povezan");
-          } else {
-            console.log("[HYBRID SMS] ❌ GSM modem konfigurisan ali nije uspešno povezan");
-          }
+      const gsmConfigured = await gsmModemService.configure(config);
+      if (gsmConfigured) {
+        this.isGsmModemReady = await gsmModemService.connect();
+        if (this.isGsmModemReady) {
+          console.log("[GSM SMS] ✅ GSM modem uspešno konfigurisan i povezan");
+          return true;
+        } else {
+          console.log("[GSM SMS] ❌ GSM modem konfigurisan ali nije uspešno povezan");
+          return false;
         }
       }
       
-      return true;
+      return false;
     } catch (error) {
       console.error("[HYBRID SMS] Greška pri konfiguraciji:", error);
       return false;
     }
   }
 
-  // Glavni metod za slanje SMS-a
+  // Glavni metod za slanje SMS-a - samo GSM modem
   async sendSms(smsData: SMSMessage): Promise<SMSResponse> {
     if (!this.config) {
       return {
         success: false,
-        error: "Hibridni SMS servis nije konfigurisan"
+        error: "GSM SMS servis nije konfigurisan"
       };
     }
 
-    const { preferredProvider, fallbackEnabled } = this.config;
-    
-    // Određuj koji provider da koristiš
-    let primaryProvider: 'gsm_modem' | 'twilio';
-    let fallbackProvider: 'gsm_modem' | 'twilio' | null = null;
-
-    if (preferredProvider === 'auto') {
-      // Automatski izbor - GSM modem ima prioritet ako je dostupan
-      primaryProvider = this.isGsmModemReady ? 'gsm_modem' : 'twilio';
-      fallbackProvider = fallbackEnabled ? (primaryProvider === 'gsm_modem' ? 'twilio' : 'gsm_modem') : null;
-    } else {
-      primaryProvider = preferredProvider;
-      fallbackProvider = fallbackEnabled ? (primaryProvider === 'gsm_modem' ? 'twilio' : 'gsm_modem') : null;
+    if (!this.isGsmModemReady) {
+      return {
+        success: false,
+        error: "GSM modem nije spreman ili povezan"
+      };
     }
 
-    console.log(`[HYBRID SMS] Pokušaj slanja SMS-a sa ${primaryProvider}, fallback: ${fallbackProvider || 'none'}`);
+    console.log(`[GSM SMS] Slanje SMS-a preko GSM modema na: ${smsData.to}`);
 
-    // Pokušaj sa primarnim provajderom
-    const primaryResult = await this.sendWithProvider(primaryProvider, smsData);
-    
-    if (primaryResult.success) {
-      console.log(`[HYBRID SMS] ✅ SMS uspešno poslat sa ${primaryProvider}`);
-      return { ...primaryResult, provider: primaryProvider };
-    }
-
-    // Ako primarni ne radi, pokušaj sa fallback provajderom
-    if (fallbackProvider) {
-      console.log(`[HYBRID SMS] Pokušaj fallback sa ${fallbackProvider}`);
-      const fallbackResult = await this.sendWithProvider(fallbackProvider, smsData);
-      
-      if (fallbackResult.success) {
-        console.log(`[HYBRID SMS] ✅ SMS uspešno poslat sa fallback ${fallbackProvider}`);
-        return { ...fallbackResult, provider: fallbackProvider };
-      }
-    }
-
-    // Ako oba nisu uspešna
-    console.error(`[HYBRID SMS] ❌ Slanje SMS-a neuspešno sa svim provajderima`);
-    return {
-      success: false,
-      error: `Slanje neuspešno: ${primaryResult.error}${fallbackProvider ? ` | Fallback: ${fallbackProvider} greška` : ''}`
-    };
-  }
-
-  // Pošalji SMS sa specifičnim provajderom
-  private async sendWithProvider(provider: 'gsm_modem' | 'twilio', smsData: SMSMessage): Promise<SMSResponse> {
     try {
-      if (provider === 'gsm_modem') {
-        if (!this.isGsmModemReady) {
-          return {
-            success: false,
-            error: "GSM modem nije spreman"
-          };
-        }
-        return await gsmModemService.sendSms(smsData);
+      const result = await gsmModemService.sendSms(smsData);
+      
+      if (result.success) {
+        console.log(`[GSM SMS] ✅ SMS uspešno poslat preko GSM modema`);
+        return { ...result, provider: 'gsm_modem' };
       } else {
-        // Twilio
-        if (!this.isTwilioReady) {
-          return {
-            success: false,
-            error: "Twilio nije konfigurisan"
-          };
-        }
-        
-        // Konvertuj u format koji Twilio očekuje
-        const client = { fullName: 'Hybrid SMS', phone: smsData.to };
-        const service = { id: 0, description: 'Hybrid SMS', status: 'custom' };
-        
-        const twilioResult = await smsService.sendServiceStatusUpdate(
-          client,
-          service,
-          'custom',
-          null
-        );
-        
-        return {
-          success: twilioResult,
-          messageId: twilioResult ? `twilio_${Date.now()}` : undefined,
-          error: twilioResult ? undefined : "Twilio slanje neuspešno"
-        };
+        console.error(`[GSM SMS] ❌ Slanje SMS-a neuspešno: ${result.error}`);
+        return result;
       }
     } catch (error) {
-      console.error(`[HYBRID SMS] Greška sa ${provider}:`, error);
+      console.error(`[GSM SMS] ❌ Greška pri slanju SMS-a:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Nepoznata greška"
@@ -178,35 +113,46 @@ export class HybridSMSService {
     }
   }
 
-  // Dobij informacije o konfiguraciji
-  getConfigInfo(): { provider: string; phone?: string; connected: boolean; availableProviders: string[] } | null {
+  // Test GSM modema
+  async testGsmModem(testNumber: string): Promise<SMSResponse> {
+    if (!this.isGsmModemReady) {
+      return {
+        success: false,
+        error: "GSM modem nije spreman"
+      };
+    }
+
+    const testMessage = {
+      to: testNumber,
+      message: "Test poruka sa GSM modema - Frigo Sistem Todosijević",
+      type: 'custom' as const
+    };
+
+    return await this.sendSms(testMessage);
+  }
+
+  // Dobij informacije o konfiguraciji GSM modema
+  getConfigInfo(): { provider: string; phone?: string; connected: boolean; port?: string } | null {
     if (!this.config) {
       return null;
     }
 
-    const availableProviders = [];
-    if (this.isGsmModemReady) availableProviders.push('gsm_modem');
-    if (this.isTwilioReady) availableProviders.push('twilio');
-
     const gsmInfo = gsmModemService.getConfigInfo();
-    const phone = gsmInfo?.phone || process.env.TWILIO_PHONE_NUMBER || process.env.GSM_MODEM_PHONE;
-
+    
     return {
-      provider: this.config.preferredProvider,
-      phone,
-      connected: this.isGsmModemReady || this.isTwilioReady,
-      availableProviders
+      provider: 'gsm_modem',
+      phone: this.config.phoneNumber || '+38267028666',
+      connected: this.isGsmModemReady,
+      port: this.config.port
     };
   }
 
-  // Test konekcije
-  async testConnection(): Promise<{ gsm_modem: boolean; twilio: boolean }> {
+  // Test GSM modem konekcije
+  async testConnection(): Promise<{ gsm_modem: boolean }> {
     const gsmTest = this.isGsmModemReady ? await gsmModemService.testConnection() : false;
-    const twilioTest = this.isTwilioReady; // Twilio test može biti složeniji
     
     return {
-      gsm_modem: gsmTest,
-      twilio: twilioTest
+      gsm_modem: gsmTest
     };
   }
 
@@ -217,7 +163,7 @@ export class HybridSMSService {
       const ports = await SerialPort.list();
       return ports.map(port => `${port.path} (${port.manufacturer || 'Unknown'})`);
     } catch (error) {
-      console.error("[HYBRID SMS] Greška pri dobijanju portova:", error);
+      console.error("[GSM SMS] Greška pri dobijanju portova:", error);
       return [];
     }
   }
@@ -230,7 +176,7 @@ export class HybridSMSService {
     technicianName?: string | null
   ): Promise<boolean> {
     if (!client.phone) {
-      console.warn(`[HYBRID SMS] Klijent ${client.fullName} nema broj telefona`);
+      console.warn(`[GSM SMS] Klijent ${client.fullName} nema broj telefona`);
       return false;
     }
 
@@ -269,7 +215,7 @@ export class HybridSMSService {
     scheduledDate: Date
   ): Promise<boolean> {
     if (!client.phone) {
-      console.warn(`[HYBRID SMS] Klijent ${client.fullName} nema broj telefona`);
+      console.warn(`[GSM SMS] Klijent ${client.fullName} nema broj telefona`);
       return false;
     }
 
@@ -288,14 +234,14 @@ export class HybridSMSService {
   // Restartuj GSM modem konekciju
   async restartGsmModem(): Promise<boolean> {
     try {
-      console.log("[HYBRID SMS] Restartovanje GSM modem konekcije...");
+      console.log("[GSM SMS] Restartovanje GSM modem konekcije...");
       
       // Zatvori postojeću konekciju
       await gsmModemService.disconnect();
       
       // Pokušaj ponovo da se povezuje
-      if (this.config?.gsmModemConfig) {
-        const configured = await gsmModemService.configure(this.config.gsmModemConfig);
+      if (this.config) {
+        const configured = await gsmModemService.configure(this.config);
         if (configured) {
           this.isGsmModemReady = await gsmModemService.connect();
           return this.isGsmModemReady;
@@ -304,11 +250,11 @@ export class HybridSMSService {
       
       return false;
     } catch (error) {
-      console.error("[HYBRID SMS] Greška pri restartovanju GSM modema:", error);
+      console.error("[GSM SMS] Greška pri restartovanju GSM modema:", error);
       return false;
     }
   }
 }
 
-// Eksportuj singleton instancu
-export const hybridSmsService = new HybridSMSService();
+// Eksportuj singleton instancu - sada je GSM-only servis
+export const hybridSmsService = new GSMOnlySMSService();

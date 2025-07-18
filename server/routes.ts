@@ -3618,6 +3618,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Slanje SMS poruke preko GSM modema
+  app.post("/api/gsm-modem/send", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za slanje SMS poruka" });
+      }
+
+      const { recipient, message } = z.object({
+        recipient: z.string().min(8),
+        message: z.string().min(1).max(160)
+      }).parse(req.body);
+
+      console.log(`[GSM MODEM SEND] Slanje SMS-a na: ${recipient}`);
+      
+      const result = await hybridSmsService.sendSms({
+        to: recipient,
+        message: message,
+        type: 'custom'
+      });
+
+      if (result.success) {
+        console.log(`[GSM MODEM SEND] ✅ SMS uspešno poslat na: ${recipient}`);
+        res.json({ 
+          success: true, 
+          messageId: result.messageId || 'GSM_' + Date.now(),
+          provider: result.provider || 'gsm_modem'
+        });
+      } else {
+        console.error(`[GSM MODEM SEND] ❌ Neuspešno slanje SMS-a: ${result.error}`);
+        res.status(500).json({ 
+          success: false, 
+          error: result.error || "Greška pri slanju SMS poruke preko GSM modema" 
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeći podaci za SMS", 
+          details: error.format() 
+        });
+      }
+      
+      console.error("[GSM MODEM SEND] Greška:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju SMS poruke preko GSM modema", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
+  // Grupno slanje SMS poruka preko GSM modema
+  app.post("/api/gsm-modem/bulk", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za grupno slanje SMS poruka" });
+      }
+
+      const { clientIds, message } = z.object({
+        clientIds: z.array(z.number()).min(1),
+        message: z.string().min(1).max(160)
+      }).parse(req.body);
+
+      console.log(`[GSM MODEM BULK] Grupno slanje SMS-a za ${clientIds.length} klijenata`);
+      
+      const clients = await Promise.all(
+        clientIds.map(id => storage.getClient(id))
+      );
+
+      const results = [];
+      const errors = [];
+
+      for (const client of clients) {
+        if (!client) {
+          errors.push({ clientId: client?.id, error: "Klijent nije pronađen" });
+          continue;
+        }
+
+        if (!client.phone) {
+          errors.push({ clientId: client.id, error: "Klijent nema telefon" });
+          continue;
+        }
+
+        try {
+          const result = await hybridSmsService.sendSms({
+            to: client.phone,
+            message: `Frigo Sistem Todosijević: ${message}`,
+            type: 'custom'
+          });
+
+          if (result.success) {
+            results.push({ clientId: client.id, success: true });
+          } else {
+            errors.push({ clientId: client.id, error: result.error || "Greška pri slanju SMS poruke" });
+          }
+        } catch (error) {
+          errors.push({ clientId: client.id, error: error.message });
+        }
+      }
+
+      console.log(`[GSM MODEM BULK] Rezultat: ${results.length} uspešno, ${errors.length} neuspešno`);
+
+      res.json({
+        success: errors.length === 0,
+        results: {
+          total: clientIds.length,
+          sent: results.length,
+          failed: errors.length
+        },
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeći podaci za grupno slanje SMS", 
+          details: error.format() 
+        });
+      }
+      
+      console.error("[GSM MODEM BULK] Greška:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri grupnom slanju SMS poruka preko GSM modema", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
   // =====================================
   // NOTIFICATIONS API ENDPOINTS
   // =====================================
