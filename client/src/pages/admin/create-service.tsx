@@ -212,26 +212,27 @@ export default function CreateService() {
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation("/admin/services")}
-            className="mr-3"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Nazad
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Kreiranje novog servisa</h1>
-            <p className="text-muted-foreground mt-1">
-              Dodajte novi servis u sistem
-            </p>
+      <div className="w-full h-full overflow-y-auto">
+        <div className="container mx-auto py-6 px-4 max-w-4xl">
+          {/* Header */}
+          <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => setLocation("/admin/services")}
+              className="mr-3"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Nazad
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Kreiranje novog servisa</h1>
+              <p className="text-muted-foreground mt-1">
+                Dodajte novi servis u sistem
+              </p>
+            </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-20">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-20">
           <div className="grid grid-cols-1 gap-6">
             {/* Client Selection */}
             <Card>
@@ -435,6 +436,7 @@ export default function CreateService() {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </AdminLayout>
   );
