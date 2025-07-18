@@ -43,12 +43,26 @@ const smsSettingsSchema = z.object({
 
 // GSM Modem postavke schema
 const gsmModemSettingsSchema = z.object({
-  provider: z.literal('gsm_modem'),
-  port: z.string().min(1),
+  provider: z.literal('gsm_modem').optional(),
+  port: z.string().optional(),
   baudRate: z.number().int().positive().default(9600),
   phoneNumber: z.string().min(1),
   pin: z.string().optional(),
-  fallbackToTwilio: z.boolean().default(true)
+  fallbackToTwilio: z.boolean().default(false),
+  // Novi WiFi polja
+  connectionType: z.enum(['usb', 'wifi']).default('usb'),
+  wifiHost: z.string().optional(),
+  wifiPort: z.number().int().positive().optional()
+}).refine((data) => {
+  // Validacija na osnovu tipa konekcije
+  if (data.connectionType === 'usb') {
+    return data.port && data.port.length > 0;
+  } else if (data.connectionType === 'wifi') {
+    return data.wifiHost && data.wifiHost.length > 0 && data.wifiPort && data.wifiPort > 0;
+  }
+  return true;
+}, {
+  message: "Za USB konekciju je potreban port, a za WiFi su potrebni host i port",
 });
 
 // Funkcija za generisanje SMS poruke na osnovu statusa servisa
@@ -3472,13 +3486,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const config = gsmModemSettingsSchema.parse(req.body);
       
-      console.log(`[GSM MODEM API] Konfiguracija GSM modema: port=${config.port}, baud=${config.baudRate}, phone=${config.phoneNumber}`);
+      if (config.connectionType === 'wifi') {
+        console.log(`[GSM MODEM API] WiFi konfiguracija GSM modema: host=${config.wifiHost}, port=${config.wifiPort}, phone=${config.phoneNumber}`);
+      } else {
+        console.log(`[GSM MODEM API] USB konfiguracija GSM modema: port=${config.port}, baud=${config.baudRate}, phone=${config.phoneNumber}`);
+      }
       
-      // Konfiguracija GSM-only servisa
+      // Konfiguracija GSM-only servisa sa novim poljima
       const gsmConfig = {
-        port: config.port,
+        port: config.port || '',
         baudRate: config.baudRate,
-        phoneNumber: config.phoneNumber
+        phoneNumber: config.phoneNumber,
+        connectionType: config.connectionType,
+        wifiHost: config.wifiHost,
+        wifiPort: config.wifiPort
       };
 
       const configured = await gsmOnlySMSService.configure(gsmConfig);
