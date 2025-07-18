@@ -52,6 +52,15 @@ interface SMSConfigResponse {
   };
 }
 
+interface GSMModemStatus {
+  configured: boolean;
+  provider: string | null;
+  phoneNumber: string | null;
+  connected: boolean;
+  availableProviders: string[];
+  connectionTest: { gsm_modem: boolean; twilio: boolean };
+}
+
 interface Client {
   id: number;
   fullName: string;
@@ -70,6 +79,15 @@ export default function SMSMessaging() {
   const [selectAll, setSelectAll] = useState(false);
   const [charactersLeft, setCharactersLeft] = useState(160);
   const [charsLeftBulk, setCharsLeftBulk] = useState(160);
+  
+  // GSM Modem konfiguracija
+  const [gsmConfig, setGsmConfig] = useState({
+    port: "",
+    baudRate: 9600,
+    phoneNumber: "+38267028666",
+    fallbackToTwilio: true
+  });
+  const [showGsmConfig, setShowGsmConfig] = useState(false);
   
   // Dohvati konfiguraciju SMS servisa - obavezno osvežiti svaki put
   const { data: smsConfig, isLoading: configLoading, refetch: refetchSmsConfig } = useQuery<SMSConfigResponse>({
@@ -94,6 +112,26 @@ export default function SMSMessaging() {
       const res = await apiRequest("GET", "/api/clients");
       return await res.json();
     },
+  });
+
+  // Dohvati GSM modem status
+  const { data: gsmStatus, isLoading: gsmLoading } = useQuery<GSMModemStatus>({
+    queryKey: ["/api/gsm-modem/status"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/gsm-modem/status");
+      return await res.json();
+    },
+    retry: 1,
+  });
+
+  // Dohvati dostupne portove
+  const { data: portData } = useQuery<{ ports: string[] }>({
+    queryKey: ["/api/gsm-modem/ports"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/gsm-modem/ports");
+      return await res.json();
+    },
+    retry: 1,
   });
 
   // Mutacija za slanje test poruke
@@ -148,6 +186,57 @@ export default function SMSMessaging() {
     onError: (error: Error) => {
       toast({
         title: "Greška",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // GSM Modem konfiguracija
+  const gsmConfigMutation = useMutation({
+    mutationFn: async (config: typeof gsmConfig) => {
+      const res = await apiRequest("POST", "/api/gsm-modem/configure", config);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Greška pri konfiguraciji GSM modema");
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Uspešno",
+        description: "GSM modem je uspešno konfigurisan",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/gsm-modem/status"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Greška",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // GSM Modem test
+  const gsmTestMutation = useMutation({
+    mutationFn: async (recipient: string) => {
+      const res = await apiRequest("POST", "/api/gsm-modem/test", { recipient });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Greška pri testiranju GSM modema");
+      }
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Test uspešan",
+        description: `GSM modem test SMS uspešno poslat (${data.provider})`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Test neuspešan",
         description: error.message,
         variant: "destructive",
       });
@@ -390,6 +479,159 @@ export default function SMSMessaging() {
                 Osveži status
               </Button>
             </CardFooter>
+          </Card>
+        </div>
+
+        {/* GSM Modem Configuration Section */}
+        <div className="mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Phone className="h-5 w-5" />
+                  <span>GSM Modem (Lokalni SMS)</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowGsmConfig(!showGsmConfig)}
+                >
+                  {showGsmConfig ? "Sakrij" : "Prikaži"} konfiguraciju
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                Konfiguracija GSM modema sa SIM karticom 067028666 za lokalno slanje SMS poruka
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* GSM Status */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">GSM Status:</span>
+                  <Badge variant={gsmStatus?.configured ? "default" : "secondary"}>
+                    {gsmStatus?.configured ? "Konfigurisan" : "Nije konfigurisan"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Povezan:</span>
+                  <Badge variant={gsmStatus?.connected ? "default" : "destructive"}>
+                    {gsmStatus?.connected ? "Da" : "Ne"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Broj telefona:</span>
+                  <span>{gsmStatus?.phoneNumber || "+38267028666"}</span>
+                </div>
+                
+                {/* Configuration Form */}
+                {showGsmConfig && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                    <h4 className="font-medium mb-3">Konfiguracija GSM modema</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="gsm-port">Serial Port</Label>
+                        <Select 
+                          value={gsmConfig.port} 
+                          onValueChange={(value) => setGsmConfig({...gsmConfig, port: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Izaberite port" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {portData?.ports?.map(port => (
+                              <SelectItem key={port} value={port}>{port}</SelectItem>
+                            ))}
+                            <SelectItem value="/dev/ttyUSB0">/dev/ttyUSB0</SelectItem>
+                            <SelectItem value="/dev/ttyUSB1">/dev/ttyUSB1</SelectItem>
+                            <SelectItem value="/dev/ttyACM0">/dev/ttyACM0</SelectItem>
+                            <SelectItem value="COM3">COM3</SelectItem>
+                            <SelectItem value="COM4">COM4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="gsm-baud">Baud Rate</Label>
+                        <Select 
+                          value={gsmConfig.baudRate.toString()} 
+                          onValueChange={(value) => setGsmConfig({...gsmConfig, baudRate: parseInt(value)})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="9600">9600</SelectItem>
+                            <SelectItem value="19200">19200</SelectItem>
+                            <SelectItem value="38400">38400</SelectItem>
+                            <SelectItem value="57600">57600</SelectItem>
+                            <SelectItem value="115200">115200</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="gsm-phone">Broj telefona</Label>
+                        <Input
+                          id="gsm-phone"
+                          value={gsmConfig.phoneNumber}
+                          onChange={(e) => setGsmConfig({...gsmConfig, phoneNumber: e.target.value})}
+                          placeholder="+38267028666"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="gsm-fallback"
+                          checked={gsmConfig.fallbackToTwilio}
+                          onCheckedChange={(checked) => setGsmConfig({...gsmConfig, fallbackToTwilio: checked as boolean})}
+                        />
+                        <Label htmlFor="gsm-fallback">Fallback na Twilio ako GSM ne radi</Label>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <Button 
+                          onClick={() => gsmConfigMutation.mutate(gsmConfig)}
+                          disabled={gsmConfigMutation.isPending || !gsmConfig.port}
+                          className="flex-1"
+                        >
+                          {gsmConfigMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Konfigurišem...
+                            </>
+                          ) : (
+                            "Konfiguriši GSM"
+                          )}
+                        </Button>
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={() => gsmTestMutation.mutate("+38267028666")}
+                          disabled={gsmTestMutation.isPending || !gsmStatus?.configured}
+                        >
+                          {gsmTestMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Testiram...
+                            </>
+                          ) : (
+                            "Test GSM"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="p-3 bg-blue-50 rounded-md text-sm">
+                  <p className="text-xs text-blue-600 mb-2">GSM Modem info:</p>
+                  <p className="text-xs">
+                    GSM modem koristi SIM karticu 067028666 za lokalno slanje SMS poruka. 
+                    Potrebno je fizički povezati USB modem sa računarom i konfigurirati odgovarajući port.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
 
