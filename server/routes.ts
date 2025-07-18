@@ -3600,6 +3600,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Skeniranje mreže za GSM modem
+  app.post("/api/gsm-modem/scan-network", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za skeniranje mreže" });
+      }
+
+      console.log("[GSM MODEM] Započinje skeniranje mreže za GSM modem...");
+      
+      const net = require('net');
+      const commonPorts = [23, 2000, 8080, 80, 8888, 443, 1883, 8081, 8082, 8083];
+      const possibleIPs = [
+        '192.168.1.1',
+        '192.168.0.1', 
+        '192.168.1.100',
+        '192.168.0.100',
+        '10.0.0.1',
+        '172.16.0.1'
+      ];
+
+      const devices = [];
+      let scanCount = 0;
+      const totalScans = possibleIPs.length * commonPorts.length;
+
+      for (const ip of possibleIPs) {
+        for (const port of commonPorts) {
+          scanCount++;
+          console.log(`[GSM SCAN] Skeniram ${ip}:${port} (${scanCount}/${totalScans})`);
+          
+          try {
+            const client = new net.Socket();
+            
+            const testPromise = new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                client.destroy();
+                reject(new Error('timeout'));
+              }, 1000); // 1 sekunda timeout za svaki test
+
+              client.connect(port, ip, () => {
+                clearTimeout(timeout);
+                client.destroy();
+                resolve({ ip, port });
+              });
+
+              client.on('error', (err) => {
+                clearTimeout(timeout);
+                client.destroy();
+                reject(err);
+              });
+            });
+
+            const result = await testPromise;
+            devices.push(result);
+            console.log(`[GSM SCAN] ✓ Pronađen modem na ${ip}:${port}`);
+            
+            // Prekini skeniranje nakon prvog pronađenog uređaja
+            if (devices.length > 0) break;
+          } catch (error) {
+            // Ignorisi greške i nastavi skeniranje
+          }
+        }
+        
+        // Prekini skeniranje nakon prvog pronađenog uređaja
+        if (devices.length > 0) break;
+      }
+
+      console.log(`[GSM SCAN] Završeno skeniranje. Pronađeno ${devices.length} uređaja.`);
+      
+      res.json({ 
+        success: true, 
+        devices,
+        scannedCount: scanCount,
+        totalCount: totalScans
+      });
+    } catch (error) {
+      console.error("Greška pri skeniranju mreže:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Greška pri skeniranju mreže",
+        error: error.message
+      });
+    }
+  });
+
   // Test GSM modema
   app.post("/api/gsm-modem/test", async (req, res) => {
     try {

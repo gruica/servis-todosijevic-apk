@@ -138,6 +138,43 @@ export default function GSMModemSettings() {
     }
   };
 
+  // Skeniranje mreže za GSM modem
+  const scanNetwork = async () => {
+    try {
+      toast({ title: "Skeniram mrežu...", description: "Tražim GSM modem na mreži, molim sačekajte..." });
+      
+      const res = await apiRequest("POST", "/api/gsm-modem/scan-network", {});
+      const response = await res.json();
+      
+      if (response.success && response.devices.length > 0) {
+        const device = response.devices[0];
+        setGsmConfig(prev => ({
+          ...prev,
+          wifiHost: device.ip,
+          wifiPort: device.port
+        }));
+        
+        toast({ 
+          title: "Modem pronađen!", 
+          description: `Automatski postavljen na ${device.ip}:${device.port}`,
+          duration: 5000
+        });
+      } else {
+        toast({ 
+          title: "Modem nije pronađen", 
+          description: "Pokušajte ručno unijeti IP adresu ili proverite da li je modem povezan",
+          variant: "destructive" 
+        });
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Greška pri skeniranju", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -348,7 +385,7 @@ export default function GSMModemSettings() {
                       placeholder="192.168.1.1"
                     />
                     <p className="text-sm text-gray-600 mt-1">
-                      IP adresa GSM modema u WiFi mreži (obično 192.168.1.1)
+                      IP adresa GSM modema. Ako ne znate, idite na Windows Command Prompt i ukucajte "ipconfig" da vidite gateway adresu.
                     </p>
                   </div>
 
@@ -402,12 +439,21 @@ export default function GSMModemSettings() {
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                     <p className="text-sm text-blue-800">
                       <strong>WiFi konekcija:</strong> Kada koristite WiFi, ne trebate COM port. 
-                      Modem komunicira direktno preko mreže na IP adresi (vidim da je vaša 192.168.1.1) 
-                      preko TCP/IP protokola. Obično se koristi port 23 za AT komande.
+                      Modem komunicira direktno preko mreže na IP adresi preko TCP/IP protokola.
                     </p>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <strong>Kako pronaći IP adresu GSM modema:</strong>
+                      <ol className="list-decimal list-inside mt-1 space-y-1">
+                        <li>Otvorite Command Prompt (Windows key + R, ukucajte "cmd")</li>
+                        <li>Ukucajte "ipconfig" i pritisnite Enter</li>
+                        <li>Tražite "Default Gateway" - to je obično IP adresa modema</li>
+                        <li>Ili idite u router settings (obično 192.168.1.1 ili 192.168.0.1)</li>
+                        <li>Pogledajte listu povezanih uređaja da nađete GSM modem</li>
+                      </ol>
+                    </div>
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-4 space-y-2">
                     <Button 
                       onClick={testConnection} 
                       variant="outline" 
@@ -415,6 +461,14 @@ export default function GSMModemSettings() {
                       className="w-full"
                     >
                       Testiraj konekciju
+                    </Button>
+                    <Button 
+                      onClick={scanNetwork} 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full"
+                    >
+                      Skeniraj mrežu za GSM modem
                     </Button>
                   </div>
                 </>
