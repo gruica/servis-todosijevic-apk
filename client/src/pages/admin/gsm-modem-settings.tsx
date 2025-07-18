@@ -120,13 +120,25 @@ export default function GSMModemSettings() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!gsmConfig.port || !gsmConfig.phoneNumber) {
-      toast({
-        title: "Greška",
-        description: "COM port i broj telefona su obavezni",
-        variant: "destructive",
-      });
-      return;
+    // Validacija na osnovu tipa konekcije
+    if (gsmConfig.connectionType === 'usb') {
+      if (!gsmConfig.port || !gsmConfig.phoneNumber) {
+        toast({
+          title: "Greška",
+          description: "COM port i broj telefona su obavezni za USB konekciju",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (gsmConfig.connectionType === 'wifi') {
+      if (!gsmConfig.wifiHost || !gsmConfig.wifiPort || !gsmConfig.phoneNumber) {
+        toast({
+          title: "Greška",
+          description: "IP adresa, port i broj telefona su obavezni za WiFi konekciju",
+          variant: "destructive",
+        });
+        return;
+      }
     }
     
     configureMutation.mutate(gsmConfig);
