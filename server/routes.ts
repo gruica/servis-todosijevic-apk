@@ -7,6 +7,8 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService as newSmsService, SmsConfig } from "./twilio-sms";
 import { smsService } from "./sms-service";
+import { hybridSmsService } from "./hybrid-sms-service";
+import { gsmModemService } from "./gsm-modem-service";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -32,10 +34,20 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
 
 // SMS postavke schema
 const smsSettingsSchema = z.object({
-  provider: z.enum(['messaggio', 'plivo', 'budgetsms', 'viber', 'twilio']),
+  provider: z.enum(['messaggio', 'plivo', 'budgetsms', 'viber', 'twilio', 'gsm_modem']),
   apiKey: z.string().min(1),
   authToken: z.string().optional(),
   senderId: z.string().optional()
+});
+
+// GSM Modem postavke schema
+const gsmModemSettingsSchema = z.object({
+  provider: z.literal('gsm_modem'),
+  port: z.string().min(1),
+  baudRate: z.number().int().positive().default(9600),
+  phoneNumber: z.string().min(1),
+  pin: z.string().optional(),
+  fallbackToTwilio: z.boolean().default(true)
 });
 
 // Funkcija za generisanje SMS poruke na osnovu statusa servisa
@@ -3414,6 +3426,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =====================================
+  // GSM MODEM API ENDPOINTS
+  // =====================================
+
+  // Dobij dostupne serial portove za GSM modem
+  app.get("/api/gsm-modem/ports", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem postavkama" });
+      }
+
+      const ports = await hybridSmsService.getAvailablePorts();
+      res.json({ ports });
+    } catch (error) {
+      console.error("Greška pri dobijanju portova:", error);
+      res.status(500).json({ error: "Greška pri dobijanju dostupnih portova" });
+    }
+  });
+
+  // Konfiguracija GSM modema
+  app.post("/api/gsm-modem/configure", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju GSM modema" });
+      }
+
+      const config = gsmModemSettingsSchema.parse(req.body);
+      
+      console.log(`[GSM MODEM API] Konfiguracija GSM modema: port=${config.port}, baud=${config.baudRate}, phone=${config.phoneNumber}`);
+      
+      // Konfiguracija hibridnog SMS servisa
+      const hybridConfig = {
+        preferredProvider: 'gsm_modem' as const,
+        fallbackEnabled: config.fallbackToTwilio,
+        gsmModemConfig: {
+          port: config.port,
+          baudRate: config.baudRate,
+          phoneNumber: config.phoneNumber
+        }
+      };
+
+      const configured = await hybridSmsService.configure(hybridConfig);
+      
+      if (configured) {
+        res.json({ 
+          success: true, 
+          message: "GSM modem je uspešno konfigurisan",
+          provider: 'gsm_modem',
+          phoneNumber: config.phoneNumber
+        });
+      } else {
+        res.status(500).json({ error: "Greška pri konfiguraciji GSM modema" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci za GSM modem", 
+          details: error.format() 
+        });
+      }
+      console.error("Greška pri konfiguraciji GSM modema:", error);
+      res.status(500).json({ 
+        error: "Greška pri konfiguraciji GSM modema", 
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
+  // Status GSM modema
+  app.get("/api/gsm-modem/status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup GSM modem statusu" });
+      }
+
+      const configInfo = hybridSmsService.getConfigInfo();
+      const connectionTest = await hybridSmsService.testConnection();
+      
+      res.json({
+        configured: !!configInfo,
+        provider: configInfo?.provider || null,
+        phoneNumber: configInfo?.phone || null,
+        connected: configInfo?.connected || false,
+        availableProviders: configInfo?.availableProviders || [],
+        connectionTest
+      });
+    } catch (error) {
+      console.error("Greška pri dobijanju GSM modem statusa:", error);
+      res.status(500).json({ error: "Greška pri dobijanju GSM modem statusa" });
+    }
+  });
+
+  // Test GSM modema
+  app.post("/api/gsm-modem/test", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za testiranje GSM modema" });
+      }
+
+      const { recipient } = z.object({ recipient: z.string().min(8) }).parse(req.body);
+      
+      console.log(`[GSM MODEM TEST] Slanje test SMS-a na: ${recipient}`);
+      
+      const result = await hybridSmsService.sendSms({
+        to: recipient,
+        message: "Test poruka sa GSM modema - Frigo Sistem Todosijević",
+        type: 'custom'
+      });
+      
+      if (result.success) {
+        console.log(`[GSM MODEM TEST] ✅ Test SMS uspešno poslat na: ${recipient}`);
+        return res.json({ 
+          success: true, 
+          message: "Test SMS uspešno poslat",
+          messageId: result.messageId,
+          provider: result.provider || 'gsm_modem'
+        });
+      } else {
+        console.error(`[GSM MODEM TEST] ❌ Neuspešno slanje test SMS-a: ${result.error}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: result.error || "Neuspešno slanje test SMS-a"
+        });
+      }
+    } catch (error) {
+      console.error("[GSM MODEM TEST] Greška:", error);
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Nevažeći broj telefona", 
+          details: error.format() 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju test SMS-a", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
+  // Restart GSM modem konekcije
+  app.post("/api/gsm-modem/restart", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za restartovanje GSM modema" });
+      }
+
+      console.log("[GSM MODEM API] Restartovanje GSM modem konekcije...");
+      
+      const restarted = await hybridSmsService.restartGsmModem();
+      
+      if (restarted) {
+        res.json({ 
+          success: true, 
+          message: "GSM modem je uspešno restartovan" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "Greška pri restartovanju GSM modema" 
+        });
+      }
+    } catch (error) {
+      console.error("Greška pri restartovanju GSM modema:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri restartovanju GSM modema", 
+        message: error instanceof Error ? error.message : "Nepoznata greška" 
+      });
+    }
+  });
+
+  // =====================================
   // NOTIFICATIONS API ENDPOINTS
   // =====================================
 
@@ -3838,27 +4025,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
       
-      const result = await newSmsService.sendSms({
+      // Prvo pokušaj hibridni SMS servis (GSM modem sa fallback)
+      const hybridResult = await hybridSmsService.sendSms({
         to: recipient,
         message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
         type: 'transactional'
       });
       
-      if (result.success) {
-        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient}`);
+      if (hybridResult.success) {
+        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko ${hybridResult.provider}`);
         return res.json({ 
           success: true, 
           message: "Test SMS uspešno poslat",
-          messageId: result.messageId,
-          cost: result.cost,
-          provider: newSmsService.getConfigInfo()?.provider
+          messageId: hybridResult.messageId,
+          cost: hybridResult.cost,
+          provider: hybridResult.provider
         });
       } else {
-        console.error(`[SMS TEST] ❌ Neuspešno slanje test SMS-a: ${result.error}`);
-        return res.status(500).json({ 
-          success: false, 
-          error: result.error || "Neuspešno slanje test SMS-a"
+        console.error(`[SMS TEST] ❌ Hibridni servis neuspešan: ${hybridResult.error}, pokušavam fallback`);
+        
+        // Fallback na novi SMS servis
+        const fallbackResult = await newSmsService.sendSms({
+          to: recipient,
+          message: `Test SMS iz Frigo Sistema. Vreme: ${new Date().toLocaleString('sr-Latn-ME')}. Ignoriši ovu poruku.`,
+          type: 'transactional'
         });
+        
+        if (fallbackResult.success) {
+          console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko fallback`);
+          return res.json({ 
+            success: true, 
+            message: "Test SMS uspešno poslat (fallback)",
+            messageId: fallbackResult.messageId,
+            cost: fallbackResult.cost,
+            provider: newSmsService.getConfigInfo()?.provider
+          });
+        } else {
+          console.error(`[SMS TEST] ❌ Svi SMS servisi neuspešni: ${fallbackResult.error}`);
+          return res.status(500).json({ 
+            success: false, 
+            error: fallbackResult.error || "Neuspešno slanje test SMS-a"
+          });
+        }
       }
     } catch (error) {
       console.error("[SMS TEST] Greška:", error);
