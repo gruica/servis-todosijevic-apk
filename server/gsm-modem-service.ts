@@ -1,5 +1,6 @@
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
+import { Socket } from 'net';
 
 // Interface za GSM modem konfiguraciju
 interface GSMModemConfig {
@@ -7,6 +8,10 @@ interface GSMModemConfig {
   baudRate: number;
   phoneNumber: string;
   pin?: string;
+  // Novi WiFi konfiguracija
+  connectionType?: 'usb' | 'wifi';
+  wifiHost?: string;
+  wifiPort?: number;
 }
 
 // Interface za SMS poruku
@@ -27,6 +32,7 @@ interface SMSResponse {
 export class GSMModemService {
   private serialPort: SerialPort | null = null;
   private parser: ReadlineParser | null = null;
+  private wifiSocket: Socket | null = null;
   private config: GSMModemConfig | null = null;
   private isConnected: boolean = false;
   private commandQueue: Array<{ command: string; resolve: Function; reject: Function }> = [];
@@ -62,13 +68,27 @@ export class GSMModemService {
     }
 
     try {
-      console.log(`[GSM MODEM] Povezivanje sa portom ${this.config.port}...`);
-      
-      this.serialPort = new SerialPort({
-        path: this.config.port,
-        baudRate: this.config.baudRate,
-        autoOpen: false
-      });
+      // Proveri tip konekcije
+      if (this.config.connectionType === 'wifi') {
+        return await this.connectWiFi();
+      } else {
+        return await this.connectUSB();
+      }
+    } catch (error) {
+      console.error("[GSM MODEM] Greška pri povezivanju:", error);
+      return false;
+    }
+  }
+
+  // Povezivanje preko USB-a
+  private async connectUSB(): Promise<boolean> {
+    console.log(`[GSM MODEM] Povezivanje sa USB portom ${this.config?.port}...`);
+    
+    this.serialPort = new SerialPort({
+      path: this.config!.port,
+      baudRate: this.config!.baudRate,
+      autoOpen: false
+    });
 
       this.parser = this.serialPort.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
@@ -106,10 +126,54 @@ export class GSMModemService {
       });
 
       return true;
-    } catch (error) {
-      console.error("[GSM MODEM] Greška pri povezivanju:", error);
+  }
+
+  // Povezivanje preko WiFi-a
+  private async connectWiFi(): Promise<boolean> {
+    if (!this.config?.wifiHost || !this.config?.wifiPort) {
+      console.error("[GSM MODEM] WiFi host ili port nije konfigurisan");
       return false;
     }
+
+    console.log(`[GSM MODEM] Povezivanje sa WiFi modemom ${this.config.wifiHost}:${this.config.wifiPort}...`);
+    
+    this.wifiSocket = new Socket();
+    
+    // Event listeneri za WiFi socket
+    this.wifiSocket.on('connect', () => {
+      console.log("[GSM MODEM] ✅ WiFi konekcija uspostavljena");
+      this.isConnected = true;
+      this.initializeModem();
+    });
+
+    this.wifiSocket.on('error', (err) => {
+      console.error("[GSM MODEM] ❌ WiFi konekcija greška:", err);
+      this.isConnected = false;
+    });
+
+    this.wifiSocket.on('close', () => {
+      console.log("[GSM MODEM] WiFi konekcija zatvorena");
+      this.isConnected = false;
+    });
+
+    // Čitanje podataka sa WiFi modema
+    this.wifiSocket.on('data', (data: Buffer) => {
+      const response = data.toString().trim();
+      this.handleModemResponse(response);
+    });
+
+    // Povezivanje
+    await new Promise<void>((resolve, reject) => {
+      this.wifiSocket?.connect(this.config!.wifiPort!, this.config!.wifiHost!, () => {
+        resolve();
+      });
+      
+      this.wifiSocket?.on('error', (err) => {
+        reject(err);
+      });
+    });
+
+    return true;
   }
 
   // Inicijalizacija modema
@@ -187,8 +251,17 @@ export class GSMModemService {
         }
       };
 
-      this.parser?.on('data', responseHandler);
-      this.serialPort?.write(command + '\r\n');
+      if (this.config?.connectionType === 'wifi') {
+        // WiFi konekcija
+        this.wifiSocket?.on('data', (data: Buffer) => {
+          responseHandler(data.toString());
+        });
+        this.wifiSocket?.write(command + '\r\n');
+      } else {
+        // USB konekcija
+        this.parser?.on('data', responseHandler);
+        this.serialPort?.write(command + '\r\n');
+      }
       
     } catch (error) {
       this.processingCommand = false;
@@ -208,7 +281,7 @@ export class GSMModemService {
 
   // Pošalji SMS poruku
   async sendSms(smsData: SMSMessage): Promise<SMSResponse> {
-    if (!this.isConnected || !this.serialPort) {
+    if (!this.isConnected || (!this.serialPort && !this.wifiSocket)) {
       return {
         success: false,
         error: "GSM modem nije povezan"
@@ -223,13 +296,25 @@ export class GSMModemService {
       
       // Pošalji poruku i završi sa Ctrl+Z (ASCII 26)
       await new Promise<void>((resolve, reject) => {
-        this.serialPort?.write(smsData.message + String.fromCharCode(26), (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
+        const messageToSend = smsData.message + String.fromCharCode(26);
+        
+        if (this.config?.connectionType === 'wifi') {
+          this.wifiSocket?.write(messageToSend, (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        } else {
+          this.serialPort?.write(messageToSend, (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        }
       });
 
       console.log("[GSM MODEM] ✅ SMS uspešno poslat");

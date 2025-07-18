@@ -20,7 +20,10 @@ export default function GSMModemSettings() {
     port: "",
     baudRate: 9600,
     phoneNumber: "+38267028666",
-    fallbackToTwilio: false
+    fallbackToTwilio: false,
+    connectionType: 'usb' as 'usb' | 'wifi',
+    wifiHost: '',
+    wifiPort: 8080
   });
   
   const [testPhone, setTestPhone] = useState("");
@@ -211,8 +214,40 @@ export default function GSMModemSettings() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Tip konekcije */}
               <div>
-                <Label htmlFor="gsmPort">COM Port</Label>
+                <Label htmlFor="connectionType">Tip konekcije</Label>
+                <Select 
+                  value={gsmConfig.connectionType} 
+                  onValueChange={(value) => setGsmConfig(prev => ({ ...prev, connectionType: value as 'usb' | 'wifi' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Odaberite tip konekcije" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="usb">
+                      <div className="flex items-center space-x-2">
+                        <Smartphone className="h-4 w-4" />
+                        <span>USB kabl</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="wifi">
+                      <div className="flex items-center space-x-2">
+                        <Wifi className="h-4 w-4" />
+                        <span>WiFi mreža</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-600 mt-1">
+                  Odaberite kako se povezati sa GSM modemom
+                </p>
+              </div>
+
+              {gsmConfig.connectionType === 'usb' && (
+                <>
+                  <div>
+                    <Label htmlFor="gsmPort">COM Port</Label>
                 <Select 
                   value={gsmConfig.port} 
                   onValueChange={(value) => setGsmConfig(prev => ({ ...prev, port: value }))}
@@ -234,13 +269,13 @@ export default function GSMModemSettings() {
                     <SelectItem value="COM8">COM8</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-600 mt-1">
-                  Odaberite COM port na kojem je povezan GSM modem
-                </p>
-              </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Odaberite COM port na kojem je povezan GSM modem
+                    </p>
+                  </div>
 
-              <div>
-                <Label htmlFor="gsmBaudRate">Baud Rate</Label>
+                  <div>
+                    <Label htmlFor="gsmBaudRate">Baud Rate</Label>
                 <Select 
                   value={gsmConfig.baudRate.toString()} 
                   onValueChange={(value) => setGsmConfig(prev => ({ ...prev, baudRate: parseInt(value) }))}
@@ -257,9 +292,42 @@ export default function GSMModemSettings() {
                     <SelectItem value="38400">38400</SelectItem>
                     <SelectItem value="57600">57600</SelectItem>
                     <SelectItem value="115200">115200</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    </SelectContent>
+                  </Select>
+                  </div>
+                </>
+              )}
+
+              {gsmConfig.connectionType === 'wifi' && (
+                <>
+                  <div>
+                    <Label htmlFor="wifiHost">IP adresa GSM modema</Label>
+                    <Input
+                      id="wifiHost"
+                      value={gsmConfig.wifiHost}
+                      onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiHost: e.target.value }))}
+                      placeholder="192.168.1.100"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      IP adresa GSM modema u lokalnoj WiFi mreži
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="wifiPort">Port</Label>
+                    <Input
+                      id="wifiPort"
+                      type="number"
+                      value={gsmConfig.wifiPort}
+                      onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiPort: parseInt(e.target.value) || 8080 }))}
+                      placeholder="8080"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      TCP/IP port za komunikaciju sa GSM modemom
+                    </p>
+                  </div>
+                </>
+              )}
 
               <div>
                 <Label htmlFor="gsmPhoneNumber">Broj SIM kartice</Label>
