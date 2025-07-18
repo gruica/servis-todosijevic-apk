@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { MessageSquare, Smartphone, Send, CheckCircle, AlertCircle, Wifi, Phone } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function GSMModemSettings() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // GSM Modem konfiguracija
   const [gsmConfig, setGsmConfig] = useState({

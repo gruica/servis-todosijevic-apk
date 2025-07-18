@@ -1,4 +1,4 @@
-import { gsmModemService } from './gsm-modem-service';
+import { gsmModemService, GSMModemService } from './gsm-modem-service';
 
 // Interface za SMS poruku
 interface SMSMessage {
@@ -188,7 +188,7 @@ export class GSMOnlySMSService {
 
   // Dohvata dostupne COM portove
   async getAvailablePorts(): Promise<string[]> {
-    return await gsmModemService.getAvailablePorts();
+    return await GSMModemService.getAvailablePorts();
   }
 }
 
