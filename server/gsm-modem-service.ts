@@ -46,11 +46,20 @@ export class GSMModemService {
   async configure(config: GSMModemConfig): Promise<boolean> {
     try {
       this.config = config;
-      console.log(`[GSM MODEM] Konfiguracija modema: port=${config.port}, baudRate=${config.baudRate}, phone=${config.phoneNumber}`);
       
-      // Sačuvaj konfiguraciju u environment varijable
-      process.env.GSM_MODEM_PORT = config.port;
-      process.env.GSM_MODEM_BAUD_RATE = config.baudRate.toString();
+      if (config.connectionType === 'wifi') {
+        console.log(`[GSM MODEM] WiFi konfiguracija: host=${config.wifiHost}, port=${config.wifiPort}, phone=${config.phoneNumber}`);
+        // Sačuvaj WiFi konfiguraciju
+        process.env.GSM_MODEM_WIFI_HOST = config.wifiHost || '';
+        process.env.GSM_MODEM_WIFI_PORT = (config.wifiPort || 23).toString();
+      } else {
+        console.log(`[GSM MODEM] USB konfiguracija: port=${config.port}, baudRate=${config.baudRate}, phone=${config.phoneNumber}`);
+        // Sačuvaj USB konfiguraciju
+        process.env.GSM_MODEM_PORT = config.port;
+        process.env.GSM_MODEM_BAUD_RATE = config.baudRate.toString();
+      }
+      
+      process.env.GSM_MODEM_CONNECTION_TYPE = config.connectionType || 'usb';
       process.env.GSM_MODEM_PHONE = config.phoneNumber;
       
       return true;

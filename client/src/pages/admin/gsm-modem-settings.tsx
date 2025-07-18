@@ -22,8 +22,8 @@ export default function GSMModemSettings() {
     phoneNumber: "+38267028666",
     fallbackToTwilio: false,
     connectionType: 'usb' as 'usb' | 'wifi',
-    wifiHost: '',
-    wifiPort: 8080
+    wifiHost: '192.168.1.1',
+    wifiPort: 23
   });
   
   const [testPhone, setTestPhone] = useState("");
@@ -312,24 +312,32 @@ export default function GSMModemSettings() {
                       id="wifiHost"
                       value={gsmConfig.wifiHost}
                       onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiHost: e.target.value }))}
-                      placeholder="192.168.1.100"
+                      placeholder="192.168.1.1"
                     />
                     <p className="text-sm text-gray-600 mt-1">
-                      IP adresa GSM modema u lokalnoj WiFi mreži
+                      IP adresa GSM modema u WiFi mreži (obično 192.168.1.1)
                     </p>
                   </div>
 
                   <div>
-                    <Label htmlFor="wifiPort">Port</Label>
+                    <Label htmlFor="wifiPort">TCP/IP Port</Label>
                     <Input
                       id="wifiPort"
                       type="number"
                       value={gsmConfig.wifiPort}
-                      onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiPort: parseInt(e.target.value) || 8080 }))}
-                      placeholder="8080"
+                      onChange={(e) => setGsmConfig(prev => ({ ...prev, wifiPort: parseInt(e.target.value) || 23 }))}
+                      placeholder="23"
                     />
                     <p className="text-sm text-gray-600 mt-1">
-                      TCP/IP port za komunikaciju sa GSM modemom
+                      TCP/IP port (obično 23 ili 8080 za AT komande)
+                    </p>
+                  </div>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <p className="text-sm text-blue-800">
+                      <strong>WiFi konekcija:</strong> Kada koristite WiFi, ne trebate COM port. 
+                      Modem komunicira direktno preko mreže na IP adresi (vidim da je vaša 192.168.1.1) 
+                      preko TCP/IP protokola. Obično se koristi port 23 za AT komande.
                     </p>
                   </div>
                 </>
