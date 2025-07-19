@@ -4468,9 +4468,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Spare parts API endpoints
   
   // Get all spare part orders (admin only)
-  app.get("/api/admin/spare-parts", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.get("/api/admin/spare-parts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4483,9 +4483,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get pending spare part orders (admin only)
-  app.get("/api/admin/spare-parts/pending", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.get("/api/admin/spare-parts/pending", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4498,11 +4498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get spare part order by ID
-  app.get("/api/spare-parts/:id", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-
+  app.get("/api/spare-parts/:id", jwtAuth, async (req, res) => {
     try {
       const order = await storage.getSparePartOrder(parseInt(req.params.id));
       if (!order) {
@@ -4516,11 +4512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get spare part orders by service ID
-  app.get("/api/services/:id/spare-parts", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.sendStatus(401);
-    }
-
+  app.get("/api/services/:id/spare-parts", jwtAuth, async (req, res) => {
     try {
       const orders = await storage.getSparePartOrdersByService(parseInt(req.params.id));
       res.json(orders);
