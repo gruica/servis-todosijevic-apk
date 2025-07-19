@@ -66,55 +66,57 @@ export function SupplementGeneraliForm({
     const isMobile = window.innerWidth <= 768;
     if (!isMobile) return;
 
-    const originalViewportHeight = window.innerHeight;
-    let keyboardHeight = 0;
-
-    const handleResize = () => {
-      const currentHeight = window.innerHeight;
+    const originalViewportHeight = window.visualViewport?.height || window.innerHeight;
+    
+    const handleViewportChange = () => {
+      const currentHeight = window.visualViewport?.height || window.innerHeight;
       const heightDifference = originalViewportHeight - currentHeight;
       
       // Keyboard is open if height decreased by more than 150px
       const isKeyboardOpen = heightDifference > 150;
       setKeyboardVisible(isKeyboardOpen);
       
-      if (isKeyboardOpen) {
-        keyboardHeight = heightDifference;
+      if (isKeyboardOpen && dialogRef.current) {
+        const dialogElement = dialogRef.current;
         
-        // Position dialog above keyboard
-        if (dialogRef.current && activeInputRef.current) {
-          const dialogElement = dialogRef.current;
-          const activeInput = activeInputRef.current;
-          
-          // Get input position
-          const inputRect = activeInput.getBoundingClientRect();
-          const dialogRect = dialogElement.getBoundingClientRect();
-          
-          // Calculate needed scroll to keep input visible
-          const visibleHeight = window.innerHeight - keyboardHeight;
-          const inputBottom = inputRect.bottom;
-          
-          if (inputBottom > visibleHeight - 60) { // 60px buffer
-            const scrollNeeded = inputBottom - (visibleHeight - 60);
-            
-            // Scroll the dialog content, not the window
-            const dialogContent = dialogElement.querySelector('[data-radix-dialog-content]');
-            if (dialogContent) {
-              dialogContent.scrollTop += scrollNeeded;
-            }
-          }
-          
-          // Position dialog higher if needed
-          dialogElement.style.transform = `translateY(-${Math.min(keyboardHeight / 2, 100)}px)`;
-          dialogElement.style.maxHeight = `${visibleHeight - 40}px`;
-          dialogElement.style.overflowY = 'auto';
+        // Keep dialog at reasonable size and position above keyboard
+        const availableHeight = currentHeight - 100; // 100px buffer
+        
+        // Position dialog to be visible above keyboard
+        dialogElement.style.position = 'fixed';
+        dialogElement.style.top = '20px';
+        dialogElement.style.maxHeight = `${availableHeight}px`;
+        dialogElement.style.height = `auto`;
+        dialogElement.style.minHeight = `${Math.min(availableHeight, 400)}px`;
+        dialogElement.style.overflowY = 'auto';
+        dialogElement.style.transform = 'translateX(-50%)';
+        dialogElement.style.left = '50%';
+        dialogElement.style.width = '95vw';
+        dialogElement.style.maxWidth = '500px';
+        dialogElement.style.zIndex = '9999';
+        
+        // If there's an active input, scroll it into view
+        if (activeInputRef.current) {
+          setTimeout(() => {
+            activeInputRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            });
+          }, 100);
         }
-      } else {
-        // Reset dialog position when keyboard closes
-        if (dialogRef.current) {
-          dialogRef.current.style.transform = '';
-          dialogRef.current.style.maxHeight = '';
-          dialogRef.current.style.overflowY = '';
-        }
+      } else if (dialogRef.current) {
+        // Reset dialog styles when keyboard closes
+        const dialogElement = dialogRef.current;
+        dialogElement.style.position = '';
+        dialogElement.style.top = '';
+        dialogElement.style.maxHeight = '';
+        dialogElement.style.height = '';
+        dialogElement.style.overflowY = '';
+        dialogElement.style.transform = '';
+        dialogElement.style.left = '';
+        dialogElement.style.width = '';
+        dialogElement.style.maxWidth = '';
       }
     };
 
@@ -125,43 +127,57 @@ export function SupplementGeneraliForm({
         
         // Delay to allow keyboard animation
         setTimeout(() => {
-          handleResize();
+          handleViewportChange();
         }, 300);
       }
     };
 
     const handleInputBlur = () => {
+      // Short delay to check if focus moved to another input
       setTimeout(() => {
-        if (document.activeElement?.tagName !== 'INPUT' && 
-            document.activeElement?.tagName !== 'TEXTAREA') {
+        const focusedElement = document.activeElement;
+        if (!focusedElement || 
+            (focusedElement.tagName !== 'INPUT' && focusedElement.tagName !== 'TEXTAREA')) {
           activeInputRef.current = null;
           setKeyboardVisible(false);
-          if (dialogRef.current) {
-            dialogRef.current.style.transform = '';
-            dialogRef.current.style.maxHeight = '';
-            dialogRef.current.style.overflowY = '';
-          }
+          handleViewportChange();
         }
       }, 100);
     };
 
-    // Event listeners
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+    // Use visualViewport if available for better mobile support
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+    } else {
+      window.addEventListener('resize', handleViewportChange);
+    }
+    
+    window.addEventListener('orientationchange', handleViewportChange);
     document.addEventListener('focusin', handleInputFocus);
     document.addEventListener('focusout', handleInputBlur);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+      } else {
+        window.removeEventListener('resize', handleViewportChange);
+      }
+      window.removeEventListener('orientationchange', handleViewportChange);
       document.removeEventListener('focusin', handleInputFocus);
       document.removeEventListener('focusout', handleInputBlur);
       
       // Reset styles on cleanup
       if (dialogRef.current) {
-        dialogRef.current.style.transform = '';
-        dialogRef.current.style.maxHeight = '';
-        dialogRef.current.style.overflowY = '';
+        const dialogElement = dialogRef.current;
+        dialogElement.style.position = '';
+        dialogElement.style.top = '';
+        dialogElement.style.maxHeight = '';
+        dialogElement.style.height = '';
+        dialogElement.style.overflowY = '';
+        dialogElement.style.transform = '';
+        dialogElement.style.left = '';
+        dialogElement.style.width = '';
+        dialogElement.style.maxWidth = '';
       }
     };
   }, [isOpen]);
@@ -239,9 +255,7 @@ export function SupplementGeneraliForm({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         ref={dialogRef}
-        className={`max-w-2xl transition-all duration-300 ${
-          keyboardVisible ? 'max-h-[70vh] overflow-y-auto' : ''
-        }`}
+        className="max-w-2xl transition-all duration-300"
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -279,7 +293,10 @@ export function SupplementGeneraliForm({
                           className="w-full"
                           onFocus={(e) => {
                             activeInputRef.current = e.target;
+                            // Prevent zoom on iOS
+                            e.target.style.fontSize = '16px';
                           }}
+                          inputMode="email"
                         />
                       </FormControl>
                       <FormDescription>
@@ -303,6 +320,7 @@ export function SupplementGeneraliForm({
                           className="w-full"
                           onFocus={(e) => {
                             activeInputRef.current = e.target;
+                            e.target.style.fontSize = '16px';
                           }}
                         />
                       </FormControl>
@@ -328,6 +346,7 @@ export function SupplementGeneraliForm({
                         className="w-full"
                         onFocus={(e) => {
                           activeInputRef.current = e.target;
+                          e.target.style.fontSize = '16px';
                         }}
                       />
                     </FormControl>
@@ -361,7 +380,9 @@ export function SupplementGeneraliForm({
                           className="w-full"
                           onFocus={(e) => {
                             activeInputRef.current = e.target;
+                            e.target.style.fontSize = '16px';
                           }}
+                          inputMode="text"
                         />
                       </FormControl>
                       <FormDescription>
@@ -385,6 +406,7 @@ export function SupplementGeneraliForm({
                           className="w-full"
                           onFocus={(e) => {
                             activeInputRef.current = e.target;
+                            e.target.style.fontSize = '16px';
                           }}
                         />
                       </FormControl>
@@ -411,6 +433,7 @@ export function SupplementGeneraliForm({
                         className="w-full"
                         onFocus={(e) => {
                           activeInputRef.current = e.target;
+                          e.target.style.fontSize = '16px';
                         }}
                       />
                     </FormControl>
@@ -441,6 +464,7 @@ export function SupplementGeneraliForm({
                       className="w-full"
                       onFocus={(e) => {
                         activeInputRef.current = e.target;
+                        e.target.style.fontSize = '16px';
                       }}
                     />
                   </FormControl>
