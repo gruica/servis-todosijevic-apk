@@ -125,11 +125,11 @@ export function setupAuth(app: Express) {
         return done(null, false);
       }
       
-      console.log(`User deserialized successfully: ${user.username}`);
-      done(null, user);
+      console.log(`Successfully deserialized user: ${user.username}, role: ${user.role}`);
+      return done(null, user);
     } catch (error) {
       console.error(`Error deserializing user ${id}:`, error);
-      done(error, null);
+      return done(error, null);
     }
   });
 

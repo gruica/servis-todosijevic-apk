@@ -4852,16 +4852,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint za dopunjavanje Generali servisa
   app.patch("/api/services/:id/supplement-generali", async (req, res) => {
     try {
-      console.log("🔄 GENERALI DOPUNA - Početak zahteva:", {
-        serviceId: req.params.id,
-        user: req.user?.username,
-        role: req.user?.role,
-        technicianId: req.user?.technicianId,
-        body: req.body
-      });
+      // Dopuna Generali podataka za servis
 
       if (!req.isAuthenticated() || req.user?.role !== "technician") {
-        console.log("❌ GENERALI DOPUNA - Neautorizovan pristup");
+
         return res.status(403).json({ error: "Samo serviseri mogu dopunjavati Generali servise" });
       }
 
@@ -4875,10 +4869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updateData
       });
 
-      console.log("🔍 GENERALI DOPUNA - Validacija:", {
-        success: validationResult.success,
-        errors: validationResult.success ? null : validationResult.error.errors
-      });
+      // Validacija podataka
 
       if (!validationResult.success) {
         return res.status(400).json({
@@ -4890,7 +4881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validData = validationResult.data;
 
       // Proveri da li servis postoji i da li je dodeljen ovom serviseru
-      const service = await storage.getServiceById(serviceId);
+      const service = await storage.getService(serviceId);
       if (!service) {
         return res.status(404).json({ error: "Servis nije pronađen" });
       }
@@ -4906,13 +4897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (validData.clientAddress) updateClientData.address = validData.clientAddress;
         if (validData.clientCity) updateClientData.city = validData.clientCity;
 
-        console.log("🔄 GENERALI DOPUNA - Ažuriranje klijenta:", {
-          clientId: service.clientId,
-          updateData: updateClientData
-        });
-
         await storage.updateClient(service.clientId, updateClientData);
-        console.log("✅ GENERALI DOPUNA - Klijent ažuriran");
       }
 
       // Dopuni podatke o aparatu ako su navedeni
@@ -4922,13 +4907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (validData.model) updateApplianceData.model = validData.model;
         if (validData.purchaseDate) updateApplianceData.purchaseDate = validData.purchaseDate;
 
-        console.log("🔄 GENERALI DOPUNA - Ažuriranje aparata:", {
-          applianceId: service.applianceId,
-          updateData: updateApplianceData
-        });
-
         await storage.updateAppliance(service.applianceId, updateApplianceData);
-        console.log("✅ GENERALI DOPUNA - Aparat ažuriran");
       }
 
       // Dodaj napomene o dopuni u tehnicianske napomene ako postoje
@@ -4938,16 +4917,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `${currentNotes}\n\n[DOPUNA GENERALI] ${validData.supplementNotes}` :
           `[DOPUNA GENERALI] ${validData.supplementNotes}`;
         
-        console.log("🔄 GENERALI DOPUNA - Ažuriranje napomena servisa");
         await storage.updateService(serviceId, { technicianNotes: updatedNotes });
-        console.log("✅ GENERALI DOPUNA - Napomene ažurirane");
       }
 
       // Vraćaj ažurirani servis
-      console.log("🔄 GENERALI DOPUNA - Preuzimanje ažuriranog servisa");
-      const updatedService = await storage.getServiceById(serviceId);
-      
-      console.log("✅ GENERALI DOPUNA - Uspešno završeno");
+      const updatedService = await storage.getService(serviceId);
       res.json({ 
         success: true, 
         message: "Generali servis je uspešno dopunjen",

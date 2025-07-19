@@ -32,6 +32,8 @@ app.use((req, res, next) => {
 // NAKON body parser-a postavi session middleware
 setupAuth(app);
 
+// Session middleware je konfigurisan u setupAuth()
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
