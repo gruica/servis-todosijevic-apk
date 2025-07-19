@@ -228,13 +228,32 @@ export default function Users() {
   // Watch role field to conditionally show technician dropdown
   const watchRole = form.watch("role");
 
-  // Create user mutation
+  // Create user mutation - using JWT authentication
   const createUserMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
       // Remove id when creating a new user
       const { id, ...createData } = data;
-      const res = await apiRequest("POST", "/api/users", createData);
-      return await res.json();
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error("Nema autentifikacionog tokena");
+      }
+      
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(createData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Greška pri kreiranju korisnika");
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -253,10 +272,15 @@ export default function Users() {
     },
   });
 
-  // Update user mutation
+  // Update user mutation - using JWT authentication
   const updateUserMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
       if (!data.id) throw new Error("ID korisnika je obavezan za ažuriranje");
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error("Nema autentifikacionog tokena");
+      }
       
       // If password is empty, remove it from update data (don't change password)
       let updateData = { ...data };
@@ -268,8 +292,21 @@ export default function Users() {
         updateData.password = updateData.password || "";
       }
       
-      const res = await apiRequest("PUT", `/api/users/${data.id}`, updateData);
-      return await res.json();
+      const response = await fetch(`/api/users/${data.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Greška pri ažuriranju korisnika");
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -288,11 +325,27 @@ export default function Users() {
     },
   });
 
-  // Delete user mutation
+  // Delete user mutation - using JWT authentication
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const res = await apiRequest("DELETE", `/api/users/${userId}`);
-      return res.ok;
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error("Nema autentifikacionog tokena");
+      }
+      
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Greška pri brisanju korisnika");
+      }
+      
+      return response.ok;
     },
     onSuccess: () => {
       toast({
