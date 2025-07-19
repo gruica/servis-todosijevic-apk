@@ -53,7 +53,7 @@ type TechnicianService = Service & {
 
 export default function TechnicianServices() {
   const { toast } = useToast();
-  const { logoutMutation } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [location, navigate] = useLocation();
   const { highlightedServiceId, shouldAutoOpen, setHighlightedServiceId, setShouldAutoOpen, clearHighlight } = useNotification();
   const isMobile = useIsMobile();
@@ -96,7 +96,7 @@ export default function TechnicianServices() {
 
 
 
-  // Fetch services assigned to the logged-in technician
+  // Fetch services assigned to the logged-in technician - SAMO AKO JE KORISNIK PRIJAVLJEN
   const { data: services = [], isLoading, error, refetch } = useQuery<TechnicianService[]>({
     queryKey: ["/api/my-services"],
     queryFn: async ({ signal }) => {
@@ -113,14 +113,11 @@ export default function TechnicianServices() {
       }
       const data = await response.json();
       console.log("✅ Dobio servise:", data?.length || 0, "servisa");
-      console.log("📋 Services data:", data);
       return data;
     },
-    // Obavezno osvežavaj podatke svakih 10 sekundi
-    refetchInterval: 10000,
-    // Omogući osvežavanje podataka i kada browser nije u fokusu
-    refetchIntervalInBackground: true,
-    // Smanji staleTime da bi podaci bili ažurniji
+    enabled: !!user, // KRITIČNO: Pozovi query samo ako je korisnik prijavljen!
+    refetchInterval: user ? 10000 : false, // Samo ako je korisnik prijavljen
+    refetchIntervalInBackground: !!user,
     staleTime: 5000,
   });
   

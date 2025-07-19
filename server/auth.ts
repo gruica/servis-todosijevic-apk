@@ -56,10 +56,10 @@ export function setupAuth(app: Express) {
     REPLIT_ENVIRONMENT: process.env.REPLIT_ENVIRONMENT,
     REPLIT_DEV_DOMAIN: !!process.env.REPLIT_DEV_DOMAIN,
     NODE_ENV: process.env.NODE_ENV,
-    willUseSecure: isProduction,
-    willUseSameSite: isProduction ? "none" : "lax",
-    willUseDomain: isProduction ? '.replit.dev' : null,
-    willUseHttpOnly: !isProduction // false for production debugging
+    willUseSecure: false, // DEBUGGING - temporarily disable
+    willUseSameSite: "lax",
+    willUseDomain: undefined,
+    willUseHttpOnly: true
   });
   
   const sessionSettings: session.SessionOptions = {
@@ -69,11 +69,11 @@ export function setupAuth(app: Express) {
     store: undefined, // Koristimo default MemoryStore za debugging
     name: 'connect.sid',
     cookie: {
-      secure: isProduction, // True za Replit HTTPS, false za localhost
-      httpOnly: false, // Experimentalno false da vidimo da li je httpOnly problem
-      sameSite: isProduction ? "none" : "lax", // none za HTTPS cross-site, lax za localhost
+      secure: false, // Temporary disable secure for debugging
+      httpOnly: true,
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
-      domain: isProduction ? '.replit.dev' : null, // Pokušaj sa explicit Replit domain
+      domain: undefined,
       path: '/'
     },
     proxy: isProduction // Potrebno za trust proxy kada je secure = true
