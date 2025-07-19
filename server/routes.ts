@@ -4403,9 +4403,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/services/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.sendStatus(401);
+  app.put("/api/admin/services/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4424,9 +4424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/services/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.sendStatus(401);
+  app.delete("/api/admin/services/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4444,9 +4444,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/services/:id/assign-technician", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.put("/api/admin/services/:id/assign-technician", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4825,9 +4825,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update spare part order (admin only)
-  app.put("/api/admin/spare-parts/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.put("/api/admin/spare-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4868,9 +4868,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Return service from waiting_parts to active status (admin only)
-  app.post("/api/admin/services/:id/return-from-waiting", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.post("/api/admin/services/:id/return-from-waiting", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4914,9 +4914,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete spare part order (admin only)
-  app.delete("/api/admin/spare-parts/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.delete("/api/admin/spare-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
