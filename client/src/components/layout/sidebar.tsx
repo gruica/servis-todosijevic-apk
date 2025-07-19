@@ -113,7 +113,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
               <li key={item.path}>
                 <Link
                   href={item.path}
-                  onClick={() => closeMobileMenu()}
+                  onClick={() => closeMobileMenu && closeMobileMenu()}
                 >
                   <div 
                     className={cn(

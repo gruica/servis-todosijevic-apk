@@ -4934,6 +4934,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin spare parts ordering endpoint
+  app.post("/api/admin/spare-parts/order", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const {
+        serviceId,
+        brand,
+        deviceModel,
+        productCode,
+        applianceCategory,
+        partName,
+        quantity = 1,
+        description,
+        warrantyStatus,
+        urgency = 'normal',
+        emailTarget
+      } = req.body;
+
+      // Validacija obaveznih polja
+      if (!brand || !deviceModel || !productCode || !applianceCategory || !partName) {
+        return res.status(400).json({ error: "Obavezna polja nisu popunjena" });
+      }
+
+      // Validacija brenda i email adrese
+      const validBrandEmails = {
+        'beko': 'servis@eurotehnikamn.me',
+        'complus': 'servis@complus.me'
+      };
+
+      if (!validBrandEmails[brand as keyof typeof validBrandEmails]) {
+        return res.status(400).json({ error: "Nepoznat brend aparata" });
+      }
+
+      const targetEmail = validBrandEmails[brand as keyof typeof validBrandEmails];
+
+      // Kreiraj narudžbu u bazi podataka
+      const sparePartOrder = await storage.createSparePartOrder({
+        serviceId: serviceId || null,
+        technicianId: null, // Admin narudžba
+        applianceId: null,
+        partName,
+        partNumber: productCode,
+        quantity,
+        description: `${applianceCategory} - ${deviceModel}\n${description || ''}`.trim(),
+        urgency,
+        status: 'pending',
+        warrantyStatus: warrantyStatus || 'u garanciji',
+        supplierName: brand === 'beko' ? 'Eurotehnika' : 'Complus',
+        orderDate: new Date(),
+        adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend`
+      });
+
+      // Pošalji email obaveštenje
+      let serviceInfo = '';
+      if (serviceId) {
+        const service = await storage.getService(serviceId);
+        if (service) {
+          const client = await storage.getClient(service.clientId);
+          const appliance = await storage.getAppliance(service.applianceId);
+          serviceInfo = `\nServis: ${client?.fullName} - ${appliance?.model || 'N/A'}`;
+        }
+      }
+
+      const emailSubject = `${urgency === 'high' ? '[HITNO] ' : ''}Porudžbina rezervnog dela - ${brand.toUpperCase()}`;
+      
+      const emailContent = `
+Poštovani,
+
+Molimo da obezbedite sledeći rezervni deo:
+
+PODACI O APARATU:
+• Brend: ${brand.toUpperCase()}
+• Model: ${deviceModel}
+• Tip aparata: ${applianceCategory}
+• Produkt kod: ${productCode}
+
+REZERVNI DEO:
+• Naziv dela: ${partName}
+• Količina: ${quantity}
+• Garancijski status: ${warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
+• Hitnost: ${urgency === 'high' ? '🚨 HITNO' : urgency === 'normal' ? 'Normalna' : 'Niska'}
+
+${description ? `DODATNE NAPOMENE:\n${description}\n` : ''}${serviceInfo}
+
+PORUDŽBINA BR: ${sparePartOrder.id}
+Datum porudžbine: ${new Date().toLocaleDateString('sr-RS')}
+
+Molimo potvrdite dostupnost i rok isporuke.
+
+S poštovanjem,
+Frigo Sistem Todosijević
+Admin panel - automatska porudžbina
+      `.trim();
+
+      try {
+        await emailService.sendEmail(
+          targetEmail,
+          emailSubject,
+          emailContent
+        );
+        console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+      } catch (emailError) {
+        console.error('[SPARE PARTS ORDER] Greška pri slanju email-a:', emailError);
+        // Ne prekidamo proces zbog email greške
+      }
+
+      // Obavesti administratore o novoj porudžbini
+      try {
+        await NotificationService.notifySparePartOrdered(
+          sparePartOrder.id,
+          req.user.id // admin user kao technician za admin porudžbine
+        );
+      } catch (notificationError) {
+        console.error('[SPARE PARTS ORDER] Greška pri slanju obaveštenja:', notificationError);
+      }
+
+      res.json({
+        success: true,
+        orderId: sparePartOrder.id,
+        message: `Rezervni deo je uspešno poručen. Email je poslat ${brand === 'beko' ? 'Eurotehnika servisu' : 'Complus servisu'}.`
+      });
+
+    } catch (error) {
+      console.error("Error creating admin spare part order:", error);
+      res.status(500).json({ error: "Greška pri kreiranju porudžbine rezervnog dela" });
+    }
+  });
+
   // Data export endpoints - CSV and Excel
   app.get("/api/export/data/:table", async (req, res) => {
     try {
