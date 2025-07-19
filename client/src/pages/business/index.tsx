@@ -34,19 +34,7 @@ export default function BusinessDashboard() {
   
   // Dohvatanje servisnih zahteva za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
-    queryKey: ["/api/business/services", user?.id],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`/api/business/services`);
-        if (!response.ok) {
-          throw new Error('Greška pri dohvatanju servisa');
-        }
-        return await response.json();
-      } catch (error) {
-        console.error("Greška pri dohvatanju servisa:", error);
-        return [];
-      }
-    },
+    queryKey: ["/api/business/services"],
     enabled: !!user?.id,
   });
   
