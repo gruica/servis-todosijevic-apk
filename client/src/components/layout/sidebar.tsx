@@ -48,6 +48,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel uvoz/izvoz", icon: "import_export" },
+    { path: "/admin/data-export", label: "Izvoz podataka", icon: "download", highlight: true },
     { path: "/admin/cleanup", label: "Čišćenje baze", icon: "cleaning_services", highlight: true },
     { path: "/profile", label: "Moj profil", icon: "person" },
   ];

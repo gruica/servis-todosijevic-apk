@@ -4727,6 +4727,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data export endpoints - CSV and Excel
+  app.get("/api/export/data/:table", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za izvoz podataka" });
+      }
+      
+      const table = req.params.table;
+      const format = req.query.format as string || 'csv';
+      
+      // Dozvoljena imena tabela za izvoz
+      const allowedTables = [
+        'clients', 'services', 'appliances', 'technicians', 'users',
+        'appliance_categories', 'manufacturers', 'notifications',
+        'maintenance_schedules', 'maintenance_alerts', 'spare_part_orders'
+      ];
+      
+      if (!allowedTables.includes(table)) {
+        return res.status(400).json({ error: "Nepoznata tabela za izvoz" });
+      }
+      
+      // Dobijanje podataka iz tabele
+      const result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+      const rows = result.rows;
+      
+      if (format === 'csv') {
+        // CSV format
+        if (rows.length === 0) {
+          return res.status(404).json({ error: "Nema podataka za izvoz" });
+        }
+        
+        // Create CSV content
+        const headers = Object.keys(rows[0]);
+        const csvContent = [
+          headers.join(','), // Header row
+          ...rows.map(row => 
+            headers.map(header => {
+              const value = row[header];
+              // Escape quotes and wrap in quotes if contains comma, quote, or newline
+              if (value === null || value === undefined) return '';
+              const stringValue = String(value);
+              if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+              }
+              return stringValue;
+            }).join(',')
+          )
+        ].join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=${table}.csv`);
+        res.setHeader('Content-Length', Buffer.byteLength(csvContent, 'utf8'));
+        
+        res.end(csvContent);
+      } else {
+        return res.status(400).json({ error: "Nepodržan format. Koristite 'csv'" });
+      }
+      
+    } catch (error) {
+      console.error("Greška pri izvozu podataka:", error);
+      res.status(500).json({ error: "Greška pri izvozu podataka" });
+    }
+  });
+  
+  // Endpoint za listu dostupnih tabela
+  app.get("/api/export/tables", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup" });
+      }
+      
+      const tables = [
+        { name: 'clients', displayName: 'Klijenti', description: 'Podaci o klijentima' },
+        { name: 'services', displayName: 'Servisi', description: 'Podaci o servisima' },
+        { name: 'appliances', displayName: 'Uređaji', description: 'Podaci o uređajima' },
+        { name: 'technicians', displayName: 'Serviseri', description: 'Podaci o serviserima' },
+        { name: 'users', displayName: 'Korisnici', description: 'Podaci o korisnicima sistema' },
+        { name: 'appliance_categories', displayName: 'Kategorije uređaja', description: 'Kategorije bijele tehnike' },
+        { name: 'manufacturers', displayName: 'Proizvođači', description: 'Proizvođači uređaja' },
+        { name: 'notifications', displayName: 'Obavještenja', description: 'Sistemska obavještenja' },
+        { name: 'maintenance_schedules', displayName: 'Raspored održavanja', description: 'Planovi održavanja' },
+        { name: 'maintenance_alerts', displayName: 'Upozorenja održavanja', description: 'Automatska upozorenja' },
+        { name: 'spare_part_orders', displayName: 'Narudžbe rezervnih djelova', description: 'Narudžbe dijelova' }
+      ];
+      
+      // Dodaj broj zapisa za svaku tabelu
+      const tablesWithCounts = await Promise.all(
+        tables.map(async (table) => {
+          try {
+            const result = await pool.query(`SELECT COUNT(*) as count FROM ${table.name}`);
+            return {
+              ...table,
+              recordCount: parseInt(result.rows[0].count)
+            };
+          } catch (error) {
+            return {
+              ...table,
+              recordCount: 0
+            };
+          }
+        })
+      );
+      
+      res.json(tablesWithCounts);
+    } catch (error) {
+      console.error("Greška pri dobijanju lista tabela:", error);
+      res.status(500).json({ error: "Greška pri dobijanju lista tabela" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

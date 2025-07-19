@@ -101,6 +101,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/data-export" component={React.lazy(() => import('@/pages/admin/data-export'))} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
       {/* Technician routes */}
