@@ -31,7 +31,7 @@ export function TestWarrantyEmail() {
         setResult({ success: true, message: data.message });
         toast({
           title: "Email poslat uspešno",
-          description: `Test warranty email (${warrantyStatus === "in_warranty" ? "u garanciji" : "van garancije"}) poslat na gruica@icloud.com`,
+          description: `Test warranty email (${warrantyStatus === "in_warranty" ? "u garanciji" : "van garancije"}) poslat na gruica@frigosistemtodosijevic.com`,
         });
       } else {
         setResult({ success: false, message: data.error || "Neuspešno slanje emaila" });
@@ -90,7 +90,7 @@ export function TestWarrantyEmail() {
           disabled={isLoading}
           className="w-full"
         >
-          {isLoading ? "Šalje email..." : "Pošalji test email na gruica@icloud.com"}
+          {isLoading ? "Šalje email..." : "Pošalji test email na gruica@frigosistemtodosijevic.com"}
         </Button>
 
         {result && (

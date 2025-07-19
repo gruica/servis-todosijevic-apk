@@ -25,6 +25,11 @@ const urgencyOptions = [
   { value: 'urgent', label: 'Hitno', color: 'bg-red-100 text-red-800' },
 ];
 
+const warrantyStatusOptions = [
+  { value: 'in_warranty', label: '🛡️ U garanciji', color: 'bg-green-100 text-green-800' },
+  { value: 'out_of_warranty', label: '💰 Van garancije', color: 'bg-red-100 text-red-800' },
+];
+
 export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePartsOrderFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -35,6 +40,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
     partNumber: '',
     quantity: 1,
     urgency: 'medium',
+    warrantyStatus: '',
     notes: ''
   });
 
@@ -60,6 +66,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
         partNumber: '',
         quantity: 1,
         urgency: 'medium',
+        warrantyStatus: '',
         notes: ''
       });
       
@@ -88,6 +95,15 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
       toast({
         title: 'Greška',
         description: 'Molimo unesite naziv rezervnog dela',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.warrantyStatus) {
+      toast({
+        title: 'Greška',
+        description: 'Molimo izaberite warranty status (u garanciji ili van garancije)',
         variant: 'destructive',
       });
       return;
@@ -196,6 +212,39 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="warrantyStatus">Warranty Status *</Label>
+                <Select value={formData.warrantyStatus} onValueChange={(value) => handleInputChange('warrantyStatus', value)}>
+                  <SelectTrigger className={!formData.warrantyStatus ? "border-red-300" : ""}>
+                    <SelectValue placeholder="Izaberite warranty status">
+                      {formData.warrantyStatus && (
+                        <div className="flex items-center space-x-2">
+                          <Badge className={warrantyStatusOptions.find(opt => opt.value === formData.warrantyStatus)?.color}>
+                            {warrantyStatusOptions.find(opt => opt.value === formData.warrantyStatus)?.label}
+                          </Badge>
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warrantyStatusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={option.color}>
+                            {option.label}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!formData.warrantyStatus && (
+                  <p className="text-sm text-red-600 mt-1">
+                    Molimo izaberite da li je deo u garanciji ili van garancije
+                  </p>
+                )}
               </div>
               
               <div>

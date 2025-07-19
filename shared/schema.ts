@@ -592,6 +592,7 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   description: text("description"), // Dodatni opis potrebe
   urgency: text("urgency").notNull().default("normal"), // normal, high, urgent
   status: text("status").notNull().default("pending"), // pending, approved, ordered, received, cancelled
+  warrantyStatus: text("warranty_status").notNull(), // in_warranty, out_of_warranty
   estimatedCost: text("estimated_cost"), // Procenjena cena
   actualCost: text("actual_cost"), // Stvarna cena
   supplierName: text("supplier_name"), // Dobavljač
@@ -618,8 +619,14 @@ export const sparePartStatusEnum = z.enum([
   "cancelled", // otkazano
 ]);
 
+export const sparePartWarrantyStatusEnum = z.enum([
+  "in_warranty", // u garanciji
+  "out_of_warranty", // van garancije
+]);
+
 export type SparePartUrgency = z.infer<typeof sparePartUrgencyEnum>;
 export type SparePartStatus = z.infer<typeof sparePartStatusEnum>;
+export type SparePartWarrantyStatus = z.infer<typeof sparePartWarrantyStatusEnum>;
 
 export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pick({
   serviceId: true,
@@ -631,6 +638,7 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: true,
   urgency: true,
   status: true,
+  warrantyStatus: true,
   estimatedCost: true,
   actualCost: true,
   supplierName: true,
@@ -648,6 +656,7 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
   urgency: sparePartUrgencyEnum.default("normal"),
   status: sparePartStatusEnum.default("pending"),
+  warrantyStatus: sparePartWarrantyStatusEnum,
   estimatedCost: z.string().max(50, "Procenjena cena je predugačka").or(z.literal("")).optional(),
   actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
   supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),

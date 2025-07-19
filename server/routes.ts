@@ -7,7 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
 import { generateToken, jwtAuthMiddleware, requireRole } from "./jwt-auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -5060,7 +5060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const testClient = {
         id: 999,
         fullName: "Test Korisnik",
-        email: "gruica@icloud.com",
+        email: "gruica@frigosistemtodosijevic.com",
         phone: "067123456",
         address: "Test Adresa 123",
         city: "Podgorica"
