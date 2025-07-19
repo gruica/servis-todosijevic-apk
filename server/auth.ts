@@ -71,13 +71,13 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       sameSite: "lax", // Povratak na lax - možda je none problem
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
-      domain: undefined,
+      domain: null, // Eksplicitno null umesto undefined
       path: '/'
     },
     proxy: isProduction // Potrebno za trust proxy kada je secure = true
   };
 
-  app.set("trust proxy", true); // Promenjen sa 1 na true za bolje proxy handling
+  // Trust proxy je već postavljen u index.ts
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
@@ -305,7 +305,19 @@ export function setupAuth(app: Express) {
           path: req.session.cookie.path,
           domain: req.session.cookie.domain
         });
-        console.log(`🍪 Response cookies will be set:`, res.getHeaders()['set-cookie'] || 'none');
+        
+        // Dodatni debug posle odgovora
+        res.on('finish', () => {
+          console.log(`🍪 FINALNI Response headers:`, res.getHeaders());
+          console.log(`🍪 Set-Cookie header:`, res.getHeaders()['set-cookie'] || 'MISSING!');
+        });
+        
+        console.log(`🍪 Trenutni request headers:`, {
+          host: req.headers.host,
+          origin: req.headers.origin,
+          'user-agent': req.headers['user-agent'],
+          cookie: req.headers.cookie || 'NO COOKIES'
+        });
         
         // Remove password from the response
         const { password, ...userWithoutPassword } = user as SelectUser;
