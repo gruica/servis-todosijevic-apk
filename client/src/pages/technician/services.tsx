@@ -164,13 +164,6 @@ export default function TechnicianServices() {
     }, {} as Record<string, number>)
   });
 
-  console.log("✅ UI Debug: Servisi se prikazuju uspešno!", {
-    totalServices: services?.length,
-    filteredServices: filteredServices?.length,
-    cities: Object.keys(groupedServices),
-    servicesPerCity: Object.entries(groupedServices).map(([city, servs]) => `${city}: ${servs.length}`)
-  });
-
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
@@ -396,6 +389,14 @@ export default function TechnicianServices() {
     groups[city].push(service);
     return groups;
   }, {} as Record<string, TechnicianService[]>);
+
+  // Debug UI state after grouping
+  console.log("✅ UI Debug: Servisi se prikazuju uspešno!", {
+    totalServices: services?.length,
+    filteredServices: filteredServices?.length,
+    cities: Object.keys(groupedServices),
+    servicesPerCity: Object.entries(groupedServices).map(([city, servs]) => `${city}: ${servs.length}`)
+  });
 
   // Sort cities alphabetically and services within each city by date
   const sortedCities = Object.keys(groupedServices).sort();
