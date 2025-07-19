@@ -46,19 +46,33 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Prepoznaj da li je produkcija (Replit ima HTTPS)
+  const isProduction = process.env.REPLIT_ENVIRONMENT === 'production' || 
+                       !!process.env.REPLIT_DEV_DOMAIN || 
+                       process.env.NODE_ENV === 'production';
+  
+  console.log("🔧 Session config:", {
+    isProduction,
+    REPLIT_ENVIRONMENT: process.env.REPLIT_ENVIRONMENT,
+    REPLIT_DEV_DOMAIN: !!process.env.REPLIT_DEV_DOMAIN,
+    NODE_ENV: process.env.NODE_ENV,
+    willUseSecure: isProduction,
+    willUseSameSite: isProduction ? "none" : "lax"
+  });
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret",
     resave: false,
     saveUninitialized: false,
     store: undefined, // Koristimo default MemoryStore za debugging
-    name: 'connect.sid', // Vraćamo default ime
+    name: 'connect.sid',
     cookie: {
-      secure: false, // False za development, true za production
+      secure: isProduction, // True za Replit HTTPS, false za localhost
       httpOnly: true,
-      sameSite: "lax", // Lax je bolji za Replit
+      sameSite: isProduction ? "none" : "lax", // None za cross-site HTTPS, lax za localhost
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
-      domain: undefined, // Uklanjamo domain - neka browser odluči
-      path: '/' // Eksplicitno postavljamo path
+      domain: undefined,
+      path: '/'
     }
   };
 
