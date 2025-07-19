@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/jwt-user", jwtAuthMiddleware, async (req, res) => {
     try {
       const userId = (req as any).user.id;
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ error: "Korisnik nije pronađen" });
@@ -2397,17 +2397,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`JWT: Fetching services for technician ${user.username} (ID: ${user.id})`);
       
       // Get user details to find technician ID
-      const fullUser = await storage.getUserById(user.id);
+      const fullUser = await storage.getUser(user.id);
       if (!fullUser || !fullUser.technicianId) {
         console.log(`JWT: User ${user.username} has no technicianId`);
         return res.status(400).json({ error: "Korisnik nije serviser" });
       }
       
-      // Get technician services
+      // Get technician services with full details (like the working endpoint)
       const services = await storage.getServicesByTechnician(fullUser.technicianId);
       console.log(`JWT: Found ${services.length} services for technician ${user.username}`);
       
-      res.json(services);
+      // Add client and appliance details to each service
+      const servicesWithDetails = await Promise.all(services.map(async (service) => {
+        const client = await storage.getClient(service.clientId);
+        const appliance = await storage.getAppliance(service.applianceId);
+        
+        let applianceCategory = null;
+        if (appliance && appliance.categoryId) {
+          applianceCategory = await storage.getApplianceCategory(appliance.categoryId);
+        }
+        
+        return {
+          ...service,
+          client,
+          appliance: appliance ? {
+            ...appliance,
+            category: applianceCategory
+          } : null
+        };
+      }));
+      
+      console.log(`JWT: Returning ${servicesWithDetails.length} services with details for technician ${user.username}`);
+      res.json(servicesWithDetails);
     } catch (error) {
       console.error("JWT: Error fetching technician services:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
