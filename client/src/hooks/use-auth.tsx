@@ -39,6 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
+  
+  // Debug auth stanje
+  console.log("🔐 Auth Debug:", { 
+    user: user ? `${user.username} (${user.role})` : null, 
+    isLoading, 
+    error: error?.message,
+    hasUser: !!user 
+  });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
