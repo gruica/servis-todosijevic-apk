@@ -4357,9 +4357,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin services API endpoints
-  app.get("/api/admin/services", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.get("/api/admin/services", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4372,9 +4372,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get services waiting for parts (admin only)
-  app.get("/api/admin/services/waiting-for-parts", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.get("/api/admin/services/waiting-for-parts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
@@ -4386,9 +4386,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/services/:id", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.sendStatus(401);
+  app.get("/api/admin/services/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
