@@ -33,9 +33,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     refetch,
   } = useQuery<SelectUser | null, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    staleTime: 0, // Uvek sveži podaci
+    queryKey: ["/api/jwt-user"],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        return null;
+      }
+      
+      const response = await fetch("/api/jwt-user", {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('auth_token');
+          return null;
+        }
+        throw new Error('Failed to fetch user');
+      }
+      
+      return response.json();
+    },
+    staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -50,33 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      console.log("Attempting login with username:", credentials.username);
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
-          credentials: "include"
-        });
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Login error:", res.status, errorText);
-          throw new Error(errorText || "Neispravno korisničko ime ili lozinka");
-        }
-        
-        return await res.json();
-      } catch (err) {
-        console.error("Login fetch error:", err);
-        throw err;
+      console.log("JWT Login attempt for:", credentials.username);
+      
+      const res = await fetch("/api/jwt-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Login failed" }));
+        throw new Error(errorData.error || "Neispravno korisničko ime ili lozinka");
       }
+      
+      return await res.json();
     },
-    onSuccess: (user: SelectUser) => {
-      console.log("Login successful, user:", user.username);
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (response: { user: SelectUser; token: string }) => {
+      console.log("JWT Login successful for:", response.user.username);
+      localStorage.setItem('auth_token', response.token);
+      queryClient.setQueryData(["/api/jwt-user"], response.user);
+      refetch();
       toast({
         title: "Uspešna prijava",
-        description: `Dobrodošli, ${user.fullName}!`,
+        description: `Dobrodošli, ${response.user.fullName}!`,
       });
     },
     onError: (error: Error) => {
@@ -114,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } else {
         // Za ostale tipove korisnika, postavljamo podatke u queryClient
-        queryClient.setQueryData(["/api/user"], data);
+        queryClient.setQueryData(["/api/jwt-user"], data);
         toast({
           title: "Uspešna registracija",
           description: `Dobrodošli, ${data.fullName}!`,
@@ -133,70 +150,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      try {
-        await apiRequest("POST", "/api/logout");
-        // Dodatno - direktan fetch kao rezervni mehanizam
-        await fetch("/api/logout", {
-          method: "POST",
-          credentials: "include"
-        });
-      } catch (error) {
-        console.error("Greška pri odjavljivanju:", error);
-      }
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem("lastAuthRedirect");
+      return Promise.resolve();
     },
     onSuccess: () => {
-      // Čišćenje svih podataka
-      queryClient.setQueryData(["/api/user"], null);
-      queryClient.clear(); // Čišćenje celog keša
-      localStorage.removeItem("lastAuthRedirect");
-      
-      // Brisanje kolačića (cookies) kroz postavljanje isteklih
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
+      queryClient.setQueryData(["/api/jwt-user"], null);
+      queryClient.clear();
       
       toast({
         title: "Uspešno ste se odjavili",
         description: "Vidimo se ponovo!",
       });
     },
-    onError: (error: Error) => {
-      // Čak i u slučaju greške, očistimo podatke
-      queryClient.setQueryData(["/api/user"], null);
-      localStorage.removeItem("lastAuthRedirect");
-      
-      toast({
-        title: "Odjavljivanje",
-        description: "Sesija je zatvorena",
-      });
-    },
   });
 
-  // Nova funkcija za čišćenje auth korisnika - poboljšana verzija
   const clearAuthUser = () => {
-    console.log("Čišćenje korisničkih podataka za novi login");
-    
-    // Čišćenje React Query keša
-    queryClient.setQueryData(["/api/user"], null);
-    queryClient.invalidateQueries({queryKey: ["/api/user"]});
-    
-    // Čišćenje localStorage
+    console.log("JWT: Čišćenje korisničkih podataka");
+    localStorage.removeItem('auth_token');
     localStorage.removeItem("lastAuthRedirect");
-    
-    // Čišćenje kolačića (cookies) - za svaki slučaj
-    document.cookie.split(";").forEach(function(c) {
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-    });
-    
-    // Dodatno sigurnosno čišćenje sesije pozivom na backend
-    fetch("/api/logout", {
-      method: "POST",
-      credentials: "include"
-    }).then(() => {
-      console.log("Sesija uspešno očišćena");
-    }).catch((err) => {
-      console.error("Greška pri čišćenju sesije:", err);
-    });
+    queryClient.setQueryData(["/api/jwt-user"], null);
+    queryClient.invalidateQueries({queryKey: ["/api/jwt-user"]});
   };
 
   // Provera uloge korisnika

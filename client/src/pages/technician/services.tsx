@@ -96,27 +96,39 @@ export default function TechnicianServices() {
 
 
 
-  // Fetch services assigned to the logged-in technician - SAMO AKO JE KORISNIK PRIJAVLJEN
+  // Fetch services assigned to the logged-in technician using JWT
   const { data: services = [], isLoading, error, refetch } = useQuery<TechnicianService[]>({
     queryKey: ["/api/my-services"],
     queryFn: async ({ signal }) => {
-      console.log("🔄 Pozivam /api/my-services...");
+      console.log("🔄 JWT: Pozivam /api/my-services...");
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No auth token found');
+      }
+      
       const response = await fetch("/api/my-services", { 
         signal,
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
-      console.log("📡 Response status:", response.status);
+      
+      console.log("📡 JWT Response status:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ API greška:", response.status, errorText);
+        console.error("❌ JWT API greška:", response.status, errorText);
+        if (response.status === 401) {
+          localStorage.removeItem('auth_token');
+        }
         throw new Error(`Greška pri dobijanju servisa: ${response.status} ${errorText}`);
       }
       const data = await response.json();
-      console.log("✅ Dobio servise:", data?.length || 0, "servisa");
+      console.log("✅ JWT: Dobio servise:", data?.length || 0, "servisa");
       return data;
     },
-    enabled: !!user, // KRITIČNO: Pozovi query samo ako je korisnik prijavljen!
-    refetchInterval: user ? 10000 : false, // Samo ako je korisnik prijavljen
+    enabled: !!user, // Pozovi query samo ako je korisnik prijavljen
+    refetchInterval: user ? 10000 : false,
     refetchIntervalInBackground: !!user,
     staleTime: 5000,
   });

@@ -1,11 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, comparePassword } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
+import { generateToken, jwtAuthMiddleware, requireRole } from "./jwt-auth";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -72,6 +73,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/security/verify-bot", verifyBotAnswer);
   app.get("/api/security/rate-limit-status", getRateLimitStatus);
   
+  // JWT Login endpoint - replacing session-based login
+  app.post("/api/jwt-login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni" });
+      }
+      
+      console.log(`JWT Login attempt for: ${username}`);
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        console.log(`JWT Login: User ${username} not found`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Check password
+      const isPasswordValid = await comparePassword(password, user.password);
+      if (!isPasswordValid) {
+        console.log(`JWT Login: Invalid password for ${username}`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Check if user is verified
+      if (!user.isVerified) {
+        console.log(`JWT Login: User ${username} not verified`);
+        return res.status(401).json({ error: "Račun nije verifikovan. Kontaktirajte administratora." });
+      }
+      
+      // Generate JWT token
+      const token = generateToken({
+        userId: user.id,
+        username: user.username,
+        role: user.role
+      });
+      
+      console.log(`JWT Login successful for: ${username} (${user.role})`);
+      
+      // Return token and user info
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          email: user.email,
+          phone: user.phone,
+          technicianId: user.technicianId
+        },
+        token
+      });
+      
+    } catch (error) {
+      console.error("JWT Login error:", error);
+      res.status(500).json({ error: "Greška pri prijavljivanju" });
+    }
+  });
+
+  // JWT User info endpoint
+  app.get("/api/jwt-user", jwtAuthMiddleware, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const user = await storage.getUserById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
+      }
+      
+      res.json({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        email: user.email,
+        phone: user.phone,
+        technicianId: user.technicianId
+      });
+    } catch (error) {
+      console.error("JWT User info error:", error);
+      res.status(500).json({ error: "Greška pri dobijanju korisničkih podataka" });
+    }
+  });
+
   // Email verification routes
   app.post("/api/email/send-verification", async (req, res) => {
     try {
@@ -2304,7 +2390,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Get services for the logged-in technician (legacy endpoint)
-  app.get("/api/my-services", getTechnicianServices);
+  // JWT-based technician services endpoint
+  app.get("/api/my-services", jwtAuthMiddleware, requireRole("technician"), async (req, res) => {
+    try {
+      const user = (req as any).user;
+      console.log(`JWT: Fetching services for technician ${user.username} (ID: ${user.id})`);
+      
+      // Get user details to find technician ID
+      const fullUser = await storage.getUserById(user.id);
+      if (!fullUser || !fullUser.technicianId) {
+        console.log(`JWT: User ${user.username} has no technicianId`);
+        return res.status(400).json({ error: "Korisnik nije serviser" });
+      }
+      
+      // Get technician services
+      const services = await storage.getServicesByTechnician(fullUser.technicianId);
+      console.log(`JWT: Found ${services.length} services for technician ${user.username}`);
+      
+      res.json(services);
+    } catch (error) {
+      console.error("JWT: Error fetching technician services:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa" });
+    }
+  });
 
   // Get services for the logged-in technician (new endpoint)
   app.get("/api/technician/services", getTechnicianServices);
