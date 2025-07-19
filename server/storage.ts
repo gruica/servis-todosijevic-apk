@@ -78,7 +78,7 @@ export interface IStorage {
   getClientByEmail(email: string): Promise<Client | undefined>; // Nova metoda za pretragu po emailu
   getClientWithDetails(id: number): Promise<any | undefined>; // Dodajemo metodu za detaljne informacije o klijentu
   createClient(client: InsertClient): Promise<Client>;
-  updateClient(id: number, client: InsertClient): Promise<Client | undefined>;
+  updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<void>;
   getRecentClients(limit: number): Promise<Client[]>;
   
@@ -98,7 +98,7 @@ export interface IStorage {
   getApplianceBySerialNumber(serialNumber: string): Promise<Appliance | undefined>; // Nova metoda za pretragu po serijskom broju
   getAppliancesByClient(clientId: number): Promise<Appliance[]>;
   createAppliance(appliance: InsertAppliance): Promise<Appliance>;
-  updateAppliance(id: number, appliance: InsertAppliance): Promise<Appliance | undefined>;
+  updateAppliance(id: number, appliance: Partial<InsertAppliance>): Promise<Appliance | undefined>;
   deleteAppliance(id: number): Promise<void>;
   getApplianceStats(): Promise<{categoryId: number, count: number}[]>;
   
@@ -575,17 +575,17 @@ export class MemStorage implements IStorage {
     return client;
   }
 
-  async updateClient(id: number, insertClient: InsertClient): Promise<Client | undefined> {
+  async updateClient(id: number, insertClient: Partial<InsertClient>): Promise<Client | undefined> {
     const existingClient = this.clients.get(id);
     if (!existingClient) return undefined;
     
     const updatedClient: Client = { 
       id,
-      fullName: insertClient.fullName,
-      phone: insertClient.phone,
-      email: insertClient.email || null,
-      address: insertClient.address || null,
-      city: insertClient.city || null
+      fullName: insertClient.fullName ?? existingClient.fullName,
+      phone: insertClient.phone ?? existingClient.phone,
+      email: insertClient.email !== undefined ? (insertClient.email || null) : existingClient.email,
+      address: insertClient.address !== undefined ? (insertClient.address || null) : existingClient.address,
+      city: insertClient.city !== undefined ? (insertClient.city || null) : existingClient.city
     };
     this.clients.set(id, updatedClient);
     return updatedClient;
@@ -666,19 +666,19 @@ export class MemStorage implements IStorage {
     return appliance;
   }
 
-  async updateAppliance(id: number, insertAppliance: InsertAppliance): Promise<Appliance | undefined> {
+  async updateAppliance(id: number, insertAppliance: Partial<InsertAppliance>): Promise<Appliance | undefined> {
     const existingAppliance = this.appliances.get(id);
     if (!existingAppliance) return undefined;
     
     const updatedAppliance: Appliance = { 
       id,
-      clientId: insertAppliance.clientId,
-      categoryId: insertAppliance.categoryId,
-      manufacturerId: insertAppliance.manufacturerId,
-      model: insertAppliance.model || null,
-      serialNumber: insertAppliance.serialNumber || null,
-      purchaseDate: insertAppliance.purchaseDate || null,
-      notes: insertAppliance.notes || null
+      clientId: insertAppliance.clientId ?? existingAppliance.clientId,
+      categoryId: insertAppliance.categoryId ?? existingAppliance.categoryId,
+      manufacturerId: insertAppliance.manufacturerId ?? existingAppliance.manufacturerId,
+      model: insertAppliance.model !== undefined ? (insertAppliance.model || null) : existingAppliance.model,
+      serialNumber: insertAppliance.serialNumber !== undefined ? (insertAppliance.serialNumber || null) : existingAppliance.serialNumber,
+      purchaseDate: insertAppliance.purchaseDate !== undefined ? (insertAppliance.purchaseDate || null) : existingAppliance.purchaseDate,
+      notes: insertAppliance.notes !== undefined ? (insertAppliance.notes || null) : existingAppliance.notes
     };
     this.appliances.set(id, updatedAppliance);
     return updatedAppliance;
@@ -1801,7 +1801,7 @@ export class DatabaseStorage implements IStorage {
     return client;
   }
 
-  async updateClient(id: number, data: InsertClient): Promise<Client | undefined> {
+  async updateClient(id: number, data: Partial<InsertClient>): Promise<Client | undefined> {
     const [updatedClient] = await db
       .update(clients)
       .set(data)
@@ -1878,7 +1878,7 @@ export class DatabaseStorage implements IStorage {
     return appliance;
   }
 
-  async updateAppliance(id: number, data: InsertAppliance): Promise<Appliance | undefined> {
+  async updateAppliance(id: number, data: Partial<InsertAppliance>): Promise<Appliance | undefined> {
     const [updatedAppliance] = await db
       .update(appliances)
       .set(data)

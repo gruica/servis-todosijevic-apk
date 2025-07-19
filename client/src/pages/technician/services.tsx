@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
@@ -25,6 +25,7 @@ import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/
 import SparePartsOrderForm from "@/components/spare-parts-order-form";
 import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFolder";
 import { useNotification } from "@/contexts/notification-context";
+import { SupplementGeneraliForm } from "@/components/technician/supplement-generali-form";
 
 type TechnicianService = Service & {
   client?: {
@@ -88,6 +89,10 @@ export default function TechnicianServices() {
   // State za zahtev rezervnih delova
   const [sparePartsOrderOpen, setSparePartsOrderOpen] = useState(false);
   const [sparePartsService, setSparePartsService] = useState<TechnicianService | null>(null);
+  
+  // State za dopunjavanje Generali servisa
+  const [supplementGeneraliOpen, setSupplementGeneraliOpen] = useState(false);
+  const [supplementGeneraliService, setSupplementGeneraliService] = useState<TechnicianService | null>(null);
 
 
 
@@ -241,6 +246,11 @@ export default function TechnicianServices() {
     setUnavailableReason("");
     setReschedulingNotes("");
     setClientUnavailableDialogOpen(true);
+  }
+
+  const openSupplementGeneraliDialog = (service: TechnicianService) => {
+    setSupplementGeneraliService(service);
+    setSupplementGeneraliOpen(true);
   };
 
   const handleClientUnavailable = (status: "client_not_home" | "client_not_answering") => {
@@ -748,6 +758,19 @@ export default function TechnicianServices() {
                                 Detalji
                               </Button>
                             </div>
+                            
+                            {/* Generali servis dopunjavanje */}
+                            <div className="flex gap-2 w-full mt-2">
+                              <Button 
+                                variant="outline" 
+                                size="default"
+                                onClick={() => openSupplementGeneraliDialog(service)}
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 w-full h-10"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Dopuni Generali podatke
+                              </Button>
+                            </div>
 
                             {/* Druga grupa - Status akcije */}
                             {(service.status === "pending" || service.status === "scheduled") && (
@@ -1151,6 +1174,28 @@ export default function TechnicianServices() {
           clientName={sparePartsService.client?.fullName || ""}
           applianceModel={`${sparePartsService.appliance?.category?.name} ${sparePartsService.appliance?.model}` || ""}
           technicianId={sparePartsService.technicianId || 0}
+        />
+      )}
+
+      {/* Dialog za dopunjavanje Generali servisa */}
+      {supplementGeneraliService && (
+        <SupplementGeneraliForm
+          isOpen={supplementGeneraliOpen}
+          onClose={() => {
+            setSupplementGeneraliOpen(false);
+            setSupplementGeneraliService(null);
+          }}
+          serviceId={supplementGeneraliService.id}
+          serviceName={`Servis #${supplementGeneraliService.id}`}
+          currentClientEmail={supplementGeneraliService.client?.email}
+          currentClientAddress={supplementGeneraliService.client?.address}
+          currentClientCity={supplementGeneraliService.client?.city}
+          currentSerialNumber={supplementGeneraliService.appliance?.serialNumber}
+          currentModel={supplementGeneraliService.appliance?.model}
+          currentPurchaseDate={supplementGeneraliService.appliance?.purchaseDate}
+          onSuccess={() => {
+            refetch();
+          }}
         />
       )}
     </div>

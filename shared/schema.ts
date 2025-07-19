@@ -356,6 +356,30 @@ export const insertServiceSchema = createInsertSchema(services).pick({
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
 
+// Schema za dopunjavanje Generali servisa
+export const supplementGeneraliServiceSchema = z.object({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  // Podaci o klijentu koji se mogu dopuniti
+  clientEmail: z.string().email("Unesite validnu email adresu").optional(),
+  clientAddress: z.string().min(5, "Adresa mora imati najmanje 5 karaktera").max(200, "Adresa je predugačka").optional(),
+  clientCity: z.string().min(2, "Grad mora imati najmanje 2 karaktera").max(50, "Grad je predugačak").optional(),
+  // Podaci o aparatu koji se mogu dopuniti
+  serialNumber: z.string().min(3, "Serijski broj mora imati najmanje 3 karaktera").max(50, "Serijski broj je predugačak").optional(),
+  model: z.string().min(2, "Model mora imati najmanje 2 karaktera").max(100, "Model je predugačak").optional(),
+  purchaseDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime()) && date <= new Date();
+    }, "Datum kupovine ne može biti u budućnosti"),
+  // Dodatne napomene o dopuni
+  supplementNotes: z.string().max(500, "Napomene su predugačke").optional(),
+});
+
+export type SupplementGeneraliService = z.infer<typeof supplementGeneraliServiceSchema>;
+
 // Relations
 export const usersRelations = relations(users, ({ one }) => ({
   technician: one(technicians, {
