@@ -68,6 +68,7 @@ export default function TechnicianServices() {
   const [machineNotes, setMachineNotes] = useState<string>("");
   const [cost, setCost] = useState<string>("");
   const [isCompletelyFixed, setIsCompletelyFixed] = useState<boolean>(true);
+  const [warrantyStatus, setWarrantyStatus] = useState<string>("in_warranty");
   
   // State za označavanje klijenta kao nedostupnog
   const [clientUnavailableDialogOpen, setClientUnavailableDialogOpen] = useState(false);
@@ -199,6 +200,7 @@ export default function TechnicianServices() {
       machineNotes, 
       cost, 
       isCompletelyFixed,
+      warrantyStatus,
       clientUnavailableReason,
       needsRescheduling,
       reschedulingNotes
@@ -210,6 +212,7 @@ export default function TechnicianServices() {
       machineNotes?: string;
       cost?: string;
       isCompletelyFixed?: boolean;
+      warrantyStatus?: string;
       clientUnavailableReason?: string;
       needsRescheduling?: boolean;
       reschedulingNotes?: string;
@@ -223,6 +226,7 @@ export default function TechnicianServices() {
         machineNotes,
         cost,
         isCompletelyFixed,
+        warrantyStatus,
         clientUnavailableReason,
         needsRescheduling,
         reschedulingNotes
@@ -282,7 +286,8 @@ export default function TechnicianServices() {
       usedParts: usedParts,
       machineNotes: machineNotes,
       cost: cost,
-      isCompletelyFixed: isCompletelyFixed
+      isCompletelyFixed: isCompletelyFixed,
+      warrantyStatus: warrantyStatus
     });
   };
 
@@ -296,6 +301,7 @@ export default function TechnicianServices() {
     setMachineNotes(service.machineNotes || "");
     setCost(service.cost || "");
     setIsCompletelyFixed(service.isCompletelyFixed !== false);
+    setWarrantyStatus(service.warrantyStatus || "in_warranty");
     
     setStatusDialogOpen(true);
   };
@@ -483,7 +489,8 @@ export default function TechnicianServices() {
         usedParts: data.usedParts,
         machineNotes: data.machineNotes,
         cost: data.cost?.toString(),
-        isCompletelyFixed: true
+        isCompletelyFixed: true,
+        warrantyStatus: data.warrantyStatus || "in_warranty"
       });
       
       // Eksplicitno invalidiramo cache jer mutateAsync ne poziva onSuccess callback
@@ -516,7 +523,8 @@ export default function TechnicianServices() {
         usedParts: "",
         machineNotes: "",
         cost: "",
-        isCompletelyFixed: status === "completed"
+        isCompletelyFixed: status === "completed",
+        warrantyStatus: "in_warranty"
       });
       
       // Eksplicitno invalidiramo cache jer mutateAsync ne poziva onSuccess callback
@@ -1060,6 +1068,54 @@ export default function TechnicianServices() {
                     </span>
                   </label>
                 </div>
+
+                {newStatus === "completed" && (
+                  <div className="space-y-3 border p-3 sm:p-4 rounded-md border-orange-200 bg-orange-50">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <label className="text-sm font-semibold text-orange-800">
+                        Status garancije
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <input 
+                          type="radio" 
+                          id="warranty_in"
+                          name="warrantyStatus"
+                          value="in_warranty"
+                          checked={warrantyStatus === "in_warranty"}
+                          onChange={(e) => setWarrantyStatus(e.target.value)}
+                          className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                        />
+                        <label htmlFor="warranty_in" className="text-sm font-medium text-green-700 flex items-center">
+                          <span className="mr-2">🛡️</span>
+                          U garanciji - garanciski uslovi
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <input 
+                          type="radio" 
+                          id="warranty_out"
+                          name="warrantyStatus"
+                          value="out_of_warranty"
+                          checked={warrantyStatus === "out_of_warranty"}
+                          onChange={(e) => setWarrantyStatus(e.target.value)}
+                          className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
+                        />
+                        <label htmlFor="warranty_out" className="text-sm font-medium text-red-700 flex items-center">
+                          <span className="mr-2">💰</span>
+                          Van garancije - naplatiti servis
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 </div>
               )}
             </div>
