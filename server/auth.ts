@@ -50,12 +50,12 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret",
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
-    name: 'frigosistem_sid', // Specificiramo jedinstveno ime za cookie
+    store: undefined, // Koristimo default MemoryStore za debugging
+    name: 'connect.sid', // Vraćamo default ime
     cookie: {
-      secure: process.env.REPLIT_DOMAINS ? true : false, // True za Replit, false za localhost
+      secure: false, // False za sada dok debug-ujemo
       httpOnly: true,
-      sameSite: process.env.REPLIT_DOMAINS ? "none" : "lax", // None za Replit HTTPS, lax za localhost
+      sameSite: "lax", // Lax za sada
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined, // Uklanjamo domain - neka browser odluči
       path: '/' // Eksplicitno postavljamo path
