@@ -449,7 +449,8 @@ export class EmailService {
     serviceId: number,
     status: string,
     description: string,
-    technicianName: string
+    technicianName: string,
+    warrantyStatus?: string
   ): Promise<boolean> {
     console.log(`[DEBUG EMAIL] Početak slanja obaveštenja o statusu servisa #${serviceId} klijentu ${client.fullName} (${client.email || 'bez email-a'})`);
     
@@ -459,25 +460,65 @@ export class EmailService {
       return false;
     }
 
-    const subject = `Ažuriranje statusa servisa #${serviceId}`;
+    // Generiraj naslov na osnovu statusa i garancije
+    let subject = `Ažuriranje statusa servisa #${serviceId}`;
+    if (status === "Završen" && warrantyStatus) {
+      subject = warrantyStatus === "in_warranty" 
+        ? `Završen garanciski servis #${serviceId}` 
+        : `Završen vangaranciski servis #${serviceId}`;
+    }
+
+    // Generiraj warranty status poruku
+    let warrantyMessage = "";
+    let warrantyStyle = "";
+    
+    if (status === "Završen" && warrantyStatus) {
+      if (warrantyStatus === "in_warranty") {
+        warrantyMessage = `
+          <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p style="margin: 0; color: #155724; font-weight: bold;">
+              🛡️ GARANCISKI SERVIS
+            </p>
+            <p style="margin: 5px 0 0 0; color: #155724;">
+              Servis je obavljen u okviru garancijskih uslova. Ne naplaćuje se intervencija prema garancijskim uslovima.
+            </p>
+          </div>
+        `;
+      } else {
+        warrantyMessage = `
+          <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p style="margin: 0; color: #721c24; font-weight: bold;">
+              💰 VANGARANCISKI SERVIS
+            </p>
+            <p style="margin: 5px 0 0 0; color: #721c24;">
+              Servis je obavljen van garancijskih uslova. Naplaćuje se prema važećem cenovniku servisa.
+            </p>
+          </div>
+        `;
+      }
+    }
+
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #0066cc;">Ažuriranje statusa servisa</h2>
+        <h2 style="color: #0066cc;">Obaveštenje o završetku servisa</h2>
         <p>Poštovani/a ${client.fullName},</p>
-        <p>Obaveštavamo Vas da je status Vašeg servisa ažuriran:</p>
+        <p>Obaveštavamo Vas da je Vaš servis uspešno završen:</p>
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
           <p><strong>Broj servisa:</strong> #${serviceId}</p>
-          <p><strong>Novi status:</strong> ${status}</p>
-          <p><strong>Opis:</strong> ${description}</p>
+          <p><strong>Status:</strong> ${status}</p>
+          <p><strong>Opis radova:</strong> ${description}</p>
           <p><strong>Serviser:</strong> ${technicianName}</p>
         </div>
-        <p>Za sva dodatna pitanja, možete nas kontaktirati telefonom na broj 033 402 402 ili odgovorom na ovaj email.</p>
+        ${warrantyMessage}
+        <p>Za sva dodatna pitanja u vezi servisa, možete nas kontaktirati telefonom na broj 033 402 402 ili odgovorom na ovaj email.</p>
+        <p>Hvala Vam što ste izabrali naše usluge!</p>
         <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
         <hr style="border: 1px solid #ddd; margin: 20px 0;">
         <p style="font-size: 12px; color: #666;">
           Frigo Sistem Todosijević<br>
           Kontakt telefon: 033 402 402<br>
-          Email: info@frigosistemtodosijevic.com
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
         </p>
       </div>
     `;

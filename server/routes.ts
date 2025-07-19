@@ -1548,7 +1548,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   id,
                   statusDescription,
                   clientEmailContent,
-                  technicianName
+                  technicianName,
+                  updatedService.warrantyStatus
                 );
                 
                 if (clientEmailSent) {
@@ -1781,7 +1782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 serviceId,
                 statusDescription,
                 clientEmailContent,
-                technicianName
+                technicianName,
+                updatedService.warrantyStatus
               );
               
               if (clientEmailSent) {
@@ -5048,6 +5050,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ GENERALI DOPUNA - Greška:", error);
       res.status(500).json({ error: "Greška pri dopunjavanju servisa" });
+    }
+  });
+
+  // Test endpoint za warranty status email notifikacije
+  app.post("/api/test-warranty-email", async (req, res) => {
+    try {
+      // Mock podatci za test
+      const testClient = {
+        id: 999,
+        fullName: "Test Korisnik",
+        email: "gruica@icloud.com",
+        phone: "067123456",
+        address: "Test Adresa 123",
+        city: "Podgorica"
+      };
+
+      const { warrantyStatus = "in_warranty" } = req.body;
+      
+      console.log(`[TEST EMAIL] Šalje test warranty email na ${testClient.email} sa statusom: ${warrantyStatus}`);
+      
+      const emailService = new EmailService();
+      
+      const result = await emailService.sendServiceStatusUpdate(
+        testClient,
+        999,
+        "Završen",
+        "Test servis je završen uspešno. Proverena je funkcionalnost uređaja i uklonjen je kvar.",
+        "Gruica Todosijević",
+        warrantyStatus
+      );
+      
+      if (result) {
+        console.log(`[TEST EMAIL] ✅ Test email uspešno poslat na ${testClient.email}`);
+        res.json({ 
+          success: true, 
+          message: `Test warranty email (${warrantyStatus}) poslat na ${testClient.email}`,
+          warrantyStatus,
+          recipient: testClient.email
+        });
+      } else {
+        console.error(`[TEST EMAIL] ❌ Neuspešno slanje test emaila`);
+        res.status(500).json({ 
+          success: false, 
+          error: "Neuspešno slanje test emaila. Proverite SMTP konfiguraciju."
+        });
+      }
+      
+    } catch (error) {
+      console.error("[TEST EMAIL] Greška pri slanju test emaila:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Greška pri slanju test emaila",
+        message: error.message
+      });
     }
   });
 

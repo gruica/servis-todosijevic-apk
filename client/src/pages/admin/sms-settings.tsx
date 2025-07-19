@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { TestWarrantyEmail } from "@/components/TestWarrantyEmail";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MessageSquare, Smartphone, Send, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -487,6 +488,15 @@ export default function SmsSettings() {
               </ul>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Test Warranty Email Section */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Test Warranty Email</h2>
+          <p className="text-gray-600 mb-4">
+            Testirajte email obavještenja za različite warranty statuse
+          </p>
+          <TestWarrantyEmail />
         </div>
       </div>
     </div>
