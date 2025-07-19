@@ -4730,12 +4730,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data export endpoints - CSV and Excel
   app.get("/api/export/data/:table", async (req, res) => {
     try {
+      console.log(`[EXPORT] Zahtev za izvoz: table=${req.params.table}, format=${req.query.format}, user=${req.user?.username}`);
+      
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        console.log(`[EXPORT] Pristup odbijen: authenticated=${req.isAuthenticated()}, role=${req.user?.role}`);
         return res.status(403).json({ error: "Nemate dozvolu za izvoz podataka" });
       }
       
       const table = req.params.table;
       const format = req.query.format as string || 'csv';
+      
+      console.log(`[EXPORT] Obrađuje se: table=${table}, format=${format}`);
       
       // Dozvoljena imena tabela za izvoz
       const allowedTables = [
@@ -4749,17 +4754,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Dobijanje podataka iz tabele
-      const result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+      let result;
+      try {
+        // Pokušaj sa sortiranjem po id
+        result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+      } catch (error) {
+        // Ako nema id kolonu, sortiranje bez ORDER BY
+        console.log(`Tabela ${table} nema id kolonu, sortiranje bez ORDER BY`);
+        result = await pool.query(`SELECT * FROM ${table}`);
+      }
+      
       const rows = result.rows;
       
       if (format === 'csv') {
         // CSV format
         if (rows.length === 0) {
-          return res.status(404).json({ error: "Nema podataka za izvoz" });
+          // Vratiti prazan CSV sa samo headerom
+          const emptyResult = await pool.query(`SELECT * FROM ${table} LIMIT 0`);
+          const headers = emptyResult.fields?.map(f => f.name) || [];
+          
+          if (headers.length === 0) {
+            return res.status(400).json({ error: "Tabela nema definisane kolone" });
+          }
+          
+          const csvContent = headers.join(',');
+          res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+          res.setHeader('Content-Disposition', `attachment; filename=${table}.csv`);
+          res.setHeader('Content-Length', Buffer.byteLength(csvContent, 'utf8'));
+          return res.end(csvContent);
         }
         
         // Create CSV content
         const headers = Object.keys(rows[0]);
+        console.log(`[EXPORT] Kreiranje CSV za tabelu ${table}, broj redova: ${rows.length}, kolone: ${headers.join(', ')}`);
+        
         const csvContent = [
           headers.join(','), // Header row
           ...rows.map(row => 
@@ -4776,18 +4804,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         ].join('\n');
         
+        console.log(`[EXPORT] CSV kreiran, veličina: ${Buffer.byteLength(csvContent, 'utf8')} bytes`);
+        
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename=${table}.csv`);
         res.setHeader('Content-Length', Buffer.byteLength(csvContent, 'utf8'));
         
+        console.log(`[EXPORT] Šalje se CSV fajl za tabelu ${table}`);
         res.end(csvContent);
       } else {
         return res.status(400).json({ error: "Nepodržan format. Koristite 'csv'" });
       }
       
     } catch (error) {
-      console.error("Greška pri izvozu podataka:", error);
-      res.status(500).json({ error: "Greška pri izvozu podataka" });
+      console.error(`[EXPORT] Greška pri izvozu podataka za tabelu ${req.params.table}:`, error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      res.status(500).json({ 
+        error: "Greška pri izvozu podataka", 
+        details: errorMessage,
+        table: req.params.table 
+      });
     }
   });
   

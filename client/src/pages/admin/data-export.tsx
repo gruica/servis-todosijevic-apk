@@ -25,18 +25,54 @@ export default function DataExportPage() {
     setExportingTables(prev => new Set(prev).add(tableName));
     
     try {
+      console.log(`Starting export for table: ${tableName}, format: ${format}`);
+      
       const response = await fetch(`/api/export/data/${tableName}?format=${format}`, {
         method: 'GET',
         credentials: 'include',
       });
 
+      console.log(`Response status: ${response.status}, ok: ${response.ok}`);
+      console.log(`Response headers:`, response.headers);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Greška pri izvozu podataka');
+        // Try to get error message
+        let errorMessage = 'Greška pri izvozu podataka';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Check if response is actually CSV
+      const contentType = response.headers.get('content-type');
+      console.log(`Content-Type: ${contentType}`);
+      
+      if (!contentType?.includes('text/csv')) {
+        console.warn('Response is not CSV, checking if it\'s JSON error...');
+        const text = await response.text();
+        console.log('Response text:', text);
+        
+        try {
+          const jsonError = JSON.parse(text);
+          throw new Error(jsonError.error || 'Neočekivan format odgovora');
+        } catch {
+          // Not JSON, proceed with download
+          console.log('Not JSON error, proceeding with download');
+        }
       }
 
       // Create blob and download
       const blob = await response.blob();
+      console.log(`Blob size: ${blob.size} bytes`);
+      
+      if (blob.size === 0) {
+        throw new Error('Preuzeti fajl je prazan');
+      }
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -44,12 +80,16 @@ export default function DataExportPage() {
       a.download = `${tableName}.${format}`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Cleanup
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
 
       toast({
         title: "Izvoz uspešan",
-        description: `Podaci iz tabele "${tableName}" su uspešno preuzeti.`,
+        description: `Podaci iz tabele "${tableName}" su uspešno preuzeti (${blob.size} bytes).`,
       });
     } catch (error) {
       console.error('Export error:', error);
