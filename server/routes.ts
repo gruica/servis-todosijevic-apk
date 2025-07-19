@@ -2043,12 +2043,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Users management routes
-  app.get("/api/users", async (req, res) => {
+  // Users management routes - JWT protected
+  app.get("/api/users", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
-      }
+      console.log("GET /api/users - Admin request for all users");
       
       // Get all users but don't return their passwords
       const users = await Promise.all(
@@ -2058,6 +2056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
+      console.log(`Returning ${users.length} users to admin`);
       res.json(users);
     } catch (error) {
       console.error("Error getting users:", error);
@@ -2065,25 +2064,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint za dobijanje neverifikovanih korisnika
-  app.get("/api/users/unverified", async (req, res) => {
+  // Endpoint za dobijanje neverifikovanih korisnika - JWT protected
+  app.get("/api/users/unverified", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      console.log("GET /api/users/unverified - Zahtev za dobijanje neverifikovanih korisnika");
-      console.log("Autorizacija korisnika:", req.isAuthenticated() ? `Autentifikovan (${req.user?.username}, uloga: ${req.user?.role})` : "Nije autentifikovan");
-      
-      // Osiguramo da je korisnik autorizovan - samo admin može da vidi neverifikovane korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        console.log("Neautorizovan pristup endpoint-u za neverifikovane korisnike");
-        return res.status(403).json({ 
-          error: "Nemate dozvolu za pristup neverifikovanim korisnicima",
-          message: "Samo administrator može pristupiti ovim podacima."
-        });
-      }
+      console.log("GET /api/users/unverified - Admin request for unverified users");
+      console.log(`JWT user: ${req.user?.username} (role: ${req.user?.role})`);
       
       // Dobavimo sve neverifikovane korisnike
-      console.log("Dohvatanje neverifikovanih korisnika iz baze...");
+      console.log("Fetching unverified users from database...");
       const rawUsers = await storage.getUnverifiedUsers();
-      console.log(`Pronađeno ${rawUsers.length} neverifikovanih korisnika u bazi`);
+      console.log(`Found ${rawUsers.length} unverified users in database`);
       
       // Isključimo lozinku iz odgovora
       const unverifiedUsers = rawUsers.map(user => {
@@ -2091,11 +2081,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return userWithoutPassword;
       });
       
-      // Vraćamo samo niz korisnika bez nested data polja da bi odgovaralo očekivanom formatu u frontendu
-      console.log(`Vraćanje ${unverifiedUsers.length} neverifikovanih korisnika klijentu`);
+      console.log(`Returning ${unverifiedUsers.length} unverified users to admin`);
       res.json(unverifiedUsers);
     } catch (error) {
-      console.error("Greška pri dobijanju neverifikovanih korisnika:", error);
+      console.error("Error getting unverified users:", error);
       res.status(500).json({ 
         error: "Greška pri dobijanju neverifikovanih korisnika", 
         message: "Došlo je do interne greške pri dobijanju liste neverifikovanih korisnika."
@@ -2103,22 +2092,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint za verifikaciju korisnika
-  app.post("/api/users/:id/verify", async (req, res) => {
+  // Endpoint za verifikaciju korisnika - JWT protected
+  app.post("/api/users/:id/verify", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log(`Pokušaj verifikacije korisnika sa ID ${req.params.id}`);
+      console.log(`JWT Admin user: ${req.user?.username} (ID: ${req.user?.userId})`);
       
-      // Osiguramo da je korisnik autorizovan - samo admin može da verifikuje korisnike
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        console.log("Verifikacija neuspešna - korisnik nije admin");
-        return res.status(403).json({ 
-          error: "Nemate dozvolu za verifikaciju korisnika", 
-          message: "Samo administrator može verifikovati korisnike."
-        });
-      }
+      // JWT middleware already validated admin role
       
       const userId = parseInt(req.params.id);
-      const adminId = req.user.id;
+      const adminId = req.user.userId;
       
       console.log(`Administrator ${adminId} (${req.user.username}) verifikuje korisnika ${userId}`);
       
@@ -2172,11 +2155,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/users", async (req, res) => {
+  app.post("/api/users", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za kreiranje korisnika" });
-      }
+      console.log("POST /api/users - Admin creating new user");
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      
+      // JWT middleware already validated admin role
       
       const userData = insertUserSchema.parse(req.body);
       
@@ -2209,11 +2193,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/users/:id", async (req, res) => {
+  app.put("/api/users/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje korisnika" });
-      }
+      console.log(`PUT /api/users/${req.params.id} - Admin updating user`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      
+      // JWT middleware already validated admin role
       
       const userId = parseInt(req.params.id);
       const existingUser = await storage.getUser(userId);
@@ -2276,11 +2261,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/users/:id", async (req, res) => {
+  app.delete("/api/users/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za brisanje korisnika" });
-      }
+      console.log(`DELETE /api/users/${req.params.id} - Admin deleting user`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      
+      // JWT middleware already validated admin role
       
       const userId = parseInt(req.params.id);
       
