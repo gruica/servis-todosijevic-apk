@@ -163,23 +163,48 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Get all users
+  // Get all users - using JWT authentication
   const { data: users = [], isLoading: isLoadingUsers, refetch: refetchUsers } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async ({ signal }) => {
-      const response = await fetch("/api/users", { signal });
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error("Nema autentifikacionog tokena");
+      }
+      
+      const response = await fetch("/api/users", { 
+        signal,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Nemate dozvolu za pristup korisnicima");
+        }
         throw new Error("Greška pri dobijanju korisnika");
       }
       return response.json();
     },
   });
 
-  // Get technicians for dropdown (needed when creating technician users)
+  // Get technicians for dropdown (needed when creating technician users) - using JWT
   const { data: technicians = [], isLoading: isLoadingTechnicians } = useQuery({
     queryKey: ["/api/technicians"],
     queryFn: async ({ signal }) => {
-      const response = await fetch("/api/technicians", { signal });
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error("Nema autentifikacionog tokena");
+      }
+      
+      const response = await fetch("/api/technicians", { 
+        signal,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
         throw new Error("Greška pri dobijanju servisera");
       }
