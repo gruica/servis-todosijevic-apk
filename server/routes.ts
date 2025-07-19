@@ -4705,39 +4705,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.partName
       );
 
-      // ✨ NOVO: Automatsko slanje emaila servis firmi ako je deo u garanciji
-      if (validatedData.warrantyStatus === 'in_warranty') {
-        console.log(`[SPARE PARTS] Deo je u garanciji, šaljem email servis firmi...`);
+      // ✨ NOVO: Automatsko slanje emailova svim relevantnim stranama
+      try {
+        // Dobijmo sve potrebne podatke za slanje emailova
+        const service = await storage.getService(validatedData.serviceId);
+        const technician = await storage.getTechnician(technicianId);
         
-        try {
-          // Dobijmo podatke o servisu i klijentu za email
-          const service = await storage.getService(validatedData.serviceId);
-          const technician = await storage.getTechnician(technicianId);
-          let clientName = 'Nepoznat klijent';
-          
-          if (service) {
-            const client = await storage.getClient(service.clientId);
-            clientName = client?.fullName || 'Nepoznat klijent';
-          }
-          
+        if (!service) {
+          console.error('[SPARE PARTS] Servis nije pronađen, ne mogu poslati emailove');
+        } else {
+          const client = await storage.getClient(service.clientId);
+          const clientName = client?.fullName || 'Nepoznat klijent';
+          const clientEmail = client?.email;
           const technicianName = technician?.fullName || req.user?.fullName || 'Nepoznat serviser';
           
-          // Šaljemo email servis firmi
-          const emailResult = await emailService.sendWarrantySparePartNotification(
-            validatedData.serviceId,
-            validatedData.partName,
-            validatedData.partNumber || 'N/A',
-            clientName,
-            technicianName,
-            validatedData.urgency || 'medium',
-            validatedData.notes || undefined
-          );
-          
-          console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${emailResult ? 'Uspešno' : 'Neuspešno'}`);
-        } catch (emailError) {
-          console.error('[SPARE PARTS] Greška pri slanju emaila servis firmi:', emailError);
-          // Ne prekidamo proces ako email ne može da se pošalje
+          // 1. Email servis firmi ako je deo u garanciji
+          if (validatedData.warrantyStatus === 'in_warranty') {
+            console.log(`[SPARE PARTS] Deo je u garanciji, šaljem email servis firmi...`);
+            
+            const warrantyEmailResult = await emailService.sendWarrantySparePartNotification(
+              validatedData.serviceId,
+              validatedData.partName,
+              validatedData.partNumber || 'N/A',
+              clientName,
+              technicianName,
+              validatedData.urgency || 'medium',
+              validatedData.description || undefined
+            );
+            
+            console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+          }
+
+          // 2. Email klijentu o naručivanju rezervnog dela
+          if (clientEmail) {
+            console.log(`[SPARE PARTS] Šaljem email klijentu ${clientName} (${clientEmail})...`);
+            
+            const clientEmailResult = await emailService.sendSparePartOrderNotificationToClient(
+              clientEmail,
+              clientName,
+              validatedData.serviceId,
+              validatedData.partName,
+              validatedData.urgency || 'medium',
+              validatedData.warrantyStatus,
+              technicianName
+            );
+            
+            console.log(`[SPARE PARTS] Rezultat slanja emaila klijentu: ${clientEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+          } else {
+            console.warn(`[SPARE PARTS] Klijent ${clientName} nema email adresu, preskačem slanje`);
+          }
+
+          // 3. Email kreatoru servisa (ako nije isti kao klijent)
+          let creatorEmail = null;
+          let creatorName = 'Nepoznat kreator';
+          let creatorRole = 'unknown';
+
+          // Proveri da li je servis kreiran od strane poslovnog partnera
+          if (service.businessPartnerId) {
+            try {
+              const businessPartner = await storage.getUser(service.businessPartnerId);
+              if (businessPartner && businessPartner.email && businessPartner.email !== clientEmail) {
+                creatorEmail = businessPartner.email;
+                creatorName = businessPartner.fullName || businessPartner.username;
+                creatorRole = 'business_partner';
+              }
+            } catch (error) {
+              console.warn('[SPARE PARTS] Greška pri dobijanju podataka o poslovnom partneru:', error);
+            }
+          }
+
+          // Ako nema poslovnog partnera, proveravamo da li je admin kreirao servis
+          // (u ovom slučaju, čuvamo admin email kao fallback)
+          if (!creatorEmail) {
+            // Ovde možemo dodati logiku za pronalaženje admin-a koji je kreirao servis
+            // Za sada, šaljemo na glavnu admin adresu
+            creatorEmail = 'admin@frigosistemtodosijevic.com';
+            creatorName = 'Administrator';
+            creatorRole = 'admin';
+          }
+
+          // Šaljemo email kreatoru servisa samo ako se razlikuje od klijenta
+          if (creatorEmail && creatorEmail !== clientEmail) {
+            console.log(`[SPARE PARTS] Šaljem email kreatoru servisa ${creatorName} (${creatorRole})...`);
+            
+            const creatorEmailResult = await emailService.sendSparePartOrderNotificationToCreator(
+              creatorEmail,
+              creatorName,
+              creatorRole,
+              validatedData.serviceId,
+              clientName,
+              validatedData.partName,
+              validatedData.urgency || 'medium',
+              validatedData.warrantyStatus,
+              technicianName
+            );
+            
+            console.log(`[SPARE PARTS] Rezultat slanja emaila kreatoru servisa: ${creatorEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+          } else {
+            console.log(`[SPARE PARTS] Kreator servisa je isti kao klijent ili nema email, preskačem slanje`);
+          }
         }
+      } catch (emailError) {
+        console.error('[SPARE PARTS] Greška pri slanju emailova:', emailError);
+        // Ne prekidamo proces ako emailovi ne mogu da se pošalju
       }
       
       res.status(201).json(order);

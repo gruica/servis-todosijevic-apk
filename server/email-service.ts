@@ -1234,6 +1234,177 @@ www.frigosistemtodosijevic.com
       return false;
     }
   }
+
+  /**
+   * Šalje obaveštenje klijentu o naručivanju rezervnog dela
+   */
+  public async sendSparePartOrderNotificationToClient(
+    clientEmail: string,
+    clientName: string,
+    serviceId: number,
+    partName: string,
+    urgency: string,
+    warrantyStatus: string,
+    technicianName: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Početak slanja obaveštenja klijentu ${clientName} (${clientEmail}) o naručivanju rezervnog dela za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja klijentu`);
+      return false;
+    }
+
+    if (!clientEmail) {
+      console.warn(`[EMAIL] Ne mogu poslati email klijentu ${clientName} - email adresa nije dostupna`);
+      return false;
+    }
+
+    const urgencyLabel = urgency === 'urgent' ? 'Hitno' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const warrantyLabel = warrantyStatus === 'in_warranty' ? 'u garanciji' : 'van garancije';
+    const warrantyStyle = warrantyStatus === 'in_warranty' ? 
+      'background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724;' : 
+      'background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24;';
+    const warrantyIcon = warrantyStatus === 'in_warranty' ? '🛡️' : '💰';
+
+    const subject = `Naručen rezervni deo - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0066cc;">Obaveštenje o naručivanju rezervnog dela</h2>
+        <p>Poštovani/a ${clientName},</p>
+        <p>Obaveštavamo Vas da je naš serviser naručio rezervni deo potreban za popravku Vašeg uređaja:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007bff;">
+          <h3 style="color: #007bff; margin-top: 0;">Detalji narudžbine</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Naziv dela:</strong> ${partName}</p>
+          <p><strong>Prioritet:</strong> ${urgencyLabel}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="${warrantyStyle} padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; font-weight: bold;">
+            ${warrantyIcon} Servis se izvršava ${warrantyLabel}
+          </p>
+        </div>
+
+        <p>Obavesćiemo Vas čim rezervni deo stigne i kada možemo nastaviti sa popravkom.</p>
+        <p>Za sva pitanja možete nas kontaktirati na broj 033 402 402.</p>
+        
+        <p>Hvala Vam na razumevanju!</p>
+        <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: clientEmail,
+        subject,
+        html,
+      }, 3);
+      
+      console.log(`[EMAIL] Rezultat slanja obaveštenja klijentu: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju obaveštenja klijentu:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje obaveštenje kreatoru servisa o naručivanju rezervnog dela
+   */
+  public async sendSparePartOrderNotificationToCreator(
+    creatorEmail: string,
+    creatorName: string,
+    creatorRole: string,
+    serviceId: number,
+    clientName: string,
+    partName: string,
+    urgency: string,
+    warrantyStatus: string,
+    technicianName: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Početak slanja obaveštenja kreatoru servisa ${creatorName} (${creatorRole}) o naručivanju rezervnog dela za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja kreatoru servisa`);
+      return false;
+    }
+
+    if (!creatorEmail) {
+      console.warn(`[EMAIL] Ne mogu poslati email kreatoru servisa ${creatorName} - email adresa nije dostupna`);
+      return false;
+    }
+
+    const urgencyLabel = urgency === 'urgent' ? 'Hitno' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const warrantyLabel = warrantyStatus === 'in_warranty' ? 'u garanciji' : 'van garancije';
+    const roleLabel = creatorRole === 'admin' ? 'Administrator' : 
+                     creatorRole === 'business_partner' ? 'Poslovni partner' : 
+                     creatorRole === 'customer' ? 'Klijent' : 'Korisnik';
+
+    const subject = `Naručen rezervni deo za Vaš servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0066cc;">Obaveštenje o naručivanju rezervnog dela</h2>
+        <p>Poštovani/a ${creatorName},</p>
+        <p>Obaveštavamo Vas da je naš serviser naručio rezervni deo za servis koji ste kreirali:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #28a745; margin-top: 0;">Detalji narudžbine</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Klijent:</strong> ${clientName}</p>
+          <p><strong>Naziv dela:</strong> ${partName}</p>
+          <p><strong>Prioritet:</strong> ${urgencyLabel}</p>
+          <p><strong>Status garancije:</strong> ${warrantyLabel}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Kreirao servis:</strong> ${roleLabel}</p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="background-color: #e7f3ff; border: 1px solid #b8daff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #004085;">
+            ℹ️ <strong>Napomena:</strong> Klijent je takođe obavešten o naručivanju rezervnog dela.
+          </p>
+        </div>
+
+        <p>Servis će biti nastavljen čim rezervni deo stigne.</p>
+        <p>Za sva pitanja možete nas kontaktirati na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Tim Frigo Sistema Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: creatorEmail,
+        subject,
+        html,
+      }, 3);
+      
+      console.log(`[EMAIL] Rezultat slanja obaveštenja kreatoru servisa: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju obaveštenja kreatoru servisa:`, error);
+      return false;
+    }
+  }
 }
 
 export const emailService = EmailService.getInstance();
