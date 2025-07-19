@@ -156,25 +156,7 @@ export default function BusinessServices() {
 
   // Dohvatanje servisa za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
-    queryKey: ["/api/business/services", user?.id],
-    queryFn: async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const response = await fetch(`/api/business/services`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Greška pri dohvatanju servisa');
-        }
-        return await response.json();
-      } catch (error) {
-        console.error("Greška pri dohvatanju servisa:", error);
-        return [];
-      }
-    },
+    queryKey: ["/api/business/services"],
     enabled: !!user?.id,
   });
 
