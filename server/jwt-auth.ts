@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { storage } from './storage';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'frigo-sistem-jwt-secret-key-2025';
 const JWT_EXPIRES_IN = '30d';
@@ -40,7 +41,7 @@ export function extractTokenFromRequest(req: Request): string | null {
   return null;
 }
 
-export function jwtAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function jwtAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = extractTokenFromRequest(req);
   
   if (!token) {
@@ -54,16 +55,27 @@ export function jwtAuthMiddleware(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Nevažeći token' });
   }
   
+  // Get full user data from database to include technicianId
+  const user = await storage.getUser(payload.userId);
+  if (!user) {
+    return res.status(401).json({ error: 'Korisnik nije pronađen' });
+  }
+  
   // Attach user info to request
   (req as any).user = {
     id: payload.userId,
     username: payload.username,
-    role: payload.role
+    role: payload.role,
+    technicianId: user.technicianId,
+    fullName: user.fullName
   };
   
   console.log(`JWT: Authenticated user ${payload.username} (${payload.role})`);
   next();
 }
+
+// Alias for backwards compatibility
+export const jwtAuth = jwtAuthMiddleware;
 
 export function requireRole(roles: string | string[]) {
   const allowedRoles = Array.isArray(roles) ? roles : [roles];

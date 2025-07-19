@@ -6,7 +6,7 @@ import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
-import { generateToken, jwtAuthMiddleware, requireRole } from "./jwt-auth";
+import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -4669,8 +4669,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new spare part order (technician only)
-  app.post("/api/spare-parts", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "technician") {
+  app.post("/api/spare-parts", jwtAuth, async (req, res) => {
+    if (!req.user || req.user.role !== "technician") {
       return res.sendStatus(401);
     }
 
@@ -4849,6 +4849,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(order);
     } catch (error) {
       console.error("Error creating spare part order:", error);
+      console.error("Request body:", req.body);
+      console.error("User data:", req.user);
+      console.error("Tech ID:", req.user?.technicianId);
       res.status(500).json({ error: "Failed to create spare part order" });
     }
   });
