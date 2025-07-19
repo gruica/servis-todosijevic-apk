@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -41,6 +41,9 @@ export function SupplementGeneraliForm({
 }: SupplementGeneraliFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const activeInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   const form = useForm<SupplementGeneraliService>({
     resolver: zodResolver(supplementGeneraliServiceSchema),
@@ -55,6 +58,113 @@ export function SupplementGeneraliForm({
       supplementNotes: ""
     }
   });
+
+  // Mobile keyboard positioning logic
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    const originalViewportHeight = window.innerHeight;
+    let keyboardHeight = 0;
+
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDifference = originalViewportHeight - currentHeight;
+      
+      // Keyboard is open if height decreased by more than 150px
+      const isKeyboardOpen = heightDifference > 150;
+      setKeyboardVisible(isKeyboardOpen);
+      
+      if (isKeyboardOpen) {
+        keyboardHeight = heightDifference;
+        
+        // Position dialog above keyboard
+        if (dialogRef.current && activeInputRef.current) {
+          const dialogElement = dialogRef.current;
+          const activeInput = activeInputRef.current;
+          
+          // Get input position
+          const inputRect = activeInput.getBoundingClientRect();
+          const dialogRect = dialogElement.getBoundingClientRect();
+          
+          // Calculate needed scroll to keep input visible
+          const visibleHeight = window.innerHeight - keyboardHeight;
+          const inputBottom = inputRect.bottom;
+          
+          if (inputBottom > visibleHeight - 60) { // 60px buffer
+            const scrollNeeded = inputBottom - (visibleHeight - 60);
+            
+            // Scroll the dialog content, not the window
+            const dialogContent = dialogElement.querySelector('[data-radix-dialog-content]');
+            if (dialogContent) {
+              dialogContent.scrollTop += scrollNeeded;
+            }
+          }
+          
+          // Position dialog higher if needed
+          dialogElement.style.transform = `translateY(-${Math.min(keyboardHeight / 2, 100)}px)`;
+          dialogElement.style.maxHeight = `${visibleHeight - 40}px`;
+          dialogElement.style.overflowY = 'auto';
+        }
+      } else {
+        // Reset dialog position when keyboard closes
+        if (dialogRef.current) {
+          dialogRef.current.style.transform = '';
+          dialogRef.current.style.maxHeight = '';
+          dialogRef.current.style.overflowY = '';
+        }
+      }
+    };
+
+    const handleInputFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        activeInputRef.current = target;
+        
+        // Delay to allow keyboard animation
+        setTimeout(() => {
+          handleResize();
+        }, 300);
+      }
+    };
+
+    const handleInputBlur = () => {
+      setTimeout(() => {
+        if (document.activeElement?.tagName !== 'INPUT' && 
+            document.activeElement?.tagName !== 'TEXTAREA') {
+          activeInputRef.current = null;
+          setKeyboardVisible(false);
+          if (dialogRef.current) {
+            dialogRef.current.style.transform = '';
+            dialogRef.current.style.maxHeight = '';
+            dialogRef.current.style.overflowY = '';
+          }
+        }
+      }, 100);
+    };
+
+    // Event listeners
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    document.addEventListener('focusin', handleInputFocus);
+    document.addEventListener('focusout', handleInputBlur);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      document.removeEventListener('focusin', handleInputFocus);
+      document.removeEventListener('focusout', handleInputBlur);
+      
+      // Reset styles on cleanup
+      if (dialogRef.current) {
+        dialogRef.current.style.transform = '';
+        dialogRef.current.style.maxHeight = '';
+        dialogRef.current.style.overflowY = '';
+      }
+    };
+  }, [isOpen]);
 
   const supplementMutation = useMutation({
     mutationFn: async (data: SupplementGeneraliService) => {
@@ -127,7 +237,12 @@ export function SupplementGeneraliForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent 
+        ref={dialogRef}
+        className={`max-w-2xl transition-all duration-300 ${
+          keyboardVisible ? 'max-h-[70vh] overflow-y-auto' : ''
+        }`}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -162,6 +277,9 @@ export function SupplementGeneraliForm({
                           type="email"
                           placeholder={currentClientEmail || "primer@email.com"}
                           className="w-full"
+                          onFocus={(e) => {
+                            activeInputRef.current = e.target;
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -183,6 +301,9 @@ export function SupplementGeneraliForm({
                           {...field} 
                           placeholder={currentClientCity || "Podgorica"}
                           className="w-full"
+                          onFocus={(e) => {
+                            activeInputRef.current = e.target;
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -205,6 +326,9 @@ export function SupplementGeneraliForm({
                         {...field} 
                         placeholder={currentClientAddress || "Ulica i broj"}
                         className="w-full"
+                        onFocus={(e) => {
+                          activeInputRef.current = e.target;
+                        }}
                       />
                     </FormControl>
                     <FormDescription>
@@ -235,6 +359,9 @@ export function SupplementGeneraliForm({
                           {...field} 
                           placeholder={currentSerialNumber || "SN123456789"}
                           className="w-full"
+                          onFocus={(e) => {
+                            activeInputRef.current = e.target;
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -256,6 +383,9 @@ export function SupplementGeneraliForm({
                           {...field} 
                           placeholder={currentModel || "Samsung WF1234"}
                           className="w-full"
+                          onFocus={(e) => {
+                            activeInputRef.current = e.target;
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -279,6 +409,9 @@ export function SupplementGeneraliForm({
                         type="date"
                         max={new Date().toISOString().split('T')[0]}
                         className="w-full"
+                        onFocus={(e) => {
+                          activeInputRef.current = e.target;
+                        }}
                       />
                     </FormControl>
                     <FormDescription>
@@ -306,6 +439,9 @@ export function SupplementGeneraliForm({
                       placeholder="Dodajte napomene o razlogu dopune ili dodatne informacije..."
                       rows={3}
                       className="w-full"
+                      onFocus={(e) => {
+                        activeInputRef.current = e.target;
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
