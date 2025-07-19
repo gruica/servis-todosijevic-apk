@@ -134,6 +134,16 @@ const SystemDiagnostics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<SystemStatus | null>(null);
   
+  // Helper function to get JWT headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+  
   useEffect(() => {
     // Inicijalizacija praznog objekta statistike da izbjegnemo greške pri renderiranju
     setSystemStats({
@@ -156,7 +166,7 @@ const SystemDiagnostics: React.FC = () => {
     try {
       // Provjera API-ja za servise
       const servicesStart = Date.now();
-      const servicesResponse = await fetch('/api/services');
+      const servicesResponse = await fetch('/api/services', { headers: getAuthHeaders() });
       const servicesTime = Date.now() - servicesStart;
       
       let servicesStatus: SystemStatus = {
@@ -239,7 +249,7 @@ const SystemDiagnostics: React.FC = () => {
       
       // Provjera API-ja za klijente
       const clientsStart = Date.now();
-      const clientsResponse = await fetch('/api/clients');
+      const clientsResponse = await fetch('/api/clients', { headers: getAuthHeaders() });
       const clientsTime = Date.now() - clientsStart;
       
       let clientsStatus: SystemStatus = {
@@ -310,7 +320,7 @@ const SystemDiagnostics: React.FC = () => {
       
       // Provjera API-ja za servisere
       const techniciansStart = Date.now();
-      const techniciansResponse = await fetch('/api/technicians');
+      const techniciansResponse = await fetch('/api/technicians', { headers: getAuthHeaders() });
       const techniciansTime = Date.now() - techniciansStart;
       
       let techniciansStatus: SystemStatus = {
@@ -381,7 +391,7 @@ const SystemDiagnostics: React.FC = () => {
       
       // Provjera API-ja za uređaje
       const appliancesStart = Date.now();
-      const appliancesResponse = await fetch('/api/appliances');
+      const appliancesResponse = await fetch('/api/appliances', { headers: getAuthHeaders() });
       const appliancesTime = Date.now() - appliancesStart;
       
       let appliancesStatus: SystemStatus = {
@@ -452,7 +462,7 @@ const SystemDiagnostics: React.FC = () => {
       
       // Provjera API-ja za kategorije uređaja
       const categoriesStart = Date.now();
-      const categoriesResponse = await fetch('/api/appliance-categories');
+      const categoriesResponse = await fetch('/api/appliance-categories', { headers: getAuthHeaders() });
       const categoriesTime = Date.now() - categoriesStart;
       
       let categoriesStatus: SystemStatus = {
@@ -599,7 +609,7 @@ const SystemDiagnostics: React.FC = () => {
         lastChecked: new Date()
       };
       
-      const sessionResponse = await fetch('/api/user');
+      const sessionResponse = await fetch('/api/jwt-user', { headers: getAuthHeaders() });
       
       if (sessionResponse.status === 200) {
         sessionStatus.status = 'healthy';

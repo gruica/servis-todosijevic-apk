@@ -56,7 +56,7 @@ export function NotificationsDropdown() {
   
   // Dobijanje korisničkih podataka iz query cache-a
   const { data: user } = useQuery({
-    queryKey: ["/api/user"],
+    queryKey: ["/api/jwt-user"],
     enabled: false, // Ne treba da se izvršava automatski
   });
 

@@ -82,8 +82,15 @@ const DiagnosticServicesPage = () => {
       
       const startTime = Date.now();
       
-      // Prvo učitavanje čistog response-a kao tekst
-      const responseRaw = await fetch('/api/services');
+      // Prvo učitavanje čistog response-a kao tekst with JWT token
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const responseRaw = await fetch('/api/services', { headers });
       const responseTime = Date.now() - startTime;
       
       const contentType = responseRaw.headers.get('Content-Type');

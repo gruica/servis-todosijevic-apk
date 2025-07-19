@@ -36,10 +36,20 @@ export class AuthHelper {
    * Dohvata trenutno prijavljenog korisnika
    */
   static async getCurrentUser() {
-    const response = await fetch("/api/user");
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return null;
+    }
+    
+    const response = await fetch("/api/jwt-user", {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     
     if (!response.ok) {
       if (response.status === 401) {
+        localStorage.removeItem('auth_token');
         return null;
       }
       

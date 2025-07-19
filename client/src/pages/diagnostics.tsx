@@ -16,8 +16,15 @@ const DiagnosticsPage = () => {
     try {
       console.log('Započinjem provjeru API-ja za servise...');
       
-      // Šaljemo request za servise
-      const response = await fetch('/api/services');
+      // Šaljemo request za servise with JWT token
+      const token = localStorage.getItem('auth_token');
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch('/api/services', { headers });
       const responseText = await response.text();
       
       setApiResponse(responseText.substring(0, 1000) + (responseText.length > 1000 ? '...' : ''));
