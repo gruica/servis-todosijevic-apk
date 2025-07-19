@@ -343,10 +343,9 @@ export function AdminSparePartsOrdering({ serviceId }: AdminSparePartsOrderingPr
     <>
       <Button
         onClick={() => setIsDialogOpen(true)}
-        className="flex items-center gap-2"
-        variant="outline"
+        className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
       >
-        <Wrench className="h-4 w-4" />
+        <Package className="h-4 w-4" />
         Poruči rezervni deo
       </Button>
 
