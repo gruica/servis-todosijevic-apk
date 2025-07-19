@@ -4719,9 +4719,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const clientEmail = client?.email;
           const technicianName = technician?.fullName || req.user?.fullName || 'Nepoznat serviser';
           
-          // 1. Email servis firmi ako je deo u garanciji I ako je uređaj Beko
+          // 1. Email servis firmama ako je deo u garanciji (prema brendu)
           if (validatedData.warrantyStatus === 'in_warranty') {
-            console.log(`[SPARE PARTS] Deo je u garanciji, proveravam da li je Beko uređaj...`);
+            console.log(`[SPARE PARTS] Deo je u garanciji, proveravam proizvođača uređaja...`);
             
             // Dobijamo podatke o uređaju i proizvođaču
             const appliance = await storage.getAppliance(service.applianceId);
@@ -4731,8 +4731,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log(`[SPARE PARTS] Proizvođač uređaja: ${manufacturerName}`);
               
-              if (manufacturerName === 'beko') {
-                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem email servis firmi...`);
+              // KRITIČNA LOGIKA: Različite servisne firme za različite brendove
+              const complussupportedBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
+              const bekoSupportedBrand = 'beko';
+              
+              if (manufacturerName === bekoSupportedBrand) {
+                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem email Eurotehnika servis firmi...`);
                 
                 const warrantyEmailResult = await emailService.sendWarrantySparePartNotification(
                   validatedData.serviceId,
@@ -4744,12 +4748,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   validatedData.description || undefined
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                console.log(`[SPARE PARTS] Rezultat slanja emaila Eurotehnika servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+              } else if (complussupportedBrands.includes(manufacturerName)) {
+                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, šaljem email Complus servis firmi...`);
+                
+                const complusEmailResult = await emailService.sendComplusWarrantySparePartNotification(
+                  validatedData.serviceId,
+                  validatedData.partName,
+                  validatedData.partNumber || 'N/A',
+                  clientName,
+                  technicianName,
+                  manufacturer?.name || manufacturerName,
+                  validatedData.urgency || 'medium',
+                  validatedData.description || undefined
+                );
+                
+                console.log(`[SPARE PARTS] Rezultat slanja emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
               } else {
-                console.log(`[SPARE PARTS] Uređaj nije Beko (${manufacturerName}), ne šaljem email servis firmi`);
+                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, ne šaljem email nijednoj servisnoj firmi (nije podržan brend)`);
               }
             } else {
-              console.warn(`[SPARE PARTS] Ne mogu da pronađem podatke o uređaju, ne šaljem email servis firmi`);
+              console.warn(`[SPARE PARTS] Ne mogu da pronađem podatke o uređaju, ne šaljem email servisnim firmama`);
             }
           }
 
