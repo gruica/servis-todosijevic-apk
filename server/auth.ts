@@ -53,9 +53,9 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     name: 'frigosistem_sid', // Specificiramo jedinstveno ime za cookie
     cookie: {
-      secure: true, // True za HTTPS Replit
+      secure: process.env.NODE_ENV === 'production', // False za localhost, true za production
       httpOnly: true,
-      sameSite: "none", // None za cross-site HTTPS
+      sameSite: process.env.NODE_ENV === 'production' ? "none" : "lax", // Lax za localhost
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined, // Uklanjamo domain - neka browser odluči
       path: '/' // Eksplicitno postavljamo path
