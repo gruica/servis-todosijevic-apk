@@ -57,7 +57,7 @@ export function setupAuth(app: Express) {
     REPLIT_DEV_DOMAIN: !!process.env.REPLIT_DEV_DOMAIN,
     NODE_ENV: process.env.NODE_ENV,
     willUseSecure: isProduction,
-    willUseSameSite: "lax"
+    willUseSameSite: isProduction ? "none" : "lax"
   });
   
   const sessionSettings: session.SessionOptions = {
@@ -69,7 +69,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: isProduction, // True za Replit HTTPS, false za localhost
       httpOnly: true,
-      sameSite: "lax", // Povratak na lax - možda je none problem
+      sameSite: isProduction ? "none" : "lax", // none za HTTPS cross-site, lax za localhost
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: null, // Eksplicitno null umesto undefined
       path: '/'
