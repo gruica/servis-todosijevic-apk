@@ -53,9 +53,9 @@ export function setupAuth(app: Express) {
     store: undefined, // Koristimo default MemoryStore za debugging
     name: 'connect.sid', // Vraćamo default ime
     cookie: {
-      secure: true, // True za HTTPS Replit
+      secure: false, // False za development, true za production
       httpOnly: true,
-      sameSite: "none", // None je potrebno za cross-site HTTPS
+      sameSite: "lax", // Lax je bolji za Replit
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined, // Uklanjamo domain - neka browser odluči
       path: '/' // Eksplicitno postavljamo path
