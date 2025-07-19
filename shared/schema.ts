@@ -620,8 +620,8 @@ export const sparePartStatusEnum = z.enum([
 ]);
 
 export const sparePartWarrantyStatusEnum = z.enum([
-  "in_warranty", // u garanciji
-  "out_of_warranty", // van garancije
+  "u garanciji", // in warranty
+  "van garancije", // out of warranty
 ]);
 
 export type SparePartUrgency = z.infer<typeof sparePartUrgencyEnum>;

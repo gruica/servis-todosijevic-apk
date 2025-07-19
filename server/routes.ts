@@ -4688,7 +4688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const technicianName = technician?.fullName || req.user?.fullName || 'Nepoznat serviser';
           
           // 1. Email servis firmama ako je deo u garanciji (prema brendu)
-          if (validatedData.warrantyStatus === 'in_warranty') {
+          if (validatedData.warrantyStatus === 'u garanciji') {
             console.log(`[SPARE PARTS] Deo je u garanciji, proveravam proizvođača uređaja...`);
             
             // Dobijamo podatke o uređaju i proizvođaču
