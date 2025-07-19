@@ -4719,21 +4719,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const clientEmail = client?.email;
           const technicianName = technician?.fullName || req.user?.fullName || 'Nepoznat serviser';
           
-          // 1. Email servis firmi ako je deo u garanciji
+          // 1. Email servis firmi ako je deo u garanciji I ako je uređaj Beko
           if (validatedData.warrantyStatus === 'in_warranty') {
-            console.log(`[SPARE PARTS] Deo je u garanciji, šaljem email servis firmi...`);
+            console.log(`[SPARE PARTS] Deo je u garanciji, proveravam da li je Beko uređaj...`);
             
-            const warrantyEmailResult = await emailService.sendWarrantySparePartNotification(
-              validatedData.serviceId,
-              validatedData.partName,
-              validatedData.partNumber || 'N/A',
-              clientName,
-              technicianName,
-              validatedData.urgency || 'medium',
-              validatedData.description || undefined
-            );
-            
-            console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+            // Dobijamo podatke o uređaju i proizvođaču
+            const appliance = await storage.getAppliance(service.applianceId);
+            if (appliance) {
+              const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+              const manufacturerName = manufacturer?.name?.toLowerCase();
+              
+              console.log(`[SPARE PARTS] Proizvođač uređaja: ${manufacturerName}`);
+              
+              if (manufacturerName === 'beko') {
+                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem email servis firmi...`);
+                
+                const warrantyEmailResult = await emailService.sendWarrantySparePartNotification(
+                  validatedData.serviceId,
+                  validatedData.partName,
+                  validatedData.partNumber || 'N/A',
+                  clientName,
+                  technicianName,
+                  validatedData.urgency || 'medium',
+                  validatedData.description || undefined
+                );
+                
+                console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+              } else {
+                console.log(`[SPARE PARTS] Uređaj nije Beko (${manufacturerName}), ne šaljem email servis firmi`);
+              }
+            } else {
+              console.warn(`[SPARE PARTS] Ne mogu da pronađem podatke o uređaju, ne šaljem email servis firmi`);
+            }
           }
 
           // 2. Email klijentu o naručivanju rezervnog dela
