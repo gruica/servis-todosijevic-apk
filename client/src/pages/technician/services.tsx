@@ -100,20 +100,15 @@ export default function TechnicianServices() {
   const { data: services = [], isLoading, error, refetch } = useQuery<TechnicianService[]>({
     queryKey: ["/api/my-services"],
     queryFn: async ({ signal }) => {
-      console.log("🔄 Pozivam /api/my-services...");
       const response = await fetch("/api/my-services", { 
         signal,
-        credentials: 'include' // Eksplicitno dodajem credentials
+        credentials: 'include'
       });
-      console.log("📡 Response status:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ API greška:", response.status, errorText);
         throw new Error(`Greška pri dobijanju servisa: ${response.status} ${errorText}`);
       }
-      const data = await response.json();
-      console.log("✅ Dobio servise:", data?.length || 0, "servisa");
-      return data;
+      return response.json();
     },
     // Obavezno osvežavaj podatke svakih 10 sekundi
     refetchInterval: 10000,
@@ -121,14 +116,6 @@ export default function TechnicianServices() {
     refetchIntervalInBackground: true,
     // Smanji staleTime da bi podaci bili ažurniji
     staleTime: 5000,
-  });
-  
-  // Debug logging
-  console.log("🔍 Debug stanje:", {
-    isLoading,
-    error: error?.message,
-    servicesCount: services?.length || 0,
-    services: services?.map(s => ({ id: s.id, status: s.status, client: s.client?.fullName }))
   });
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije

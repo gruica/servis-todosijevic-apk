@@ -2261,42 +2261,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const technicianId = req.user.technicianId;
       console.log(`Dohvatanje servisa za servisera sa ID: ${technicianId}, korisnik: ${req.user.username}`);
       
-      // Get all services assigned to this technician
-      let services = await storage.getServicesByTechnician(technicianId);
-      console.log(`Pronađeno ${services.length} servisa za servisera ${technicianId}`);
-      
-      // Ako nema servisa, proveri direktno u bazi (zaobilaženje kesiranja)
-      if (services.length === 0) {
-        try {
-          // Direktno dohvati iz baze za ovaj slučaj
-          const servicesFromDb = await pool.query(
-            "SELECT * FROM services WHERE technician_id = $1",
-            [technicianId]
-          );
-          
-          if (servicesFromDb.rows.length > 0) {
-            console.log(`Pronađeno ${servicesFromDb.rows.length} servisa direktno iz baze za servisera ${technicianId}`);
-            // U ovom slučaju, moramo ručno mapirati kolone iz snake_case u camelCase
-            services = servicesFromDb.rows.map(row => ({
-              id: row.id,
-              clientId: row.client_id,
-              applianceId: row.appliance_id,
-              technicianId: row.technician_id,
-              description: row.description,
-              status: row.status,
-              scheduledDate: row.scheduled_date,
-              completedDate: row.completed_date,
-              cost: row.cost,
-              technicianNotes: row.technician_notes,
-              createdAt: row.created_at,
-              usedParts: row.used_parts,
-              machineNotes: row.machine_notes,
-              isCompletelyFixed: row.is_completely_fixed
-            }));
-          }
-        } catch (dbError) {
-          console.error("Greška pri direktnom dohvatanju iz baze:", dbError);
-        }
+      // Get all services assigned to this technician - koristimo direktno Drizzle query
+      let services;
+      try {
+        // Direktno koristimo Drizzle query da zaobidemo storage cache probleme
+        const dbServices = await db.select().from(schema.services).where(eq(schema.services.technicianId, technicianId));
+        console.log(`Pronađeno ${dbServices.length} servisa direktno iz baze za servisera ${technicianId}`);
+        services = dbServices;
+      } catch (dbError) {
+        console.error("Greška pri Drizzle query:", dbError);
+        // Fallback na storage ako Drizzle ne radi
+        services = await storage.getServicesByTechnician(technicianId);
+        console.log(`Fallback: Pronađeno ${services.length} servisa kroz storage za servisera ${technicianId}`);
       }
       
       // Get client and appliance data for each service
