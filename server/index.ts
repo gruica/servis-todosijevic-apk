@@ -6,6 +6,9 @@ import { setupAuth } from "./auth";
 
 const app = express();
 
+// Omogući trust proxy za Replit
+app.set('trust proxy', 1);
+
 // PRVO postavi JSON body parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

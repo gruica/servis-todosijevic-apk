@@ -57,7 +57,7 @@ export function setupAuth(app: Express) {
     REPLIT_DEV_DOMAIN: !!process.env.REPLIT_DEV_DOMAIN,
     NODE_ENV: process.env.NODE_ENV,
     willUseSecure: isProduction,
-    willUseSameSite: isProduction ? "none" : "lax"
+    willUseSameSite: "lax"
   });
   
   const sessionSettings: session.SessionOptions = {
@@ -69,11 +69,12 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: isProduction, // True za Replit HTTPS, false za localhost
       httpOnly: true,
-      sameSite: isProduction ? "none" : "lax", // None za cross-site HTTPS, lax za localhost
+      sameSite: "lax", // Povratak na lax - možda je none problem
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
       domain: undefined,
       path: '/'
-    }
+    },
+    proxy: isProduction // Potrebno za trust proxy kada je secure = true
   };
 
   app.set("trust proxy", true); // Promenjen sa 1 na true za bolje proxy handling
@@ -294,6 +295,17 @@ export function setupAuth(app: Express) {
         console.log(`Session after login:`, req.session);
         console.log(`Session.passport after login:`, req.session?.passport);
         console.log(`User is authenticated after login:`, req.isAuthenticated());
+        
+        // Debug cookie informacije
+        console.log(`🍪 Cookie config:`, {
+          secure: req.session.cookie.secure,
+          httpOnly: req.session.cookie.httpOnly,
+          sameSite: req.session.cookie.sameSite,
+          maxAge: req.session.cookie.maxAge,
+          path: req.session.cookie.path,
+          domain: req.session.cookie.domain
+        });
+        console.log(`🍪 Response cookies will be set:`, res.getHeaders()['set-cookie'] || 'none');
         
         // Remove password from the response
         const { password, ...userWithoutPassword } = user as SelectUser;
