@@ -164,6 +164,13 @@ export default function TechnicianServices() {
     }, {} as Record<string, number>)
   });
 
+  console.log("✅ UI Debug: Servisi se prikazuju uspešno!", {
+    totalServices: services?.length,
+    filteredServices: filteredServices?.length,
+    cities: Object.keys(groupedServices),
+    servicesPerCity: Object.entries(groupedServices).map(([city, servs]) => `${city}: ${servs.length}`)
+  });
+
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
@@ -809,17 +816,30 @@ export default function TechnicianServices() {
                             </div>
 
                             {/* Druga grupa - Status akcije */}
-                            {(service.status === "pending" || service.status === "scheduled") && (
+                            {/* Servisi sa statusom assigned, pending ili scheduled */}
+                            {(service.status === "assigned" || service.status === "pending" || service.status === "scheduled") && (
                               <div className="flex flex-col gap-2 w-full">
-                                <Button 
-                                  variant="default" 
-                                  size="default"
-                                  onClick={() => openStatusDialog(service, "in_progress")}
-                                  className="w-full h-12 text-base font-medium"
-                                >
-                                  <ClipboardCheck className="h-5 w-5 mr-2" />
-                                  Započni servis
-                                </Button>
+                                <div className="flex gap-2 w-full">
+                                  <Button 
+                                    variant="default" 
+                                    size="default"
+                                    onClick={() => openStatusDialog(service, "in_progress")}
+                                    className="flex-1 h-12 text-base font-medium"
+                                  >
+                                    <ClipboardCheck className="h-5 w-5 mr-2" />
+                                    Započni servis
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="outline" 
+                                    size="default"
+                                    onClick={() => openStatusDialog(service, "completed")}
+                                    className="flex-1 h-12 text-base font-medium bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                  >
+                                    <ClipboardCheck className="h-5 w-5 mr-2" />
+                                    Završi servis
+                                  </Button>
+                                </div>
                                 
                                 {/* Quick buttons for client issues */}
                                 <div className="flex gap-2 w-full">
@@ -848,12 +868,13 @@ export default function TechnicianServices() {
                               </div>
                             )}
                             
+                            {/* Servisi u toku - samo dugme za završetak */}
                             {service.status === "in_progress" && (
                               <Button 
                                 variant="default" 
                                 size="default"
                                 onClick={() => openStatusDialog(service, "completed")}
-                                className="w-full h-12 text-base font-medium"
+                                className="w-full h-12 text-base font-medium bg-green-600 hover:bg-green-700"
                               >
                                 <ClipboardCheck className="h-5 w-5 mr-2" />
                                 Završi servis
