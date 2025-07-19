@@ -28,6 +28,8 @@ interface SparePartsOrderFormProps {
   serviceId: number;
   clientName: string;
   applianceModel: string;
+  applianceManufacturer?: string;
+  applianceCategory?: string;
   technicianId: number;
 }
 
@@ -37,6 +39,8 @@ export default function SparePartsOrderForm({
   serviceId,
   clientName,
   applianceModel,
+  applianceManufacturer = "",
+  applianceCategory = "",
   technicianId
 }: SparePartsOrderFormProps) {
   const [parts, setParts] = useState<SparePartItem[]>([]);
@@ -48,15 +52,35 @@ export default function SparePartsOrderForm({
   });
   const [urgency, setUrgency] = useState<"low" | "medium" | "high">("medium");
   const [supplierNotes, setSupplierNotes] = useState("");
+  const [warrantyStatus, setWarrantyStatus] = useState<"u garanciji" | "van garancije">("u garanciji");
   const queryClient = useQueryClient();
+
+  // Brand detection logika
+  const detectBrand = (manufacturer: string): "beko" | "complus" => {
+    const manufacturerLower = manufacturer.toLowerCase();
+    if (manufacturerLower.includes("beko")) {
+      return "beko";
+    }
+    // Electrolux, Elica, Candy, Hoover, Turbo Air idu na Complus
+    if (manufacturerLower.includes("electrolux") || 
+        manufacturerLower.includes("elica") || 
+        manufacturerLower.includes("candy") || 
+        manufacturerLower.includes("hoover") || 
+        manufacturerLower.includes("turbo air")) {
+      return "complus";
+    }
+    // Default na Complus za nepoznate brendove
+    return "complus";
+  };
 
   const submitOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const res = await apiRequest("POST", "/api/spare-parts/order", orderData);
+      const res = await apiRequest("POST", "/api/spare-parts", orderData);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/spare-parts/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/spare-parts"] });
       toast({
         title: "Zahtev poslat",
         description: "Zahtev za rezervne delove je uspešno poslat administratoru.",
@@ -143,15 +167,24 @@ export default function SparePartsOrderForm({
       return;
     }
 
+    // Koristi prvi deo za osnovne informacije (pojednostavljena logika)
+    const firstPart = parts[0];
+    const brand = detectBrand(applianceManufacturer);
+    
     const orderData = {
       serviceId,
       technicianId,
-      parts,
-      urgency,
-      supplierNotes,
-      totalValue: getTotalOrderValue(),
-      clientName,
-      applianceModel
+      partName: firstPart.description,
+      partNumber: firstPart.partNumber,
+      quantity: parts.reduce((sum, part) => sum + part.quantity, 0),
+      description: parts.map(part => `${part.partNumber}: ${part.description} (${part.quantity}x)`).join('\n') + 
+                   (supplierNotes ? `\n\nNapomene: ${supplierNotes}` : ''),
+      urgency: urgency === "high" ? "high" : urgency === "low" ? "low" : "normal",
+      warrantyStatus,
+      brand,
+      deviceModel: applianceModel,
+      productCode: firstPart.partNumber,
+      applianceCategory: applianceCategory || "Nespecifikovano"
     };
 
     submitOrderMutation.mutate(orderData);
@@ -167,6 +200,7 @@ export default function SparePartsOrderForm({
     });
     setUrgency("medium");
     setSupplierNotes("");
+    setWarrantyStatus("u garanciji");
   };
 
   return (
@@ -318,6 +352,28 @@ export default function SparePartsOrderForm({
               <CardTitle className="text-sm">Detalji zahteva</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <Label htmlFor="warrantyStatus" className="text-xs">Status garancije</Label>
+                <Select value={warrantyStatus} onValueChange={(value: "u garanciji" | "van garancije") => setWarrantyStatus(value)}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="u garanciji">
+                      <div className="flex items-center gap-2">
+                        <span>🛡️</span>
+                        <span className="text-green-700">U garanciji</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="van garancije">
+                      <div className="flex items-center gap-2">
+                        <span>💰</span>
+                        <span className="text-red-700">Van garancije</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label htmlFor="urgency" className="text-xs">Prioritet</Label>
                 <Select value={urgency} onValueChange={(value: "low" | "medium" | "high") => setUrgency(value)}>

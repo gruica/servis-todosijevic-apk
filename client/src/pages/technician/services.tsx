@@ -1295,7 +1295,9 @@ export default function TechnicianServices() {
           }}
           serviceId={sparePartsService.id}
           clientName={sparePartsService.client?.fullName || ""}
-          applianceModel={`${sparePartsService.appliance?.category?.name} ${sparePartsService.appliance?.model}` || ""}
+          applianceModel={sparePartsService.appliance?.model || ""}
+          applianceManufacturer={sparePartsService.appliance?.manufacturer?.name || ""}
+          applianceCategory={sparePartsService.appliance?.category?.name || ""}
           technicianId={sparePartsService.technicianId || 0}
         />
       )}
