@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import BusinessLayout from "@/components/layout/business-layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -155,10 +155,12 @@ export default function BusinessServices() {
   }, []);
 
   // Dohvatanje servisa za poslovnog partnera
-  const { data: services, isLoading } = useQuery<ServiceItem[]>({
+  const { data: services, isLoading, error } = useQuery<ServiceItem[]>({
     queryKey: ["/api/business/services"],
     enabled: !!user?.id,
   });
+
+
 
   // Auto-open handling za notification navigaciju
   useEffect(() => {

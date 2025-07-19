@@ -1051,7 +1051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Provera da li servis pripada poslovnom partneru
-      if (service.businessPartnerId !== partnerIdNum) {
+      if (service.businessPartnerId !== req.user.id) {
         return res.status(403).json({ error: "Nemate pristup ovom servisu" });
       }
       
