@@ -132,6 +132,38 @@ export default function TechnicianServices() {
     services: services?.slice(0, 3).map(s => ({ id: s.id, status: s.status, client: s.client?.fullName }))
   });
 
+  // Debug filter logic
+  console.log("📊 Filter debug:", {
+    activeTab,
+    servicesCount: services?.length || 0,
+    filteredServicesCount: "prije filtera",
+    sampleServices: services?.slice(0, 2).map(s => ({ id: s.id, status: s.status, devicePickedUp: s.devicePickedUp }))
+  });
+
+  const filteredServices = services.filter((service) => {
+    if (activeTab === "active") {
+      return service.status === "pending" || service.status === "scheduled" || service.status === "in_progress" || service.status === "assigned";
+    } else if (activeTab === "completed") {
+      return service.status === "completed";
+    } else if (activeTab === "picked_up") {
+      return service.devicePickedUp === true;
+    } else if (activeTab === "problematic") {
+      return service.status === "client_not_home" || service.status === "client_not_answering";
+    } else {
+      return service.status === "waiting_parts" || service.status === "cancelled" || 
+             service.status === "client_not_home" || service.status === "client_not_answering";
+    }
+  });
+
+  // Debug filter results
+  console.log("🎯 Filter rezultati:", {
+    filteredServicesCount: filteredServices?.length || 0,
+    statusSpread: services?.reduce((acc, s) => {
+      acc[s.status] = (acc[s.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  });
+
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
@@ -346,21 +378,7 @@ export default function TechnicianServices() {
     setSparePartsOrderOpen(true);
   };
 
-  // Filter services based on active tab
-  const filteredServices = services.filter((service) => {
-    if (activeTab === "active") {
-      return service.status === "pending" || service.status === "scheduled" || service.status === "in_progress";
-    } else if (activeTab === "completed") {
-      return service.status === "completed";
-    } else if (activeTab === "picked_up") {
-      return service.devicePickedUp === true;
-    } else if (activeTab === "problematic") {
-      return service.status === "client_not_home" || service.status === "client_not_answering";
-    } else {
-      return service.status === "waiting_parts" || service.status === "cancelled" || 
-             service.status === "client_not_home" || service.status === "client_not_answering";
-    }
-  });
+  // Filter services based on active tab - moved up to avoid duplication
 
   // Group services by city for better organization
   const groupedServices = filteredServices.reduce((groups, service) => {
