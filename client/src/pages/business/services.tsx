@@ -159,7 +159,13 @@ export default function BusinessServices() {
     queryKey: ["/api/business/services", user?.id],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/business/services`);
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`/api/business/services`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         if (!response.ok) {
           throw new Error('Greška pri dohvatanju servisa');
         }

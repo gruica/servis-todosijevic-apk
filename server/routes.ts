@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, comparePassword } from "./auth";
-import { registerBusinessPartnerRoutes } from "./business-partner-routes";
+// import { registerBusinessPartnerRoutes } from "./business-partner-routes"; // Disabled - using JWT endpoints instead
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
@@ -285,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Registruj rute za poslovne partnere
-  registerBusinessPartnerRoutes(app);
+  // registerBusinessPartnerRoutes(app); // Disabled - using JWT endpoints instead
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
@@ -1015,24 +1015,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Business Partner API Endpoints
-  app.get("/api/business/services", async (req, res) => {
+  app.get("/api/business/services", jwtAuth, async (req, res) => {
     try {
-      const { partnerId } = req.query;
-      
-      if (!partnerId || typeof partnerId !== 'string') {
-        return res.status(400).json({ error: "Nedostaje ID poslovnog partnera" });
+      // Koristi user ID iz JWT tokena umesto query parametra
+      if (req.user.role !== 'business_partner') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
-      try {
-        const partnerIdNum = parseInt(partnerId);
-        console.log(`Dohvatanje servisa za poslovnog partnera sa ID: ${partnerIdNum}`);
-        
-        // Dohvati servise povezane sa poslovnim partnerom
-        const services = await storage.getServicesByPartner(partnerIdNum);
-        res.json(services);
-      } catch (err) {
-        return res.status(400).json({ error: "Nevažeći ID poslovnog partnera" });
-      }
+      console.log(`Dohvatanje servisa za poslovnog partnera sa ID: ${req.user.id}`);
+      
+      // Dohvati servise povezane sa poslovnim partnerom
+      const services = await storage.getServicesByPartner(req.user.id);
+      res.json(services);
     } catch (error) {
       console.error("Greška pri dobijanju servisa za poslovnog partnera:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
@@ -1040,16 +1034,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API za detalje servisa za poslovnog partnera sa istorijom statusa
-  app.get("/api/business/services/:id", async (req, res) => {
+  app.get("/api/business/services/:id", jwtAuth, async (req, res) => {
     try {
       const serviceId = parseInt(req.params.id);
-      const { partnerId } = req.query;
       
-      if (!partnerId || typeof partnerId !== 'string') {
-        return res.status(400).json({ error: "Nedostaje ID poslovnog partnera" });
+      // Samo business partneri mogu pristupiti ovim podacima
+      if (req.user.role !== 'business_partner') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
-      
-      const partnerIdNum = parseInt(partnerId);
       
       // Prvo proveri da li je servis povezan sa ovim poslovnim partnerom
       const service = await storage.getService(serviceId);
@@ -3624,12 +3616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =====================================
 
   // Dobijanje notifikacija za trenutno ulogovanog korisnika
-  app.get("/api/notifications", async (req, res) => {
+  app.get("/api/notifications", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Morate biti ulogovani" });
-      }
-
       const limit = parseInt(req.query.limit as string) || 50;
       const notifications = await NotificationService.getUserNotifications(req.user.id, limit);
       res.json(notifications);
@@ -3640,12 +3628,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dobijanje broja nepročitanih notifikacija
-  app.get("/api/notifications/unread-count", async (req, res) => {
+  app.get("/api/notifications/unread-count", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Morate biti ulogovani" });
-      }
-
       const count = await NotificationService.getUnreadCount(req.user.id);
       res.json({ count });
     } catch (error) {
@@ -3655,12 +3639,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Označavanje notifikacije kao pročitane
-  app.post("/api/notifications/:id/mark-read", async (req, res) => {
+  app.post("/api/notifications/:id/mark-read", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Morate biti ulogovani" });
-      }
-
       const notificationId = parseInt(req.params.id);
       await NotificationService.markAsRead(notificationId, req.user.id);
       res.json({ success: true });
@@ -3671,12 +3651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Označavanje svih notifikacija kao pročitane
-  app.post("/api/notifications/mark-all-read", async (req, res) => {
+  app.post("/api/notifications/mark-all-read", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Morate biti ulogovani" });
-      }
-
       await NotificationService.markAllAsRead(req.user.id);
       res.json({ success: true });
     } catch (error) {
