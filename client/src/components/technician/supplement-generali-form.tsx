@@ -59,10 +59,8 @@ export function SupplementGeneraliForm({
   const supplementMutation = useMutation({
     mutationFn: async (data: SupplementGeneraliService) => {
       const { serviceId: _, ...supplementData } = data;
-      return apiRequest(`/api/services/${serviceId}/supplement-generali`, {
-        method: "PATCH",
-        body: JSON.stringify(supplementData)
-      });
+      const response = await apiRequest("PATCH", `/api/services/${serviceId}/supplement-generali`, supplementData);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -75,18 +73,39 @@ export function SupplementGeneraliForm({
       onClose();
     },
     onError: (error: any) => {
+      console.error("🔴 Greška pri dopunjavanju Generali servisa:", error);
+      let errorMessage = "Greška pri dopunjavanju servisa";
+      
+      if (error.message) {
+        // Parse API error responses
+        if (error.message.includes("400:")) {
+          errorMessage = "Neispravni podaci - proverite da li su sva polja popunjena ispravno";
+        } else if (error.message.includes("403:")) {
+          errorMessage = "Nemate dozvolu za dopunjavanje ovog servisa";
+        } else if (error.message.includes("404:")) {
+          errorMessage = "Servis nije pronađen";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Greška",
-        description: error.message || "Greška pri dopunjavanju servisa",
+        description: errorMessage,
         variant: "destructive"
       });
     }
   });
 
   const onSubmit = async (data: SupplementGeneraliService) => {
+    console.log("🔄 Počinje slanje Generali dopune:", data);
     setIsSubmitting(true);
     try {
-      await supplementMutation.mutateAsync(data);
+      const result = await supplementMutation.mutateAsync(data);
+      console.log("✅ Uspešno dopunjen Generali servis:", result);
+    } catch (error) {
+      console.error("❌ Greška pri slanju dopune:", error);
+      // Error se već rešava u onError callback-u
     } finally {
       setIsSubmitting(false);
     }
