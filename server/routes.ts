@@ -4704,6 +4704,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.user.id,
         validatedData.partName
       );
+
+      // ✨ NOVO: Automatsko slanje emaila servis firmi ako je deo u garanciji
+      if (validatedData.warrantyStatus === 'in_warranty') {
+        console.log(`[SPARE PARTS] Deo je u garanciji, šaljem email servis firmi...`);
+        
+        try {
+          // Dobijmo podatke o servisu i klijentu za email
+          const service = await storage.getService(validatedData.serviceId);
+          const technician = await storage.getTechnician(technicianId);
+          let clientName = 'Nepoznat klijent';
+          
+          if (service) {
+            const client = await storage.getClient(service.clientId);
+            clientName = client?.fullName || 'Nepoznat klijent';
+          }
+          
+          const technicianName = technician?.fullName || req.user?.fullName || 'Nepoznat serviser';
+          
+          // Šaljemo email servis firmi
+          const emailResult = await emailService.sendWarrantySparePartNotification(
+            validatedData.serviceId,
+            validatedData.partName,
+            validatedData.partNumber || 'N/A',
+            clientName,
+            technicianName,
+            validatedData.urgency || 'medium',
+            validatedData.notes || undefined
+          );
+          
+          console.log(`[SPARE PARTS] Rezultat slanja emaila servis firmi: ${emailResult ? 'Uspešno' : 'Neuspešno'}`);
+        } catch (emailError) {
+          console.error('[SPARE PARTS] Greška pri slanju emaila servis firmi:', emailError);
+          // Ne prekidamo proces ako email ne može da se pošalje
+        }
+      }
       
       res.status(201).json(order);
     } catch (error) {

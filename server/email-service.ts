@@ -1147,6 +1147,93 @@ www.frigosistemtodosijevic.com
       return false;
     }
   }
+
+  /**
+   * Šalje obaveštenje servis firmi o rezervnom delu u garanciji
+   */
+  public async sendWarrantySparePartNotification(
+    serviceId: number,
+    partName: string,
+    partNumber: string,
+    clientName: string,
+    technicianName: string,
+    urgency: string,
+    description?: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Početak slanja obaveštenja servis firmi o garancijskom rezervnom delu za servis #${serviceId}`);
+    
+    // Provera da li je SMTP konfiguracija dostupna
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja servis firmi`);
+      return false;
+    }
+
+    const serviceCompanyEmail = 'servis@eurotehnikamn.me';
+    const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
+
+    const subject = `${priorityIndicator} Garanciski rezervni deo - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #155724; margin: 0;">🛡️ GARANCISKI REZERVNI DEO</h2>
+          <p style="margin: 5px 0 0 0; color: #155724; font-weight: bold;">
+            Automatsko obaveštenje sistema
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        <p>Obaveštavamo Vas da je naručen rezervni deo u okviru garancijskih uslova:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0;">Detalji porudžbine</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Naziv dela:</strong> ${partName}</p>
+          <p><strong>Kataloški broj:</strong> ${partNumber}</p>
+          <p><strong>Prioritet:</strong> <span style="color: ${urgency === 'urgent' ? '#dc3545' : urgency === 'high' ? '#fd7e14' : '#6c757d'};">${urgencyLabel}</span></p>
+          <p><strong>Klijent:</strong> ${clientName}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+          ${description ? `<p><strong>Napomene:</strong> ${description}</p>` : ''}
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #856404;">
+            ⚠️ <strong>Napomena:</strong> Ovo je garanciski servis. Rezervni deo se naručuje u skladu sa garancijskim uslovima.
+          </p>
+        </div>
+
+        <p>Molimo Vas da obradi ovu porudžbinu u najkraćem roku.</p>
+        <p>Za sva dodatna pitanja, kontaktirajte nas na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    console.log(`[EMAIL] Slanje obaveštenja servis firmi na: ${serviceCompanyEmail}`);
+
+    try {
+      const result = await this.sendEmail({
+        to: serviceCompanyEmail,
+        subject,
+        html,
+      }, 3); // 3 pokušaja slanja za važne obavštenja
+      
+      console.log(`[EMAIL] Rezultat slanja obaveštenja servis firmi: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju obaveštenja servis firmi:`, error);
+      return false;
+    }
+  }
 }
 
 export const emailService = EmailService.getInstance();
