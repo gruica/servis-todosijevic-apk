@@ -113,6 +113,7 @@ export default function AdminServices() {
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
   const [pickupFilter, setPickupFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
   const [selectedService, setSelectedService] = useState<AdminService | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -256,7 +257,9 @@ export default function AdminServices() {
         (pickupFilter === "picked_up" && service.devicePickedUp) ||
         (pickupFilter === "not_picked_up" && !service.devicePickedUp);
       
-      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner && matchesPickup;
+      const matchesCity = cityFilter === "all" || service.client?.city === cityFilter;
+      
+      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner && matchesPickup && matchesCity;
     } catch (error) {
       console.error("Error filtering service:", service.id, error);
       return false;
@@ -508,7 +511,7 @@ export default function AdminServices() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
               <div className="space-y-2">
                 <Label>Pretraga</Label>
                 <div className="relative">
@@ -582,6 +585,23 @@ export default function AdminServices() {
                     <SelectItem value="all">Svi uređaji</SelectItem>
                     <SelectItem value="picked_up">Preuzeti</SelectItem>
                     <SelectItem value="not_picked_up">Nisu preuzeti</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Grad</Label>
+                <Select value={cityFilter} onValueChange={setCityFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Svi gradovi</SelectItem>
+                    {Array.from(new Set(services.map(s => s.client?.city).filter(Boolean))).sort().map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
