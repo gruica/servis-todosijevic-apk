@@ -189,7 +189,7 @@ export function MobileSMSConfig() {
             <Input
               id="baseUrl"
               type="url"
-              placeholder="http://192.168.1.100:8080"
+              placeholder="http://192.168.10.118:8080/api/v1"
               value={config.baseUrl}
               onChange={(e) => setConfig({ ...config, baseUrl: e.target.value })}
               className="font-mono"
@@ -273,9 +273,9 @@ export function MobileSMSConfig() {
             <ol className="list-decimal list-inside space-y-2 text-sm">
               <li>Instalirajte "SMS Mobile API" aplikaciju na vaš telefon</li>
               <li>Otvorite aplikaciju i pokrenite SMS Gateway servis</li>
-              <li>Zabeležite IP adresu i port prikazane u aplikaciji</li>
-              <li>Unesite Base URL u format: http://IP_ADRESA:PORT</li>
-              <li>Ako je konfigurisan API key u aplikaciji, unesite ga ovde</li>
+              <li>Vaša IP adresa je: <code className="bg-gray-100 px-1 rounded">192.168.10.118</code></li>
+              <li>Unesite Base URL: <code className="bg-gray-100 px-1 rounded">http://192.168.10.118:8080/api/v1</code></li>
+              <li>Ako SMS Mobile API aplikacija traži port, uobičajeno je 8080 ili 8000</li>
               <li>Sačuvajte konfiguraciju i testirajte konekciju</li>
               <li>Pošaljite test SMS da proverite funkcionalnost</li>
             </ol>
