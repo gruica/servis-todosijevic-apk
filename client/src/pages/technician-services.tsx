@@ -60,9 +60,9 @@ export default function TechnicianServicesList() {
     queryKey: ["/api/technicians"],
   });
 
-  // Učitavanje servisa dodeljenih trenutnom serviseru
+  // Učitavanje servisa - admin vidi sve servise, tehnićar samo svoje
   const { data: services } = useQuery<any[]>({
-    queryKey: ["/api/my-services"],
+    queryKey: ["/api/admin/services-by-technicians"],
   });
 
   // Proverava da li je stranica otvorena sa notifikacijom

@@ -4373,6 +4373,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get admin services grouped by technicians
+  app.get("/api/admin/services-by-technicians", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const services = await storage.getAdminServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching admin services by technicians:", error);
+      res.status(500).json({ error: "Failed to fetch services by technicians" });
+    }
+  });
+
   // Get services waiting for parts (admin only)
   app.get("/api/admin/services/waiting-for-parts", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {
