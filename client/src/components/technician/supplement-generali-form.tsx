@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
-import { FileText, Calendar, Mail, MapPin, Hash, Package } from "lucide-react";
+import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan } from "lucide-react";
+import { OCRCamera } from "@/components/ocr-camera";
+import { ScannedData } from "@/services/ocr-service";
 
 interface SupplementGeneraliFormProps {
   serviceId: number;
@@ -42,6 +44,7 @@ export function SupplementGeneraliForm({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const activeInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
@@ -237,6 +240,33 @@ export function SupplementGeneraliForm({
     }
   };
 
+  const handleScannedData = (scannedData: ScannedData) => {
+    console.log("📷 Skenirani podaci:", scannedData);
+    
+    // Automatski popuni polja sa skeniranim podacima
+    if (scannedData.model) {
+      form.setValue("model", scannedData.model);
+    }
+    if (scannedData.serialNumber) {
+      form.setValue("serialNumber", scannedData.serialNumber);
+    }
+    
+    // Prikaži toast sa informacijom
+    const scannedFields = [];
+    if (scannedData.model) scannedFields.push("model");
+    if (scannedData.serialNumber) scannedFields.push("serijski broj");
+    if (scannedData.productNumber) scannedFields.push("product broj");
+    
+    if (scannedFields.length > 0) {
+      toast({
+        title: "Podaci skenirani uspešno",
+        description: `Pronađeni su podaci: ${scannedFields.join(", ")}. Proverite i potvrdite podatke.`,
+      });
+    }
+    
+    setIsCameraOpen(false);
+  };
+
   // Proverava da li ima barem jedan unos koji se dopunjuje
   const hasAnyFieldToSupplement = () => {
     const values = form.getValues();
@@ -361,10 +391,23 @@ export function SupplementGeneraliForm({
 
             {/* Podaci o aparatu */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Podaci o aparatu
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Podaci o aparatu
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCameraOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  <Scan className="h-4 w-4" />
+                  Skeniraj generalije
+                </Button>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -495,6 +538,13 @@ export function SupplementGeneraliForm({
             </DialogFooter>
           </form>
         </Form>
+        
+        {/* OCR Kamera komponenta */}
+        <OCRCamera
+          isOpen={isCameraOpen}
+          onClose={() => setIsCameraOpen(false)}
+          onDataScanned={handleScannedData}
+        />
       </DialogContent>
     </Dialog>
   );
