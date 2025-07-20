@@ -31,6 +31,7 @@ import UserVerification from "@/pages/admin/user-verification";
 import SmsSettings from "@/pages/admin/sms-settings";
 import SMSTest from "@/pages/admin/sms-test";
 import GSMConfig from "@/pages/admin/gsm-config";
+import MobileSMSConfigPage from "@/pages/admin/mobile-sms-config";
 
 import SMSMessaging from "@/pages/sms-messaging";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -100,7 +101,7 @@ function Router() {
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/mobile-sms" component={React.lazy(() => import("@/pages/admin/mobile-sms-config"))} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/mobile-sms" component={MobileSMSConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/gsm-config" component={GSMConfig} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
