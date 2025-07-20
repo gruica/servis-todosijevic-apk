@@ -310,7 +310,19 @@ export function MobileSMSConfig() {
                 Možemo se vratiti na pouzdani Twilio SMS servis koji garantovano funkcioniše
                 sa cloud server-ima. Treba vam samo Twilio Account SID i Auth Token.
               </p>
-              <div className="flex gap-2">
+              <div className="mt-3 p-2 bg-orange-50 rounded border-l-4 border-orange-500">
+                <p className="text-sm font-medium text-orange-800 mb-1">🛠️ Port Forwarding Setup:</p>
+                <div className="text-xs text-orange-700 space-y-1">
+                  <div><strong>1.</strong> U router admin panelu idite na "Port Forwards" (već otvoreno)</div>
+                  <div><strong>2.</strong> Promenite External Port sa 9080 na <code className="bg-white px-1">8080</code></div>
+                  <div><strong>3.</strong> Promenite Internal Port na <code className="bg-white px-1">8080</code></div>
+                  <div><strong>4.</strong> Internal IP ostavite <code className="bg-white px-1">192.168.10.118</code></div>
+                  <div><strong>5.</strong> Kliknite "Save & Apply"</div>
+                  <div><strong>6.</strong> Pronađite javnu IP u "Internet" sekciji ili kliknite dugme ispod</div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-3">
                 <Button 
                   variant="outline" 
                   size="sm"
