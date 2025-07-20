@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
-import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan } from "lucide-react";
+import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan, X } from "lucide-react";
 import { EnhancedOCRCamera } from "@/components/enhanced-ocr-camera";
 import { ScannedData } from "@/services/enhanced-ocr-service";
 
@@ -85,14 +85,14 @@ export function SupplementGeneraliForm({
         const dialogElement = dialogRef.current;
         
         // Keep dialog at reasonable size and position above keyboard
-        const availableHeight = currentHeight - 100; // 100px buffer
+        const availableHeight = currentHeight - 40; // Smaller buffer for more space
         
-        // Position dialog to be visible above keyboard
+        // Position dialog to be visible above keyboard with better sizing
         dialogElement.style.position = 'fixed';
-        dialogElement.style.top = '20px';
+        dialogElement.style.top = '5px';
         dialogElement.style.maxHeight = `${availableHeight}px`;
-        dialogElement.style.height = `auto`;
-        dialogElement.style.minHeight = `${Math.min(availableHeight, 400)}px`;
+        dialogElement.style.height = 'auto';
+        dialogElement.style.minHeight = 'auto'; // Remove fixed min-height
         dialogElement.style.overflowY = 'auto';
         dialogElement.style.transform = 'translateX(-50%)';
         dialogElement.style.left = '50%';
@@ -100,15 +100,35 @@ export function SupplementGeneraliForm({
         dialogElement.style.maxWidth = '500px';
         dialogElement.style.zIndex = '9999';
         
-        // If there's an active input, scroll it into view
+        // Ensure footer buttons are always accessible with sticky positioning
+        const footer = dialogElement.querySelector('.space-x-2, [class*="gap-2"]');
+        if (footer) {
+          (footer as HTMLElement).style.position = 'sticky';
+          (footer as HTMLElement).style.bottom = '0';
+          (footer as HTMLElement).style.backgroundColor = 'white';
+          (footer as HTMLElement).style.zIndex = '10';
+          (footer as HTMLElement).style.padding = '12px 0';
+          (footer as HTMLElement).style.borderTop = '1px solid #e5e7eb';
+          (footer as HTMLElement).style.marginTop = '16px';
+        }
+        
+        // Ensure content scrolls properly while keeping footer visible
+        const content = dialogElement.querySelector('form');
+        if (content) {
+          (content as HTMLElement).style.maxHeight = `${availableHeight - 80}px`; // Reserve space for footer
+          (content as HTMLElement).style.overflowY = 'auto';
+          (content as HTMLElement).style.paddingBottom = '20px';
+        }
+        
+        // If there's an active input, scroll it into view gently
         if (activeInputRef.current) {
           setTimeout(() => {
             activeInputRef.current?.scrollIntoView({ 
               behavior: 'smooth', 
-              block: 'center',
+              block: 'nearest',
               inline: 'nearest'
             });
-          }, 100);
+          }, 150);
         }
       } else if (dialogRef.current) {
         // Reset dialog styles when keyboard closes
@@ -122,6 +142,27 @@ export function SupplementGeneraliForm({
         dialogElement.style.left = '';
         dialogElement.style.width = '';
         dialogElement.style.maxWidth = '';
+        dialogElement.style.zIndex = '';
+        
+        // Reset footer styles
+        const footer = dialogElement.querySelector('.space-x-2, [class*="gap-2"]');
+        if (footer) {
+          (footer as HTMLElement).style.position = '';
+          (footer as HTMLElement).style.bottom = '';
+          (footer as HTMLElement).style.backgroundColor = '';
+          (footer as HTMLElement).style.zIndex = '';
+          (footer as HTMLElement).style.padding = '';
+          (footer as HTMLElement).style.borderTop = '';
+          (footer as HTMLElement).style.marginTop = '';
+        }
+        
+        // Reset content styles
+        const content = dialogElement.querySelector('form');
+        if (content) {
+          (content as HTMLElement).style.maxHeight = '';
+          (content as HTMLElement).style.overflowY = '';
+          (content as HTMLElement).style.paddingBottom = '';
+        }
       }
     };
 
@@ -315,11 +356,24 @@ export function SupplementGeneraliForm({
         ref={dialogRef}
         className="max-w-2xl transition-all duration-300"
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Dopuni {serviceName}
-          </DialogTitle>
+        <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Dopuni {serviceName}
+            </DialogTitle>
+            {/* Mobile close button - always visible */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0 md:hidden"
+              disabled={isSubmitting}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <DialogDescription>
             Dopunite nedostajuće podatke o klijentu i aparatu za Generali servis.
             Popunite samo polja koja želite da dodate ili ažurirate.
@@ -547,22 +601,26 @@ export function SupplementGeneraliForm({
               )}
             />
 
-            <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                Otkaži
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !hasAnyFieldToSupplement()}
-                className="min-w-24"
-              >
-                {isSubmitting ? "Čuva..." : "Dopuni servis"}
-              </Button>
+            {/* Mobile-optimized footer - sticky positioned on mobile when keyboard is open */}
+            <DialogFooter className={`gap-2 mt-6 ${keyboardVisible ? 'sticky bottom-0 bg-white border-t pt-4 z-10' : ''}`}>
+              <div className="flex flex-col md:flex-row gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="w-full md:w-auto"
+                >
+                  Otkaži
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !hasAnyFieldToSupplement()}
+                  className="w-full md:w-auto min-w-24"
+                >
+                  {isSubmitting ? "Čuva..." : "Dopuni servis"}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
