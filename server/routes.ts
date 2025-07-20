@@ -5340,10 +5340,8 @@ Admin panel - automatska porudžbina
         return res.status(403).json({ error: "Nemate ulogu servisera" });
       }
 
-      // Proveri da li je servis dodeljen ovom serviseru
-      if (service.technicianId !== userDetails.technicianId) {
-        return res.status(403).json({ error: "Možete dopunjavati samo svoje servise" });
-      }
+      // Serviseri mogu dopunjavati Generali podatke za bilo koji servis
+      // (uklonjena ograničavajuća provera dodele servisa)
 
       // Dopuni podatke o klijentu ako su navedeni
       if (validData.clientEmail || validData.clientAddress || validData.clientCity) {
