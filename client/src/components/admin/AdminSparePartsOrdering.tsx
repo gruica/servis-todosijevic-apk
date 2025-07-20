@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [enteredServiceId, setEnteredServiceId] = useState(serviceId?.toString() || '');
+  const [debouncedServiceId, setDebouncedServiceId] = useState(serviceId?.toString() || '');
   const [applianceSerialNumber, setApplianceSerialNumber] = useState('');
   const [formData, setFormData] = useState({
     deviceModel: '',
@@ -52,6 +53,15 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debounce effect for service ID input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedServiceId(enteredServiceId);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [enteredServiceId]);
+
   // Get service details if serviceId is provided
   const { data: service } = useQuery({
     queryKey: ['/api/admin/services', serviceId],
@@ -63,15 +73,15 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     enabled: !!serviceId
   });
 
-  // Get service details for entered service ID
+  // Get service details for entered service ID (debounced)
   const { data: enteredService, isLoading: isLoadingEnteredService } = useQuery({
-    queryKey: ['/api/admin/services', enteredServiceId],
+    queryKey: ['/api/admin/services', debouncedServiceId],
     queryFn: async () => {
-      if (!enteredServiceId || enteredServiceId === '') return null;
-      const response = await apiRequest('GET', `/api/admin/services/${enteredServiceId}`);
+      if (!debouncedServiceId || debouncedServiceId === '') return null;
+      const response = await apiRequest('GET', `/api/admin/services/${debouncedServiceId}`);
       return response.json();
     },
-    enabled: !!enteredServiceId && enteredServiceId !== ''
+    enabled: !!debouncedServiceId && debouncedServiceId !== ''
   });
 
   // Use entered service data if available, otherwise use passed serviceId data
@@ -327,7 +337,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
             </div>
           )}
 
-          {isLoadingEnteredService && enteredServiceId && (
+          {isLoadingEnteredService && debouncedServiceId && (
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <p className="text-yellow-800">Učitavam podatke o servisu...</p>
             </div>
