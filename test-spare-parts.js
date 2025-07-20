@@ -2,7 +2,13 @@ import fetch from 'node-fetch';
 
 async function testSpareParts() {
   const baseUrl = 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
-  const jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEyLCJ1c2VybmFtZSI6ImdydWljYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLmNvbSIsInJvbGUiOiJ0ZWNobmljaWFuIiwiaWF0IjoxNzUyOTYwNzkxLCJleHAiOjE3NTU1NTI3OTF9.lNkTZdtdNJJKQQ9S-0HdqL8sQRAJCl-c5JZGcGlTa_Y';
+  const jwt = process.env.TEST_JWT_TOKEN;
+  
+  if (!jwt) {
+    console.error('❌ TEST_JWT_TOKEN environment variable is not set');
+    console.log('Please set TEST_JWT_TOKEN as a secret in Replit with a valid JWT token for testing');
+    return;
+  }
 
   console.log('🧪 Testiram Beko uređaj (servis #26) - treba da ide na servis@eurotehnikamn.me');
   
