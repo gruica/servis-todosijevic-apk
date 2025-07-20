@@ -3041,126 +3041,56 @@ export class DatabaseStorage implements IStorage {
   // Spare parts methods
   async getAllSparePartOrders(): Promise<any[]> {
     try {
+      // Prvo dohvati sve spare part orders
       const orders = await db
-        .select({
-          // Spare part order data
-          id: sparePartOrders.id,
-          serviceId: sparePartOrders.serviceId,
-          technicianId: sparePartOrders.technicianId,
-          applianceId: sparePartOrders.applianceId,
-          partName: sparePartOrders.partName,
-          partNumber: sparePartOrders.partNumber,
-          quantity: sparePartOrders.quantity,
-          description: sparePartOrders.description,
-          urgency: sparePartOrders.urgency,
-          status: sparePartOrders.status,
-          warrantyStatus: sparePartOrders.warrantyStatus,
-          estimatedCost: sparePartOrders.estimatedCost,
-          actualCost: sparePartOrders.actualCost,
-          supplierName: sparePartOrders.supplierName,
-          orderDate: sparePartOrders.orderDate,
-          expectedDelivery: sparePartOrders.expectedDelivery,
-          receivedDate: sparePartOrders.receivedDate,
-          adminNotes: sparePartOrders.adminNotes,
-          createdAt: sparePartOrders.createdAt,
-          updatedAt: sparePartOrders.updatedAt,
-          
-          // Service data (flat fields)
-          serviceDataId: services.id,
-          serviceDataStatus: services.status,
-          serviceDataDescription: services.problemDescription,
-          serviceDataCreatedAt: services.createdAt,
-          serviceDataScheduledDate: services.scheduledDate,
-          
-          // Client data (flat fields)
-          clientDataFullName: clients.fullName,
-          clientDataPhone: clients.phone,
-          clientDataEmail: clients.email,
-          clientDataAddress: clients.address,
-          clientDataCity: clients.city,
-          
-          // Appliance data (flat fields)
-          applianceDataModel: appliances.model,
-          applianceDataSerialNumber: appliances.serialNumber,
-          
-          // Category data (flat fields)
-          categoryDataName: applianceCategories.name,
-          
-          // Manufacturer data (flat fields)
-          manufacturerDataName: manufacturers.name,
-          
-          // Technician data (flat fields)
-          technicianDataName: technicians.name,
-          technicianDataPhone: technicians.phone,
-          technicianDataEmail: technicians.email,
-          technicianDataSpecialization: technicians.specialization,
-        })
+        .select()
         .from(sparePartOrders)
-        .leftJoin(services, eq(sparePartOrders.serviceId, services.id))
-        .leftJoin(clients, eq(services.clientId, clients.id))
-        .leftJoin(appliances, eq(services.applianceId, appliances.id))
-        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-        .leftJoin(technicians, eq(sparePartOrders.technicianId, technicians.id))
         .orderBy(desc(sparePartOrders.createdAt));
 
-      // Transform the data to match expected format
-      return orders.map(order => ({
-        id: order.id,
-        serviceId: order.serviceId,
-        technicianId: order.technicianId,
-        applianceId: order.applianceId,
-        partName: order.partName,
-        partNumber: order.partNumber,
-        quantity: order.quantity,
-        description: order.description,
-        urgency: order.urgency,
-        status: order.status,
-        warrantyStatus: order.warrantyStatus,
-        estimatedCost: order.estimatedCost,
-        actualCost: order.actualCost,
-        supplierName: order.supplierName,
-        orderDate: order.orderDate,
-        expectedDelivery: order.expectedDelivery,
-        receivedDate: order.receivedDate,
-        adminNotes: order.adminNotes,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        
-        // Include service data if it exists
-        service: order.serviceDataId ? {
-          id: order.serviceDataId,
-          status: order.serviceDataStatus,
-          description: order.serviceDataDescription,
-          createdAt: order.serviceDataCreatedAt,
-          scheduledDate: order.serviceDataScheduledDate,
-          client: {
-            fullName: order.clientDataFullName || '',
-            phone: order.clientDataPhone || '',
-            email: order.clientDataEmail,
-            address: order.clientDataAddress,
-            city: order.clientDataCity,
-          },
-          appliance: {
-            model: order.applianceDataModel,
-            serialNumber: order.applianceDataSerialNumber,
-            category: {
-              name: order.categoryDataName || ''
-            },
-            manufacturer: {
-              name: order.manufacturerDataName || ''
+      // Zatim dodaj povezane podatke za svaki order
+      const enrichedOrders = await Promise.all(
+        orders.map(async (order) => {
+          let serviceData = undefined;
+          let technicianData = undefined;
+
+          // Dodaj service podatke ako postoji serviceId
+          if (order.serviceId) {
+            try {
+              const service = await this.getAdminServiceById(order.serviceId);
+              if (service) {
+                serviceData = service;
+              }
+            } catch (error) {
+              console.log(`Servis ${order.serviceId} nije pronađen:`, error);
             }
           }
-        } : undefined,
-        
-        // Include technician data if it exists
-        technician: order.technicianDataName ? {
-          name: order.technicianDataName,
-          phone: order.technicianDataPhone || '',
-          email: order.technicianDataEmail || '',
-          specialization: order.technicianDataSpecialization || ''
-        } : undefined
-      }));
+
+          // Dodaj technician podatke ako postoji technicianId
+          if (order.technicianId) {
+            try {
+              const technician = await this.getTechnician(order.technicianId);
+              if (technician) {
+                technicianData = {
+                  name: technician.name,
+                  phone: technician.phone || '',
+                  email: technician.email || '',
+                  specialization: technician.specialization || ''
+                };
+              }
+            } catch (error) {
+              console.log(`Serviser ${order.technicianId} nije pronađen:`, error);
+            }
+          }
+
+          return {
+            ...order,
+            service: serviceData,
+            technician: technicianData
+          };
+        })
+      );
+
+      return enrichedOrders;
     } catch (error) {
       console.error('Greška pri dohvatanju svih porudžbina rezervnih delova:', error);
       throw error;
