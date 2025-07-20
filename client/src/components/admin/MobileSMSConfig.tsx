@@ -280,12 +280,34 @@ export function MobileSMSConfig() {
               <li>Pošaljite test SMS da proverite funkcionalnost</li>
             </ol>
             
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 mb-1">💡 Napomena:</p>
-              <p className="text-sm text-blue-800">
-                Telefon i server moraju biti na istoj WiFi mreži. SMS Mobile API aplikacija 
-                koristi vaš telefon kao SMS gateway za slanje poruka klijentima.
+            <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-sm font-medium text-yellow-800 mb-2">⚠️ Problem sa konekcijom:</p>
+              <p className="text-sm text-yellow-700 mb-2">
+                Replit server (cloud) ne može pristupiti vašoj lokalnoj IP adresi (192.168.10.118).
               </p>
+              <p className="text-sm font-weight-bold text-yellow-800 mb-1">Rešenja:</p>
+              <ol className="text-sm text-yellow-700 list-decimal list-inside space-y-1">
+                <li>Koristite javnu IP adresu umesto lokalne (proverite routeralternitiva)</li>
+                <li>Omogućite port forwarding na router-u za port 8080</li>
+                <li>Koristite ngrok ili slični tunel servis</li>
+                <li>Alternativno: vratimo se na Twilio SMS provider</li>
+              </ol>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm font-medium text-blue-900 mb-1">💡 Alternativa - Twilio SMS:</p>
+              <p className="text-sm text-blue-800 mb-3">
+                Možemo se vratiti na pouzdani Twilio SMS servis koji garantovano funkcioniše
+                sa cloud server-ima. Treba vam samo Twilio Account SID i Auth Token.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/admin/sms-test'}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Pređi na Twilio SMS konfiguraciju
+              </Button>
             </div>
           </div>
         </CardContent>
