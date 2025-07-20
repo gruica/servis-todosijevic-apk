@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,7 @@ const APPLIANCE_CATEGORIES = [
 const BEKO_MANUFACTURERS = ["Beko"];
 const COMPLUS_MANUFACTURERS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
 
-export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePartsOrderingProps) {
+function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePartsOrderingProps) {
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -411,3 +411,5 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
     </>
   );
 }
+
+export const AdminSparePartsOrdering = memo(AdminSparePartsOrderingComponent);

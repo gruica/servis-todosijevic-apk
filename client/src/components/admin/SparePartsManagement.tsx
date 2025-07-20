@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { formatDate } from '@/lib/utils';
-import { AdminSparePartsOrdering } from './AdminSparePartsOrdering';
+import { SimpleSparePartsDialog } from './SimpleSparePartsDialog';
 
 const urgencyLabels = {
   low: 'Niska',
@@ -50,7 +50,6 @@ export function SparePartsManagement() {
   const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [updateData, setUpdateData] = useState({
     status: '',
     notes: ''
@@ -193,30 +192,12 @@ export function SparePartsManagement() {
         </div>
         
         {/* New Order Button */}
-        <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Nova porudžbina
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Poruči rezervni deo</DialogTitle>
-              <DialogDescription>
-                Kreirajte novu porudžbinu rezervnog dela. Odaberite brend aparata i unesite potrebne podatke.
-              </DialogDescription>
-            </DialogHeader>
-            <AdminSparePartsOrdering 
-              serviceId={null} 
-              onSuccess={() => {
-                setShowNewOrderDialog(false);
-                queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-                queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <SimpleSparePartsDialog 
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+          }}
+        />
       </div>
 
       {/* Filters */}
