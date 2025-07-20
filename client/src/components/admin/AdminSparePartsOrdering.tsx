@@ -62,6 +62,11 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     return () => clearTimeout(timer);
   }, [enteredServiceId]);
 
+  // Memoize dependent values to prevent re-renders
+  const queryEnabled = useMemo(() => {
+    return !!debouncedServiceId && debouncedServiceId !== '' && !isNaN(parseInt(debouncedServiceId)) && parseInt(debouncedServiceId) > 0;
+  }, [debouncedServiceId]);
+
   // Get service details if serviceId is provided
   const { data: service } = useQuery({
     queryKey: ['/api/admin/services', serviceId],
@@ -78,10 +83,12 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     queryKey: ['/api/admin/services', debouncedServiceId],
     queryFn: async () => {
       if (!debouncedServiceId || debouncedServiceId === '') return null;
-      const response = await apiRequest('GET', `/api/admin/services/${debouncedServiceId}`);
+      const serviceId = parseInt(debouncedServiceId);
+      if (isNaN(serviceId) || serviceId <= 0) return null;
+      const response = await apiRequest('GET', `/api/admin/services/${serviceId}`);
       return response.json();
     },
-    enabled: !!debouncedServiceId && debouncedServiceId !== ''
+    enabled: queryEnabled
   });
 
   // Use entered service data if available, otherwise use passed serviceId data
@@ -503,4 +510,9 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
   );
 }
 
-export const AdminSparePartsOrdering = memo(AdminSparePartsOrderingComponent);
+export const AdminSparePartsOrdering = memo(AdminSparePartsOrderingComponent, (prevProps, nextProps) => {
+  // Only re-render if serviceId or onSuccess props actually changed
+  return prevProps.serviceId === nextProps.serviceId && prevProps.onSuccess === nextProps.onSuccess;
+});
+
+export default AdminSparePartsOrdering;
