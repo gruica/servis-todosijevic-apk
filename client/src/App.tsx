@@ -100,7 +100,7 @@ function Router() {
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/sms-settings" component={SmsSettings} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/mobile-sms" component={React.lazy(() => import("@/pages/admin/mobile-sms-config"))} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/gsm-config" component={GSMConfig} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
