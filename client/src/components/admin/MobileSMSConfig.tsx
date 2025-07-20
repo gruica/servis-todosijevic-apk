@@ -294,12 +294,21 @@ export function MobileSMSConfig() {
               </ol>
               
               <div className="mt-3 p-2 bg-white rounded border-l-4 border-green-500">
-                <p className="text-sm font-medium text-green-800 mb-1">📱 Najbrže rešenje - ngrok:</p>
+                <p className="text-sm font-medium text-green-800 mb-1">📱 Preporučeno rešenje - ngrok tunnel:</p>
                 <ol className="text-xs text-green-700 list-decimal list-inside space-y-1">
-                  <li>Skidajte ngrok aplikaciju na telefon</li>
-                  <li>Pokrenite: <code className="bg-gray-100 px-1">ngrok http 8080</code></li>
-                  <li>Kopirajte https URL (npr. https://abc123.ngrok.io)</li>
+                  <li>Instalirajte ngrok na telefon ili računar</li>
+                  <li>Pokrenite: <code className="bg-gray-100 px-1">ngrok http --host-header=localhost 8080</code></li>
+                  <li>Kopirajte HTTPS URL (npr. https://abc123.ngrok.io)</li>
                   <li>Unesite u Base URL: <code className="bg-gray-100 px-1">https://abc123.ngrok.io/api/v1</code></li>
+                </ol>
+                <p className="text-xs text-green-600 mt-2">💡 Ngrok pravi siguran tunel preko interneta - najbolja opcija!</p>
+              </div>
+
+              <div className="mt-3 p-2 bg-yellow-50 rounded border-l-4 border-yellow-500">
+                <p className="text-sm font-medium text-yellow-800 mb-1">🔄 Alternativa - Lokalni IP:</p>
+                <ol className="text-xs text-yellow-700 list-decimal list-inside space-y-1">
+                  <li>Možete probati lokalni IP direktno: <code className="bg-gray-100 px-1">http://192.168.10.118:8080/api/v1</code></li>
+                  <li>Ili pokušajte sa drugim portom ako 8080 ne radi</li>
                 </ol>
               </div>
             </div>
@@ -322,7 +331,7 @@ export function MobileSMSConfig() {
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3">
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -332,23 +341,51 @@ export function MobileSMSConfig() {
                       const data = await response.json();
                       const publicIP = data.ip;
                       const newUrl = `http://${publicIP}:8080/api/v1`;
+                      setConfig({...config, baseUrl: newUrl});
                       navigator.clipboard.writeText(newUrl);
-                      alert(`Javna IP adresa: ${publicIP}\n\nBase URL za SMS Mobile API:\n${newUrl}\n\n(Kopirana u clipboard)`);
+                      toast({
+                        title: "IP adresa dohvaćena",
+                        description: `Base URL postavljen na: ${newUrl}`,
+                      });
                     } catch (error) {
                       window.open('https://www.whatismyipaddress.com/', '_blank');
                     }
                   }}
                   className="bg-green-600 text-white hover:bg-green-700"
                 >
-                  Dobij javnu IP i SMS URL
+                  Javni IP URL
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.location.href = '/admin/sms-test'}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={() => {
+                    const localUrl = `http://192.168.10.118:8080/api/v1`;
+                    setConfig({...config, baseUrl: localUrl});
+                    toast({
+                      title: "Lokalni IP postavljen",
+                      description: `Base URL: ${localUrl}`,
+                    });
+                  }}
+                  className="bg-yellow-600 text-white hover:bg-yellow-700"
                 >
-                  Twilio alternativa
+                  Lokalni IP URL
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const customUrl = prompt("Unesite custom URL (npr. https://abc123.ngrok.io/api/v1):");
+                    if (customUrl) {
+                      setConfig({...config, baseUrl: customUrl});
+                      toast({
+                        title: "Custom URL postavljen",
+                        description: `Base URL: ${customUrl}`,
+                      });
+                    }
+                  }}
+                  className="bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  Custom URL
                 </Button>
               </div>
             </div>
