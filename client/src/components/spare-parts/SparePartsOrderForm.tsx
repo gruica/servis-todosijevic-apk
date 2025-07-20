@@ -19,15 +19,14 @@ interface SparePartsOrderFormProps {
 }
 
 const urgencyOptions = [
-  { value: 'low', label: 'Niska', color: 'bg-green-100 text-green-800' },
-  { value: 'medium', label: 'Srednja', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'normal', label: 'Normalna', color: 'bg-green-100 text-green-800' },
   { value: 'high', label: 'Visoka', color: 'bg-orange-100 text-orange-800' },
   { value: 'urgent', label: 'Hitno', color: 'bg-red-100 text-red-800' },
 ];
 
 const warrantyStatusOptions = [
-  { value: 'in_warranty', label: '🛡️ U garanciji', color: 'bg-green-100 text-green-800' },
-  { value: 'out_of_warranty', label: '💰 Van garancije', color: 'bg-red-100 text-red-800' },
+  { value: 'u garanciji', label: '🛡️ U garanciji', color: 'bg-green-100 text-green-800' },
+  { value: 'van garancije', label: '💰 Van garancije', color: 'bg-red-100 text-red-800' },
 ];
 
 export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePartsOrderFormProps) {
@@ -39,17 +38,20 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
     partName: '',
     partNumber: '',
     quantity: 1,
-    urgency: 'medium',
+    urgency: 'normal',
     warrantyStatus: '',
     notes: ''
   });
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
+      // Map 'notes' to 'description' for backend compatibility
+      const { notes, ...restData } = orderData;
       return await apiRequest('/api/spare-parts', {
         method: 'POST',
         body: JSON.stringify({
-          ...orderData,
+          ...restData,
+          description: notes, // Map notes to description field
           serviceId
         }),
       });
@@ -65,7 +67,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
         partName: '',
         partNumber: '',
         quantity: 1,
-        urgency: 'medium',
+        urgency: 'normal',
         warrantyStatus: '',
         notes: ''
       });

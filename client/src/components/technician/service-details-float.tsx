@@ -214,7 +214,8 @@ export function ServiceDetailsFloat({
             variant="outline"
             size="sm"
             disabled={!service.client?.phone}
-            className="w-full"
+            showIcon={true}
+            fullWidth={true}
           />
           
           {service.client?.address && (
