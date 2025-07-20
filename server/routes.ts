@@ -70,14 +70,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
-  // Debug middleware za sve DELETE requests
-  app.use((req, res, next) => {
-    if (req.method === 'DELETE') {
-      console.log(`DEBUG: DELETE request to ${req.url}`);
-    }
-    next();
-  });
-  
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
   app.post("/api/security/verify-bot", verifyBotAnswer);
@@ -4889,26 +4881,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete spare part order (admin only)
   app.delete("/api/admin/spare-parts/:id", jwtAuth, async (req, res) => {
-    console.log('DELETE /api/admin/spare-parts/:id - User:', req.user?.username, 'Role:', req.user?.role);
-    
     if (req.user.role !== "admin") {
-      console.log('DELETE rejected - not admin role:', req.user.role);
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
       const orderId = parseInt(req.params.id);
-      console.log('DELETE - Order ID:', orderId);
-      
       const deleted = await storage.deleteSparePartOrder(orderId);
-      console.log('DELETE - Storage result:', deleted);
       
       if (!deleted) {
-        console.log('DELETE - Order not found:', orderId);
         return res.status(404).json({ error: "Spare part order not found" });
       }
       
-      console.log('DELETE - Success for order:', orderId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting spare part order:", error);
