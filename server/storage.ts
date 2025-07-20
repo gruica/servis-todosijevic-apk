@@ -3065,47 +3065,35 @@ export class DatabaseStorage implements IStorage {
           createdAt: sparePartOrders.createdAt,
           updatedAt: sparePartOrders.updatedAt,
           
-          // Service data (if exists)
-          serviceData: {
-            id: services.id,
-            status: services.status,
-            description: services.problemDescription,
-            createdAt: services.createdAt,
-            scheduledDate: services.scheduledDate,
-          },
+          // Service data (flat fields)
+          serviceDataId: services.id,
+          serviceDataStatus: services.status,
+          serviceDataDescription: services.problemDescription,
+          serviceDataCreatedAt: services.createdAt,
+          serviceDataScheduledDate: services.scheduledDate,
           
-          // Client data (if service exists)
-          clientData: {
-            fullName: clients.fullName,
-            phone: clients.phone,
-            email: clients.email,
-            address: clients.address,
-            city: clients.city,
-          },
+          // Client data (flat fields)
+          clientDataFullName: clients.fullName,
+          clientDataPhone: clients.phone,
+          clientDataEmail: clients.email,
+          clientDataAddress: clients.address,
+          clientDataCity: clients.city,
           
-          // Appliance data (if service exists)
-          applianceData: {
-            model: appliances.model,
-            serialNumber: appliances.serialNumber,
-          },
+          // Appliance data (flat fields)
+          applianceDataModel: appliances.model,
+          applianceDataSerialNumber: appliances.serialNumber,
           
-          // Category data (if appliance exists)
-          categoryData: {
-            name: applianceCategories.name,
-          },
+          // Category data (flat fields)
+          categoryDataName: applianceCategories.name,
           
-          // Manufacturer data (if appliance exists)
-          manufacturerData: {
-            name: manufacturers.name,
-          },
+          // Manufacturer data (flat fields)
+          manufacturerDataName: manufacturers.name,
           
-          // Technician data (if exists)
-          technicianData: {
-            name: technicians.name,
-            phone: technicians.phone,
-            email: technicians.email,
-            specialization: technicians.specialization,
-          }
+          // Technician data (flat fields)
+          technicianDataName: technicians.name,
+          technicianDataPhone: technicians.phone,
+          technicianDataEmail: technicians.email,
+          technicianDataSpecialization: technicians.specialization,
         })
         .from(sparePartOrders)
         .leftJoin(services, eq(sparePartOrders.serviceId, services.id))
@@ -3140,37 +3128,37 @@ export class DatabaseStorage implements IStorage {
         updatedAt: order.updatedAt,
         
         // Include service data if it exists
-        service: order.serviceData?.id ? {
-          id: order.serviceData.id,
-          status: order.serviceData.status,
-          description: order.serviceData.description,
-          createdAt: order.serviceData.createdAt,
-          scheduledDate: order.serviceData.scheduledDate,
+        service: order.serviceDataId ? {
+          id: order.serviceDataId,
+          status: order.serviceDataStatus,
+          description: order.serviceDataDescription,
+          createdAt: order.serviceDataCreatedAt,
+          scheduledDate: order.serviceDataScheduledDate,
           client: {
-            fullName: order.clientData?.fullName || '',
-            phone: order.clientData?.phone || '',
-            email: order.clientData?.email,
-            address: order.clientData?.address,
-            city: order.clientData?.city,
+            fullName: order.clientDataFullName || '',
+            phone: order.clientDataPhone || '',
+            email: order.clientDataEmail,
+            address: order.clientDataAddress,
+            city: order.clientDataCity,
           },
           appliance: {
-            model: order.applianceData?.model,
-            serialNumber: order.applianceData?.serialNumber,
+            model: order.applianceDataModel,
+            serialNumber: order.applianceDataSerialNumber,
             category: {
-              name: order.categoryData?.name || ''
+              name: order.categoryDataName || ''
             },
             manufacturer: {
-              name: order.manufacturerData?.name || ''
+              name: order.manufacturerDataName || ''
             }
           }
         } : undefined,
         
         // Include technician data if it exists
-        technician: order.technicianData?.name ? {
-          name: order.technicianData.name,
-          phone: order.technicianData.phone || '',
-          email: order.technicianData.email || '',
-          specialization: order.technicianData.specialization || ''
+        technician: order.technicianDataName ? {
+          name: order.technicianDataName,
+          phone: order.technicianDataPhone || '',
+          email: order.technicianDataEmail || '',
+          specialization: order.technicianDataSpecialization || ''
         } : undefined
       }));
     } catch (error) {
