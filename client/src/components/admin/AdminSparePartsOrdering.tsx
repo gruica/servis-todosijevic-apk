@@ -192,13 +192,15 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     handleDialogClose(false);
   }, [handleDialogClose]);
 
-  const BrandSelectionDialog = () => (
-    <Dialog open={isDialogOpen && !selectedBrand} onOpenChange={(open) => {
-      if (!open) {
-        setIsDialogOpen(false);
-        setSelectedBrand(null);
-      }
-    }}>
+  const handleBrandSelectionDialogChange = useCallback((open: boolean) => {
+    if (!open) {
+      setIsDialogOpen(false);
+      setSelectedBrand(null);
+    }
+  }, []);
+
+  const BrandSelectionDialog = useCallback(() => (
+    <Dialog open={isDialogOpen && !selectedBrand} onOpenChange={handleBrandSelectionDialogChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Odaberite brend aparata</DialogTitle>
@@ -239,9 +241,9 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
         </div>
       </DialogContent>
     </Dialog>
-  );
+  ), [isDialogOpen, selectedBrand, handleBrandSelectionDialogChange, handleBekoSelection, handleComplusSelection]);
 
-  const OrderFormDialog = () => (
+  const OrderFormDialog = useCallback(() => (
     <Dialog open={isDialogOpen && !!selectedBrand} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" key={`order-form-${selectedBrand}`}>
         <DialogHeader>
@@ -394,7 +396,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
         </form>
       </DialogContent>
     </Dialog>
-  );
+  ), [isDialogOpen, selectedBrand, handleDialogClose, service, formData, handleDeviceModelChange, handleProductCodeChange, handleApplianceCategoryChange, handlePartNameChange, handleQuantityChange, handleDescriptionChange, handleWarrantyStatusChange, handleUrgencyChange, handleSubmit, handleCancelClick, orderSparePartMutation.isPending]);
 
   return (
     <>
