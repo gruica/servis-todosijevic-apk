@@ -148,7 +148,16 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     setFormData(prev => ({ ...prev, urgency: value as any }));
   }, []);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  // Stable handlers for service ID and serial number inputs
+  const handleServiceIdChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEnteredServiceId(e.target.value);
+  }, []);
+
+  const handleSerialNumberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setApplianceSerialNumber(e.target.value);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedBrand) {
@@ -170,10 +179,11 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     }
 
     const finalServiceId = enteredServiceId ? parseInt(enteredServiceId) : serviceId;
+    const finalSerialNumber = applianceSerialNumber || null;
     
     const orderData = {
       serviceId: finalServiceId || null,
-      applianceSerialNumber: applianceSerialNumber || null,
+      applianceSerialNumber: finalSerialNumber,
       brand: selectedBrand,
       deviceModel: formData.deviceModel,
       productCode: formData.productCode,
@@ -187,7 +197,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     };
 
     orderSparePartMutation.mutate(orderData);
-  }, [selectedBrand, formData, serviceId, orderSparePartMutation, toast]);
+  };
 
   const resetFormData = useCallback(() => {
     setFormData({
@@ -293,7 +303,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
               <Input
                 id="enteredServiceId"
                 value={enteredServiceId}
-                onChange={(e) => setEnteredServiceId(e.target.value)}
+                onChange={handleServiceIdChange}
                 placeholder="npr. 59"
                 type="number"
               />
@@ -304,7 +314,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
               <Input
                 id="applianceSerialNumber"
                 value={applianceSerialNumber}
-                onChange={(e) => setApplianceSerialNumber(e.target.value)}
+                onChange={handleSerialNumberChange}
                 placeholder="npr. ABC123456789"
               />
             </div>
