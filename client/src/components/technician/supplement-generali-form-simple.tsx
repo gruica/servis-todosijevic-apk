@@ -98,10 +98,17 @@ export function SupplementGeneraliFormSimple({
     }
   });
 
-  const onSubmit = async (data: SupplementGeneraliService) => {
+  const onSubmit = async (data: SupplementGeneraliService, event?: React.FormEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     setIsSubmitting(true);
     try {
       await supplementMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Form submit error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -122,8 +129,16 @@ export function SupplementGeneraliFormSimple({
 
   if (!isOpen) return null;
 
+  const handleDialogClose = () => {
+    try {
+      onClose();
+    } catch (error) {
+      console.error("Dialog close error:", error);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
       <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
           <div className="flex items-center justify-between">
@@ -135,7 +150,7 @@ export function SupplementGeneraliFormSimple({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={handleDialogClose}
               className="h-8 w-8 p-0 md:hidden"
               disabled={isSubmitting}
             >
@@ -348,7 +363,7 @@ export function SupplementGeneraliFormSimple({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={onClose}
+                  onClick={handleDialogClose}
                   disabled={isSubmitting}
                   className="w-full md:w-auto"
                 >
