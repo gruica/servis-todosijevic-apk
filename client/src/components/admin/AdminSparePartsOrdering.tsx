@@ -71,18 +71,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
         title: "Uspešno poručeno",
         description: `Rezervni deo je uspešno poručen. Email je poslat ${selectedBrand === 'beko' ? 'Beko servisu' : 'Complus servisu'}.`,
       });
-      setIsDialogOpen(false);
-      setSelectedBrand(null);
-      setFormData({
-        deviceModel: '',
-        productCode: '',
-        applianceCategory: '',
-        partName: '',
-        quantity: 1,
-        description: '',
-        warrantyStatus: 'u garanciji',
-        urgency: 'normal'
-      });
+      handleDialogClose(false);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
       
       // Call parent onSuccess callback if provided
@@ -170,6 +159,39 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
     orderSparePartMutation.mutate(orderData);
   }, [selectedBrand, formData, serviceId, orderSparePartMutation, toast]);
 
+  const resetFormData = useCallback(() => {
+    setFormData({
+      deviceModel: '',
+      productCode: '',
+      applianceCategory: '',
+      partName: '',
+      quantity: 1,
+      description: '',
+      warrantyStatus: 'u garanciji',
+      urgency: 'normal'
+    });
+  }, []);
+
+  const handleDialogClose = useCallback((open: boolean) => {
+    if (!open) {
+      setIsDialogOpen(false);
+      setSelectedBrand(null);
+      resetFormData();
+    }
+  }, [resetFormData]);
+
+  const handleBekoSelection = useCallback(() => {
+    setSelectedBrand('beko');
+  }, []);
+
+  const handleComplusSelection = useCallback(() => {
+    setSelectedBrand('complus');
+  }, []);
+
+  const handleCancelClick = useCallback(() => {
+    handleDialogClose(false);
+  }, [handleDialogClose]);
+
   const BrandSelectionDialog = () => (
     <Dialog open={isDialogOpen && !selectedBrand} onOpenChange={(open) => {
       if (!open) {
@@ -187,7 +209,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
         <div className="grid gap-4 py-4">
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setSelectedBrand('beko')}
+            onClick={handleBekoSelection}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -202,7 +224,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
 
           <Card 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setSelectedBrand('complus')}
+            onClick={handleComplusSelection}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -220,13 +242,8 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
   );
 
   const OrderFormDialog = () => (
-    <Dialog open={isDialogOpen && !!selectedBrand} onOpenChange={(open) => {
-      if (!open) {
-        setIsDialogOpen(false);
-        setSelectedBrand(null);
-      }
-    }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <Dialog open={isDialogOpen && !!selectedBrand} onOpenChange={handleDialogClose}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" key={`order-form-${selectedBrand}`}>
         <DialogHeader>
           <DialogTitle>
             Poruči {selectedBrand === 'beko' ? 'Beko' : 'Electrolux/Elica/Candy/Hoover/Turbo Air'} rezervni deo
@@ -362,10 +379,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => {
-                setIsDialogOpen(false);
-                setSelectedBrand(null);
-              }}
+              onClick={handleCancelClick}
             >
               Otkaži
             </Button>
