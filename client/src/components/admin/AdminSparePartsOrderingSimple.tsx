@@ -67,6 +67,36 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
     enabled: !!debouncedServiceNumber && !isNaN(parseInt(debouncedServiceNumber)) && parseInt(debouncedServiceNumber) > 0
   });
 
+  // Auto-populate form data when service data is loaded
+  React.useEffect(() => {
+    if (serviceData) {
+      setSerialNumber(serviceData.serialNumber || '');
+      
+      // Auto-detect brand based on manufacturer
+      if (serviceData.manufacturerName) {
+        const manufacturer = serviceData.manufacturerName.toLowerCase();
+        if (manufacturer.includes('beko')) {
+          setSelectedBrand('beko');
+        } else if (
+          manufacturer.includes('electrolux') || 
+          manufacturer.includes('elica') || 
+          manufacturer.includes('candy') || 
+          manufacturer.includes('hoover') || 
+          manufacturer.includes('turbo air')
+        ) {
+          setSelectedBrand('complus');
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        deviceModel: serviceData.model || '',
+        applianceCategory: serviceData.categoryName || '',
+        description: `Rezervni deo za servis #${serviceData.id} - ${serviceData.clientName} (${serviceData.manufacturerName} ${serviceData.model})`
+      }));
+    }
+  }, [serviceData]);
+
   const mutation = useMutation({
     mutationFn: async (orderData: any) => {
       const response = await apiRequest('POST', '/api/admin/spare-parts/order', orderData);
