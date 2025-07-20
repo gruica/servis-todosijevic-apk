@@ -61,9 +61,11 @@ export default function TechnicianServicesList() {
   });
 
   // Učitavanje servisa - admin vidi sve servise, tehnićar samo svoje
-  const { data: services } = useQuery<any[]>({
+  const { data: services, isLoading: servicesLoading, error: servicesError } = useQuery<any[]>({
     queryKey: ["/api/admin/services-by-technicians"],
   });
+
+
 
   // Proverava da li je stranica otvorena sa notifikacijom
   useEffect(() => {
@@ -319,6 +321,10 @@ export default function TechnicianServicesList() {
                     <TableRow>
                       <TableHead>ID</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Klijent</TableHead>
+                      <TableHead>Telefon</TableHead>
+                      <TableHead>Grad</TableHead>
+                      <TableHead>Uređaj</TableHead>
                       <TableHead>Datum</TableHead>
                       <TableHead>Serviser</TableHead>
                       <TableHead>Opis</TableHead>
@@ -328,7 +334,7 @@ export default function TechnicianServicesList() {
                   <TableBody>
                     {!filteredServices || filteredServices.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                           Nema pronađenih servisa
                         </TableCell>
                       </TableRow>
@@ -344,6 +350,18 @@ export default function TechnicianServicesList() {
                           <TableCell className="font-medium">#{service.id}</TableCell>
                           <TableCell>
                             <StatusBadge status={service.status} />
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {service.client?.fullName || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {service.client?.phone || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {service.client?.city || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {service.appliance?.category?.name || "N/A"} - {service.appliance?.manufacturer?.name || ""}
                           </TableCell>
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell>{getTechnicianName(service.technicianId)}</TableCell>
@@ -405,10 +423,22 @@ export default function TechnicianServicesList() {
               <div>
                 <h3 className="font-semibold text-sm text-gray-600 mb-2">Informacije o klijentu</h3>
                 <div className="bg-blue-50 p-3 rounded space-y-2">
-                  <p className="text-sm"><strong>Ime:</strong> {selectedService.clientName || "N/A"}</p>
-                  <p className="text-sm"><strong>Telefon:</strong> {selectedService.clientPhone || "N/A"}</p>
-                  <p className="text-sm"><strong>Email:</strong> {selectedService.clientEmail || "N/A"}</p>
-                  <p className="text-sm"><strong>Adresa:</strong> {selectedService.clientAddress || "N/A"}</p>
+                  <p className="text-sm"><strong>Ime:</strong> {selectedService.client?.fullName || "N/A"}</p>
+                  <p className="text-sm"><strong>Telefon:</strong> {selectedService.client?.phone || "N/A"}</p>
+                  <p className="text-sm"><strong>Email:</strong> {selectedService.client?.email || "N/A"}</p>
+                  <p className="text-sm"><strong>Adresa:</strong> {selectedService.client?.address || "N/A"}</p>
+                  <p className="text-sm"><strong>Grad:</strong> {selectedService.client?.city || "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Informacije o uređaju */}
+              <div>
+                <h3 className="font-semibold text-sm text-gray-600 mb-2">Informacije o uređaju</h3>
+                <div className="bg-purple-50 p-3 rounded space-y-2">
+                  <p className="text-sm"><strong>Kategorija:</strong> {selectedService.appliance?.category?.name || "N/A"}</p>
+                  <p className="text-sm"><strong>Proizvođač:</strong> {selectedService.appliance?.manufacturer?.name || "N/A"}</p>
+                  <p className="text-sm"><strong>Model:</strong> {selectedService.appliance?.model || "N/A"}</p>
+                  <p className="text-sm"><strong>Serijski broj:</strong> {selectedService.appliance?.serialNumber || "N/A"}</p>
                 </div>
               </div>
 
@@ -417,6 +447,13 @@ export default function TechnicianServicesList() {
                 <h3 className="font-semibold text-sm text-gray-600 mb-2">Dodeljeni serviser</h3>
                 <div className="bg-green-50 p-3 rounded">
                   <p className="text-sm"><strong>Serviser:</strong> {getTechnicianName(selectedService.technicianId)}</p>
+                  {selectedService.technician && (
+                    <>
+                      <p className="text-sm"><strong>Telefon:</strong> {selectedService.technician.phone || "N/A"}</p>
+                      <p className="text-sm"><strong>Email:</strong> {selectedService.technician.email || "N/A"}</p>
+                      <p className="text-sm"><strong>Specijalizacija:</strong> {selectedService.technician.specialization || "N/A"}</p>
+                    </>
+                  )}
                 </div>
               </div>
 
