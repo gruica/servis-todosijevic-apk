@@ -1095,18 +1095,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", async (req, res) => {
+  app.post("/api/services", jwtAuth, async (req, res) => {
     try {
       console.log("=== KREIRANJE NOVOG SERVISA ===");
       console.log("Podaci iz frontend forme:", req.body);
-      
-      // Provera autentifikacije
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ 
-          error: "Neautentifikovani korisnik", 
-          message: "Morate biti ulogovani da biste kreirali servis."
-        });
-      }
       
       // Provera dozvola (samo admin ili technician mogu kreirati servise)
       if (!["admin", "technician"].includes(req.user?.role || "")) {
@@ -1457,7 +1449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/services/:id", async (req, res) => {
+  app.put("/api/services/:id", jwtAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -1656,11 +1648,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update service status (for technicians)
-  app.put("/api/services/:id/status", async (req, res) => {
+  app.put("/api/services/:id/status", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Potrebna je prijava" });
-      }
       
       const serviceId = parseInt(req.params.id);
       const { 
@@ -3777,10 +3766,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Missing endpoints for assign technician and update status
-  app.put("/api/services/:id/assign-technician", async (req, res) => {
+  app.put("/api/services/:id/assign-technician", jwtAuth, async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za dodeljivanje servisera" });
       }
       
@@ -3846,10 +3835,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/services/:id/update-status", async (req, res) => {
+  app.put("/api/services/:id/update-status", jwtAuth, async (req, res) => {
     try {
       // Proveri da li je korisnik admin ili serviser
-      if (!req.isAuthenticated() || !["admin", "technician"].includes(req.user?.role || "")) {
+      if (!["admin", "technician"].includes(req.user?.role || "")) {
         return res.status(403).json({ error: "Nemate dozvolu za ažuriranje statusa" });
       }
       
