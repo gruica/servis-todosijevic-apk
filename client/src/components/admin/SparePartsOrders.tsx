@@ -289,50 +289,129 @@ export default function SparePartsOrders() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-semibold">#{order.id} - {order.partName}</h3>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="font-semibold text-lg">
+                            Porudžbina #{order.id} - {order.partName}
+                          </h3>
                           {getStatusBadge(order.status)}
                           {getUrgencyBadge(order.urgency)}
                           <Badge variant="outline" className="flex items-center gap-1">
                             {order.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'} 
                             {order.warrantyStatus}
                           </Badge>
+                          {order.service && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                              <Wrench className="h-3 w-3" />
+                              Servis #{order.service.id}
+                            </Badge>
+                          )}
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="font-medium text-muted-foreground">Osnovni podaci</p>
-                            <p>Količina: {order.quantity}</p>
-                            {order.partNumber && <p>Kataloški br: {order.partNumber}</p>}
-                            {order.supplierName && <p>Dobavljač: {order.supplierName}</p>}
-                            <p>Kreiran: {formatDate(order.createdAt)}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm mt-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Package className="h-4 w-4 text-primary" />
+                              <p className="font-medium text-foreground">Osnovni podaci</p>
+                            </div>
+                            <div className="space-y-1 ml-6">
+                              <p>Količina: <span className="font-medium">{order.quantity}</span></p>
+                              {order.partNumber && <p>Kataloški br: <span className="font-medium">{order.partNumber}</span></p>}
+                              {order.supplierName && <p>Dobavljač: <span className="font-medium">{order.supplierName}</span></p>}
+                              <p>Kreiran: <span className="font-medium">{formatDate(order.createdAt)}</span></p>
+                              {order.estimatedCost && <p>Procenjena cena: <span className="font-medium">{order.estimatedCost}€</span></p>}
+                              {order.actualCost && <p>Stvarna cena: <span className="font-medium text-green-600">{order.actualCost}€</span></p>}
+                            </div>
                           </div>
                           
-                          {order.service && (
-                            <div>
-                              <p className="font-medium text-muted-foreground">Servis #{order.service.id}</p>
-                              <p>Klijent: {order.service.client.fullName}</p>
-                              <p>Telefon: {order.service.client.phone}</p>
-                              <p>Grad: {order.service.client.city || 'N/A'}</p>
-                              <p>Uređaj: {order.service.appliance.manufacturer.name} {order.service.appliance.model}</p>
+                          {order.service ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <User className="h-4 w-4 text-blue-600" />
+                                <p className="font-medium text-foreground">
+                                  Servis #{order.service.id} - Klijent
+                                </p>
+                              </div>
+                              <div className="space-y-1 ml-6">
+                                <p>Ime: <span className="font-medium">{order.service.client.fullName}</span></p>
+                                <div className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium text-blue-600">{order.service.client.phone}</span>
+                                </div>
+                                {order.service.client.email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-sm">{order.service.client.email}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                                  <span>{order.service.client.city || 'N/A'}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {order.service.client.address}
+                                </p>
+                                <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                                  <p className="text-xs font-medium text-muted-foreground">Uređaj:</p>
+                                  <p className="text-sm">
+                                    {order.service.appliance.manufacturer.name} {order.service.appliance.model}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {order.service.appliance.category.name}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Building className="h-4 w-4 text-orange-600" />
+                                <p className="font-medium text-foreground">Admin porudžbina</p>
+                              </div>
+                              <div className="space-y-1 ml-6">
+                                <p className="text-sm text-muted-foreground">
+                                  Porudžbina kreirana direktno od strane administratora
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  Bez vezanog servisa
+                                </Badge>
+                              </div>
                             </div>
                           )}
                           
-                          {order.technician && (
-                            <div>
-                              <p className="font-medium text-muted-foreground">Serviser</p>
-                              <p>Ime: {order.technician.name}</p>
-                              <p>Telefon: {order.technician.phone}</p>
-                              <p>Email: {order.technician.email}</p>
-                              <p>Spec: {order.technician.specialization}</p>
+                          {order.technician ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Settings className="h-4 w-4 text-green-600" />
+                                <p className="font-medium text-foreground">Serviser</p>
+                              </div>
+                              <div className="space-y-1 ml-6">
+                                <p>Ime: <span className="font-medium">{order.technician.name}</span></p>
+                                <div className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium text-green-600">{order.technician.phone}</span>
+                                </div>
+                                {order.technician.email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-sm">{order.technician.email}</span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  {order.technician.specialization}
+                                </p>
+                              </div>
                             </div>
-                          )}
-                          
-                          {!order.service && !order.technician && (
-                            <div>
-                              <p className="font-medium text-muted-foreground">Admin porudžbina</p>
-                              <p>Kreirana direktno kroz admin panel</p>
-                              {order.description && <p>Opis: {order.description}</p>}
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Settings className="h-4 w-4 text-gray-400" />
+                                <p className="font-medium text-muted-foreground">Serviser</p>
+                              </div>
+                              <div className="space-y-1 ml-6">
+                                <p className="text-sm text-muted-foreground">
+                                  Nije dodeljen serviser
+                                </p>
+                              </div>
                             </div>
                           )}
                         </div>
