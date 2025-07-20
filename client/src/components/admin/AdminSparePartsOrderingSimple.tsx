@@ -88,14 +88,36 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
         }
       }
       
+      // Generate comprehensive description with all service details
+      const autoDescription = [
+        `Rezervni deo za servis #${serviceData.id}`,
+        `Klijent: ${serviceData.clientName}`,
+        `Telefon: ${serviceData.clientPhone}`,
+        `Uređaj: ${serviceData.categoryName} - ${serviceData.manufacturerName} ${serviceData.model}`,
+        serviceData.serialNumber ? `Serijski broj: ${serviceData.serialNumber}` : '',
+        serviceData.technicianName ? `Serviser: ${serviceData.technicianName}` : '',
+        serviceData.description ? `Problem: ${serviceData.description}` : ''
+      ].filter(Boolean).join(' | ');
+      
       setFormData(prev => ({
         ...prev,
         deviceModel: serviceData.model || '',
         applianceCategory: serviceData.categoryName || '',
-        description: `Rezervni deo za servis #${serviceData.id} - ${serviceData.clientName} (${serviceData.manufacturerName} ${serviceData.model})`
+        description: autoDescription,
+        // Auto-populate other fields based on service context
+        productCode: '', // Will be filled manually by admin
+        partName: '', // Will be filled manually by admin  
+        quantity: 1,
+        warrantyStatus: 'u garanciji', // Default to warranty
+        urgency: 'normal' // Default urgency
       }));
+      
+      toast({
+        title: "Podaci automatski učitani",
+        description: `Učitani podaci za servis #${serviceData.id} - ${serviceData.clientName}`,
+      });
     }
-  }, [serviceData]);
+  }, [serviceData, toast]);
 
   const mutation = useMutation({
     mutationFn: async (orderData: any) => {
