@@ -42,7 +42,7 @@ import {
   Building
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
-import { AdminSparePartsOrdering } from "@/components/admin/AdminSparePartsOrdering";
+import AdminSparePartsOrderingSimple from "@/components/admin/AdminSparePartsOrderingSimple";
 
 interface AdminService {
   id: number;
@@ -392,7 +392,7 @@ export default function AdminServices() {
             </p>
           </div>
           <div className="flex gap-3">
-            <AdminSparePartsOrdering />
+            <AdminSparePartsOrderingSimple />
             <Button 
               onClick={() => window.location.href = '/admin/create-service'} 
               className="bg-primary hover:bg-primary/90"
