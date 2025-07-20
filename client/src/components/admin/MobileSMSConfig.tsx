@@ -287,11 +287,21 @@ export function MobileSMSConfig() {
               </p>
               <p className="text-sm font-weight-bold text-yellow-800 mb-1">Rešenja:</p>
               <ol className="text-sm text-yellow-700 list-decimal list-inside space-y-1">
-                <li>Koristite javnu IP adresu umesto lokalne (proverite routeralternitiva)</li>
-                <li>Omogućite port forwarding na router-u za port 8080</li>
-                <li>Koristite ngrok ili slični tunel servis</li>
-                <li>Alternativno: vratimo se na Twilio SMS provider</li>
+                <li><strong>ngrok tunnel (preporučeno):</strong> Instalirajte ngrok na telefon ili računar</li>
+                <li><strong>Port forwarding:</strong> Konfigurirajte router za prosleđivanje porta 8080</li>
+                <li><strong>Javna IP:</strong> Koristite javnu IP adresu umesto lokalne (192.168.x.x)</li>
+                <li><strong>VPN/Hamachi:</strong> Uspostavite VPN konekciju između servera i telefona</li>
               </ol>
+              
+              <div className="mt-3 p-2 bg-white rounded border-l-4 border-green-500">
+                <p className="text-sm font-medium text-green-800 mb-1">📱 Najbrže rešenje - ngrok:</p>
+                <ol className="text-xs text-green-700 list-decimal list-inside space-y-1">
+                  <li>Skidajte ngrok aplikaciju na telefon</li>
+                  <li>Pokrenite: <code className="bg-gray-100 px-1">ngrok http 8080</code></li>
+                  <li>Kopirajte https URL (npr. https://abc123.ngrok.io)</li>
+                  <li>Unesite u Base URL: <code className="bg-gray-100 px-1">https://abc123.ngrok.io/api/v1</code></li>
+                </ol>
+              </div>
             </div>
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -300,14 +310,24 @@ export function MobileSMSConfig() {
                 Možemo se vratiti na pouzdani Twilio SMS servis koji garantovano funkcioniše
                 sa cloud server-ima. Treba vam samo Twilio Account SID i Auth Token.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.location.href = '/admin/sms-test'}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Pređi na Twilio SMS konfiguraciju
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://www.whatismyipaddress.com/', '_blank')}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  Proverite javnu IP adresu
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.href = '/admin/sms-test'}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Twilio alternativa
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
