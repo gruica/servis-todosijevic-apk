@@ -143,6 +143,16 @@ export default function AdminServices() {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  // Debug console logs
+  useEffect(() => {
+    console.log("Admin Services Debug:", {
+      servicesCount: services.length,
+      isLoading: loadingServices,
+      error: error?.message,
+      hasError: !!error
+    });
+  }, [services, loadingServices, error]);
+
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {

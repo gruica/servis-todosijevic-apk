@@ -38,7 +38,6 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/clients", label: "Klijenti", icon: "person" },
     { path: "/admin/services", label: "Servisi", icon: "build" },
     { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: "package", highlight: true },
-    { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
     { path: "/appliances", label: "Bijela tehnika", icon: "home_repair_service" },
     { path: "/users", label: "Upravljaj korisnicima", icon: "group" },
