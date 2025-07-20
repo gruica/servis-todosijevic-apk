@@ -73,9 +73,7 @@ export class MobileSMSService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Frigo-Sistem-SMS-Client/1.0'
-        },
-        timeout: 10000
+          'User-Agent': 'Frigo-Sistem-SMS-Client/1.0',
           ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` })
         }
       });
