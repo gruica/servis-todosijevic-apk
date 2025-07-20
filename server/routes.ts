@@ -2898,7 +2898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SQL Admin panel endpoint
+  // SQL Admin panel endpoint (DEPRECATED - Use Drizzle queries instead)
   app.post("/api/admin/execute-sql", async (req, res) => {
     try {
       // Provera da li je korisnik admin
@@ -2906,37 +2906,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Samo administrator ima pristup SQL upravljaču" });
       }
       
-      const { query } = req.body;
-      
-      if (!query || typeof query !== "string") {
-        return res.status(400).json({ error: "SQL upit je obavezan" });
-      }
-      
-      // Zaštita od destruktivnih upita koji mogu oštetiti bazu
-      const lowerQuery = query.toLowerCase();
-      const isDestructive = 
-        lowerQuery.includes("drop table") || 
-        lowerQuery.includes("drop database") ||
-        lowerQuery.includes("truncate table");
-      
-      if (isDestructive) {
-        return res.status(400).json({
-          error: "Destruktivni upiti nisu dozvoljeni (DROP TABLE, DROP DATABASE, TRUNCATE)",
-          query
-        });
-      }
-      
-      // Izvršavanje SQL upita
-      const result = await pool.query(query);
-      
-      res.json({
-        success: true,
-        rowCount: result.rowCount,
-        rows: result.rows,
-        fields: result.fields?.map(f => ({
-          name: f.name,
-          dataTypeID: f.dataTypeID
-        }))
+      // SECURITY: This endpoint is deprecated due to SQL injection risk
+      // Raw SQL queries should not be executed directly from user input
+      return res.status(400).json({
+        success: false,
+        error: "SQL executor je onemogućen iz bezbednosnih razloga. Koristite Drizzle ORM upite umesto raw SQL-a.",
+        deprecatedReason: "Raw SQL queries with user input pose SQL injection risk"
       });
     } catch (err) {
       const error = err as Error;
@@ -5082,36 +5057,49 @@ Admin panel - automatska porudžbina
       
       console.log(`[EXPORT] Obrađuje se: table=${table}, format=${format}`);
       
-      // Dozvoljena imena tabela za izvoz
-      const allowedTables = [
-        'clients', 'services', 'appliances', 'technicians', 'users',
-        'appliance_categories', 'manufacturers', 'notifications',
-        'maintenance_schedules', 'maintenance_alerts', 'spare_part_orders'
-      ];
+      // Mapiranje naziva tabela u Drizzle table definicije
+      const tableMap: Record<string, any> = {
+        'clients': schema.clients,
+        'services': schema.services,
+        'appliances': schema.appliances,
+        'technicians': schema.technicians,
+        'users': schema.users,
+        'appliance_categories': schema.applianceCategories,
+        'manufacturers': schema.manufacturers,
+        'notifications': schema.notifications,
+        'maintenance_schedules': schema.maintenanceSchedules,
+        'maintenance_alerts': schema.maintenanceAlerts,
+        'spare_part_orders': schema.sparePartOrders
+      };
       
-      if (!allowedTables.includes(table)) {
+      const drizzleTable = tableMap[table];
+      if (!drizzleTable) {
         return res.status(400).json({ error: "Nepoznata tabela za izvoz" });
       }
       
-      // Dobijanje podataka iz tabele
-      let result;
+      // Dobijanje podataka iz tabele pomoću Drizzle ORM
+      let rows;
       try {
         // Pokušaj sa sortiranjem po id
-        result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+        rows = await db.select().from(drizzleTable).orderBy(drizzleTable.id);
       } catch (error) {
         // Ako nema id kolonu, sortiranje bez ORDER BY
         console.log(`Tabela ${table} nema id kolonu, sortiranje bez ORDER BY`);
-        result = await pool.query(`SELECT * FROM ${table}`);
+        rows = await db.select().from(drizzleTable);
       }
-      
-      const rows = result.rows;
       
       if (format === 'csv') {
         // CSV format
         if (rows.length === 0) {
           // Vratiti prazan CSV sa samo headerom
-          const emptyResult = await pool.query(`SELECT * FROM ${table} LIMIT 0`);
-          const headers = emptyResult.fields?.map(f => f.name) || [];
+          let headers: string[] = [];
+          try {
+            const emptyRows = await db.select().from(drizzleTable).limit(0);
+            headers = Object.keys(emptyRows[0] || {});
+          } catch {
+            // Fallback: koristi kolone iz schema objekta
+            headers = Object.keys(drizzleTable).filter(key => key !== 'getSQL');
+          }
           
           if (headers.length === 0) {
             return res.status(400).json({ error: "Tabela nema definisane kolone" });
@@ -5188,14 +5176,34 @@ Admin panel - automatska porudžbina
         { name: 'spare_part_orders', displayName: 'Narudžbe rezervnih djelova', description: 'Narudžbe dijelova' }
       ];
       
-      // Dodaj broj zapisa za svaku tabelu
+      // Mapiranje naziva tabela u Drizzle table definicije
+      const tableMap: Record<string, any> = {
+        'clients': schema.clients,
+        'services': schema.services,
+        'appliances': schema.appliances,
+        'technicians': schema.technicians,
+        'users': schema.users,
+        'appliance_categories': schema.applianceCategories,
+        'manufacturers': schema.manufacturers,
+        'notifications': schema.notifications,
+        'maintenance_schedules': schema.maintenanceSchedules,
+        'maintenance_alerts': schema.maintenanceAlerts,
+        'spare_part_orders': schema.sparePartOrders
+      };
+
+      // Dodaj broj zapisa za svaku tabelu koristeći Drizzle ORM
       const tablesWithCounts = await Promise.all(
         tables.map(async (table) => {
           try {
-            const result = await pool.query(`SELECT COUNT(*) as count FROM ${table.name}`);
+            const drizzleTable = tableMap[table.name];
+            if (!drizzleTable) {
+              return { ...table, recordCount: 0 };
+            }
+            
+            const result = await db.select({ count: sql`count(*)` }).from(drizzleTable);
             return {
               ...table,
-              recordCount: parseInt(result.rows[0].count)
+              recordCount: parseInt(result[0].count as string)
             };
           } catch (error) {
             return {
