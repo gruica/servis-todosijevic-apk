@@ -6,6 +6,8 @@ import { setupAuth, comparePassword } from "./auth";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { smsService } from "./sms-service";
+import gsmModemService from "./gsm-modem-service";
+import hybridSMSService from "./hybrid-sms-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum } from "@shared/schema";
 import { db, pool } from "./db";
@@ -5349,6 +5351,204 @@ Admin panel - automatska porudžbina
       });
     }
   });
+
+  // ===== GSM MODEM API ROUTES =====
+  
+  // GSM Modem Configuration Schema
+  const gsmModemConfigSchema = z.object({
+    portPath: z.string().min(1),
+    baudRate: z.number().int().positive(),
+    pin: z.string().optional(),
+    maxRetries: z.number().int().positive(),
+    timeout: z.number().int().positive()
+  });
+
+  // Hybrid SMS Configuration Schema
+  const hybridSMSConfigSchema = z.object({
+    primaryProvider: z.enum(['gsm', 'twilio']),
+    enableFallback: z.boolean(),
+    fallbackDelay: z.number().int().positive(),
+    maxRetries: z.number().int().positive()
+  });
+
+  // Get GSM Modem Status
+  app.get("/api/admin/gsm/status", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[GSM API] Admin getting GSM modem status');
+      const status = await gsmModemService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('[GSM API] Error getting GSM status:', error);
+      res.status(500).json({ 
+        error: "Greška pri dobijanju GSM statusa",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Configure GSM Modem
+  app.post("/api/admin/gsm/config", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[GSM API] Admin configuring GSM modem');
+      const config = gsmModemConfigSchema.parse(req.body);
+      
+      // Save to database
+      await storage.updateSystemSetting('gsm_modem_port', config.portPath);
+      await storage.updateSystemSetting('gsm_modem_baud', config.baudRate.toString());
+      if (config.pin) {
+        await storage.updateSystemSetting('gsm_modem_pin', config.pin);
+      }
+      await storage.updateSystemSetting('gsm_modem_retries', config.maxRetries.toString());
+      await storage.updateSystemSetting('gsm_modem_timeout', config.timeout.toString());
+      
+      // Apply configuration
+      const success = await gsmModemService.configure(config);
+      
+      if (success) {
+        // Try to connect
+        await gsmModemService.connect();
+        res.json({ success: true, message: "GSM modem uspešno konfigurisan" });
+      } else {
+        res.status(500).json({ error: "Neuspešna konfiguracija GSM modema" });
+      }
+    } catch (error) {
+      console.error('[GSM API] Error configuring GSM:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci", details: error.format() });
+      }
+      res.status(500).json({ 
+        error: "Greška pri konfiguraciji GSM modema",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Test GSM Modem Connection
+  app.post("/api/admin/gsm/test", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[GSM API] Admin testing GSM modem connection');
+      
+      // Initialize and test connection
+      await gsmModemService.initialize();
+      const status = await gsmModemService.getStatus();
+      
+      if (status.isConnected) {
+        res.json({ 
+          success: true, 
+          message: "GSM modem test uspešan",
+          status 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "GSM modem nije povezan",
+          status 
+        });
+      }
+    } catch (error) {
+      console.error('[GSM API] Error testing GSM:', error);
+      res.status(500).json({ 
+        success: false,
+        error: "Greška pri testiranju GSM modema",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Get Hybrid SMS Status
+  app.get("/api/admin/sms/hybrid/status", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[HYBRID SMS API] Admin getting hybrid SMS status');
+      const status = await hybridSMSService.getStatus();
+      const statistics = hybridSMSService.getStatistics();
+      res.json({ ...status, statistics });
+    } catch (error) {
+      console.error('[HYBRID SMS API] Error getting hybrid SMS status:', error);
+      res.status(500).json({ 
+        error: "Greška pri dobijanju hibridnog SMS statusa",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Configure Hybrid SMS System
+  app.post("/api/admin/sms/hybrid/config", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[HYBRID SMS API] Admin configuring hybrid SMS system');
+      const config = hybridSMSConfigSchema.parse(req.body);
+      
+      const success = await hybridSMSService.configure(config);
+      
+      if (success) {
+        res.json({ success: true, message: "Hibridni SMS sistem uspešno konfigurisan" });
+      } else {
+        res.status(500).json({ error: "Neuspešna konfiguracija hibridnog SMS sistema" });
+      }
+    } catch (error) {
+      console.error('[HYBRID SMS API] Error configuring hybrid SMS:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Nevažeći podaci", details: error.format() });
+      }
+      res.status(500).json({ 
+        error: "Greška pri konfiguraciji hibridnog SMS sistema",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Test SMS Sending (Hybrid)
+  app.post("/api/admin/sms/test", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[HYBRID SMS API] Admin testing SMS sending');
+      
+      const { phoneNumber, message } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ error: "Potreban je broj telefona i poruka" });
+      }
+      
+      // Initialize hybrid SMS service
+      await hybridSMSService.initialize();
+      
+      // Send test SMS
+      const result = await hybridSMSService.sendSMS(phoneNumber, message);
+      
+      if (result.success) {
+        const statistics = hybridSMSService.getStatistics();
+        res.json({ 
+          success: true, 
+          message: "Test SMS uspešno poslat",
+          provider: statistics.lastProvider,
+          messageId: result.messageId,
+          statistics
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: result.error || "Neuspešno slanje test SMS-a"
+        });
+      }
+    } catch (error) {
+      console.error('[HYBRID SMS API] Error testing SMS:', error);
+      res.status(500).json({ 
+        success: false,
+        error: "Greška pri testiranju SMS slanja",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Initialize GSM and Hybrid SMS services on startup
+  (async () => {
+    try {
+      console.log('[STARTUP] Inicijalizovanje GSM i hibridnog SMS sistema...');
+      await gsmModemService.initialize();
+      await hybridSMSService.initialize();
+      console.log('[STARTUP] GSM i hibridni SMS sistem uspešno inicijalizovani');
+    } catch (error) {
+      console.error('[STARTUP] Greška pri inicijalizaciji GSM sistema:', error);
+    }
+  })();
 
   const httpServer = createServer(app);
   return httpServer;

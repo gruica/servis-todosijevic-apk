@@ -15,11 +15,12 @@ import {
   SparePartOrder, InsertSparePartOrder,
   SparePartUrgency, SparePartStatus,
   Notification, InsertNotification,
+  SystemSetting, InsertSystemSetting,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
-  notifications
+  notifications, systemSettings
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -155,6 +156,25 @@ export interface IStorage {
   createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
   updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
   deleteSparePartOrder(id: number): Promise<boolean>;
+  
+  // Notification methods
+  getAllNotifications(userId?: number): Promise<Notification[]>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  getUnreadNotifications(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  updateNotification(id: number, notification: Partial<Notification>): Promise<Notification | undefined>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
+  deleteNotification(id: number): Promise<boolean>;
+  
+  // System Settings methods
+  getSystemSettings(): Promise<SystemSetting[]>;
+  getSystemSetting(key: string): Promise<SystemSetting | undefined>;
+  getSystemSettingsByCategory(category: string): Promise<SystemSetting[]>;
+  createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined>;
+  deleteSystemSetting(key: string): Promise<boolean>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -3137,6 +3157,82 @@ export class DatabaseStorage implements IStorage {
       return result.length > 0;
     } catch (error) {
       console.error('Greška pri brisanju porudžbine rezervnog dela:', error);
+      return false;
+    }
+  }
+
+  // System Settings methods
+  async getSystemSettings(): Promise<SystemSetting[]> {
+    try {
+      return await db.select().from(systemSettings);
+    } catch (error) {
+      console.error('Greška pri dohvatanju sistemskih postavki:', error);
+      return [];
+    }
+  }
+
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    try {
+      const [setting] = await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.key, key))
+        .limit(1);
+      return setting;
+    } catch (error) {
+      console.error('Greška pri dohvatanju sistemske postavke:', error);
+      return undefined;
+    }
+  }
+
+  async getSystemSettingsByCategory(category: string): Promise<SystemSetting[]> {
+    try {
+      return await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.category, category));
+    } catch (error) {
+      console.error('Greška pri dohvatanju sistemskih postavki po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
+    try {
+      const [newSetting] = await db
+        .insert(systemSettings)
+        .values(setting)
+        .returning();
+      return newSetting;
+    } catch (error) {
+      console.error('Greška pri kreiranju sistemske postavke:', error);
+      throw error;
+    }
+  }
+
+  async updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined> {
+    try {
+      const [updatedSetting] = await db
+        .update(systemSettings)
+        .set(setting)
+        .where(eq(systemSettings.key, key))
+        .returning();
+      return updatedSetting;
+    } catch (error) {
+      console.error('Greška pri ažuriranju sistemske postavke:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSystemSetting(key: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(systemSettings)
+        .where(eq(systemSettings.key, key))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Greška pri brisanju sistemske postavke:', error);
       return false;
     }
   }

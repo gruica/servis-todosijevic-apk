@@ -733,3 +733,35 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// System Settings tabela - za SMS, email i ostale sistemske postavke
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // Jedinstveni ključ postavke
+  value: text("value"), // Vrednost postavke
+  description: text("description"), // Opis postavke
+  category: text("category").default("general").notNull(), // Kategorija postavke (sms, email, general)
+  isEncrypted: boolean("is_encrypted").default(false).notNull(), // Da li je vrednost šifrovana
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id), // Admin koji je menjao postavku
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).pick({
+  key: true,
+  value: true,
+  description: true,
+  category: true,
+  isEncrypted: true,
+  updatedBy: true,
+});
+
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;
+
+// Relacije za system settings
+export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
+  updatedByUser: one(users, {
+    fields: [systemSettings.updatedBy],
+    references: [users.id],
+  }),
+}));
