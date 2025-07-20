@@ -53,6 +53,7 @@ import NewBusinessClient from "@/pages/business/clients/new";
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
 import DiagnosticsPage from "@/pages/diagnostics";
+import OCRTestPage from "@/pages/ocr-test";
 import DiagnosticServicesPage from "@/pages/diagnostic-services";
 import SystemDiagnostics from "@/pages/system-diagnostics";
 import EmailVerificationDemo from "@/pages/email-verification-demo";
@@ -106,6 +107,9 @@ function Router() {
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
+      
+      {/* OCR Test route - accessible to admin and technician */}
+      <RoleProtectedRoute path="/ocr-test" component={OCRTestPage} allowedRoles={["admin", "technician"]} />
       
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServices} allowedRoles={["technician"]} />

@@ -11,8 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
 import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan } from "lucide-react";
-import { OCRCamera } from "@/components/ocr-camera";
-import { ScannedData } from "@/services/ocr-service";
+import { EnhancedOCRCamera } from "@/components/enhanced-ocr-camera";
+import { ScannedData } from "@/services/enhanced-ocr-service";
 
 interface SupplementGeneraliFormProps {
   serviceId: number;
@@ -23,6 +23,7 @@ interface SupplementGeneraliFormProps {
   currentSerialNumber?: string | null;
   currentModel?: string | null;
   currentPurchaseDate?: string | null;
+  manufacturerName?: string | null;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -37,6 +38,7 @@ export function SupplementGeneraliForm({
   currentSerialNumber,
   currentModel,
   currentPurchaseDate,
+  manufacturerName,
   isOpen,
   onClose,
   onSuccess
@@ -241,26 +243,52 @@ export function SupplementGeneraliForm({
   };
 
   const handleScannedData = (scannedData: ScannedData) => {
-    console.log("📷 Skenirani podaci:", scannedData);
+    console.log("📷 Napredni skaner - pronađeni podaci:", scannedData);
     
     // Automatski popuni polja sa skeniranim podacima
-    if (scannedData.model) {
+    if (scannedData.model && scannedData.model.length >= 3) {
       form.setValue("model", scannedData.model);
     }
-    if (scannedData.serialNumber) {
+    if (scannedData.serialNumber && scannedData.serialNumber.length >= 6) {
       form.setValue("serialNumber", scannedData.serialNumber);
     }
     
-    // Prikaži toast sa informacijom
+    // Dodaj dodatne informacije u napomene ako postoje
+    let additionalInfo = [];
+    if (scannedData.productNumber) {
+      additionalInfo.push(`Product broj: ${scannedData.productNumber}`);
+    }
+    if (scannedData.manufacturerCode && scannedData.manufacturerCode !== 'generic') {
+      additionalInfo.push(`Detektovan proizvođač: ${scannedData.manufacturerCode}`);
+    }
+    if (scannedData.year) {
+      additionalInfo.push(`Godina: ${scannedData.year}`);
+    }
+    
+    if (additionalInfo.length > 0) {
+      const currentNotes = form.getValues("supplementNotes") || "";
+      const newNotes = currentNotes + (currentNotes ? "\n" : "") + 
+        `Skenirani podaci: ${additionalInfo.join(", ")}`;
+      form.setValue("supplementNotes", newNotes);
+    }
+    
+    // Prikaži detaljnu informaciju
     const scannedFields = [];
     if (scannedData.model) scannedFields.push("model");
     if (scannedData.serialNumber) scannedFields.push("serijski broj");
     if (scannedData.productNumber) scannedFields.push("product broj");
+    if (scannedData.manufacturerCode && scannedData.manufacturerCode !== 'generic') scannedFields.push("proizvođač");
     
     if (scannedFields.length > 0) {
       toast({
-        title: "Podaci skenirani uspešno",
-        description: `Pronađeni su podaci: ${scannedFields.join(", ")}. Proverite i potvrdite podatke.`,
+        title: `Napredni skaner - ${scannedFields.length} podataka pronađeno`,
+        description: `Uspešno detektovani: ${scannedFields.join(", ")}. Pouzdanost: ${Math.round(scannedData.confidence)}%`,
+      });
+    } else {
+      toast({
+        title: "Skeniranje završeno",
+        description: "Nisu pronađeni jasni podaci. Pokušajte sa boljim osvetljenjem ili pozicioniranjem.",
+        variant: "destructive"
       });
     }
     
@@ -401,11 +429,11 @@ export function SupplementGeneraliForm({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsCameraOpen(true)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
                 >
                   <Camera className="h-4 w-4" />
                   <Scan className="h-4 w-4" />
-                  Skeniraj generalije
+                  Napredni skener
                 </Button>
               </div>
               
@@ -539,11 +567,18 @@ export function SupplementGeneraliForm({
           </form>
         </Form>
         
-        {/* OCR Kamera komponenta */}
-        <OCRCamera
+        {/* Napredna OCR Kamera komponenta */}
+        <EnhancedOCRCamera
           isOpen={isCameraOpen}
           onClose={() => setIsCameraOpen(false)}
           onDataScanned={handleScannedData}
+          manufacturerHint={manufacturerName ? 
+            manufacturerName.toLowerCase().includes('beko') ? 'beko' :
+            manufacturerName.toLowerCase().includes('electrolux') ? 'electrolux' :
+            manufacturerName.toLowerCase().includes('samsung') ? 'samsung' :
+            manufacturerName.toLowerCase().includes('lg') ? 'lg' :
+            'generic' : 'generic'
+          }
         />
       </DialogContent>
     </Dialog>
