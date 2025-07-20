@@ -3578,6 +3578,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // =====================================
+  // ADMIN SERVICES API ENDPOINTS
+  // =====================================
+
+  // Get single service with full details for admin
+  app.get("/api/admin/services/:id", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Nevažeći ID servisa" });
+      }
+
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      // Get related data
+      const client = service.clientId ? await storage.getClient(service.clientId) : null;
+      const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+      const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+      const category = appliance?.categoryId ? await storage.getApplianceCategory(appliance.categoryId) : null;
+      const manufacturer = appliance?.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
+
+      // Return formatted response for admin panel
+      const response = {
+        id: service.id,
+        status: service.status,
+        description: service.description,
+        createdAt: service.createdAt,
+        scheduledDate: service.scheduledDate,
+        clientName: client?.fullName || '',
+        clientPhone: client?.phone || '',
+        clientEmail: client?.email || '',
+        clientAddress: client?.address || '',
+        clientCity: client?.city || '',
+        model: appliance?.model || '',
+        serialNumber: appliance?.serialNumber || '',
+        categoryName: category?.name || '',
+        manufacturerName: manufacturer?.name || '',
+        technicianName: technician?.fullName || '',
+        technicianPhone: technician?.phone || '',
+        technicianEmail: technician?.email || ''
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Greška pri dobijanju admin servisa:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa" });
+    }
+  });
+
+  // =====================================
   // NOTIFICATIONS API ENDPOINTS
   // =====================================
 
