@@ -177,15 +177,30 @@ export default function TechnicianServices() {
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
+      console.log("🔔 Notification Effect: Tražim servis", {
+        highlightedServiceId,
+        shouldAutoOpen,
+        servicesCount: services.length,
+        serviceIds: services.map(s => s.id)
+      });
+      
       const targetService = services.find(service => service.id === highlightedServiceId);
       if (targetService) {
-        console.log("🎯 Notification: Otvaramo floating dialog za servis", targetService.id);
+        console.log("✅ Notification: Pronašao servis, otvaramo floating dialog", targetService.id);
         
         // Automatski otvara floating servis prozor za highlighted servis
         setFloatingSelectedService(targetService);
         setFloatingServiceOpen(true);
         
         // Čisti notification state posle otvaranja
+        clearHighlight();
+      } else {
+        console.log("❌ Notification: Servis nije pronađen u listi servisa tehničara", {
+          highlightedServiceId,
+          availableServices: services.map(s => ({ id: s.id, status: s.status }))
+        });
+        
+        // Čisti notification state ako servis nije pronađen
         clearHighlight();
       }
     }
