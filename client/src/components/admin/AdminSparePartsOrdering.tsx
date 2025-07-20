@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -180,6 +180,9 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Odaberite brend aparata</DialogTitle>
+          <DialogDescription>
+            Izaberite proizvođača aparata za koji naručujete rezervni deo. Svaki brend ima svoju email adresu za dostavu narudžbine.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Card 
@@ -228,6 +231,9 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
           <DialogTitle>
             Poruči {selectedBrand === 'beko' ? 'Beko' : 'Electrolux/Elica/Candy/Hoover/Turbo Air'} rezervni deo
           </DialogTitle>
+          <DialogDescription>
+            Popunite podatke o rezervnom delu koji trebate. Narudžbina će biti poslata na odgovarajući email servisa.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
