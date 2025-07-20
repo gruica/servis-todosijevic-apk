@@ -33,9 +33,6 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Debug logging
-  console.log('🔧 SparePartsOrderForm rendering for serviceId:', serviceId);
-  
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     partName: '',

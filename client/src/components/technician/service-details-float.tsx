@@ -381,25 +381,17 @@ export function ServiceDetailsFloat({
         </Card>
 
         {/* Spare Parts Order Form */}
-        {(() => {
-          const shouldShowSparePartsForm = (service.status === "pending" || service.status === "assigned" || service.status === "scheduled" || service.status === "in_progress");
-          console.log('🔧 Spare Parts Form Debug:', { 
-            serviceId: service.id, 
-            status: service.status, 
-            shouldShow: shouldShowSparePartsForm 
-          });
-          return shouldShowSparePartsForm && (
-            <SparePartsOrderForm
-              serviceId={service.id}
-              onSuccess={() => {
-                // Optional: refresh service data or show success message
-              }}
-              onCancel={() => {
-                // Optional: handle cancel action
-              }}
-            />
-          );
-        })()}
+        {(service.status === "pending" || service.status === "assigned" || service.status === "scheduled" || service.status === "in_progress") && (
+          <SparePartsOrderForm
+            serviceId={service.id}
+            onSuccess={() => {
+              // Optional: refresh service data or show success message
+            }}
+            onCancel={() => {
+              // Optional: handle cancel action
+            }}
+          />
+        )}
       </div>
     </FloatingSheet>
   );

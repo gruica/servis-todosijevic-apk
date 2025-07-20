@@ -4966,14 +4966,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend`
       });
 
-      // Pošalji email obaveštenje
-      let serviceInfo = '';
+      // Povuci detaljne informacije o servisu za email
+      let serviceDetails = '';
+      let technicianName = '';
+      let clientDetails = '';
+      let applianceDetails = '';
+      
       if (serviceId) {
-        const service = await storage.getService(serviceId);
-        if (service) {
-          const client = await storage.getClient(service.clientId);
-          const appliance = await storage.getAppliance(service.applianceId);
-          serviceInfo = `\nServis: ${client?.fullName} - ${appliance?.model || 'N/A'}`;
+        try {
+          const service = await storage.getService(serviceId);
+          if (service) {
+            // Povuci podatke o klijentu
+            const client = await storage.getClient(service.clientId);
+            if (client) {
+              clientDetails = `
+PODACI O KLIJENTU:
+• Ime: ${client.fullName}
+• Telefon: ${client.phone || 'N/A'}
+• Email: ${client.email || 'N/A'}
+• Adresa: ${client.address || 'N/A'}, ${client.city || 'N/A'}`;
+            }
+            
+            // Povuci podatke o aparatu
+            const appliance = await storage.getAppliance(service.applianceId);
+            if (appliance) {
+              // Povuci kategoriju aparata
+              let categoryName = 'N/A';
+              if (appliance.categoryId) {
+                try {
+                  const category = await storage.getApplianceCategory(appliance.categoryId);
+                  categoryName = category?.name || 'N/A';
+                } catch (catError) {
+                  console.log('Greška pri dohvatanju kategorije aparata:', catError);
+                }
+              }
+              
+              // Povuci proizvođača
+              let manufacturerName = 'N/A';
+              if (appliance.manufacturerId) {
+                try {
+                  const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                  manufacturerName = manufacturer?.name || 'N/A';
+                } catch (manError) {
+                  console.log('Greška pri dohvatanju proizvođača:', manError);
+                }
+              }
+              
+              applianceDetails = `
+PODACI O APARATU (IZ SERVISA):
+• Kategorija: ${categoryName}
+• Proizvođač: ${manufacturerName}  
+• Model: ${appliance.model || 'N/A'}
+• Serijski broj: ${appliance.serialNumber || 'N/A'}
+• Datum kupovine: ${appliance.purchaseDate ? new Date(appliance.purchaseDate).toLocaleDateString('sr-RS') : 'N/A'}
+• Napomene: ${appliance.notes || 'N/A'}`;
+            }
+            
+            // Povuci podatke o serviseru
+            if (service.technicianId) {
+              try {
+                const technician = await storage.getTechnician(service.technicianId);
+                if (technician) {
+                  technicianName = `
+DODELJENI SERVISER:
+• Ime: ${technician.name}
+• Telefon: ${technician.phone || 'N/A'}
+• Email: ${technician.email || 'N/A'}`;
+                }
+              } catch (techError) {
+                console.log('Greška pri dohvatanju servisera:', techError);
+              }
+            }
+            
+            serviceDetails = `
+PODACI O SERVISU:
+• Broj servisa: #${service.id}
+• Status: ${service.status}
+• Datum kreiranja: ${new Date(service.createdAt).toLocaleDateString('sr-RS')}
+• Datum zakazivanja: ${service.scheduledDate ? new Date(service.scheduledDate).toLocaleDateString('sr-RS') : 'N/A'}
+• Opis problema: ${service.problemDescription || 'N/A'}
+• Napomene servisera: ${service.technicianNotes || 'N/A'}
+• Cena servisa: ${service.serviceCost || 'N/A'} €${clientDetails}${applianceDetails}${technicianName}`;
+          }
+        } catch (serviceError) {
+          console.error('Greška pri povlačenju podataka o servisu:', serviceError);
+          serviceDetails = `\nServis #${serviceId} - greška pri učitavanju detalja`;
         }
       }
 
@@ -4984,7 +5061,7 @@ Poštovani,
 
 Molimo da obezbedite sledeći rezervni deo:
 
-PODACI O APARATU:
+PODACI O APARATU (ADMIN UNOS):
 • Brend: ${brand.toUpperCase()}
 • Model: ${deviceModel}
 • Tip aparata: ${applianceCategory}
@@ -4996,7 +5073,7 @@ REZERVNI DEO:
 • Garancijski status: ${warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
 • Hitnost: ${urgency === 'high' ? '🚨 HITNO' : urgency === 'normal' ? 'Normalna' : 'Niska'}
 
-${description ? `DODATNE NAPOMENE:\n${description}\n` : ''}${serviceInfo}
+${description ? `DODATNE NAPOMENE:\n${description}\n` : ''}${serviceDetails}
 
 PORUDŽBINA BR: ${sparePartOrder.id}
 Datum porudžbine: ${new Date().toLocaleDateString('sr-RS')}
