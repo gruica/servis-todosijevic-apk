@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -211,6 +211,9 @@ export default function SparePartsOrderForm({
             <Package className="h-5 w-5" />
             Zahtev za rezervne delove
           </DialogTitle>
+          <DialogDescription>
+            Dodajte potrebne rezervne delove u listu, odaberite nivo hitnosti i pošaljite zahtev administratoru.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

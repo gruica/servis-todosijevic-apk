@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, X, RotateCcw, Zap, Settings, CheckCircle, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -182,6 +182,9 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
           </div>
+          <DialogDescription>
+            Skenirajte serijski broj, model ili druge podatke sa generalne nalepnice aparata. Pozicionirajte kameru tako da tekst bude u okviru i kliknite "Skeniraj".
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">

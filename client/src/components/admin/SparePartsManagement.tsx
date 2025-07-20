@@ -10,7 +10,7 @@ import { AlertCircle, Package, Search, Bell, Edit, Trash2, Eye, Mail, Phone, Map
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { formatDate } from '@/lib/utils';
 import { AdminSparePartsOrdering } from './AdminSparePartsOrdering';
 
@@ -203,6 +203,9 @@ export function SparePartsManagement() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Poruči rezervni deo</DialogTitle>
+              <DialogDescription>
+                Kreirajte novu porudžbinu rezervnog dela. Odaberite brend aparata i unesite potrebne podatke.
+              </DialogDescription>
             </DialogHeader>
             <AdminSparePartsOrdering 
               serviceId={null} 
@@ -342,6 +345,9 @@ export function SparePartsManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ažuriraj porudžbinu</DialogTitle>
+            <DialogDescription>
+              Promenite status porudžbine i dodajte dodatne napomene. Informacije će biti sačuvane i prosleđene tehničarima.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

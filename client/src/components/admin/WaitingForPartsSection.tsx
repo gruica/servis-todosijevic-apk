@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription,
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
@@ -227,6 +228,9 @@ export function WaitingForPartsSection() {
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>Vraćanje servisa u realizaciju</DialogTitle>
+                          <DialogDescription>
+                            Servis će biti vraćen u aktivnu realizaciju nakon što su potrebni rezervni delovi dostupni.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>

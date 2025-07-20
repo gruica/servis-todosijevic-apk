@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, X, RotateCcw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -116,6 +116,9 @@ export function OCRCamera({ isOpen, onClose, onDataScanned }: OCRCameraProps) {
             <Camera className="h-5 w-5" />
             Skeniraj generalije aparata
           </DialogTitle>
+          <DialogDescription>
+            Pozicionirajte kameru na nalepnicu sa podacima aparata. Sistem će automatski prepoznati serijski broj, model i druge informacije.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 relative bg-black">
