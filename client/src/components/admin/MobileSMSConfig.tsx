@@ -39,7 +39,7 @@ export function MobileSMSConfig() {
   // Configure SMS
   const configureMutation = useMutation({
     mutationFn: async (data: MobileSMSConfig) => {
-      return apiRequest("/api/sms/configure", "POST", data);
+      return apiRequest("POST", "/api/sms/configure", data);
     },
     onSuccess: () => {
       toast({
@@ -61,7 +61,7 @@ export function MobileSMSConfig() {
   // Test connection
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/sms/test-connection", "POST");
+      return apiRequest("POST", "/api/sms/test-connection");
     },
     onSuccess: (data) => {
       toast({
@@ -81,7 +81,7 @@ export function MobileSMSConfig() {
   // Test SMS
   const testSMSMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
-      return apiRequest("/api/sms/send-test", "POST", { phoneNumber });
+      return apiRequest("POST", "/api/sms/send-test", { phoneNumber });
     },
     onSuccess: (data) => {
       toast({
