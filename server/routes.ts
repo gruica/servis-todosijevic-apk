@@ -70,6 +70,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
+  // Debug middleware za sve DELETE requests
+  app.use((req, res, next) => {
+    if (req.method === 'DELETE') {
+      console.log(`DEBUG: DELETE request to ${req.url}`);
+    }
+    next();
+  });
+  
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
   app.post("/api/security/verify-bot", verifyBotAnswer);
