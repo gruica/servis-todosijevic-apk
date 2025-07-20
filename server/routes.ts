@@ -4670,34 +4670,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const bekoSupportedBrand = 'beko';
               
               if (manufacturerName === bekoSupportedBrand) {
-                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem email Eurotehnika servis firmi...`);
+                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem prošireni email Eurotehnika servis firmi sa kompletnim kontekstom...`);
                 
-                const warrantyEmailResult = await emailService.sendWarrantySparePartNotification(
+                // Dobijamo dodatne podatke za kompletne informacije
+                const category = await storage.getApplianceCategory(appliance.categoryId);
+                
+                const warrantyEmailResult = await emailService.sendEnhancedWarrantySparePartNotification(
                   validatedData.serviceId,
                   validatedData.partName,
                   validatedData.partNumber || 'N/A',
-                  clientName,
-                  technicianName,
                   validatedData.urgency || 'medium',
-                  validatedData.description || undefined
+                  validatedData.description || '',
+                  service,        // Kompletni podaci o servisu
+                  client,         // Kompletni podaci o klijentu  
+                  appliance,      // Kompletni podaci o aparatu
+                  category,       // Podaci o kategoriji aparata
+                  manufacturer,   // Podaci o proizvođaču
+                  technician      // Podaci o tehničaru
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja emaila Eurotehnika servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Eurotehnika servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
               } else if (complussupportedBrands.includes(manufacturerName)) {
-                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, šaljem email Complus servis firmi...`);
+                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, šaljem prošireni email Complus servis firmi sa kompletnim kontekstom...`);
                 
-                const complusEmailResult = await emailService.sendComplusWarrantySparePartNotification(
+                // Dobijamo dodatne podatke za kompletne informacije
+                const category = await storage.getApplianceCategory(appliance.categoryId);
+                
+                const complusEmailResult = await emailService.sendEnhancedComplusWarrantySparePartNotification(
                   validatedData.serviceId,
                   validatedData.partName,
                   validatedData.partNumber || 'N/A',
-                  clientName,
-                  technicianName,
-                  manufacturer?.name || manufacturerName,
                   validatedData.urgency || 'medium',
-                  validatedData.description || undefined
+                  validatedData.description || '',
+                  manufacturer?.name || manufacturerName,
+                  service,        // Kompletni podaci o servisu
+                  client,         // Kompletni podaci o klijentu  
+                  appliance,      // Kompletni podaci o aparatu
+                  category,       // Podaci o kategoriji aparata
+                  manufacturer,   // Podaci o proizvođaču
+                  technician      // Podaci o tehničaru
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
               } else {
                 console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, ne šaljem email nijednoj servisnoj firmi (nije podržan brend)`);
               }

@@ -1493,6 +1493,262 @@ www.frigosistemtodosijevic.com
       return false;
     }
   }
+
+  /**
+   * Šalje obaveštenje servis firmi sa kompletnim informacijama o servisu
+   * NOVA FUNKCIJA - Uključuje sve podatke o servisu, klijentu i aparatu
+   */
+  public async sendEnhancedWarrantySparePartNotification(
+    serviceId: number,
+    partName: string,
+    partNumber: string,
+    urgency: string,
+    description: string,
+    serviceData: any,
+    clientData: any,
+    applianceData: any,
+    categoryData: any,
+    manufacturerData: any,
+    technicianData: any
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje proširenog obaveštenja Eurotehnika servis firmi za servis #${serviceId} sa kompletnim podacima`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje proširenog obaveštenja`);
+      return false;
+    }
+
+    const serviceCompanyEmail = 'servis@eurotehnikamn.me';
+    const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
+
+    const subject = `${priorityIndicator} Garanciski rezervni deo - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #155724; margin: 0;">🛡️ GARANCISKI REZERVNI DEO</h2>
+          <p style="margin: 5px 0 0 0; color: #155724; font-weight: bold;">
+            Automatsko obaveštenje sistema - Kompletan kontekst servisa
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        <p>Obaveštavamo Vas da je naručen rezervni deo u okviru garancijskih uslova. Evo kompletnih informacija o servisu:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0;">📋 DETALJI PORUDŽBINE</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Naziv dela:</strong> ${partName}</p>
+          <p><strong>Kataloški broj:</strong> ${partNumber}</p>
+          <p><strong>Prioritet:</strong> <span style="color: ${urgency === 'urgent' ? '#dc3545' : urgency === 'high' ? '#fd7e14' : '#6c757d'};">${urgencyLabel}</span></p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+          ${description ? `<p><strong>Napomene:</strong> ${description}</p>` : ''}
+        </div>
+
+        <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #2196f3;">
+          <h3 style="color: #1976d2; margin-top: 0;">🔧 PODACI O SERVISU</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Status:</strong> ${serviceData?.status || 'N/A'}</p>
+          <p><strong>Kreiran:</strong> ${serviceData?.createdAt ? new Date(serviceData.createdAt).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          <p><strong>Planiran za:</strong> ${serviceData?.scheduledDate ? new Date(serviceData.scheduledDate).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          <p><strong>Opis problema:</strong> ${serviceData?.description || 'N/A'}</p>
+          ${serviceData?.technicianNotes ? `<p><strong>Napomene servisera:</strong> ${serviceData.technicianNotes}</p>` : ''}
+          ${serviceData?.cost ? `<p><strong>Cena servisa:</strong> ${serviceData.cost} €</p>` : ''}
+        </div>
+
+        <div style="background-color: #fff3e0; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ff9800;">
+          <h3 style="color: #f57c00; margin-top: 0;">👤 PODACI O KLIJENTU</h3>
+          <p><strong>Ime i prezime:</strong> ${clientData?.fullName || 'N/A'}</p>
+          <p><strong>Telefon:</strong> ${clientData?.phone || 'N/A'}</p>
+          <p><strong>Email:</strong> ${clientData?.email || 'N/A'}</p>
+          <p><strong>Adresa:</strong> ${clientData?.address || 'N/A'}</p>
+          <p><strong>Grad:</strong> ${clientData?.city || 'N/A'}</p>
+        </div>
+
+        <div style="background-color: #f3e5f5; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #9c27b0;">
+          <h3 style="color: #7b1fa2; margin-top: 0;">🏠 PODACI O APARATU IZ SERVISA</h3>
+          <p><strong>Kategorija:</strong> ${categoryData?.name || 'N/A'}</p>
+          <p><strong>Proizvođač:</strong> ${manufacturerData?.name || 'N/A'}</p>
+          <p><strong>Model:</strong> ${applianceData?.model || 'N/A'}</p>
+          <p><strong>Serijski broj:</strong> ${applianceData?.serialNumber || 'N/A'}</p>
+          <p><strong>Datum kupovine:</strong> ${applianceData?.purchaseDate ? new Date(applianceData.purchaseDate).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          ${applianceData?.notes ? `<p><strong>Napomene o aparatu:</strong> ${applianceData.notes}</p>` : ''}
+        </div>
+
+        <div style="background-color: #e8f5e8; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4caf50;">
+          <h3 style="color: #388e3c; margin-top: 0;">👨‍🔧 DODELJENI SERVISER</h3>
+          <p><strong>Ime i prezime:</strong> ${technicianData?.fullName || 'N/A'}</p>
+          <p><strong>Telefon:</strong> ${technicianData?.phone || 'N/A'}</p>
+          <p><strong>Email:</strong> ${technicianData?.email || 'N/A'}</p>
+          ${technicianData?.specialization ? `<p><strong>Specijalizacija:</strong> ${technicianData.specialization}</p>` : ''}
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #856404;">
+            ⚠️ <strong>Napomena:</strong> Ovo je garanciski servis. Rezervni deo se naručuje u skladu sa garancijskim uslovima.
+          </p>
+        </div>
+
+        <p>Molimo Vas da obradi ovu porudžbinu u najkraćem roku imajući u vidu kompletan kontekst servisa.</p>
+        <p>Za sva dodatna pitanja, kontaktirajte nas na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    console.log(`[EMAIL] Slanje proširenog obaveštenja Eurotehnika servis firmi na: ${serviceCompanyEmail}`);
+
+    try {
+      const result = await this.sendEmail({
+        to: serviceCompanyEmail,
+        subject,
+        html,
+      }, 3);
+      
+      console.log(`[EMAIL] Rezultat slanja proširenog obaveštenja Eurotehnika servis firmi: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju proširenog obaveštenja Eurotehnika servis firmi:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje obaveštenje Complus servis firmi sa kompletnim informacijama o servisu
+   * NOVA FUNKCIJA - Uključuje sve podatke o servisu, klijentu i aparatu
+   */
+  public async sendEnhancedComplusWarrantySparePartNotification(
+    serviceId: number,
+    partName: string,
+    partNumber: string,
+    urgency: string,
+    description: string,
+    manufacturerName: string,
+    serviceData: any,
+    clientData: any,
+    applianceData: any,
+    categoryData: any,
+    manufacturerData: any,
+    technicianData: any
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje proširenog obaveštenja Complus servis firmi za ${manufacturerName} sa kompletnim podacima - servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje proširenog obaveštenja Complus`);
+      return false;
+    }
+
+    const serviceCompanyEmail = 'servis@complus.me';
+    const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
+
+    const subject = `${priorityIndicator} Garanciski rezervni deo ${manufacturerName.toUpperCase()} - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #155724; margin: 0;">🛡️ GARANCISKI REZERVNI DEO - ${manufacturerName.toUpperCase()}</h2>
+          <p style="margin: 5px 0 0 0; color: #155724; font-weight: bold;">
+            Automatsko obaveštenje sistema - Kompletan kontekst servisa
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        <p>Obaveštavamo Vas da je naručen rezervni deo u okviru garancijskih uslova. Evo kompletnih informacija o servisu:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0;">📋 DETALJI PORUDŽBINE</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Brend:</strong> <span style="color: #0066cc; font-weight: bold;">${manufacturerName.toUpperCase()}</span></p>
+          <p><strong>Naziv dela:</strong> ${partName}</p>
+          <p><strong>Kataloški broj:</strong> ${partNumber}</p>
+          <p><strong>Prioritet:</strong> <span style="color: ${urgency === 'urgent' ? '#dc3545' : urgency === 'high' ? '#fd7e14' : '#6c757d'};">${urgencyLabel}</span></p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+          ${description ? `<p><strong>Napomene:</strong> ${description}</p>` : ''}
+        </div>
+
+        <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #2196f3;">
+          <h3 style="color: #1976d2; margin-top: 0;">🔧 PODACI O SERVISU</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Status:</strong> ${serviceData?.status || 'N/A'}</p>
+          <p><strong>Kreiran:</strong> ${serviceData?.createdAt ? new Date(serviceData.createdAt).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          <p><strong>Planiran za:</strong> ${serviceData?.scheduledDate ? new Date(serviceData.scheduledDate).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          <p><strong>Opis problema:</strong> ${serviceData?.description || 'N/A'}</p>
+          ${serviceData?.technicianNotes ? `<p><strong>Napomene servisera:</strong> ${serviceData.technicianNotes}</p>` : ''}
+          ${serviceData?.cost ? `<p><strong>Cena servisa:</strong> ${serviceData.cost} €</p>` : ''}
+        </div>
+
+        <div style="background-color: #fff3e0; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ff9800;">
+          <h3 style="color: #f57c00; margin-top: 0;">👤 PODACI O KLIJENTU</h3>
+          <p><strong>Ime i prezime:</strong> ${clientData?.fullName || 'N/A'}</p>
+          <p><strong>Telefon:</strong> ${clientData?.phone || 'N/A'}</p>
+          <p><strong>Email:</strong> ${clientData?.email || 'N/A'}</p>
+          <p><strong>Adresa:</strong> ${clientData?.address || 'N/A'}</p>
+          <p><strong>Grad:</strong> ${clientData?.city || 'N/A'}</p>
+        </div>
+
+        <div style="background-color: #f3e5f5; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #9c27b0;">
+          <h3 style="color: #7b1fa2; margin-top: 0;">🏠 PODACI O APARATU IZ SERVISA</h3>
+          <p><strong>Kategorija:</strong> ${categoryData?.name || 'N/A'}</p>
+          <p><strong>Proizvođač:</strong> ${manufacturerData?.name || 'N/A'}</p>
+          <p><strong>Model:</strong> ${applianceData?.model || 'N/A'}</p>
+          <p><strong>Serijski broj:</strong> ${applianceData?.serialNumber || 'N/A'}</p>
+          <p><strong>Datum kupovine:</strong> ${applianceData?.purchaseDate ? new Date(applianceData.purchaseDate).toLocaleDateString('sr-ME') : 'N/A'}</p>
+          ${applianceData?.notes ? `<p><strong>Napomene o aparatu:</strong> ${applianceData.notes}</p>` : ''}
+        </div>
+
+        <div style="background-color: #e8f5e8; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4caf50;">
+          <h3 style="color: #388e3c; margin-top: 0;">👨‍🔧 DODELJENI SERVISER</h3>
+          <p><strong>Ime i prezime:</strong> ${technicianData?.fullName || 'N/A'}</p>
+          <p><strong>Telefon:</strong> ${technicianData?.phone || 'N/A'}</p>
+          <p><strong>Email:</strong> ${technicianData?.email || 'N/A'}</p>
+          ${technicianData?.specialization ? `<p><strong>Specijalizacija:</strong> ${technicianData.specialization}</p>` : ''}
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #856404;">
+            ⚠️ <strong>Napomena:</strong> Ovo je garanciski servis za ${manufacturerName} uređaj. Rezervni deo se naručuje u skladu sa garancijskim uslovima.
+          </p>
+        </div>
+
+        <p>Molimo Vas da obradi ovu porudžbinu u najkraćem roku imajući u vidu kompletan kontekst servisa.</p>
+        <p>Za sva dodatna pitanja, kontaktirajte nas na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    console.log(`[EMAIL] Slanje proširenog obaveštenja Complus servis firmi na: ${serviceCompanyEmail}`);
+
+    try {
+      const result = await this.sendEmail({
+        to: serviceCompanyEmail,
+        subject,
+        html,
+      }, 3);
+      
+      console.log(`[EMAIL] Rezultat slanja proširenog obaveštenja Complus servis firmi: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju proširenog obaveštenja Complus servis firmi:`, error);
+      return false;
+    }
+  }
 }
 
 export const emailService = EmailService.getInstance();
