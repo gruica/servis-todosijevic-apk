@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Package, Search, Bell, Edit, Trash2, Eye, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { AlertCircle, Package, Search, Bell, Edit, Trash2, Eye, Mail, Phone, MapPin, Calendar, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { formatDate } from '@/lib/utils';
+import { AdminSparePartsOrdering } from './AdminSparePartsOrdering';
 
 const urgencyLabels = {
   low: 'Niska',
@@ -49,6 +50,7 @@ export function SparePartsManagement() {
   const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [updateData, setUpdateData] = useState({
     status: '',
     notes: ''
@@ -189,6 +191,29 @@ export function SparePartsManagement() {
             </Badge>
           )}
         </div>
+        
+        {/* New Order Button */}
+        <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova porudžbina
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Poruči rezervni deo</DialogTitle>
+            </DialogHeader>
+            <AdminSparePartsOrdering 
+              serviceId={null} 
+              onSuccess={() => {
+                setShowNewOrderDialog(false);
+                queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+                queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}

@@ -14,6 +14,7 @@ import { Wrench, Package } from 'lucide-react';
 
 interface AdminSparePartsOrderingProps {
   serviceId?: number;
+  onSuccess?: () => void;
 }
 
 const APPLIANCE_CATEGORIES = [
@@ -32,7 +33,7 @@ const APPLIANCE_CATEGORIES = [
 const BEKO_MANUFACTURERS = ["Beko"];
 const COMPLUS_MANUFACTURERS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
 
-export function AdminSparePartsOrdering({ serviceId }: AdminSparePartsOrderingProps) {
+export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePartsOrderingProps) {
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,6 +84,11 @@ export function AdminSparePartsOrdering({ serviceId }: AdminSparePartsOrderingPr
         urgency: 'normal'
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      
+      // Call parent onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error: any) => {
       toast({
