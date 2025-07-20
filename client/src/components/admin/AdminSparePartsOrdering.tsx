@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,7 +99,40 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Individual form handlers
+  const handleDeviceModelChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, deviceModel: e.target.value }));
+  }, []);
+
+  const handleProductCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, productCode: e.target.value }));
+  }, []);
+
+  const handlePartNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, partName: e.target.value }));
+  }, []);
+
+  const handleQuantityChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, description: e.target.value }));
+  }, []);
+
+  const handleApplianceCategoryChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, applianceCategory: value }));
+  }, []);
+
+  const handleWarrantyStatusChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, warrantyStatus: value as any }));
+  }, []);
+
+  const handleUrgencyChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, urgency: value as any }));
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedBrand) {
@@ -135,7 +168,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
     };
 
     orderSparePartMutation.mutate(orderData);
-  };
+  }, [selectedBrand, formData, serviceId, orderSparePartMutation, toast]);
 
   const BrandSelectionDialog = () => (
     <Dialog open={isDialogOpen && !selectedBrand} onOpenChange={(open) => {
@@ -212,7 +245,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
               <Input
                 id="deviceModel"
                 value={formData.deviceModel}
-                onChange={(e) => setFormData(prev => ({ ...prev, deviceModel: e.target.value }))}
+                onChange={handleDeviceModelChange}
                 placeholder="npr. WMB 71643 PTE"
                 required
               />
@@ -223,7 +256,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
               <Input
                 id="productCode"
                 value={formData.productCode}
-                onChange={(e) => setFormData(prev => ({ ...prev, productCode: e.target.value }))}
+                onChange={handleProductCodeChange}
                 placeholder="npr. 481281729632"
                 required
               />
@@ -232,9 +265,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
 
           <div>
             <Label htmlFor="applianceCategory">Tip aparata *</Label>
-            <Select value={formData.applianceCategory} onValueChange={(value) => 
-              setFormData(prev => ({ ...prev, applianceCategory: value }))
-            }>
+            <Select value={formData.applianceCategory} onValueChange={handleApplianceCategoryChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Odaberite tip aparata" />
               </SelectTrigger>
@@ -253,7 +284,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
             <Input
               id="partName"
               value={formData.partName}
-              onChange={(e) => setFormData(prev => ({ ...prev, partName: e.target.value }))}
+              onChange={handlePartNameChange}
               placeholder="npr. Pumpa za vodu, Filter, Grejač"
               required
             />
@@ -266,7 +297,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
               type="number"
               min="1"
               value={formData.quantity}
-              onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+              onChange={handleQuantityChange}
             />
           </div>
 
@@ -274,7 +305,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
             <Label>Garancijski status *</Label>
             <RadioGroup 
               value={formData.warrantyStatus} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, warrantyStatus: value as any }))}
+              onValueChange={handleWarrantyStatusChange}
               className="flex flex-row space-x-4 mt-2"
             >
               <div className="flex items-center space-x-2">
@@ -292,7 +323,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
             <Label>Hitnost</Label>
             <RadioGroup 
               value={formData.urgency} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, urgency: value as any }))}
+              onValueChange={handleUrgencyChange}
               className="flex flex-row space-x-4 mt-2"
             >
               <div className="flex items-center space-x-2">
@@ -315,7 +346,7 @@ export function AdminSparePartsOrdering({ serviceId, onSuccess }: AdminSparePart
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={handleDescriptionChange}
               placeholder="Dodatne informacije o delu..."
               rows={3}
             />
