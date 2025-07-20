@@ -5299,12 +5299,11 @@ Admin panel - automatska porudžbina
   });
 
   // Endpoint za dopunjavanje Generali servisa
-  app.patch("/api/services/:id/supplement-generali", async (req, res) => {
+  app.patch("/api/services/:id/supplement-generali", jwtAuth, async (req, res) => {
     try {
       // Dopuna Generali podataka za servis
 
-      if (!req.isAuthenticated() || req.user?.role !== "technician") {
-
+      if (req.user?.role !== "technician") {
         return res.status(403).json({ error: "Samo serviseri mogu dopunjavati Generali servise" });
       }
 
@@ -5329,13 +5328,20 @@ Admin panel - automatska porudžbina
 
       const validData = validationResult.data;
 
-      // Proveri da li servis postoji i da li je dodeljen ovom serviseru
+      // Proveri da li servis postoji
       const service = await storage.getService(serviceId);
       if (!service) {
         return res.status(404).json({ error: "Servis nije pronađen" });
       }
 
-      if (service.technicianId !== req.user.technicianId) {
+      // Povuci korisničke podatke da bi dobio technicianId
+      const userDetails = await storage.getUser(req.user.id);
+      if (!userDetails || !userDetails.technicianId) {
+        return res.status(403).json({ error: "Nemate ulogu servisera" });
+      }
+
+      // Proveri da li je servis dodeljen ovom serviseru
+      if (service.technicianId !== userDetails.technicianId) {
         return res.status(403).json({ error: "Možete dopunjavati samo svoje servise" });
       }
 
