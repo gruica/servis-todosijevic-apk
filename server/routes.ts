@@ -4923,6 +4923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const {
         serviceId,
+        applianceSerialNumber,
         brand,
         deviceModel,
         productCode,
@@ -4977,13 +4978,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partName,
         partNumber: productCode,
         quantity,
-        description: `${applianceCategory} - ${deviceModel}\n${description || ''}`.trim(),
+        description: `${applianceCategory} - ${deviceModel}${applianceSerialNumber ? `\nSerijski broj: ${applianceSerialNumber}` : ''}\n${description || ''}`.trim(),
         urgency,
         status: 'pending',
         warrantyStatus: warrantyStatus || 'u garanciji',
         supplierName: brand === 'beko' ? 'Eurotehnika' : 'Complus',
         orderDate: new Date(),
-        adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend${serviceId ? ` (Servis #${serviceId})` : ''}`
+        adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend${serviceId ? ` (Servis #${serviceId})` : ''}${applianceSerialNumber ? ` - SN: ${applianceSerialNumber}` : ''}`
       });
 
       // Povuci detaljne informacije o servisu za email

@@ -36,6 +36,8 @@ const COMPLUS_MANUFACTURERS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo 
 function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePartsOrderingProps) {
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [enteredServiceId, setEnteredServiceId] = useState(serviceId?.toString() || '');
+  const [applianceSerialNumber, setApplianceSerialNumber] = useState('');
   const [formData, setFormData] = useState({
     deviceModel: '',
     productCode: '',
@@ -61,6 +63,20 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     enabled: !!serviceId
   });
 
+  // Get service details for entered service ID
+  const { data: enteredService, isLoading: isLoadingEnteredService } = useQuery({
+    queryKey: ['/api/admin/services', enteredServiceId],
+    queryFn: async () => {
+      if (!enteredServiceId || enteredServiceId === '') return null;
+      const response = await apiRequest('GET', `/api/admin/services/${enteredServiceId}`);
+      return response.json();
+    },
+    enabled: !!enteredServiceId && enteredServiceId !== ''
+  });
+
+  // Use entered service data if available, otherwise use passed serviceId data
+  const currentService = enteredService || service;
+
   const orderSparePartMutation = useMutation({
     mutationFn: async (orderData: any) => {
       const response = await apiRequest('POST', '/api/admin/spare-parts/order', orderData);
@@ -69,7 +85,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     onSuccess: () => {
       toast({
         title: "Uspešno poručeno",
-        description: `Rezervni deo je uspešno poručen. Email je poslat ${selectedBrand === 'beko' ? 'Beko servisu' : 'Complus servisu'}.`,
+        description: `Rezervni deo je uspešno poručen${enteredServiceId ? ` za servis #${enteredServiceId}` : ''}. Email je poslat ${selectedBrand === 'beko' ? 'Beko servisu' : 'Complus servisu'}.`,
       });
       handleDialogClose(false);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
@@ -143,8 +159,11 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       return;
     }
 
+    const finalServiceId = enteredServiceId ? parseInt(enteredServiceId) : serviceId;
+    
     const orderData = {
-      serviceId: serviceId || null,
+      serviceId: finalServiceId || null,
+      applianceSerialNumber: applianceSerialNumber || null,
       brand: selectedBrand,
       deviceModel: formData.deviceModel,
       productCode: formData.productCode,
@@ -257,11 +276,60 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {service && (
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Servis:</strong> {service.clientName} - {service.applianceModel}
-              </p>
+          {/* Service ID and Appliance Serial Number Input */}
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <Label htmlFor="enteredServiceId">Broj servisa</Label>
+              <Input
+                id="enteredServiceId"
+                value={enteredServiceId}
+                onChange={(e) => setEnteredServiceId(e.target.value)}
+                placeholder="npr. 59"
+                type="number"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="applianceSerialNumber">Serijski broj aparata</Label>
+              <Input
+                id="applianceSerialNumber"
+                value={applianceSerialNumber}
+                onChange={(e) => setApplianceSerialNumber(e.target.value)}
+                placeholder="npr. ABC123456789"
+              />
+            </div>
+          </div>
+
+          {/* Service Information Display */}
+          {currentService && (
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="font-semibold text-blue-900 mb-2">Podaci o servisu #{currentService.id}</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Klijent:</strong> {currentService.clientName}</p>
+                  <p><strong>Telefon:</strong> {currentService.clientPhone}</p>
+                  <p><strong>Email:</strong> {currentService.clientEmail}</p>
+                  <p><strong>Adresa:</strong> {currentService.clientAddress}, {currentService.clientCity}</p>
+                </div>
+                <div>
+                  <p><strong>Aparat:</strong> {currentService.manufacturerName} {currentService.applianceModel}</p>
+                  <p><strong>Kategorija:</strong> {currentService.categoryName}</p>
+                  <p><strong>Serijski broj:</strong> {currentService.applianceSerialNumber || 'Nije unet'}</p>
+                  <p><strong>Status servisa:</strong> {currentService.status}</p>
+                </div>
+              </div>
+              {currentService.description && (
+                <p className="mt-2"><strong>Opis problema:</strong> {currentService.description}</p>
+              )}
+              {currentService.technicianNotes && (
+                <p className="mt-1"><strong>Napomene tehničara:</strong> {currentService.technicianNotes}</p>
+              )}
+            </div>
+          )}
+
+          {isLoadingEnteredService && enteredServiceId && (
+            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-yellow-800">Učitavam podatke o servisu...</p>
             </div>
           )}
 
