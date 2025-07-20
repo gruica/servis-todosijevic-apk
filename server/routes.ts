@@ -4938,11 +4938,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const targetEmail = validBrandEmails[brand as keyof typeof validBrandEmails];
 
+      // Ako je povezano sa servisom, pokušaj da povučeš technicianId i applianceId
+      let linkedTechnicianId = null;
+      let linkedApplianceId = null;
+      
+      if (serviceId) {
+        try {
+          const linkedService = await storage.getService(serviceId);
+          if (linkedService) {
+            linkedTechnicianId = linkedService.technicianId;
+            linkedApplianceId = linkedService.applianceId;
+          }
+        } catch (serviceError) {
+          console.log('Greška pri povezivanju sa servisom:', serviceError);
+          // Ne prekidamo proces ako nema servisa
+        }
+      }
+
       // Kreiraj narudžbu u bazi podataka
       const sparePartOrder = await storage.createSparePartOrder({
         serviceId: serviceId || null,
-        technicianId: null, // Admin narudžba
-        applianceId: null,
+        technicianId: linkedTechnicianId, // Povezan serviser iz servisa ili null za admin narudžbu
+        applianceId: linkedApplianceId, // Povezan uređaj iz servisa ili null
         partName,
         partNumber: productCode,
         quantity,
@@ -4952,7 +4969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         warrantyStatus: warrantyStatus || 'u garanciji',
         supplierName: brand === 'beko' ? 'Eurotehnika' : 'Complus',
         orderDate: new Date(),
-        adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend`
+        adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend${serviceId ? ` (Servis #${serviceId})` : ''}`
       });
 
       // Povuci detaljne informacije o servisu za email

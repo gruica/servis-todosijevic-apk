@@ -73,6 +73,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       });
       handleDialogClose(false);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
       
       // Call parent onSuccess callback if provided
       if (onSuccess) {

@@ -1,0 +1,676 @@
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { formatDate } from '@/lib/utils';
+import { 
+  Package, 
+  Wrench, 
+  User, 
+  Phone, 
+  Mail, 
+  MapPin,
+  Calendar,
+  DollarSign,
+  Edit,
+  Check,
+  X,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Building,
+  Settings
+} from 'lucide-react';
+
+interface SparePartOrder {
+  id: number;
+  serviceId?: number;
+  technicianId?: number;
+  applianceId?: number;
+  partName: string;
+  partNumber?: string;
+  quantity: number;
+  description?: string;
+  urgency: 'normal' | 'high' | 'urgent';
+  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  warrantyStatus: 'u garanciji' | 'van garancije';
+  estimatedCost?: string;
+  actualCost?: string;
+  supplierName?: string;
+  orderDate?: string;
+  expectedDelivery?: string;
+  receivedDate?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Related data
+  service?: {
+    id: number;
+    status: string;
+    description: string;
+    createdAt: string;
+    scheduledDate?: string;
+    client: {
+      fullName: string;
+      phone: string;
+      email?: string;
+      address?: string;
+      city?: string;
+    };
+    appliance: {
+      model?: string;
+      serialNumber?: string;
+      category: { name: string };
+      manufacturer: { name: string };
+    };
+  };
+  technician?: {
+    name: string;
+    phone: string;
+    email: string;
+    specialization: string;
+  };
+}
+
+export default function SparePartsOrders() {
+  const [selectedOrder, setSelectedOrder] = useState<SparePartOrder | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [editFormData, setEditFormData] = useState({
+    status: '',
+    estimatedCost: '',
+    actualCost: '',
+    expectedDelivery: '',
+    receivedDate: '',
+    adminNotes: ''
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch all spare part orders
+  const { data: orders = [], isLoading, error } = useQuery<SparePartOrder[]>({
+    queryKey: ['/api/admin/spare-parts'],
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Update order mutation
+  const updateOrderMutation = useMutation({
+    mutationFn: async (data: { id: number; updates: Partial<SparePartOrder> }) => {
+      const response = await apiRequest('PUT', `/api/admin/spare-parts/${data.id}`, data.updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno ažurirano",
+        description: "Porudžbina rezervnog dela je uspešno ažurirana.",
+      });
+      setIsEditOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška pri ažuriranju",
+        description: error.message || "Došlo je do greške pri ažuriranju porudžbine.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Filter orders based on status
+  const filteredOrders = orders.filter(order => {
+    if (statusFilter === 'all') return true;
+    return order.status === statusFilter;
+  });
+
+  // Get status badge
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { label: "Na čekanju", variant: "secondary" as const, icon: Clock },
+      approved: { label: "Odobreno", variant: "default" as const, icon: Check },
+      ordered: { label: "Poručeno", variant: "default" as const, icon: Package },
+      received: { label: "Primljeno", variant: "default" as const, icon: CheckCircle },
+      cancelled: { label: "Otkazano", variant: "destructive" as const, icon: X }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const Icon = config.icon;
+    
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  // Get urgency badge
+  const getUrgencyBadge = (urgency: string) => {
+    const urgencyConfig = {
+      normal: { label: "Normalno", variant: "secondary" as const },
+      high: { label: "Visoko", variant: "default" as const },
+      urgent: { label: "HITNO", variant: "destructive" as const }
+    };
+    
+    const config = urgencyConfig[urgency as keyof typeof urgencyConfig] || urgencyConfig.normal;
+    
+    return (
+      <Badge variant={config.variant}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  // Handle view details
+  const handleViewDetails = (order: SparePartOrder) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
+
+  // Handle edit order
+  const handleEditOrder = (order: SparePartOrder) => {
+    setSelectedOrder(order);
+    setEditFormData({
+      status: order.status,
+      estimatedCost: order.estimatedCost || '',
+      actualCost: order.actualCost || '',
+      expectedDelivery: order.expectedDelivery ? new Date(order.expectedDelivery).toISOString().split('T')[0] : '',
+      receivedDate: order.receivedDate ? new Date(order.receivedDate).toISOString().split('T')[0] : '',
+      adminNotes: order.adminNotes || ''
+    });
+    setIsEditOpen(true);
+  };
+
+  // Handle form submission
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+
+    const updates: Partial<SparePartOrder> = {
+      status: editFormData.status as any,
+      estimatedCost: editFormData.estimatedCost || null,
+      actualCost: editFormData.actualCost || null,
+      expectedDelivery: editFormData.expectedDelivery ? new Date(editFormData.expectedDelivery).toISOString() : null,
+      receivedDate: editFormData.receivedDate ? new Date(editFormData.receivedDate).toISOString() : null,
+      adminNotes: editFormData.adminNotes || null
+    };
+
+    updateOrderMutation.mutate({ id: selectedOrder.id, updates });
+  }, [selectedOrder, editFormData, updateOrderMutation]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Učitavanje porudžbina...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center min-h-[200px]">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 mb-2">Greška pri učitavanju porudžbina</p>
+            <p className="text-muted-foreground">Molimo pokušajte ponovo.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Trenutne porudžbine rezervnih delova
+              </CardTitle>
+              <CardDescription>
+                Pregled svih porudžbina rezervnih delova sa kompletnim detaljima
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="status-filter">Status:</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Svi statusi</SelectItem>
+                  <SelectItem value="pending">Na čekanju</SelectItem>
+                  <SelectItem value="approved">Odobreno</SelectItem>
+                  <SelectItem value="ordered">Poručeno</SelectItem>
+                  <SelectItem value="received">Primljeno</SelectItem>
+                  <SelectItem value="cancelled">Otkazano</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">
+                Nema porudžbina
+              </p>
+              <p className="text-muted-foreground">
+                {statusFilter === 'all' 
+                  ? 'Trenutno nema registrovanih porudžbina rezervnih delova.'
+                  : `Nema porudžbina sa statusom "${statusFilter}".`
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredOrders.map((order) => (
+                <Card key={order.id} className="border">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold">#{order.id} - {order.partName}</h3>
+                          {getStatusBadge(order.status)}
+                          {getUrgencyBadge(order.urgency)}
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            {order.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'} 
+                            {order.warrantyStatus}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="font-medium text-muted-foreground">Osnovni podaci</p>
+                            <p>Količina: {order.quantity}</p>
+                            {order.partNumber && <p>Kataloški br: {order.partNumber}</p>}
+                            {order.supplierName && <p>Dobavljač: {order.supplierName}</p>}
+                            <p>Kreiran: {formatDate(order.createdAt)}</p>
+                          </div>
+                          
+                          {order.service && (
+                            <div>
+                              <p className="font-medium text-muted-foreground">Servis #{order.service.id}</p>
+                              <p>Klijent: {order.service.client.fullName}</p>
+                              <p>Telefon: {order.service.client.phone}</p>
+                              <p>Grad: {order.service.client.city || 'N/A'}</p>
+                              <p>Uređaj: {order.service.appliance.manufacturer.name} {order.service.appliance.model}</p>
+                            </div>
+                          )}
+                          
+                          {order.technician && (
+                            <div>
+                              <p className="font-medium text-muted-foreground">Serviser</p>
+                              <p>Ime: {order.technician.name}</p>
+                              <p>Telefon: {order.technician.phone}</p>
+                              <p>Email: {order.technician.email}</p>
+                              <p>Spec: {order.technician.specialization}</p>
+                            </div>
+                          )}
+                          
+                          {!order.service && !order.technician && (
+                            <div>
+                              <p className="font-medium text-muted-foreground">Admin porudžbina</p>
+                              <p>Kreirana direktno kroz admin panel</p>
+                              {order.description && <p>Opis: {order.description}</p>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(order)}
+                        >
+                          Detalji
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditOrder(order)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalji porudžbine #{selectedOrder?.id}</DialogTitle>
+            <DialogDescription>
+              Kompletan pregled porudžbine rezervnog dela sa svim povezanim podacima
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="general">Osnovni podaci</TabsTrigger>
+                <TabsTrigger value="service">Servis</TabsTrigger>
+                <TabsTrigger value="financial">Finansijski</TabsTrigger>
+                <TabsTrigger value="timeline">Vremenski tok</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="general" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Naziv dela</Label>
+                    <p className="mt-1">{selectedOrder.partName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Količina</Label>
+                    <p className="mt-1">{selectedOrder.quantity}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Status</Label>
+                    <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Hitnost</Label>
+                    <div className="mt-1">{getUrgencyBadge(selectedOrder.urgency)}</div>
+                  </div>
+                </div>
+                
+                {selectedOrder.description && (
+                  <div>
+                    <Label className="text-sm font-medium">Opis</Label>
+                    <p className="mt-1 text-sm">{selectedOrder.description}</p>
+                  </div>
+                )}
+                
+                {selectedOrder.adminNotes && (
+                  <div>
+                    <Label className="text-sm font-medium">Napomene administratora</Label>
+                    <p className="mt-1 text-sm">{selectedOrder.adminNotes}</p>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="service" className="space-y-4">
+                {selectedOrder.service ? (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Servis #{selectedOrder.service.id}</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Status servisa</Label>
+                          <p className="mt-1">{selectedOrder.service.status}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Opis problema</Label>
+                          <p className="mt-1">{selectedOrder.service.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold mb-3">Podaci o klijentu</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Ime i prezime</Label>
+                          <p className="mt-1">{selectedOrder.service.client.fullName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Telefon</Label>
+                          <p className="mt-1">{selectedOrder.service.client.phone}</p>
+                        </div>
+                        {selectedOrder.service.client.email && (
+                          <div>
+                            <Label className="text-sm font-medium">Email</Label>
+                            <p className="mt-1">{selectedOrder.service.client.email}</p>
+                          </div>
+                        )}
+                        {selectedOrder.service.client.address && (
+                          <div>
+                            <Label className="text-sm font-medium">Adresa</Label>
+                            <p className="mt-1">{selectedOrder.service.client.address}, {selectedOrder.service.client.city}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold mb-3">Podaci o uređaju</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Proizvođač</Label>
+                          <p className="mt-1">{selectedOrder.service.appliance.manufacturer.name}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Kategorija</Label>
+                          <p className="mt-1">{selectedOrder.service.appliance.category.name}</p>
+                        </div>
+                        {selectedOrder.service.appliance.model && (
+                          <div>
+                            <Label className="text-sm font-medium">Model</Label>
+                            <p className="mt-1">{selectedOrder.service.appliance.model}</p>
+                          </div>
+                        )}
+                        {selectedOrder.service.appliance.serialNumber && (
+                          <div>
+                            <Label className="text-sm font-medium">Serijski broj</Label>
+                            <p className="mt-1">{selectedOrder.service.appliance.serialNumber}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground mb-2">
+                      Admin porudžbina
+                    </p>
+                    <p className="text-muted-foreground">
+                      Ova porudžbina je kreirana direktno kroz admin panel i nije povezana sa specifičnim servisom.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="financial" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Garancijski status</Label>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                        {selectedOrder.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'} 
+                        {selectedOrder.warrantyStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Dobavljač</Label>
+                    <p className="mt-1">{selectedOrder.supplierName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Procenjena cena</Label>
+                    <p className="mt-1">{selectedOrder.estimatedCost ? `${selectedOrder.estimatedCost} €` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Stvarna cena</Label>
+                    <p className="mt-1">{selectedOrder.actualCost ? `${selectedOrder.actualCost} €` : 'N/A'}</p>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="timeline" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Datum kreiranja</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.createdAt)}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedOrder.orderDate && (
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Package className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium">Datum porudžbine</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.orderDate)}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedOrder.expectedDelivery && (
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <p className="font-medium">Očekivana isporuka</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.expectedDelivery)}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedOrder.receivedDate && (
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium">Datum prijema</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.receivedDate)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Uredi porudžbinu #{selectedOrder?.id}</DialogTitle>
+            <DialogDescription>
+              Ažuriranje statusa i detalja porudžbine rezervnog dela
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={editFormData.status} 
+                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Na čekanju</SelectItem>
+                    <SelectItem value="approved">Odobreno</SelectItem>
+                    <SelectItem value="ordered">Poručeno</SelectItem>
+                    <SelectItem value="received">Primljeno</SelectItem>
+                    <SelectItem value="cancelled">Otkazano</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="estimatedCost">Procenjena cena (€)</Label>
+                <Input
+                  id="estimatedCost"
+                  type="number"
+                  step="0.01"
+                  value={editFormData.estimatedCost}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="actualCost">Stvarna cena (€)</Label>
+                <Input
+                  id="actualCost"
+                  type="number"
+                  step="0.01"
+                  value={editFormData.actualCost}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, actualCost: e.target.value }))}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="expectedDelivery">Očekivana isporuka</Label>
+                <Input
+                  id="expectedDelivery"
+                  type="date"
+                  value={editFormData.expectedDelivery}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, expectedDelivery: e.target.value }))}
+                />
+              </div>
+              
+              {editFormData.status === 'received' && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="receivedDate">Datum prijema</Label>
+                  <Input
+                    id="receivedDate"
+                    type="date"
+                    value={editFormData.receivedDate}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, receivedDate: e.target.value }))}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="adminNotes">Napomene administratora</Label>
+              <Textarea
+                id="adminNotes"
+                value={editFormData.adminNotes}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, adminNotes: e.target.value }))}
+                placeholder="Dodatne napomene o porudžbini..."
+                rows={3}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                Otkaži
+              </Button>
+              <Button type="submit" disabled={updateOrderMutation.isPending}>
+                {updateOrderMutation.isPending ? 'Ažuriranje...' : 'Sačuvaj izmene'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
