@@ -42,10 +42,12 @@ export function extractTokenFromRequest(req: Request): string | null {
 }
 
 export async function jwtAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  console.log(`JWT: ${req.method} ${req.url} - Checking auth`);
   const token = extractTokenFromRequest(req);
   
   if (!token) {
     console.log('JWT: No token found in request');
+    console.log('JWT: Headers:', req.headers.authorization);
     return res.status(401).json({ error: 'Potrebna je prijava' });
   }
   
