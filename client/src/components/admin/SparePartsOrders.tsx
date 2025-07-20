@@ -29,7 +29,8 @@ import {
   AlertCircle,
   CheckCircle,
   Building,
-  Settings
+  Settings,
+  Trash2
 } from 'lucide-react';
 
 interface SparePartOrder {
@@ -128,6 +129,29 @@ export default function SparePartsOrders() {
     }
   });
 
+  // Delete order mutation
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await apiRequest('DELETE', `/api/admin/spare-parts/${orderId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno obrisano",
+        description: "Porudžbina rezervnog dela je uspešno obrisana.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška pri brisanju",
+        description: error.message || "Došlo je do greške pri brisanju porudžbine.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Filter orders based on status
   const filteredOrders = orders.filter(order => {
     if (statusFilter === 'all') return true;
@@ -190,6 +214,13 @@ export default function SparePartsOrders() {
       adminNotes: order.adminNotes || ''
     });
     setIsEditOpen(true);
+  };
+
+  // Handle delete order
+  const handleDeleteOrder = (order: SparePartOrder) => {
+    if (window.confirm(`Da li ste sigurni da želite da obrišete porudžbinu #${order.id} - ${order.partName}?`)) {
+      deleteOrderMutation.mutate(order.id);
+    }
   };
 
   // Handle form submission
@@ -431,6 +462,19 @@ export default function SparePartsOrders() {
                           onClick={() => handleEditOrder(order)}
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteOrder(order)}
+                          disabled={deleteOrderMutation.isPending}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          {deleteOrderMutation.isPending ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
