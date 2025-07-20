@@ -326,10 +326,21 @@ export function MobileSMSConfig() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.open('https://www.whatismyipaddress.com/', '_blank')}
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('https://api.ipify.org?format=json');
+                      const data = await response.json();
+                      const publicIP = data.ip;
+                      const newUrl = `http://${publicIP}:8080/api/v1`;
+                      navigator.clipboard.writeText(newUrl);
+                      alert(`Javna IP adresa: ${publicIP}\n\nBase URL za SMS Mobile API:\n${newUrl}\n\n(Kopirana u clipboard)`);
+                    } catch (error) {
+                      window.open('https://www.whatismyipaddress.com/', '_blank');
+                    }
+                  }}
                   className="bg-green-600 text-white hover:bg-green-700"
                 >
-                  Proverite javnu IP adresu
+                  Dobij javnu IP i SMS URL
                 </Button>
                 <Button 
                   variant="outline" 
