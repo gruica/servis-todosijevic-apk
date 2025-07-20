@@ -25,7 +25,7 @@ import { callPhoneNumber, openMapWithAddress, isMobileEnvironment } from "@/lib/
 import SparePartsOrderForm from "@/components/spare-parts-order-form";
 import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFolder";
 import { useNotification } from "@/contexts/notification-context";
-import { SupplementGeneraliForm } from "@/components/technician/supplement-generali-form";
+import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
 
 type TechnicianService = Service & {
   client?: {
@@ -1320,7 +1320,7 @@ export default function TechnicianServices() {
 
       {/* Dialog za dopunjavanje Generali servisa */}
       {supplementGeneraliService && (
-        <SupplementGeneraliForm
+        <SupplementGeneraliFormSimple
           isOpen={supplementGeneraliOpen}
           onClose={() => {
             setSupplementGeneraliOpen(false);
@@ -1334,6 +1334,7 @@ export default function TechnicianServices() {
           currentSerialNumber={supplementGeneraliService.appliance?.serialNumber}
           currentModel={supplementGeneraliService.appliance?.model}
           currentPurchaseDate={supplementGeneraliService.appliance?.purchaseDate}
+          manufacturerName={supplementGeneraliService.appliance?.manufacturer?.name}
           onSuccess={() => {
             refetch();
           }}

@@ -47,8 +47,7 @@ export function SupplementGeneraliForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const activeInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  // Removed all problematic refs that were causing freezing
 
   const form = useForm<SupplementGeneraliService>({
     resolver: zodResolver(supplementGeneraliServiceSchema),
@@ -64,168 +63,30 @@ export function SupplementGeneraliForm({
     }
   });
 
-  // Mobile keyboard positioning logic
+  // Simplified mobile keyboard detection - only for visual feedback
   useEffect(() => {
     if (!isOpen) return;
 
     const isMobile = window.innerWidth <= 768;
     if (!isMobile) return;
 
-    const originalViewportHeight = window.visualViewport?.height || window.innerHeight;
-    
     const handleViewportChange = () => {
+      const originalHeight = window.innerHeight;
       const currentHeight = window.visualViewport?.height || window.innerHeight;
-      const heightDifference = originalViewportHeight - currentHeight;
+      const heightDifference = originalHeight - currentHeight;
       
-      // Keyboard is open if height decreased by more than 150px
-      const isKeyboardOpen = heightDifference > 150;
-      setKeyboardVisible(isKeyboardOpen);
-      
-      if (isKeyboardOpen && dialogRef.current) {
-        const dialogElement = dialogRef.current;
-        
-        // Keep dialog at reasonable size and position above keyboard
-        const availableHeight = currentHeight - 40; // Smaller buffer for more space
-        
-        // Position dialog to be visible above keyboard with better sizing
-        dialogElement.style.position = 'fixed';
-        dialogElement.style.top = '5px';
-        dialogElement.style.maxHeight = `${availableHeight}px`;
-        dialogElement.style.height = 'auto';
-        dialogElement.style.minHeight = 'auto'; // Remove fixed min-height
-        dialogElement.style.overflowY = 'auto';
-        dialogElement.style.transform = 'translateX(-50%)';
-        dialogElement.style.left = '50%';
-        dialogElement.style.width = '95vw';
-        dialogElement.style.maxWidth = '500px';
-        dialogElement.style.zIndex = '9999';
-        
-        // Ensure footer buttons are always accessible with sticky positioning
-        const footer = dialogElement.querySelector('.space-x-2, [class*="gap-2"]');
-        if (footer) {
-          (footer as HTMLElement).style.position = 'sticky';
-          (footer as HTMLElement).style.bottom = '0';
-          (footer as HTMLElement).style.backgroundColor = 'white';
-          (footer as HTMLElement).style.zIndex = '10';
-          (footer as HTMLElement).style.padding = '12px 0';
-          (footer as HTMLElement).style.borderTop = '1px solid #e5e7eb';
-          (footer as HTMLElement).style.marginTop = '16px';
-        }
-        
-        // Ensure content scrolls properly while keeping footer visible
-        const content = dialogElement.querySelector('form');
-        if (content) {
-          (content as HTMLElement).style.maxHeight = `${availableHeight - 80}px`; // Reserve space for footer
-          (content as HTMLElement).style.overflowY = 'auto';
-          (content as HTMLElement).style.paddingBottom = '20px';
-        }
-        
-        // If there's an active input, scroll it into view gently
-        if (activeInputRef.current) {
-          setTimeout(() => {
-            activeInputRef.current?.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'nearest',
-              inline: 'nearest'
-            });
-          }, 150);
-        }
-      } else if (dialogRef.current) {
-        // Reset dialog styles when keyboard closes
-        const dialogElement = dialogRef.current;
-        dialogElement.style.position = '';
-        dialogElement.style.top = '';
-        dialogElement.style.maxHeight = '';
-        dialogElement.style.height = '';
-        dialogElement.style.overflowY = '';
-        dialogElement.style.transform = '';
-        dialogElement.style.left = '';
-        dialogElement.style.width = '';
-        dialogElement.style.maxWidth = '';
-        dialogElement.style.zIndex = '';
-        
-        // Reset footer styles
-        const footer = dialogElement.querySelector('.space-x-2, [class*="gap-2"]');
-        if (footer) {
-          (footer as HTMLElement).style.position = '';
-          (footer as HTMLElement).style.bottom = '';
-          (footer as HTMLElement).style.backgroundColor = '';
-          (footer as HTMLElement).style.zIndex = '';
-          (footer as HTMLElement).style.padding = '';
-          (footer as HTMLElement).style.borderTop = '';
-          (footer as HTMLElement).style.marginTop = '';
-        }
-        
-        // Reset content styles
-        const content = dialogElement.querySelector('form');
-        if (content) {
-          (content as HTMLElement).style.maxHeight = '';
-          (content as HTMLElement).style.overflowY = '';
-          (content as HTMLElement).style.paddingBottom = '';
-        }
-      }
+      // Simple keyboard detection without DOM manipulation
+      setKeyboardVisible(heightDifference > 150);
     };
 
-    const handleInputFocus = (e: FocusEvent) => {
-      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
-        activeInputRef.current = target;
-        
-        // Delay to allow keyboard animation
-        setTimeout(() => {
-          handleViewportChange();
-        }, 300);
-      }
-    };
-
-    const handleInputBlur = () => {
-      // Short delay to check if focus moved to another input
-      setTimeout(() => {
-        const focusedElement = document.activeElement;
-        if (!focusedElement || 
-            (focusedElement.tagName !== 'INPUT' && focusedElement.tagName !== 'TEXTAREA')) {
-          activeInputRef.current = null;
-          setKeyboardVisible(false);
-          handleViewportChange();
-        }
-      }, 100);
-    };
-
-    // Use visualViewport if available for better mobile support
+    // Use only visualViewport for better compatibility
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
-    } else {
-      window.addEventListener('resize', handleViewportChange);
-    }
-    
-    window.addEventListener('orientationchange', handleViewportChange);
-    document.addEventListener('focusin', handleInputFocus);
-    document.addEventListener('focusout', handleInputBlur);
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-      } else {
-        window.removeEventListener('resize', handleViewportChange);
-      }
-      window.removeEventListener('orientationchange', handleViewportChange);
-      document.removeEventListener('focusin', handleInputFocus);
-      document.removeEventListener('focusout', handleInputBlur);
       
-      // Reset styles on cleanup
-      if (dialogRef.current) {
-        const dialogElement = dialogRef.current;
-        dialogElement.style.position = '';
-        dialogElement.style.top = '';
-        dialogElement.style.maxHeight = '';
-        dialogElement.style.height = '';
-        dialogElement.style.overflowY = '';
-        dialogElement.style.transform = '';
-        dialogElement.style.left = '';
-        dialogElement.style.width = '';
-        dialogElement.style.maxWidth = '';
-      }
-    };
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      };
+    }
   }, [isOpen]);
 
   const supplementMutation = useMutation({
@@ -352,10 +213,7 @@ export function SupplementGeneraliForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        ref={dialogRef}
-        className="max-w-2xl transition-all duration-300"
-      >
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -404,7 +262,6 @@ export function SupplementGeneraliForm({
                           placeholder={currentClientEmail || "primer@email.com"}
                           className="w-full"
                           onFocus={(e) => {
-                            activeInputRef.current = e.target;
                             // Prevent zoom on iOS
                             e.target.style.fontSize = '16px';
                           }}
