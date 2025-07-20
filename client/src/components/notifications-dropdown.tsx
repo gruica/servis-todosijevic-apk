@@ -24,6 +24,7 @@ interface Notification {
   title: string;
   message: string;
   relatedServiceId?: number;
+  relatedSparePartId?: number;
   relatedUserId?: number;
   isRead: boolean;
   priority: "low" | "normal" | "high" | "urgent";
@@ -107,6 +108,7 @@ export function NotificationsDropdown() {
       notificationId: notification.id,
       userRole: user?.role,
       relatedServiceId: notification.relatedServiceId,
+      relatedSparePartId: notification.relatedSparePartId,
       title: notification.title
     });
     
@@ -115,16 +117,17 @@ export function NotificationsDropdown() {
       markAsReadMutation.mutate(notification.id);
     }
     
+    // Posebno rukovanje admin spare parts notifikacija
+    if (user && notification.type === 'admin_spare_part_ordered' && notification.relatedSparePartId) {
+      console.log("📦 Admin spare parts notification - navigating to spare parts management");
+      // Za admin spare parts notifikacije - navigacija na spare parts management
+      navigate('/admin/spare-parts');
+      setIsOpen(false);
+      return;
+    }
+    
     // Navigacija na osnovu tipa notifikacije i korisničke uloge
     if (user && notification.relatedServiceId) {
-      // Posebno rukovanje admin spare parts notifikacija
-      if (notification.type === 'admin_spare_part_ordered' && user.role === 'admin') {
-        console.log("📦 Admin spare parts notification - navigating to spare parts management");
-        // Za admin spare parts notifikacije - navigacija na spare parts management
-        navigate('/admin/spare-parts');
-        setIsOpen(false);
-        return;
-      }
       
       console.log("🎯 Setting notification context:", {
         serviceId: notification.relatedServiceId,

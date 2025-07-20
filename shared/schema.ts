@@ -693,10 +693,11 @@ export const sparePartOrderRelations = relations(sparePartOrders, ({ one }) => (
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id), // Korisnik koji prima notifikaciju
-  type: text("type").notNull(), // "service_assigned", "service_created", "service_status_changed", "spare_part_ordered"
+  type: text("type").notNull(), // "service_assigned", "service_created", "service_status_changed", "spare_part_ordered", "admin_spare_part_ordered"
   title: text("title").notNull(), // Naslov notifikacije
   message: text("message").notNull(), // Poruka notifikacije
   relatedServiceId: integer("related_service_id").references(() => services.id), // Povezani servis (opciono)
+  relatedSparePartId: integer("related_spare_part_id").references(() => sparePartOrders.id), // Povezana spare part narudžbina (opciono)
   relatedUserId: integer("related_user_id").references(() => users.id), // Povezani korisnik (opciono)
   isRead: boolean("is_read").default(false).notNull(), // Da li je pročitana
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).default("normal").notNull(),
@@ -710,6 +711,7 @@ export const insertNotificationSchema = createInsertSchema(notifications).pick({
   title: true,
   message: true,
   relatedServiceId: true,
+  relatedSparePartId: true,
   relatedUserId: true,
   isRead: true,
   priority: true,
@@ -727,6 +729,10 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   relatedService: one(services, {
     fields: [notifications.relatedServiceId],
     references: [services.id],
+  }),
+  relatedSparePart: one(sparePartOrders, {
+    fields: [notifications.relatedSparePartId],
+    references: [sparePartOrders.id],
   }),
   relatedUser: one(users, {
     fields: [notifications.relatedUserId],

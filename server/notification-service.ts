@@ -9,6 +9,7 @@ export interface NotificationData {
   title: string;
   message: string;
   relatedServiceId?: number;
+  relatedSparePartId?: number;
   relatedUserId?: number;
   priority?: "low" | "normal" | "high" | "urgent";
 }
@@ -25,6 +26,7 @@ export class NotificationService {
           title: data.title,
           message: data.message,
           relatedServiceId: data.relatedServiceId,
+          relatedSparePartId: data.relatedSparePartId,
           relatedUserId: data.relatedUserId,
           priority: data.priority || "normal",
           isRead: false,
@@ -208,7 +210,7 @@ export class NotificationService {
           type: "admin_spare_part_ordered",
           title: "Nova admin porudžbina rezervnih delova",
           message: `${adminName} je poručio rezervni deo: ${order.partName}${order.partNumber ? ` (${order.partNumber})` : ''} - ${order.urgency === 'urgent' ? 'HITNO' : order.urgency === 'high' ? 'VISOKA PRIORITET' : 'STANDARDNO'}`,
-          relatedServiceId: orderId, // Koristimo orderId umesto serviceId
+          relatedSparePartId: orderId, // Koristimo spare part ID
           relatedUserId: null,
           priority: order.urgency === 'urgent' ? 'urgent' : order.urgency === 'high' ? 'high' : 'normal',
         });
@@ -605,6 +607,7 @@ export class NotificationService {
           title: notifications.title,
           message: notifications.message,
           relatedServiceId: notifications.relatedServiceId,
+          relatedSparePartId: notifications.relatedSparePartId,
           relatedUserId: notifications.relatedUserId,
           isRead: notifications.isRead,
           priority: notifications.priority,
