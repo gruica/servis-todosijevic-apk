@@ -102,6 +102,13 @@ export function NotificationsDropdown() {
 
   // Funkcija za navigaciju na detalje notifikacije
   const handleNotificationClick = (notification: Notification) => {
+    console.log("🔔 Notification click:", {
+      notificationId: notification.id,
+      userRole: user?.role,
+      relatedServiceId: notification.relatedServiceId,
+      title: notification.title
+    });
+    
     // Označava notifikaciju kao pročitanu
     if (!notification.isRead) {
       markAsReadMutation.mutate(notification.id);
@@ -109,31 +116,42 @@ export function NotificationsDropdown() {
     
     // Navigacija na osnovu tipa notifikacije i korisničke uloge
     if (user && notification.relatedServiceId) {
+      console.log("🎯 Setting notification context:", {
+        serviceId: notification.relatedServiceId,
+        shouldAutoOpen: true
+      });
+      
       // Postavi highlighted service u context
       setHighlightedServiceId(notification.relatedServiceId);
       setShouldAutoOpen(true);
       
       switch (user.role) {
         case 'technician':
+          console.log("👨‍🔧 Navigating technician to /tech");
           // Za tehničare - navigacija na stranicu servisa sa fokusiranim servisom
           navigate('/tech');
           break;
         case 'admin':
+          console.log("👨‍💼 Navigating admin to /admin/services");
           // Za adminiastratore - navigacija na admin servise sa fokusiranim servisom
           navigate('/admin/services');
           break;
         case 'customer':
+          console.log("👤 Navigating customer to /customer/services");
           // Za klijente - navigacija na svoje servise
           navigate('/customer/services');
           break;
         case 'business_partner':
+          console.log("🤝 Navigating business partner to /business/services");
           // Za poslovne partnere - navigacija na svoje servise
           navigate('/business/services');
           break;
         default:
+          console.log("❓ Unknown role, navigating to /");
           navigate('/');
       }
     } else {
+      console.log("⚠️ No user or no related service ID");
       // Fallback navigacija bez specifičnog servisa
       if (user) {
         switch (user.role) {

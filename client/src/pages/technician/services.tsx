@@ -179,16 +179,17 @@ export default function TechnicianServices() {
     if (highlightedServiceId && shouldAutoOpen && services.length > 0) {
       const targetService = services.find(service => service.id === highlightedServiceId);
       if (targetService) {
+        console.log("🎯 Notification: Otvaramo floating dialog za servis", targetService.id);
+        
         // Automatski otvara floating servis prozor za highlighted servis
         setFloatingSelectedService(targetService);
         setFloatingServiceOpen(true);
         
-        // Čisti state posle otvaranja da se izbegnu duplikati
-        setShouldAutoOpen(false);
-        history.replaceState(null, '', '/tech');
+        // Čisti notification state posle otvaranja
+        clearHighlight();
       }
     }
-  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
+  }, [services, highlightedServiceId, shouldAutoOpen, clearHighlight]);
 
   // Mutation for updating service status
   const updateStatusMutation = useMutation({
