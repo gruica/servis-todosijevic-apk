@@ -102,7 +102,7 @@ export function setupAuth(app: Express) {
           }
           
           console.log(`User found: ${username}`);
-          const isPasswordValid = await comparePasswords(password, user.password);
+          const isPasswordValid = await comparePassword(password, user.password);
           
           if (!isPasswordValid) {
             console.log(`Invalid password for user: ${username}`);
