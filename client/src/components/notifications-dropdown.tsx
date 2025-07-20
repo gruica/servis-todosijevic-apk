@@ -46,6 +46,7 @@ const typeIcons = {
   spare_part_requested: Package,
   spare_part_received: Package,
   spare_part_status_changed: Package,
+  admin_spare_part_ordered: Package,
 };
 
 export function NotificationsDropdown() {
@@ -116,6 +117,15 @@ export function NotificationsDropdown() {
     
     // Navigacija na osnovu tipa notifikacije i korisničke uloge
     if (user && notification.relatedServiceId) {
+      // Posebno rukovanje admin spare parts notifikacija
+      if (notification.type === 'admin_spare_part_ordered' && user.role === 'admin') {
+        console.log("📦 Admin spare parts notification - navigating to spare parts management");
+        // Za admin spare parts notifikacije - navigacija na spare parts management
+        navigate('/admin/spare-parts');
+        setIsOpen(false);
+        return;
+      }
+      
       console.log("🎯 Setting notification context:", {
         serviceId: notification.relatedServiceId,
         shouldAutoOpen: true

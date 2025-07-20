@@ -5022,9 +5022,9 @@ Admin panel - automatska porudžbina
 
       // Obavesti administratore o novoj porudžbini
       try {
-        await NotificationService.notifySparePartOrdered(
+        await NotificationService.notifyAdminSparePartOrdered(
           sparePartOrder.id,
-          req.user.id // admin user kao technician za admin porudžbine
+          req.user.fullName || req.user.username || "Administrator"
         );
       } catch (notificationError) {
         console.error('[SPARE PARTS ORDER] Greška pri slanju obaveštenja:', notificationError);

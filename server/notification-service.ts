@@ -169,6 +169,57 @@ export class NotificationService {
     }
   }
 
+  // Kreiranje notifikacije za admin porudžbinu rezervnih delova
+  static async notifyAdminSparePartOrdered(orderId: number, adminName: string) {
+    try {
+      // Dobijamo podatke o porudžbini
+      const orderData = await db
+        .select({
+          id: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          urgency: sparePartOrders.urgency,
+          quantity: sparePartOrders.quantity,
+          description: sparePartOrders.description,
+        })
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, orderId))
+        .limit(1);
+
+      if (!orderData.length) {
+        throw new Error(`Porudžbina sa ID ${orderId} nije pronađena`);
+      }
+
+      const order = orderData[0];
+
+      // Dobijamo sve administratore
+      const admins = await db
+        .select({
+          id: users.id,
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.role, "admin"));
+
+      // Kreiramo notifikaciju za svakog administratora
+      for (const admin of admins) {
+        await this.createNotification({
+          userId: admin.id,
+          type: "admin_spare_part_ordered",
+          title: "Nova admin porudžbina rezervnih delova",
+          message: `${adminName} je poručio rezervni deo: ${order.partName}${order.partNumber ? ` (${order.partNumber})` : ''} - ${order.urgency === 'urgent' ? 'HITNO' : order.urgency === 'high' ? 'VISOKA PRIORITET' : 'STANDARDNO'}`,
+          relatedServiceId: orderId, // Koristimo orderId umesto serviceId
+          relatedUserId: null,
+          priority: order.urgency === 'urgent' ? 'urgent' : order.urgency === 'high' ? 'high' : 'normal',
+        });
+      }
+
+      console.log(`Notifikacija o admin porudžbini rezervnog dela poslana administratorima`);
+    } catch (error) {
+      console.error("Greška pri slanju notifikacije o admin porudžbini:", error);
+    }
+  }
+
   // Kreiranje notifikacije za novi zahtev za rezervnim delom
   static async notifySparePartOrdered(orderId: number, technicianId: number) {
     try {
