@@ -3195,6 +3195,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSparePartOrder(id: number): Promise<boolean> {
     try {
+      // First delete any related notifications
+      await db
+        .delete(notifications)
+        .where(eq(notifications.relatedSparePartId, id));
+      
+      // Then delete the spare part order
       const result = await db
         .delete(sparePartOrders)
         .where(eq(sparePartOrders.id, id))
