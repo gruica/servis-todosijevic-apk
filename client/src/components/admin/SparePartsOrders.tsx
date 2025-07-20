@@ -132,10 +132,15 @@ export default function SparePartsOrders() {
   // Delete order mutation
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
+      console.log('DELETE API call starting for orderId:', orderId);
       const response = await apiRequest('DELETE', `/api/admin/spare-parts/${orderId}`);
-      return response.json();
+      console.log('DELETE API response status:', response.status);
+      const result = await response.json();
+      console.log('DELETE API response data:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('DELETE mutation success:', data);
       toast({
         title: "Uspešno obrisano",
         description: "Porudžbina rezervnog dela je uspešno obrisana.",
@@ -144,6 +149,7 @@ export default function SparePartsOrders() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
     },
     onError: (error: any) => {
+      console.error('DELETE mutation error:', error);
       toast({
         title: "Greška pri brisanju",
         description: error.message || "Došlo je do greške pri brisanju porudžbine.",
@@ -218,7 +224,9 @@ export default function SparePartsOrders() {
 
   // Handle delete order
   const handleDeleteOrder = (order: SparePartOrder) => {
+    console.log('Delete order clicked:', order.id, order.partName);
     if (window.confirm(`Da li ste sigurni da želite da obrišete porudžbinu #${order.id} - ${order.partName}?`)) {
+      console.log('Mutation started for order ID:', order.id);
       deleteOrderMutation.mutate(order.id);
     }
   };
