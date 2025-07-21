@@ -666,6 +666,60 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
 export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
 export type SparePartOrder = typeof sparePartOrders.$inferSelect;
 
+// Tabela za dostupne rezervne delove (available parts)
+export const availableParts = pgTable("available_parts", {
+  id: serial("id").primaryKey(),
+  partName: text("part_name").notNull(),
+  partNumber: text("part_number"), // Kataloški broj dela
+  quantity: integer("quantity").notNull().default(1),
+  description: text("description"), // Opis dela
+  supplierName: text("supplier_name"), // Dobavljač
+  unitCost: text("unit_cost"), // Cena po komadu
+  location: text("location"), // Lokacija u skladištu
+  warrantyStatus: text("warranty_status").notNull(), // u garanciji, van garancije
+  categoryId: integer("category_id").references(() => applianceCategories.id), // Kategorija uređaja
+  manufacturerId: integer("manufacturer_id").references(() => manufacturers.id), // Proizvođač
+  originalOrderId: integer("original_order_id").references(() => sparePartOrders.id), // Originalna porudžbina
+  addedDate: timestamp("added_date").defaultNow().notNull(), // Kada je deo dodati u skladište
+  addedBy: integer("added_by").notNull().references(() => users.id), // Ko je dodao deo
+  notes: text("notes"), // Dodatne napomene
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAvailablePartSchema = createInsertSchema(availableParts).pick({
+  partName: true,
+  partNumber: true,
+  quantity: true,
+  description: true,
+  supplierName: true,
+  unitCost: true,
+  location: true,
+  warrantyStatus: true,
+  categoryId: true,
+  manufacturerId: true,
+  originalOrderId: true,
+  addedBy: true,
+  notes: true,
+}).extend({
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
+  partNumber: z.string().max(100, "Kataloški broj je predugačak").or(z.literal("")).optional(),
+  quantity: z.number().int().positive("Količina mora biti pozitivan broj"),
+  description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
+  supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
+  unitCost: z.string().max(50, "Cena je predugačka").or(z.literal("")).optional(),
+  location: z.string().max(100, "Lokacija je predugačka").or(z.literal("")).optional(),
+  warrantyStatus: sparePartWarrantyStatusEnum,
+  categoryId: z.number().int().positive("ID kategorije mora biti pozitivan broj").optional(),
+  manufacturerId: z.number().int().positive("ID proizvođača mora biti pozitivan broj").optional(),
+  originalOrderId: z.number().int().positive("ID originalne porudžbine mora biti pozitivan broj").optional(),
+  addedBy: z.number().int().positive("ID korisnika mora biti pozitivan broj"),
+  notes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+});
+
+export type InsertAvailablePart = z.infer<typeof insertAvailablePartSchema>;
+export type AvailablePart = typeof availableParts.$inferSelect;
+
 // Dodatne relacije
 export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
   user: one(users, {
@@ -686,6 +740,25 @@ export const sparePartOrderRelations = relations(sparePartOrders, ({ one }) => (
   appliance: one(appliances, {
     fields: [sparePartOrders.applianceId],
     references: [appliances.id],
+  }),
+}));
+
+export const availablePartsRelations = relations(availableParts, ({ one }) => ({
+  category: one(applianceCategories, {
+    fields: [availableParts.categoryId],
+    references: [applianceCategories.id],
+  }),
+  manufacturer: one(manufacturers, {
+    fields: [availableParts.manufacturerId],
+    references: [manufacturers.id],
+  }),
+  originalOrder: one(sparePartOrders, {
+    fields: [availableParts.originalOrderId],
+    references: [sparePartOrders.id],
+  }),
+  addedByUser: one(users, {
+    fields: [availableParts.addedBy],
+    references: [users.id],
   }),
 }));
 

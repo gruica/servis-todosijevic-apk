@@ -14,13 +14,14 @@ import {
   EmailVerification, InsertEmailVerification,
   SparePartOrder, InsertSparePartOrder,
   SparePartUrgency, SparePartStatus,
+  AvailablePart, InsertAvailablePart,
   Notification, InsertNotification,
   SystemSetting, InsertSystemSetting,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
-  notifications, systemSettings
+  availableParts, notifications, systemSettings
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -156,6 +157,19 @@ export interface IStorage {
   createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
   updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
   deleteSparePartOrder(id: number): Promise<boolean>;
+  markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: SparePartOrder; availablePart: AvailablePart } | undefined>;
+
+  // Available parts methods
+  getAllAvailableParts(): Promise<AvailablePart[]>;
+  getAvailablePart(id: number): Promise<AvailablePart | undefined>;
+  getAvailablePartsByCategory(categoryId: number): Promise<AvailablePart[]>;
+  getAvailablePartsByManufacturer(manufacturerId: number): Promise<AvailablePart[]>;
+  getAvailablePartsByWarrantyStatus(warrantyStatus: string): Promise<AvailablePart[]>;
+  searchAvailableParts(searchTerm: string): Promise<AvailablePart[]>;
+  createAvailablePart(part: InsertAvailablePart): Promise<AvailablePart>;
+  updateAvailablePart(id: number, part: Partial<AvailablePart>): Promise<AvailablePart | undefined>;
+  deleteAvailablePart(id: number): Promise<boolean>;
+  updateAvailablePartQuantity(id: number, quantityChange: number): Promise<AvailablePart | undefined>;
   
   // Notification methods
   getAllNotifications(userId?: number): Promise<Notification[]>;
@@ -3209,6 +3223,197 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine rezervnog dela:', error);
       return false;
+    }
+  }
+
+  async markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: SparePartOrder; availablePart: AvailablePart } | undefined> {
+    try {
+      // Get the order first
+      const order = await this.getSparePartOrder(orderId);
+      if (!order) {
+        throw new Error('Porudžbina nije pronađena');
+      }
+
+      // Update the order status to 'received'
+      const updatedOrder = await this.updateSparePartOrder(orderId, {
+        status: 'received',
+        receivedDate: new Date(),
+        actualCost: receivedData.actualCost || order.actualCost
+      });
+
+      if (!updatedOrder) {
+        throw new Error('Nije moguće ažurirati porudžbinu');
+      }
+
+      // Create available part from the order
+      const availablePartData: InsertAvailablePart = {
+        partName: order.partName,
+        partNumber: order.partNumber || undefined,
+        quantity: order.quantity,
+        description: order.description || undefined,
+        supplierName: order.supplierName || undefined,
+        unitCost: receivedData.actualCost || order.estimatedCost || undefined,
+        location: receivedData.location || undefined,
+        warrantyStatus: order.warrantyStatus,
+        categoryId: undefined, // Could be extracted from appliance if needed
+        manufacturerId: undefined, // Could be extracted from appliance if needed
+        originalOrderId: orderId,
+        addedBy: adminId,
+        notes: receivedData.notes || undefined
+      };
+
+      const availablePart = await this.createAvailablePart(availablePartData);
+
+      return { order: updatedOrder, availablePart };
+    } catch (error) {
+      console.error('Greška pri označavanju dela kao primljenog:', error);
+      throw error;
+    }
+  }
+
+  // Available parts methods
+  async getAllAvailableParts(): Promise<AvailablePart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnih delova:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePart(id: number): Promise<AvailablePart | undefined> {
+    try {
+      const [part] = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.id, id));
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePartsByCategory(categoryId: number): Promise<AvailablePart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.categoryId, categoryId))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po kategoriji:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePartsByManufacturer(manufacturerId: number): Promise<AvailablePart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.manufacturerId, manufacturerId))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po proizvođaču:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePartsByWarrantyStatus(warrantyStatus: string): Promise<AvailablePart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.warrantyStatus, warrantyStatus))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po garanciji:', error);
+      throw error;
+    }
+  }
+
+  async searchAvailableParts(searchTerm: string): Promise<AvailablePart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(
+          sql`LOWER(${availableParts.partName}) LIKE LOWER(${'%' + searchTerm + '%'}) OR 
+              LOWER(${availableParts.partNumber}) LIKE LOWER(${'%' + searchTerm + '%'}) OR
+              LOWER(${availableParts.description}) LIKE LOWER(${'%' + searchTerm + '%'})`
+        )
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri pretrazi dostupnih delova:', error);
+      throw error;
+    }
+  }
+
+  async createAvailablePart(part: InsertAvailablePart): Promise<AvailablePart> {
+    try {
+      const [newPart] = await db
+        .insert(availableParts)
+        .values(part)
+        .returning();
+      return newPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailablePart(id: number, part: Partial<AvailablePart>): Promise<AvailablePart | undefined> {
+    try {
+      const [updatedPart] = await db
+        .update(availableParts)
+        .set({...part, updatedAt: new Date()})
+        .where(eq(availableParts.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async deleteAvailablePart(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(availableParts)
+        .where(eq(availableParts.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Greška pri brisanju dostupnog dela:', error);
+      return false;
+    }
+  }
+
+  async updateAvailablePartQuantity(id: number, quantityChange: number): Promise<AvailablePart | undefined> {
+    try {
+      const part = await this.getAvailablePart(id);
+      if (!part) {
+        throw new Error('Deo nije pronađen');
+      }
+
+      const newQuantity = part.quantity + quantityChange;
+      if (newQuantity < 0) {
+        throw new Error('Količina ne može biti negativna');
+      }
+
+      return await this.updateAvailablePart(id, { quantity: newQuantity });
+    } catch (error) {
+      console.error('Greška pri ažuriranju količine dela:', error);
+      throw error;
     }
   }
 

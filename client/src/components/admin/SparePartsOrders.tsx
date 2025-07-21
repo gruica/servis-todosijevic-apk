@@ -158,6 +158,48 @@ export default function SparePartsOrders() {
     }
   });
 
+  // Mark as received mutation
+  const markReceivedMutation = useMutation({
+    mutationFn: async (order: SparePartOrder) => {
+      // Create available part entry
+      const availablePartData = {
+        partName: order.partName,
+        partNumber: order.partNumber || '',
+        quantity: order.quantity,
+        description: order.description || '',
+        warrantyStatus: order.warrantyStatus,
+        supplierName: order.supplierName || '',
+        actualCost: order.actualCost || '',
+        location: 'Skladište', // Default location
+        notes: `Prelazak iz porudžbine #${order.id}`,
+        originalOrderId: order.id,
+        serviceId: order.serviceId,
+        technicianId: order.technicianId,
+        applianceId: order.applianceId,
+        receivedDate: new Date().toISOString()
+      };
+
+      const response = await apiRequest('POST', '/api/admin/available-parts', availablePartData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Deo označen kao primljen",
+        description: "Rezervni deo je prebačen u dostupne delove.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/available-parts'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška pri označavanju",
+        description: error.message || "Došlo je do greške pri označavanju dela kao primljenog.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Filter orders based on status
   const filteredOrders = orders.filter(order => {
     if (statusFilter === 'all') return true;
@@ -228,6 +270,13 @@ export default function SparePartsOrders() {
     if (window.confirm(`Da li ste sigurni da želite da obrišete porudžbinu #${order.id} - ${order.partName}?`)) {
       console.log('Mutation started for order ID:', order.id);
       deleteOrderMutation.mutate(order.id);
+    }
+  };
+
+  // Handle mark as received
+  const handleMarkReceived = (order: SparePartOrder) => {
+    if (window.confirm(`Da li ste sigurni da je deo ${order.partName} stigao i želite ga prebaciti u dostupne delove?`)) {
+      markReceivedMutation.mutate(order);
     }
   };
 
@@ -464,6 +513,17 @@ export default function SparePartsOrders() {
                         >
                           Detalji
                         </Button>
+                        {order.status === 'pending' && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleMarkReceived(order)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Stigao
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

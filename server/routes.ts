@@ -5574,6 +5574,182 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ===== AVAILABLE PARTS ENDPOINTS =====
+
+  // Mark spare part as received and move to available parts (admin only)
+  app.post("/api/admin/spare-parts/:id/mark-received", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const orderId = parseInt(req.params.id);
+      const { actualCost, location, notes } = req.body;
+      
+      const result = await storage.markSparePartAsReceived(orderId, req.user.id, {
+        actualCost,
+        location,
+        notes
+      });
+      
+      if (!result) {
+        return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Rezervni deo je uspešno označen kao primljen i dodatan u skladište",
+        order: result.order,
+        availablePart: result.availablePart
+      });
+    } catch (error) {
+      console.error("Error marking spare part as received:", error);
+      res.status(500).json({ error: "Greška pri označavanju dela kao primljenog" });
+    }
+  });
+
+  // Get all available parts (admin only)
+  app.get("/api/admin/available-parts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const parts = await storage.getAllAvailableParts();
+      res.json(parts);
+    } catch (error) {
+      console.error("Error fetching available parts:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dostupnih delova" });
+    }
+  });
+
+  // Get available part by ID (admin only)
+  app.get("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const part = await storage.getAvailablePart(parseInt(req.params.id));
+      if (!part) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+      res.json(part);
+    } catch (error) {
+      console.error("Error fetching available part:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dostupnog dela" });
+    }
+  });
+
+  // Search available parts (admin only)
+  app.get("/api/admin/available-parts/search", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Parametar pretrage 'q' je obavezan" });
+      }
+      
+      const parts = await storage.searchAvailableParts(q);
+      res.json(parts);
+    } catch (error) {
+      console.error("Error searching available parts:", error);
+      res.status(500).json({ error: "Greška pri pretrazi dostupnih delova" });
+    }
+  });
+
+  // Create new available part manually (admin only)
+  app.post("/api/admin/available-parts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partData = {
+        ...req.body,
+        addedBy: req.user.id
+      };
+      
+      const part = await storage.createAvailablePart(partData);
+      res.json(part);
+    } catch (error) {
+      console.error("Error creating available part:", error);
+      res.status(500).json({ error: "Greška pri kreiranju dostupnog dela" });
+    }
+  });
+
+  // Update available part (admin only)
+  app.put("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedPart = await storage.updateAvailablePart(partId, updates);
+      if (!updatedPart) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error updating available part:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju dostupnog dela" });
+    }
+  });
+
+  // Delete available part (admin only)
+  app.delete("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const deleted = await storage.deleteAvailablePart(partId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting available part:", error);
+      res.status(500).json({ error: "Greška pri brisanju dostupnog dela" });
+    }
+  });
+
+  // Update available part quantity (admin only)
+  app.patch("/api/admin/available-parts/:id/quantity", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const { quantityChange } = req.body;
+      
+      if (typeof quantityChange !== 'number') {
+        return res.status(400).json({ error: "Promena količine mora biti broj" });
+      }
+      
+      const updatedPart = await storage.updateAvailablePartQuantity(partId, quantityChange);
+      if (!updatedPart) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error updating available part quantity:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju količine dela" });
+    }
+  });
+
   // ===== MOBILE SMS API ONLY =====
   // Old GSM modem and hybrid SMS services removed - using Mobile SMS API instead
 
