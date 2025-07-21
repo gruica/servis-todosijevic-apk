@@ -5,6 +5,7 @@ import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
 
 import { storage } from "./storage";
+import { createMobileSMSService } from "./mobile-sms-service";
 
 const app = express();
 
@@ -70,7 +71,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Mobile SMS servis je onemogućen - čekaju se novi parametri
+  // Inicijalizacija Mobile SMS servisa sa novim parametrima
+  console.log('[MOBILE SMS] Pokretanje mobile SMS servisa sa novom aplikacijom...');
+  const mobileSMSService = createMobileSMSService(storage as any);
+  await mobileSMSService.initialize();
   
   const server = await registerRoutes(app);
 

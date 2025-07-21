@@ -3,7 +3,8 @@ import fetch from 'node-fetch';
 export interface MobileGatewaySMSConfig {
   gatewayIP: string;
   gatewayPort: number;
-  apiKey?: string;
+  username: string;
+  password: string;
   timeout: number;
 }
 
@@ -34,19 +35,15 @@ export class MobileGatewaySMSService {
       console.log(`[MOBILE SMS] 📱 Slanje SMS-a na ${message.phoneNumber} preko mobile gateway-a`);
       console.log(`[MOBILE SMS] Gateway: ${this.config.gatewayIP}:${this.config.gatewayPort}`);
       
-      const url = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/api/send-sms`;
+      const url = `http://${this.config.gatewayIP}:${this.config.gatewayPort}`;
       
+      // Formatiranje prema parametrima aplikacije sa slike
       const requestBody = {
-        phone: message.phoneNumber,
-        message: message.message,
-        priority: message.priority || 'normal',
-        timestamp: new Date().toISOString()
+        tel: message.phoneNumber,        // Phone number parameter key
+        message: message.message,        // Text parameter key  
+        user: this.config.username,      // User parameter key
+        password: this.config.password   // Password parameter key
       };
-
-      // Dodaj API key ako postoji
-      if (this.config.apiKey) {
-        (requestBody as any).apiKey = this.config.apiKey;
-      }
 
       console.log(`[MOBILE SMS] 📤 Slanje zahteva na: ${url}`);
       console.log(`[MOBILE SMS] 📋 Sadržaj: ${message.message.substring(0, 100)}...`);
@@ -122,7 +119,7 @@ export class MobileGatewaySMSService {
     try {
       console.log(`[MOBILE SMS] 🔍 Testiranje konekcije sa gateway-om`);
       
-      const url = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/api/status`;
+      const url = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/status`;
       
       const response = await fetch(url, {
         method: 'GET',
