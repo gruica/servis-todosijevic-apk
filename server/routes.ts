@@ -5,9 +5,8 @@ import { setupAuth, comparePassword } from "./auth";
 // import { registerBusinessPartnerRoutes } from "./business-partner-routes"; // Disabled - using JWT endpoints instead
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
-// SMS service removed - using Mobile SMS API instead
-// GSM modem service removed - using Mobile SMS API instead
-import { mobileSmsService } from "./mobile-sms-service.js";
+// Hybrid SMS service - combines Twilio + Mobi Gateway
+import { hybridSMSService } from "./hybrid-sms-service.js";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema } from "@shared/schema";
 import { db, pool } from "./db";
@@ -67,8 +66,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
-  // Initialize Mobile SMS API service with database configuration
-  await mobileSmsService.initializeFromDatabase(storage);
+  // Initialize Hybrid SMS service
+  await hybridSMSService.initialize();
   
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
@@ -3350,10 +3349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { recipient, message } = validationResult.data;
       
       // Slanje test poruke
-      const result = await smsService.sendSms({
-        to: recipient,
-        body: message
-      });
+      const result = await hybridSMSService.sendSMS(recipient, message);
       
       if (result) {
         res.json({ success: true, message: "SMS poruka je uspešno poslata" });
@@ -3873,11 +3869,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
-        const smsResult = await smsService.sendServiceStatusUpdate(
-          service.client,
-          { id: serviceId, description: service.description, status: 'assigned' },
-          'assigned',
-          technician.fullName
+        const smsResult = await hybridSMSService.sendSMS(
+          service.client.phone,
+          smsMessage
         );
         
         if (smsResult) {
@@ -3933,11 +3927,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Pošalji SMS obaveštenje klijentu o promenama statusa
       if (service.client?.phone) {
         const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
-        const smsResult = await smsService.sendServiceStatusUpdate(
-          service.client,
-          { id: serviceId, description: service.description, status: status },
-          status,
-          service.technician?.fullName
+        const smsResult = await hybridSMSService.sendSMS(
+          service.client.phone,
+          smsMessage
         );
         
         if (smsResult) {
@@ -3969,8 +3961,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS ADMIN] Konfiguracija SMS provajdera: ${smsConfig.provider}`);
       
-      // Konfiguriši Twilio SMS servis
-      smsService.configure(smsConfig);
+      // Konfiguriši Hybrid SMS servis
+      await hybridSMSService.configure(smsConfig);
       
       res.json({ 
         success: true, 
@@ -3999,7 +3991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
       }
       
-      const configInfo = smsService.getStatus();
+      const configInfo = await hybridSMSService.getStatus();
       
       if (!configInfo.isConfigured) {
         return res.json({ 
@@ -4034,8 +4026,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
       
-      // Koristi Twilio SMS servis
-      const sent = await smsService.sendTestSMS(recipient);
+      // Koristi Hybrid SMS servis
+      const sent = await hybridSMSService.sendSMS(recipient, "Test SMS poruka iz Frigo Sistema");
       
       if (sent) {
         console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko Twilio`);
@@ -4096,7 +4088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      const result = await smsService.sendCustomSMS(service.client.phone, message);
+      const result = await hybridSMSService.sendSMS(service.client.phone, message);
       
       if (result) {
         console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);

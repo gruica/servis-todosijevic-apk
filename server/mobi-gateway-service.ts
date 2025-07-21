@@ -4,7 +4,7 @@
  */
 
 import fetch from 'node-fetch';
-import { AbortController } from 'node-fetch';
+// AbortController is available globally in Node.js 16+
 
 export interface MobiGatewayConfig {
   phoneIpAddress: string;
