@@ -688,6 +688,91 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
    * Šalje obaveštenje serviseru o novom dodeljenom servisu
    */
   /**
+   * Šalje notifikaciju za Beko servise na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)
+   */
+  public async sendBekoServiceNotification(
+    serviceId: number,
+    partName: string,
+    partNumber: string,
+    clientName: string,
+    technicianName: string,
+    urgency: string,
+    description?: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje Beko notifikacije za servis #${serviceId} na mp4@eurotehnikamn.me`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje Beko notifikacije`);
+      return false;
+    }
+
+    const bekoEmail = 'mp4@eurotehnikamn.me';
+    const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
+    const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
+
+    const subject = `${priorityIndicator} Beko servis obaveštenje - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #856404; margin: 0;">⚠️ BEKO SERVIS OBAVEŠTENJE</h2>
+          <p style="margin: 5px 0 0 0; color: #856404; font-weight: bold;">
+            Automatsko obaveštenje - Beko je obustavila elektronske servise
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        <p>Obaveštavamo Vas o servisu Beko uređaja:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #fd7e14;">
+          <h3 style="color: #856404; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Potreban deo:</strong> ${partName}</p>
+          <p><strong>Kataloški broj:</strong> ${partNumber}</p>
+          <p><strong>Prioritet:</strong> <span style="color: ${urgency === 'urgent' ? '#dc3545' : urgency === 'high' ? '#fd7e14' : '#6c757d'};">${urgencyLabel}</span></p>
+          <p><strong>Klijent:</strong> ${clientName}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+          ${description ? `<p><strong>Napomene:</strong> ${description}</p>` : ''}
+        </div>
+
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #721c24;">
+            <strong>NAPOMENA:</strong> Pošto je Beko obustavila elektronske servise, molimo Vas da se direktno obratite proizvođaču ili ovlašćenom servisu za dalji postupak.
+          </p>
+        </div>
+
+        <p>Za sva dodatna pitanja, kontaktirajte nas na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    console.log(`[EMAIL] Slanje Beko obaveštenja na: ${bekoEmail}`);
+
+    try {
+      const result = await this.sendEmail({
+        to: bekoEmail,
+        subject,
+        html,
+      }, 3);
+      
+      console.log(`[EMAIL] Rezultat slanja Beko notifikacije: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju Beko notifikacije:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje email korisniku kada je njegov nalog verifikovan 
    * @param userEmail Email adresa korisnika
    * @param userName Ime korisnika

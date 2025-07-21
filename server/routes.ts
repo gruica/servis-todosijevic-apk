@@ -4784,32 +4784,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log(`[SPARE PARTS] Proizvođač uređaja: ${manufacturerName}`);
               
-              // KRITIČNA LOGIKA: Različite servisne firme za različite brendove
-              const complussupportedBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
-              const bekoSupportedBrand = 'beko';
+              // AŽURIRANA LOGIKA: Samo Complus servisna firma (Beko je obustavila elektronske servise)
+              const complussupportedBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air', 'beko'];
               
-              if (manufacturerName === bekoSupportedBrand) {
-                console.log(`[SPARE PARTS] Uređaj je Beko, šaljem prošireni email Eurotehnika servis firmi sa kompletnim kontekstom...`);
+              // NAPOMENA: Beko je obustavila elektronske servise - sve notifikacije se šalju na mp4@eurotehnikamn.me
+              if (manufacturerName === 'beko') {
+                console.log(`[SPARE PARTS] Uređaj je Beko - šaljem notifikaciju na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)...`);
                 
-                // Dobijamo dodatne podatke za kompletne informacije
-                const category = await storage.getApplianceCategory(appliance.categoryId);
-                
-                const warrantyEmailResult = await emailService.sendEnhancedWarrantySparePartNotification(
+                // Specifična notifikacija za Beko servise
+                const bekoEmailResult = await emailService.sendBekoServiceNotification(
                   validatedData.serviceId,
                   validatedData.partName,
                   validatedData.partNumber || 'N/A',
+                  clientName,
+                  technicianName,
                   validatedData.urgency || 'medium',
-                  validatedData.description || '',
-                  service,        // Kompletni podaci o servisu
-                  client,         // Kompletni podaci o klijentu  
-                  appliance,      // Kompletni podaci o aparatu
-                  category,       // Podaci o kategoriji aparata
-                  manufacturer,   // Podaci o proizvođaču
-                  technician      // Podaci o tehničaru
+                  validatedData.description || ''
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Eurotehnika servis firmi: ${warrantyEmailResult ? 'Uspešno' : 'Neuspešno'}`);
-              } else if (complussupportedBrands.includes(manufacturerName)) {
+                console.log(`[SPARE PARTS] Rezultat slanja Beko notifikacije na mp4@eurotehnikamn.me: ${bekoEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+              } else if (complussupportedBrands.includes(manufacturerName) && manufacturerName !== 'beko') {
                 console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, šaljem prošireni email Complus servis firmi sa kompletnim kontekstom...`);
                 
                 // Dobijamo dodatne podatke za kompletne informacije
@@ -5060,9 +5054,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Obavezna polja nisu popunjena" });
       }
 
-      // Validacija brenda i email adrese
+      // AŽURIRANA VALIDACIJA: Beko je obustavila elektronske servise
       const validBrandEmails = {
-        'beko': 'servis@eurotehnikamn.me',
+        'beko': 'mp4@eurotehnikamn.me', // Beko notifikacije se šalju na mp4@eurotehnikamn.me
         'complus': 'servis@complus.me'
       };
 
@@ -5101,7 +5095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         urgency,
         status: 'pending',
         warrantyStatus: warrantyStatus || 'u garanciji',
-        supplierName: brand === 'beko' ? 'Eurotehnika' : 'Complus',
+        supplierName: brand === 'beko' ? 'Beko (obustavljena elektronska podrška)' : 'Complus',
         orderDate: new Date(),
         adminNotes: `Admin porudžbina - ${brand.toUpperCase()} brend${serviceId ? ` (Servis #${serviceId})` : ''}${applianceSerialNumber ? ` - SN: ${applianceSerialNumber}` : ''}`
       });
@@ -5226,12 +5220,27 @@ Admin panel - automatska porudžbina
       `.trim();
 
       try {
-        await emailService.sendEmail(
-          targetEmail,
-          emailSubject,
-          emailContent
-        );
-        console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+        if (brand === 'beko') {
+          // Za Beko, koristi specijalnu notifikaciju umesto običnog emaila
+          await emailService.sendBekoServiceNotification(
+            serviceId || 0,
+            partName,
+            productCode,
+            'Nedefinisan klijent', // Admin unos, nema specificiran klijent
+            req.user.fullName || req.user.username || 'Administrator',
+            urgency,
+            description
+          );
+          console.log(`[SPARE PARTS ORDER] Beko notifikacija poslata na mp4@eurotehnikamn.me`);
+        } else {
+          // Za ostale brendove, koristi standardni email
+          await emailService.sendEmail(
+            targetEmail,
+            emailSubject,
+            emailContent
+          );
+          console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+        }
       } catch (emailError) {
         console.error('[SPARE PARTS ORDER] Greška pri slanju email-a:', emailError);
         // Ne prekidamo proces zbog email greške
@@ -5250,7 +5259,7 @@ Admin panel - automatska porudžbina
       res.json({
         success: true,
         orderId: sparePartOrder.id,
-        message: `Rezervni deo je uspešno poručen. Email je poslat ${brand === 'beko' ? 'Eurotehnika servisu' : 'Complus servisu'}.`
+        message: `Rezervni deo je uspešno poručen. ${brand === 'beko' ? 'Beko notifikacija je poslata na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)' : 'Email je poslat Complus servisu'}.`
       });
 
     } catch (error) {
