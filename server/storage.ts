@@ -17,11 +17,12 @@ import {
   AvailablePart, InsertAvailablePart,
   Notification, InsertNotification,
   SystemSetting, InsertSystemSetting,
+  RemovedPart, InsertRemovedPart,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
-  availableParts, notifications, systemSettings
+  availableParts, notifications, systemSettings, removedParts
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -189,6 +190,17 @@ export interface IStorage {
   createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
   updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined>;
   deleteSystemSetting(key: string): Promise<boolean>;
+
+  // Removed Parts methods
+  getAllRemovedParts(): Promise<RemovedPart[]>;
+  getRemovedPart(id: number): Promise<RemovedPart | undefined>;
+  getRemovedPartsByService(serviceId: number): Promise<RemovedPart[]>;
+  getRemovedPartsByTechnician(technicianId: number): Promise<RemovedPart[]>;
+  getRemovedPartsByStatus(status: string): Promise<RemovedPart[]>;
+  createRemovedPart(part: InsertRemovedPart): Promise<RemovedPart>;
+  updateRemovedPart(id: number, part: Partial<RemovedPart>): Promise<RemovedPart | undefined>;
+  deleteRemovedPart(id: number): Promise<boolean>;
+  markPartAsReturned(id: number, returnDate: string, notes?: string): Promise<RemovedPart | undefined>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -3490,6 +3502,133 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju sistemske postavke:', error);
       return false;
+    }
+  }
+
+  // Removed Parts methods
+  async getAllRemovedParts(): Promise<RemovedPart[]> {
+    try {
+      return await db.select().from(removedParts).orderBy(desc(removedParts.id));
+    } catch (error) {
+      console.error('Greška pri dohvatanju uklonjenih delova:', error);
+      return [];
+    }
+  }
+
+  async getRemovedPart(id: number): Promise<RemovedPart | undefined> {
+    try {
+      const [part] = await db
+        .select()
+        .from(removedParts)
+        .where(eq(removedParts.id, id))
+        .limit(1);
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju uklonjenog dela:', error);
+      return undefined;
+    }
+  }
+
+  async getRemovedPartsByService(serviceId: number): Promise<RemovedPart[]> {
+    try {
+      return await db
+        .select()
+        .from(removedParts)
+        .where(eq(removedParts.serviceId, serviceId))
+        .orderBy(desc(removedParts.id));
+    } catch (error) {
+      console.error('Greška pri dohvatanju uklonjenih delova za servis:', error);
+      return [];
+    }
+  }
+
+  async getRemovedPartsByTechnician(technicianId: number): Promise<RemovedPart[]> {
+    try {
+      return await db
+        .select()
+        .from(removedParts)
+        .where(eq(removedParts.createdBy, technicianId))
+        .orderBy(desc(removedParts.id));
+    } catch (error) {
+      console.error('Greška pri dohvatanju uklonjenih delova za servisera:', error);
+      return [];
+    }
+  }
+
+  async getRemovedPartsByStatus(status: string): Promise<RemovedPart[]> {
+    try {
+      return await db
+        .select()
+        .from(removedParts)
+        .where(eq(removedParts.partStatus, status))
+        .orderBy(desc(removedParts.id));
+    } catch (error) {
+      console.error('Greška pri dohvatanju uklonjenih delova po statusu:', error);
+      return [];
+    }
+  }
+
+  async createRemovedPart(part: InsertRemovedPart): Promise<RemovedPart> {
+    try {
+      const [newPart] = await db
+        .insert(removedParts)
+        .values(part)
+        .returning();
+      return newPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju uklonjenog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateRemovedPart(id: number, part: Partial<RemovedPart>): Promise<RemovedPart | undefined> {
+    try {
+      const [updatedPart] = await db
+        .update(removedParts)
+        .set(part)
+        .where(eq(removedParts.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju uklonjenog dela:', error);
+      return undefined;
+    }
+  }
+
+  async deleteRemovedPart(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(removedParts)
+        .where(eq(removedParts.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Greška pri brisanju uklonjenog dela:', error);
+      return false;
+    }
+  }
+
+  async markPartAsReturned(id: number, returnDate: string, notes?: string): Promise<RemovedPart | undefined> {
+    try {
+      const updateData: Partial<RemovedPart> = {
+        actualReturnDate: returnDate,
+        partStatus: 'returned',
+        isReinstalled: true,
+      };
+      
+      if (notes) {
+        updateData.technicianNotes = notes;
+      }
+
+      const [updatedPart] = await db
+        .update(removedParts)
+        .set(updateData)
+        .where(eq(removedParts.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri označavanju dela kao vraćenog:', error);
+      return undefined;
     }
   }
 }

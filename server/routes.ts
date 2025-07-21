@@ -9,7 +9,7 @@ import { excelService } from "./excel-service";
 // GSM modem service removed - using Mobile SMS API instead
 import { mobileSmsService } from "./mobile-sms-service.js";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -28,6 +28,7 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'assigned': 'Dodeljen serviseru',
   'scheduled': 'Zakazan termin',
   'in_progress': 'U toku',
+  'device_parts_removed': 'Delovi uklonjeni sa uređaja',
   'completed': 'Završen',
   'cancelled': 'Otkazan'
 };
@@ -5747,6 +5748,146 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error fetching waiting services:", error);
       res.status(500).json({ error: "Failed to fetch waiting services" });
+    }
+  });
+
+  // ===== REMOVED PARTS ENDPOINTS =====
+  
+  // Get all removed parts (admin/technician access)
+  app.get("/api/removed-parts", jwtAuth, async (req, res) => {
+    try {
+      const removedParts = await storage.getAllRemovedParts();
+      res.json(removedParts);
+    } catch (error) {
+      console.error("Error fetching removed parts:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju uklonjenih delova" });
+    }
+  });
+
+  // Get removed parts by service ID
+  app.get("/api/services/:id/removed-parts", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const removedParts = await storage.getRemovedPartsByService(serviceId);
+      res.json(removedParts);
+    } catch (error) {
+      console.error("Error fetching removed parts for service:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju uklonjenih delova za servis" });
+    }
+  });
+
+  // Get removed parts by technician ID
+  app.get("/api/technicians/:id/removed-parts", jwtAuth, async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      const removedParts = await storage.getRemovedPartsByTechnician(technicianId);
+      res.json(removedParts);
+    } catch (error) {
+      console.error("Error fetching removed parts for technician:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju uklonjenih delova za servisera" });
+    }
+  });
+
+  // Create new removed part record
+  app.post("/api/removed-parts", jwtAuth, async (req, res) => {
+    try {
+      console.log("Creating removed part with data:", req.body);
+      
+      // Validacija da li je korisnik serviser ili admin
+      if (req.user.role !== "technician" && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Samo serviseri i administratori mogu evidentirati uklonjene delove" });
+      }
+      
+      const validatedData = insertRemovedPartSchema.parse(req.body);
+      const removedPart = await storage.createRemovedPart(validatedData);
+      
+      res.status(201).json(removedPart);
+    } catch (error) {
+      console.error("Error creating removed part:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Neispravni podaci", details: error.errors });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju evidencije uklonjenog dela" });
+    }
+  });
+
+  // Update removed part status
+  app.put("/api/removed-parts/:id", jwtAuth, async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Validacija da li je korisnik serviser ili admin
+      if (req.user.role !== "technician" && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Samo serviseri i administratori mogu ažurirati uklonjene delove" });
+      }
+      
+      const updatedPart = await storage.updateRemovedPart(partId, updateData);
+      if (!updatedPart) {
+        return res.status(404).json({ error: "Uklonjeni deo nije pronađen" });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error updating removed part:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju uklonjenog dela" });
+    }
+  });
+
+  // Mark part as returned/reinstalled
+  app.patch("/api/removed-parts/:id/return", jwtAuth, async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      const { returnDate, notes } = req.body;
+      
+      // Validacija da li je korisnik serviser ili admin
+      if (req.user.role !== "technician" && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Samo serviseri i administratori mogu označiti delove kao vraćene" });
+      }
+      
+      if (!returnDate) {
+        return res.status(400).json({ error: "Datum vraćanja je obavezan" });
+      }
+      
+      const updatedPart = await storage.markPartAsReturned(partId, returnDate, notes);
+      if (!updatedPart) {
+        return res.status(404).json({ error: "Uklonjeni deo nije pronađen" });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error("Error marking part as returned:", error);
+      res.status(500).json({ error: "Greška pri označavanju dela kao vraćenog" });
+    }
+  });
+
+  // Update service status to device_parts_removed
+  app.patch("/api/services/:id/parts-removed", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      // Validacija da li je korisnik serviser ili admin
+      if (req.user.role !== "technician" && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Samo serviseri i administratori mogu menjati status servisa" });
+      }
+      
+      const updatedService = await storage.updateService(serviceId, {
+        id: serviceId,
+        clientId: 0, // Ove vrednosti će biti ignorisane zbog Partial type-a
+        applianceId: 0,
+        description: "",
+        createdAt: "",
+        status: "device_parts_removed"
+      });
+      
+      if (!updatedService) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error updating service status:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa servisa" });
     }
   });
 

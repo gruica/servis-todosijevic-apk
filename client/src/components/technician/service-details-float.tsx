@@ -20,6 +20,7 @@ import { formatDate } from "@/lib/utils";
 import { CallClientButton } from "@/components/ui/call-client-button";
 import { openMapWithAddress } from "@/lib/mobile-utils";
 import { SparePartsOrderForm } from "@/components/spare-parts/SparePartsOrderForm";
+import { RemovedPartsForm, RemovedPartsList } from "@/components/technician/removed-parts-form";
 
 type ServiceDetailsFloatProps = {
   isOpen: boolean;
@@ -391,6 +392,20 @@ export function ServiceDetailsFloat({
               // Optional: handle cancel action
             }}
           />
+        )}
+
+        {/* Removed Parts Management */}
+        {(service.status === "assigned" || service.status === "scheduled" || service.status === "in_progress" || service.status === "device_parts_removed") && (
+          <div className="space-y-4">
+            <RemovedPartsForm
+              serviceId={service.id}
+              technicianId={service.assignedTechnicianId || 1} // Fallback to 1 if not available
+              onSuccess={() => {
+                // Refresh service data after successful part removal
+              }}
+            />
+            <RemovedPartsList serviceId={service.id} />
+          </div>
         )}
       </div>
     </FloatingSheet>

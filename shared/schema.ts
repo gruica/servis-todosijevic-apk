@@ -197,6 +197,7 @@ export const serviceStatusEnum = z.enum([
   "scheduled", // zakazano
   "in_progress", // u procesu
   "waiting_parts", // čeka delove
+  "device_parts_removed", // delovi uklonjeni sa uređaja
   "completed", // završeno
   "cancelled", // otkazano
   "client_not_home", // klijent nije kući
@@ -238,6 +239,24 @@ export const services = pgTable("services", {
   devicePickedUp: boolean("device_picked_up").default(false), // Da li je uređaj preuzet
   pickupDate: text("pickup_date"), // Datum preuzimanja uređaja
   pickupNotes: text("pickup_notes"), // Napomene o preuzimanju
+});
+
+// Tabela za praćenje uklonjenih delova sa uređaja
+export const removedParts = pgTable("removed_parts", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  partName: text("part_name").notNull(), // Naziv dela (elektronika, motor, pumpa, itd.)
+  partDescription: text("part_description"), // Detaljan opis dela
+  removalDate: text("removal_date").notNull(), // Datum uklanjanja
+  removalReason: text("removal_reason").notNull(), // Razlog uklanjanja (popravka, zamena, itd.)
+  currentLocation: text("current_location").default("workshop"), // Lokacija dela (workshop, external_repair, returned)
+  expectedReturnDate: text("expected_return_date"), // Očekivani datum vraćanja
+  actualReturnDate: text("actual_return_date"), // Stvarni datum vraćanja
+  partStatus: text("part_status").notNull().default("removed"), // removed, in_repair, repaired, returned, replaced
+  technicianNotes: text("technician_notes"), // Napomene servisera
+  repairCost: text("repair_cost"), // Troškovi popravke dela
+  isReinstalled: boolean("is_reinstalled").default(false), // Da li je deo vraćen u uređaj
+  createdBy: integer("created_by").notNull(), // ID servisera koji je uklonio deo
 });
 
 // Osnovni schema za validaciju servisa - samo obavezna polja
@@ -380,6 +399,40 @@ export const supplementGeneraliServiceSchema = z.object({
 
 export type SupplementGeneraliService = z.infer<typeof supplementGeneraliServiceSchema>;
 
+// Schema za validaciju uklonjenih delova
+export const insertRemovedPartSchema = createInsertSchema(removedParts).pick({
+  serviceId: true,
+  partName: true,
+  partDescription: true,
+  removalDate: true,
+  removalReason: true,
+  currentLocation: true,
+  expectedReturnDate: true,
+  actualReturnDate: true,
+  partStatus: true,
+  technicianNotes: true,
+  repairCost: true,
+  isReinstalled: true,
+  createdBy: true,
+}).extend({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(100, "Naziv dela je predugačak"),
+  partDescription: z.string().max(500, "Opis dela je predugačak").optional(),
+  removalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD"),
+  removalReason: z.string().min(5, "Razlog uklanjanja mora biti detaljniji").max(300, "Razlog je predugačak"),
+  currentLocation: z.enum(["workshop", "external_repair", "returned"]).default("workshop"),
+  expectedReturnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD").optional(),
+  actualReturnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD").optional(),
+  partStatus: z.enum(["removed", "in_repair", "repaired", "returned", "replaced"]).default("removed"),
+  technicianNotes: z.string().max(500, "Napomene su predugačke").optional(),
+  repairCost: z.string().max(20, "Cena je predugačka").optional(),
+  isReinstalled: z.boolean().default(false),
+  createdBy: z.number().int().positive("ID servisera mora biti pozitivan broj"),
+});
+
+export type InsertRemovedPart = z.infer<typeof insertRemovedPartSchema>;
+export type RemovedPart = typeof removedParts.$inferSelect;
+
 // Relations
 export const usersRelations = relations(users, ({ one }) => ({
   technician: one(technicians, {
@@ -413,7 +466,7 @@ export const appliancesRelations = relations(appliances, ({ one, many }) => ({
   services: many(services),
 }));
 
-export const servicesRelations = relations(services, ({ one }) => ({
+export const servicesRelations = relations(services, ({ one, many }) => ({
   client: one(clients, {
     fields: [services.clientId],
     references: [clients.id],
@@ -424,6 +477,18 @@ export const servicesRelations = relations(services, ({ one }) => ({
   }),
   technician: one(technicians, {
     fields: [services.technicianId],
+    references: [technicians.id],
+  }),
+  removedParts: many(removedParts),
+}));
+
+export const removedPartsRelations = relations(removedParts, ({ one }) => ({
+  service: one(services, {
+    fields: [removedParts.serviceId],
+    references: [services.id],
+  }),
+  technician: one(technicians, {
+    fields: [removedParts.createdBy],
     references: [technicians.id],
   }),
 }));
