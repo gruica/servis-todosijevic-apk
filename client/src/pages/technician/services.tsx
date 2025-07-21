@@ -26,6 +26,7 @@ import SparePartsOrderForm from "@/components/spare-parts-order-form";
 import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFolder";
 import { useNotification } from "@/contexts/notification-context";
 import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
+import { RemovedPartsForm } from "@/components/technician/removed-parts-form";
 
 type TechnicianService = Service & {
   client?: {
@@ -94,6 +95,8 @@ export default function TechnicianServices() {
   // State za dopunjavanje Generali servisa
   const [supplementGeneraliOpen, setSupplementGeneraliOpen] = useState(false);
   const [supplementGeneraliService, setSupplementGeneraliService] = useState<TechnicianService | null>(null);
+  
+
 
 
 
@@ -408,6 +411,8 @@ export default function TechnicianServices() {
     setSparePartsService(service);
     setSparePartsOrderOpen(true);
   };
+
+
 
   // Filter services based on active tab - moved up to avoid duplication
 
@@ -842,12 +847,33 @@ export default function TechnicianServices() {
                                 variant="outline" 
                                 size="default"
                                 onClick={() => openSupplementGeneraliDialog(service)}
-                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 w-full h-10"
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 flex-1 h-10"
                               >
                                 <FileText className="h-4 w-4 mr-1" />
                                 Dopuni Generali podatke
                               </Button>
                             </div>
+
+                            {/* Evidencija uklonjenih delova i rezervni delovi */}
+                            {(service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled") && (
+                              <div className="flex gap-2 w-full mt-2">
+                                <RemovedPartsForm 
+                                  serviceId={service.id}
+                                  technicianId={service.technicianId || 0}
+                                  onSuccess={() => refetch()}
+                                />
+                                
+                                <Button 
+                                  variant="outline" 
+                                  size="default"
+                                  onClick={() => openSparePartsOrder(service)}
+                                  className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 flex-1 h-10"
+                                >
+                                  <Package className="h-4 w-4 mr-1" />
+                                  Poruči rezervni deo
+                                </Button>
+                              </div>
+                            )}
 
                             {/* Druga grupa - Status akcije */}
                             {/* Servisi sa statusom assigned, pending ili scheduled */}
@@ -1340,6 +1366,8 @@ export default function TechnicianServices() {
           }}
         />
       )}
+
+
     </div>
   );
 }
