@@ -1,12 +1,14 @@
 /**
  * SMS Mobile API Service
- * Integrates with SMS Mobile API Android app for sending SMS messages
+ * Integrates with com.smsmobileapiapp Android app for sending SMS messages
  * The app transforms mobile phone into SMS Gateway accessible via HTTP API
+ * API endpoints: /api/v1/status, /api/v1/send-sms
+ * Payload format: {to, message, key?}
  */
 
 interface SMSMobileConfig {
-  baseUrl: string; // e.g., "http://192.168.1.100:8080" or phone's IP
-  apiKey?: string; // Optional API key if configured in app
+  baseUrl: string; // e.g., "http://192.168.1.100:8080" or phone's IP (without /api/v1)
+  apiKey?: string; // Optional API key if configured in com.smsmobileapiapp
 }
 
 interface SMSMessage {
@@ -26,18 +28,65 @@ export class MobileSMSService {
 
   constructor() {
     this.config = {
-      baseUrl: process.env.SMS_MOBILE_BASE_URL || '',
-      apiKey: process.env.SMS_MOBILE_API_KEY || undefined
+      baseUrl: '',
+      apiKey: undefined
     };
-    this.isConfigured = !!this.config.baseUrl;
+    this.isConfigured = false;
+    this.loadConfigFromDatabase();
+  }
+
+  /**
+   * Load configuration from database
+   */
+  private async loadConfigFromDatabase() {
+    try {
+      // This will be called from routes when storage is available
+    } catch (error) {
+      console.error('[SMS MOBILE] Greška pri učitavanju konfiguracije:', error);
+    }
+  }
+
+  /**
+   * Initialize service with database settings
+   */
+  async initializeFromDatabase(storage: any) {
+    try {
+      const settings = await storage.getSystemSettings();
+      const baseUrl = settings.find((s: any) => s.key === 'sms_mobile_base_url')?.value;
+      const apiKey = settings.find((s: any) => s.key === 'sms_mobile_api_key')?.value;
+
+      if (baseUrl) {
+        this.config = {
+          baseUrl,
+          apiKey: apiKey || undefined
+        };
+        this.isConfigured = true;
+        console.log(`[SMS MOBILE] Konfiguracija učitana iz baze: ${baseUrl}`);
+      }
+    } catch (error) {
+      console.error('[SMS MOBILE] Greška pri inicijalizaciji iz baze:', error);
+    }
   }
 
   /**
    * Configure SMS Mobile API service
    */
-  async configure(config: SMSMobileConfig): Promise<boolean> {
+  async configure(config: SMSMobileConfig, storage?: any): Promise<boolean> {
     try {
       this.config = config;
+      
+      // Save to database if storage is provided
+      if (storage) {
+        try {
+          await storage.updateSystemSetting('sms_mobile_base_url', config.baseUrl);
+          if (config.apiKey) {
+            await storage.updateSystemSetting('sms_mobile_api_key', config.apiKey);
+          }
+          console.log('[SMS MOBILE] Konfiguracija sačuvana u bazu podataka');
+        } catch (dbError) {
+          console.warn('[SMS MOBILE] Greška pri čuvanju u bazu:', dbError);
+        }
+      }
       
       // Test connection to mobile app
       const testResult = await this.testConnection();
@@ -69,7 +118,7 @@ export class MobileSMSService {
     try {
       console.log(`[SMS MOBILE] Testiram konekciju sa ${this.config.baseUrl}`);
       
-      const response = await fetch(`${this.config.baseUrl}/status`, {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -105,12 +154,12 @@ export class MobileSMSService {
       console.log(`[SMS MOBILE] Šaljem SMS na ${message.to}: ${message.body.substring(0, 50)}...`);
 
       const payload = {
-        phone: message.to,
+        to: message.to,
         message: message.body,
         ...(this.config.apiKey && { key: this.config.apiKey })
       };
 
-      const response = await fetch(`${this.config.baseUrl}/send`, {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/send-sms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

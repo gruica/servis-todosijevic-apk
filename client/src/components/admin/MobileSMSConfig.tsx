@@ -25,7 +25,7 @@ export function MobileSMSConfig() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [config, setConfig] = useState<MobileSMSConfig>({
-    baseUrl: "http://77.222.37.69:8080/api/v1",
+    baseUrl: "http://77.222.37.69:8080",
     apiKey: ""
   });
   const [testPhone, setTestPhone] = useState("");

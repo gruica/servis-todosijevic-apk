@@ -66,6 +66,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
+  // Initialize Mobile SMS API service with database configuration
+  await mobileSmsService.initializeFromDatabase(storage);
+  
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
   app.post("/api/security/verify-bot", verifyBotAnswer);
@@ -3471,7 +3474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[MOBILE SMS API] Konfiguracija: baseUrl=${config.baseUrl}`);
       
-      const configured = await mobileSmsService.configure(config);
+      const configured = await mobileSmsService.configure(config, storage);
       
       if (configured) {
         res.json({ 
