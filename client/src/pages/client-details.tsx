@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -55,8 +56,8 @@ interface ExtendedService extends Service {
     notes?: string;
   }>;
 }
+
 import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowLeft, 
@@ -99,7 +100,7 @@ export default function ClientDetails() {
     queryKey: ["/api/clients/details", clientId],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/clients/${clientId}/details`);
+        const res = await apiRequest("GET", `/api/clients/${clientId}/details`);
         if (!res.ok) {
           throw new Error("Klijent nije pronađen");
         }
