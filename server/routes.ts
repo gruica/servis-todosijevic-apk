@@ -309,13 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint za dobijanje detaljnih informacija o klijentu (sa aparatima, servisima i serviserima)
-  app.get("/api/clients/:id/details", async (req, res) => {
+  app.get("/api/clients/:id/details", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      // Provera autentifikacije - samo admin može da vidi detalje klijenta
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(401).json({ error: "Nemate dozvolu za pristup detaljima klijenta" });
-      }
-      
       const clientDetails = await storage.getClientWithDetails(parseInt(req.params.id));
       if (!clientDetails) return res.status(404).json({ error: "Klijent nije pronađen" });
       res.json(clientDetails);
