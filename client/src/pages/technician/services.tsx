@@ -58,7 +58,7 @@ export default function TechnicianServices() {
   const [location, navigate] = useLocation();
   const { highlightedServiceId, shouldAutoOpen, setHighlightedServiceId, setShouldAutoOpen, clearHighlight } = useNotification();
   const isMobile = useIsMobile();
-  // Uvek proveriti mobilno okruženje (mobile web i APK)
+  // Mobile environment detection
   const isMobileDevice = isMobileEnvironment();
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);

@@ -6,8 +6,8 @@ import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { emailService } from "./email-service";
-import { smsService } from "./sms-service";
-import { smsService as newSmsService } from "./twilio-sms";
+// SMS service import removed
+// SMS functionality has been removed
 import { NotificationService } from "./notification-service";
 
 export function registerBusinessPartnerRoutes(app: Express) {
@@ -189,6 +189,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
         usedParts: "[]", // Prazna lista za delove
         machineNotes: null,
         isCompletelyFixed: null,
+        warrantyStatus: "in_warranty", // dodano obavezno polje
         // Dodajemo podatke o poslovnom partneru
         businessPartnerId: partnerId,
         partnerCompanyName

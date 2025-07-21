@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminProfileWidget } from "@/components/admin/profile-widget";
 import { useAuth } from "@/hooks/use-auth";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export function Header({ toggleSidebar }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { logoutMutation } = useAuth();
   
   return (

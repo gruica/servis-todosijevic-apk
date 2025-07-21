@@ -29,13 +29,7 @@ import SQLAdmin from "@/pages/sql-admin";
 import ExcelImportExport from "@/pages/excel-import-export";
 import ExcelImport from "@/pages/admin/excel-import";
 import UserVerification from "@/pages/admin/user-verification";
-import SmsSettings from "@/pages/admin/sms-settings";
-import SMSTest from "@/pages/admin/sms-test";
-import GSMConfig from "@/pages/admin/gsm-config";
-import MobileSMSConfigPage from "@/pages/admin/mobile-sms-config";
-import MobiGatewayConfig from "@/pages/admin/mobi-gateway-config";
-
-import SMSMessaging from "@/pages/sms-messaging";
+// SMS functionality has been completely removed from the application
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 import { initializeCapacitor, isNativeMobile } from "./capacitor";
@@ -104,11 +98,7 @@ function Router() {
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/mobile-sms" component={MobileSMSConfigPage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/gsm-config" component={GSMConfig} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/mobi-gateway-config" component={MobiGatewayConfig} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
+      {/* SMS routes have been completely removed from the application */}
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />

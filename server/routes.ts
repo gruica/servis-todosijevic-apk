@@ -5,8 +5,6 @@ import { setupAuth, comparePassword } from "./auth";
 // import { registerBusinessPartnerRoutes } from "./business-partner-routes"; // Disabled - using JWT endpoints instead
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
-// Hybrid SMS service - combines Twilio + Mobi Gateway
-import { hybridSMSService } from "./hybrid-sms-service.js";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema } from "@shared/schema";
 import { db, pool } from "./db";
@@ -32,21 +30,9 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'cancelled': 'Otkazan'
 };
 
-// Twilio SMS postavke schema
-// Twilio SMS schema removed - using Mobile SMS API instead
-
-// Funkcija za generisanje SMS poruke na osnovu statusa servisa
+// SMS functionality has been completely removed from the application
 function generateStatusUpdateMessage(serviceId: number, newStatus: string, technicianName?: string | null): string {
-  const statusMessages = {
-    'assigned': `Frigo Sistem: Vaš servis #${serviceId} je dodeljen serviseru ${technicianName || ''}. Kontakt: 033 402 402`,
-    'scheduled': `Frigo Sistem: Zakazan je termin za servis #${serviceId}. Kontakt: 033 402 402`,
-    'in_progress': `Frigo Sistem: Servis #${serviceId} je u toku. Kontakt: 033 402 402`,
-    'completed': `Frigo Sistem: Servis #${serviceId} je završen. Kontakt: 033 402 402`,
-    'cancelled': `Frigo Sistem: Servis #${serviceId} je otkazan. Kontakt: 033 402 402`,
-    'pending': `Frigo Sistem: Servis #${serviceId} je u pripremi. Kontakt: 033 402 402`
-  };
-  
-  return statusMessages[newStatus] || `Frigo Sistem: Status servisa #${serviceId} je ažuriran. Kontakt: 033 402 402`;
+  return '';
 }
 
 // Email postavke schema
@@ -66,8 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
-  // Initialize Hybrid SMS service
-  await hybridSMSService.initialize();
+  // SMS service has been completely removed from the application
   
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
@@ -1714,7 +1699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[STATUS UPDATE] Servis #${serviceId} uspešno ažuriran. Novi status: ${updatedService.status}`);
       
-      // Informacije o slanju emaila i SMS-a koje će biti vraćene klijentu
+      // Informacije o slanju emaila koje će biti vraćene klijentu (SMS funkcionalnost uklonjena)
       const emailInfo: {
         emailSent: boolean;
         smsSent: boolean;
@@ -1783,40 +1768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               emailInfo.emailError = `Klijent ${client.fullName} nema definisanu email adresu`;
             }
             
-            // 3. Šalje SMS obaveštenje KLIJENTU - nova funkcionalnost
-            if (client.phone) {
-              console.log(`[SMS SISTEM] Pokušavam slanje SMS poruke klijentu ${client.fullName} (${client.phone})`);
-              
-              // Kraći sadržaj za SMS koji je maksimalno 160 karaktera
-              const clientSmsContent = technicianNotes || service.description || "";
-              // Skraćujemo napomenu ako postoji
-              let additionalInfo = "";
-              if (clientSmsContent && clientSmsContent.length > 0) {
-                const maxNoteLength = 70; // Ograničavamo dužinu napomene
-                additionalInfo = clientSmsContent.length > maxNoteLength 
-                  ? clientSmsContent.substring(0, maxNoteLength) + '...' 
-                  : clientSmsContent;
-              }
-              
-              // Šaljemo SMS klijentu preko Mobile SMS API
-              const clientSmsSent = await mobileSmsService.sendServiceStatusUpdate(
-                client,
-                serviceId,
-                statusDescription,
-                additionalInfo
-              );
-              
-              if (clientSmsSent) {
-                console.log(`[SMS SISTEM] ✅ Uspešno poslata SMS poruka klijentu ${client.fullName} preko Twilio`);
-                emailInfo.smsSent = true;
-              } else {
-                console.error(`[SMS SISTEM] ❌ Neuspešno slanje SMS poruke preko Twilio`);
-                emailInfo.smsError = "Neuspešno slanje SMS poruke. Proverite SMS postavke.";
-              }
-            } else {
-              console.warn(`[SMS SISTEM] ⚠️ Klijent ${client.fullName} nema broj telefona, preskačem slanje SMS-a`);
-              emailInfo.smsError = `Klijent ${client.fullName} nema definisan broj telefona`;
-            }
+            // SMS functionality has been completely removed from the application
             
             // 3. Šalje obaveštenje SERVISERU
             let techEmailSent = false;
@@ -1904,7 +1856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Bezbedno obradimo grešku koja može biti bilo kog tipa
         const errorMessage = error instanceof Error ? error.message : String(error);
         emailInfo.emailError = `Sistemska greška (email): ${errorMessage || "Nepoznata greška"}`;
-        emailInfo.smsError = `Sistemska greška (SMS): ${errorMessage || "Nepoznata greška"}`;
+        // SMS functionality has been removed
       }
       
       // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
@@ -3279,300 +3231,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SMS Servis rute
+  // SMS functionality has been completely removed from the application
+  // All SMS-related endpoints, schemas, and configurations have been disabled
   
-  // Schema za validaciju test SMS-a
-  const testSmsSchema = z.object({
-    recipient: z.string().min(1, { message: "Broj telefona je obavezan" }),
-    message: z.string().min(1, { message: "Tekst poruke je obavezan" }).max(160, { message: "SMS poruka ne može biti duža od 160 karaktera" })
-  });
+  // SMS functionality has been completely removed from the application
   
-  // Ruta za proveru konfiguracije SMS servisa
-  app.get("/api/sms/config", (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(401).json({ error: "Nemate dozvolu za pristup konfiguraciji SMS servisa" });
-    }
-    
-    // Ovo je pojednostavljeni pristup koji će direktno koristiti environment varijable
-    // Proverimo da li su svi potrebni kredencijali prisutni
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
-    
-    console.log('[SMS CONFIG API] Kredencijali:', 
-      'accountSid:', accountSid ? `${accountSid.substring(0, 5)}...` : 'nedostaje', 
-      'authToken:', authToken ? 'postoji' : 'nedostaje',
-      'phone:', phoneNumber || 'nedostaje');
-    
-    // Proverimo sami da li je konfiguracija validna
-    const isValidConfig = 
-      accountSid && 
-      accountSid.startsWith('AC') && 
-      authToken && 
-      phoneNumber;
-    
-    console.log('[SMS CONFIG API] Validna konfiguracija:', isValidConfig);
-    
-    // Informacije o konfiguraciji
-    const configInfo = {
-      configured: isValidConfig,
-      phone: phoneNumber || null,
-      missingCredentials: {
-        accountSid: !accountSid,
-        authToken: !authToken,
-        phoneNumber: !phoneNumber
-      },
-      invalidCredentials: {
-        accountSid: accountSid && !accountSid.startsWith('AC'),
-      }
-    };
-    
-    res.json(configInfo);
-  });
+  // SMS test endpoint removed
   
-  // Ruta za slanje test SMS poruke
-  app.post("/api/sms/test", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(401).json({ error: "Nemate dozvolu za slanje test poruka" });
-    }
-    
-    try {
-      const validationResult = testSmsSchema.safeParse(req.body);
-      
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Nevažeći podaci za SMS", 
-          details: validationResult.error.format() 
-        });
-      }
-      
-      const { recipient, message } = validationResult.data;
-      
-      // Slanje test poruke
-      const result = await hybridSMSService.sendSMS(recipient, message);
-      
-      if (result) {
-        res.json({ success: true, message: "SMS poruka je uspešno poslata" });
-      } else {
-        res.status(500).json({ error: "Greška pri slanju SMS poruke" });
-      }
-    } catch (error) {
-      console.error("Greška pri slanju test SMS poruke:", error);
-      res.status(500).json({ error: "Greška pri slanju test SMS poruke", details: error.message });
-    }
-  });
+  // SMS service update endpoint removed
   
-  // Ruta za slanje SMS obaveštenja klijentu o promeni statusa servisa
-  app.post("/api/sms/service-update/:serviceId", async (req, res) => {
-    if (!req.isAuthenticated() || (req.user?.role !== "admin" && req.user?.role !== "technician")) {
-      return res.status(401).json({ error: "Nemate dozvolu za slanje obaveštenja" });
-    }
-    
-    try {
-      const serviceId = parseInt(req.params.serviceId);
-      const service = await storage.getService(serviceId);
-      
-      if (!service) {
-        return res.status(404).json({ error: "Servis nije pronađen" });
-      }
-      
-      // Dohvatanje podataka o klijentu
-      const client = await storage.getClient(service.clientId);
-      if (!client || !client.phone) {
-        return res.status(400).json({ 
-          error: "Nedostaju podaci o klijentu", 
-          message: "Klijent ne postoji ili nema definisan broj telefona" 
-        });
-      }
-      
-      // Slanje SMS obaveštenja o promeni statusa
-      const result = await mobileSmsService.sendServiceStatusUpdate(
-        client,
-        serviceId,
-        STATUS_DESCRIPTIONS[service.status] || service.status,
-        req.body.additionalInfo
-      );
-      
-      if (result) {
-        res.json({ success: true, message: "SMS obaveštenje je uspešno poslato" });
-      } else {
-        res.status(500).json({ error: "Greška pri slanju SMS obaveštenja" });
-      }
-    } catch (error) {
-      console.error("Greška pri slanju SMS obaveštenja o servisu:", error);
-      res.status(500).json({ error: "Greška pri slanju SMS obaveštenja", details: error.message });
-    }
-  });
-  
-  // Ruta za masovno slanje SMS poruka izabranim klijentima
-  app.post("/api/sms/bulk", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(401).json({ error: "Nemate dozvolu za slanje masovnih poruka" });
-    }
-    
-    try {
-      const { clientIds, message } = req.body;
-      
-      if (!Array.isArray(clientIds) || clientIds.length === 0) {
-        return res.status(400).json({ error: "Morate izabrati bar jednog klijenta" });
-      }
-      
-      if (!message || message.trim().length === 0) {
-        return res.status(400).json({ error: "Tekst poruke je obavezan" });
-      }
-      
-      if (message.length > 160) {
-        return res.status(400).json({ error: "SMS poruka ne može biti duža od 160 karaktera" });
-      }
-      
-      const results = [];
-      const errors = [];
-      
-      // Iteriramo kroz sve klijente i šaljemo im poruke
-      for (const clientId of clientIds) {
-        try {
-          const client = await storage.getClient(clientId);
-          
-          if (!client || !client.phone) {
-            errors.push({ 
-              clientId, 
-              error: "Klijent ne postoji ili nema definisan broj telefona" 
-            });
-            continue;
-          }
-          
-          const result = await mobileSmsService.sendSms({
-            to: client.phone,
-            body: `Frigo Sistem Todosijević: ${message}`
-          });
-          
-          if (result) {
-            results.push({ clientId, success: true });
-          } else {
-            errors.push({ clientId, error: "Greška pri slanju SMS poruke" });
-          }
-        } catch (error) {
-          errors.push({ clientId, error: error.message });
-        }
-      }
-      
-      res.json({
-        success: errors.length === 0,
-        results: {
-          total: clientIds.length,
-          sent: results.length,
-          failed: errors.length
-        },
-        errors: errors.length > 0 ? errors : undefined
-      });
-    } catch (error) {
-      console.error("Greška pri masovnom slanju SMS poruka:", error);
-      res.status(500).json({ error: "Greška pri masovnom slanju SMS poruka", details: error.message });
-    }
-  });
+  // SMS bulk sending endpoint removed
+  // SMS bulk endpoint removed
 
-  // =====================================
-  // MOBILE SMS API ENDPOINTS
-  // =====================================
+  // Mobile SMS API endpoints have been completely removed
 
-  const mobileSMSConfigSchema = z.object({
-    baseUrl: z.string().url(),
-    apiKey: z.string().optional()
-  });
+  // SMS status endpoint removed
 
-  // Konfiguracija Mobile SMS API-ja
-  app.post("/api/sms/configure", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const config = mobileSMSConfigSchema.parse(req.body);
-      
-      console.log(`[MOBILE SMS API] Konfiguracija: baseUrl=${config.baseUrl}`);
-      
-      const configured = await mobileSmsService.configure(config, storage);
-      
-      if (configured) {
-        res.json({ 
-          success: true, 
-          message: "Mobile SMS API je uspešno konfigurisan",
-          provider: 'mobile-sms',
-          baseUrl: config.baseUrl
-        });
-      } else {
-        res.status(500).json({ error: "Greška pri konfiguraciji Mobile SMS API-ja" });
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Nevažeći podaci za Mobile SMS API", 
-          details: error.format() 
-        });
-      }
-      console.error("Greška pri konfiguraciji Mobile SMS API-ja:", error);
-      res.status(500).json({ 
-        error: "Greška pri konfiguraciji Mobile SMS API-ja", 
-        message: error instanceof Error ? error.message : "Nepoznata greška"
-      });
-    }
-  });
+  // SMS test connection endpoint removed
 
-  // Status SMS servisa
-  app.get("/api/sms/status", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const status = await mobileSmsService.getStatus();
-      res.json(status);
-    } catch (error) {
-      console.error("Greška pri dobijanju SMS statusa:", error);
-      res.status(500).json({ error: "Greška pri dobijanju SMS statusa" });
-    }
-  });
-
-  // Test konekcije sa Mobile SMS API
-  app.post("/api/sms/test-connection", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const connected = await mobileSmsService.testConnection();
-      
-      if (connected) {
-        res.json({ 
-          success: true, 
-          message: "Mobile SMS API konekcija je uspešna",
-          provider: 'mobile-sms'
-        });
-      } else {
-        res.status(500).json({ error: "Mobile SMS API konekcija nije uspešna" });
-      }
-    } catch (error) {
-      console.error("Greška pri testiranju konekcije:", error);
-      res.status(500).json({ error: "Greška pri testiranju konekcije" });
-    }
-  });
-
-  // Pošalji test SMS preko Mobile SMS API
-  app.post("/api/sms/send-test", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const { phoneNumber } = req.body;
-      
-      if (!phoneNumber) {
-        return res.status(400).json({ error: "Broj telefona je obavezan" });
-      }
-
-      console.log(`[MOBILE SMS] Slanje test SMS-a na ${phoneNumber}`);
-      
-      const sent = await mobileSmsService.sendTestSMS(phoneNumber);
-      
-      if (sent) {
-        res.json({ 
-          success: true, 
-          message: "Test SMS je uspešno poslat",
-          phoneNumber: phoneNumber,
-          provider: 'mobile-sms'
-        });
-      } else {
-        res.status(500).json({ error: "Greška pri slanju test SMS-a" });
-      }
-    } catch (error) {
-      console.error("Greška pri slanju test SMS-a:", error);
-      res.status(500).json({ error: "Greška pri slanju test SMS-a" });
-    }
-  });
+  // SMS test send endpoint removed
 
 
 
@@ -3866,20 +3543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Greška pri obaveštavanju o pending delovima:", notificationError);
       }
       
-      // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
-      if (service.client?.phone) {
-        const smsMessage = generateStatusUpdateMessage(serviceId, 'assigned', technician.fullName);
-        const smsResult = await hybridSMSService.sendSMS(
-          service.client.phone,
-          smsMessage
-        );
-        
-        if (smsResult) {
-          console.log(`[SMS] ✅ SMS obaveštenje o dodeljivanju servisera poslato klijentu ${service.client.fullName}`);
-        } else {
-          console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
-        }
-      }
+      // SMS functionality has been removed from the application
       
       res.json({
         ...updatedService,
@@ -3924,20 +3588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Greška pri slanju notifikacije o promeni statusa:", notificationError);
       }
       
-      // Pošalji SMS obaveštenje klijentu o promenama statusa
-      if (service.client?.phone) {
-        const smsMessage = generateStatusUpdateMessage(serviceId, status, service.technician?.fullName);
-        const smsResult = await hybridSMSService.sendSMS(
-          service.client.phone,
-          smsMessage
-        );
-        
-        if (smsResult) {
-          console.log(`[SMS] ✅ SMS obaveštenje o statusu poslato klijentu ${service.client.fullName}`);
-        } else {
-          console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
-        }
-      }
+      // SMS functionality has been removed from the application
       
       res.json({
         ...updatedService,
@@ -3949,118 +3600,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SMS Configuration endpoints
-  app.post("/api/admin/sms-settings", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za konfiguraciju SMS-a" });
-      }
-      
-      const smsConfig = smsSettingsSchema.parse(req.body);
-      
-      console.log(`[SMS ADMIN] Konfiguracija SMS provajdera: ${smsConfig.provider}`);
-      
-      // Konfiguriši Hybrid SMS servis
-      await hybridSMSService.configure(smsConfig);
-      
-      res.json({ 
-        success: true, 
-        message: `SMS provajder ${smsConfig.provider} je uspešno konfigurisan`,
-        provider: smsConfig.provider
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Nevažeće SMS postavke", 
-          details: error.format() 
-        });
-      }
-      console.error("Greška pri konfiguraciji SMS-a:", error);
-      res.status(500).json({ 
-        error: "Greška pri konfiguraciji SMS-a", 
-        message: error instanceof Error ? error.message : "Nepoznata greška"
-      });
-    }
-  });
+  // SMS Configuration endpoints have been completely removed from the application
 
-  app.get("/api/admin/sms-settings", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pregled SMS postavki" });
-      }
-      
-      const configInfo = await hybridSMSService.getStatus();
-      
-      if (!configInfo.isConfigured) {
-        return res.json({ 
-          configured: false,
-          recommendations: [
-            { provider: 'twilio', description: 'Preporučena opcija za Crnu Goru', price: 'Zavisi od plana' }
-          ]
-        });
-      }
-      
-      res.json({
-        configured: true,
-        provider: 'twilio'
-      });
-    } catch (error) {
-      console.error("Greška pri dobijanju SMS postavki:", error);
-      res.status(500).json({ 
-        error: "Greška pri dobijanju SMS postavki", 
-        message: error instanceof Error ? error.message : "Nepoznata greška"
-      });
-    }
-  });
+  // Admin SMS settings endpoint removed
 
-  app.post("/api/admin/test-sms", async (req, res) => {
-    try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za testiranje SMS-a" });
-      }
-      
-      const { recipient } = z.object({ recipient: z.string().min(8) }).parse(req.body);
-      
-      console.log(`[SMS TEST] Slanje test SMS-a na: ${recipient}`);
-      
-      // Koristi Hybrid SMS servis
-      const sent = await hybridSMSService.sendSMS(recipient, "Test SMS poruka iz Frigo Sistema");
-      
-      if (sent) {
-        console.log(`[SMS TEST] ✅ Test SMS uspešno poslat na: ${recipient} preko Twilio`);
-        return res.json({ 
-          success: true, 
-          message: "Test SMS uspešno poslat",
-          provider: 'twilio'
-        });
-      } else {
-        console.error(`[SMS TEST] ❌ Twilio servis neuspešan`);
-        return res.status(500).json({ 
-          success: false, 
-          error: "Neuspešno slanje test SMS-a"
-        });
-      }
-    } catch (error) {
-      console.error("[SMS TEST] Greška:", error);
-      
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Nevažeći broj telefona", 
-          details: error.format() 
-        });
-      }
-      
-      res.status(500).json({ 
-        success: false, 
-        error: "Greška pri slanju test SMS-a", 
-        message: error instanceof Error ? error.message : "Nepoznata greška" 
-      });
-    }
-  });
+  // SMS test endpoint has been removed
 
   // SMS notification endpoints for services
   app.post("/api/services/:id/send-sms", async (req, res) => {
@@ -4088,7 +3632,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
       
-      const result = await hybridSMSService.sendSMS(service.client.phone, message);
+      // SMS functionality removed
+      const result = false;
       
       if (result) {
         console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
@@ -4097,7 +3642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "SMS obaveštenje uspešno poslato"
         });
       } else {
-        console.error(`[SMS] ❌ Neuspešno slanje SMS-a preko Twilio`);
+        // SMS functionality has been removed
         return res.status(500).json({ 
           success: false, 
           error: "Neuspešno slanje SMS obaveštenja"
@@ -6047,157 +5592,13 @@ Admin panel - automatska porudžbina
     }
   });
 
-  // ===== SMS GATEWAY ENDPOINTS =====
+  // SMS GATEWAY ENDPOINTS have been completely removed
 
-  // SMS Test endpoint
-  app.post("/api/admin/sms-test", jwtAuth, async (req, res) => {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
+  // Mobi Gateway configuration endpoint removed
 
-    try {
-      const { phoneNumber, message, provider } = req.body;
-      
-      if (!phoneNumber || !message) {
-        return res.status(400).json({ error: "Telefon i poruka su obavezni" });
-      }
+  // All SMS endpoints removed
 
-      console.log(`[SMS TEST] Admin ${req.user.fullName} testira SMS na ${phoneNumber} preko ${provider || 'default'}`);
-      
-      const { hybridSMSService } = await import('./hybrid-sms-service.js');
-      const result = await hybridSMSService.sendTestSMS(phoneNumber, provider);
-      
-      if (result) {
-        res.json({ 
-          success: true, 
-          message: "SMS uspešno poslat" 
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          error: "Greška pri slanju SMS-a" 
-        });
-      }
-    } catch (error) {
-      console.error("Error sending test SMS:", error);
-      res.status(500).json({ error: "Greška pri slanju test SMS-a" });
-    }
-  });
-
-  // Mobi Gateway konfiguracija
-  app.post("/api/admin/mobi-gateway/configure", jwtAuth, async (req, res) => {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
-
-    try {
-      const { phoneIpAddress, port, username, password } = req.body;
-      
-      if (!phoneIpAddress || !port) {
-        return res.status(400).json({ error: "IP adresa i port su obavezni" });
-      }
-
-      console.log(`[MOBI CONFIG] Admin konfigurišer Mobi Gateway: ${phoneIpAddress}:${port}`);
-      
-      const { hybridSMSService } = await import('./hybrid-sms-service.js');
-      const success = await hybridSMSService.configureMobiGateway({
-        phoneIpAddress,
-        port: parseInt(port),
-        username,
-        password,
-        timeout: 30000,
-        retryAttempts: 3
-      });
-      
-      if (success) {
-        res.json({ 
-          success: true, 
-          message: "Mobi Gateway uspešno konfigurisan" 
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          error: "Greška pri konfiguraciji Mobi Gateway" 
-        });
-      }
-    } catch (error) {
-      console.error("Error configuring Mobi Gateway:", error);
-      res.status(500).json({ error: "Greška pri konfiguraciji Mobi Gateway" });
-    }
-  });
-
-  // Postavljanje SMS provider-a
-  app.post("/api/admin/sms/set-provider", jwtAuth, async (req, res) => {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
-
-    try {
-      const { primaryProvider, fallbackProvider } = req.body;
-      
-      if (!primaryProvider || !['twilio', 'mobi_gateway'].includes(primaryProvider)) {
-        return res.status(400).json({ error: "Valjan primary provider je obavezan (twilio ili mobi_gateway)" });
-      }
-
-      console.log(`[SMS CONFIG] Admin postavlja providere: primary=${primaryProvider}, fallback=${fallbackProvider}`);
-      
-      const { hybridSMSService } = await import('./hybrid-sms-service.js');
-      await hybridSMSService.setPrimaryProvider(primaryProvider);
-      if (fallbackProvider) {
-        await hybridSMSService.setFallbackProvider(fallbackProvider);
-      }
-      
-      res.json({ 
-        success: true, 
-        message: "SMS provider uspešno postavljen" 
-      });
-    } catch (error) {
-      console.error("Error setting SMS provider:", error);
-      res.status(500).json({ error: "Greška pri postavljanju SMS provider-a" });
-    }
-  });
-
-  // SMS status endpoint
-  app.get("/api/admin/sms/status", jwtAuth, async (req, res) => {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
-
-    try {
-      const { hybridSMSService } = await import('./hybrid-sms-service.js');
-      const status = await hybridSMSService.getStatus();
-      
-      res.json(status);
-    } catch (error) {
-      console.error("Error getting SMS status:", error);
-      res.status(500).json({ error: "Greška pri dobijanju SMS statusa" });
-    }
-  });
-
-  // Test konekcije sa SMS provider-om
-  app.post("/api/admin/sms/test-connection", jwtAuth, async (req, res) => {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
-
-    try {
-      const { provider } = req.body;
-      
-      const { hybridSMSService } = await import('./hybrid-sms-service.js');
-      const result = await hybridSMSService.testConnection(provider);
-      
-      res.json(result);
-    } catch (error) {
-      console.error("Error testing SMS connection:", error);
-      res.status(500).json({ error: "Greška pri testiranju SMS konekcije" });
-    }
-  });
-
-  // ===== MOBILE SMS API ONLY =====
-  // Old GSM modem and hybrid SMS services removed - using Mobile SMS API instead
-
-  // Mobile SMS API will be configured via admin interface
-  console.log('[STARTUP] Mobile SMS API spreman za konfiguraciju preko admin panela');
+  // All SMS functionality has been completely removed from the application
 
   const httpServer = createServer(app);
   return httpServer;
