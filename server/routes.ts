@@ -4393,21 +4393,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get services waiting for parts (admin only) - MORA BITI IZNAD /:id rute!
-  app.get("/api/admin/services/waiting-for-parts", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
-
-    try {
-      const waitingServices = await storage.getServicesByStatus('waiting_parts');
-      res.json(waitingServices);
-    } catch (error) {
-      console.error("Error fetching waiting services:", error);
-      res.status(500).json({ error: "Failed to fetch waiting services" });
-    }
-  });
-
   app.get("/api/admin/services/:id", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
@@ -5747,6 +5732,21 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error updating available part quantity:", error);
       res.status(500).json({ error: "Greška pri ažuriranju količine dela" });
+    }
+  });
+
+  // Get services waiting for parts - special endpoint to avoid conflict with /:id route
+  app.get("/api/admin/waitingforparts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const waitingServices = await storage.getServicesByStatus('waiting_parts');
+      res.json(waitingServices);
+    } catch (error) {
+      console.error("Error fetching waiting services:", error);
+      res.status(500).json({ error: "Failed to fetch waiting services" });
     }
   });
 

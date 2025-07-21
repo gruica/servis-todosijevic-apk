@@ -42,7 +42,7 @@ export function WaitingForPartsSection() {
   const { toast } = useToast();
 
   const { data: waitingServices = [], isLoading } = useQuery<WaitingService[]>({
-    queryKey: ['/api/admin/services/waiting-for-parts'],
+    queryKey: ['/api/admin/waitingforparts'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -55,7 +55,7 @@ export function WaitingForPartsSection() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/services/waiting-for-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/waitingforparts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/services'] });
       toast({
         title: "Servis vraćen u realizaciju",
