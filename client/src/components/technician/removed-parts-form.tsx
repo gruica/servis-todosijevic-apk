@@ -76,7 +76,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
 
   const updateServiceStatusMutation = useMutation({
     mutationFn: () => 
-      apiRequest(`/api/services/${serviceId}/parts-removed`, "PATCH", {}),
+      apiRequest("PATCH", `/api/services/${serviceId}/parts-removed`, {}),
     onSuccess: () => {
       toast({
         title: "Status ažuriran",
