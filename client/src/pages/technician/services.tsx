@@ -145,7 +145,9 @@ export default function TechnicianServices() {
     isLoading,
     error: error?.message,
     servicesCount: services?.length || 0,
-    services: services?.slice(0, 3).map(s => ({ id: s.id, status: s.status, client: s.client?.fullName }))
+    services: services?.slice(0, 3).map(s => ({ id: s.id, status: s.status, client: s.client?.fullName })),
+    hasService106: services?.some(s => s.id === 106),
+    service106Details: services?.find(s => s.id === 106)
   });
 
   // Debug filter logic
@@ -697,8 +699,10 @@ export default function TechnicianServices() {
             ) : (
               <ScrollArea className="h-[calc(100vh-220px)]">
                 <div className="space-y-6 pr-2 pb-4">
-                  {sortedCities.map((city) => (
-                    <div key={city} className="space-y-3">
+                  {sortedCities.map((city) => {
+                    console.log(`📍 Rendering city ${city} with services:`, groupedServices[city].map(s => ({ id: s.id, client: s.client?.fullName, description: s.description })));
+                    return (
+                      <div key={city} className="space-y-3">
                       <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-primary" />
@@ -960,7 +964,8 @@ export default function TechnicianServices() {
                         </Card>
                       ))}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             )}
