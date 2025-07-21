@@ -26,7 +26,7 @@ interface GatewayStatus {
   gatewayInfo?: any;
 }
 
-export function MobileSMSConfigPage() {
+export default function MobileSMSConfigPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [testPhone, setTestPhone] = useState("");
