@@ -23,13 +23,20 @@ export class MobileSMSService {
         this.isEnabled = true;
         console.log(`[MOBILE SMS] ✅ Servis inicijalizovan sa gateway: ${config.gatewayIP}:${config.gatewayPort}`);
         
-        // Test konekcije
-        const connectionTest = await this.gatewayService.testConnection();
-        if (connectionTest.connected) {
-          console.log('[MOBILE SMS] 🟢 Gateway je dostupan i spreman za rad');
-        } else {
-          console.log(`[MOBILE SMS] 🟡 Gateway nije dostupan: ${connectionTest.error}`);
-        }
+        // Test konekcije sa timeout da ne blokira server startup
+        console.log('[MOBILE SMS] 🔍 Testiranje konekcije sa gateway-om');
+        setTimeout(async () => {
+          try {
+            const connectionTest = await this.gatewayService!.testConnection();
+            if (connectionTest.connected) {
+              console.log('[MOBILE SMS] 🟢 Gateway je dostupan i spreman za rad');
+            } else {
+              console.log(`[MOBILE SMS] 🟡 Gateway nije dostupan: ${connectionTest.error}`);
+            }
+          } catch (error: any) {
+            console.log(`[MOBILE SMS] 🟡 Nije moguće testirati konekciju: ${error.message}`);
+          }
+        }, 2000);
       } else {
         console.log('[MOBILE SMS] ⚠️ Konfiguracija nije pronađena - SMS funkcionalnost onemogućena');
         this.isEnabled = false;
@@ -58,7 +65,8 @@ export class MobileSMSService {
       return {
         gatewayIP,
         gatewayPort,
-        apiKey: apiKey || undefined,
+        username: settings.find(s => s.key === 'mobile_sms_username')?.value || 'gruica',
+        password: settings.find(s => s.key === 'mobile_sms_password')?.value || 'AdamEva230723@',
         timeout
       };
     } catch (error: any) {
