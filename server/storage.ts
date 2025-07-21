@@ -3486,9 +3486,19 @@ export class DatabaseStorage implements IStorage {
 
   async updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined> {
     try {
+      // Uklanjamo undefined vrednosti iz setting objekta
+      const cleanSetting = Object.fromEntries(
+        Object.entries(setting).filter(([_, value]) => value !== undefined)
+      );
+      
+      if (Object.keys(cleanSetting).length === 0) {
+        console.error('Nema validnih podataka za ažuriranje');
+        return undefined;
+      }
+      
       const [updatedSetting] = await db
         .update(systemSettings)
-        .set(setting)
+        .set(cleanSetting)
         .where(eq(systemSettings.key, key))
         .returning();
       return updatedSetting;
