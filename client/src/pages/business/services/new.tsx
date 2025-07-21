@@ -135,8 +135,8 @@ export default function NewBusinessServiceRequest() {
       try {
         console.log("Slanje zahteva za kreiranje servisa:", data);
         
-        // Koristimo specijalizovanu business partner rutu
-        const serviceResponse = await apiRequest("POST", "/api/business/services", {
+        // Koristimo specijalizovanu business partner rutu sa JWT autentifikacijom
+        const serviceResponse = await apiRequest("POST", "/api/business/services-jwt", {
           // Podaci o klijentu
           clientFullName: data.clientFullName.trim(),
           clientPhone: data.clientPhone.trim(),

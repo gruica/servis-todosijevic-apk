@@ -5750,6 +5750,139 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ===== BUSINESS PARTNER JWT ENDPOINTS =====
+  
+  // Create service by business partner (JWT version)
+  app.post("/api/business/services-jwt", jwtAuth, async (req, res) => {
+    if (req.user.role !== "business_partner") {
+      return res.status(403).json({ error: "Samo poslovni partneri mogu pristupiti ovom resursu" });
+    }
+
+    try {
+      console.log("=== KREIRANJE SERVISA OD STRANE POSLOVNOG PARTNERA (JWT) ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      console.log("Korisnik:", req.user);
+      
+      const {
+        clientId,
+        applianceId,
+        description,
+        categoryId,
+        manufacturerId,
+        model,
+        serialNumber,
+        clientFullName,
+        clientPhone,
+        clientEmail,
+        clientAddress,
+        clientCity
+      } = req.body;
+
+      if (!description || description.trim().length === 0) {
+        console.error("Nedostaje opis servisa");
+        return res.status(400).json({
+          error: "Nedostaje opis servisa",
+          message: "Opis servisa je obavezno polje."
+        });
+      }
+
+      const partnerId = req.user.id;
+      const partnerCompanyName = req.user.companyName || "Poslovni partner";
+      
+      console.log("Partner ID:", partnerId);
+      console.log("Partner Company:", partnerCompanyName);
+
+      // Prvo provera da li imamo postojećeg klijenta
+      let finalClientId = clientId && clientId > 0 ? parseInt(clientId) : null;
+      
+      if (!finalClientId && clientFullName && clientPhone) {
+        console.log("Kreiram novog klijenta sa podacima:", { clientFullName, clientPhone, clientEmail });
+        const newClient = await storage.createClient({
+          fullName: clientFullName.trim(),
+          phone: clientPhone.trim(),
+          email: clientEmail?.trim() || null,
+          address: clientAddress?.trim() || null,
+          city: clientCity?.trim() || null
+        });
+        
+        finalClientId = newClient.id;
+        console.log("Kreiran novi klijent sa ID:", finalClientId);
+      }
+
+      if (!finalClientId) {
+        console.error("Nedostaje Client ID");
+        return res.status(400).json({
+          error: "Nedostaje klijent",
+          message: "Morate odabrati postojećeg klijenta ili kreirati novog."
+        });
+      }
+
+      // Provera da li imamo postojeći uređaj
+      let finalApplianceId = applianceId && applianceId > 0 ? parseInt(applianceId) : null;
+      
+      if (!finalApplianceId && categoryId && manufacturerId && model) {
+        console.log("Kreiram novi uređaj sa podacima:", { categoryId, manufacturerId, model, serialNumber });
+        const newAppliance = await storage.createAppliance({
+          clientId: finalClientId,
+          categoryId: parseInt(categoryId),
+          manufacturerId: parseInt(manufacturerId),
+          model: model.trim(),
+          serialNumber: serialNumber?.trim() || null,
+          purchaseDate: null,
+          notes: null
+        });
+        
+        finalApplianceId = newAppliance.id;
+        console.log("Kreiran novi uređaj sa ID:", finalApplianceId);
+      }
+
+      if (!finalApplianceId) {
+        console.error("Nedostaje Appliance ID");
+        return res.status(400).json({
+          error: "Nedostaje uređaj",
+          message: "Morate odabrati postojeći uređaj ili kreirati novi."
+        });
+      }
+
+      // Kreiraj servis
+      const newService = await storage.createService({
+        clientId: finalClientId,
+        applianceId: finalApplianceId,
+        technicianId: null,
+        description: description.trim(),
+        status: 'pending',
+        businessPartnerId: partnerId,
+        partnerCompanyName: partnerCompanyName,
+        warrantyStatus: 'out_of_warranty'
+      });
+
+      console.log("Kreiran novi servis sa ID:", newService.id);
+
+      // Notify admins about new service from partner
+      try {
+        await NotificationService.notifyServiceCreatedByPartner(
+          newService.id,
+          partnerCompanyName
+        );
+      } catch (notificationError) {
+        console.error("Greška pri slanju obaveštenja:", notificationError);
+      }
+
+      res.json({
+        success: true,
+        serviceId: newService.id,
+        message: "Servis je uspešno kreiran. Administrator će ga uskoro dodeliti serviseru."
+      });
+
+    } catch (error) {
+      console.error("Greška pri kreiranju servisa od strane poslovnog partnera:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri kreiranju servisa. Pokušajte ponovo kasnije." 
+      });
+    }
+  });
+
   // ===== MOBILE SMS API ONLY =====
   // Old GSM modem and hybrid SMS services removed - using Mobile SMS API instead
 
