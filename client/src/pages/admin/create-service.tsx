@@ -109,14 +109,32 @@ export default function CreateService() {
   });
 
   // Fetch appliances for selected client
-  const { data: appliances = [], isLoading: appliancesLoading } = useQuery<Appliance[]>({
+  const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
     queryKey: ["/api/appliances", watchedClientId],
     queryFn: async () => {
       if (!watchedClientId) return [];
-      const response = await apiRequest("GET", `/api/clients/${watchedClientId}/appliances`);
-      return response.json();
+      
+      console.log("🔍 Fetching appliances for client ID:", watchedClientId);
+      
+      try {
+        const response = await apiRequest("GET", `/api/clients/${watchedClientId}/appliances`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("🔍 Appliances API error:", response.status, errorText);
+          throw new Error(`Failed to fetch appliances: ${response.status} ${errorText}`);
+        }
+        
+        const appliancesData = await response.json();
+        console.log("🔍 Appliances data received:", appliancesData);
+        return appliancesData;
+      } catch (error) {
+        console.error("🔍 Error fetching appliances:", error);
+        throw error;
+      }
     },
-    enabled: !!watchedClientId,
+    enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
+    retry: 1,
   });
 
   // More debug logging
@@ -125,6 +143,9 @@ export default function CreateService() {
     appliancesLength: appliances.length,
     appliancesLoading,
     watchedClientId,
+    appliancesError,
+    hasAppliancesError: !!appliancesError,
+    appliancesErrorMessage: appliancesError?.message,
   });
 
   // Fetch technicians
@@ -301,11 +322,20 @@ export default function CreateService() {
                                 key={client.id}
                                 value={`${client.fullName} ${client.phone} ${client.email || ''} ${client.address || ''} ${client.city || ''}`}
                                 onSelect={() => {
-                                  setValue("clientId", client.id.toString());
+                                  console.log("🔍 Client selected:", client.id, client.fullName);
+                                  const clientIdString = client.id.toString();
+                                  
+                                  setValue("clientId", clientIdString);
                                   setValue("applianceId", ""); // Reset appliance when client changes
-                                  setSelectedClientId(client.id.toString()); // Update local state too
+                                  setSelectedClientId(clientIdString); // Update local state too
                                   setIsClientSelectorOpen(false);
                                   setClientSearchQuery(""); // Reset search
+                                  
+                                  console.log("🔍 After setting values:", {
+                                    clientIdString,
+                                    formClientId: watch("clientId"),
+                                    selectedClientIdState: clientIdString
+                                  });
                                 }}
                                 className="flex flex-col items-start gap-1 p-3"
                               >
