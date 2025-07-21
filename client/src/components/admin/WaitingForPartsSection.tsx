@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,32 +41,17 @@ export function WaitingForPartsSection() {
   const [adminNotes, setAdminNotes] = useState('');
   const { toast } = useToast();
 
-  const { data: waitingServices, isLoading } = useQuery({
+  const { data: waitingServices = [], isLoading } = useQuery<WaitingService[]>({
     queryKey: ['/api/admin/services/waiting-for-parts'],
-    queryFn: async () => {
-      const response = await fetch('/api/admin/services/waiting-for-parts');
-      if (!response.ok) {
-        throw new Error('Failed to fetch waiting services');
-      }
-      return response.json() as WaitingService[];
-    },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const returnServiceMutation = useMutation({
     mutationFn: async ({ serviceId, newStatus, adminNotes }: { serviceId: number; newStatus: string; adminNotes: string }) => {
-      const response = await fetch(`/api/admin/services/${serviceId}/return-from-waiting`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ newStatus, adminNotes }),
+      const response = await apiRequest('POST', `/api/admin/services/${serviceId}/return-from-waiting`, {
+        newStatus, 
+        adminNotes 
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to return service from waiting');
-      }
-
       return response.json();
     },
     onSuccess: () => {

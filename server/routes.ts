@@ -4393,7 +4393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get services waiting for parts (admin only)
+  // Get services waiting for parts (admin only) - MORA BITI IZNAD /:id rute!
   app.get("/api/admin/services/waiting-for-parts", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });

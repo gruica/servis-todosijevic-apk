@@ -701,8 +701,8 @@ export default function AdminServices() {
                           
                           {/* Klijent */}
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{service.client.fullName}</p>
-                            {service.client.city && (
+                            <p className="font-medium text-sm truncate">{service.client?.fullName || 'Nepoznat klijent'}</p>
+                            {service.client?.city && (
                               <p className="text-xs text-muted-foreground flex items-center gap-1">
                                 <MapPin className="h-3 w-3" />
                                 {service.client.city}
@@ -735,9 +735,9 @@ export default function AdminServices() {
                           
                           {/* Uređaj */}
                           <div className="min-w-0">
-                            <p className="text-sm truncate">{service.appliance.category.name}</p>
+                            <p className="text-sm truncate">{service.appliance?.category?.name || 'Nepoznat uređaj'}</p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {service.appliance.manufacturer.name} {service.appliance.model}
+                              {service.appliance?.manufacturer?.name || 'Nepoznat proizvođač'} {service.appliance?.model || ''}
                             </p>
                           </div>
                           
@@ -745,9 +745,9 @@ export default function AdminServices() {
                           <div className="min-w-0">
                             {service.technician ? (
                               <div>
-                                <p className="text-sm truncate">{service.technician.fullName}</p>
+                                <p className="text-sm truncate">{service.technician?.fullName || 'Nepoznat serviser'}</p>
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {service.technician.specialization}
+                                  {service.technician?.specialization || 'Bez specijalizacije'}
                                 </p>
                               </div>
                             ) : (
