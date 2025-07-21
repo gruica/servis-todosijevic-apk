@@ -177,3 +177,10 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+**KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
+- NIKAD ne diraj postojeće kodove koji rade
+- Kada dodaješ nove funkcije, proverava da li su u sukobu sa postojećim kodovima
+- Ako jesu u sukobu, napravi da se novi kodovi ne instaliraju dok ne budeš siguran u njihovu potpunu implementaciju i funkcionalnost
+- Uvek dodavaj nove endpoint-e na kraj server datoteke, ne menjaj redosled postojećih ruta
+- Prilagodi nove kodove postojećim strukturama, a ne obrnuto
