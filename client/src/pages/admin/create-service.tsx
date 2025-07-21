@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, User, Settings, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, Plus, User, Settings, Calendar, FileText, Search, Phone, MapPin, Mail } from "lucide-react";
 import { useLocation } from "wouter";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Form schema
 const createServiceSchema = z.object({
@@ -66,6 +69,8 @@ interface Technician {
 export default function CreateService() {
   const [, setLocation] = useLocation();
   const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -209,6 +214,20 @@ export default function CreateService() {
   };
 
   const selectedClient = clients.find(c => c.id.toString() === watchedClientId);
+  
+  // Filtriraj klijente na osnovu pretrage
+  const filteredClients = useMemo(() => {
+    if (!clientSearchQuery.trim()) return clients;
+    
+    const query = clientSearchQuery.toLowerCase().trim();
+    return clients.filter(client => 
+      client.fullName.toLowerCase().includes(query) ||
+      client.phone.toLowerCase().includes(query) ||
+      (client.email && client.email.toLowerCase().includes(query)) ||
+      (client.address && client.address.toLowerCase().includes(query)) ||
+      (client.city && client.city.toLowerCase().includes(query))
+    );
+  }, [clients, clientSearchQuery]);
 
   return (
     <AdminLayout>
@@ -245,25 +264,82 @@ export default function CreateService() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="clientId">Klijent *</Label>
-                  <Select
-                    value={watchedClientId || ""}
-                    onValueChange={(value) => {
-                      setValue("clientId", value);
-                      setValue("applianceId", ""); // Reset appliance when client changes
-                      setSelectedClientId(value); // Update local state too
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Izaberite klijenta..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id.toString()}>
-                          {client.fullName} - {client.phone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={isClientSelectorOpen} onOpenChange={setIsClientSelectorOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={isClientSelectorOpen}
+                        className="w-full justify-between h-10"
+                      >
+                        {selectedClient ? (
+                          <div className="flex items-center gap-2 truncate">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate">{selectedClient.fullName}</span>
+                            <span className="text-muted-foreground">({selectedClient.phone})</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Search className="h-4 w-4" />
+                            <span>Pretražite i izaberite klijenta...</span>
+                          </div>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Pretražite po imenu, telefonu, adresi..." 
+                          value={clientSearchQuery}
+                          onValueChange={setClientSearchQuery}
+                        />
+                        <CommandEmpty>Nema pronađenih klijenata.</CommandEmpty>
+                        <CommandGroup>
+                          <ScrollArea className="h-[200px]">
+                            {filteredClients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                value={`${client.fullName} ${client.phone} ${client.email || ''} ${client.address || ''} ${client.city || ''}`}
+                                onSelect={() => {
+                                  setValue("clientId", client.id.toString());
+                                  setValue("applianceId", ""); // Reset appliance when client changes
+                                  setSelectedClientId(client.id.toString()); // Update local state too
+                                  setIsClientSelectorOpen(false);
+                                  setClientSearchQuery(""); // Reset search
+                                }}
+                                className="flex flex-col items-start gap-1 p-3"
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium truncate">{client.fullName}</span>
+                                      <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Phone className="h-3 w-3" />
+                                        <span className="text-sm">{client.phone}</span>
+                                      </div>
+                                    </div>
+                                    {client.email && (
+                                      <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                                        <Mail className="h-3 w-3" />
+                                        <span className="text-xs truncate">{client.email}</span>
+                                      </div>
+                                    )}
+                                    {client.address && (
+                                      <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                                        <MapPin className="h-3 w-3" />
+                                        <span className="text-xs truncate">{client.address}, {client.city}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </ScrollArea>
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   {errors.clientId && (
                     <p className="text-sm text-red-500 mt-1">{errors.clientId.message}</p>
                   )}
