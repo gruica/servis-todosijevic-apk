@@ -98,7 +98,8 @@ function Router() {
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
-      {/* SMS routes have been completely removed from the application */}
+      {/* Mobile SMS Config route */}
+      <RoleProtectedRoute path="/admin/mobile-sms-config" component={React.lazy(() => import('@/pages/admin/mobile-sms-config').then(m => ({default: m.MobileSMSConfigPage})))} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />

@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
+import { createMobileSMSService } from "./mobile-sms-service";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -68,6 +70,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Inicijalizacija mobile SMS servisa
+  console.log('[MOBILE SMS] Pokretanje mobile SMS servisa...');
+  const mobileSMSService = createMobileSMSService(storage as any);
+  await mobileSMSService.initialize();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

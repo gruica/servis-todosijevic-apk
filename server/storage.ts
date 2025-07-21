@@ -185,6 +185,7 @@ export interface IStorage {
   
   // System Settings methods
   getSystemSettings(): Promise<SystemSetting[]>;
+  getAllSystemSettings(): Promise<SystemSetting[]>; // Alias za mobile SMS kompatibilnost
   getSystemSetting(key: string): Promise<SystemSetting | undefined>;
   getSystemSettingsByCategory(category: string): Promise<SystemSetting[]>;
   createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
@@ -3437,6 +3438,11 @@ export class DatabaseStorage implements IStorage {
       console.error('Greška pri dohvatanju sistemskih postavki:', error);
       return [];
     }
+  }
+
+  // Alias metoda za mobile SMS kompatibilnost
+  async getAllSystemSettings(): Promise<SystemSetting[]> {
+    return this.getSystemSettings();
   }
 
   async getSystemSetting(key: string): Promise<SystemSetting | undefined> {

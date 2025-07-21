@@ -18,6 +18,7 @@ import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-ve
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
+import { registerMobileSMSRoutes } from "./mobile-sms-routes";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -5598,7 +5599,8 @@ Admin panel - automatska porudžbina
 
   // All SMS endpoints removed
 
-  // All SMS functionality has been completely removed from the application
+  // Mobile SMS Gateway routes - NEW implementation
+  registerMobileSMSRoutes(app, storage);
 
   const httpServer = createServer(app);
   return httpServer;
