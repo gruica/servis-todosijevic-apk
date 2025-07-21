@@ -1,5 +1,15 @@
 import fetch from 'node-fetch';
 
+/**
+ * SMS PROVAJDER: SMSGateway Android aplikacija
+ * 
+ * SMS poruke se šalju preko SMSGateway aplikacije instaliraje na Gruica telefonu.
+ * Aplikacija prima HTTP POST zahteve i šalje SMS poruke sa SIM kartice u telefonu.
+ * 
+ * Gateway: 77.222.25.100:8080 (Gruica telefon sa SMSGateway aplikacijom)
+ * SMS se šalju sa broja SIM kartice koja je u telefonu
+ */
+
 export interface MobileGatewaySMSConfig {
   gatewayIP: string;
   gatewayPort: number;
