@@ -48,6 +48,7 @@ const typeIcons = {
   spare_part_received: Package,
   spare_part_status_changed: Package,
   admin_spare_part_ordered: Package,
+  service_has_pending_parts: AlertCircle,
 };
 
 export function NotificationsDropdown() {

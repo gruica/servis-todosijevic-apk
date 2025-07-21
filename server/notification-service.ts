@@ -74,6 +74,80 @@ export class NotificationService {
     }
   }
 
+  // Obaveštava tehnčara o postojanju pending rezervnih delova za dodeljen servis
+  static async notifyTechnicianAboutPendingParts(serviceId: number, technicianId: number) {
+    try {
+      // Dobijamo sve pending rezervne delove za ovaj servis
+      const pendingParts = await db
+        .select({
+          id: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          quantity: sparePartOrders.quantity,
+          urgency: sparePartOrders.urgency,
+          supplierName: sparePartOrders.supplierName,
+          expectedDelivery: sparePartOrders.expectedDelivery,
+          status: sparePartOrders.status,
+        })
+        .from(sparePartOrders)
+        .where(and(
+          eq(sparePartOrders.serviceId, serviceId),
+          eq(sparePartOrders.status, "pending")
+        ));
+
+      if (pendingParts.length === 0) {
+        // Nema pending delova za ovaj servis
+        return;
+      }
+
+      // Dobijamo user ID tehnčara
+      const technicianData = await db
+        .select({
+          id: users.id,
+          fullName: users.fullName,
+        })
+        .from(users)
+        .where(eq(users.technicianId, technicianId))
+        .limit(1);
+
+      if (!technicianData.length) {
+        console.error(`Tehnčar sa technicianId ${technicianId} nije pronađen`);
+        return;
+      }
+
+      const technician = technicianData[0];
+
+      // Kreiramo poruku o pending delovima
+      const partsInfo = pendingParts.map(part => {
+        let info = `• ${part.partName}`;
+        if (part.partNumber) info += ` (${part.partNumber})`;
+        if (part.quantity > 1) info += ` - Količina: ${part.quantity}`;
+        if (part.urgency === 'urgent') info += ' - HITNO';
+        if (part.supplierName) info += ` - Dobavljač: ${part.supplierName}`;
+        if (part.expectedDelivery) {
+          const delivery = new Date(part.expectedDelivery);
+          info += ` - Očekivano: ${delivery.toLocaleDateString('sr-RS')}`;
+        }
+        return info;
+      }).join('\n');
+
+      const message = `Dodeljeni servis #${serviceId} ima ${pendingParts.length} rezervni${pendingParts.length === 1 ? ' deo' : pendingParts.length < 5 ? ' dela' : ' delova'} koji čeka${pendingParts.length === 1 ? '' : 'ju'} dostavu:\n\n${partsInfo}\n\nMolimo da proverite status delova pre početka rada.`;
+
+      await this.createNotification({
+        userId: technician.id,
+        type: "service_has_pending_parts",
+        title: "Dodeljeni servis ima pending rezervne delove",
+        message: message,
+        relatedServiceId: serviceId,
+        priority: pendingParts.some(p => p.urgency === 'urgent') ? "high" : "normal",
+      });
+
+      console.log(`Obaveštenje o ${pendingParts.length} pending delova poslano tehnčaru ${technician.fullName} za servis #${serviceId}`);
+    } catch (error) {
+      console.error("Greška pri obaveštavanju tehnčara o pending delovima:", error);
+    }
+  }
+
   // Kreiranje notifikacije za vraćanje servisa iz čekanja
   static async notifyServiceReturnedFromWaiting(serviceId: number, technicianId: number, adminId: number) {
     try {

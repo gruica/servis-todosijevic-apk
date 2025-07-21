@@ -3840,6 +3840,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (notificationError) {
         console.error("Greška pri slanju notifikacije serviseru:", notificationError);
       }
+
+      // Obavesti servisera o postojanju pending rezervnih delova za ovaj servis
+      try {
+        await NotificationService.notifyTechnicianAboutPendingParts(serviceId, technicianId);
+      } catch (notificationError) {
+        console.error("Greška pri obaveštavanju o pending delovima:", notificationError);
+      }
       
       // Pošalji SMS obaveštenje klijentu o dodeljivanju servisera
       if (service.client?.phone) {
@@ -4471,6 +4478,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedService = await storage.assignTechnicianToService(serviceId, technicianId);
       if (!updatedService) {
         return res.status(404).json({ error: "Service not found" });
+      }
+      
+      // Obavesti servisera o postojanju pending rezervnih delova za ovaj servis
+      try {
+        await NotificationService.notifyTechnicianAboutPendingParts(serviceId, technicianId);
+      } catch (notificationError) {
+        console.error("Greška pri obaveštavanju o pending delovima:", notificationError);
       }
       
       res.json(updatedService);
