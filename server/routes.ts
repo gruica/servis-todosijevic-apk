@@ -4480,6 +4480,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vraćanje servisa od tehnčara u admin bazu
+  app.post("/api/admin/services/:id/return-from-technician", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { reason, notes } = req.body;
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Nevažeći ID servisa" });
+      }
+      
+      // Proveri da li servis postoji
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Proveri da li je servis dodjeljen tehnčaru
+      if (!service.technicianId) {
+        return res.status(400).json({ error: "Servis nije dodjeljen nijednom tehnčaru" });
+      }
+      
+      // Vrati servis u pending status i ukloni technician_id
+      const updatedService = await storage.updateService(serviceId, {
+        status: 'pending',
+        technicianId: null,
+        technicianNotes: notes ? `${service.technicianNotes || ''}\n\n[VRAĆENO OD TEHNČARA]: ${notes}` : service.technicianNotes
+      });
+      
+      console.log(`Admin vratio servis #${serviceId} od tehnčara. Razlog: ${reason || 'Nije naveden'}`);
+      
+      // Pošalji notifikaciju tehnčaru o vraćanju servisa
+      try {
+        await NotificationService.notifyServiceReturned(serviceId, service.technicianId, req.user.id, reason || 'Bez objašnjenja');
+      } catch (notificationError) {
+        console.error("Greška pri slanju notifikacije o vraćanju servisa:", notificationError);
+      }
+      
+      res.json({
+        ...updatedService,
+        message: `Servis #${serviceId} je uspešno vraćen od tehnčara u admin bazu`,
+        reason,
+        notes
+      });
+    } catch (error) {
+      console.error("Greška pri vraćanju servisa:", error);
+      res.status(500).json({ error: "Greška pri vraćanju servisa od tehnčara" });
+    }
+  });
+
   // Spare parts API endpoints
   
   // Get all spare part orders (admin only)

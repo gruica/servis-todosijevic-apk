@@ -118,6 +118,9 @@ export default function AdminServices() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnNotes, setReturnNotes] = useState("");
   
   // Koristi notification context
   const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
@@ -216,6 +219,32 @@ export default function AdminServices() {
       toast({
         title: "Greška",
         description: error.message || "Greška pri brisanju servisa.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const returnServiceMutation = useMutation({
+    mutationFn: async (data: { serviceId: number; reason: string; notes: string }) => {
+      await apiRequest("POST", `/api/admin/services/${data.serviceId}/return-from-technician`, {
+        reason: data.reason,
+        notes: data.notes
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno vraćeno",
+        description: "Servis je uspešno vraćen od tehnčara u admin bazu.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      setIsReturnOpen(false);
+      setReturnReason("");
+      setReturnNotes("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri vraćanju servisa.",
         variant: "destructive",
       });
     },
@@ -334,6 +363,14 @@ export default function AdminServices() {
   const handleDeleteService = (service: AdminService) => {
     setSelectedService(service);
     setIsDeleteOpen(true);
+  };
+
+  // Handle return service from technician
+  const handleReturnService = (service: AdminService) => {
+    setSelectedService(service);
+    setReturnReason("");
+    setReturnNotes("");
+    setIsReturnOpen(true);
   };
 
   // Handle assign technician
@@ -769,6 +806,15 @@ export default function AdminServices() {
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
+                          {service.technicianId && (
+                            <button
+                              className="p-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                              onClick={() => handleReturnService(service)}
+                              title="Vrati servis od tehnčara"
+                            >
+                              <XCircle className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -1167,6 +1213,66 @@ export default function AdminServices() {
                 disabled={updateServiceMutation.isPending}
               >
                 {updateServiceMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Return Service Dialog */}
+        <Dialog open={isReturnOpen} onOpenChange={setIsReturnOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Vrati servis od tehnčara</DialogTitle>
+              <DialogDescription>
+                Da li ste sigurni da želite da vratite servis #{selectedService?.id} od tehnčara nazad u admin bazu? 
+                Servis će biti postavljen u "pending" status i uklonjen iz lista tehnčara.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="return-reason">Razlog vraćanja</Label>
+                <Select value={returnReason} onValueChange={setReturnReason}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Izaberite razlog..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="technician_busy">Tehnčar je zauzet</SelectItem>
+                    <SelectItem value="wrong_assignment">Pogrešna dodela</SelectItem>
+                    <SelectItem value="priority_change">Promena prioriteta</SelectItem>
+                    <SelectItem value="client_request">Zahtev klijenta</SelectItem>
+                    <SelectItem value="technical_issue">Tehnčki problem</SelectItem>
+                    <SelectItem value="other">Ostalo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="return-notes">Dodatne napomene (opciono)</Label>
+                <Textarea 
+                  id="return-notes"
+                  value={returnNotes}
+                  onChange={(e) => setReturnNotes(e.target.value)}
+                  placeholder="Unesite dodatne napomene o razlogu vraćanja..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsReturnOpen(false)}>
+                Otkaži
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => selectedService && returnServiceMutation.mutate({
+                  serviceId: selectedService.id,
+                  reason: returnReason,
+                  notes: returnNotes
+                })}
+                disabled={returnServiceMutation.isPending || !returnReason}
+              >
+                {returnServiceMutation.isPending ? "Vraćam..." : "Vrati servis"}
               </Button>
             </DialogFooter>
           </DialogContent>

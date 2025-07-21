@@ -108,6 +108,40 @@ export class NotificationService {
     }
   }
 
+  // Kreiranje notifikacije za vraćanje servisa od tehnčara u admin bazu
+  static async notifyServiceReturned(serviceId: number, technicianId: number, adminId: number, reason: string) {
+    try {
+      const serviceData = await db
+        .select({
+          id: services.id,
+          description: services.description,
+          clientId: services.clientId,
+        })
+        .from(services)
+        .where(eq(services.id, serviceId))
+        .limit(1);
+
+      if (!serviceData.length) {
+        throw new Error(`Servis sa ID ${serviceId} nije pronađen`);
+      }
+
+      const service = serviceData[0];
+
+      await this.createNotification({
+        userId: technicianId,
+        type: "service_returned_by_admin",
+        title: "Servis vraćen od strane administratora",
+        message: `Administrator je vratio servis #${serviceId} u admin bazu. Razlog: ${reason}`,
+        relatedServiceId: serviceId,
+        relatedUserId: adminId,
+        priority: "high",
+      });
+    } catch (error) {
+      console.error("Greška pri kreiranju notifikacije za vraćanje servisa od tehnčara:", error);
+      throw error;
+    }
+  }
+
   // Kreiranje notifikacije za dodeljeni servis
   static async notifyServiceAssigned(serviceId: number, technicianId: number, assignedBy: number) {
     try {
