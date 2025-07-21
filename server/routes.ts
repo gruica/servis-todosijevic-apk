@@ -6055,6 +6055,152 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ===== SMS GATEWAY ENDPOINTS =====
+
+  // SMS Test endpoint
+  app.post("/api/admin/sms-test", jwtAuth, async (req, res) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { phoneNumber, message, provider } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ error: "Telefon i poruka su obavezni" });
+      }
+
+      console.log(`[SMS TEST] Admin ${req.user.fullName} testira SMS na ${phoneNumber} preko ${provider || 'default'}`);
+      
+      const { hybridSMSService } = await import('./hybrid-sms-service.js');
+      const result = await hybridSMSService.sendTestSMS(phoneNumber, provider);
+      
+      if (result) {
+        res.json({ 
+          success: true, 
+          message: "SMS uspešno poslat" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "Greška pri slanju SMS-a" 
+        });
+      }
+    } catch (error) {
+      console.error("Error sending test SMS:", error);
+      res.status(500).json({ error: "Greška pri slanju test SMS-a" });
+    }
+  });
+
+  // Mobi Gateway konfiguracija
+  app.post("/api/admin/mobi-gateway/configure", jwtAuth, async (req, res) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { phoneIpAddress, port, username, password } = req.body;
+      
+      if (!phoneIpAddress || !port) {
+        return res.status(400).json({ error: "IP adresa i port su obavezni" });
+      }
+
+      console.log(`[MOBI CONFIG] Admin konfigurišer Mobi Gateway: ${phoneIpAddress}:${port}`);
+      
+      const { hybridSMSService } = await import('./hybrid-sms-service.js');
+      const success = await hybridSMSService.configureMobiGateway({
+        phoneIpAddress,
+        port: parseInt(port),
+        username,
+        password,
+        timeout: 30000,
+        retryAttempts: 3
+      });
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Mobi Gateway uspešno konfigurisan" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "Greška pri konfiguraciji Mobi Gateway" 
+        });
+      }
+    } catch (error) {
+      console.error("Error configuring Mobi Gateway:", error);
+      res.status(500).json({ error: "Greška pri konfiguraciji Mobi Gateway" });
+    }
+  });
+
+  // Postavljanje SMS provider-a
+  app.post("/api/admin/sms/set-provider", jwtAuth, async (req, res) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { primaryProvider, fallbackProvider } = req.body;
+      
+      if (!primaryProvider || !['twilio', 'mobi_gateway'].includes(primaryProvider)) {
+        return res.status(400).json({ error: "Valjan primary provider je obavezan (twilio ili mobi_gateway)" });
+      }
+
+      console.log(`[SMS CONFIG] Admin postavlja providere: primary=${primaryProvider}, fallback=${fallbackProvider}`);
+      
+      const { hybridSMSService } = await import('./hybrid-sms-service.js');
+      await hybridSMSService.setPrimaryProvider(primaryProvider);
+      if (fallbackProvider) {
+        await hybridSMSService.setFallbackProvider(fallbackProvider);
+      }
+      
+      res.json({ 
+        success: true, 
+        message: "SMS provider uspešno postavljen" 
+      });
+    } catch (error) {
+      console.error("Error setting SMS provider:", error);
+      res.status(500).json({ error: "Greška pri postavljanju SMS provider-a" });
+    }
+  });
+
+  // SMS status endpoint
+  app.get("/api/admin/sms/status", jwtAuth, async (req, res) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { hybridSMSService } = await import('./hybrid-sms-service.js');
+      const status = await hybridSMSService.getStatus();
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting SMS status:", error);
+      res.status(500).json({ error: "Greška pri dobijanju SMS statusa" });
+    }
+  });
+
+  // Test konekcije sa SMS provider-om
+  app.post("/api/admin/sms/test-connection", jwtAuth, async (req, res) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { provider } = req.body;
+      
+      const { hybridSMSService } = await import('./hybrid-sms-service.js');
+      const result = await hybridSMSService.testConnection(provider);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing SMS connection:", error);
+      res.status(500).json({ error: "Greška pri testiranju SMS konekcije" });
+    }
+  });
+
   // ===== MOBILE SMS API ONLY =====
   // Old GSM modem and hybrid SMS services removed - using Mobile SMS API instead
 

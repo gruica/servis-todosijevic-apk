@@ -1,244 +1,261 @@
 /**
  * Hybrid SMS Service
- * Kombinuje GSM modem (fizička SIM kartica) sa Twilio fallback sistemom
+ * Kombinuje Twilio i Mobi Gateway SMS servise
  */
 
-import gsmModemService, { SMSResult as GSMSMSResult } from './gsm-modem-service';
-import { storage } from './storage';
+import { smsService as twilioService } from './sms-service.js';
+import { getMobiGatewayService, initializeMobiGateway, MobiGatewayConfig } from './mobi-gateway-service.js';
+import { storage } from './storage.js';
 
-// Importuj postojeći Twilio SMS servis
-class TwilioSMSService {
-  private client: any | null = null;
-  private config: any | null = null;
-  private isConfigured = false;
-
-  async initialize(): Promise<void> {
-    try {
-      const settings = await storage.getSystemSettings();
-      const accountSid = settings.find(s => s.key === 'twilio_account_sid')?.value;
-      const authToken = settings.find(s => s.key === 'twilio_auth_token')?.value;
-      const fromNumber = settings.find(s => s.key === 'twilio_phone_number')?.value;
-
-      if (accountSid && authToken && fromNumber) {
-        const twilio = await import('twilio');
-        this.client = twilio.default(accountSid, authToken);
-        this.config = { accountSid, authToken, fromNumber };
-        this.isConfigured = true;
-        console.log('[TWILIO FALLBACK] Twilio fallback konfigurisan');
-      }
-    } catch (error) {
-      console.error('[TWILIO FALLBACK] Greška pri konfiguraciji:', error);
-    }
-  }
-
-  async sendSMS(phoneNumber: string, message: string): Promise<GSMSMSResult> {
-    if (!this.isConfigured || !this.client || !this.config) {
-      return {
-        success: false,
-        error: 'Twilio fallback nije konfigurisan'
-      };
-    }
-
-    try {
-      const result = await this.client.messages.create({
-        body: message,
-        from: this.config.fromNumber,
-        to: phoneNumber
-      });
-
-      return {
-        success: true,
-        messageId: result.sid,
-        deliveryStatus: 'sent'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Twilio greška'
-      };
-    }
-  }
-}
+export type SMSProvider = 'twilio' | 'mobi_gateway';
 
 export interface HybridSMSConfig {
-  primaryProvider: 'gsm' | 'twilio';
-  enableFallback: boolean;
-  fallbackDelay: number; // milisekunde
-  maxRetries: number;
-}
-
-export interface HybridSMSStatus {
-  primaryProvider: 'gsm' | 'twilio';
-  gsmStatus: any;
-  twilioStatus: boolean;
-  lastProvider?: 'gsm' | 'twilio';
-  totalSent: number;
-  successRate: number;
-  lastError?: string;
+  primaryProvider: SMSProvider;
+  fallbackProvider?: SMSProvider;
+  mobiGatewayConfig?: MobiGatewayConfig;
 }
 
 class HybridSMSService {
-  private config: HybridSMSConfig = {
-    primaryProvider: 'gsm',
-    enableFallback: true,
-    fallbackDelay: 5000,
-    maxRetries: 2
-  };
-  
-  private twilioService = new TwilioSMSService();
-  private stats = {
-    totalSent: 0,
-    successfulSent: 0,
-    gsmSent: 0,
-    twilioSent: 0,
-    lastProvider: null as 'gsm' | 'twilio' | null,
-    lastError: null as string | null
-  };
+  private primaryProvider: SMSProvider = 'twilio';
+  private fallbackProvider?: SMSProvider;
+  private config: HybridSMSConfig;
 
   constructor() {
-    console.log('[HYBRID SMS] Inicijalizovanje hibridnog SMS servisa');
+    this.config = {
+      primaryProvider: 'twilio'
+    };
+    console.log('[HYBRID SMS] Inicijalizujem Hybrid SMS Service');
   }
 
   async initialize(): Promise<void> {
-    console.log('[HYBRID SMS] Učitavanje hibridne SMS konfiguracije...');
+    console.log('[HYBRID SMS] Učitavam konfiguraciju...');
     
     try {
       // Učitaj konfiguraciju iz baze
       const settings = await storage.getSystemSettings();
-      const primaryProvider = settings.find(s => s.key === 'sms_primary_provider')?.value as 'gsm' | 'twilio' || 'gsm';
-      const enableFallback = settings.find(s => s.key === 'sms_enable_fallback')?.value === 'true';
-      const fallbackDelay = parseInt(settings.find(s => s.key === 'sms_fallback_delay')?.value || '5000');
-      const maxRetries = parseInt(settings.find(s => s.key === 'sms_max_retries')?.value || '2');
-
+      const primaryProvider = settings.find(s => s.key === 'sms_primary_provider')?.value as SMSProvider || 'twilio';
+      const fallbackProvider = settings.find(s => s.key === 'sms_fallback_provider')?.value as SMSProvider;
+      
+      this.primaryProvider = primaryProvider;
+      this.fallbackProvider = fallbackProvider;
+      
+      console.log(`[HYBRID SMS] Primary provider: ${primaryProvider}`);
+      console.log(`[HYBRID SMS] Fallback provider: ${fallbackProvider || 'none'}`);
+      
+      // Inicijalizuj Twilio
+      await twilioService.initialize();
+      
+      // Inicijalizuj Mobi Gateway ako je potreban
+      if (primaryProvider === 'mobi_gateway' || fallbackProvider === 'mobi_gateway') {
+        await this.initializeMobiGateway();
+      }
+      
       this.config = {
         primaryProvider,
-        enableFallback,
-        fallbackDelay,
-        maxRetries
+        fallbackProvider
       };
-
-      console.log(`[HYBRID SMS] Konfiguracija: primary=${primaryProvider}, fallback=${enableFallback}`);
-
-      // Inicijalizuj oba servisa
-      await gsmModemService.initialize();
-      await this.twilioService.initialize();
-
-      console.log('[HYBRID SMS] Hibridni SMS servis uspešno inicijalizovan');
+      
     } catch (error) {
       console.error('[HYBRID SMS] Greška pri inicijalizaciji:', error);
-      this.stats.lastError = error instanceof Error ? error.message : 'Nepoznata greška';
     }
   }
 
-  async sendSMS(phoneNumber: string, message: string): Promise<GSMSMSResult> {
-    this.stats.totalSent++;
-    console.log(`[HYBRID SMS] Slanje SMS na ${phoneNumber} (pokušaj ${this.stats.totalSent})`);
-
-    let result: GSMSMSResult;
-    let usedProvider: 'gsm' | 'twilio';
-
-    // Pokušaj sa primarnim provajderom
-    if (this.config.primaryProvider === 'gsm') {
-      console.log('[HYBRID SMS] Pokušavam sa GSM modemom (primarni)...');
-      result = await gsmModemService.sendSMS(phoneNumber, message);
-      usedProvider = 'gsm';
-    } else {
-      console.log('[HYBRID SMS] Pokušavam sa Twilio (primarni)...');
-      result = await this.twilioService.sendSMS(phoneNumber, message);
-      usedProvider = 'twilio';
-    }
-
-    // Ako je primarni neuspešan i fallback je omogućen
-    if (!result.success && this.config.enableFallback) {
-      console.log(`[HYBRID SMS] Primarni provajder (${usedProvider}) neuspešan, prebacujem na fallback...`);
-      
-      // Čekaj pre fallback-a
-      await this.delay(this.config.fallbackDelay);
-      
-      // Pokušaj sa fallback provajderom
-      if (this.config.primaryProvider === 'gsm') {
-        console.log('[HYBRID SMS] Pokušavam sa Twilio (fallback)...');
-        result = await this.twilioService.sendSMS(phoneNumber, message);
-        usedProvider = 'twilio';
-      } else {
-        console.log('[HYBRID SMS] Pokušavam sa GSM modemom (fallback)...');
-        result = await gsmModemService.sendSMS(phoneNumber, message);
-        usedProvider = 'gsm';
-      }
-    }
-
-    // Ažuriraj statistike
-    this.stats.lastProvider = usedProvider;
-    
-    if (result.success) {
-      this.stats.successfulSent++;
-      if (usedProvider === 'gsm') {
-        this.stats.gsmSent++;
-      } else {
-        this.stats.twilioSent++;
-      }
-      console.log(`[HYBRID SMS] SMS uspešno poslat preko ${usedProvider}`);
-    } else {
-      this.stats.lastError = result.error || 'Nepoznata greška';
-      console.error(`[HYBRID SMS] SMS slanje neuspešno: ${result.error}`);
-    }
-
-    return result;
-  }
-
-  async getStatus(): Promise<HybridSMSStatus> {
-    const gsmStatus = await gsmModemService.getStatus();
-    const twilioStatus = this.twilioService['isConfigured'] || false;
-    
-    return {
-      primaryProvider: this.config.primaryProvider,
-      gsmStatus,
-      twilioStatus,
-      lastProvider: this.stats.lastProvider || undefined,
-      totalSent: this.stats.totalSent,
-      successRate: this.stats.totalSent > 0 ? (this.stats.successfulSent / this.stats.totalSent) * 100 : 0,
-      lastError: this.stats.lastError || undefined
-    };
-  }
-
-  async configure(config: Partial<HybridSMSConfig>): Promise<boolean> {
+  private async initializeMobiGateway(): Promise<void> {
     try {
-      this.config = { ...this.config, ...config };
+      const settings = await storage.getSystemSettings();
+      const phoneIp = settings.find(s => s.key === 'mobi_gateway_phone_ip')?.value;
+      const port = settings.find(s => s.key === 'mobi_gateway_port')?.value;
+      const username = settings.find(s => s.key === 'mobi_gateway_username')?.value;
+      const password = settings.find(s => s.key === 'mobi_gateway_password')?.value;
       
-      // Sačuvaj u bazu podataka
-      await storage.updateSystemSetting('sms_primary_provider', this.config.primaryProvider);
-      await storage.updateSystemSetting('sms_enable_fallback', this.config.enableFallback.toString());
-      await storage.updateSystemSetting('sms_fallback_delay', this.config.fallbackDelay.toString());
-      await storage.updateSystemSetting('sms_max_retries', this.config.maxRetries.toString());
-      
-      console.log('[HYBRID SMS] Konfiguracija ažurirana:', this.config);
-      return true;
+      if (phoneIp && port) {
+        const config: MobiGatewayConfig = {
+          phoneIpAddress: phoneIp,
+          port: parseInt(port),
+          username,
+          password,
+          timeout: 30000,
+          retryAttempts: 3
+        };
+        
+        initializeMobiGateway(config);
+        console.log(`[HYBRID SMS] Mobi Gateway inicijalizovan: ${phoneIp}:${port}`);
+      } else {
+        console.log('[HYBRID SMS] Mobi Gateway konfiguracija nije kompletna');
+      }
     } catch (error) {
-      console.error('[HYBRID SMS] Greška pri konfiguraciji:', error);
+      console.error('[HYBRID SMS] Greška pri inicijalizaciji Mobi Gateway:', error);
+    }
+  }
+
+  async configureMobiGateway(config: MobiGatewayConfig): Promise<boolean> {
+    try {
+      console.log(`[HYBRID SMS] Konfigurišem Mobi Gateway: ${config.phoneIpAddress}:${config.port}`);
+      
+      // Sačuvaj konfiguraciju u bazu
+      await storage.setSystemSetting('mobi_gateway_phone_ip', config.phoneIpAddress);
+      await storage.setSystemSetting('mobi_gateway_port', config.port.toString());
+      if (config.username) await storage.setSystemSetting('mobi_gateway_username', config.username);
+      if (config.password) await storage.setSystemSetting('mobi_gateway_password', config.password);
+      
+      // Inicijalizuj servis
+      const mobiService = initializeMobiGateway(config);
+      
+      // Test konekcije
+      const testResult = await mobiService.testConnection();
+      if (testResult.success) {
+        console.log('[HYBRID SMS] Mobi Gateway konfiguracija uspešna');
+        return true;
+      } else {
+        console.error('[HYBRID SMS] Mobi Gateway test neuspešan:', testResult.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('[HYBRID SMS] Greška pri konfiguraciji Mobi Gateway:', error);
       return false;
     }
   }
 
-  getStatistics() {
+  async setPrimaryProvider(provider: SMSProvider): Promise<void> {
+    this.primaryProvider = provider;
+    this.config.primaryProvider = provider;
+    await storage.setSystemSetting('sms_primary_provider', provider);
+    console.log(`[HYBRID SMS] Primary provider postavljen na: ${provider}`);
+  }
+
+  async setFallbackProvider(provider?: SMSProvider): Promise<void> {
+    this.fallbackProvider = provider;
+    this.config.fallbackProvider = provider;
+    if (provider) {
+      await storage.setSystemSetting('sms_fallback_provider', provider);
+    } else {
+      await storage.deleteSystemSetting('sms_fallback_provider');
+    }
+    console.log(`[HYBRID SMS] Fallback provider postavljen na: ${provider || 'none'}`);
+  }
+
+  async sendSMS(to: string, message: string): Promise<boolean> {
+    console.log(`[HYBRID SMS] Šaljem SMS na ${to} preko ${this.primaryProvider}`);
+    
+    // Pokušaj sa primary provider
+    const primaryResult = await this.sendViaSingleProvider(this.primaryProvider, to, message);
+    
+    if (primaryResult) {
+      console.log(`[HYBRID SMS] ✅ SMS uspešno poslat preko ${this.primaryProvider}`);
+      return true;
+    }
+    
+    // Ako primary nije uspešan, pokušaj sa fallback
+    if (this.fallbackProvider && this.fallbackProvider !== this.primaryProvider) {
+      console.log(`[HYBRID SMS] Primary neuspešan, pokušavam sa fallback: ${this.fallbackProvider}`);
+      
+      const fallbackResult = await this.sendViaSingleProvider(this.fallbackProvider, to, message);
+      
+      if (fallbackResult) {
+        console.log(`[HYBRID SMS] ✅ SMS uspešno poslat preko fallback: ${this.fallbackProvider}`);
+        return true;
+      }
+    }
+    
+    console.error('[HYBRID SMS] ❌ Svi pokušaji slanja SMS-a neuspešni');
+    return false;
+  }
+
+  private async sendViaSingleProvider(provider: SMSProvider, to: string, message: string): Promise<boolean> {
+    try {
+      if (provider === 'twilio') {
+        return await twilioService.sendSMS(to, message);
+      } else if (provider === 'mobi_gateway') {
+        const mobiService = getMobiGatewayService();
+        if (!mobiService) {
+          console.error('[HYBRID SMS] Mobi Gateway nije inicijalizovan');
+          return false;
+        }
+        
+        const result = await mobiService.sendSMS({
+          recipient: to,
+          message: message,
+          senderId: 'FrigoServis'
+        });
+        
+        return result.success;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error(`[HYBRID SMS] Greška pri slanju preko ${provider}:`, error);
+      return false;
+    }
+  }
+
+  async getStatus(): Promise<{
+    primaryProvider: SMSProvider;
+    fallbackProvider?: SMSProvider;
+    twilioStatus: any;
+    mobiGatewayStatus?: any;
+  }> {
+    const twilioStatus = await twilioService.getStatus();
+    
+    let mobiGatewayStatus = undefined;
+    const mobiService = getMobiGatewayService();
+    if (mobiService) {
+      const connectionTest = await mobiService.testConnection();
+      const phoneStatus = await mobiService.getPhoneStatus();
+      
+      mobiGatewayStatus = {
+        connected: connectionTest.success,
+        phoneStatus: phoneStatus.status,
+        error: connectionTest.error || phoneStatus.error
+      };
+    }
+    
     return {
-      totalSent: this.stats.totalSent,
-      successfulSent: this.stats.successfulSent,
-      failedSent: this.stats.totalSent - this.stats.successfulSent,
-      successRate: this.stats.totalSent > 0 ? (this.stats.successfulSent / this.stats.totalSent) * 100 : 0,
-      gsmSent: this.stats.gsmSent,
-      twilioSent: this.stats.twilioSent,
-      lastProvider: this.stats.lastProvider,
-      lastError: this.stats.lastError
+      primaryProvider: this.primaryProvider,
+      fallbackProvider: this.fallbackProvider,
+      twilioStatus,
+      mobiGatewayStatus
     };
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  async testConnection(provider?: SMSProvider): Promise<{ success: boolean; error?: string }> {
+    const testProvider = provider || this.primaryProvider;
+    
+    try {
+      if (testProvider === 'twilio') {
+        const success = await twilioService.testConnection();
+        return { success };
+      } else if (testProvider === 'mobi_gateway') {
+        const mobiService = getMobiGatewayService();
+        if (!mobiService) {
+          return { success: false, error: 'Mobi Gateway nije inicijalizovan' };
+        }
+        
+        return await mobiService.testConnection();
+      }
+      
+      return { success: false, error: 'Nepoznat provider' };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Nepoznata greška' 
+      };
+    }
+  }
+
+  async sendTestSMS(to: string, provider?: SMSProvider): Promise<boolean> {
+    const testProvider = provider || this.primaryProvider;
+    const testMessage = `Test SMS - Frigo Sistem Todosijević\nProvider: ${testProvider}\nVreme: ${new Date().toLocaleString('sr-RS')}`;
+    
+    return await this.sendViaSingleProvider(testProvider, to, testMessage);
+  }
+
+  getCurrentProvider(): SMSProvider {
+    return this.primaryProvider;
+  }
+
+  getFallbackProvider(): SMSProvider | undefined {
+    return this.fallbackProvider;
   }
 }
 
-// Singleton instance
-const hybridSMSService = new HybridSMSService();
-
-export { hybridSMSService };
-export default hybridSMSService;
+export const hybridSMSService = new HybridSMSService();

@@ -33,6 +33,7 @@ import SmsSettings from "@/pages/admin/sms-settings";
 import SMSTest from "@/pages/admin/sms-test";
 import GSMConfig from "@/pages/admin/gsm-config";
 import MobileSMSConfigPage from "@/pages/admin/mobile-sms-config";
+import MobiGatewayConfig from "@/pages/admin/mobi-gateway-config";
 
 import SMSMessaging from "@/pages/sms-messaging";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -106,6 +107,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/mobile-sms" component={MobileSMSConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-test" component={SMSTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/gsm-config" component={GSMConfig} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/mobi-gateway-config" component={MobiGatewayConfig} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms" component={SMSMessaging} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
