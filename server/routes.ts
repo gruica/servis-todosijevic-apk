@@ -2361,7 +2361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/my-services", jwtAuthMiddleware, requireRole("technician"), async (req, res) => {
     try {
       const user = (req as any).user;
-      console.log(`JWT: Fetching services for technician ${user.username} (ID: ${user.id})`);
+      console.log(`JWT: NOVO! Fetching services for technician ${user.username} (ID: ${user.id})`);
       
       // Get user details to find technician ID
       const fullUser = await storage.getUser(user.id);
