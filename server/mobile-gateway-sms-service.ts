@@ -156,28 +156,33 @@ export class MobileGatewaySMSService {
     }
   }
 
-  // Helper metoda za formatiranje srpskih brojeva telefona
-  static formatSerbianPhoneNumber(phone: string): string {
+  // Helper metoda za formatiranje crnogorskih brojeva telefona  
+  static formatMontenegrinPhoneNumber(phone: string): string {
     // Ukloni sve što nije broj
     const cleanPhone = phone.replace(/\D/g, '');
     
-    // Ako počinje sa 381, ostavi kako jeste
-    if (cleanPhone.startsWith('381')) {
+    // Ako počinje sa 382, ostavi kako jeste
+    if (cleanPhone.startsWith('382')) {
       return `+${cleanPhone}`;
     }
     
-    // Ako počinje sa 0, zameni sa 381
+    // Ako počinje sa 0, zameni sa 382
     if (cleanPhone.startsWith('0')) {
-      return `+381${cleanPhone.substring(1)}`;
+      return `+382${cleanPhone.substring(1)}`;
     }
     
-    // Ako je 8 ili 9 cifara, dodaj 381
-    if (cleanPhone.length === 8 || cleanPhone.length === 9) {
-      return `+381${cleanPhone}`;
+    // Ako je 8 cifara (crnogorski brojevi), dodaj 382
+    if (cleanPhone.length === 8 && (cleanPhone.startsWith('6') || cleanPhone.startsWith('7'))) {
+      return `+382${cleanPhone}`;
     }
     
     // Inače vrati kako jeste sa +
     return cleanPhone.startsWith('+') ? cleanPhone : `+${cleanPhone}`;
+  }
+
+  // Alias za kompatibilnost - koristi crnogorsko formatiranje
+  static formatSerbianPhoneNumber(phone: string): string {
+    return MobileGatewaySMSService.formatMontenegrinPhoneNumber(phone);
   }
 }
 

@@ -87,8 +87,8 @@ export class MobileSMSService {
     }
 
     try {
-      // Formatiranje srpskog broja telefona
-      const formattedPhone = MobileGatewaySMSService.formatSerbianPhoneNumber(phoneNumber);
+      // Formatiranje crnogorskog broja telefona
+      const formattedPhone = MobileGatewaySMSService.formatMontenegrinPhoneNumber(phoneNumber);
       
       const smsMessage: SMSMessage = {
         phoneNumber: formattedPhone,
