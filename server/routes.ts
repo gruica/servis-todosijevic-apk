@@ -5853,7 +5853,8 @@ Admin panel - automatska porudžbina
         status: 'pending',
         businessPartnerId: partnerId,
         partnerCompanyName: partnerCompanyName,
-        warrantyStatus: 'out_of_warranty'
+        warrantyStatus: 'out_of_warranty',
+        createdAt: new Date().toISOString().split('T')[0] // Format YYYY-MM-DD
       });
 
       console.log("Kreiran novi servis sa ID:", newService.id);
