@@ -52,7 +52,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
 
   const createRemovedPartMutation = useMutation({
     mutationFn: (data: RemovedPartFormData) => 
-      apiRequest("/api/removed-parts", "POST", data),
+      apiRequest("POST", "/api/removed-parts", data),
     onSuccess: () => {
       toast({
         title: "Uspešno evidentirano",
@@ -306,7 +306,7 @@ export function RemovedPartsList({ serviceId }: RemovedPartsListProps) {
 
   const markAsReturnedMutation = useMutation({
     mutationFn: ({ partId, returnDate, notes }: { partId: number; returnDate: string; notes?: string }) =>
-      apiRequest(`/api/removed-parts/${partId}/return`, "PATCH", { returnDate, notes }),
+      apiRequest("PATCH", `/api/removed-parts/${partId}/return`, { returnDate, notes }),
     onSuccess: () => {
       toast({
         title: "Deo označen kao vraćen",
@@ -330,9 +330,9 @@ export function RemovedPartsList({ serviceId }: RemovedPartsListProps) {
       repaired: { label: "Popravljen", variant: "default" as const, icon: CheckCircle2 },
       returned: { label: "Vraćen", variant: "default" as const, icon: CheckCircle2 },
       replaced: { label: "Zamenjen", variant: "outline" as const, icon: Package },
-    };
+    } as const;
 
-    const config = statusConfig[status] || statusConfig.removed;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.removed;
     const Icon = config.icon;
 
     return (
