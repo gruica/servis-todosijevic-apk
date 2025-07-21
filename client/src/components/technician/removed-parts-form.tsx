@@ -109,7 +109,10 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="outline" 
+          className="w-full bg-red-50 hover:bg-red-100 text-red-700 border-red-200 h-10"
+        >
           <Settings className="h-4 w-4 mr-2" />
           Evidentiraj uklonjene delove
         </Button>

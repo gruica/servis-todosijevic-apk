@@ -111,10 +111,12 @@ export default function TechnicianServices() {
         throw new Error('No auth token found');
       }
       
-      const response = await fetch("/api/my-services", { 
+      const response = await fetch(`/api/my-services?${Date.now()}`, { 
         signal,
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       });
       
@@ -134,7 +136,8 @@ export default function TechnicianServices() {
     enabled: !!user, // Pozovi query samo ako je korisnik prijavljen
     refetchInterval: user ? 10000 : false,
     refetchIntervalInBackground: !!user,
-    staleTime: 5000,
+    staleTime: 0, // No stale time - always fresh
+    gcTime: 0, // No cache time
   });
   
   // Debug logging

@@ -2370,9 +2370,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Korisnik nije serviser" });
       }
       
-      // Get technician services with full details (like the working endpoint)
-      const services = await storage.getServicesByTechnician(fullUser.technicianId);
-      console.log(`JWT: Found ${services.length} services for technician ${user.username}`);
+      const technicianId = fullUser.technicianId;
+      console.log(`JWT: Fetching services for technician ID ${technicianId}`);
+      
+      // Get all services assigned to this technician - using direct Drizzle query for fresh data
+      console.log(`JWT: About to execute direct Drizzle query for technician ${technicianId}`);
+      let services;
+      try {
+        // Direct Drizzle query to bypass storage cache
+        console.log(`JWT: Executing db.select().from(schema.services).where(eq(schema.services.technicianId, ${technicianId}))`);
+        const dbServices = await db.select().from(schema.services).where(eq(schema.services.technicianId, technicianId)).orderBy(desc(schema.services.createdAt));
+        console.log(`JWT: DRIZZLE SUCCESS - Found ${dbServices.length} services directly from DB for technician ${technicianId}`);
+        
+        // Debug: show service IDs from direct query
+        const serviceIds = dbServices.map(s => s.id);
+        console.log(`JWT: Direct query service IDs: [${serviceIds.join(', ')}]`);
+        
+        services = dbServices;
+      } catch (dbError) {
+        console.error("JWT: DRIZZLE ERROR:", dbError);
+        // Fallback to storage if Drizzle fails
+        console.log(`JWT: Falling back to storage.getServicesByTechnician(${technicianId})`);
+        services = await storage.getServicesByTechnician(technicianId);
+        console.log(`JWT: Fallback found ${services.length} services via storage for technician ${technicianId}`);
+      }
       
       // Add client and appliance details to each service
       const servicesWithDetails = await Promise.all(services.map(async (service) => {
