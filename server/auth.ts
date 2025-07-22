@@ -295,7 +295,7 @@ export function setupAuth(app: Express) {
         // Uspješna prijava - logiram sesiju
         console.log(`Login successful, session established for user ${user.username} (ID: ${user.id}), session ID: ${req.sessionID}`);
         console.log(`Session after login:`, req.session);
-        console.log(`Session.passport after login:`, req.session?.passport);
+        console.log(`Session.passport after login:`, (req.session as any)?.passport);
         console.log(`User is authenticated after login:`, req.isAuthenticated());
         
         // Debug cookie informacije
@@ -474,7 +474,7 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: "Korisnik nije pronađen" });
       }
       
-      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+      const isPasswordValid = await comparePassword(currentPassword, user.password);
       if (!isPasswordValid) {
         return res.status(400).json({ error: "Trenutna šifra nije ispravna" });
       }

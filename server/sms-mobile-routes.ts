@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { SmsMobileAPIService } from './sms-mobile-api-service.js';
 import { IStorage } from './storage.js';
-import { jwtAuth } from './auth.js';
+import { jwtAuthMiddleware } from './jwt-auth.js';
 
 export function createSMSMobileRoutes(storage: IStorage): Router {
   const router = Router();
@@ -35,7 +35,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   }
 
   // POST /api/sms/mobile/send - Pošalji pojedinačni SMS
-  router.post('/send', jwtAuth, async (req, res) => {
+  router.post('/send', jwtAuthMiddleware, async (req, res) => {
     try {
       const { phoneNumber, message, priority } = req.body;
 
@@ -85,7 +85,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   });
 
   // POST /api/sms/mobile/send-bulk - Pošalji grupno SMS
-  router.post('/send-bulk', jwtAuth, async (req, res) => {
+  router.post('/send-bulk', jwtAuthMiddleware, async (req, res) => {
     try {
       const { messages } = req.body;
 
@@ -127,7 +127,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   });
 
   // GET /api/sms/mobile/status - Proveri status API-ja
-  router.get('/status', jwtAuth, async (req, res) => {
+  router.get('/status', jwtAuthMiddleware, async (req, res) => {
     try {
       const smsService = await createSMSMobileService();
       if (!smsService) {
@@ -152,7 +152,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   });
 
   // GET /api/sms/mobile/credits - Dohvati broj kredita
-  router.get('/credits', jwtAuth, async (req, res) => {
+  router.get('/credits', jwtAuthMiddleware, async (req, res) => {
     try {
       const smsService = await createSMSMobileService();
       if (!smsService) {
@@ -177,7 +177,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   });
 
   // GET /api/sms/mobile/gateways - Dohvati listu gateway-a
-  router.get('/gateways', jwtAuth, async (req, res) => {
+  router.get('/gateways', jwtAuthMiddleware, async (req, res) => {
     try {
       const smsService = await createSMSMobileService();
       if (!smsService) {
@@ -202,7 +202,7 @@ export function createSMSMobileRoutes(storage: IStorage): Router {
   });
 
   // POST /api/sms/mobile/test - Test slanje SMS-a
-  router.post('/test', jwtAuth, async (req, res) => {
+  router.post('/test', jwtAuthMiddleware, async (req, res) => {
     try {
       const { phoneNumber } = req.body;
 
