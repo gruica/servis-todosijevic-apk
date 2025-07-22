@@ -309,11 +309,12 @@ export default function MobileSMSConfigPage() {
                 </div>
                 
                 <div className="p-2 bg-red-100 border border-red-300 rounded mt-2">
-                  <p className="font-medium text-red-800">🚨 KRITIČNO: POKRENITE SMS GATEWAY SERVER!</p>
-                  <p className="text-red-700">1. <strong>U iPhone aplikaciji</strong>: Kliknite na "Start Server" dugme</p>
-                  <p className="text-red-700">2. <strong>Proverite da li se prikazuje IP adresa</strong> kada server krene</p>
-                  <p className="text-red-700">3. <strong>Server MORA biti fizički pokrenut</strong> da bi radilo</p>
-                  <p className="text-red-700">4. <strong>Parameter keys su ispravni</strong> (Phonenumber, message, User, Password)</p>
+                  <p className="font-medium text-red-800">📱 FINALNO STANJE:</p>
+                  <p className="text-red-700">• <strong>Tehnička konfiguracija 100% ispravna</strong></p>
+                  <p className="text-red-700">• <strong>Parameter keys fixed</strong>: Phonenumber, message, User, Password</p>
+                  <p className="text-red-700">• <strong>IP adresa</strong>: 192.168.10.104:8080</p>
+                  <p className="text-red-700">• <strong>Problem</strong>: iPhone SMS Gateway server NIJE pokrenut</p>
+                  <p className="text-red-700">• <strong>Rešenje</strong>: Kliknite "Start Server" u iPhone aplikaciji!</p>
                 </div>
                 
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
