@@ -59,11 +59,12 @@ export class MobileGatewaySMSService {
       console.log(`[MOBILE SMS] 📋 Sadržaj: ${message.message.substring(0, 100)}...`);
 
       // iPhone SMS Gateway aplikacija očekuje application/x-www-form-urlencoded
+      // Koristi parameter keys iz iPhone aplikacije (prema slici)
       const formData = new URLSearchParams();
-      formData.append('tel', message.phoneNumber);
-      formData.append('message', message.message);
-      formData.append('user', this.config.username);
-      formData.append('password', this.config.password);
+      formData.append('067028666', message.phoneNumber);     // Phone number parameter key
+      formData.append('message', message.message);           // Text parameter key  
+      formData.append('gruica', this.config.username);       // User parameter key
+      formData.append('AdamEva230723@', this.config.password); // Password parameter key
 
       const response = await fetch(url, {
         method: 'POST',

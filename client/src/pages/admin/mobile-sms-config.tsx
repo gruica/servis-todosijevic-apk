@@ -278,17 +278,26 @@ export default function MobileSMSConfigPage() {
                 <p>• Zapišite IP adresu koja se prikaže i unesite je gore</p>
                 
                 <div className="p-2 bg-green-100 border border-green-300 rounded mt-2">
-                  <p className="font-medium text-green-800">📶 TRENUTNA MREŽNA KONFIGURACIJA:</p>
+                  <p className="font-medium text-green-800">📶 TRENUTNO STANJE:</p>
                   <p className="text-green-700">• Server IP: <span className="font-mono">192.168.10.104</span></p>
-                  <p className="text-green-700">• Gateway IP u bazi: <span className="font-mono">192.168.10.117</span> (potrebno ažurirati)</p>
-                  <p className="text-green-700">• WiFi mreža: Frigo Sistem Todosijevic (2.4GHz, kanal 11)</p>
+                  <p className="text-green-700">• iPhone SMS Gateway aplikacija je POKRENUTA ✅</p>
+                  <p className="text-green-700">• WiFi mreža: Frigo Sistem Todosijevic</p>
+                  <p className="text-green-700">• Problem: mrežna komunikacija između servera i iPhone-a</p>
+                </div>
+                
+                <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">
+                  <p className="font-medium text-blue-800">📱 SLEDEĆI KORACI:</p>
+                  <p className="text-blue-700">1. U iPhone SMS Gateway aplikaciji proverite koja IP adresa je prikazana</p>
+                  <p className="text-blue-700">2. Unesite tu IP adresu u polje gore</p>
+                  <p className="text-blue-700">3. Kliknite "Sačuvaj konfiguraciju"</p>
+                  <p className="text-blue-700">4. Testirajte SMS slanje ispod</p>
                 </div>
                 
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
                   <p className="font-medium text-yellow-800">⚠️ VAŽNO:</p>
+                  <p className="text-yellow-700">• Aplikacija mora biti ENABLED (zeleni prekidač uključen)</p>
                   <p className="text-yellow-700">• Aplikacija mora biti aktivna u prvom planu</p>
-                  <p className="text-yellow-700">• iPhone mora biti na istoj WiFi mreži kao server</p>
-                  <p className="text-yellow-700">• IP adresa u aplikaciji mora se poklapati sa IP u konfiguraciji</p>
+                  <p className="text-yellow-700">• iPhone mora biti na "Frigo Sistem Todosijevic" WiFi mreži</p>
                 </div>
               </div>
             </div>
