@@ -344,11 +344,14 @@ export default function MobileSMSConfigPage() {
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm font-medium text-blue-900 mb-2">📱 Korak po korak:</p>
                   <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
-                    <li>Instalirajte 'SMSGateway' Android aplikaciju na Gruica telefon</li>
-                    <li>Pokrenite SMSGateway aplikaciju</li>
-                    <li>Konfiguriše aplikaciju da sluša na portu <strong>8080</strong></li>
-                    <li>Proverite da telefon ima IP adresu <strong>{(currentConfig as any)?.gatewayIP || '77.222.25.100'}</strong></li>
-                    <li>Unesite korisničke podatke: <strong>gruica/AdamEva230723@</strong></li>
+                    <li>Instalirajte 'SMS Gateway' iPhone aplikaciju</li>
+                    <li>Pokrenite SMS Gateway aplikaciju</li>
+                    <li>HTTP method: <strong>POST</strong> (ne GET)</li>
+                    <li>Port: <strong>8080</strong></li>
+                    <li>User: <strong>gruica</strong></li>
+                    <li>Password: <strong>AdamEva230723@</strong></li>
+                    <li>Allowed IP addresses: <strong>35.193.249.200</strong> i <strong>77.222.25.100</strong></li>
+                    <li>OMOGUĆITE aplikaciju (Disabled → Enabled)</li>
                   </ol>
                 </div>
                 
