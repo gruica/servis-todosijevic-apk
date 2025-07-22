@@ -356,10 +356,11 @@ export default function MobileSMSConfigPage() {
                   </ol>
                 </div>
                 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm font-medium text-green-900 mb-2">✅ IP ADRESA POTVRĐENA:</p>
-                  <p className="text-sm text-green-800">Lokalna IP 192.168.10.117 odgovara sistemskoj konfiguraciji</p>
-                  <p className="text-sm text-green-700 mt-1">Testiranje SMS Gateway aplikacije u toku...</p>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm font-medium text-blue-900 mb-2">📡 WiFi IP ADRESA OBJAŠNJENJE:</p>
+                  <p className="text-sm text-blue-800">Javna IP (104.28.60.115) ≠ Lokalna WiFi IP (192.168.10.117)</p>
+                  <p className="text-sm text-blue-700 mt-1">Za SMS Gateway koristimo lokalnu WiFi IP: 192.168.10.117 ✅</p>
+                  <p className="text-xs text-blue-600 mt-2">Problem: SMS Gateway aplikacija ne odgovara na portu 8080</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
