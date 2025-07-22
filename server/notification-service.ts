@@ -389,34 +389,9 @@ export class NotificationService {
 
       console.log(`Notifikacija o zahtevu za rezervnim delom poslana administratorima`);
       
-      // Pošaljemo email obaveštenje administratorima
-      try {
-        const emailSubject = `Novi zahtev za rezervnim delom - ${order.urgency === 'urgent' ? 'HITNO' : 'PRIORITET: ' + order.urgency}`;
-        const emailBody = `
-          Serviser ${technicianName} je zahtevao rezervni deo:
-          
-          Deo: ${order.partName}
-          Kataloški broj: ${order.partNumber || 'Nije naveden'}
-          Količina: ${order.quantity}
-          Prioritet: ${order.urgency === 'urgent' ? 'HITNO' : order.urgency === 'high' ? 'VISOK' : 'STANDARDNO'}
-          Servis ID: #${order.serviceId}
-          ${order.description ? `Opis: ${order.description}` : ''}
-          
-          Molimo da pregledate zahtev u admin panelu.
-          
-          Frigo Sistem Todosijević
-        `;
-        
-        for (const admin of admins) {
-          await emailService.sendEmail(
-            admin.email || 'admin@frigosistemtodosijevic.com',
-            emailSubject,
-            emailBody
-          );
-        }
-      } catch (emailError) {
-        console.error("Greška pri slanju email obaveštenja:", emailError);
-      }
+      // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+      // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+      console.log("[NOTIFICATION] Email obaveštenja za administratore su onemogućena po zahtevu korisnika");
     } catch (error) {
       console.error("Greška pri slanju notifikacije o zahtevu za rezervnim delom:", error);
     }

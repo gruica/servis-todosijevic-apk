@@ -1522,13 +1522,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
                   emailInfo.emailSent = true;
                   
-                  // Obavesti administratore o poslatom mail-u klijentu
-                  await emailService.notifyAdminAboutEmail(
-                    "Obaveštenje klijenta o promeni statusa",
-                    client.email,
-                    id,
-                    `Poslato obaveštenje klijentu ${client.fullName} o promeni statusa servisa #${id} u "${statusDescription}"`
-                  );
+                  // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+                  // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+                  console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
                 } else {
                   console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja klijentu ${client.fullName}`);
                   emailInfo.emailError = `Nije moguće poslati email klijentu ${client.fullName}. Proverite SMTP konfiguraciju.`;
@@ -1584,13 +1580,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     emailInfo.emailDetails = `Obavešteni: klijent i serviser ${technician.fullName}`;
                   }
                   
-                  // Obavesti administratore o poslatom mail-u serviseru
-                  await emailService.notifyAdminAboutEmail(
-                    "Obaveštenje servisera o promeni statusa",
-                    techEmail,
-                    id,
-                    `Poslato obaveštenje serviseru ${technician.fullName} o promeni statusa servisa #${id} u "${statusDescription}"`
-                  );
+                  // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+                  // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+                  console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
                 } else {
                   console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja serviseru ${technician.fullName}`);
                   
@@ -1820,13 +1812,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     emailInfo.emailDetails = `Obavešteni: klijent i serviser ${technician.fullName}`;
                   }
                   
-                  // Obavesti administratore o poslatom mail-u serviseru
-                  await emailService.notifyAdminAboutEmail(
-                    "Obaveštenje servisera o promeni statusa",
-                    techEmail,
-                    serviceId,
-                    `Poslato obaveštenje serviseru ${technician.fullName} o promeni statusa servisa #${serviceId} u "${statusDescription}"`
-                  );
+                  // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+                  // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+                  console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
                 } else {
                   console.error(`[EMAIL SISTEM] ❌ Neuspešno slanje obaveštenja serviseru ${technician.fullName}`);
                   
@@ -2820,13 +2808,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (result) {
         console.log(`[TEST EMAIL] ✅ Test email uspešno poslat na: ${recipient}`);
-        // Obavesti administratore
-        await emailService.notifyAdminAboutEmail(
-          "Test email-a",
-          recipient,
-          0, // Nema ID servisa
-          `Administrator ${req.user.fullName} je testirao slanje email-a na adresu ${recipient}`
-        );
+        // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+        // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+        console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
         return res.json({ success: true, message: "Test email uspešno poslat" });
       } else {
         console.error(`[TEST EMAIL] ❌ Neuspešno slanje test email-a na: ${recipient}`);
@@ -3425,34 +3409,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date().toISOString().split('T')[0]
       });
 
-      // Slanje email notifikacije administratorima
-      try {
-        const client = await storage.getClient(clientId);
-        if (client) {
-          // Koristim postojeću email funkcionalnost
-          const adminUsers = await storage.getAllUsers();
-          const admins = adminUsers.filter(user => user.role === "admin");
-          
-          for (const admin of admins) {
-            if (admin.email) {
-              await emailService.sendEmail({
-                to: admin.email,
-                subject: `Novi zahtev za servis #${newService.id} od klijenta ${client.fullName}`,
-                html: `
-                  <h2>Novi zahtev za servis #${newService.id}</h2>
-                  <p><strong>Klijent:</strong> ${client.fullName}</p>
-                  <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
-                  <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
-                  <p><strong>Opis:</strong> ${newService.description}</p>
-                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
-                `
-              });
-            }
-          }
-        }
-      } catch (emailError) {
-        console.error("Greška pri slanju email notifikacije:", emailError);
-      }
+      // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+      // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+      console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
 
       res.status(201).json(newService);
     } catch (error) {
@@ -4784,15 +4743,9 @@ Admin panel - automatska porudžbina
         // Ne prekidamo proces zbog email greške
       }
 
-      // Obavesti administratore o novoj porudžbini
-      try {
-        await NotificationService.notifyAdminSparePartOrdered(
-          sparePartOrder.id,
-          req.user.fullName || req.user.username || "Administrator"
-        );
-      } catch (notificationError) {
-        console.error('[SPARE PARTS ORDER] Greška pri slanju obaveštenja:', notificationError);
-      }
+      // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+      // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+      console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
 
       res.json({
         success: true,

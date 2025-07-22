@@ -210,25 +210,9 @@ export function registerBusinessPartnerRoutes(app: Express) {
         const client = await storage.getClient(finalClientId);
         const clientName = client?.fullName || "Klijent";
         
-        // Ako ima administratora, šaljemo email
-        if (admins.length > 0) {
-          // Email za administratore
-          for (const admin of admins) {
-            if (admin.email) {
-              await emailService.sendEmail({
-                to: admin.email,
-                subject: `Novi servisni zahtev #${newService.id} od partnera ${partnerCompanyName}`,
-                html: `
-                  <h2>Novi servisni zahtev #${newService.id}</h2>
-                  <p><strong>Partner:</strong> ${partnerCompanyName}</p>
-                  <p><strong>Klijent:</strong> ${clientName}</p>
-                  <p><strong>Opis:</strong> ${description}</p>
-                  <p>Molimo vas da pregledate novi zahtev u administratorskom panelu.</p>
-                `
-              });
-            }
-          }
-        }
+        // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
+        // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
+        console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
       } catch (emailError) {
         console.error("Greška pri slanju email obaveštenja:", emailError);
         // Ne prekidamo izvršenje ako slanje email-a ne uspe
