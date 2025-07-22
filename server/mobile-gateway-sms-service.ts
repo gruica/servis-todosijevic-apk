@@ -134,42 +134,87 @@ export class MobileGatewaySMSService {
   }
 
   async testConnection(): Promise<{ connected: boolean; error?: string; gatewayInfo?: any }> {
+    return this.checkGatewayStatus();
+  }
+
+  async checkGatewayStatus(): Promise<{ connected: boolean; error?: string; gatewayInfo?: any }> {
     try {
-      console.log(`[MOBILE SMS] 🔍 Testiranje konekcije sa gateway-om`);
+      console.log(`[MOBILE SMS] 🔍 Proverava status gateway-a na ${this.config.gatewayIP}:${this.config.gatewayPort}`);
       
-      const url = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/status`;
+      // Prvo pokušaj sa /status endpoint-om
+      const statusUrl = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/status`;
       
-      const response = await fetch(url, {
+      try {
+        const response = await fetch(statusUrl, {
+          method: 'GET',
+          timeout: 3000, // Kratki timeout za status check
+          headers: {
+            'User-Agent': 'Frigo-Sistem-SMS-Gateway/1.0'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.text();
+          console.log(`[MOBILE SMS] ✅ Gateway dostupan preko /status`);
+          return {
+            connected: true,
+            gatewayInfo: {
+              status: 'online',
+              response: data,
+              endpoint: '/status'
+            }
+          };
+        }
+      } catch (statusError) {
+        console.log(`[MOBILE SMS] ℹ️ /status endpoint nije dostupan, pokušavam osnovni endpoint`);
+      }
+
+      // Ako /status ne radi, pokušaj osnovni endpoint
+      const baseUrl = `http://${this.config.gatewayIP}:${this.config.gatewayPort}`;
+      
+      const response = await fetch(baseUrl, {
         method: 'GET',
+        timeout: 3000,
         headers: {
           'User-Agent': 'Frigo-Sistem-SMS-Gateway/1.0'
         }
       });
 
       if (response.ok) {
-        const data = await response.json() as any;
-        console.log(`[MOBILE SMS] ✅ Gateway je dostupan`);
-        console.log(`[MOBILE SMS] 📱 Info: ${JSON.stringify(data, null, 2)}`);
-        
+        const data = await response.text();
+        console.log(`[MOBILE SMS] ✅ Gateway dostupan preko osnovnog endpoint-a`);
         return {
           connected: true,
-          gatewayInfo: data
+          gatewayInfo: {
+            status: 'online',
+            response: data,
+            endpoint: 'base'
+          }
         };
       } else {
-        const error = `HTTP ${response.status}: ${response.statusText}`;
-        console.log(`[MOBILE SMS] ❌ Gateway nedostupan: ${error}`);
-        
+        console.log(`[MOBILE SMS] ❌ Gateway odgovorio sa statusom ${response.status}`);
         return {
           connected: false,
-          error: error
+          error: `Gateway odgovorio sa HTTP ${response.status}. Proverite da li je iPhone SMS Gateway aplikacija pokrenuta i aktivna.`
         };
       }
     } catch (error: any) {
       console.log(`[MOBILE SMS] 💥 Greška pri testiranju konekcije: ${error.message}`);
+      console.log(`[MOBILE SMS] 🟡 Gateway nije dostupan: ${error.message}`);
+      
+      let errorMessage = error.message;
+      
+      if (error.message.includes('ETIMEDOUT') || error.message.includes('Connection timed out')) {
+        errorMessage = `Connection timeout - iPhone SMS Gateway aplikacija nije pokrenuta ili nije dostupna na ${this.config.gatewayIP}:${this.config.gatewayPort}`;
+      } else if (error.message.includes('ECONNREFUSED')) {
+        errorMessage = `Connection refused - Port ${this.config.gatewayPort} nije otvoren na ${this.config.gatewayIP}. Proverite SMS Gateway aplikaciju.`;
+      } else if (error.message.includes('ENOTFOUND')) {
+        errorMessage = `Host not found - IP adresa ${this.config.gatewayIP} nije dostupna u mreži.`;
+      }
       
       return {
         connected: false,
-        error: error.message
+        error: errorMessage
       };
     }
   }

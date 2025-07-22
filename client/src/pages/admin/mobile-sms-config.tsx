@@ -219,6 +219,32 @@ export default function MobileSMSConfigPage() {
             >
               {updateConfigMutation.isPending ? "Ažuriranje..." : "Sačuvaj konfiguraciju"}
             </Button>
+
+            {/* Instrukcije za iPhone konfiguraciju */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-4">
+              <h4 className="font-medium text-blue-900 mb-2">📱 iPhone SMS Gateway - Postupak konfiguracije</h4>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p><strong>1. Instalacija aplikacije:</strong></p>
+                <p>• Preuzmite "SMS Gateway for iPhone" aplikaciju iz App Store</p>
+                
+                <p className="pt-2"><strong>2. Konfiguracija u aplikaciji:</strong></p>
+                <p>• Username: <span className="font-mono bg-blue-100 px-1 rounded">gruica</span></p>
+                <p>• Password: <span className="font-mono bg-blue-100 px-1 rounded">AdamEva230723@</span></p>
+                <p>• Port: <span className="font-mono bg-blue-100 px-1 rounded">8080</span></p>
+                <p>• HTTP method: <span className="font-mono bg-blue-100 px-1 rounded">POST</span></p>
+                <p>• Content-Type: <span className="font-mono bg-blue-100 px-1 rounded">application/x-www-form-urlencoded</span></p>
+                
+                <p className="pt-2"><strong>3. Pokretanje:</strong></p>
+                <p>• Kliknite "Start Server" u aplikaciji</p>
+                <p>• Zapišite IP adresu koja se prikaže i unesite je gore</p>
+                
+                <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
+                  <p className="font-medium text-yellow-800">⚠️ VAŽNO:</p>
+                  <p className="text-yellow-700">• Aplikacija mora biti aktivna u prvom planu</p>
+                  <p className="text-yellow-700">• iPhone mora biti na istoj WiFi mreži kao server</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -264,11 +290,31 @@ export default function MobileSMSConfigPage() {
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                       <p className="text-sm text-red-800 font-medium">Greška konekcije:</p>
                       <p className="text-sm text-red-800">{gatewayStatus.error}</p>
-                      {gatewayStatus.error.includes('ECONNREFUSED') && (
-                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                          <p className="text-sm text-yellow-800 font-medium">📱 SMSGateway aplikacija nije pokrenuta!</p>
-                          <p className="text-xs text-yellow-700 mt-1">
-                            Potrebno je da pokrenete SMSGateway aplikaciju na telefonu sa IP adresom {(currentConfig as any)?.gatewayIP}:{(currentConfig as any)?.gatewayPort}
+                      
+                      {(gatewayStatus.error.includes('ECONNREFUSED') || gatewayStatus.error.includes('ETIMEDOUT') || gatewayStatus.error.includes('Connection timed out')) && (
+                        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-sm text-yellow-800 font-bold">📱 iPhone SMS Gateway aplikacija nije dostupna!</p>
+                          <div className="mt-2 space-y-1 text-xs text-yellow-700">
+                            <p><strong>Koraci za rešavanje problema:</strong></p>
+                            <p>1. Proverite da li je iPhone povezan na WiFi mrežu</p>
+                            <p>2. Otvorite SMS Gateway aplikaciju na iPhone-u</p>
+                            <p>3. Proverite da li aplikacija prikazuje IP: {(currentConfig as any)?.gatewayIP}:{(currentConfig as any)?.gatewayPort}</p>
+                            <p>4. Ako se IP razlikuje, ažurirajte konfiguraciju</p>
+                            <p>5. Aplikacija mora biti aktivna u prvom planu (foreground)</p>
+                            <p>6. Proverite da li je omogućeno slanje HTTP zahteva</p>
+                          </div>
+                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                            <p className="text-xs text-orange-800 font-medium">⚠️ VAŽNO: iPhone aplikacija mora biti pokrenuta i vidljiva na ekranu!</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {gatewayStatus.error.includes('fetch failed') && (
+                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                          <p className="text-sm text-blue-800 font-medium">🌐 Mrežni problem</p>
+                          <p className="text-xs text-blue-700 mt-1">
+                            Server ne može da pristupi IP adresi {(currentConfig as any)?.gatewayIP}. 
+                            Proverite mrežne postavke i firewall.
                           </p>
                         </div>
                       )}
