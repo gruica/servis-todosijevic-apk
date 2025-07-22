@@ -315,22 +315,22 @@ export class SMSMobileAPIService {
   async updateConfiguration(config: Partial<SMSMobileAPIConfig>): Promise<void> {
     try {
       if (config.apiKey !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_api_key', config.apiKey, 'SMS Mobile API ključ');
+        await this.storage.updateSystemSetting('sms_mobile_api_key', config.apiKey);
         this.config.apiKey = config.apiKey;
       }
       
       if (config.baseUrl !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_base_url', config.baseUrl, 'SMS Mobile API base URL');
+        await this.storage.updateSystemSetting('sms_mobile_base_url', config.baseUrl);
         this.config.baseUrl = config.baseUrl;
       }
       
       if (config.timeout !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_timeout', config.timeout.toString(), 'SMS Mobile API timeout');
+        await this.storage.updateSystemSetting('sms_mobile_timeout', config.timeout.toString());
         this.config.timeout = config.timeout;
       }
       
       if (config.enabled !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_enabled', config.enabled.toString(), 'SMS Mobile API omogućen');
+        await this.storage.updateSystemSetting('sms_mobile_enabled', config.enabled.toString());
         this.config.enabled = config.enabled;
       }
       
