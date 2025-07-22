@@ -357,9 +357,9 @@ export default function MobileSMSConfigPage() {
                 </div>
                 
                 <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm font-medium text-green-900 mb-2">✅ ISPRAVKA PRIMENJENA:</p>
-                  <p className="text-sm text-green-800">Password parameter ispravljen u iPhone aplikaciji</p>
-                  <p className="text-sm text-green-700 mt-1">Testiranje SMS funkcionalnosti u toku...</p>
+                  <p className="text-sm font-medium text-green-900 mb-2">✅ APLIKACIJA RESTARTOVANA:</p>
+                  <p className="text-sm text-green-800">SMS Gateway ponovo pokrenuta sa ispravnim parametrima</p>
+                  <p className="text-sm text-green-700 mt-1">Verifikacija funkcionalnosti u toku...</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
