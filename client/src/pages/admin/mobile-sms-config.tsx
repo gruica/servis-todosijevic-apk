@@ -308,13 +308,12 @@ export default function MobileSMSConfigPage() {
                   <p className="text-blue-700">• Naša aplikacija: <strong>172.20.10.2:8080</strong> (ažurirano)</p>
                 </div>
                 
-                <div className="p-2 bg-red-100 border border-red-300 rounded mt-2">
-                  <p className="font-medium text-red-800">📱 FINALNO STANJE:</p>
-                  <p className="text-red-700">• <strong>Tehnička konfiguracija 100% ispravna</strong></p>
-                  <p className="text-red-700">• <strong>Parameter keys fixed</strong>: Phonenumber, message, User, Password</p>
-                  <p className="text-red-700">• <strong>IP adresa</strong>: 192.168.10.104:8080</p>
-                  <p className="text-red-700">• <strong>Problem</strong>: iPhone SMS Gateway server NIJE pokrenut</p>
-                  <p className="text-red-700">• <strong>Rešenje</strong>: Kliknite "Start Server" u iPhone aplikaciji!</p>
+                <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">
+                  <p className="font-medium text-blue-800">🔄 AŽURIRANJE IP ADRESE:</p>
+                  <p className="text-blue-700">• <strong>Nova IP adresa</strong>: 172.20.10.2:8080 (MacBook IP)</p>
+                  <p className="text-blue-700">• <strong>Parameter keys</strong>: Phonenumber, message, User, Password ✅</p>
+                  <p className="text-blue-700">• <strong>Logika</strong>: Direktan pristup MacBook SMS serveru</p>
+                  <p className="text-blue-700">• <strong>Sledeći korak</strong>: Pokretanje SMS servera na MacBook-u</p>
                 </div>
                 
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
