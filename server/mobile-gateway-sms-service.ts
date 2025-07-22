@@ -58,13 +58,21 @@ export class MobileGatewaySMSService {
       console.log(`[MOBILE SMS] 📤 Slanje zahteva na: ${url}`);
       console.log(`[MOBILE SMS] 📋 Sadržaj: ${message.message.substring(0, 100)}...`);
 
+      // iPhone SMS Gateway aplikacija očekuje application/x-www-form-urlencoded
+      const formData = new URLSearchParams();
+      formData.append('tel', message.phoneNumber);
+      formData.append('message', message.message);
+      formData.append('user', this.config.username);
+      formData.append('password', this.config.password);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': 'Frigo-Sistem-SMS-Gateway/1.0'
         },
-        body: JSON.stringify(requestBody)
+        body: formData.toString(),
+        timeout: this.config.timeout
       });
 
       const responseData = await response.json() as any;

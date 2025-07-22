@@ -351,8 +351,15 @@ export default function MobileSMSConfigPage() {
                     <li>User: <strong>gruica</strong></li>
                     <li>Password: <strong>AdamEva230723@</strong></li>
                     <li>Allowed IP addresses: <strong>35.193.249.200</strong> i <strong>192.168.10.117</strong></li>
-                    <li>OMOGUĆITE aplikaciju (Disabled → Enabled)</li>
+                    <li><strong>OMOGUĆITE aplikaciju (Disabled → Enabled)</strong></li>
+                    <li><strong>APLIKACIJA MORA BITI AKTIVNO POKRENUTA</strong></li>
                   </ol>
+                </div>
+                
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm font-medium text-red-900 mb-2">⚠️ TRENUTNI PROBLEM:</p>
+                  <p className="text-sm text-red-800">Connection timeout na 192.168.10.117:8080 - aplikacija nije dostupna</p>
+                  <p className="text-sm text-red-700 mt-2">Proverite da li je SMS Gateway aplikacija pokrenuta na iPhone-u i da li prikazuje status "Running"</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
