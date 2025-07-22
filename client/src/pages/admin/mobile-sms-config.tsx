@@ -293,18 +293,26 @@ export default function MobileSMSConfigPage() {
                   <p className="text-blue-700"><strong>Potrebno je naći IP adresu iPhone-a u opsegu 192.168.10.x</strong></p>
                 </div>
                 
-                <div className="p-2 bg-orange-100 border border-orange-300 rounded mt-2">
-                  <p className="font-medium text-orange-800">⚠️ PROBLEM PRONAĐEN:</p>
-                  <p className="text-orange-700">Skeniranje mreže 192.168.10.100-120 nije pronašlo aktivnu iPhone SMS Gateway aplikaciju na portu 8080.</p>
-                  <p className="text-orange-700"><strong>Možda aplikacija nije stvarno pokrenuta ili koristi drugi port.</strong></p>
+                <div className="p-2 bg-red-100 border border-red-300 rounded mt-2">
+                  <p className="font-medium text-red-800">❌ PROBLEM POTVRĐEN:</p>
+                  <p className="text-red-700">Admin panel pokazuje "ETIMEDOUT" grešku na 192.168.10.104:8080</p>
+                  <p className="text-red-700"><strong>iPhone SMS Gateway aplikacija NIJE pokrenuta na ovoj adresi!</strong></p>
+                  <p className="text-red-700">Pokušavam sa 192.168.10.117 kao alternativom...</p>
+                </div>
+                
+                <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
+                  <p className="font-medium text-yellow-800">🚨 KRITIČNO: APLIKACIJA NIJE POKRENUTA!</p>
+                  <p className="text-yellow-700">Ni 192.168.10.104 ni 192.168.10.117 ne odgovaraju na port 8080.</p>
+                  <p className="text-yellow-700"><strong>iPhone SMS Gateway aplikacija mora biti FIZIČKI pokrenuta.</strong></p>
                 </div>
                 
                 <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">
-                  <p className="font-medium text-blue-800">📱 SLEDEĆI KORACI:</p>
-                  <p className="text-blue-700">1. <strong>DUPLO-KLIKNITE</strong> na "Start Server" u iPhone SMS Gateway aplikaciji</p>
-                  <p className="text-blue-700">2. Proverite da li se prikazuje IP adresa kada je server pokrenut</p>
-                  <p className="text-blue-700">3. Koristite "Skeniraj" dugme ispod da ponovo pronađete aplikaciju</p>
-                  <p className="text-blue-700">4. Unesite pronađenu IP adresu u polje gore</p>
+                  <p className="font-medium text-blue-800">📱 OBAVEZNI KORACI ZA IPHONE:</p>
+                  <p className="text-blue-700">1. <strong>Otvorite</strong> iPhone SMS Gateway aplikaciju</p>
+                  <p className="text-blue-700">2. <strong>Kliknite</strong> na "Start Server" dugme</p>
+                  <p className="text-blue-700">3. <strong>SAČEKAJTE</strong> da se prikaže IP adresa (npr. 192.168.10.xxx)</p>
+                  <p className="text-blue-700">4. <strong>Unesite tu IP adresu</strong> u polje gore i sačuvajte</p>
+                  <p className="text-blue-700">5. Tek tada testirajte SMS funkcionalnost</p>
                 </div>
                 
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
