@@ -19,6 +19,7 @@ import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitS
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
 import { registerMobileSMSRoutes } from "./mobile-sms-routes";
+import { createSMSMobileRoutes } from "./sms-mobile-routes";
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -5554,6 +5555,10 @@ Admin panel - automatska porudžbina
 
   // Mobile SMS Gateway routes - NEW implementation
   registerMobileSMSRoutes(app, storage);
+  
+  // SMS Mobile API routes (nova SmsMobile aplikacija)
+  const smsMobileRoutes = createSMSMobileRoutes(storage);
+  app.use('/api/sms/mobile', smsMobileRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
