@@ -6,6 +6,10 @@ export interface SMSMobileAPIConfig {
   baseUrl: string;
   timeout: number;
   enabled: boolean;
+  sendsms: string;
+  sendwa: string;
+  recipients: string;
+  message: string;
 }
 
 export interface SMSMobileAPISendRequest {
@@ -33,7 +37,11 @@ export class SMSMobileAPIService {
       apiKey: '',
       baseUrl: 'https://api.smsmobileapi.com',
       timeout: 30000,
-      enabled: false
+      enabled: false,
+      sendsms: '1',
+      sendwa: '0',
+      recipients: '+382',
+      message: ''
     };
   }
 
@@ -62,12 +70,18 @@ export class SMSMobileAPIService {
       this.config.baseUrl = settings.find(s => s.key === 'sms_mobile_base_url')?.value || 'https://api.smsmobileapi.com';
       this.config.timeout = parseInt(settings.find(s => s.key === 'sms_mobile_timeout')?.value || '30000');
       this.config.enabled = settings.find(s => s.key === 'sms_mobile_enabled')?.value === 'true';
+      this.config.sendsms = settings.find(s => s.key === 'sms_mobile_sendsms')?.value || '1';
+      this.config.sendwa = settings.find(s => s.key === 'sms_mobile_sendwa')?.value || '0';
+      this.config.recipients = settings.find(s => s.key === 'sms_mobile_recipients')?.value || '+382';
+      this.config.message = settings.find(s => s.key === 'sms_mobile_message')?.value || '';
       
       console.log('[SMS MOBILE API] Konfiguracija učitana:', {
         enabled: this.config.enabled,
         hasApiKey: !!this.config.apiKey,
         baseUrl: this.config.baseUrl,
-        timeout: this.config.timeout
+        timeout: this.config.timeout,
+        sendsms: this.config.sendsms,
+        sendwa: this.config.sendwa
       });
     } catch (error) {
       console.error('[SMS MOBILE API] Greška pri učitavanju konfiguracije:', error);
@@ -351,6 +365,26 @@ export class SMSMobileAPIService {
       if (config.enabled !== undefined) {
         await this.storage.updateSystemSetting('sms_mobile_enabled', { value: config.enabled.toString() });
         this.config.enabled = config.enabled;
+      }
+      
+      if (config.sendsms !== undefined) {
+        await this.storage.updateSystemSetting('sms_mobile_sendsms', { value: config.sendsms });
+        this.config.sendsms = config.sendsms;
+      }
+      
+      if (config.sendwa !== undefined) {
+        await this.storage.updateSystemSetting('sms_mobile_sendwa', { value: config.sendwa });
+        this.config.sendwa = config.sendwa;
+      }
+      
+      if (config.recipients !== undefined) {
+        await this.storage.updateSystemSetting('sms_mobile_recipients', { value: config.recipients });
+        this.config.recipients = config.recipients;
+      }
+      
+      if (config.message !== undefined) {
+        await this.storage.updateSystemSetting('sms_mobile_message', { value: config.message });
+        this.config.message = config.message;
       }
       
       console.log('[SMS MOBILE API] Konfiguracija ažurirana');

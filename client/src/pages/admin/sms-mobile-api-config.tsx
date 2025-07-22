@@ -17,6 +17,10 @@ interface SMSMobileAPIConfig {
   timeout: number;
   enabled: boolean;
   hasApiKey: boolean;
+  sendsms: string;
+  sendwa: string;
+  recipients: string;
+  message: string;
 }
 
 interface SMSMobileAPIStatus {
@@ -40,7 +44,11 @@ export default function SMSMobileAPIConfigPage() {
     baseUrl: 'https://api.smsmobileapi.com',
     timeout: 30000,
     enabled: false,
-    hasApiKey: false
+    hasApiKey: false,
+    sendsms: '1',
+    sendwa: '0',
+    recipients: '+382',
+    message: ''
   });
   
   const [apiKey, setApiKey] = useState('');
@@ -139,7 +147,11 @@ export default function SMSMobileAPIConfigPage() {
       apiKey: apiKey || undefined,
       baseUrl: config.baseUrl,
       timeout: config.timeout,
-      enabled: config.enabled
+      enabled: config.enabled,
+      sendsms: config.sendsms,
+      sendwa: config.sendwa,
+      recipients: config.recipients,
+      message: config.message
     };
     
     updateConfigMutation.mutate(configData);
