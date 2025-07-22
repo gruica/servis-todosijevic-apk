@@ -56,7 +56,7 @@ import SystemDiagnostics from "@/pages/system-diagnostics";
 import EmailVerificationDemo from "@/pages/email-verification-demo";
 import AdminCleanup from "@/pages/admin-cleanup";
 import DataExportPage from "@/pages/admin/data-export";
-// Mobile SMS Config page has been completely removed
+import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 
 function Router() {
   return (
@@ -100,7 +100,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
 
-      {/* Mobile SMS Config route has been completely removed */}
+      <RoleProtectedRoute path="/admin/sms-mobile-api-config" component={SMSMobileAPIConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />

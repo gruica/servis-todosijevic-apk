@@ -18,6 +18,7 @@ import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-ve
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
+import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
 // SMS mobile functionality has been completely removed
 
 // Mapiranje status kodova u opisne nazive statusa
@@ -5552,7 +5553,9 @@ Admin panel - automatska porudžbina
 
   // All SMS endpoints removed
 
-  // SMS Mobile Gateway functionality has been completely removed
+  // SMS Mobile API routes - Nova implementacija
+  const smsMobileAPIRoutes = createSMSMobileAPIRoutes(storage);
+  app.use('/api/sms-mobile-api', smsMobileAPIRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
