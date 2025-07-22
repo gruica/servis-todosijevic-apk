@@ -357,9 +357,10 @@ export default function MobileSMSConfigPage() {
                 </div>
                 
                 <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm font-medium text-red-900 mb-2">⚠️ TRENUTNI PROBLEM:</p>
-                  <p className="text-sm text-red-800">Connection timeout na 192.168.10.117:8080 - aplikacija nije dostupna</p>
-                  <p className="text-sm text-red-700 mt-2">Proverite da li je SMS Gateway aplikacija pokrenuta na iPhone-u i da li prikazuje status "Running"</p>
+                  <p className="text-sm font-medium text-red-900 mb-2">❌ KRITIČNA GREŠKA U APLIKACIJI:</p>
+                  <p className="text-sm text-red-800">Password parameter key sadrži dupli "password" prefiks!</p>
+                  <p className="text-sm text-red-700 mt-1"><strong>ISPRAVKA:</strong> Promeniti "passwordAdamEva230723@" u samo "AdamEva230723@"</p>
+                  <p className="text-xs text-red-600 mt-2">Sistem pokušava autentifikaciju sa "password=passwordAdamEva230723@" što je pogrešno</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
