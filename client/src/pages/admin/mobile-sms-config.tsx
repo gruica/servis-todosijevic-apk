@@ -356,10 +356,11 @@ export default function MobileSMSConfigPage() {
                   </ol>
                 </div>
                 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm font-medium text-green-900 mb-2">✅ APLIKACIJA RESTARTOVANA:</p>
-                  <p className="text-sm text-green-800">SMS Gateway ponovo pokrenuta sa ispravnim parametrima</p>
-                  <p className="text-sm text-green-700 mt-1">Verifikacija funkcionalnosti u toku...</p>
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-md">
+                  <p className="text-sm font-medium text-orange-900 mb-2">🔍 IP ADRESA PROBLEM IDENTIFIKOVAN:</p>
+                  <p className="text-sm text-orange-800">WhatsMyIP pokazuje javnu IP (104.28.60.115) - potrebna je lokalna WiFi IP</p>
+                  <p className="text-sm text-orange-700 mt-1"><strong>AKCIJA:</strong> Idite u Postavke → WiFi → (i) → proverite lokalne IP adrese</p>
+                  <p className="text-xs text-orange-600 mt-2">Lokalna IP adresa počinje sa 192.168.x.x ili 10.x.x.x</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
