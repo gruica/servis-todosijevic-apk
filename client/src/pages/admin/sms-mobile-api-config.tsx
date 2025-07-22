@@ -52,8 +52,8 @@ export default function SMSMobileAPIConfigPage() {
   });
   
   const [apiKey, setApiKey] = useState('');
-  const [testPhoneNumber, setTestPhoneNumber] = useState('+38269123456');
-  const [testMessage, setTestMessage] = useState('Test poruka sa SMS Mobile API');
+  const [testPhoneNumber, setTestPhoneNumber] = useState('+38267051141');
+  const [testMessage, setTestMessage] = useState('Test SMS poruka sa SMS Mobile API sistema - Frigo Sistem Todosijević');
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
 
   // Query za dobijanje trenutne konfiguracije
