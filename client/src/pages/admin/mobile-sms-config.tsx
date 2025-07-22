@@ -350,7 +350,7 @@ export default function MobileSMSConfigPage() {
                     <li>Port: <strong>8080</strong></li>
                     <li>User: <strong>gruica</strong></li>
                     <li>Password: <strong>AdamEva230723@</strong></li>
-                    <li>Allowed IP addresses: <strong>35.193.249.200</strong> i <strong>77.222.25.100</strong></li>
+                    <li>Allowed IP addresses: <strong>35.193.249.200</strong> i <strong>192.168.10.117</strong></li>
                     <li>OMOGUĆITE aplikaciju (Disabled → Enabled)</li>
                   </ol>
                 </div>
