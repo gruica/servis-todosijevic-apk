@@ -282,7 +282,13 @@ export default function MobileSMSConfigPage() {
                   <p className="text-green-700">• Server IP: <span className="font-mono">192.168.10.104</span></p>
                   <p className="text-green-700">• iPhone SMS Gateway aplikacija je POKRENUTA ✅</p>
                   <p className="text-green-700">• WiFi mreža: Frigo Sistem Todosijevic</p>
-                  <p className="text-green-700">• Problem: mrežna komunikacija između servera i iPhone-a</p>
+                  <p className="text-green-700">• Status: Čeka ispravku IP adrese</p>
+                </div>
+                
+                <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">
+                  <p className="font-medium text-blue-800">🎯 FINALNI KORAK:</p>
+                  <p className="text-blue-700"><strong>iPhone aplikacija je aktivna, ali server pokušava pogrešnu IP adresu!</strong></p>
+                  <p className="text-blue-700">Konfiguracija parametara je 100% ispravna. Potrebno je samo da unesete pravu IP adresu iPhone-a.</p>
                 </div>
                 
                 <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">

@@ -141,6 +141,7 @@ export class MobileGatewaySMSService {
   async checkGatewayStatus(): Promise<{ connected: boolean; error?: string; gatewayInfo?: any }> {
     try {
       console.log(`[MOBILE SMS] 🔍 Proverava status gateway-a na ${this.config.gatewayIP}:${this.config.gatewayPort}`);
+      console.log(`[MOBILE SMS] 📡 Testiranje mrežne dostupnosti iPhone SMS Gateway aplikacije...`);
       
       // Prvo pokušaj sa /status endpoint-om
       const statusUrl = `http://${this.config.gatewayIP}:${this.config.gatewayPort}/status`;
@@ -167,7 +168,8 @@ export class MobileGatewaySMSService {
           };
         }
       } catch (statusError) {
-        console.log(`[MOBILE SMS] ℹ️ /status endpoint nije dostupan, pokušavam osnovni endpoint`);
+        console.log(`[MOBILE SMS] ℹ️ /status endpoint nije dostupan na ${statusUrl}`);
+        console.log(`[MOBILE SMS] 🔄 Pokušavam osnovni endpoint na http://${this.config.gatewayIP}:${this.config.gatewayPort}/`);
       }
 
       // Ako /status ne radi, pokušaj osnovni endpoint
