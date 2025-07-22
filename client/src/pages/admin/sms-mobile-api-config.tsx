@@ -63,17 +63,14 @@ export default function SMSMobileAPIConfigPage() {
 
   useEffect(() => {
     if (currentConfig) {
-      setConfig(currentConfig);
+      setConfig(currentConfig as SMSMobileAPIConfig);
     }
   }, [currentConfig]);
 
   // Mutation za ažuriranje konfiguracije
   const updateConfigMutation = useMutation({
     mutationFn: async (configData: any) => {
-      return apiRequest('/api/sms-mobile-api/config', {
-        method: 'PUT',
-        body: JSON.stringify(configData)
-      });
+      return apiRequest('/api/sms-mobile-api/config', 'PUT', configData);
     },
     onSuccess: () => {
       toast({
@@ -95,14 +92,12 @@ export default function SMSMobileAPIConfigPage() {
   // Mutation za testiranje konekcije
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/sms-mobile-api/test', {
-        method: 'POST'
-      });
+      return apiRequest('/api/sms-mobile-api/test', 'POST');
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Test uspešan",
-        description: data.message || "Konekcija sa SMS Mobile API je uspešna",
+        description: data?.message || "Konekcija sa SMS Mobile API je uspešna",
       });
       refetchStatus();
     },
@@ -118,19 +113,16 @@ export default function SMSMobileAPIConfigPage() {
   // Mutation za slanje test SMS-a
   const sendTestSMSMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/sms-mobile-api/send', {
-        method: 'POST',
-        body: JSON.stringify({
-          phoneNumber: testPhoneNumber,
-          message: testMessage,
-          sendWhatsApp: sendWhatsApp
-        })
+      return apiRequest('/api/sms-mobile-api/send', 'POST', {
+        phoneNumber: testPhoneNumber,
+        message: testMessage,
+        sendWhatsApp: sendWhatsApp
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "SMS poslana",
-        description: data.message || "Test SMS poruka je uspešno poslana",
+        description: data?.message || "Test SMS poruka je uspešno poslana",
       });
     },
     onError: (error: any) => {
@@ -169,14 +161,14 @@ export default function SMSMobileAPIConfigPage() {
     sendTestSMSMutation.mutate();
   };
 
-  const getStatusColor = (status: SMSMobileAPIStatus | undefined) => {
+  const getStatusColor = (status: any) => {
     if (!status) return 'gray';
     if (status.enabled && status.configured && status.apiStatus?.success) return 'green';
     if (status.enabled && status.configured) return 'yellow';
     return 'red';
   };
 
-  const getStatusText = (status: SMSMobileAPIStatus | undefined) => {
+  const getStatusText = (status: any) => {
     if (!status) return 'Učitava...';
     if (!status.enabled) return 'Onemogućen';
     if (!status.configured) return 'Nije konfigurisan';
@@ -235,29 +227,29 @@ export default function SMSMobileAPIConfigPage() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Omogućen:</span>
-              <span className="ml-2">{serviceStatus?.enabled ? 'Da' : 'Ne'}</span>
+              <span className="ml-2">{(serviceStatus as any)?.enabled ? 'Da' : 'Ne'}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Konfigurisan:</span>
-              <span className="ml-2">{serviceStatus?.configured ? 'Da' : 'Ne'}</span>
+              <span className="ml-2">{(serviceStatus as any)?.configured ? 'Da' : 'Ne'}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Base URL:</span>
-              <span className="ml-2 font-mono text-xs">{serviceStatus?.baseUrl}</span>
+              <span className="ml-2 font-mono text-xs">{(serviceStatus as any)?.baseUrl}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Timeout:</span>
-              <span className="ml-2">{serviceStatus?.timeout}ms</span>
+              <span className="ml-2">{(serviceStatus as any)?.timeout}ms</span>
             </div>
           </div>
 
-          {serviceStatus?.apiStatus && (
-            <Alert className={serviceStatus.apiStatus.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+          {(serviceStatus as any)?.apiStatus && (
+            <Alert className={(serviceStatus as any).apiStatus.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
               <AlertDescription>
-                <strong>API Status:</strong> {serviceStatus.apiStatus.message}
-                {serviceStatus.apiStatus.error && (
+                <strong>API Status:</strong> {(serviceStatus as any).apiStatus.message}
+                {(serviceStatus as any).apiStatus.error && (
                   <div className="mt-1 text-sm text-red-600">
-                    Greška: {serviceStatus.apiStatus.error}
+                    Greška: {(serviceStatus as any).apiStatus.error}
                   </div>
                 )}
               </AlertDescription>
@@ -398,7 +390,7 @@ export default function SMSMobileAPIConfigPage() {
 
           <Button 
             onClick={handleSendTestSMS}
-            disabled={sendTestSMSMutation.isPending || !serviceStatus?.enabled || !serviceStatus?.configured}
+            disabled={sendTestSMSMutation.isPending || !(serviceStatus as any)?.enabled || !(serviceStatus as any)?.configured}
             className="w-full"
           >
             {sendTestSMSMutation.isPending ? 'Šalje...' : 'Pošalji test SMS'}
