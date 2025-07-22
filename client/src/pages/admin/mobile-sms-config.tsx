@@ -347,7 +347,7 @@ export default function MobileSMSConfigPage() {
                     <li>Instalirajte 'SMSGateway' Android aplikaciju na Gruica telefon</li>
                     <li>Pokrenite SMSGateway aplikaciju</li>
                     <li>Konfiguriše aplikaciju da sluša na portu <strong>8080</strong></li>
-                    <li>Proverite da telefon ima IP adresu <strong>{(currentConfig as any)?.gatewayIP || '77.222.37.69'}</strong></li>
+                    <li>Proverite da telefon ima IP adresu <strong>{(currentConfig as any)?.gatewayIP || '77.222.25.100'}</strong></li>
                     <li>Unesite korisničke podatke: <strong>gruica/AdamEva230723@</strong></li>
                   </ol>
                 </div>
