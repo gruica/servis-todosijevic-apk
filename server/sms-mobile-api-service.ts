@@ -274,14 +274,33 @@ export class SMSMobileAPIService {
 
   async getApiStatus(): Promise<SMSMobileAPIResponse> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/status/`, {
-        method: 'GET',
+      if (!this.config.apiKey) {
+        return {
+          success: false,
+          message: 'SMS Mobile API ključ nije konfigurisan',
+          error: 'SMS Mobile API ključ nije konfigurisan'
+        };
+      }
+
+      // Koristimo pravi SMS Mobile API endpoint sa test pozivom
+      const requestData = new URLSearchParams();
+      requestData.append('recipients', '+38267123456'); // Test broj koji neće biti korišćen
+      requestData.append('message', 'TEST_CONNECTION'); // Test poruka
+      requestData.append('apikey', this.config.apiKey);
+      requestData.append('sendsms', '0'); // Onemogući stvarno slanje
+      requestData.append('test', '1'); // Test mode ako je podržan
+
+      const response = await fetch(`${this.config.baseUrl}/sendsms/`, {
+        method: 'POST',
+        body: requestData,
         headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': 'FrigoSistemTodosijevic/1.0'
         }
       });
 
       const responseText = await response.text();
+      console.log('[SMS MOBILE API] Status test odgovor:', responseText);
       
       return {
         success: response.ok,
