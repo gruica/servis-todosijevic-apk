@@ -334,22 +334,22 @@ export class SMSMobileAPIService {
   async updateConfiguration(config: Partial<SMSMobileAPIConfig>): Promise<void> {
     try {
       if (config.apiKey !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_api_key', config.apiKey);
+        await this.storage.updateSystemSetting('sms_mobile_api_key', { value: config.apiKey });
         this.config.apiKey = config.apiKey;
       }
       
       if (config.baseUrl !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_base_url', config.baseUrl);
+        await this.storage.updateSystemSetting('sms_mobile_base_url', { value: config.baseUrl });
         this.config.baseUrl = config.baseUrl;
       }
       
       if (config.timeout !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_timeout', config.timeout.toString());
+        await this.storage.updateSystemSetting('sms_mobile_timeout', { value: config.timeout.toString() });
         this.config.timeout = config.timeout;
       }
       
       if (config.enabled !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_enabled', config.enabled.toString());
+        await this.storage.updateSystemSetting('sms_mobile_enabled', { value: config.enabled.toString() });
         this.config.enabled = config.enabled;
       }
       
