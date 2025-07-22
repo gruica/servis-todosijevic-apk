@@ -126,7 +126,7 @@ export function registerMobileSMSRoutes(app: Express, storage: IStorage) {
       ];
 
       for (const update of updates) {
-        await storage.updateSystemSetting(update.key, update.value, userId);
+        await storage.updateSystemSetting(update.key, update.value);
       }
 
       // Reinicijalizacija mobile SMS servisa

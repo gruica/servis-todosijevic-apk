@@ -262,7 +262,16 @@ export default function MobileSMSConfigPage() {
 
                   {gatewayStatus?.error && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-800 font-medium">Greška konekcije:</p>
                       <p className="text-sm text-red-800">{gatewayStatus.error}</p>
+                      {gatewayStatus.error.includes('ECONNREFUSED') && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-sm text-yellow-800 font-medium">📱 SMSGateway aplikacija nije pokrenuta!</p>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Potrebno je da pokrenete SMSGateway aplikaciju na telefonu sa IP adresom {(currentConfig as any)?.gatewayIP}:{(currentConfig as any)?.gatewayPort}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -319,6 +328,41 @@ export default function MobileSMSConfigPage() {
               >
                 {testSMSMutation.isPending ? "Slanje..." : "Pošalji test SMS"}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Dodano uputstvo za korisnike */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Settings className="w-5 h-5 mr-2" />
+                Uputstvo za pokretanje
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm font-medium text-blue-900 mb-2">📱 Korak po korak:</p>
+                  <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
+                    <li>Instalirajte 'SMSGateway' Android aplikaciju na Gruica telefon</li>
+                    <li>Pokrenite SMSGateway aplikaciju</li>
+                    <li>Konfiguriše aplikaciju da sluša na portu <strong>8080</strong></li>
+                    <li>Proverite da telefon ima IP adresu <strong>{(currentConfig as any)?.gatewayIP || '77.222.37.69'}</strong></li>
+                    <li>Unesite korisničke podatke: <strong>gruica/AdamEva230723@</strong></li>
+                  </ol>
+                </div>
+                
+                {gatewayStatus?.connected ? (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm font-medium text-green-900">✅ SMS Gateway je aktivan i spreman za rad!</p>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm font-medium text-red-900">❌ SMS Gateway nije dostupan</p>
+                    <p className="text-xs text-red-700 mt-1">Proverite da li je SMSGateway aplikacija pokrenuta na telefonu</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
