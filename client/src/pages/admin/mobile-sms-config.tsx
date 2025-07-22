@@ -294,10 +294,10 @@ export default function MobileSMSConfigPage() {
                 </div>
                 
                 <div className="p-2 bg-green-100 border border-green-300 rounded mt-2">
-                  <p className="font-medium text-green-800">✅ PROBLEM PRONAĐEN I REŠAVA SE!</p>
-                  <p className="text-green-700">MacBook ima IP adresu <strong>172.20.10.2</strong> umesto 192.168.10.104</p>
-                  <p className="text-green-700">MacBook koristi iPhone kao hotspot preko proxy-ja!</p>
-                  <p className="text-green-700">Ažuriram IP adresu na 172.20.10.2...</p>
+                  <p className="font-medium text-green-800">🎯 FINALNI PROBLEM PRONAĐEN!</p>
+                  <p className="text-green-700">iPhone aplikacija koristi <strong>standardne parameter keys</strong>:</p>
+                  <p className="text-green-700">• Phonenumber, message, User, Password</p>
+                  <p className="text-green-700">Ažurirao sam kod da koristi ispravne parameter keys!</p>
                 </div>
                 
                 <div className="p-2 bg-blue-100 border border-blue-300 rounded mt-2">
@@ -308,12 +308,12 @@ export default function MobileSMSConfigPage() {
                   <p className="text-blue-700">• Naša aplikacija: <strong>172.20.10.2:8080</strong> (ažurirano)</p>
                 </div>
                 
-                <div className="p-2 bg-orange-100 border border-orange-300 rounded mt-2">
-                  <p className="font-medium text-orange-800">🔧 SLEDEĆI KORAK:</p>
-                  <p className="text-orange-700">1. <strong>Na iPhone-u</strong>: Pokrenite SMS Gateway aplikaciju</p>
-                  <p className="text-orange-700">2. <strong>Kliknite "Start Server"</strong> i proverite IP adresu</p>
-                  <p className="text-orange-700">3. <strong>iPhone možda koristi IP</strong>: 192.168.10.104 ili 172.20.10.1</p>
-                  <p className="text-orange-700">4. <strong>Testirajte "Skeniraj"</strong> dugme ispod za automatsko otkrivanje</p>
+                <div className="p-2 bg-red-100 border border-red-300 rounded mt-2">
+                  <p className="font-medium text-red-800">🚨 KRITIČNO: POKRENITE SMS GATEWAY SERVER!</p>
+                  <p className="text-red-700">1. <strong>U iPhone aplikaciji</strong>: Kliknite na "Start Server" dugme</p>
+                  <p className="text-red-700">2. <strong>Proverite da li se prikazuje IP adresa</strong> kada server krene</p>
+                  <p className="text-red-700">3. <strong>Server MORA biti fizički pokrenut</strong> da bi radilo</p>
+                  <p className="text-red-700">4. <strong>Parameter keys su ispravni</strong> (Phonenumber, message, User, Password)</p>
                 </div>
                 
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
