@@ -97,6 +97,78 @@ export function registerMobileSMSRoutes(app: Express, storage: IStorage) {
     }
   });
 
+  // Skeniranje mreže za pronalaženje SMS Gateway aplikacije
+  app.get('/api/mobile-sms/scan-network', jwtAuth, requireRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      console.log('[MOBILE SMS] 🔍 Pokretanje skeniranja mreže za SMS Gateway...');
+      
+      const results: Array<{ip: string; port: number; status: string; response?: any}> = [];
+      
+      // Pokušaj različite IP adrese u lokalnoj mreži
+      const baseIP = '192.168.10.';
+      const testIPs = [];
+      
+      // Generiši listu IP adresa za testiranje (preskačemo određene)
+      for (let i = 1; i <= 254; i++) {
+        if (i !== 1) { // preskačemo gateway
+          testIPs.push(`${baseIP}${i}`);
+        }
+      }
+      
+      // Testiranje prvih 20 IP adresa (da ne bude previše sporo)
+      const testPromises = testIPs.slice(0, 20).map(async (ip) => {
+        try {
+          const url = `http://${ip}:8080`;
+          const response = await fetch(url, {
+            method: 'GET',
+            timeout: 2000,
+            headers: { 'User-Agent': 'SMS-Gateway-Scanner/1.0' }
+          });
+          
+          if (response.ok) {
+            const responseText = await response.text();
+            console.log(`[MOBILE SMS] ✅ Pronašao aktivan servis na ${ip}:8080`);
+            
+            return {
+              ip,
+              port: 8080,
+              status: 'active',
+              response: responseText.substring(0, 200) // Ograniči dužinu odgovora
+            };
+          }
+        } catch (error) {
+          // Ignorisemo greške, samo logujemo ako je potrebno
+        }
+        
+        return {
+          ip,
+          port: 8080,
+          status: 'inactive'
+        };
+      });
+      
+      const scanResults = await Promise.all(testPromises);
+      const activeServices = scanResults.filter(r => r.status === 'active');
+      
+      console.log(`[MOBILE SMS] 📊 Skeniranje završeno: ${activeServices.length} aktivnih servisa od ${testPromises.length} testiranih`);
+      
+      return res.json({
+        success: true,
+        scannedCount: testPromises.length,
+        activeServices,
+        message: activeServices.length > 0 
+          ? `Pronađeno ${activeServices.length} aktivnih SMS Gateway servisa`
+          : 'Nije pronađen nijedan aktivan SMS Gateway servis na portu 8080'
+      });
+    } catch (error: any) {
+      console.error('Greška pri skeniranju mreže:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Greška pri skeniranju mreže'
+      });
+    }
+  });
+
   // Ažuriranje konfiguracije
   app.post('/api/mobile-sms/config', jwtAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {

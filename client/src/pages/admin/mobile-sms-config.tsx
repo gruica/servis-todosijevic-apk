@@ -93,6 +93,34 @@ export default function MobileSMSConfigPage() {
     },
   });
 
+  // Mutation za skeniranje mreže
+  const scanNetworkMutation = useMutation({
+    mutationFn: () => apiRequest("/api/mobile-sms/scan-network", "GET"),
+    onSuccess: (data: any) => {
+      if (data.success && data.activeServices && data.activeServices.length > 0) {
+        const firstService = data.activeServices[0];
+        setConfig(prev => ({ ...prev, gatewayIP: firstService.ip }));
+        toast({
+          title: "🔍 Skeniranje mreže",
+          description: `Pronađen SMS Gateway na ${firstService.ip}:${firstService.port}`,
+        });
+      } else {
+        toast({
+          title: "🔍 Skeniranje mreže",
+          description: data.message || "Nije pronađen SMS Gateway servis",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Greška skeniranja",
+        description: error.message || "Neuspešno skeniranje mreže",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Učitavanje konfiguracije
   useEffect(() => {
     if (currentConfig) {
@@ -165,13 +193,24 @@ export default function MobileSMSConfigPage() {
 
             <div className="space-y-2">
               <Label htmlFor="gatewayIP">IP Adresa telefona</Label>
-              <Input
-                id="gatewayIP"
-                value={config.gatewayIP}
-                onChange={(e) => setConfig({ ...config, gatewayIP: e.target.value })}
-                placeholder="192.168.1.100"
-                disabled={!config.enabled}
-              />
+              <div className="flex space-x-2">
+                <Input
+                  id="gatewayIP"
+                  value={config.gatewayIP}
+                  onChange={(e) => setConfig({ ...config, gatewayIP: e.target.value })}
+                  placeholder="192.168.1.100"
+                  disabled={!config.enabled}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => scanNetworkMutation.mutate()}
+                  disabled={!config.enabled || scanNetworkMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                >
+                  {scanNetworkMutation.isPending ? "Skenira..." : "🔍 Skeniraj"}
+                </Button>
+              </div>
               <p className="text-sm text-gray-500">
                 IP adresa vašeg telefona u lokalnoj mreži
               </p>
@@ -238,10 +277,18 @@ export default function MobileSMSConfigPage() {
                 <p>• Kliknite "Start Server" u aplikaciji</p>
                 <p>• Zapišite IP adresu koja se prikaže i unesite je gore</p>
                 
+                <div className="p-2 bg-green-100 border border-green-300 rounded mt-2">
+                  <p className="font-medium text-green-800">📶 TRENUTNA MREŽNA KONFIGURACIJA:</p>
+                  <p className="text-green-700">• Server IP: <span className="font-mono">192.168.10.104</span></p>
+                  <p className="text-green-700">• Gateway IP u bazi: <span className="font-mono">192.168.10.117</span> (potrebno ažurirati)</p>
+                  <p className="text-green-700">• WiFi mreža: Frigo Sistem Todosijevic (2.4GHz, kanal 11)</p>
+                </div>
+                
                 <div className="p-2 bg-yellow-100 border border-yellow-300 rounded mt-2">
                   <p className="font-medium text-yellow-800">⚠️ VAŽNO:</p>
                   <p className="text-yellow-700">• Aplikacija mora biti aktivna u prvom planu</p>
                   <p className="text-yellow-700">• iPhone mora biti na istoj WiFi mreži kao server</p>
+                  <p className="text-yellow-700">• IP adresa u aplikaciji mora se poklapati sa IP u konfiguraciji</p>
                 </div>
               </div>
             </div>
