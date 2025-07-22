@@ -5,7 +5,7 @@ import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
 
 import { storage } from "./storage";
-import { createMobileSMSService } from "./mobile-sms-service";
+// Mobile SMS Service has been completely removed
 
 const app = express();
 
@@ -71,10 +71,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Inicijalizacija Mobile SMS servisa sa novim parametrima
-  console.log('[MOBILE SMS] Pokretanje mobile SMS servisa sa novom aplikacijom...');
-  const mobileSMSService = createMobileSMSService(storage as any);
-  await mobileSMSService.initialize();
+  // Mobile SMS Service has been completely removed
   
   const server = await registerRoutes(app);
 
