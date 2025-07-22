@@ -356,11 +356,10 @@ export default function MobileSMSConfigPage() {
                   </ol>
                 </div>
                 
-                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm font-medium text-red-900 mb-2">❌ KRITIČNA GREŠKA U APLIKACIJI:</p>
-                  <p className="text-sm text-red-800">Password parameter key sadrži dupli "password" prefiks!</p>
-                  <p className="text-sm text-red-700 mt-1"><strong>ISPRAVKA:</strong> Promeniti "passwordAdamEva230723@" u samo "AdamEva230723@"</p>
-                  <p className="text-xs text-red-600 mt-2">Sistem pokušava autentifikaciju sa "password=passwordAdamEva230723@" što je pogrešno</p>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm font-medium text-green-900 mb-2">✅ ISPRAVKA PRIMENJENA:</p>
+                  <p className="text-sm text-green-800">Password parameter ispravljen u iPhone aplikaciji</p>
+                  <p className="text-sm text-green-700 mt-1">Testiranje SMS funkcionalnosti u toku...</p>
                 </div>
                 
                 {gatewayStatus?.connected ? (
