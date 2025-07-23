@@ -2019,6 +2019,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailInfo.emailError = `Sistemska greška (email): ${errorMessage || "Nepoznata greška"}`;
       }
 
+      // ===== SPECIJALNI SMS TRIGGERI ZA KLIJENT_NIJE_DOSTUPAN =====
+      // Dodajemo specifičnu logiku za statuse "client_not_home" i "client_not_answering"
+      if (smsService && smsService.isConfigured() && (validStatus === "client_not_home" || validStatus === "client_not_answering")) {
+        try {
+          console.log(`[SMS KLIJENT_NIJE_DOSTUPAN] Automatski trigger za status: ${validStatus}`);
+          
+          // 1. SMS KLIJENTU o nedostupnosti i ponovnom zakazivanju
+          if (service.clientId) {
+            const client = await storage.getClient(service.clientId);
+            const appliance = await storage.getAppliance(service.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+            
+            if (client && client.phone) {
+              try {
+                await smsService.notifyClientUnavailable({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: serviceId.toString(),
+                  deviceType: category?.name || 'uređaj',
+                  technicianName: technician?.fullName || 'serviser',
+                  unavailableReason: clientUnavailableReason || 'nedostupan'
+                });
+                console.log(`[SMS KLIJENT_NIJE_DOSTUPAN] ✅ SMS o nedostupnosti poslat klijentu ${client.fullName} (${client.phone})`);
+              } catch (smsError) {
+                console.error(`[SMS KLIJENT_NIJE_DOSTUPAN] ❌ Greška pri slanju SMS-a klijentu:`, smsError);
+              }
+            }
+          }
+
+          // 2. SMS ADMINISTRATORIMA o nedostupnosti klijenta
+          try {
+            const admins = await getAdminsWithPhones();
+            const client = await storage.getClient(service.clientId!);
+            const appliance = await storage.getAppliance(service.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+            
+            for (const admin of admins) {
+              try {
+                await smsService.notifyAdminClientUnavailable({
+                  adminPhone: admin.phone,
+                  adminName: admin.fullName,
+                  serviceId: serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  deviceType: category?.name || 'uređaj',
+                  technicianName: technician?.fullName || 'serviser',
+                  unavailableType: validStatus === "client_not_home" ? 'nije kući' : 'ne javlja se',
+                  reschedulingNotes: reschedulingNotes || 'potrebno novo zakazivanje'
+                });
+                console.log(`[SMS KLIJENT_NIJE_DOSTUPAN] ✅ SMS o nedostupnosti klijenta poslat administratoru ${admin.fullName} (${admin.phone})`);
+              } catch (adminSmsError) {
+                console.error(`[SMS KLIJENT_NIJE_DOSTUPAN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+              }
+            }
+          } catch (adminSmsError) {
+            console.error('[SMS KLIJENT_NIJE_DOSTUPAN] Globalna greška pri slanju admin SMS obaveštenja:', adminSmsError);
+          }
+          
+        } catch (smsError) {
+          console.error("[SMS KLIJENT_NIJE_DOSTUPAN] Globalna greška pri SMS triggerima za nedostupnost klijenta:", smsError);
+        }
+      }
+
       // ===== DODATNI AUTOMATSKI SMS TRIGGERI =====
       // Dodajemo SMS obaveštenja za sve status promjene (ne samo completed)
       if (smsService && smsService.isConfigured() && service.status !== validStatus) {
@@ -5083,6 +5147,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('[SPARE PARTS] Greška pri slanju emailova:', emailError);
         // Ne prekidamo proces ako emailovi ne mogu da se pošalju
       }
+
+      // ===== SMS TRIGGERI ZA PORUDŽBINU REZERVNIH DELOVA =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS SISTEM] Početak SMS triggera za porudžbinu rezervnih delova #${order.id}`);
+          
+          const service = await storage.getService(validatedData.serviceId);
+          if (service) {
+            const client = await storage.getClient(service.clientId);
+            const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const technician = await storage.getTechnician(technicianId);
+            
+            const deviceType = category ? category.name : 'Uređaj';
+            const technicianName = technician ? technician.fullName : req.user.fullName || 'Nepoznat serviser';
+            const deliveryTime = validatedData.urgency === 'urgent' ? '3-5 dana' : '7-10 dana';
+            
+            // 1. SMS KORISNIKU o porudžbini rezervnih delova
+            if (client && client.phone) {
+              try {
+                await smsService.notifyClientPartsOrdered({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: validatedData.serviceId.toString(),
+                  partName: validatedData.partName,
+                  deviceType: deviceType,
+                  deliveryTime: deliveryTime
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o porudžbini delova poslat korisniku ${client.fullName} (${client.phone})`);
+              } catch (smsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku o porudžbini:`, smsError);
+              }
+            }
+            
+            // 2. SMS ADMINISTRATORU o porudžbini rezervnih delova
+            const admins = await getAdminsWithPhones();
+            for (const admin of admins) {
+              try {
+                await smsService.notifyAdminPartsOrdered({
+                  adminPhone: admin.phone,
+                  adminName: admin.fullName,
+                  serviceId: validatedData.serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  deviceType: deviceType,
+                  partName: validatedData.partName,
+                  orderedBy: technicianName,
+                  urgency: validatedData.urgency || 'normal'
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o porudžbini delova poslat administratoru ${admin.fullName} (${admin.phone})`);
+              } catch (adminSmsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a administratoru o porudžbini:`, adminSmsError);
+              }
+            }
+          }
+        } catch (smsError) {
+          console.error('[SMS SISTEM] Globalna greška pri slanju SMS obaveštenja za porudžbinu rezervnih delova:', smsError);
+        }
+      }
       
       console.log("🎉 Returning successful response");
       res.status(201).json(order);
@@ -6094,6 +6216,65 @@ Admin panel - automatska porudžbina
       
       const validatedData = insertRemovedPartSchema.parse(req.body);
       const removedPart = await storage.createRemovedPart(validatedData);
+      
+      // ===== SMS TRIGGERI ZA EVIDENCIJU UKLONJENIH DELOVA =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS SISTEM] Početak SMS triggera za evidenciju uklonjenih delova (servis #${validatedData.serviceId})`);
+          
+          // Dohvati podatke o servisu, klijentu, uređaju i serviseru
+          const service = await storage.getService(validatedData.serviceId);
+          if (service) {
+            const client = await storage.getClient(service.clientId);
+            const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+            
+            const deviceType = category ? category.name : 'Uređaj';
+            const technicianName = technician ? technician.fullName : req.user.fullName || 'Nepoznat serviser';
+            
+            // 1. SMS KORISNIKU o uklonjenim delovima
+            if (client && client.phone) {
+              try {
+                await smsService.notifyClientPartsRemoved({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: validatedData.serviceId.toString(),
+                  deviceType: deviceType,
+                  partName: validatedData.partName,
+                  technicianName: technicianName,
+                  removalReason: validatedData.removalReason
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o uklonjenim delovima poslat korisniku ${client.fullName} (${client.phone})`);
+              } catch (smsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku o uklonjenim delovima:`, smsError);
+              }
+            }
+            
+            // 2. SMS ADMINISTRATORU o uklonjenim delovima
+            const admins = await getAdminsWithPhones();
+            for (const admin of admins) {
+              try {
+                await smsService.notifyAdminPartsRemoved({
+                  adminPhone: admin.phone,
+                  adminName: admin.fullName,
+                  serviceId: validatedData.serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  deviceType: deviceType,
+                  partName: validatedData.partName,
+                  technicianName: technicianName,
+                  removalReason: validatedData.removalReason
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o uklonjenim delovima poslat administratoru ${admin.fullName} (${admin.phone})`);
+              } catch (adminSmsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a administratoru o uklonjenim delovima:`, adminSmsError);
+              }
+            }
+          }
+        } catch (smsError) {
+          console.error('[SMS SISTEM] Globalna greška pri slanju SMS obaveštenja za uklonjene delove:', smsError);
+        }
+      }
       
       res.status(201).json(removedPart);
     } catch (error) {

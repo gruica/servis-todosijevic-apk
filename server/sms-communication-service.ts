@@ -382,6 +382,58 @@ export class SMSCommunicationService {
     );
   }
 
+  // ===== TEHNIČKE AKCIJE SMS TRIGGERI =====
+
+  /**
+   * SMS korisniku kada serviser prijavi da klijent nije dostupan
+   */
+  async notifyClientUnavailable(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    technicianName: string;
+    unavailableReason: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('klijent_nije_dostupan', 
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        unavailableReason: data.unavailableReason
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru kada serviser prijavi da klijent nije dostupan
+   */
+  async notifyAdminClientUnavailable(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+    unavailableType: string;
+    reschedulingNotes: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_klijent_nije_dostupan', 
+      { phone: data.adminPhone, name: data.adminName, role: 'technician' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        unavailableType: data.unavailableType,
+        reschedulingNotes: data.reschedulingNotes
+      }
+    );
+  }
+
   /**
    * Proverava da li je SMS servis konfigurisan i spreman
    */
@@ -740,6 +792,156 @@ export class SMSCommunicationService {
         clientName: data.clientName,
         deviceType: data.deviceType,
         partName: data.partName
+      }
+    );
+  }
+
+  // ===== TEHNIČKE AKCIJE - NOVI SMS TRIGGERI =====
+
+  /**
+   * SMS klijentu kada tehničar ukloni delove
+   */
+  async notifyClientPartsRemoved(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_parts_removed',
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
+  /**
+   * SMS klijentu kada tehničar poruči rezervni deo
+   */
+  async notifyClientPartOrderedByTechnician(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    partName?: string;
+    urgency?: string;
+    deliveryTime?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_part_ordered_by_technician',
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        partName: data.partName,
+        urgency: data.urgency,
+        deliveryTime: data.deliveryTime
+      }
+    );
+  }
+
+  /**
+   * SMS klijentu kada tehničar označi da nije dostupan
+   */
+  async notifyClientNotAvailableByTechnician(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    technicianName: string;
+    companyPhone: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_not_available_by_technician',
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        companyPhone: data.companyPhone
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru kada tehničar ukloni delove
+   */
+  async notifyAdminPartsRemovedByTechnician(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    clientPhone: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_parts_removed_by_technician',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru kada tehničar poruči rezervni deo
+   */
+  async notifyAdminPartOrderedByTechnician(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    clientPhone: string;
+    deviceType: string;
+    technicianName: string;
+    partName?: string;
+    urgency?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_part_ordered_by_technician',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        partName: data.partName,
+        urgency: data.urgency
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru kada tehničar označi da klijent nije dostupan
+   */
+  async notifyAdminClientNotAvailableByTechnician(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    clientPhone: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_client_not_available_by_technician',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
       }
     );
   }

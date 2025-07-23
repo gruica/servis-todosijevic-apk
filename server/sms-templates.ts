@@ -2,8 +2,10 @@
 
 export interface SMSTemplateData {
   clientName?: string;
+  clientPhone?: string;
   serviceId?: string;
   technicianName?: string;
+  technicianPhone?: string;
   deviceType?: string;
   deviceModel?: string;
   problemDescription?: string;
@@ -23,6 +25,11 @@ export interface SMSTemplateData {
   orderedBy?: string;
   urgency?: string;
   adminName?: string;
+  companyPhone?: string;
+  partnerName?: string;
+  unavailableType?: string;
+  reschedulingNotes?: string;
+  unavailableReason?: string;
 }
 
 export class SMSTemplates {
@@ -453,6 +460,146 @@ Servis može biti nastavljen.
 ${this.COMPANY_NAME}`;
   }
 
+  // TEHNIČKE AKCIJE - SMS TEMPLATE-I ZA KLIJENTE I ADMINISTRATORE
+
+  /**
+   * SMS klijentu kada su uklonjeni delovi za popravku u radionici
+   */
+  static clientPartsRemoved(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Naš serviser je identifikovao kvar na vašem ${data.deviceType} (servis #${data.serviceId}).
+
+Određeni delovi su uklonjeni radi stručne popravke u našoj radionici. Obavesitićemo vas o daljem toku popravke.
+
+Za dodatne informacije: ${this.CONTACT_PHONE}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS klijentu kada tehničar poruči rezervni deo
+   */
+  static clientPartOrderedByTechnician(data: SMSTemplateData): string {
+    const deliveryTime = data.deliveryTime || (data.urgency === 'urgent' ? '3-5' : '7-10') + ' radnih dana';
+    
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Za vaš ${data.deviceType} (servis #${data.serviceId}) je naručen potreban rezervni deo.
+
+Očekivano vreme dostave: ${deliveryTime}
+Kontaktiraćemo vas čim deo stigne u magacin.
+
+Za dodatne informacije: ${this.CONTACT_PHONE}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS klijentu kada tehničar označi da klijent nije dostupan
+   */
+  static clientNotAvailableByTechnician(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Naš serviser je pokušao da vas kontaktira u vezi servisa #${data.serviceId} za ${data.deviceType}, ali vas nije zatekao.
+
+Molimo vas pozovite nas na ${this.CONTACT_PHONE} da dogovorimo novi termin koji vam odgovara.
+
+Hvala na razumevanju.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru kada tehničar ukloni delove
+   */
+  static adminPartsRemovedByTechnician(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+DELOVI UKLONJENI - Servis #${data.serviceId}
+
+Serviser: ${data.technicianName}
+Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Uređaj: ${data.deviceType}
+
+Delovi uklonjeni za popravku u radionici.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru kada serviser poruči rezervni deo
+   */
+  static adminPartOrderedByTechnician(data: SMSTemplateData): string {
+    const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
+    
+    return `${data.adminName || 'Administratore'},
+
+PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}
+
+Serviser: ${data.technicianName}
+Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Uređaj: ${data.deviceType}
+Deo: ${data.partName}
+
+Potrebna Vaša potvrda ili akcija.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru kada klijent nije dostupan
+   */
+  static adminClientUnavailableByTechnician(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+KLIJENT NEDOSTUPAN - Servis #${data.serviceId}
+
+Serviser: ${data.technicianName}
+Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Uređaj: ${data.deviceType}
+Status: ${data.unavailableType || 'nedostupan'}
+
+Potrebno novo zakazivanje termina.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru kada tehničar poruči rezervni deo
+   */
+  static adminPartOrderedByTechnician(data: SMSTemplateData): string {
+    const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
+    
+    return `${data.adminName || 'Administratore'},
+
+PORUDŽBINA DELA${urgencyText} - Servis #${data.serviceId}
+
+Serviser: ${data.technicianName}
+Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Uređaj: ${data.deviceType}
+Deo: ${data.partName || 'nije specificiran'}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru kada tehničar označi da klijent nije dostupan
+   */
+  static adminClientNotAvailableByTechnician(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+KLIJENT NEDOSTUPAN - Servis #${data.serviceId}
+
+Serviser: ${data.technicianName}
+Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Uređaj: ${data.deviceType}
+
+Potrebno organizovati novi termin.
+
+${this.COMPANY_NAME}`;
+  }
+
   // GENERIČKE FUNKCIJE
 
   /**
@@ -514,6 +661,24 @@ ${this.COMPANY_NAME}`;
         return this.adminPartsOrdered(data);
       case 'admin_parts_arrived':
         return this.adminPartsArrived(data);
+      // TEHNIČKE AKCIJE - NOVI TEMPLATE-I
+      case 'client_parts_removed':
+        return this.clientPartsRemoved(data);
+      case 'client_part_ordered_by_technician':
+        return this.clientPartOrderedByTechnician(data);
+      case 'client_not_available_by_technician':
+        return this.clientNotAvailableByTechnician(data);
+      case 'admin_parts_removed_by_technician':
+        return this.adminPartsRemovedByTechnician(data);
+      case 'admin_part_ordered_by_technician':
+        return this.adminPartOrderedByTechnician(data);
+      case 'admin_client_not_available_by_technician':
+        return this.adminClientNotAvailableByTechnician(data);
+      // SPECIJALNI TEMPLATE-I ZA KLIJENT_NIJE_DOSTUPAN TRIGGERE
+      case 'klijent_nije_dostupan':
+        return this.clientNotAvailableByTechnician(data);
+      case 'admin_klijent_nije_dostupan':
+        return this.adminClientUnavailableByTechnician(data);
       default:
         throw new Error(`Nepoznat tip SMS template-a: ${type}`);
     }
@@ -554,7 +719,14 @@ ${this.COMPANY_NAME}`;
       // SERVISERI
       'technician_part_arrived': 'Rezervni deo stigao - serviser',
       'new_service_assigned': 'Novi servis dodeljen',
-      'part_status_update': 'Status rezervnog dela'
+      'part_status_update': 'Status rezervnog dela',
+      // TEHNIČKE AKCIJE - NOVI TEMPLATE-I
+      'client_parts_removed': 'Delovi uklonjeni - klijent',
+      'client_part_ordered_by_technician': 'Deo poručen od tehničara - klijent',
+      'client_not_available_by_technician': 'Klijent nedostupan od tehničara - klijent',
+      'admin_parts_removed_by_technician': 'Delovi uklonjeni od tehničara - admin',
+      'admin_part_ordered_by_technician': 'Deo poručen od tehničara - admin',
+      'admin_client_not_available_by_technician': 'Klijent nedostupan od tehničara - admin'
     };
   }
 }
