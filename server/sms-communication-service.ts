@@ -614,4 +614,133 @@ export class SMSCommunicationService {
       }
     );
   }
+
+  // ===== ADMIN SMS OBAVEŠTENJA =====
+
+  /**
+   * SMS administratoru o novom servisu
+   */
+  async notifyAdminNewService(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    createdBy: string;
+    problemDescription?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_new_service',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        createdBy: data.createdBy,
+        problemDescription: data.problemDescription
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru o promeni statusa servisa
+   */
+  async notifyAdminStatusChange(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    oldStatus: string;
+    newStatus: string;
+    technicianName?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_status_change',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        oldStatus: data.oldStatus,
+        newStatus: data.newStatus,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru o dodeli tehničara
+   */
+  async notifyAdminTechnicianAssigned(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+    assignedBy: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_technician_assigned',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        assignedBy: data.assignedBy
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru o porudžbini rezervnih delova
+   */
+  async notifyAdminPartsOrdered(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    partName: string;
+    orderedBy: string;
+    urgency: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_parts_ordered',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        partName: data.partName,
+        orderedBy: data.orderedBy,
+        urgency: data.urgency
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru o prispeću rezervnih delova
+   */
+  async notifyAdminPartsArrived(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    partName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_parts_arrived',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        partName: data.partName
+      }
+    );
+  }
 }

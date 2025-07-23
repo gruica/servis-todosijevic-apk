@@ -16,6 +16,13 @@ export interface SMSTemplateData {
   deliveryTime?: string;
   statusDescription?: string;
   technicianNotes?: string;
+  createdBy?: string;
+  oldStatus?: string;
+  newStatus?: string;
+  assignedBy?: string;
+  orderedBy?: string;
+  urgency?: string;
+  adminName?: string;
 }
 
 export class SMSTemplates {
@@ -358,6 +365,94 @@ Servis će uskoro biti završen.
 ${this.COMPANY_NAME}`;
   }
 
+  // ===== ADMIN SMS TEMPLATE-I =====
+
+  /**
+   * SMS administratoru o novom servisu
+   */
+  static adminNewService(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+NOVI SERVIS #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Kreirao: ${data.createdBy}
+
+${data.problemDescription ? `Problem: ${data.problemDescription}` : ''}
+
+Zahteva Vašu pažnju.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru o promeni statusa servisa
+   */
+  static adminStatusChange(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+PROMENA STATUSA - Servis #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Status: ${data.oldStatus} → ${data.newStatus}
+${data.technicianName ? `Serviser: ${data.technicianName}` : ''}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru o dodeli tehničara
+   */
+  static adminTechnicianAssigned(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+DODELJEN SERVISER - Servis #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Serviser: ${data.technicianName}
+Dodelio: ${data.assignedBy}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru o porudžbini rezervnih delova
+   */
+  static adminPartsOrdered(data: SMSTemplateData): string {
+    const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
+    
+    return `${data.adminName || 'Administratore'},
+
+PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Deo: ${data.partName}
+Poručio: ${data.orderedBy}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS administratoru o prispeću rezervnih delova
+   */
+  static adminPartsArrived(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+STIGLI DELOVI - Servis #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Deo: ${data.partName}
+
+Servis može biti nastavljen.
+
+${this.COMPANY_NAME}`;
+  }
+
   // GENERIČKE FUNKCIJE
 
   /**
@@ -408,6 +503,17 @@ ${this.COMPANY_NAME}`;
         return this.businessPartnerPartsOrdered(data);
       case 'business_partner_parts_arrived':
         return this.businessPartnerPartsArrived(data);
+      // ADMIN SMS TEMPLATE-I
+      case 'admin_new_service':
+        return this.adminNewService(data);
+      case 'admin_status_change':
+        return this.adminStatusChange(data);
+      case 'admin_technician_assigned':
+        return this.adminTechnicianAssigned(data);
+      case 'admin_parts_ordered':
+        return this.adminPartsOrdered(data);
+      case 'admin_parts_arrived':
+        return this.adminPartsArrived(data);
       default:
         throw new Error(`Nepoznat tip SMS template-a: ${type}`);
     }
@@ -435,6 +541,12 @@ ${this.COMPANY_NAME}`;
       'client_parts_ordered': 'Rezervni dio poručen - klijent',
       'business_partner_parts_ordered': 'Rezervni dio poručen - poslovni partner',
       'business_partner_parts_arrived': 'Rezervni dio stigao - poslovni partner',
+      // ADMIN SMS TEMPLATE-I
+      'admin_new_service': 'Novi servis - admin',
+      'admin_status_change': 'Promena statusa - admin',
+      'admin_technician_assigned': 'Dodeljen serviser - admin',
+      'admin_parts_ordered': 'Porudžbina delova - admin',
+      'admin_parts_arrived': 'Stigli delovi - admin',
       // POSLOVNI PARTNERI - AUTOMATSKI TRIGGERI
       'business_partner_technician_assigned': 'Dodela tehničara - partner',
       'business_partner_status_update': 'Promjena statusa - partner',

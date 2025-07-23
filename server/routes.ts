@@ -78,6 +78,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Pozovi inicijalizaciju SMS servisa
   await initializeSMSService();
+
+  // Helper funkcija za dobijanje administratora sa telefonskim brojevima
+  async function getAdminsWithPhones(): Promise<Array<{id: number, fullName: string, phone: string}>> {
+    try {
+      const allUsers = await storage.getAllUsers();
+      return allUsers
+        .filter(user => user.role === 'admin' && user.phone && user.phone.trim() !== '')
+        .map(user => ({
+          id: user.id,
+          fullName: user.fullName,
+          phone: user.phone!
+        }));
+    } catch (error) {
+      console.error('❌ Greška pri dobijanju administratora:', error);
+      return [];
+    }
+  }
   
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
@@ -1437,6 +1454,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Greška pri slanju email obaveštenja:", emailError);
         // Ne vraćamo grešku korisniku jer servis je uspešno kreiran
       }
+
+      // ===== ADMIN SMS OBAVEŠTENJA O NOVOM SERVISU =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS ADMIN] Šalje obaveštenje administratorima o novom servisu #${service.id}`);
+          
+          const admins = await getAdminsWithPhones();
+          const client = await storage.getClient(service.clientId);
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          
+          const deviceType = category ? category.name : 'Nepoznat uređaj';
+          const createdBy = req.user?.fullName || req.user?.username || 'Nepoznat korisnik';
+
+          for (const admin of admins) {
+            try {
+              await smsService.notifyAdminNewService({
+                adminPhone: admin.phone,
+                adminName: admin.fullName,
+                serviceId: service.id.toString(),
+                clientName: client?.fullName || 'Nepoznat klijent',
+                deviceType: deviceType,
+                createdBy: createdBy,
+                problemDescription: service.description
+              });
+              console.log(`[SMS ADMIN] ✅ SMS o novom servisu poslat administratoru ${admin.fullName} (${admin.phone})`);
+            } catch (adminSmsError) {
+              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+            }
+          }
+        } catch (adminSmsError) {
+          console.error('[SMS ADMIN] Globalna greška pri slanju admin SMS obaveštenja o novom servisu:', adminSmsError);
+        }
+      }
       
       // Vraćamo uspešan odgovor sa kreiranim servisom
       res.status(201).json({
@@ -2021,6 +2072,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         } catch (smsError) {
           console.error("[SMS SISTEM] Globalna greška pri automatskim SMS triggerima:", smsError);
+        }
+      }
+
+      // ===== ADMIN SMS OBAVEŠTENJA O PROMENI STATUSA =====
+      if (smsService && smsService.isConfigured() && service.status !== validStatus) {
+        try {
+          console.log(`[SMS ADMIN] Šalje obaveštenje administratorima o promeni statusa servisa #${serviceId}: ${service.status} -> ${validStatus}`);
+          
+          const admins = await getAdminsWithPhones();
+          const client = await storage.getClient(service.clientId!);
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          
+          const deviceType = category ? category.name : 'Nepoznat uređaj';
+          const oldStatusDescription = STATUS_DESCRIPTIONS[service.status] || service.status;
+          const newStatusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
+
+          for (const admin of admins) {
+            try {
+              await smsService.notifyAdminStatusChange({
+                adminPhone: admin.phone,
+                adminName: admin.fullName,
+                serviceId: serviceId.toString(),
+                clientName: client?.fullName || 'Nepoznat klijent',
+                deviceType: deviceType,
+                oldStatus: oldStatusDescription,
+                newStatus: newStatusDescription,
+                technicianName: technician?.fullName
+              });
+              console.log(`[SMS ADMIN] ✅ SMS o promeni statusa poslat administratoru ${admin.fullName} (${admin.phone})`);
+            } catch (adminSmsError) {
+              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+            }
+          }
+        } catch (adminSmsError) {
+          console.error('[SMS ADMIN] Globalna greška pri slanju admin SMS obaveštenja o promeni statusa:', adminSmsError);
         }
       }
       
@@ -3776,6 +3864,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('❌ Greška pri SMS obaveštenju poslovnog partnera:', smsError);
         }
       }
+
+      // ===== ADMIN SMS OBAVEŠTENJA O DODELI SERVISERA =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS ADMIN] Šalje obaveštenje administratorima o dodeli servisera za servis #${serviceId}`);
+          
+          const admins = await getAdminsWithPhones();
+          const client = await storage.getClient(service.clientId);
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          
+          const deviceType = category ? category.name : 'Nepoznat uređaj';
+
+          for (const admin of admins) {
+            try {
+              await smsService.notifyAdminTechnicianAssigned({
+                adminPhone: admin.phone,
+                adminName: admin.fullName,
+                serviceId: serviceId.toString(),
+                clientName: client?.fullName || 'Nepoznat klijent',
+                deviceType: deviceType,
+                technicianName: technician.fullName
+              });
+              console.log(`[SMS ADMIN] ✅ SMS o dodeli servisera poslat administratoru ${admin.fullName} (${admin.phone})`);
+            } catch (adminSmsError) {
+              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+            }
+          }
+        } catch (adminSmsError) {
+          console.error('[SMS ADMIN] Globalna greška pri slanju admin SMS obaveštenja o dodeli servisera:', adminSmsError);
+        }
+      }
       
       res.json({
         ...updatedService,
@@ -4434,6 +4554,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await NotificationService.notifyTechnicianAboutPendingParts(serviceId, technicianId);
       } catch (notificationError) {
         console.error("Greška pri obaveštavanju o pending delovima:", notificationError);
+      }
+
+      // ===== ADMIN SMS OBAVEŠTENJA O DODELI SERVISERA =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS ADMIN] Šalje obaveštenje administratorima o dodeli servisera za servis #${serviceId} (admin endpoint)`);
+          
+          const admins = await getAdminsWithPhones();
+          const service = await storage.getService(serviceId);
+          const client = service ? await storage.getClient(service.clientId) : null;
+          const appliance = service ? await storage.getAppliance(service.applianceId) : null;
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const technician = await storage.getTechnician(technicianId);
+          
+          const deviceType = category ? category.name : 'Nepoznat uređaj';
+
+          for (const admin of admins) {
+            try {
+              await smsService.notifyAdminTechnicianAssigned({
+                adminPhone: admin.phone,
+                adminName: admin.fullName,
+                serviceId: serviceId.toString(),
+                clientName: client?.fullName || 'Nepoznat klijent',
+                deviceType: deviceType,
+                technicianName: technician?.fullName || 'Nepoznat serviser'
+              });
+              console.log(`[SMS ADMIN] ✅ SMS o dodeli servisera poslat administratoru ${admin.fullName} (${admin.phone})`);
+            } catch (adminSmsError) {
+              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+            }
+          }
+        } catch (adminSmsError) {
+          console.error('[SMS ADMIN] Globalna greška pri slanju admin SMS obaveštenja o dodeli servisera (admin endpoint):', adminSmsError);
+        }
       }
       
       res.json(updatedService);
