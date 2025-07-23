@@ -4221,23 +4221,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create new spare part order (technician only)
   app.post("/api/spare-parts", jwtAuth, async (req, res) => {
+    console.log("🔧 POST /api/spare-parts pozvan");
+    console.log("User:", req.user);
+    console.log("Request body:", req.body);
+    
     if (!req.user || req.user.role !== "technician") {
+      console.log("❌ Unauthorized - user role:", req.user?.role);
       return res.sendStatus(401);
     }
 
     try {
       const technicianId = req.user.technicianId;
+      console.log("👤 Technician ID:", technicianId);
+      
       if (!technicianId) {
+        console.log("❌ Technician ID not found in user data");
         return res.status(400).json({ error: "Technician ID not found" });
       }
 
-      const validatedData = insertSparePartOrderSchema.parse({
+      console.log("🧪 Validating data...");
+      const dataToValidate = {
         ...req.body,
         technicianId,
         status: 'pending'
-      });
+      };
+      console.log("Data to validate:", dataToValidate);
+      
+      const validatedData = insertSparePartOrderSchema.parse(dataToValidate);
+      console.log("✅ Data validated successfully");
 
+      console.log("💾 Creating spare part order...");
       const order = await storage.createSparePartOrder(validatedData);
+      console.log("✅ Order created with ID:", order.id);
       
       // Automatski kreiraj obaveštenje za administratore
       await NotificationService.notifySparePartOrdered(order.id, technicianId);
@@ -4261,11 +4276,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Kreiraj obaveštenje za tehničara da je servis premešten u folder čekanja
-      await NotificationService.notifyServiceWaitingForParts(
-        validatedData.serviceId,
-        req.user.id,
-        validatedData.partName
-      );
+      if (validatedData.serviceId && req.user?.id) {
+        await NotificationService.notifyServiceWaitingForParts(
+          validatedData.serviceId,
+          req.user.id,
+          validatedData.partName
+        );
+      }
 
       // ✨ NOVO: Automatsko slanje emailova svim relevantnim stranama
       try {
@@ -4416,13 +4433,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ne prekidamo proces ako emailovi ne mogu da se pošalju
       }
       
+      console.log("🎉 Returning successful response");
       res.status(201).json(order);
     } catch (error) {
-      console.error("Error creating spare part order:", error);
+      console.error("❌ Error creating spare part order:", error);
       console.error("Request body:", req.body);
       console.error("User data:", req.user);
       console.error("Tech ID:", req.user?.technicianId);
-      res.status(500).json({ error: "Failed to create spare part order" });
+      
+      // Pošaljemo detaljniju grešku
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        res.status(500).json({ 
+          error: "Failed to create spare part order",
+          details: error.message 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to create spare part order" });
+      }
     }
   });
 
