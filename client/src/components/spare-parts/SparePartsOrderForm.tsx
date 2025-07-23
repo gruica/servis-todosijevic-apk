@@ -47,14 +47,27 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
     mutationFn: async (orderData: any) => {
       // Map 'notes' to 'description' for backend compatibility
       const { notes, ...restData } = orderData;
-      return await apiRequest('/api/spare-parts', {
+      const requestBody = {
+        ...restData,
+        description: notes, // Map notes to description field
+        serviceId
+      };
+      
+      const response = await fetch('/api/spare-parts', {
         method: 'POST',
-        body: JSON.stringify({
-          ...restData,
-          description: notes, // Map notes to description field
-          serviceId
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+        },
+        body: JSON.stringify(requestBody)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorData}`);
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({

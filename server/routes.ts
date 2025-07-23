@@ -4242,12 +4242,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Automatski kreiraj obaveštenje za administratore
       await NotificationService.notifySparePartOrdered(order.id, technicianId);
       
-      // Automatski premesti servis u "waiting_parts" status
-      await storage.updateService(validatedData.serviceId, {
-        status: 'waiting_parts',
-        technicianNotes: (await storage.getService(validatedData.serviceId))?.technicianNotes + 
-          `\n[${new Date().toLocaleDateString('sr-RS')}] Servis pauziran - čeka rezervni deo: ${validatedData.partName}`
-      });
+      // Automatski premesti servis u "waiting_parts" status samo ako je serviceId validan
+      if (validatedData.serviceId) {
+        const currentService = await storage.getService(validatedData.serviceId);
+        if (currentService) {
+          const updatedNotes = (currentService.technicianNotes || '') + 
+            `\n[${new Date().toLocaleDateString('sr-RS')}] Servis pauziran - čeka rezervni deo: ${validatedData.partName}`;
+          
+          // Kreiramo kompletan objekat servisa za ažuriranje
+          const updateData = {
+            ...currentService,
+            status: 'waiting_parts' as const,
+            technicianNotes: updatedNotes
+          };
+          
+          await storage.updateService(validatedData.serviceId, updateData);
+        }
+      }
       
       // Kreiraj obaveštenje za tehničara da je servis premešten u folder čekanja
       await NotificationService.notifyServiceWaitingForParts(
