@@ -342,6 +342,13 @@ export default function TechnicianServices() {
     setSupplementGeneraliOpen(true);
   };
 
+  const openSparePartsOrder = (service: TechnicianService) => {
+    console.log("🔧 openSparePartsOrder pozvan sa servisom:", service.id);
+    setSparePartsService(service);
+    setSparePartsOrderOpen(true);
+    console.log("🔧 State postavljen - sparePartsOrderOpen:", true);
+  };
+
   const handleClientUnavailable = (status: "client_not_home" | "client_not_answering") => {
     if (!selectedService) return;
     
@@ -411,11 +418,7 @@ export default function TechnicianServices() {
     returnToAdminMutation.mutate(service.id);
   };
 
-  // Funkcija za otvaranje forme za rezervne delove
-  const openSparePartsOrder = (service: TechnicianService) => {
-    setSparePartsService(service);
-    setSparePartsOrderOpen(true);
-  };
+
 
 
 
