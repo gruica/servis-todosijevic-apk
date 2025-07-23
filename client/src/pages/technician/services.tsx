@@ -58,6 +58,14 @@ function SparePartsDialog({
   const queryClient = useQueryClient();
 
   const isButtonDisabled = isSubmitting || !partName.trim() || !warrantyStatus;
+  
+  // Debug log za dugme aktivaciju
+  console.log("🔧 Button state:", {
+    isSubmitting,
+    partName: partName.trim(),
+    warrantyStatus,
+    isButtonDisabled
+  });
 
   const handleSubmit = async () => {
     if (isButtonDisabled) return;
@@ -152,8 +160,11 @@ function SparePartsDialog({
             </label>
             <select 
               value={warrantyStatus}
-              onChange={(e) => setWarrantyStatus(e.target.value)}
-              className="w-full p-2 border rounded-md"
+              onChange={(e) => {
+                console.log("🔧 Warranty status changed to:", e.target.value);
+                setWarrantyStatus(e.target.value);
+              }}
+              className="w-full p-2 border rounded-md focus:border-green-500"
             >
               <option value="">Izaberite status</option>
               <option value="u garanciji">🛡️ U garanciji</option>
