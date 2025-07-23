@@ -1762,7 +1762,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
               emailInfo.emailError = `Klijent ${client.fullName} nema definisanu email adresu`;
             }
             
-            // SMS functionality has been completely removed from the application
+            // 2.5. Automatski SMS obaveštenja za klijenta
+            if (client.phone && validStatus === 'completed') {
+              try {
+                const settings = await storage.getSystemSettings();
+                const smsConfig = {
+                  apiKey: settings.sms_mobile_api_key || '',
+                  baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+                  senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+                  enabled: settings.sms_mobile_enabled === 'true'
+                };
+
+                if (smsConfig.enabled && smsConfig.apiKey) {
+                  const { SMSCommunicationService } = await import('./sms-communication-service.js');
+                  const smsService = new SMSCommunicationService(smsConfig);
+                  
+                  // Dohvati kategoriju uređaja za SMS
+                  const appliance = await storage.getAppliance(service.applianceId);
+                  const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+                  
+                  const smsResult = await smsService.notifyServiceCompleted({
+                    clientPhone: client.phone,
+                    clientName: client.fullName,
+                    serviceId: serviceId.toString(),
+                    deviceType: category?.name || 'Uređaj',
+                    technicianName: technicianName
+                  });
+                  
+                  if (smsResult.success) {
+                    console.log(`📱 Automatski SMS o završetku servisa poslat klijentu ${client.fullName} (${client.phone})`);
+                    emailInfo.smsSent = true;
+                  } else {
+                    console.error(`❌ Greška pri slanju automatskog SMS-a:`, smsResult.error);
+                    emailInfo.smsError = smsResult.error || 'Nepoznata greška pri slanju SMS-a';
+                  }
+                }
+              } catch (smsError: any) {
+                console.error('❌ Greška pri automatskom SMS obaveštenju:', smsError);
+                emailInfo.smsError = smsError.message || 'Nepoznata greška pri SMS servisu';
+              }
+            }
             
             // 3. Šalje obaveštenje SERVISERU
             let techEmailSent = false;
@@ -2881,6 +2920,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const upload = multer({ storage: uploadStorage });
 
+  // Bulk SMS endpoint za masovno slanje SMS poruka
+  app.post("/api/sms/bulk-send", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { type, message, phoneNumbers } = req.body;
+
+      if (!Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Nedostaju brojevi telefona"
+        });
+      }
+
+      const results = [];
+
+      for (const phone of phoneNumbers) {
+        try {
+          const result = await smsCommService.sendCustomMessage(phone, message);
+          results.push({
+            phone,
+            success: result.success,
+            messageId: result.messageId,
+            error: result.error
+          });
+          
+          // Pauza između SMS-ova
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          results.push({
+            phone,
+            success: false,
+            error: error instanceof Error ? error.message : 'Nepoznata greška'
+          });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.length - successCount;
+
+      console.log(`[BULK SMS] Poslato ${successCount}/${results.length} SMS poruka`);
+
+      res.json({
+        success: true,
+        results,
+        summary: {
+          total: results.length,
+          success: successCount,
+          failed: failCount
+        }
+      });
+
+    } catch (error) {
+      console.error("[BULK SMS] Greška:", error);
+      res.status(500).json({
+        success: false,
+        error: "Greška pri slanju bulk SMS poruka",
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
   // Excel export endpoints
   app.get("/api/excel/clients", async (req, res) => {
     try {
@@ -3504,7 +3603,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Greška pri obaveštavanju o pending delovima:", notificationError);
       }
       
-      // SMS functionality has been removed from the application
+      // 4. Automatski SMS za poslovnog partnera
+      if (service.businessPartnerId) {
+        try {
+          const businessPartner = await storage.getUser(service.businessPartnerId);
+          if (businessPartner?.phone) {
+            const client = await storage.getClient(service.clientId);
+            const appliance = await storage.getAppliance(service.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            
+            const settings = await storage.getSystemSettings();
+            const smsConfig = {
+              apiKey: settings.sms_mobile_api_key || '',
+              baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+              senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+              enabled: settings.sms_mobile_enabled === 'true'
+            };
+
+            if (smsConfig.enabled && smsConfig.apiKey) {
+              const { SMSCommunicationService } = await import('./sms-communication-service.js');
+              const smsService = new SMSCommunicationService(smsConfig);
+              
+              await smsService.notifyBusinessPartnerServiceAssigned({
+                partnerPhone: businessPartner.phone,
+                partnerName: businessPartner.fullName || businessPartner.username,
+                serviceId: serviceId.toString(),
+                clientName: client?.fullName || 'Nepoznat klijent',
+                deviceType: category?.name || 'Uređaj',
+                technicianName: technician.fullName
+              });
+              
+              console.log(`📱 SMS o dodeli servisa poslat poslovnom partneru ${businessPartner.fullName || businessPartner.username}`);
+            }
+          }
+        } catch (smsError) {
+          console.error('❌ Greška pri SMS obaveštenju poslovnog partnera:', smsError);
+        }
+      }
       
       res.json({
         ...updatedService,
@@ -3561,11 +3696,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SMS Configuration endpoints have been completely removed from the application
+  // SMS Mobile API endpoints - restore comprehensive SMS functionality
+  
+  // Admin masovno slanje SMS-a
+  app.post("/api/admin/sms-bulk", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
 
-  // Admin SMS settings endpoint removed
+      const { recipients, message, type } = req.body;
+      
+      if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        return res.status(400).json({ error: "Lista primaoca je obavezna" });
+      }
 
-  // SMS test endpoint has been removed
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: "Poruka je obavezna" });
+      }
+
+      const settings = await storage.getSystemSettings();
+      const smsConfig = {
+        apiKey: settings.sms_mobile_api_key || '',
+        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+        enabled: settings.sms_mobile_enabled === 'true'
+      };
+
+      if (!smsConfig.enabled || !smsConfig.apiKey) {
+        return res.status(400).json({ error: "SMS servis nije konfigurisan" });
+      }
+
+      const { SMSCommunicationService } = await import('./sms-communication-service.js');
+      const smsService = new SMSCommunicationService(smsConfig);
+      
+      const results = [];
+      
+      for (const recipient of recipients) {
+        try {
+          const result = await smsService.sendCustomMessage(recipient.phone, message);
+          results.push({
+            phone: recipient.phone,
+            name: recipient.name,
+            success: result.success,
+            messageId: result.messageId,
+            error: result.error
+          });
+          
+          if (result.success) {
+            console.log(`📱 Masovno SMS uspešno poslato na ${recipient.phone} (${recipient.name})`);
+          } else {
+            console.error(`❌ Greška pri slanju SMS na ${recipient.phone}:`, result.error);
+          }
+        } catch (error) {
+          results.push({
+            phone: recipient.phone,
+            name: recipient.name,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      
+      res.json({
+        success: true,
+        message: `SMS uspešno poslat na ${successCount} od ${recipients.length} brojeva`,
+        results
+      });
+
+    } catch (error) {
+      console.error("Greška pri masovnom slanju SMS-a:", error);
+      res.status(500).json({ error: "Greška pri slanju SMS obaveštenja" });
+    }
+  });
+
+  // Automatsko obaveštenje o prispeću rezervnih delova
+  app.post("/api/spare-parts/:id/notify-arrival", jwtAuth, async (req, res) => {
+    try {
+      if (!["admin", "technician"].includes(req.user?.role || "")) {
+        return res.status(403).json({ error: "Nemate dozvolu" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getSparePartOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+
+      // Ažuriraj status na 'received'
+      await storage.updateSparePartOrder(orderId, { 
+        status: 'received',
+        actualDeliveryDate: new Date()
+      });
+
+      const settings = await storage.getSystemSettings();
+      const smsConfig = {
+        apiKey: settings.sms_mobile_api_key || '',
+        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+        enabled: settings.sms_mobile_enabled === 'true'
+      };
+
+      if (smsConfig.enabled && smsConfig.apiKey) {
+        const { SMSCommunicationService } = await import('./sms-communication-service.js');
+        const smsService = new SMSCommunicationService(smsConfig);
+
+        // Obavesti tehniciara
+        if (order.technicianId) {
+          const technician = await storage.getTechnician(order.technicianId);
+          const techUser = technician ? await storage.getUserByTechnicianId(order.technicianId) : null;
+          
+          if (techUser?.phone) {
+            await smsService.notifySparePartArrived({
+              technicianPhone: techUser.phone,
+              technicianName: technician.fullName,
+              serviceId: order.serviceId?.toString() || 'N/A',
+              partName: order.partName
+            });
+            
+            console.log(`📱 SMS o prispeću rezervnog dela poslat tehniciaru ${technician.fullName}`);
+          }
+        }
+
+        // Obavesti klijenta
+        if (order.serviceId) {
+          const service = await storage.getService(order.serviceId);
+          if (service?.clientId) {
+            const client = await storage.getClient(service.clientId);
+            const appliance = await storage.getAppliance(service.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            
+            if (client?.phone) {
+              await smsService.notifySparePartArrived({
+                clientPhone: client.phone,
+                clientName: client.fullName,
+                serviceId: service.id.toString(),
+                deviceType: category?.name || 'Uređaj',
+                partName: order.partName
+              });
+              
+              console.log(`📱 SMS o prispeću rezervnog dela poslat klijentu ${client.fullName}`);
+            }
+          }
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "SMS obaveštenja o prispeću rezervnog dela su poslata" 
+      });
+
+    } catch (error) {
+      console.error("Greška pri obaveštenju o prispeću rezervnog dela:", error);
+      res.status(500).json({ error: "Greška pri slanju obaveštenja" });
+    }
+  });
 
   // SMS notification endpoints for services
   app.post("/api/services/:id/send-sms", async (req, res) => {
@@ -4788,6 +5076,46 @@ Admin panel - automatska porudžbina
       // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
       console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
 
+      // Automatski SMS za rezervne delove - obavesti klijenta
+      if (serviceId) {
+        try {
+          const service = await storage.getService(serviceId);
+          if (service?.clientId) {
+            const client = await storage.getClient(service.clientId);
+            if (client?.phone) {
+              const appliance = await storage.getAppliance(service.applianceId);
+              const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+              
+              const settings = await storage.getSystemSettings();
+              const smsConfig = {
+                apiKey: settings.sms_mobile_api_key || '',
+                baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+                senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+                enabled: settings.sms_mobile_enabled === 'true'
+              };
+
+              if (smsConfig.enabled && smsConfig.apiKey) {
+                const { SMSCommunicationService } = await import('./sms-communication-service.js');
+                const smsService = new SMSCommunicationService(smsConfig);
+                
+                await smsService.notifySparePartOrdered({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: serviceId.toString(),
+                  deviceType: category?.name || 'Uređaj',
+                  partName: partName,
+                  estimatedDate: '5-7 radnih dana'
+                });
+                
+                console.log(`📱 SMS o porudžbini rezervnog dela poslat klijentu ${client.fullName}`);
+              }
+            }
+          }
+        } catch (smsError) {
+          console.error('❌ Greška pri SMS obaveštenju o rezervnom delu:', smsError);
+        }
+      }
+
       res.json({
         success: true,
         orderId: sparePartOrder.id,
@@ -5766,6 +6094,110 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error('SMS Mobile API bulk send error:', error);
       res.status(500).json({ error: 'Greška pri slanju bulk SMS-a' });
+    }
+  });
+
+  // SMS kommunikacijski endpoint za servisere
+  app.post('/api/sms/send-technician-trigger', jwtAuth, async (req, res) => {
+    try {
+      if (req.user.role !== 'technician' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo serviseri mogu slati SMS poruke klijentima' });
+      }
+
+      const { serviceId, smsType } = req.body;
+
+      if (!serviceId || !smsType) {
+        return res.status(400).json({ error: 'ServiceId i smsType su obavezni' });
+      }
+
+      // Dohvati service podatke
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Servis nije pronađen' });
+      }
+
+      // Dohvati klijenta
+      const client = await storage.getClient(service.clientId);
+      if (!client) {
+        return res.status(404).json({ error: 'Klijent nije pronađen' });
+      }
+
+      // Dohvati uređaj
+      const appliance = await storage.getAppliance(service.applianceId);
+      if (!appliance) {
+        return res.status(404).json({ error: 'Uređaj nije pronađen' });
+      }
+
+      // Dohvati kategoriju uređaja
+      const category = await storage.getApplianceCategory(appliance.categoryId);
+      const deviceType = category?.name || 'Uređaj';
+
+      // Dohvati servisera
+      const technician = await storage.getTechnician(service.technicianId!);
+      const technicianName = technician?.fullName || 'Serviser';
+
+      if (!client.phone) {
+        return res.status(400).json({ error: 'Klijent nema broj telefona' });
+      }
+
+      // Pripremi SMS konfiguraciju
+      const settings = await storage.getSystemSettings();
+      const smsConfig = {
+        apiKey: settings.sms_mobile_api_key || '',
+        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+        enabled: settings.sms_mobile_enabled === 'true'
+      };
+
+      if (!smsConfig.enabled || !smsConfig.apiKey) {
+        return res.status(400).json({ error: 'SMS servis nije konfigurisan' });
+      }
+
+      // Kreiraj SMS Communication Service
+      const { SMSCommunicationService } = await import('./sms-communication-service.js');
+      const smsService = new SMSCommunicationService(smsConfig);
+
+      // Pošalji SMS na osnovu tipa
+      let result;
+      switch (smsType) {
+        case 'client_not_available':
+          result = await smsService.notifyClientNotAvailable({
+            clientPhone: client.phone,
+            clientName: client.fullName,
+            serviceId: serviceId.toString(),
+            deviceType: deviceType,
+            technicianName: technicianName
+          });
+          break;
+          
+        case 'client_no_answer':
+          result = await smsService.notifyClientNoAnswer({
+            clientPhone: client.phone,
+            clientName: client.fullName,
+            serviceId: serviceId.toString(),
+            deviceType: deviceType,
+            technicianName: technicianName
+          });
+          break;
+          
+        default:
+          return res.status(400).json({ error: 'Nepoznat tip SMS poruke' });
+      }
+
+      if (result.success) {
+        console.log(`✅ SMS ${smsType} uspešno poslat klijentu ${client.fullName} (${client.phone})`);
+        res.json({ 
+          success: true, 
+          message: `SMS je uspešno poslat klijentu`,
+          messageId: result.messageId 
+        });
+      } else {
+        console.error(`❌ Greška pri slanju ${smsType} SMS-a:`, result.error);
+        res.status(500).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error('SMS komunikacija greška:', error);
+      res.status(500).json({ error: 'Greška pri slanju SMS-a' });
     }
   });
 

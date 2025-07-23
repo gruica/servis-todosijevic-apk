@@ -45,6 +45,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/users", label: "Upravljaj korisnicima", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: "verified_user" },
     { path: "/admin/sms-mobile-api-config", label: "SMS Mobile API", icon: "smartphone", highlight: true },
+    { path: "/admin/sms-bulk", label: "Masovno SMS", icon: "message", highlight: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },

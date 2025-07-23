@@ -57,6 +57,7 @@ import EmailVerificationDemo from "@/pages/email-verification-demo";
 import AdminCleanup from "@/pages/admin-cleanup";
 import DataExportPage from "@/pages/admin/data-export";
 import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
+import SMSBulkPage from "@/pages/admin/sms-bulk";
 
 function Router() {
   return (
@@ -101,6 +102,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
 
       <RoleProtectedRoute path="/admin/sms-mobile-api-config" component={SMSMobileAPIConfigPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/sms-bulk" component={SMSBulkPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />

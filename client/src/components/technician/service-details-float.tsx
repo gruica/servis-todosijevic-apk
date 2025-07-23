@@ -14,7 +14,8 @@ import {
   Package,
   Wrench,
   FileText,
-  Euro
+  Euro,
+  MessageSquare
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { CallClientButton } from "@/components/ui/call-client-button";
@@ -42,6 +43,36 @@ export function ServiceDetailsFloat({
   const [machineNotes, setMachineNotes] = useState("");
   const [cost, setCost] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [sendingSMS, setSendingSMS] = useState(false);
+
+  const handleSendSMS = async (smsType: string) => {
+    setSendingSMS(true);
+    try {
+      const response = await fetch('/api/sms/send-technician-trigger', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          serviceId: service.id,
+          smsType: smsType
+        })
+      });
+
+      if (response.ok) {
+        alert('SMS je uspešno poslat klijentu');
+      } else {
+        const error = await response.json();
+        alert(`Greška pri slanju SMS-a: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('SMS Error:', error);
+      alert('Greška pri slanju SMS-a');
+    } finally {
+      setSendingSMS(false);
+    }
+  };
 
   const handleStartService = async () => {
     if (!technicianNotes.trim()) {
@@ -231,6 +262,45 @@ export function ServiceDetailsFloat({
             </Button>
           )}
         </div>
+
+        {/* SMS Komunikacija sa klijentom */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              SMS Komunikacija
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSendSMS('client_not_available')}
+                disabled={!service.client?.phone || sendingSMS}
+                className="w-full text-xs"
+              >
+                {sendingSMS ? 'Šalje...' : 'Klijent se ne javlja'}
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSendSMS('client_no_answer')}
+                disabled={!service.client?.phone || sendingSMS}
+                className="w-full text-xs"
+              >
+                {sendingSMS ? 'Šalje...' : 'Klijent ne odgovara'}
+              </Button>
+            </div>
+            
+            {!service.client?.phone && (
+              <p className="text-xs text-muted-foreground text-center">
+                Nema broj telefona klijenta
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Forma za ažuriranje statusa */}
         <Card>
