@@ -71,12 +71,20 @@ function SparePartsDialog({
     if (isButtonDisabled) return;
 
     setIsSubmitting(true);
+    console.log("🚀 Slanje spare parts zahteva:", {
+      serviceId,
+      partName: partName.trim(),
+      warrantyStatus,
+      quantity,
+      technicianId
+    });
+    
     try {
       const response = await fetch('/api/spare-parts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
           serviceId,
@@ -90,8 +98,12 @@ function SparePartsDialog({
         })
       });
 
+      console.log("📡 Response status:", response.status);
+      
       if (!response.ok) {
-        throw new Error('Greška pri slanju zahteva');
+        const errorText = await response.text();
+        console.error("❌ Server greška:", response.status, errorText);
+        throw new Error(`Greška pri slanju zahteva: ${response.status} ${errorText}`);
       }
 
       toast({
