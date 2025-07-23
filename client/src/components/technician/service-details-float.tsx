@@ -381,17 +381,28 @@ export function ServiceDetailsFloat({
           </CardContent>
         </Card>
 
-        {/* Spare Parts Order Form */}
+        {/* NEW SPARE PARTS ORDER - BUTTON VERSION */}
         {(service.status === "pending" || service.status === "assigned" || service.status === "scheduled" || service.status === "in_progress") && (
-          <SparePartsOrderForm
-            serviceId={service.id}
-            onSuccess={() => {
-              // Optional: refresh service data or show success message
-            }}
-            onCancel={() => {
-              // Optional: handle cancel action
-            }}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Rezervni delovi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => {
+                  // Otvori dialog iz services.tsx
+                  const event = new CustomEvent('openSparePartsDialog', {
+                    detail: { serviceId: service.id }
+                  });
+                  window.dispatchEvent(event);
+                }}
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Poruči rezervni deo
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {/* Removed Parts Management */}

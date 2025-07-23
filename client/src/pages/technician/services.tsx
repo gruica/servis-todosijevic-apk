@@ -374,6 +374,21 @@ export default function TechnicianServices() {
     service106Details: services?.find(s => s.id === 106)
   });
 
+  // Event listener za otvaranje spare parts dialoga iz floating prozora
+  useEffect(() => {
+    const handleOpenDialog = (event: any) => {
+      const serviceId = event.detail.serviceId;
+      const service = services?.find((s: any) => s.id === serviceId);
+      if (service) {
+        setSparePartsService(service);
+        setSparePartsOrderOpen(true);
+      }
+    };
+
+    window.addEventListener('openSparePartsDialog', handleOpenDialog);
+    return () => window.removeEventListener('openSparePartsDialog', handleOpenDialog);
+  }, [services]);
+
   // Debug filter logic
   console.log("📊 Filter debug:", {
     activeTab,
