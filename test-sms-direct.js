@@ -7,8 +7,9 @@ async function testSMSMobileAPI() {
     // SMS Mobile API zahteva application/x-www-form-urlencoded format
     const formData = new URLSearchParams();
     formData.append('recipients', '38267051141');
-    formData.append('message', 'Test SMS iz Frigo Sistem aplikacije - direktan test!');
+    formData.append('message', 'Test SMS iz Frigo Sistem aplikacije - sa Sender ID!');
     formData.append('apikey', '3153ca534ac7ad8dcdbc21758c7d3af1313e50357f5b7eff');
+    formData.append('sendername', 'FRIGO SISTEM'); // Sender ID - ime firme
 
     console.log('📱 Šaljem SMS na 38267051141...');
     

@@ -5640,7 +5640,7 @@ Admin panel - automatska porudžbina
     }
 
     try {
-      const { apiKey, baseUrl, timeout, enabled } = req.body;
+      const { apiKey, baseUrl, timeout, enabled, senderId } = req.body;
 
       if (apiKey !== undefined) {
         await storage.updateSystemSetting('sms_mobile_api_key', apiKey);
@@ -5653,6 +5653,9 @@ Admin panel - automatska porudžbina
       }
       if (enabled !== undefined) {
         await storage.updateSystemSetting('sms_mobile_enabled', enabled.toString());
+      }
+      if (senderId !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_sender_id', senderId);
       }
 
       res.json({ success: true, message: 'Konfiguracija je ažurirana' });
@@ -5694,7 +5697,7 @@ Admin panel - automatska porudžbina
     }
 
     try {
-      const { recipients, message } = req.body;
+      const { recipients, message, senderId } = req.body;
 
       if (!recipients || !message) {
         return res.status(400).json({ error: 'Recipients i message su obavezni' });
@@ -5704,6 +5707,7 @@ Admin panel - automatska porudžbina
       const apiKey = settings.sms_mobile_api_key || '';
       const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
       const enabled = settings.sms_mobile_enabled === 'true';
+      const defaultSenderId = settings.sms_mobile_sender_id || 'FRIGO SISTEM';
 
       if (!enabled) {
         return res.status(400).json({ error: 'SMS Mobile API nije omogućen' });
@@ -5718,7 +5722,8 @@ Admin panel - automatska porudžbina
       
       const result = await smsService.sendSMS({
         recipients: formattedPhone,
-        message
+        message,
+        sendername: senderId || defaultSenderId
       });
 
       res.json(result);

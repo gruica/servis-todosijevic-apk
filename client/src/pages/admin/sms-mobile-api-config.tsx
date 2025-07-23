@@ -24,11 +24,13 @@ export default function SMSMobileAPIConfig() {
     apiKey: '',
     baseUrl: 'https://api.smsmobileapi.com',
     timeout: 10000,
-    enabled: false
+    enabled: false,
+    senderId: 'FRIGO SISTEM'
   });
   const [testData, setTestData] = useState({
     recipients: '38267051141',
-    message: 'Test SMS iz Frigo Sistem aplikacije'
+    message: 'Test SMS iz Frigo Sistem aplikacije',
+    senderId: 'FRIGO SISTEM'
   });
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -127,15 +129,21 @@ export default function SMSMobileAPIConfig() {
   const sendTestSMS = async () => {
     setSending(true);
     try {
+      const payload = {
+        recipients: testData.recipients,
+        message: testData.message,
+        senderId: testData.senderId || config.senderId || 'FRIGO SISTEM'
+      };
+
       const response = await apiRequest('/api/sms-mobile-api/send', {
         method: 'POST',
-        body: JSON.stringify(testData)
+        body: JSON.stringify(payload)
       });
 
       if (response.error === 0) {
         toast({
           title: "Uspešno",
-          description: `Test SMS je poslat! Message ID: ${response.message_id}`,
+          description: `Test SMS je poslat sa Sender ID: ${payload.senderId}! Message ID: ${response.message_id}`,
           variant: "default"
         });
       } else {
@@ -249,6 +257,19 @@ export default function SMSMobileAPIConfig() {
               />
             </div>
 
+            <div>
+              <Label htmlFor="senderId">Sender ID (Ime firme)</Label>
+              <Input
+                id="senderId"
+                placeholder="FRIGO SISTEM"
+                value={config.senderId}
+                onChange={(e) => setConfig(prev => ({ ...prev, senderId: e.target.value }))}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Ime koje će se prikazati kao pošaljilac SMS poruke umesto broja telefona
+              </p>
+            </div>
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="enabled"
@@ -309,6 +330,19 @@ export default function SMSMobileAPIConfig() {
               onChange={(e) => setTestData(prev => ({ ...prev, message: e.target.value }))}
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="testSenderId">Sender ID (Test)</Label>
+            <Input
+              id="testSenderId"
+              placeholder="FRIGO SISTEM"
+              value={testData.senderId}
+              onChange={(e) => setTestData(prev => ({ ...prev, senderId: e.target.value }))}
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Ostavite prazno da koristite podrazumevano ime firme
+            </p>
           </div>
 
           <Button

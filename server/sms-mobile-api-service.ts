@@ -9,6 +9,7 @@ export interface SMSMobileAPIConfig {
 export interface SendSMSRequest {
   recipients: string;
   message: string;
+  sendername?: string; // Sender ID - ime firme koje će se prikazati umesto broja
 }
 
 export interface SendSMSResponse {
@@ -41,6 +42,12 @@ export class SMSMobileAPIService {
       formData.append('recipients', request.recipients);
       formData.append('message', request.message);
       formData.append('apikey', this.config.apiKey);
+      
+      // Dodavanje Sender ID (ime firme) ako je specificirano
+      if (request.sendername && request.sendername.trim()) {
+        formData.append('sendername', request.sendername.trim());
+        console.log(`📤 Sender ID: ${request.sendername.trim()}`);
+      }
 
       const response = await axios.post(
         `${this.config.baseUrl}/sendsms/`,
