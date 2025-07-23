@@ -1,409 +1,157 @@
-import fetch from 'node-fetch';
-import { IStorage } from './storage';
+import axios from 'axios';
 
 export interface SMSMobileAPIConfig {
   apiKey: string;
-  baseUrl: string;
-  timeout: number;
-  enabled: boolean;
-  sendsms: string;
-  sendwa: string;
+  baseUrl?: string;
+  timeout?: number;
+}
+
+export interface SendSMSRequest {
   recipients: string;
   message: string;
 }
 
-export interface SMSMobileAPISendRequest {
-  recipients: string;
-  message: string;
-  sendwa?: '1' | '0'; // Send via WhatsApp
-  sendsms?: '1' | '0'; // Send via SMS
-  apikey: string;
-}
-
-export interface SMSMobileAPIResponse {
-  success: boolean;
-  message: string;
-  data?: any;
-  error?: string;
+export interface SendSMSResponse {
+  error?: number;
+  sent?: number;
+  message_id?: string;
+  details?: string;
 }
 
 export class SMSMobileAPIService {
   private config: SMSMobileAPIConfig;
-  private storage: IStorage;
 
-  constructor(storage: IStorage) {
-    this.storage = storage;
+  constructor(config: SMSMobileAPIConfig) {
     this.config = {
-      apiKey: '',
       baseUrl: 'https://api.smsmobileapi.com',
-      timeout: 30000,
-      enabled: false,
-      sendsms: '1',
-      sendwa: '0',
-      recipients: '+382',
-      message: ''
+      timeout: 10000,
+      ...config
     };
   }
 
-  async initialize(): Promise<void> {
-    console.log('[SMS MOBILE API] Inicijalizujem SMS Mobile API servis...');
-    
+  /**
+   * Pošalje SMS poruku preko SMS Mobile API
+   */
+  async sendSMS(request: SendSMSRequest): Promise<SendSMSResponse> {
     try {
-      await this.loadConfiguration();
+      console.log(`📱 SMS Mobile API: Šaljem SMS na ${request.recipients}`);
       
-      if (this.config.enabled && this.config.apiKey) {
-        console.log('[SMS MOBILE API] Servis je omogućen i konfigurisan');
-        await this.testConnection();
-      } else {
-        console.log('[SMS MOBILE API] Servis nije omogućen ili nije konfigurisan');
-      }
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri inicijalizaciji:', error);
-    }
-  }
-
-  private async loadConfiguration(): Promise<void> {
-    try {
-      const settings = await this.storage.getAllSystemSettings();
-      
-      this.config.apiKey = settings.find(s => s.key === 'sms_mobile_api_key')?.value || '';
-      this.config.baseUrl = settings.find(s => s.key === 'sms_mobile_base_url')?.value || 'https://api.smsmobileapi.com';
-      this.config.timeout = parseInt(settings.find(s => s.key === 'sms_mobile_timeout')?.value || '30000');
-      this.config.enabled = settings.find(s => s.key === 'sms_mobile_enabled')?.value === 'true';
-      this.config.sendsms = settings.find(s => s.key === 'sms_mobile_sendsms')?.value || '1';
-      this.config.sendwa = settings.find(s => s.key === 'sms_mobile_sendwa')?.value || '0';
-      this.config.recipients = settings.find(s => s.key === 'sms_mobile_recipients')?.value || '+382';
-      this.config.message = settings.find(s => s.key === 'sms_mobile_message')?.value || '';
-      
-      console.log('[SMS MOBILE API] Konfiguracija učitana:', {
-        enabled: this.config.enabled,
-        hasApiKey: !!this.config.apiKey,
-        baseUrl: this.config.baseUrl,
-        timeout: this.config.timeout,
-        sendsms: this.config.sendsms,
-        sendwa: this.config.sendwa
-      });
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri učitavanju konfiguracije:', error);
-      throw error;
-    }
-  }
-
-  async testConnection(): Promise<SMSMobileAPIResponse> {
-    try {
-      if (!this.config.enabled) {
-        return {
-          success: false,
-          message: 'SMS Mobile API servis nije omogućen',
-          error: 'SMS Mobile API servis nije omogućen'
-        };
-      }
-
-      if (!this.config.apiKey) {
-        return {
-          success: false,
-          message: 'SMS Mobile API ključ nije konfigurisan',
-          error: 'SMS Mobile API ključ nije konfigurisan'
-        };
-      }
-
-      const testData = new URLSearchParams();
-      testData.append('recipients', '+38269123456');
-      testData.append('message', 'Test poruka sa SMS Mobile API');
-      testData.append('apikey', this.config.apiKey);
-      testData.append('sendsms', '1');
-      testData.append('test', '1');
-
-      const response = await fetch(`${this.config.baseUrl}/sendsms/`, {
-        method: 'POST',
-        body: testData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'FrigoSistemTodosijevic/1.0'
+      const response = await axios.post(
+        `${this.config.baseUrl}/sendsms/`,
+        {
+          recipients: request.recipients,
+          message: request.message,
+          apikey: this.config.apiKey
+        },
+        {
+          timeout: this.config.timeout,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
-      const responseText = await response.text();
-      
-      if (response.ok) {
-        console.log('[SMS MOBILE API] Test konekcije uspešan:', responseText);
+      console.log(`📱 SMS Mobile API Response:`, response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ SMS Mobile API Error:', error.message);
+      if (error.response) {
+        console.error('❌ Response data:', error.response.data);
         return {
-          success: true,
-          message: 'Konekcija sa SMS Mobile API je uspešna',
-          data: responseText
-        };
-      } else {
-        console.error('[SMS MOBILE API] Test konekcije neuspešan:', response.status, responseText);
-        return {
-          success: false,
-          message: `HTTP ${response.status}: ${responseText}`,
-          error: `HTTP ${response.status}: ${responseText}`
+          error: 1,
+          details: error.response.data?.message || error.message
         };
       }
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri testiranju konekcije:', error);
       return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Nepoznata greška',
-        error: error instanceof Error ? error.message : 'Nepoznata greška'
+        error: 1,
+        details: error.message
       };
     }
   }
 
-  async sendSMS(phoneNumber: string, message: string, options: { sendWhatsApp?: boolean } = {}): Promise<SMSMobileAPIResponse> {
+  /**
+   * Testira konekciju sa SMS Mobile API
+   */
+  async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      if (!this.config.enabled) {
+      // Šaljemo test SMS na prazan broj da vidimo da li API ključ radi
+      const response = await axios.post(
+        `${this.config.baseUrl}/sendsms/`,
+        {
+          recipients: '38267000000', // Test broj
+          message: 'Test konekcije',
+          apikey: this.config.apiKey
+        },
+        {
+          timeout: this.config.timeout,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.error === 0) {
+        return {
+          success: true,
+          message: 'SMS Mobile API je uspešno povezan'
+        };
+      } else {
         return {
           success: false,
-          message: 'SMS Mobile API servis nije omogućen',
-          error: 'SMS Mobile API servis nije omogućen'
+          message: response.data.details || 'Nepoznata greška'
         };
       }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message
+      };
+    }
+  }
 
-      if (!this.config.apiKey) {
-        return {
-          success: false,
-          message: 'SMS Mobile API ključ nije konfigurisan',
-          error: 'SMS Mobile API ključ nije konfigurisan'
-        };
-      }
+  /**
+   * Formatira broj telefona za SMS Mobile API
+   */
+  formatPhoneNumber(phone: string): string {
+    // Ukloni sve što nije broj
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Ako počinje sa 067, 068, 069 dodaj 382
+    if (cleanPhone.match(/^(067|068|069)/)) {
+      return `382${cleanPhone}`;
+    }
+    
+    // Ako počinje sa +382, ukloni +
+    if (cleanPhone.startsWith('382')) {
+      return cleanPhone;
+    }
+    
+    // Ako počinje sa 00382, ukloni 00
+    if (cleanPhone.startsWith('00382')) {
+      return cleanPhone.substring(2);
+    }
+    
+    return cleanPhone;
+  }
 
-      const formattedPhone = this.formatPhoneNumber(phoneNumber);
-      
-      const requestData = new URLSearchParams();
-      requestData.append('recipients', formattedPhone);
-      requestData.append('message', message);
-      requestData.append('apikey', this.config.apiKey);
-      requestData.append('sendsms', '1');
-      requestData.append('sendwa', options.sendWhatsApp ? '1' : '0');
-      
-      console.log('[SMS MOBILE API] Request data:', {
+  /**
+   * Bulk slanje SMS poruka
+   */
+  async sendBulkSMS(recipients: string[], message: string): Promise<SendSMSResponse[]> {
+    const results: SendSMSResponse[] = [];
+    
+    for (const recipient of recipients) {
+      const formattedPhone = this.formatPhoneNumber(recipient);
+      const result = await this.sendSMS({
         recipients: formattedPhone,
-        message: message,
-        apikey: this.config.apiKey.substring(0, 10) + '...',
-        sendsms: '1',
-        sendwa: options.sendWhatsApp ? '1' : '0'
+        message
       });
-
-      console.log('[SMS MOBILE API] Šaljem poruku na:', formattedPhone);
+      results.push(result);
       
-      const response = await fetch(`${this.config.baseUrl}/sendsms/`, {
-        method: 'POST',
-        body: requestData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'FrigoSistemTodosijevic/1.0'
-        }
-      });
-
-      const responseText = await response.text();
-      
-      if (response.ok) {
-        console.log('[SMS MOBILE API] Poruka uspešno poslana:', responseText);
-        return {
-          success: true,
-          message: 'SMS poruka je uspešno poslana',
-          data: responseText
-        };
-      } else {
-        console.error('[SMS MOBILE API] Greška pri slanju poruke:', response.status, responseText);
-        return {
-          success: false,
-          message: `HTTP ${response.status}: ${responseText}`,
-          error: `HTTP ${response.status}: ${responseText}`
-        };
-      }
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri slanju SMS poruke:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Nepoznata greška',
-        error: error instanceof Error ? error.message : 'Nepoznata greška'
-      };
-    }
-  }
-
-  async sendBulkSMS(recipients: string[], message: string, options: { sendWhatsApp?: boolean } = {}): Promise<SMSMobileAPIResponse> {
-    try {
-      if (!this.config.enabled) {
-        return {
-          success: false,
-          message: 'SMS Mobile API servis nije omogućen',
-          error: 'SMS Mobile API servis nije omogućen'
-        };
-      }
-
-      if (!this.config.apiKey) {
-        return {
-          success: false,
-          message: 'SMS Mobile API ključ nije konfigurisan',
-          error: 'SMS Mobile API ključ nije konfigurisan'
-        };
-      }
-
-      const formattedRecipients = recipients.map(phone => this.formatPhoneNumber(phone));
-      
-      const requestData = new URLSearchParams();
-      requestData.append('recipients', formattedRecipients.join(','));
-      requestData.append('message', message);
-      requestData.append('apikey', this.config.apiKey);
-      requestData.append('sendsms', '1');
-      
-      if (options.sendWhatsApp) {
-        requestData.append('sendwa', '1');
-      }
-
-      console.log('[SMS MOBILE API] Šaljem bulk poruku na', formattedRecipients.length, 'brojeva');
-      
-      const response = await fetch(`${this.config.baseUrl}/sendsms/`, {
-        method: 'POST',
-        body: requestData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'FrigoSistemTodosijevic/1.0'
-        }
-      });
-
-      const responseText = await response.text();
-      
-      if (response.ok) {
-        console.log('[SMS MOBILE API] Bulk poruke uspešno poslane:', responseText);
-        return {
-          success: true,
-          message: `SMS poruke su uspešno poslane na ${formattedRecipients.length} brojeva`,
-          data: responseText
-        };
-      } else {
-        console.error('[SMS MOBILE API] Greška pri slanju bulk poruka:', response.status, responseText);
-        return {
-          success: false,
-          message: `HTTP ${response.status}: ${responseText}`,
-          error: `HTTP ${response.status}: ${responseText}`
-        };
-      }
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri slanju bulk SMS poruka:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Nepoznata greška',
-        error: error instanceof Error ? error.message : 'Nepoznata greška'
-      };
-    }
-  }
-
-  async getApiStatus(): Promise<SMSMobileAPIResponse> {
-    try {
-      if (!this.config.apiKey) {
-        return {
-          success: false,
-          message: 'SMS Mobile API ključ nije konfigurisan',
-          error: 'SMS Mobile API ključ nije konfigurisan'
-        };
-      }
-
-      // Koristimo pravi SMS Mobile API endpoint sa test pozivom
-      const requestData = new URLSearchParams();
-      requestData.append('recipients', '+38267123456'); // Test broj koji neće biti korišćen
-      requestData.append('message', 'TEST_CONNECTION'); // Test poruka
-      requestData.append('apikey', this.config.apiKey);
-      requestData.append('sendsms', '0'); // Onemogući stvarno slanje
-      requestData.append('test', '1'); // Test mode ako je podržan
-
-      const response = await fetch(`${this.config.baseUrl}/sendsms/`, {
-        method: 'POST',
-        body: requestData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'FrigoSistemTodosijevic/1.0'
-        }
-      });
-
-      const responseText = await response.text();
-      console.log('[SMS MOBILE API] Status test odgovor:', responseText);
-      
-      return {
-        success: response.ok,
-        message: response.ok ? 'SMS Mobile API je dostupan' : 'SMS Mobile API nije dostupan',
-        data: responseText
-      };
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri proveri statusa:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Nepoznata greška',
-        error: error instanceof Error ? error.message : 'Nepoznata greška'
-      };
-    }
-  }
-
-  private formatPhoneNumber(phoneNumber: string): string {
-    let formatted = phoneNumber.replace(/[^\d+]/g, '');
-    
-    if (formatted.startsWith('067') || formatted.startsWith('068') || formatted.startsWith('069')) {
-      formatted = '+382' + formatted;
-    } else if (formatted.startsWith('67') || formatted.startsWith('68') || formatted.startsWith('69')) {
-      formatted = '+3820' + formatted;
-    } else if (!formatted.startsWith('+')) {
-      formatted = '+382' + formatted;
+      // Kratka pauza između slanja
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    return formatted;
+    return results;
   }
-
-  async updateConfiguration(config: Partial<SMSMobileAPIConfig>): Promise<void> {
-    try {
-      if (config.apiKey !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_api_key', { value: config.apiKey });
-        this.config.apiKey = config.apiKey;
-      }
-      
-      if (config.baseUrl !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_base_url', { value: config.baseUrl });
-        this.config.baseUrl = config.baseUrl;
-      }
-      
-      if (config.timeout !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_timeout', { value: config.timeout.toString() });
-        this.config.timeout = config.timeout;
-      }
-      
-      if (config.enabled !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_enabled', { value: config.enabled.toString() });
-        this.config.enabled = config.enabled;
-      }
-      
-      if (config.sendsms !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_sendsms', { value: config.sendsms });
-        this.config.sendsms = config.sendsms;
-      }
-      
-      if (config.sendwa !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_sendwa', { value: config.sendwa });
-        this.config.sendwa = config.sendwa;
-      }
-      
-      if (config.recipients !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_recipients', { value: config.recipients });
-        this.config.recipients = config.recipients;
-      }
-      
-      if (config.message !== undefined) {
-        await this.storage.updateSystemSetting('sms_mobile_message', { value: config.message });
-        this.config.message = config.message;
-      }
-      
-      console.log('[SMS MOBILE API] Konfiguracija ažurirana');
-    } catch (error) {
-      console.error('[SMS MOBILE API] Greška pri ažuriranju konfiguracije:', error);
-      throw error;
-    }
-  }
-
-  getConfiguration(): SMSMobileAPIConfig {
-    return { ...this.config };
-  }
-}
-
-export function createSMSMobileAPIService(storage: IStorage): SMSMobileAPIService {
-  return new SMSMobileAPIService(storage);
 }

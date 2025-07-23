@@ -5593,9 +5593,176 @@ Admin panel - automatska porudžbina
 
   // All SMS endpoints removed
 
-  // SMS Mobile API routes - Nova implementacija
-  const smsMobileAPIRoutes = createSMSMobileAPIRoutes(storage);
-  app.use('/api/sms-mobile-api', smsMobileAPIRoutes);
+  // ===== SMS MOBILE API ENDPOINTS =====
+  // Import SMS Mobile API service
+  const { SMSMobileAPIService } = await import('./sms-mobile-api-service.js');
+
+  // Get SMS Mobile API status
+  app.get('/api/sms-mobile-api/status', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const settings = await storage.getSystemSettings();
+      const apiKey = settings.sms_mobile_api_key || '';
+      const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
+      const enabled = settings.sms_mobile_enabled === 'true';
+
+      if (!apiKey) {
+        return res.json({
+          enabled: false,
+          configured: false,
+          message: 'API ključ nije konfigurisan'
+        });
+      }
+
+      const smsService = new SMSMobileAPIService({ apiKey, baseUrl });
+      const connectionTest = await smsService.testConnection();
+
+      res.json({
+        enabled,
+        configured: true,
+        connected: connectionTest.success,
+        message: connectionTest.message,
+        baseUrl
+      });
+    } catch (error) {
+      console.error('SMS Mobile API status error:', error);
+      res.status(500).json({ error: 'Greška pri proveri statusa' });
+    }
+  });
+
+  // Update SMS Mobile API configuration
+  app.post('/api/sms-mobile-api/config', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const { apiKey, baseUrl, timeout, enabled } = req.body;
+
+      if (apiKey !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_api_key', apiKey);
+      }
+      if (baseUrl !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_base_url', baseUrl);
+      }
+      if (timeout !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_timeout', timeout.toString());
+      }
+      if (enabled !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_enabled', enabled.toString());
+      }
+
+      res.json({ success: true, message: 'Konfiguracija je ažurirana' });
+    } catch (error) {
+      console.error('SMS Mobile API config error:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju konfiguracije' });
+    }
+  });
+
+  // Test SMS Mobile API connection
+  app.post('/api/sms-mobile-api/test', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const settings = await storage.getSystemSettings();
+      const apiKey = settings.sms_mobile_api_key || '';
+      const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'API ključ nije konfigurisan' });
+      }
+
+      const smsService = new SMSMobileAPIService({ apiKey, baseUrl });
+      const result = await smsService.testConnection();
+
+      res.json(result);
+    } catch (error) {
+      console.error('SMS Mobile API test error:', error);
+      res.status(500).json({ error: 'Greška pri testiranju konekcije' });
+    }
+  });
+
+  // Send SMS via Mobile API
+  app.post('/api/sms-mobile-api/send', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const { recipients, message } = req.body;
+
+      if (!recipients || !message) {
+        return res.status(400).json({ error: 'Recipients i message su obavezni' });
+      }
+
+      const settings = await storage.getSystemSettings();
+      const apiKey = settings.sms_mobile_api_key || '';
+      const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
+      const enabled = settings.sms_mobile_enabled === 'true';
+
+      if (!enabled) {
+        return res.status(400).json({ error: 'SMS Mobile API nije omogućen' });
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'API ključ nije konfigurisan' });
+      }
+
+      const smsService = new SMSMobileAPIService({ apiKey, baseUrl });
+      const formattedPhone = smsService.formatPhoneNumber(recipients);
+      
+      const result = await smsService.sendSMS({
+        recipients: formattedPhone,
+        message
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('SMS Mobile API send error:', error);
+      res.status(500).json({ error: 'Greška pri slanju SMS-a' });
+    }
+  });
+
+  // Send bulk SMS via Mobile API
+  app.post('/api/sms-mobile-api/send-bulk', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const { recipients, message } = req.body;
+
+      if (!Array.isArray(recipients) || !message) {
+        return res.status(400).json({ error: 'Recipients mora biti niz i message je obavezan' });
+      }
+
+      const settings = await storage.getSystemSettings();
+      const apiKey = settings.sms_mobile_api_key || '';
+      const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
+      const enabled = settings.sms_mobile_enabled === 'true';
+
+      if (!enabled) {
+        return res.status(400).json({ error: 'SMS Mobile API nije omogućen' });
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'API ključ nije konfigurisan' });
+      }
+
+      const smsService = new SMSMobileAPIService({ apiKey, baseUrl });
+      const results = await smsService.sendBulkSMS(recipients, message);
+
+      res.json({ results });
+    } catch (error) {
+      console.error('SMS Mobile API bulk send error:', error);
+      res.status(500).json({ error: 'Greška pri slanju bulk SMS-a' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
