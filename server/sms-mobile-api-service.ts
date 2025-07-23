@@ -175,10 +175,15 @@ export class SMSMobileAPIService {
       requestData.append('message', message);
       requestData.append('apikey', this.config.apiKey);
       requestData.append('sendsms', '1');
+      requestData.append('sendwa', options.sendWhatsApp ? '1' : '0');
       
-      if (options.sendWhatsApp) {
-        requestData.append('sendwa', '1');
-      }
+      console.log('[SMS MOBILE API] Request data:', {
+        recipients: formattedPhone,
+        message: message,
+        apikey: this.config.apiKey.substring(0, 10) + '...',
+        sendsms: '1',
+        sendwa: options.sendWhatsApp ? '1' : '0'
+      });
 
       console.log('[SMS MOBILE API] Šaljem poruku na:', formattedPhone);
       
