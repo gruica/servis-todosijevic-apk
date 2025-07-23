@@ -118,7 +118,10 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("🔧 handleSubmit pozvan, formData:", formData);
+    
     if (!formData.partName.trim()) {
+      console.log("❌ Validation failed: partName missing");
       toast({
         title: 'Greška',
         description: 'Molimo unesite naziv rezervnog dela',
@@ -128,6 +131,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
     }
 
     if (!formData.warrantyStatus) {
+      console.log("❌ Validation failed: warrantyStatus missing");
       toast({
         title: 'Greška',
         description: 'Molimo izaberite warranty status (u garanciji ili van garancije)',
@@ -136,6 +140,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
       return;
     }
 
+    console.log("✅ Validation passed, submitting...");
     createOrderMutation.mutate(formData);
   };
 
@@ -302,7 +307,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createOrderMutation.isPending}
+                  disabled={createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   {createOrderMutation.isPending ? (
