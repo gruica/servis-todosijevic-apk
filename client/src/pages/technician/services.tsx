@@ -877,18 +877,23 @@ export default function TechnicianServices() {
                                   variant="outline" 
                                   size="default"
                                   onClick={() => {
+                                    alert("TEST: Dugme je kliknuto za servis " + service.id);
                                     console.log("🔧 DUGME KLIKNUTO! Pozivam openSparePartsOrder za servis:", service.id);
-                                    openSparePartsOrder(service);
+                                    setSparePartsService(service);
+                                    setSparePartsOrderOpen(true);
                                   }}
                                   className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 flex-1 h-10"
+                                  style={{ pointerEvents: 'auto', zIndex: 1000 }}
                                 >
                                   <Package className="h-4 w-4 mr-1" />
                                   Poruči rezervni deo
                                 </Button>
                               </div>
                             )}
-                            {/* Debug: Proverava da li se dugme renderuje */}
-                            {console.log("🎯 DEBUG: Za servis", service.id, "status je", service.status, "- dugme se renderuje:", (service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled"))}
+                            {(() => {
+                              console.log("🎯 DEBUG: Za servis", service.id, "status je", service.status, "- dugme se renderuje:", (service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled"));
+                              return null;
+                            })()}
 
                             {/* Druga grupa - Status akcije */}
                             {/* Servisi sa statusom assigned, pending ili scheduled */}
