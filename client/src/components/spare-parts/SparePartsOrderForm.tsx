@@ -209,15 +209,11 @@ export function SparePartsOrderForm({
     isPending: createOrderMutation.isPending
   });
 
-  if (!isOpen) {
-    console.log("🔧 SparePartsOrderForm NOT RENDERING - isOpen =", isOpen);
-    return null;
-  }
-
-  console.log("🔧 SparePartsOrderForm DIALOG SE RENDERUJE!");
+  // ALWAY RENDER FOR TESTING!
+  console.log("🔧 SparePartsOrderForm FORCING RENDER! isOpen =", isOpen);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
+    <Dialog open={true} onOpenChange={(open) => {
       console.log("🔧 Dialog onOpenChange called with:", open);
       if (!open) {
         onClose?.();

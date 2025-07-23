@@ -1350,32 +1350,39 @@ export default function TechnicianServices() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog za naručivanje rezervnih delova */}
-      {sparePartsService && (() => {
-        console.log("🔧 RENDERUJE SE SparePartsOrderForm:", { 
-          sparePartsService: sparePartsService.id, 
-          sparePartsOrderOpen,
-          clientName: sparePartsService.client?.fullName,
-          applianceModel: sparePartsService.appliance?.model,
-          applianceCategory: sparePartsService.appliance?.category?.name
-        });
-        return (
-          <SparePartsOrderForm
-            isOpen={sparePartsOrderOpen}
-            onClose={() => {
-              console.log("🔧 SparePartsOrderForm ZATVARANJE");
-              setSparePartsOrderOpen(false);
-              setSparePartsService(null);
-            }}
-            serviceId={sparePartsService.id}
-            clientName={sparePartsService.client?.fullName || ""}
-            applianceModel={sparePartsService.appliance?.model || ""}
-            applianceManufacturer={""}
-            applianceCategory={sparePartsService.appliance?.category?.name || ""}
-            technicianId={sparePartsService.technicianId || 0}
-          />
-        );
-      })()}
+      {/* EMERGENCY TEST DIALOG */}
+      <Dialog open={sparePartsOrderOpen && !!sparePartsService} onOpenChange={(open) => {
+        if (!open) {
+          setSparePartsOrderOpen(false);
+          setSparePartsService(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>EMERGENCY TEST - REZERVNI DELOVI</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>Service ID: {sparePartsService?.id || "none"}</div>
+            <div>Client: {sparePartsService?.client?.fullName || "none"}</div>
+            <input 
+              type="text" 
+              placeholder="Naziv rezervnog dela"
+              className="w-full p-2 border rounded"
+            />
+            <select className="w-full p-2 border rounded">
+              <option value="">Izaberite status garancije</option>
+              <option value="u garanciji">U garanciji</option>
+              <option value="van garancije">Van garancije</option>
+            </select>
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => alert("DUGME RADI!")}
+            >
+              🔧 POŠALJI ZAHTEV (TEST)
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog za dopunjavanje Generali servisa */}
       {supplementGeneraliService && (
