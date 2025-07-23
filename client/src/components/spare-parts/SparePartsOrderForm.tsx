@@ -51,13 +51,8 @@ export function SparePartsOrderForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [isOpen, setIsOpen] = useState(false);
-  
-  // Sinhroniziraj spoljašnje isOpen stanje
-  useEffect(() => {
-    console.log("🔧 SparePartsOrderForm useEffect - externalIsOpen changed to:", externalIsOpen);
-    setIsOpen(externalIsOpen);
-  }, [externalIsOpen]);
+  // Koristimo direktno externalIsOpen bez interno stanja
+  console.log("🔧 SparePartsOrderForm RENDER CHECK - externalIsOpen:", externalIsOpen);
   
   const [formData, setFormData] = useState({
     partName: '',
@@ -199,22 +194,20 @@ export function SparePartsOrderForm({
   // Debug: Loguj trenutno stanje forme
   console.log("🔧 SparePartsOrderForm RENDER CHECK:", {
     externalIsOpen,
-    internalIsOpen: isOpen, 
     serviceId,
-    shouldRender: isOpen
+    shouldRender: externalIsOpen
   });
 
-  if (!isOpen) {
-    console.log("🔧 SparePartsOrderForm NOT RENDERING - isOpen =", isOpen);
+  if (!externalIsOpen) {
+    console.log("🔧 SparePartsOrderForm NOT RENDERING - externalIsOpen =", externalIsOpen);
     return null;
   }
 
   console.log("🔧 SparePartsOrderForm RENDERING DIALOG");
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
+    <Dialog open={externalIsOpen} onOpenChange={(open) => {
       if (!open) {
-        setIsOpen(false);
         onClose?.();
         onCancel?.();
       }
