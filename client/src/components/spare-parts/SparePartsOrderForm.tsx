@@ -51,10 +51,11 @@ export function SparePartsOrderForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [isOpen, setIsOpen] = useState(externalIsOpen);
+  const [isOpen, setIsOpen] = useState(false);
   
   // Sinhroniziraj spoljašnje isOpen stanje
   useEffect(() => {
+    console.log("🔧 SparePartsOrderForm useEffect - externalIsOpen changed to:", externalIsOpen);
     setIsOpen(externalIsOpen);
   }, [externalIsOpen]);
   
