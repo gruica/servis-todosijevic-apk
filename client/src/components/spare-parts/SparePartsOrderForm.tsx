@@ -196,10 +196,19 @@ export function SparePartsOrderForm({
   const selectedUrgency = urgencyOptions.find(opt => opt.value === formData.urgency);
   
   // Debug: Loguj trenutno stanje forme
-  console.log("🔧 Current formData state:", formData);
-  console.log("🔧 Button should be enabled:", !createOrderMutation.isPending && formData.partName.trim() && formData.warrantyStatus);
+  console.log("🔧 SparePartsOrderForm RENDER CHECK:", {
+    externalIsOpen,
+    internalIsOpen: isOpen, 
+    serviceId,
+    shouldRender: isOpen
+  });
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log("🔧 SparePartsOrderForm NOT RENDERING - isOpen =", isOpen);
+    return null;
+  }
+
+  console.log("🔧 SparePartsOrderForm RENDERING DIALOG");
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {

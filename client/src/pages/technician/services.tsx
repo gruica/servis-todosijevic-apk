@@ -879,8 +879,10 @@ export default function TechnicianServices() {
                                   onClick={() => {
                                     alert("TEST: Dugme je kliknuto za servis " + service.id);
                                     console.log("🔧 DUGME KLIKNUTO! Pozivam openSparePartsOrder za servis:", service.id);
+                                    console.log("🔧 SERVICE DATA:", service);
                                     setSparePartsService(service);
                                     setSparePartsOrderOpen(true);
+                                    console.log("🔧 STATE POSTAVLJEN: sparePartsOrderOpen = true, sparePartsService =", service.id);
                                   }}
                                   className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 flex-1 h-10"
                                   style={{ pointerEvents: 'auto', zIndex: 1000 }}
@@ -1349,21 +1351,31 @@ export default function TechnicianServices() {
       </Dialog>
 
       {/* Dialog za naručivanje rezervnih delova */}
-      {sparePartsService && (
-        <SparePartsOrderForm
-          isOpen={sparePartsOrderOpen}
-          onClose={() => {
-            setSparePartsOrderOpen(false);
-            setSparePartsService(null);
-          }}
-          serviceId={sparePartsService.id}
-          clientName={sparePartsService.client?.fullName || ""}
-          applianceModel={sparePartsService.appliance?.model || ""}
-          applianceManufacturer={sparePartsService.appliance?.manufacturer?.name || ""}
-          applianceCategory={sparePartsService.appliance?.category?.name || ""}
-          technicianId={sparePartsService.technicianId || 0}
-        />
-      )}
+      {sparePartsService && (() => {
+        console.log("🔧 RENDERUJE SE SparePartsOrderForm:", { 
+          sparePartsService: sparePartsService.id, 
+          sparePartsOrderOpen,
+          clientName: sparePartsService.client?.fullName,
+          applianceModel: sparePartsService.appliance?.model,
+          applianceCategory: sparePartsService.appliance?.category?.name
+        });
+        return (
+          <SparePartsOrderForm
+            isOpen={sparePartsOrderOpen}
+            onClose={() => {
+              console.log("🔧 SparePartsOrderForm ZATVARANJE");
+              setSparePartsOrderOpen(false);
+              setSparePartsService(null);
+            }}
+            serviceId={sparePartsService.id}
+            clientName={sparePartsService.client?.fullName || ""}
+            applianceModel={sparePartsService.appliance?.model || ""}
+            applianceManufacturer={""}
+            applianceCategory={sparePartsService.appliance?.category?.name || ""}
+            technicianId={sparePartsService.technicianId || 0}
+          />
+        );
+      })()}
 
       {/* Dialog za dopunjavanje Generali servisa */}
       {supplementGeneraliService && (
