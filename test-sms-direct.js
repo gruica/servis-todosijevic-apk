@@ -1,71 +1,47 @@
-// Direktno testiranje SMS Mobile API
-import https from 'https';
-import querystring from 'querystring';
+import axios from 'axios';
 
-const testSMSDirect = () => {
-  console.log('🔥 Pokušavam direktno slanje SMS-a preko SMS Mobile API...');
+async function testSMSMobileAPI() {
+  console.log('🚀 Testiranje SMS Mobile API direktno...');
   
-  const postData = querystring.stringify({
-    'recipients': '+38267051141',
-    'message': 'Test SMS poruka sa SMS Mobile API sistema - Frigo Sistem Todosijević - DIREKTAN TEST',
-    'apikey': '8ddf1cbb5ed1602c6caf3ac719e627d138f2500dbcb3d9f0',
-    'sendsms': '1',
-    'sendwa': '0'
-  });
+  try {
+    // SMS Mobile API zahteva application/x-www-form-urlencoded format
+    const formData = new URLSearchParams();
+    formData.append('recipients', '38267051141');
+    formData.append('message', 'Test SMS iz Frigo Sistem aplikacije - direktan test!');
+    formData.append('apikey', '3153ca534ac7ad8dcdbc21758c7d3af1313e50357f5b7eff');
 
-  const options = {
-    hostname: 'api.smsmobileapi.com',
-    port: 443,
-    path: '/sendsms/',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(postData),
-      'User-Agent': 'FrigoSistemTodosijevic/1.0'
-    }
-  };
-
-  console.log('📱 Podaci za slanje:', {
-    recipients: '+38267051141',
-    message: 'Test SMS poruka sa SMS Mobile API sistema - Frigo Sistem Todosijević - DIREKTAN TEST',
-    sendsms: '1',
-    sendwa: '0'
-  });
-
-  const req = https.request(options, (res) => {
-    console.log('📊 Response status:', res.statusCode);
-    console.log('📊 Response headers:', res.headers);
-
-    let data = '';
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    res.on('end', () => {
-      console.log('📋 Response body:', data);
-      try {
-        const jsonResponse = JSON.parse(data);
-        console.log('✅ JSON Response:', JSON.stringify(jsonResponse, null, 2));
-        
-        if (jsonResponse.result && jsonResponse.result.error === 0) {
-          console.log('🎉 SMS USPEŠNO POSLANA!');
-          console.log('📮 SMS ID:', jsonResponse.result.id);
-          console.log('⏰ Datum/vreme:', jsonResponse.result.datetime);
-        } else {
-          console.log('❌ Greška u odgovoru:', jsonResponse.result?.error);
+    console.log('📱 Šaljem SMS na 38267051141...');
+    
+    const response = await axios.post(
+      'https://api.smsmobileapi.com/sendsms/',
+      formData,
+      {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
-      } catch (e) {
-        console.log('📄 Odgovor nije u JSON formatu:', data);
       }
-    });
-  });
+    );
 
-  req.on('error', (e) => {
-    console.error('❌ Greška pri slanju zahteva:', e.message);
-  });
+    console.log('✅ SMS Mobile API odgovor:', JSON.stringify(response.data, null, 2));
+    
+    const result = response.data.result || response.data;
+    
+    if (result.error === 0 || result.error === "0") {
+      console.log('🎉 SMS uspešno poslat!');
+      console.log(`📋 Message ID: ${result.id}`);
+      console.log(`📄 Status: ${result.note}`);
+      console.log(`📅 Vreme: ${result.datetime}`);
+    } else {
+      console.log('❌ Greška pri slanju SMS-a:', result);
+    }
+    
+  } catch (error) {
+    console.error('💥 Greška:', error.message);
+    if (error.response) {
+      console.error('🔍 Response:', error.response.data);
+    }
+  }
+}
 
-  req.write(postData);
-  req.end();
-};
-
-testSMSDirect();
+testSMSMobileAPI();

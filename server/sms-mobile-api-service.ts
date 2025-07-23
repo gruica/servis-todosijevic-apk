@@ -36,22 +36,36 @@ export class SMSMobileAPIService {
     try {
       console.log(`📱 SMS Mobile API: Šaljem SMS na ${request.recipients}`);
       
+      // SMS Mobile API zahteva application/x-www-form-urlencoded format
+      const formData = new URLSearchParams();
+      formData.append('recipients', request.recipients);
+      formData.append('message', request.message);
+      formData.append('apikey', this.config.apiKey);
+
       const response = await axios.post(
         `${this.config.baseUrl}/sendsms/`,
-        {
-          recipients: request.recipients,
-          message: request.message,
-          apikey: this.config.apiKey
-        },
+        formData,
         {
           timeout: this.config.timeout,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
           }
         }
       );
 
       console.log(`📱 SMS Mobile API Response:`, response.data);
+      
+      // Proverava odgovor - ako je response.data.result, koristimo taj format
+      if (response.data.result) {
+        return {
+          error: response.data.result.error,
+          sent: response.data.result.sent,
+          message_id: response.data.result.id,
+          details: response.data.result.note
+        };
+      }
+      
+      // Inače koristimo direktan format
       return response.data;
     } catch (error: any) {
       console.error('❌ SMS Mobile API Error:', error.message);
@@ -74,23 +88,27 @@ export class SMSMobileAPIService {
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      // Šaljemo test SMS na prazan broj da vidimo da li API ključ radi
+      // Šaljemo test SMS na prazan broj da vidimo da li API ključ radi  
+      const formData = new URLSearchParams();
+      formData.append('recipients', '38267000000'); // Test broj
+      formData.append('message', 'Test konekcije');
+      formData.append('apikey', this.config.apiKey);
+
       const response = await axios.post(
         `${this.config.baseUrl}/sendsms/`,
-        {
-          recipients: '38267000000', // Test broj
-          message: 'Test konekcije',
-          apikey: this.config.apiKey
-        },
+        formData,
         {
           timeout: this.config.timeout,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
           }
         }
       );
 
-      if (response.data.error === 0) {
+      // Proverava response format
+      const result = response.data.result || response.data;
+      
+      if (result.error === 0 || result.error === "0") {
         return {
           success: true,
           message: 'SMS Mobile API je uspešno povezan'
@@ -98,7 +116,7 @@ export class SMSMobileAPIService {
       } else {
         return {
           success: false,
-          message: response.data.details || 'Nepoznata greška'
+          message: result.details || result.note || 'Nepoznata greška'
         };
       }
     } catch (error: any) {
