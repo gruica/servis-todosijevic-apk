@@ -27,6 +27,199 @@ import { WaitingForPartsFolder } from "@/components/technician/WaitingForPartsFo
 import { useNotification } from "@/contexts/notification-context";
 import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
 import { RemovedPartsForm } from "@/components/technician/removed-parts-form";
+import { DialogDescription } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
+
+// Functional Spare Parts Dialog Component
+function SparePartsDialog({ 
+  isOpen, 
+  onClose, 
+  serviceId, 
+  clientName, 
+  applianceModel, 
+  applianceCategory, 
+  technicianId 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  serviceId: number;
+  clientName: string;
+  applianceModel: string;
+  applianceCategory: string;
+  technicianId: number;
+}) {
+  const [partName, setPartName] = useState("");
+  const [warrantyStatus, setWarrantyStatus] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [description, setDescription] = useState("");
+  const [urgency, setUrgency] = useState("normal");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const isButtonDisabled = isSubmitting || !partName.trim() || !warrantyStatus;
+
+  const handleSubmit = async () => {
+    if (isButtonDisabled) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/spare-parts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          serviceId,
+          partName: partName.trim(),
+          warrantyStatus,
+          quantity,
+          description: description.trim() || `Rezervni deo za ${applianceCategory} - ${applianceModel}`,
+          urgency,
+          technicianId,
+          applianceId: 0
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Greška pri slanju zahteva');
+      }
+
+      toast({
+        title: "Uspešno poslato!",
+        description: "Zahtev za rezervni deo je poslat administratoru.",
+        variant: "default"
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+      
+      // Reset form
+      setPartName("");
+      setWarrantyStatus("");
+      setQuantity(1);
+      setDescription("");
+      setUrgency("normal");
+      
+      onClose();
+    } catch (error) {
+      console.error('Error submitting spare part request:', error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri slanju zahteva. Pokušajte ponovo.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Naruči rezervni deo</DialogTitle>
+          <DialogDescription>
+            Popunite podatke za naručivanje rezervnog dela
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <div className="text-sm text-gray-600 mb-2">
+              <div><strong>Klijent:</strong> {clientName}</div>
+              <div><strong>Uređaj:</strong> {applianceCategory}</div>
+              <div><strong>Model:</strong> {applianceModel}</div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Naziv rezervnog dela <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              value={partName}
+              onChange={(e) => setPartName(e.target.value)}
+              placeholder="Unesite naziv dela (npr. Elektronika, Pumpa...)"
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Status garancije <span className="text-red-500">*</span>
+            </label>
+            <select 
+              value={warrantyStatus}
+              onChange={(e) => setWarrantyStatus(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="">Izaberite status</option>
+              <option value="u garanciji">🛡️ U garanciji</option>
+              <option value="van garancije">💰 Van garancije</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Količina</label>
+            <input 
+              type="number" 
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              min="1"
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Hitnost</label>
+            <select 
+              value={urgency}
+              onChange={(e) => setUrgency(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="normal">⏳ Normalno</option>
+              <option value="high">⚡ Hitno</option>
+              <option value="urgent">🚨 Vrlo hitno</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Dodatne napomene</label>
+            <textarea 
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Dodatni opis dela ili napomene..."
+              className="w-full p-2 border rounded-md h-20"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="flex-1"
+            disabled={isSubmitting}
+          >
+            Otkaži
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={isButtonDisabled}
+            className={`flex-1 ${isButtonDisabled 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {isSubmitting ? "Šalje se..." : "🔧 Pošalji zahtev"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 type TechnicianService = Service & {
   client?: {
@@ -1350,39 +1543,19 @@ export default function TechnicianServices() {
         </DialogContent>
       </Dialog>
 
-      {/* EMERGENCY TEST DIALOG */}
-      <Dialog open={sparePartsOrderOpen && !!sparePartsService} onOpenChange={(open) => {
-        if (!open) {
+      {/* FUNCTIONAL SPARE PARTS DIALOG */}
+      <SparePartsDialog 
+        isOpen={sparePartsOrderOpen && !!sparePartsService}
+        onClose={() => {
           setSparePartsOrderOpen(false);
           setSparePartsService(null);
-        }
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>EMERGENCY TEST - REZERVNI DELOVI</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>Service ID: {sparePartsService?.id || "none"}</div>
-            <div>Client: {sparePartsService?.client?.fullName || "none"}</div>
-            <input 
-              type="text" 
-              placeholder="Naziv rezervnog dela"
-              className="w-full p-2 border rounded"
-            />
-            <select className="w-full p-2 border rounded">
-              <option value="">Izaberite status garancije</option>
-              <option value="u garanciji">U garanciji</option>
-              <option value="van garancije">Van garancije</option>
-            </select>
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => alert("DUGME RADI!")}
-            >
-              🔧 POŠALJI ZAHTEV (TEST)
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        }}
+        serviceId={sparePartsService?.id || 0}
+        clientName={sparePartsService?.client?.fullName || ""}
+        applianceModel={sparePartsService?.appliance?.model || ""}
+        applianceCategory={sparePartsService?.appliance?.category?.name || ""}
+        technicianId={sparePartsService?.technicianId || 0}
+      />
 
       {/* Dialog za dopunjavanje Generali servisa */}
       {supplementGeneraliService && (
