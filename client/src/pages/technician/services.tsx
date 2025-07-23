@@ -876,7 +876,10 @@ export default function TechnicianServices() {
                                 <Button 
                                   variant="outline" 
                                   size="default"
-                                  onClick={() => openSparePartsOrder(service)}
+                                  onClick={() => {
+                                    console.log("🔧 DUGME KLIKNUTO! Pozivam openSparePartsOrder za servis:", service.id);
+                                    openSparePartsOrder(service);
+                                  }}
                                   className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 flex-1 h-10"
                                 >
                                   <Package className="h-4 w-4 mr-1" />
