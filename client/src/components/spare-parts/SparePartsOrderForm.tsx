@@ -145,13 +145,20 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
   };
 
   const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
+    console.log(`🔧 handleInputChange: ${field} = ${value}`);
+    const newFormData = {
+      ...formData,
       [field]: value
-    }));
+    };
+    console.log("🔧 New formData:", newFormData);
+    setFormData(newFormData);
   };
 
   const selectedUrgency = urgencyOptions.find(opt => opt.value === formData.urgency);
+  
+  // Debug: Loguj trenutno stanje forme
+  console.log("🔧 Current formData state:", formData);
+  console.log("🔧 Button should be enabled:", !createOrderMutation.isPending && formData.partName.trim() && formData.warrantyStatus);
 
   return (
     <Card className="mt-4">
@@ -188,7 +195,10 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
                     id="partName"
                     placeholder="Npr. Kompresor, Termostat, Filter..."
                     value={formData.partName}
-                    onChange={(e) => handleInputChange('partName', e.target.value)}
+                    onChange={(e) => {
+                      console.log("🔧 Part name input changed to:", e.target.value);
+                      handleInputChange('partName', e.target.value);
+                    }}
                     required
                   />
                 </div>
