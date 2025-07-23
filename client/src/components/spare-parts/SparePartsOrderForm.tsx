@@ -38,7 +38,7 @@ const warrantyStatusOptions = [
 
 export function SparePartsOrderForm({ 
   serviceId, 
-  isOpen: externalIsOpen = false, 
+  isOpen = false, 
   onClose, 
   onSuccess, 
   onCancel,
@@ -51,8 +51,13 @@ export function SparePartsOrderForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Koristimo direktno externalIsOpen bez interno stanja
-  console.log("🔧 SparePartsOrderForm RENDER CHECK - externalIsOpen:", externalIsOpen);
+  console.log("🔧 SparePartsOrderForm RENDERING:", {
+    isOpen,
+    serviceId,
+    clientName,
+    applianceModel,
+    applianceCategory
+  });
   
   const [formData, setFormData] = useState({
     partName: '',
@@ -191,26 +196,29 @@ export function SparePartsOrderForm({
 
   const selectedUrgency = urgencyOptions.find(opt => opt.value === formData.urgency);
   
-  // Debug: Loguj trenutno stanje forme
-  console.log("🔧 SparePartsOrderForm RENDER CHECK:", {
-    externalIsOpen,
+  // Debug: Loguj trenutno stanje forme i razlog zašto se dugme ne aktivira
+  const isButtonDisabled = createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus;
+  
+  console.log("🔧 SparePartsOrderForm DEBUG:", {
+    isOpen,
     serviceId,
-    shouldRender: externalIsOpen,
     formData,
-    isButtonDisabled: createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus,
-    partNameValid: formData.partName.trim(),
-    warrantyStatusValid: formData.warrantyStatus
+    isButtonDisabled,
+    partNameValid: !!formData.partName.trim(),
+    warrantyStatusValid: !!formData.warrantyStatus,
+    isPending: createOrderMutation.isPending
   });
 
-  if (!externalIsOpen) {
-    console.log("🔧 SparePartsOrderForm NOT RENDERING - externalIsOpen =", externalIsOpen);
+  if (!isOpen) {
+    console.log("🔧 SparePartsOrderForm NOT RENDERING - isOpen =", isOpen);
     return null;
   }
 
-  console.log("🔧 SparePartsOrderForm RENDERING DIALOG");
+  console.log("🔧 SparePartsOrderForm DIALOG SE RENDERUJE!");
 
   return (
-    <Dialog open={externalIsOpen} onOpenChange={(open) => {
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log("🔧 Dialog onOpenChange called with:", open);
       if (!open) {
         onClose?.();
         onCancel?.();
@@ -361,7 +369,7 @@ export function SparePartsOrderForm({
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus}
+                  disabled={isButtonDisabled}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   {createOrderMutation.isPending ? (
