@@ -158,18 +158,38 @@ function SparePartsDialog({
             <label className="block text-sm font-medium mb-1">
               Status garancije <span className="text-red-500">*</span>
             </label>
-            <select 
-              value={warrantyStatus}
-              onChange={(e) => {
-                console.log("🔧 Warranty status changed to:", e.target.value);
-                setWarrantyStatus(e.target.value);
-              }}
-              className="w-full p-2 border rounded-md focus:border-green-500"
-            >
-              <option value="">Izaberite status</option>
-              <option value="u garanciji">🛡️ U garanciji</option>
-              <option value="van garancije">💰 Van garancije</option>
-            </select>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("🔧 Setting warranty to: u garanciji");
+                  setWarrantyStatus("u garanciji");
+                }}
+                className={`w-full p-3 border rounded-md text-left flex items-center gap-2 ${
+                  warrantyStatus === "u garanciji" 
+                    ? "bg-green-100 border-green-500 text-green-700" 
+                    : "bg-white border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                🛡️ U garanciji
+                {warrantyStatus === "u garanciji" && <span className="ml-auto text-green-600">✓</span>}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("🔧 Setting warranty to: van garancije");
+                  setWarrantyStatus("van garancije");
+                }}
+                className={`w-full p-3 border rounded-md text-left flex items-center gap-2 ${
+                  warrantyStatus === "van garancije" 
+                    ? "bg-green-100 border-green-500 text-green-700" 
+                    : "bg-white border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                💰 Van garancije
+                {warrantyStatus === "van garancije" && <span className="ml-auto text-green-600">✓</span>}
+              </button>
+            </div>
           </div>
 
           <div>
