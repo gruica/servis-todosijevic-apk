@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Package, ShoppingCart, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Package, ShoppingCart, AlertCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
 interface SparePartsOrderFormProps {
-  serviceId: number;
+  serviceId?: number;
+  isOpen?: boolean;
+  onClose?: () => void;
   onSuccess?: () => void;
   onCancel?: () => void;
+  clientName?: string;
+  applianceModel?: string;
+  applianceManufacturer?: string;
+  applianceCategory?: string;
+  technicianId?: number;
 }
 
 const urgencyOptions = [
@@ -29,11 +36,28 @@ const warrantyStatusOptions = [
   { value: 'van garancije', label: '💰 Van garancije', color: 'bg-red-100 text-red-800' },
 ];
 
-export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePartsOrderFormProps) {
+export function SparePartsOrderForm({ 
+  serviceId, 
+  isOpen: externalIsOpen = false, 
+  onClose, 
+  onSuccess, 
+  onCancel,
+  clientName,
+  applianceModel,
+  applianceManufacturer,
+  applianceCategory,
+  technicianId
+}: SparePartsOrderFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(externalIsOpen);
+  
+  // Sinhroniziraj spoljašnje isOpen stanje
+  useEffect(() => {
+    setIsOpen(externalIsOpen);
+  }, [externalIsOpen]);
+  
   const [formData, setFormData] = useState({
     partName: '',
     partNumber: '',
@@ -98,6 +122,7 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
       });
       
       setIsOpen(false);
+      onClose?.(); // Pozovi spoljašnji callback
       
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['/api/spare-parts'] });
@@ -140,8 +165,22 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
       return;
     }
 
+    if (!serviceId) {
+      console.log("❌ Validation failed: missing serviceId");
+      toast({
+        title: 'Greška',
+        description: 'Nedostaje ID servisa',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     console.log("✅ Validation passed, submitting...");
-    createOrderMutation.mutate(formData);
+    createOrderMutation.mutate({
+      ...formData,
+      serviceId,
+      technicianId
+    });
   };
 
   const handleInputChange = (field: string, value: string | number) => {
@@ -160,34 +199,29 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
   console.log("🔧 Current formData state:", formData);
   console.log("🔧 Button should be enabled:", !createOrderMutation.isPending && formData.partName.trim() && formData.warrantyStatus);
 
+  if (!isOpen) return null;
+
   return (
-    <Card className="mt-4">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Package className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-lg">Poruči rezervni deo</CardTitle>
-                <Badge variant="secondary" className="text-xs">
-                  Opciono
-                </Badge>
-              </div>
-              {isOpen ? (
-                <ChevronUp className="h-5 w-5 text-gray-500" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-gray-500" />
-              )}
-            </div>
-            <CardDescription>
-              Ako je potreban rezervni deo za ovaj servis, možete ga poručiti ovde
-            </CardDescription>
-          </CardHeader>
-        </CollapsibleTrigger>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        setIsOpen(false);
+        onClose?.();
+        onCancel?.();
+      }
+    }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Package className="h-5 w-5 text-blue-600" />
+            <span>Poruči rezervni deo</span>
+          </DialogTitle>
+          <DialogDescription>
+            Popunite podatke za naručivanje rezervnog dela za ovaj servis
+          </DialogDescription>
+        </DialogHeader>
         
-        <CollapsibleContent>
-          <CardContent className="pt-0">
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="px-6 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="partName">Naziv rezervnog dela *</Label>
@@ -311,7 +345,11 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    onClose?.();
+                    onCancel?.();
+                  }}
                 >
                   Otkaži
                 </Button>
@@ -334,9 +372,8 @@ export function SparePartsOrderForm({ serviceId, onSuccess, onCancel }: SparePar
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
