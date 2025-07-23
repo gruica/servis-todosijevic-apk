@@ -195,7 +195,11 @@ export function SparePartsOrderForm({
   console.log("🔧 SparePartsOrderForm RENDER CHECK:", {
     externalIsOpen,
     serviceId,
-    shouldRender: externalIsOpen
+    shouldRender: externalIsOpen,
+    formData,
+    isButtonDisabled: createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus,
+    partNameValid: formData.partName.trim(),
+    warrantyStatusValid: formData.warrantyStatus
   });
 
   if (!externalIsOpen) {
@@ -349,7 +353,6 @@ export function SparePartsOrderForm({
                   type="button" 
                   variant="outline" 
                   onClick={() => {
-                    setIsOpen(false);
                     onClose?.();
                     onCancel?.();
                   }}
@@ -369,7 +372,7 @@ export function SparePartsOrderForm({
                   ) : (
                     <>
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Pošalji porudžbinu
+                      Pošalji zahtev ({Object.keys(formData).filter(key => formData[key as keyof typeof formData]).length})
                     </>
                   )}
                 </Button>
