@@ -103,8 +103,12 @@ function SparePartsDialog({
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Server greška:", response.status, errorText);
+        console.error("❌ Response headers:", Object.fromEntries(response.headers.entries()));
         throw new Error(`Greška pri slanju zahteva: ${response.status} ${errorText}`);
       }
+      
+      const responseData = await response.json();
+      console.log("✅ Server response data:", responseData);
 
       toast({
         title: "Uspešno poslato!",
