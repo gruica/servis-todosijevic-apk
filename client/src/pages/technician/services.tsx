@@ -38,7 +38,8 @@ function SparePartsDialog({
   clientName, 
   applianceModel, 
   applianceCategory, 
-  technicianId 
+  technicianId,
+  applianceId 
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -47,6 +48,7 @@ function SparePartsDialog({
   applianceModel: string;
   applianceCategory: string;
   technicianId: number;
+  applianceId: number;
 }) {
   const [partName, setPartName] = useState("");
   const [warrantyStatus, setWarrantyStatus] = useState("");
@@ -94,7 +96,7 @@ function SparePartsDialog({
           description: description.trim() || `Rezervni deo za ${applianceCategory} - ${applianceModel}`,
           urgency,
           technicianId,
-          applianceId: 0
+          applianceId
         })
       });
 
@@ -1617,6 +1619,7 @@ export default function TechnicianServices() {
         applianceModel={sparePartsService?.appliance?.model || ""}
         applianceCategory={sparePartsService?.appliance?.category?.name || ""}
         technicianId={sparePartsService?.technicianId || 0}
+        applianceId={sparePartsService?.applianceId || 0}
       />
 
       {/* Dialog za dopunjavanje Generali servisa */}
