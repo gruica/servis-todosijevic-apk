@@ -887,6 +887,8 @@ export default function TechnicianServices() {
                                 </Button>
                               </div>
                             )}
+                            {/* Debug: Proverava da li se dugme renderuje */}
+                            {console.log("🎯 DEBUG: Za servis", service.id, "status je", service.status, "- dugme se renderuje:", (service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled"))}
 
                             {/* Druga grupa - Status akcije */}
                             {/* Servisi sa statusom assigned, pending ili scheduled */}
