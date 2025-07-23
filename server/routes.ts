@@ -6435,11 +6435,13 @@ Admin panel - automatska porudžbina
         return res.status(400).json({ error: 'Recipients i message su obavezni' });
       }
 
-      const settings = await storage.getSystemSettings();
-      const apiKey = settings.sms_mobile_api_key || '';
-      const baseUrl = settings.sms_mobile_base_url || 'https://api.smsmobileapi.com';
-      const enabled = settings.sms_mobile_enabled === 'true';
-      const defaultSenderId = settings.sms_mobile_sender_id || 'FRIGO SISTEM';
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+      
+      const apiKey = settingsMap.sms_mobile_api_key || '';
+      const baseUrl = settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com';
+      const enabled = settingsMap.sms_mobile_enabled === 'true';
+      const defaultSenderId = settingsMap.sms_mobile_sender_id || 'FRIGO SISTEM';
 
       if (!enabled) {
         return res.status(400).json({ error: 'SMS Mobile API nije omogućen' });
