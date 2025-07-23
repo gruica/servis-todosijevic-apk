@@ -399,4 +399,219 @@ export class SMSCommunicationService {
 
     return this.smsApi.testConnection();
   }
+
+  // ===== NOVI AUTOMATSKI SMS TRIGGERI =====
+
+  /**
+   * SMS korisniku pri promjeni statusa servisa
+   */
+  async notifyClientStatusUpdate(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    statusDescription: string;
+    technicianNotes?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_status_update', 
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        statusDescription: data.statusDescription,
+        technicianNotes: data.technicianNotes
+      }
+    );
+  }
+
+  /**
+   * SMS poslovnom partneru kad se poruče rezervni dijelovi za njihov servis
+   */
+  async notifyBusinessPartnerPartsOrdered(data: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    partName: string;
+    deviceType: string;
+    deliveryTime: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_parts_ordered', 
+      { phone: data.partnerPhone, name: data.partnerName, role: 'business_partner' },
+      {
+        businessPartnerName: data.partnerName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        partName: data.partName,
+        deviceType: data.deviceType,
+        deliveryTime: data.deliveryTime
+      }
+    );
+  }
+
+  /**
+   * SMS poslovnom partneru kad stignu rezervni dijelovi za njihov servis
+   */
+  async notifyBusinessPartnerPartsArrived(data: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    partName: string;
+    deviceType: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_parts_arrived', 
+      { phone: data.partnerPhone, name: data.partnerName, role: 'business_partner' },
+      {
+        businessPartnerName: data.partnerName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        partName: data.partName,
+        deviceType: data.deviceType
+      }
+    );
+  }
+
+  /**
+   * SMS korisniku kada se poruče rezervni dijelovi
+   */  
+  async notifyClientPartsOrdered(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    partName: string;
+    deviceType: string;
+    deliveryTime: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_parts_ordered', 
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        partName: data.partName,
+        deviceType: data.deviceType,
+        deliveryTime: data.deliveryTime
+      }
+    );
+  }
+
+  /**
+   * SMS korisniku kada se poruči rezervni dio
+   */
+  async notifyClientSparePartOrdered(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    partName: string;
+    estimatedDate?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_spare_part_ordered',
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        partName: data.partName,
+        estimatedDate: data.estimatedDate
+      }
+    );
+  }
+
+  /**
+   * SMS korisniku kada rezervni dio stigne
+   */
+  async notifyClientSparePartArrived(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    partName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('client_spare_part_arrived',
+      { phone: data.clientPhone, name: data.clientName, role: 'client' },
+      {
+        clientName: data.clientName,
+        serviceId: data.serviceId,
+        deviceType: data.deviceType,
+        partName: data.partName
+      }
+    );
+  }
+
+  /**
+   * SMS poslovnom partneru kada se dodeli tehničar
+   */
+  async notifyBusinessPartnerTechnicianAssigned(data: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_technician_assigned',
+      { phone: data.partnerPhone, name: data.partnerName, role: 'business_partner' },
+      {
+        businessPartnerName: data.partnerName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
+  /**
+   * SMS poslovnom partneru pri promjeni statusa
+   */
+  async notifyBusinessPartnerStatusUpdate(data: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    statusDescription: string;
+    technicianNotes?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_status_update',
+      { phone: data.partnerPhone, name: data.partnerName, role: 'business_partner' },
+      {
+        businessPartnerName: data.partnerName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        statusDescription: data.statusDescription,
+        technicianNotes: data.technicianNotes
+      }
+    );
+  }
+
+  /**
+   * SMS poslovnom partneru kada se poruči rezervni dio
+   */
+  async notifyBusinessPartnerSparePartOrdered(data: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    partName: string;
+    supplierName?: string;
+    estimatedDate?: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_spare_part_ordered',
+      { phone: data.partnerPhone, name: data.partnerName, role: 'business_partner' },
+      {
+        businessPartnerName: data.partnerName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        partName: data.partName,
+        supplierName: data.supplierName,
+        estimatedDate: data.estimatedDate
+      }
+    );
+  }
 }

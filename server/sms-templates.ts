@@ -13,6 +13,9 @@ export interface SMSTemplateData {
   cost?: string;
   businessPartnerName?: string;
   supplierName?: string;
+  deliveryTime?: string;
+  statusDescription?: string;
+  technicianNotes?: string;
 }
 
 export class SMSTemplates {
@@ -147,6 +150,97 @@ Uređaj: ${data.deviceType}
 ${this.COMPANY_NAME}`;
   }
 
+  // KORISNICI - AUTOMATSKI SMS TRIGGERI
+
+  /**
+   * SMS korisniku pri promjeni statusa servisa
+   */
+  static clientStatusUpdate(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Status Vašeg servisa #${data.serviceId} (${data.deviceType}) je ažuriran na: ${data.statusDescription}.
+
+${data.technicianNotes ? `Napomena: ${data.technicianNotes}` : ''}
+
+Za dodatne informacije: ${this.CONTACT_PHONE}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS korisniku kada se poruči rezervni dio
+   */
+  static clientSparePartOrdered(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Za Vaš ${data.deviceType} (servis #${data.serviceId}) je poručen rezervni dio "${data.partName}".
+
+Očekivano vreme prispeća: ${data.estimatedDate || '5-7 radnih dana'}.
+
+Kontakt: ${this.CONTACT_PHONE}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS korisniku kada rezervni dio stigne
+   */
+  static clientSparePartArrived(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Rezervni dio "${data.partName}" za Vaš ${data.deviceType} (servis #${data.serviceId}) je stigao u magacin.
+
+Naš serviser će Vas kontaktirati u naredna 24h radi ugradnje.
+
+Hvala na strpljenju!
+
+${this.COMPANY_NAME}`;
+  }
+
+  // POSLOVNI PARTNERI - AUTOMATSKI SMS TRIGGERI
+
+  /**
+   * SMS poslovnom partneru pri dodeli tehnčara
+   */
+  static businessPartnerTechnicianAssigned(data: SMSTemplateData): string {
+    return `Poštovani ${data.businessPartnerName},
+
+Servis #${data.serviceId} za Vašeg klijenta ${data.clientName} (${data.deviceType}) je dodeljen serviseru ${data.technicianName}.
+
+Status možete pratiti kroz portal.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS poslovnom partneru pri promjeni statusa
+   */
+  static businessPartnerStatusUpdate(data: SMSTemplateData): string {
+    return `Poštovani ${data.businessPartnerName},
+
+Ažuriran je status servisa #${data.serviceId} za klijenta ${data.clientName} (${data.deviceType}).
+
+Novi status: ${data.statusDescription}
+
+${data.technicianNotes ? `Napomena: ${data.technicianNotes}` : ''}
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS poslovnom partneru kada se poruči rezervni dio
+   */
+  static businessPartnerSparePartOrdered(data: SMSTemplateData): string {
+    return `Poštovani ${data.businessPartnerName},
+
+Za servis #${data.serviceId} (klijent: ${data.clientName}, ${data.deviceType}) je poručen rezervni dio "${data.partName}".
+
+Dobavljač: ${data.supplierName || 'Standard'}
+Očekivano: ${data.estimatedDate || '5-7 dana'}
+
+${this.COMPANY_NAME}`;
+  }
+
   /**
    * SMS za poslovnog partnera nakon završetka servisa
    */
@@ -216,6 +310,54 @@ Klijent: ${data.clientName}
 ${this.COMPANY_NAME}`;
   }
 
+  /**
+   * SMS klijentu kad se poruče rezervni dijelovi
+   */
+  static clientPartsOrdered(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Za Vaš ${data.deviceType} (servis #${data.serviceId}) je poručen rezervni dio "${data.partName}".
+
+Očekivano vreme isporuke: ${data.deliveryTime || '7-10 dana'}
+
+Kontaktiraćemo Vas kada dio stigne.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS poslovnom partneru kad se poruče rezervni dijelovi za njihov servis
+   */
+  static businessPartnerPartsOrdered(data: SMSTemplateData): string {
+    return `Poštovani ${data.businessPartnerName},
+
+Za servis #${data.serviceId} koji ste Vi zakazali je poručen rezervni dio "${data.partName}".
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Isporuka: ${data.deliveryTime || '7-10 dana'}
+
+Obavijestićemo Vas kada dio stigne.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS poslovnom partneru kad stigugu rezervni dijelovi za njihov servis
+   */
+  static businessPartnerPartsArrived(data: SMSTemplateData): string {
+    return `Poštovani ${data.businessPartnerName},
+
+Rezervni dio "${data.partName}" za Vaš servis #${data.serviceId} je stigao.
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+
+Servis će uskoro biti završen.
+
+${this.COMPANY_NAME}`;
+  }
+
   // GENERIČKE FUNKCIJE
 
   /**
@@ -245,6 +387,27 @@ ${this.COMPANY_NAME}`;
         return this.newServiceAssigned(data);
       case 'part_status_update':
         return this.partStatusUpdate(data);
+      // KORISNICI - AUTOMATSKI TRIGGERI
+      case 'client_status_update':
+        return this.clientStatusUpdate(data);
+      case 'client_spare_part_ordered':
+        return this.clientSparePartOrdered(data);
+      case 'client_spare_part_arrived':
+        return this.clientSparePartArrived(data);
+      // POSLOVNI PARTNERI - AUTOMATSKI TRIGGERI
+      case 'business_partner_technician_assigned':
+        return this.businessPartnerTechnicianAssigned(data);
+      case 'business_partner_status_update':
+        return this.businessPartnerStatusUpdate(data);
+      case 'business_partner_spare_part_ordered':
+        return this.businessPartnerSparePartOrdered(data);
+      // NOVI SPARE PARTS TEMPLATE-I
+      case 'client_parts_ordered':
+        return this.clientPartsOrdered(data);
+      case 'business_partner_parts_ordered':
+        return this.businessPartnerPartsOrdered(data);
+      case 'business_partner_parts_arrived':
+        return this.businessPartnerPartsArrived(data);
       default:
         throw new Error(`Nepoznat tip SMS template-a: ${type}`);
     }
@@ -260,9 +423,23 @@ ${this.COMPANY_NAME}`;
       'client_no_answer': 'Klijent ne odgovara',
       'spare_part_arrived': 'Rezervni deo stigao - klijent',
       'spare_part_ordered': 'Rezervni deo poručen - klijent',
+      // KORISNICI - AUTOMATSKI TRIGGERI
+      'client_status_update': 'Promjena statusa - klijent',
+      'client_spare_part_ordered': 'Rezervni dio poručen - klijent',
+      'client_spare_part_arrived': 'Rezervni dio stigao - klijent',
+      // POSLOVNI PARTNERI
       'service_assigned_to_partner': 'Servis dodeljen partneru',
       'part_ordered_by_partner': 'Deo poručen - partner',
       'partner_service_completed': 'Servis završen - partner',
+      // NOVI SPARE PARTS TEMPLATE-I
+      'client_parts_ordered': 'Rezervni dio poručen - klijent',
+      'business_partner_parts_ordered': 'Rezervni dio poručen - poslovni partner',
+      'business_partner_parts_arrived': 'Rezervni dio stigao - poslovni partner',
+      // POSLOVNI PARTNERI - AUTOMATSKI TRIGGERI
+      'business_partner_technician_assigned': 'Dodela tehničara - partner',
+      'business_partner_status_update': 'Promjena statusa - partner',
+      'business_partner_spare_part_ordered': 'Rezervni dio poručen - partner',
+      // SERVISERI
       'technician_part_arrived': 'Rezervni deo stigao - serviser',
       'new_service_assigned': 'Novi servis dodeljen',
       'part_status_update': 'Status rezervnog dela'

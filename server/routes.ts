@@ -19,6 +19,7 @@ import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitS
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
 import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
+import { SMSCommunicationService } from './sms-communication-service';
 // SMS mobile functionality has been completely removed
 
 // Mapiranje status kodova u opisne nazive statusa
@@ -54,7 +55,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
-  // SMS service has been completely removed from the application
+  // Inicijalizacija SMS servisa
+  let smsService: SMSCommunicationService | null = null;
+  
+  // Funkcija za dobijanje SMS konfiguracije iz baze
+  async function initializeSMSService() {
+    try {
+      const smsSettings = await storage.getSystemSettings();
+      if (smsSettings.sms_mobile_api_key && smsSettings.sms_mobile_base_url) {
+        smsService = new SMSCommunicationService({
+          apiKey: smsSettings.sms_mobile_api_key,
+          baseUrl: smsSettings.sms_mobile_base_url,
+          senderId: smsSettings.sms_mobile_sender_id || 'FRIGO SISTEM',
+          enabled: smsSettings.sms_mobile_enabled === 'true'
+        });
+        console.log('📱 SMS Communication Service inicijalizovan');
+      }
+    } catch (error) {
+      console.error('❌ Greška pri inicijalizaciji SMS servisa:', error);
+    }
+  }
+  
+  // Pozovi inicijalizaciju SMS servisa
+  await initializeSMSService();
   
   // Security routes - Bot verification and rate limiting
   app.get("/api/security/bot-challenge", getBotChallenge);
@@ -1605,6 +1628,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error sending email notifications:", emailError);
           emailInfo.emailError = emailError.message || "Nepoznata greška pri slanju emaila";
         }
+
+        // ===== AUTOMATSKI SMS TRIGGERI =====
+        // Šaljemo SMS obaveštenja samo ako je SMS servis konfigurisan
+        if (smsService && smsService.isConfigured()) {
+          try {
+            console.log(`[SMS SISTEM] Početak automatskih SMS triggera za servis #${id}`);
+            
+            // 1. SMS KORISNIKU
+            if (updatedService.clientId) {
+              const client = await storage.getClient(updatedService.clientId);
+              if (client && client.phone) {
+                try {
+                  const statusDescription = STATUS_DESCRIPTIONS[updatedService.status] || updatedService.status;
+                  await smsService.notifyClientStatusUpdate({
+                    clientPhone: client.phone,
+                    clientName: client.fullName,
+                    serviceId: id.toString(),
+                    deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja iz appliance tabele
+                    statusDescription: statusDescription,
+                    technicianNotes: updatedService.technicianNotes
+                  });
+                  console.log(`[SMS SISTEM] ✅ SMS poslat korisniku ${client.fullName} (${client.phone})`);
+                } catch (smsError) {
+                  console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku:`, smsError);
+                }
+              }
+            }
+
+            // 2. SMS POSLOVNOM PARTNERU (ako servis dolazi od poslovnog partnera)
+            if (updatedService.businessPartnerId) {
+              try {
+                const businessPartner = await storage.getUser(updatedService.businessPartnerId);
+                if (businessPartner && businessPartner.phone) {
+                  const client = await storage.getClient(updatedService.clientId!);
+                  const statusDescription = STATUS_DESCRIPTIONS[updatedService.status] || updatedService.status;
+                  
+                  await smsService.notifyBusinessPartnerStatusUpdate({
+                    partnerPhone: businessPartner.phone,
+                    partnerName: businessPartner.fullName,
+                    serviceId: id.toString(),
+                    clientName: client?.fullName || 'Nepoznat klijent', 
+                    deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja
+                    statusDescription: statusDescription,
+                    technicianNotes: updatedService.technicianNotes
+                  });
+                  console.log(`[SMS SISTEM] ✅ SMS poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
+                }
+              } catch (smsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a poslovnom partneru:`, smsError);
+              }
+            }
+            
+          } catch (smsError) {
+            console.error("[SMS SISTEM] Globalna greška pri slanju SMS obaveštenja:", smsError);
+          }
+        } else {
+          console.log("[SMS SISTEM] SMS servis nije konfigurisan, preskačem automatske triggere");
+        }
       }
       
       // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
@@ -1885,7 +1966,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Bezbedno obradimo grešku koja može biti bilo kog tipa
         const errorMessage = error instanceof Error ? error.message : String(error);
         emailInfo.emailError = `Sistemska greška (email): ${errorMessage || "Nepoznata greška"}`;
-        // SMS functionality has been removed
+      }
+
+      // ===== DODATNI AUTOMATSKI SMS TRIGGERI =====
+      // Dodajemo SMS obaveštenja za sve status promjene (ne samo completed)
+      if (smsService && smsService.isConfigured() && service.status !== validStatus) {
+        try {
+          console.log(`[SMS SISTEM] Automatski trigger za promjenu statusa servisa #${serviceId}: ${service.status} -> ${validStatus}`);
+          
+          // 1. SMS KORISNIKU za sve status promjene
+          if (service.clientId) {
+            const client = await storage.getClient(service.clientId);
+            if (client && client.phone) {
+              try {
+                const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
+                await smsService.notifyClientStatusUpdate({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: serviceId.toString(),
+                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja iz appliance tabele
+                  statusDescription: statusDescription,
+                  technicianNotes: technicianNotes
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o promjeni statusa poslat korisniku ${client.fullName} (${client.phone})`);
+              } catch (smsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku:`, smsError);
+              }
+            }
+          }
+
+          // 2. SMS POSLOVNOM PARTNERU za sve status promjene
+          if (service.businessPartnerId) {
+            try {
+              const businessPartner = await storage.getUser(service.businessPartnerId);
+              if (businessPartner && businessPartner.phone) {
+                const client = await storage.getClient(service.clientId!);
+                const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
+                
+                await smsService.notifyBusinessPartnerStatusUpdate({
+                  partnerPhone: businessPartner.phone,
+                  partnerName: businessPartner.fullName,
+                  serviceId: serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent', 
+                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja
+                  statusDescription: statusDescription,
+                  technicianNotes: technicianNotes
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o promjeni statusa poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
+              }
+            } catch (smsError) {
+              console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a poslovnom partneru:`, smsError);
+            }
+          }
+          
+        } catch (smsError) {
+          console.error("[SMS SISTEM] Globalna greška pri automatskim SMS triggerima:", smsError);
+        }
       }
       
       // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
@@ -3840,6 +3976,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log(`📱 SMS o prispeću rezervnog dela poslat klijentu ${client.fullName}`);
             }
+
+            // Obavesti poslovnog partnera (ako servis dolazi od poslovnog partnera)
+            if (service.businessPartnerId) {
+              try {
+                const businessPartner = await storage.getUser(service.businessPartnerId);
+                if (businessPartner && businessPartner.phone) {
+                  await smsService.notifyBusinessPartnerPartsArrived({
+                    partnerPhone: businessPartner.phone,
+                    partnerName: businessPartner.fullName,
+                    serviceId: service.id.toString(),
+                    clientName: client?.fullName || 'Nepoznat klijent',
+                    deviceType: category?.name || 'Uređaj',
+                    partName: order.partName
+                  });
+                  console.log(`📱 SMS o prispeću rezervnog dela poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
+                }
+              } catch (smsError) {
+                console.error(`❌ Greška pri slanju SMS-a poslovnom partneru o prispeću:`, smsError);
+              }
+            }
           }
         }
       }
@@ -4465,6 +4621,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Automatski kreiraj obaveštenje za administratore
       await NotificationService.notifySparePartOrdered(order.id, technicianId);
+      
+      // ===== AUTOMATSKI SMS TRIGGERI ZA REZERVNE DJELOVE =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS SISTEM] Početak automatskih SMS triggera za porudžbinu rezervnih djelova #${order.id}`);
+          
+          // 1. SMS KORISNIKU o porudžbini rezervnih djelova
+          if (service.clientId) {
+            const client = await storage.getClient(service.clientId);
+            if (client && client.phone) {
+              try {
+                await smsService.notifyClientPartsOrdered({
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  serviceId: serviceId.toString(),
+                  partName: partName,
+                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja iz appliance tabele
+                  deliveryTime: urgency === 'urgent' ? '3-5 dana' : '7-10 dana'
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o porudžbini dijelova poslat korisniku ${client.fullName} (${client.phone})`);
+              } catch (smsError) {
+                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku o porudžbini:`, smsError);
+              }
+            }
+          }
+
+          // 2. SMS POSLOVNOM PARTNERU o porudžbini rezervnih djelova (ako servis dolazi od poslovnog partnera)
+          if (service.businessPartnerId) {
+            try {
+              const businessPartner = await storage.getUser(service.businessPartnerId);
+              if (businessPartner && businessPartner.phone) {
+                const client = await storage.getClient(service.clientId!);
+                
+                await smsService.notifyBusinessPartnerPartsOrdered({
+                  partnerPhone: businessPartner.phone,
+                  partnerName: businessPartner.fullName,
+                  serviceId: serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  partName: partName,
+                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja
+                  deliveryTime: urgency === 'urgent' ? '3-5 dana' : '7-10 dana'
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o porudžbini dijelova poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
+              }
+            } catch (smsError) {
+              console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a poslovnom partneru o porudžbini:`, smsError);
+            }
+          }
+          
+        } catch (smsError) {
+          console.error("[SMS SISTEM] Globalna greška pri automatskim SMS triggerima za rezervne djelove:", smsError);
+        }
+      }
       
       // Automatski premesti servis u "waiting_parts" status
       const currentService = await storage.getService(serviceId);
@@ -5113,6 +5322,47 @@ Admin panel - automatska porudžbina
           }
         } catch (smsError) {
           console.error('❌ Greška pri SMS obaveštenju o rezervnom delu:', smsError);
+        }
+      }
+
+      // ===== AUTOMATSKI SMS TRIGGERI ZA BUSINESS PARTNERE (Admin spare parts order) =====
+      if (serviceId) {
+        try {
+          const service = await storage.getService(serviceId);
+          if (service?.businessPartnerId) {
+            const businessPartner = await storage.getUser(service.businessPartnerId);
+            const client = service.clientId ? await storage.getClient(service.clientId) : null;
+            const appliance = await storage.getAppliance(service.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            
+            if (businessPartner && businessPartner.phone) {
+              const settings = await storage.getSystemSettings();
+              if (settings.sms_mobile_enabled === 'true' && settings.sms_mobile_api_key) {
+                const smsConfig = {
+                  apiKey: settings.sms_mobile_api_key,
+                  baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+                  senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
+                  enabled: true
+                };
+
+                const { SMSCommunicationService } = await import('./sms-communication-service.js');
+                const smsService = new SMSCommunicationService(smsConfig);
+                
+                await smsService.notifyBusinessPartnerPartsOrdered({
+                  partnerPhone: businessPartner.phone,
+                  partnerName: businessPartner.fullName,
+                  serviceId: serviceId.toString(),
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  partName: partName,
+                  deviceType: category?.name || 'Uređaj',
+                  deliveryTime: urgency === 'high' ? '3-5 dana' : '7-10 dana'
+                });
+                console.log(`[SMS SISTEM] ✅ SMS o admin porudžbini dijelova poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
+              }
+            }
+          }
+        } catch (smsError) {
+          console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a poslovnom partneru o admin porudžbini:`, smsError);
         }
       }
 
