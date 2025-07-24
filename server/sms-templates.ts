@@ -114,6 +114,11 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'client_spare_part_arrived');
   }
 
+  static clientServiceStatusChanged(data: SMSTemplateData): string {
+    const message = `Status servisa #${data.serviceId} promenjen: ${data.newStatus}. Serviser: ${data.technicianName}. Info: 067051141`;
+    return this.validateSMSLength(message, 'client_service_status_changed');
+  }
+
   // POSLOVNI PARTNERI SMS OBAVEŠTENJA (KRATKI FORMAT)
 
   static businessPartnerAssigned(data: SMSTemplateData): string {
@@ -129,6 +134,11 @@ export class SMSTemplates {
   static businessPartnerPartsOrdered(data: SMSTemplateData): string {
     const message = `Porucen deo ${data.partName} za servis #${data.serviceId} (${data.clientName}, ${data.deviceType}). Pristice za ${data.estimatedDate || '5-7 dana'}.`;
     return this.validateSMSLength(message, 'business_partner_parts_ordered');
+  }
+
+  static businessPartnerStatusChanged(data: SMSTemplateData): string {
+    const message = `Status servisa #${data.serviceId} promenjen: ${data.oldStatus} -> ${data.newStatus}. Klijent: ${data.clientName}, Serviser: ${data.technicianName}.`;
+    return this.validateSMSLength(message, 'business_partner_status_changed');
   }
 
   // TEHNIČKI SMS OBAVEŠTENJA (KRATKI FORMAT)
@@ -161,11 +171,13 @@ export class SMSTemplates {
       case 'klijent_nije_dostupan': return this.clientNotAvailable(data);
       case 'client_spare_part_ordered': return this.clientSparePartOrdered(data);
       case 'client_spare_part_arrived': return this.clientSparePartArrived(data);
+      case 'service_status_changed': return this.clientServiceStatusChanged(data);
       
       // Business partner templates
       case 'business_partner_assigned': return this.businessPartnerAssigned(data);
       case 'business_partner_completed': return this.businessPartnerCompleted(data);
       case 'business_partner_parts_ordered': return this.businessPartnerPartsOrdered(data);
+      case 'business_partner_status_changed': return this.businessPartnerStatusChanged(data);
       
       // Technician templates  
       case 'technician_new_service': return this.technicianNewService(data);

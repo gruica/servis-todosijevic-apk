@@ -2152,97 +2152,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // ===== DODATNI AUTOMATSKI SMS TRIGGERI =====
-      // Dodajemo SMS obaveštenja za sve status promjene (ne samo completed)
+      // ===== UNIVERZALNI SMS TRIGGER ZA SVE PROMENE STATUSA =====
+      // Konsolidovani SMS sistem koji šalje obaveštenja svim stranama odjednom
       if (smsService && smsService.isConfigured() && service.status !== validStatus) {
         try {
-          console.log(`[SMS SISTEM] Automatski trigger za promjenu statusa servisa #${serviceId}: ${service.status} -> ${validStatus}`);
+          console.log(`[SMS UNIVERZALNI] Automatski trigger za promenu statusa servisa #${serviceId}: ${service.status} -> ${validStatus}`);
           
-          // 1. SMS KORISNIKU za sve status promjene
-          if (service.clientId) {
-            const client = await storage.getClient(service.clientId);
-            if (client && client.phone) {
-              try {
-                const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
-                await smsService.notifyClientStatusUpdate({
-                  clientPhone: client.phone,
-                  clientName: client.fullName,
-                  serviceId: serviceId.toString(),
-                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja iz appliance tabele
-                  statusDescription: statusDescription,
-                  technicianNotes: technicianNotes
-                });
-                console.log(`[SMS SISTEM] ✅ SMS o promjeni statusa poslat korisniku ${client.fullName} (${client.phone})`);
-              } catch (smsError) {
-                console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a korisniku:`, smsError);
-              }
-            }
-          }
-
-          // 2. SMS POSLOVNOM PARTNERU za sve status promjene
-          if (service.businessPartnerId) {
-            try {
-              const businessPartner = await storage.getUser(service.businessPartnerId);
-              if (businessPartner && businessPartner.phone) {
-                const client = await storage.getClient(service.clientId!);
-                const statusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
-                
-                await smsService.notifyBusinessPartnerStatusUpdate({
-                  partnerPhone: businessPartner.phone,
-                  partnerName: businessPartner.fullName,
-                  serviceId: serviceId.toString(),
-                  clientName: client?.fullName || 'Nepoznat klijent', 
-                  deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja
-                  statusDescription: statusDescription,
-                  technicianNotes: technicianNotes
-                });
-                console.log(`[SMS SISTEM] ✅ SMS o promjeni statusa poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
-              }
-            } catch (smsError) {
-              console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a poslovnom partneru:`, smsError);
-            }
-          }
-          
-        } catch (smsError) {
-          console.error("[SMS SISTEM] Globalna greška pri automatskim SMS triggerima:", smsError);
-        }
-      }
-
-      // ===== ADMIN SMS OBAVEŠTENJA O PROMENI STATUSA =====
-      if (smsService && smsService.isConfigured() && service.status !== validStatus) {
-        try {
-          console.log(`[SMS ADMIN] Šalje obaveštenje administratorima o promeni statusa servisa #${serviceId}: ${service.status} -> ${validStatus}`);
-          
-          const admins = await getAdminsWithPhones();
-          const client = await storage.getClient(service.clientId!);
+          // Pripremi sve potrebne podatke
+          const client = service.clientId ? await storage.getClient(service.clientId) : null;
           const appliance = await storage.getAppliance(service.applianceId);
           const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
           const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
           
-          const deviceType = category ? category.name : 'Nepoznat uređaj';
-          const oldStatusDescription = STATUS_DESCRIPTIONS[service.status] || service.status;
-          const newStatusDescription = STATUS_DESCRIPTIONS[validStatus] || validStatus;
-
-          for (const admin of admins) {
-            try {
-              await smsService.notifyAdminStatusChange({
-                adminPhone: admin.phone,
-                adminName: admin.fullName,
-                serviceId: serviceId.toString(),
-                clientName: client?.fullName || 'Nepoznat klijent',
-                deviceType: deviceType,
-                oldStatus: oldStatusDescription,
-                newStatus: newStatusDescription,
-                technicianName: technician?.fullName
-              });
-              console.log(`[SMS ADMIN] ✅ SMS o promeni statusa poslat administratoru ${admin.fullName} (${admin.phone})`);
-            } catch (adminSmsError) {
-              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
-            }
+          // Pozovi univerzalnu SMS funkciju
+          const smsResults = await smsService.notifyServiceStatusChange({
+            serviceId: serviceId.toString(),
+            clientPhone: client?.phone,
+            clientName: client?.fullName,
+            technicianName: technician?.fullName,
+            deviceType: category?.name || 'Uređaj',
+            oldStatus: service.status,
+            newStatus: validStatus,
+            statusDescription: STATUS_DESCRIPTIONS[validStatus] || validStatus,
+            technicianNotes: technicianNotes,
+            businessPartnerPhone: businessPartner?.phone,
+            businessPartnerName: businessPartner?.fullName
+          });
+          
+          // Log rezultate
+          if (smsResults.clientSMS?.success) {
+            console.log(`[SMS UNIVERZALNI] ✅ SMS klijentu uspešno poslat`);
           }
-        } catch (adminSmsError) {
-          console.error('[SMS ADMIN] Globalna greška pri slanju admin SMS obaveštenja o promeni statusa:', adminSmsError);
+          if (smsResults.adminSMS?.length) {
+            const successCount = smsResults.adminSMS.filter(r => r.success).length;
+            console.log(`[SMS UNIVERZALNI] ✅ SMS administratorima: ${successCount}/${smsResults.adminSMS.length} uspešno`);
+          }
+          if (smsResults.businessPartnerSMS?.success) {
+            console.log(`[SMS UNIVERZALNI] ✅ SMS poslovnom partneru uspešno poslat`);
+          }
+          
+        } catch (smsError) {
+          console.error("[SMS UNIVERZALNI] Globalna greška pri SMS obaveštenjima:", smsError);
         }
+      } else {
+        console.log("[SMS UNIVERZALNI] SMS servis nije konfigurisan ili nema promene statusa");
       }
       
       // Spojimo ažurirani servis sa informacijama o slanju emaila da bi klijent imao povratnu informaciju
@@ -4073,10 +4027,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Servis nije pronađen" });
       }
       
+      // Sačuvaj stari status pre ažuriranja
+      const oldStatus = service.status;
+      
       // Ažuriraj status
       const updatedService = await storage.updateService(serviceId, { status });
       
-      console.log(`Status servisa #${serviceId} ažuriran na: ${status}`);
+      console.log(`[UPDATE-STATUS] Status servisa #${serviceId} ažuriran sa ${oldStatus} na ${status}`);
       
       // Pošalji notifikaciju o promeni statusa
       try {
@@ -4085,7 +4042,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Greška pri slanju notifikacije o promeni statusa:", notificationError);
       }
       
-      // SMS functionality has been removed from the application
+      // ===== UNIVERZALNI SMS TRIGGER ZA SVE PROMENE STATUSA =====
+      // Aktiviramo SMS obaveštenja i za ovaj endpoint
+      try {
+        const settings = await storage.getSystemSettings();
+        const smsConfig = {
+          apiKey: settings.sms_mobile_api_key || '',
+          baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settings.sms_mobile_sender_id || null,
+          enabled: settings.sms_mobile_enabled === 'true'
+        };
+
+        if (smsConfig.enabled && smsConfig.apiKey && oldStatus !== status) {
+          console.log(`[UPDATE-STATUS SMS] Aktiviram SMS trigger za promenu ${oldStatus} -> ${status}`);
+          
+          const { SMSCommunicationService } = await import('./sms-communication-service.js');
+          const smsService = new SMSCommunicationService(smsConfig);
+          
+          // Pripremi sve potrebne podatke
+          const client = service.clientId ? await storage.getClient(service.clientId) : null;
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
+          
+          // Pozovi univerzalnu SMS funkciju
+          const smsResults = await smsService.notifyServiceStatusChange({
+            serviceId: serviceId.toString(),
+            clientPhone: client?.phone,
+            clientName: client?.fullName,
+            technicianName: technician?.fullName,
+            deviceType: category?.name || 'Uređaj',
+            oldStatus: oldStatus,
+            newStatus: status,
+            statusDescription: STATUS_DESCRIPTIONS[status] || status,
+            technicianNotes: undefined,
+            businessPartnerPhone: businessPartner?.phone,
+            businessPartnerName: businessPartner?.fullName
+          });
+          
+          // Log rezultate
+          if (smsResults.clientSMS?.success) {
+            console.log(`[UPDATE-STATUS SMS] ✅ SMS klijentu uspešno poslat`);
+          }
+          if (smsResults.adminSMS?.length) {
+            const successCount = smsResults.adminSMS.filter(r => r.success).length;
+            console.log(`[UPDATE-STATUS SMS] ✅ SMS administratorima: ${successCount}/${smsResults.adminSMS.length} uspešno`);
+          }
+          if (smsResults.businessPartnerSMS?.success) {
+            console.log(`[UPDATE-STATUS SMS] ✅ SMS poslovnom partneru uspešno poslat`);
+          }
+        } else {
+          console.log("[UPDATE-STATUS SMS] SMS servis nije konfigurisan ili nema promene statusa");
+        }
+      } catch (smsError) {
+        console.error("[UPDATE-STATUS SMS] Greška pri SMS obaveštenjima:", smsError);
+      }
       
       res.json({
         ...updatedService,

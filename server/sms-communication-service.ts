@@ -218,6 +218,94 @@ export class SMSCommunicationService {
    * Trigger funkcije za automatsko slanje SMS-a
    */
 
+  // OPŠTI STATUS UPDATE TRIGGER ZA SVE PROMENE STATUSA
+  async notifyServiceStatusChange(serviceData: {
+    serviceId: string;
+    clientPhone?: string;
+    clientName?: string;
+    technicianName?: string;
+    deviceType?: string;
+    oldStatus?: string;
+    newStatus: string;
+    statusDescription?: string;
+    technicianNotes?: string;
+    businessPartnerPhone?: string;
+    businessPartnerName?: string;
+  }): Promise<{
+    clientSMS?: SMSResult;
+    adminSMS?: SMSResult[];
+    businessPartnerSMS?: SMSResult;
+  }> {
+    const results: any = {};
+
+    try {
+      // 1. SMS klijentu (ako ima telefon)
+      if (serviceData.clientPhone && serviceData.clientName) {
+        console.log(`📱 Šalje SMS klijentu o promeni statusa: ${serviceData.oldStatus} -> ${serviceData.newStatus}`);
+        results.clientSMS = await this.sendTemplatedSMS('service_status_changed', 
+          { phone: serviceData.clientPhone, name: serviceData.clientName, role: 'client' },
+          {
+            clientName: serviceData.clientName,
+            serviceId: serviceData.serviceId,
+            deviceType: serviceData.deviceType || 'Uređaj',
+            oldStatus: serviceData.oldStatus,
+            newStatus: serviceData.newStatus,
+            statusDescription: serviceData.statusDescription || serviceData.newStatus,
+            technicianName: serviceData.technicianName || 'Serviser',
+            technicianNotes: serviceData.technicianNotes
+          }
+        );
+      }
+
+      // 2. SMS administratorima
+      const { storage } = await import('./storage.js');
+      const admins = await storage.getUsersByRole('admin');
+      const adminResults: SMSResult[] = [];
+      
+      for (const admin of admins) {
+        if (admin.phone) {
+          console.log(`📱 Šalje SMS administratoru ${admin.fullName} o promeni statusa`);
+          const adminResult = await this.sendTemplatedSMS('admin_status_change',
+            { phone: admin.phone, name: admin.fullName, role: 'admin' },
+            {
+              serviceId: serviceData.serviceId,
+              clientName: serviceData.clientName || 'Nepoznat klijent',
+              deviceType: serviceData.deviceType || 'Uređaj',
+              oldStatus: serviceData.oldStatus,
+              newStatus: serviceData.newStatus,
+              technicianName: serviceData.technicianName || 'Nepoznat serviser',
+              adminName: admin.fullName
+            }
+          );
+          adminResults.push(adminResult);
+        }
+      }
+      results.adminSMS = adminResults;
+
+      // 3. SMS poslovnom partneru (ako postoji)
+      if (serviceData.businessPartnerPhone && serviceData.businessPartnerName) {
+        console.log(`📱 Šalje SMS poslovnom partneru o promeni statusa`);
+        results.businessPartnerSMS = await this.sendTemplatedSMS('business_partner_status_changed',
+          { phone: serviceData.businessPartnerPhone, name: serviceData.businessPartnerName, role: 'business_partner' },
+          {
+            serviceId: serviceData.serviceId,
+            clientName: serviceData.clientName || 'Nepoznat klijent',
+            deviceType: serviceData.deviceType || 'Uređaj',
+            oldStatus: serviceData.oldStatus,
+            newStatus: serviceData.newStatus,
+            technicianName: serviceData.technicianName || 'Serviser',
+            businessPartnerName: serviceData.businessPartnerName
+          }
+        );
+      }
+
+    } catch (error) {
+      console.error('❌ Greška pri slanju SMS obaveštenja o promeni statusa:', error);
+    }
+
+    return results;
+  }
+
   // KLIJENT TRIGERI
   async notifyServiceCompleted(serviceData: {
     clientPhone: string;
