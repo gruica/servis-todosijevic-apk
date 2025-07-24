@@ -36,6 +36,15 @@ export class SMSTemplates {
   private static COMPANY_NAME = "Frigo Sistem Todosijević";
   private static CONTACT_PHONE = "069/xxx-xxx";
   private static CONTACT_EMAIL = "info@frigosistemtodosijevic.com";
+  
+  // VALIDACIJA: Maksimalno 160 karaktera po SMS poruci
+  private static validateSMSLength(message: string): string {
+    if (message.length > 160) {
+      console.log(`⚠️ SMS template je predugačak (${message.length} karaktera), treba skratiti`);
+      return message.substring(0, 160);
+    }
+    return message;
+  }
 
   // KLIJENT SMS OBAVEŠTENJA
   
@@ -43,67 +52,36 @@ export class SMSTemplates {
    * SMS za klijenta nakon završetka servisa
    */
   static serviceCompleted(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Vaš servis #${data.serviceId} za ${data.deviceType} je uspešno završen od strane naših stručnjaka. 
-
-Hvala Vam što ste izabrali ${this.COMPANY_NAME}. Vaše zadovoljstvo je naš prioritet.
-
-Za sva pitanja: ${this.CONTACT_PHONE}`;
+    const message = `Servis #${data.serviceId} za ${data.deviceType} je uspešno završen. Hvala na poverenju! Za pitanja: ${this.CONTACT_PHONE}`;
+    return this.validateSMSLength(message);
   }
 
   /**
    * SMS za klijenta kada se serviser ne javlja ili nije dostupan
    */
   static clientNotAvailable(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Naš serviser ${data.technicianName} je pokušao da Vas kontaktira u vezi servisa #${data.serviceId} za ${data.deviceType}, ali se niste javili.
-
-Molimo Vas da nas kontaktirate na ${this.CONTACT_PHONE} radi dogovaranja novog termina.
-
-${this.COMPANY_NAME}`;
+    return `Serviser ${data.technicianName} pokušava kontakt za servis #${data.serviceId}. Pozovite ${this.CONTACT_PHONE} za novi termin.`;
   }
 
   /**
    * SMS za klijenta kada serviser ne može da ga kontaktira
    */
   static clientNoAnswer(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Vaš serviser ${data.technicianName} pokušava da Vas kontaktira u vezi servisa #${data.serviceId}.
-
-Molimo pozovite nas na ${this.CONTACT_PHONE} ili odgovorite na ovaj SMS da dogovorimo termin za ${data.deviceType}.
-
-${this.COMPANY_NAME}`;
+    return `Serviser ${data.technicianName} vas poziva za servis #${data.serviceId}. Molimo odgovorite na pozive. Kontakt: ${this.CONTACT_PHONE}`;
   }
 
   /**
    * SMS obaveštenje o prispeću rezervnog dela
    */
   static sparePartArrived(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Rezervni deo "${data.partName}" za Vaš ${data.deviceType} (servis #${data.serviceId}) je stigao.
-
-Naš serviser će Vas kontaktirati u naredna 24h radi dogovaranja termina za ugradnju.
-
-${this.COMPANY_NAME}`;
+    return `Rezervni deo ${data.partName} za servis #${data.serviceId} je stigao. Serviser će vas kontaktirati u 24h. ${this.CONTACT_PHONE}`;
   }
 
   /**
    * SMS obaveštenje o poručivanju rezervnog dela
    */
   static sparePartOrdered(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Za Vaš ${data.deviceType} (servis #${data.serviceId}) je poručen potreban rezervni deo "${data.partName}".
-
-Očekivano vreme prispeća: ${data.estimatedDate || '5-7 radnih dana'}.
-
-Kontakt: ${this.CONTACT_PHONE}
-
-${this.COMPANY_NAME}`;
+    return `Poručen rezervni deo ${data.partName} za servis #${data.serviceId}. Prispeće za ${data.estimatedDate || '5-7 dana'}. ${this.CONTACT_PHONE}`;
   }
 
   // POSLOVNI PARTNER SMS OBAVEŠTENJA
@@ -217,42 +195,21 @@ ${this.COMPANY_NAME}`;
    * SMS poslovnom partneru pri dodeli tehnčara
    */
   static businessPartnerTechnicianAssigned(data: SMSTemplateData): string {
-    return `Poštovani ${data.businessPartnerName},
-
-Servis #${data.serviceId} za Vašeg klijenta ${data.clientName} (${data.deviceType}) je dodeljen serviseru ${data.technicianName}.
-
-Status možete pratiti kroz portal.
-
-${this.COMPANY_NAME}`;
+    return `Servis #${data.serviceId} za ${data.clientName} (${data.deviceType}) dodeljen serviseru ${data.technicianName}. Pratite status kroz portal.`;
   }
 
   /**
    * SMS poslovnom partneru pri promjeni statusa
    */
   static businessPartnerStatusUpdate(data: SMSTemplateData): string {
-    return `Poštovani ${data.businessPartnerName},
-
-Ažuriran je status servisa #${data.serviceId} za klijenta ${data.clientName} (${data.deviceType}).
-
-Novi status: ${data.statusDescription}
-
-${data.technicianNotes ? `Napomena: ${data.technicianNotes}` : ''}
-
-${this.COMPANY_NAME}`;
+    return `Status servisa #${data.serviceId} za ${data.clientName} (${data.deviceType}): ${data.statusDescription}. ${data.technicianNotes ? 'Napomena: ' + data.technicianNotes : ''}`;
   }
 
   /**
    * SMS poslovnom partneru kada se poruči rezervni dio
    */
   static businessPartnerSparePartOrdered(data: SMSTemplateData): string {
-    return `Poštovani ${data.businessPartnerName},
-
-Za servis #${data.serviceId} (klijent: ${data.clientName}, ${data.deviceType}) je poručen rezervni dio "${data.partName}".
-
-Dobavljač: ${data.supplierName || 'Standard'}
-Očekivano: ${data.estimatedDate || '5-7 dana'}
-
-${this.COMPANY_NAME}`;
+    return `Poručen rezervni deo ${data.partName} za servis #${data.serviceId} (${data.clientName}, ${data.deviceType}). Dobavljač: ${data.supplierName || 'Standard'}, prispeće za ${data.estimatedDate || '5-7 dana'}.`;
   }
 
   /**
@@ -378,51 +335,24 @@ ${this.COMPANY_NAME}`;
    * SMS administratoru o novom servisu
    */
   static adminNewService(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-NOVI SERVIS #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Kreirao: ${data.createdBy}
-
-${data.problemDescription ? `Problem: ${data.problemDescription}` : ''}
-
-Zahteva Vašu pažnju.
-
-${this.COMPANY_NAME}`;
+    const message = `NOVI SERVIS #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Kreirao: ${data.createdBy}${data.problemDescription ? ', Problem: ' + data.problemDescription.substring(0, 50) : ''}`;
+    return this.validateSMSLength(message);
   }
 
   /**
    * SMS administratoru o promeni statusa servisa
    */
   static adminStatusChange(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-PROMENA STATUSA - Servis #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Status: ${data.oldStatus} → ${data.newStatus}
-${data.technicianName ? `Serviser: ${data.technicianName}` : ''}
-
-${this.COMPANY_NAME}`;
+    const message = `PROMENA STATUSA - Servis #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Status: ${data.oldStatus} → ${data.newStatus}${data.technicianName ? ', Serviser: ' + data.technicianName : ''}`;
+    return this.validateSMSLength(message);
   }
 
   /**
    * SMS administratoru o dodeli tehničara
    */
   static adminTechnicianAssigned(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-DODELJEN SERVISER - Servis #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Serviser: ${data.technicianName}
-Dodelio: ${data.assignedBy}
-
-${this.COMPANY_NAME}`;
+    const message = `DODELJEN SERVISER - Servis #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Serviser: ${data.technicianName}, Dodelio: ${data.assignedBy}`;
+    return this.validateSMSLength(message);
   }
 
   /**
@@ -430,51 +360,24 @@ ${this.COMPANY_NAME}`;
    */
   static adminPartsOrdered(data: SMSTemplateData): string {
     const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
-    
-    return `${data.adminName || 'Administratore'},
-
-PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Deo: ${data.partName}
-Poručio: ${data.orderedBy}
-
-${this.COMPANY_NAME}`;
+    const message = `PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Deo: ${data.partName}`;
+    return this.validateSMSLength(message);
   }
 
   /**
    * SMS administratoru o prispeću rezervnih delova
    */
   static adminPartsArrived(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-STIGLI DELOVI - Servis #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Deo: ${data.partName}
-
-Servis može biti nastavljen.
-
-${this.COMPANY_NAME}`;
+    const message = `STIGLI DELOVI - Servis #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Deo: ${data.partName}. Servis može biti nastavljen.`;
+    return this.validateSMSLength(message);
   }
 
   /**
    * SMS administratoru kada serviser evidencira uklonjene dijelove
    */
   static adminRemovedParts(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-UKLONJENI DIJELOVI - Servis #${data.serviceId}
-
-Klijent: ${data.clientName}
-Uređaj: ${data.deviceType}
-Serviser: ${data.technicianName}
-
-Dijelovi uklonjeni radi popravke u radionici.
-
-${this.COMPANY_NAME}`;
+    const message = `UKLONJENI DIJELOVI - Servis #${data.serviceId}. Klijent: ${data.clientName}, Uređaj: ${data.deviceType}, Serviser: ${data.technicianName}. Delovi odneseni u radionicu.`;
+    return this.validateSMSLength(message);
   }
 
   // TEHNIČKE AKCIJE - SMS TEMPLATE-I ZA KLIJENTE I ADMINISTRATORE
@@ -498,33 +401,16 @@ ${this.COMPANY_NAME}`;
    * SMS klijentu kada tehničar poruči rezervni deo
    */
   static clientPartOrderedByTechnician(data: SMSTemplateData): string {
-    const deliveryTime = data.deliveryTime || (data.urgency === 'urgent' ? '3-5' : '7-10') + ' radnih dana';
+    const deliveryTime = data.deliveryTime || (data.urgency === 'urgent' ? '3-5' : '7-10') + ' dana';
     
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Za vaš ${data.deviceType} (servis #${data.serviceId}) je naručen potreban rezervni deo.
-
-Očekivano vreme dostave: ${deliveryTime}
-Kontaktiraćemo vas čim deo stigne u magacin.
-
-Za dodatne informacije: ${this.CONTACT_PHONE}
-
-${this.COMPANY_NAME}`;
+    return `Poručen rezervni deo za ${data.deviceType} (servis #${data.serviceId}). Prispeće za ${deliveryTime}. Kontaktiraćemo vas kada stigne.`;
   }
 
   /**
    * SMS klijentu kada tehničar označi da klijent nije dostupan
    */
   static clientNotAvailableByTechnician(data: SMSTemplateData): string {
-    return `Poštovani ${data.clientName || 'klijente'},
-
-Naš serviser je pokušao da vas kontaktira u vezi servisa #${data.serviceId} za ${data.deviceType}, ali vas nije zatekao.
-
-Molimo vas pozovite nas na ${this.CONTACT_PHONE} da dogovorimo novi termin koji vam odgovara.
-
-Hvala na razumevanju.
-
-${this.COMPANY_NAME}`;
+    return `Serviser vas je pokušao kontaktirati za servis #${data.serviceId} (${data.deviceType}), ali vas nije zatekao. Pozovite ${this.CONTACT_PHONE} za novi termin.`;
   }
 
   /**
@@ -555,18 +441,8 @@ Deo: ${data.partName}`;
    * SMS administratoru kada klijent nije dostupan
    */
   static adminClientUnavailableByTechnician(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-KLIJENT NEDOSTUPAN - Servis #${data.serviceId}
-
-Serviser: ${data.technicianName}
-Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
-Uređaj: ${data.deviceType}
-Status: ${data.unavailableType || 'nedostupan'}
-
-Potrebno novo zakazivanje termina.
-
-${this.COMPANY_NAME}`;
+    const message = `KLIJENT NEDOSTUPAN - Servis #${data.serviceId}, Serviser: ${data.technicianName}, Klijent: ${data.clientName}, Uređaj: ${data.deviceType}. Potrebno novo zakazivanje.`;
+    return this.validateSMSLength(message);
   }
 
   /**

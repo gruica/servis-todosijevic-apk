@@ -35,7 +35,14 @@ export class SMSMobileAPIService {
    */
   async sendSMS(request: SendSMSRequest): Promise<SendSMSResponse> {
     try {
-      console.log(`📱 SMS Mobile API: Šaljem SMS na ${request.recipients}`);
+      // VALIDACIJA: SMS ne sme biti duži od 160 karaktera
+      if (request.message.length > 160) {
+        const truncatedMessage = request.message.substring(0, 160);
+        console.log(`⚠️ SMS skraćen sa ${request.message.length} na 160 karaktera`);
+        request.message = truncatedMessage;
+      }
+      
+      console.log(`📱 SMS Mobile API: Šaljem SMS na ${request.recipients} (${request.message.length} karaktera)`);
       
       // SMS Mobile API zahteva application/x-www-form-urlencoded format
       const formData = new URLSearchParams();
