@@ -204,6 +204,9 @@ export interface IStorage {
   deleteRemovedPart(id: number): Promise<boolean>;
   markPartAsReturned(id: number, returnDate: string, notes?: string): Promise<RemovedPart | undefined>;
   
+  // Spare Parts Orders methods for business partner details
+  getSparePartsByService(serviceId: number): Promise<SparePartOrder[]>;
+  
   // Session store
   sessionStore: any; // Express session store
 }
@@ -3654,6 +3657,21 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri označavanju dela kao vraćenog:', error);
       return undefined;
+    }
+  }
+
+  // Method for getting spare parts orders by service ID for business partner details
+  async getSparePartsByService(serviceId: number): Promise<SparePartOrder[]> {
+    try {
+      const spareParts = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.serviceId, serviceId))
+        .orderBy(desc(sparePartOrders.createdAt));
+      return spareParts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju rezervnih delova za servis:', error);
+      return [];
     }
   }
 }

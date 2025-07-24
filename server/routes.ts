@@ -1048,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Business Partner API Endpoints
+  // Business Partner API Endpoints - Enhanced with detailed service information
   app.get("/api/business/services", jwtAuth, async (req, res) => {
     try {
       // Koristi user ID iz JWT tokena umesto query parametra
@@ -1056,13 +1056,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
-      console.log(`Dohvatanje servisa za poslovnog partnera sa ID: ${req.user.id}`);
+      console.log(`Dohvatanje detaljnih servisa za poslovnog partnera sa ID: ${req.user.id}`);
       
       // Dohvati servise povezane sa poslovnim partnerom
       const services = await storage.getServicesByPartner(req.user.id);
-      res.json(services);
+      
+      // Dodajemo detaljan rad info za svaki servis
+      const enhancedServices = await Promise.all(services.map(async (service) => {
+        // Dohvati rezervne delove za servis
+        const spareParts = await storage.getSparePartsByService(service.id);
+        
+        // Dohvati uklonjene delove sa uređaja
+        const removedParts = await storage.getRemovedPartsByService(service.id);
+        
+        // Dohvati technicianove napomene i rad
+        const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+        const techUser = technician ? await storage.getUserByTechnicianId(service.technicianId) : null;
+        
+        // Kreiraj summariju rada
+        const workSummary = {
+          ...service,
+          technician: technician ? {
+            fullName: technician.fullName,
+            phone: techUser?.phone,
+            email: techUser?.email,
+            specialization: technician.specialization
+          } : null,
+          spareParts: spareParts.map(part => ({
+            partName: part.partName,
+            quantity: part.quantity,
+            productCode: part.productCode,
+            urgency: part.urgency,
+            warrantyStatus: part.warrantyStatus,
+            status: part.status,
+            orderDate: part.createdAt,
+            estimatedDeliveryDate: part.estimatedDeliveryDate,
+            actualDeliveryDate: part.actualDeliveryDate
+          })),
+          removedParts: removedParts.map(part => ({
+            partName: part.partName,
+            removalReason: part.removalReason,
+            currentLocation: part.currentLocation,
+            removalDate: part.removalDate,
+            returnDate: part.returnDate,
+            status: part.status,
+            repairCost: part.repairCost
+          })),
+          workTimeline: [
+            { date: service.createdAt, event: 'Servis kreiran', status: 'pending' },
+            service.assignedAt ? { date: service.assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
+            service.scheduledDate ? { date: service.scheduledDate, event: 'Zakazan termin', status: 'scheduled' } : null,
+            service.startedAt ? { date: service.startedAt, event: 'Servis započet', status: 'in_progress' } : null,
+            service.completedAt ? { date: service.completedAt, event: 'Servis završen', status: 'completed' } : null
+          ].filter(Boolean),
+          isCompleted: service.status === 'completed',
+          totalCost: service.cost || 0,
+          partsCount: spareParts.length,
+          removedPartsCount: removedParts.length
+        };
+        
+        return workSummary;
+      }));
+      
+      res.json(enhancedServices);
     } catch (error) {
-      console.error("Greška pri dobijanju servisa za poslovnog partnera:", error);
+      console.error("Greška pri dobijanju detaljnih servisa za poslovnog partnera:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
