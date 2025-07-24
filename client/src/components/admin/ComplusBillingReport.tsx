@@ -25,16 +25,25 @@ interface BillingService {
   warrantyStatus: string;
 }
 
+interface BrandBreakdown {
+  brand: string;
+  count: number;
+  cost: number;
+}
+
 interface MonthlyReport {
   month: string;
   year: number;
+  brandGroup: string;
+  complusBrands: string[];
   services: BillingService[];
+  servicesByBrand: Record<string, BillingService[]>;
   totalServices: number;
   totalCost: number;
+  brandBreakdown: BrandBreakdown[];
 }
 
 export default function ComplusBillingReport() {
-  const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
@@ -54,19 +63,18 @@ export default function ComplusBillingReport() {
     { value: '12', label: 'Decembar' }
   ];
 
-  // Fetch warranty services for selected brand and period
+  // Fetch warranty services for all Complus brands in selected period
   const { data: billingData, isLoading } = useQuery({
-    queryKey: ['/api/admin/billing/complus', selectedBrand, selectedMonth, selectedYear],
-    enabled: !!selectedBrand && !!selectedMonth,
+    queryKey: ['/api/admin/billing/complus', selectedMonth, selectedYear],
+    enabled: !!selectedMonth,
     queryFn: async () => {
       const params = new URLSearchParams({
-        brand: selectedBrand,
         month: selectedMonth,
         year: selectedYear.toString()
       });
       const response = await fetch(`/api/admin/billing/complus?${params}`);
       if (!response.ok) throw new Error('Greška pri dohvatanju podataka za fakturisanje');
-      return response.json() as MonthlyReport;
+      return await response.json() as MonthlyReport;
     }
   });
 
@@ -84,7 +92,7 @@ export default function ComplusBillingReport() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${selectedBrand}_garancija_${selectedMonth}_${selectedYear}.csv`);
+    link.setAttribute('download', `Complus_garancija_${selectedMonth}_${selectedYear}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,29 +104,14 @@ export default function ComplusBillingReport() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Complus Fakturisanje - Garancijski Servisi
+            Complus Fakturisanje - Svi Brendovi Zajedno
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Evidencija završenih garancijskih servisa za Complus brendove po mesecima
+            Mesečna evidencija završenih garancijskih servisa za sve Complus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Brend</label>
-              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Izaberite brend" />
-                </SelectTrigger>
-                <SelectContent>
-                  {complusBrands.map(brand => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
             <div>
               <label className="text-sm font-medium mb-2 block">Godina</label>
@@ -159,13 +152,28 @@ export default function ComplusBillingReport() {
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Izvezi CSV
+                Izvezi CSV (Svi Complus)
               </Button>
             </div>
           </div>
 
           {billingData && (
             <div className="space-y-4">
+              {/* Brand Breakdown Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                {billingData.brandBreakdown.map(brand => (
+                  <Card key={brand.brand}>
+                    <CardContent className="pt-4">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">{brand.brand}</p>
+                        <p className="text-xl font-bold">{brand.count}</p>
+                        <p className="text-xs text-gray-500">{brand.cost.toFixed(2)} €</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
@@ -211,7 +219,7 @@ export default function ComplusBillingReport() {
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    {selectedBrand} Garancija - {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
+                    Complus Garancija (Svi Brendovi) - {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -278,10 +286,10 @@ export default function ComplusBillingReport() {
             </div>
           )}
 
-          {!selectedBrand || !selectedMonth ? (
+          {!selectedMonth ? (
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Izaberite brend i mesec za pregled fakturisanja</p>
+              <p>Izaberite mesec i godinu za pregled Complus fakturisanja</p>
             </div>
           ) : billingData && billingData.services.length === 0 ? (
             <div className="text-center py-8 text-gray-500">

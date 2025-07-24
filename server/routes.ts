@@ -12,7 +12,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne, isNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
@@ -4121,36 +4121,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // COMPLUS BILLING ENDPOINTS - Fakturisanje garancijskih servisa
   
-  // Pregled završenih garancijskih servisa za Complus brendove po mesecima
+  // Pregled završenih garancijskih servisa za SVE Complus brendove po mesecima
   app.get("/api/admin/billing/complus", jwtAuth, async (req, res) => {
     try {
       if (req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin privilegije potrebne" });
       }
 
-      const { brand, month, year } = req.query;
+      const { month, year } = req.query;
       
-      if (!brand || !month || !year) {
+      if (!month || !year) {
         return res.status(400).json({ 
-          error: "Parametri brand, month i year su obavezni" 
+          error: "Parametri month i year su obavezni" 
         });
       }
 
-      // Validacija Complus brendova
+      // Definišemo SVE Complus brendove koji se fakturišu zajedno
       const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
-      if (!complusBrands.includes(brand as string)) {
-        return res.status(400).json({ 
-          error: "Brend mora biti jedan od Complus brendova" 
-        });
-      }
 
       // Kreiraj date range za mesec
       const startDate = new Date(parseInt(year as string), parseInt(month as string) - 1, 1);
       const endDate = new Date(parseInt(year as string), parseInt(month as string), 0, 23, 59, 59);
 
-      console.log(`[COMPLUS BILLING] Dohvatam ${brand} garancijske servise za ${month}/${year}`);
+      console.log(`[COMPLUS BILLING] Dohvatam SVE Complus garancijske servise za ${month}/${year}`);
+      console.log(`[COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
 
-      // Dohvati završene garancijske servise za izabrani brend i period
+      // Dohvati završene garancijske servise za SVE Complus brendove u periodu
       const services = await db
         .select({
           serviceId: schema.services.id,
@@ -4182,7 +4178,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           and(
             eq(schema.services.status, 'completed'),
             eq(schema.services.warrantyStatus, 'u garanciji'),
-            eq(schema.manufacturers.name, brand as string),
+            or(
+              eq(schema.manufacturers.name, 'Electrolux'),
+              eq(schema.manufacturers.name, 'Elica'),
+              eq(schema.manufacturers.name, 'Candy'),
+              eq(schema.manufacturers.name, 'Hoover'),
+              eq(schema.manufacturers.name, 'Turbo Air')
+            ),
             gte(schema.services.completedDate, startDate.toISOString()),
             lte(schema.services.completedDate, endDate.toISOString())
           )
@@ -4208,6 +4210,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         warrantyStatus: service.warrantyStatus || ''
       }));
 
+      // Grupiši servise po brendu za statistiku
+      const servicesByBrand = billingServices.reduce((groups, service) => {
+        const brand = service.manufacturerName;
+        if (!groups[brand]) {
+          groups[brand] = [];
+        }
+        groups[brand].push(service);
+        return groups;
+      }, {} as Record<string, typeof billingServices>);
+
       const totalServices = billingServices.length;
       const totalCost = billingServices.reduce((sum, service) => sum + (service.cost || 0), 0);
 
@@ -4219,13 +4231,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = {
         month: monthNames[parseInt(month as string) - 1],
         year: parseInt(year as string),
-        brand: brand as string,
+        brandGroup: 'Complus (svi brendovi)',
+        complusBrands,
         services: billingServices,
+        servicesByBrand,
         totalServices,
-        totalCost
+        totalCost,
+        brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
+          brand,
+          count: servicesByBrand[brand].length,
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
+        }))
       };
 
-      console.log(`[COMPLUS BILLING] Pronađeno ${totalServices} servisa, ukupna vrednost: ${totalCost.toFixed(2)}€`);
+      console.log(`[COMPLUS BILLING] Pronađeno ukupno ${totalServices} servisa za sve Complus brendove`);
+      console.log(`[COMPLUS BILLING] Ukupna vrednost: ${totalCost.toFixed(2)}€`);
+      console.log(`[COMPLUS BILLING] Raspored po brendovima:`, response.brandBreakdown);
 
       res.json(response);
     } catch (error) {
