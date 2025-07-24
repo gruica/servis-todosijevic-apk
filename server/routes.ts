@@ -66,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const apiKey = settingsMap.sms_mobile_api_key;
       const baseUrl = settingsMap.sms_mobile_base_url;
-      const senderId = settingsMap.sms_mobile_sender_id || 'FRIGO SISTEM';
+      const senderId = settingsMap.sms_mobile_sender_id || null; // Uklonjen fallback da se prikazuje broj
       const enabled = settingsMap.sms_mobile_enabled === 'true';
       
       console.log('📱 SMS postavke:', { apiKey: apiKey ? '***' : 'nema', baseUrl, senderId, enabled });

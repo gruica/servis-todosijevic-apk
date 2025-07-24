@@ -4,7 +4,7 @@ import { SMSTemplates, SMSTemplateData } from './sms-templates.js';
 export interface SMSConfig {
   apiKey: string;
   baseUrl: string;
-  senderId: string;
+  senderId: string | null;
   enabled: boolean;
 }
 
@@ -59,12 +59,17 @@ export class SMSCommunicationService {
       console.log(`📱 Šaljem ${templateType} SMS na ${formattedPhone} (${recipient.name || 'Nepoznato ime'})`);
       console.log(`📝 Sadržaj: ${message.substring(0, 100)}...`);
 
-      // Pošalji SMS
-      const result = await this.smsApi.sendSMS({
+      // Pošalji SMS - sendername samo ako postoji
+      const smsParams: any = {
         recipients: formattedPhone,
-        message: message,
-        sendername: this.config.senderId
-      });
+        message: message
+      };
+      
+      if (this.config.senderId) {
+        smsParams.sendername = this.config.senderId;
+      }
+      
+      const result = await this.smsApi.sendSMS(smsParams);
 
       if (result.error === 0) {
         console.log(`✅ SMS uspešno poslat! Message ID: ${result.message_id}`);
@@ -103,11 +108,17 @@ export class SMSCommunicationService {
       
       console.log(`📱 Šaljem custom SMS na ${formattedPhone}`);
 
-      const result = await this.smsApi.sendSMS({
+      // Pošalji SMS - sendername samo ako postoji
+      const smsParams: any = {
         recipients: formattedPhone,
-        message: message,
-        sendername: this.config.senderId
-      });
+        message: message
+      };
+      
+      if (this.config.senderId) {
+        smsParams.sendername = this.config.senderId;
+      }
+      
+      const result = await this.smsApi.sendSMS(smsParams);
 
       if (result.error === 0) {
         return {
@@ -146,11 +157,17 @@ export class SMSCommunicationService {
       
       console.log(`📱 Šaljem custom SMS na ${formattedPhone} (${recipient.name || 'Nepoznato ime'})`);
 
-      const result = await this.smsApi.sendSMS({
+      // Pošalji SMS - sendername samo ako postoji
+      const smsParams: any = {
         recipients: formattedPhone,
-        message: message,
-        sendername: this.config.senderId
-      });
+        message: message
+      };
+      
+      if (this.config.senderId) {
+        smsParams.sendername = this.config.senderId;
+      }
+      
+      const result = await this.smsApi.sendSMS(smsParams);
 
       if (result.error === 0) {
         return {
