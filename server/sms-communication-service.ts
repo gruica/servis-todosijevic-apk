@@ -50,14 +50,14 @@ export class SMSCommunicationService {
         return { success: false, error: 'SMS servisi su onemogućeni' };
       }
 
-      // Generiši SMS sadržaj na osnovu template-a
+      // Generiši OPTIMIZOVANI SMS sadržaj - GARANTOVANO JEDNODELNE PORUKE!
       const message = SMSTemplates.generateSMS(templateType, templateData);
       
       // Formatir broj telefona
       const formattedPhone = this.smsApi.formatPhoneNumber(recipient.phone);
       
       console.log(`📱 Šaljem ${templateType} SMS na ${formattedPhone} (${recipient.name || 'Nepoznato ime'})`);
-      console.log(`📝 Sadržaj: ${message.substring(0, 100)}...`);
+      console.log(`📝 Sadržaj: ${message}`);
 
       // Pošalji SMS - sendername samo ako postoji
       const smsParams: any = {
