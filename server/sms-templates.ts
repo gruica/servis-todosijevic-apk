@@ -531,17 +531,11 @@ ${this.COMPANY_NAME}`;
    * SMS administratoru kada tehničar ukloni delove
    */
   static adminPartsRemovedByTechnician(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-DELOVI UKLONJENI - Servis #${data.serviceId}
-
+    return `DELOVI UKLONJENI - Servis #${data.serviceId}
 Serviser: ${data.technicianName}
-Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Klijent: ${data.clientName}
 Uređaj: ${data.deviceType}
-
-Delovi uklonjeni za popravku u radionici.
-
-${this.COMPANY_NAME}`;
+Delovi uklonjeni za radionicu.`;
   }
 
   /**
@@ -550,18 +544,11 @@ ${this.COMPANY_NAME}`;
   static adminPartOrderedByTechnician(data: SMSTemplateData): string {
     const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
     
-    return `${data.adminName || 'Administratore'},
-
-PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}
-
+    return `PORUDŽBINA DELOVA${urgencyText} - Servis #${data.serviceId}
 Serviser: ${data.technicianName}
-Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Klijent: ${data.clientName}
 Uređaj: ${data.deviceType}
-Deo: ${data.partName}
-
-Potrebna Vaša potvrda ili akcija.
-
-${this.COMPANY_NAME}`;
+Deo: ${data.partName}`;
   }
 
   /**
@@ -588,33 +575,22 @@ ${this.COMPANY_NAME}`;
   static adminPartOrderedByTechnician(data: SMSTemplateData): string {
     const urgencyText = data.urgency === 'urgent' ? ' - HITNO!' : '';
     
-    return `${data.adminName || 'Administratore'},
-
-PORUDŽBINA DELA${urgencyText} - Servis #${data.serviceId}
-
+    return `PORUDŽBINA DELA${urgencyText} - Servis #${data.serviceId}
 Serviser: ${data.technicianName}
-Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Klijent: ${data.clientName}
 Uređaj: ${data.deviceType}
-Deo: ${data.partName || 'nije specificiran'}
-
-${this.COMPANY_NAME}`;
+Deo: ${data.partName || 'nije specificiran'}`;
   }
 
   /**
    * SMS administratoru kada tehničar označi da klijent nije dostupan
    */
   static adminClientNotAvailableByTechnician(data: SMSTemplateData): string {
-    return `${data.adminName || 'Administratore'},
-
-KLIJENT NEDOSTUPAN - Servis #${data.serviceId}
-
+    return `KLIJENT NEDOSTUPAN - Servis #${data.serviceId}
 Serviser: ${data.technicianName}
-Klijent: ${data.clientName} (${data.clientPhone || 'nema telefon'})
+Klijent: ${data.clientName}
 Uređaj: ${data.deviceType}
-
-Potrebno organizovati novi termin.
-
-${this.COMPANY_NAME}`;
+Potrebno novo zakazivanje.`;
   }
 
   // DIREKTNI SMS TEMPLATE-I ZA TEHNIČARE
