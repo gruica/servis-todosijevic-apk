@@ -4119,6 +4119,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COMPLUS BILLING ENDPOINTS - Fakturisanje garancijskih servisa
+  
+  // Pregled završenih garancijskih servisa za Complus brendove po mesecima
+  app.get("/api/admin/billing/complus", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
+
+      const { brand, month, year } = req.query;
+      
+      if (!brand || !month || !year) {
+        return res.status(400).json({ 
+          error: "Parametri brand, month i year su obavezni" 
+        });
+      }
+
+      // Validacija Complus brendova
+      const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
+      if (!complusBrands.includes(brand as string)) {
+        return res.status(400).json({ 
+          error: "Brend mora biti jedan od Complus brendova" 
+        });
+      }
+
+      // Kreiraj date range za mesec
+      const startDate = new Date(parseInt(year as string), parseInt(month as string) - 1, 1);
+      const endDate = new Date(parseInt(year as string), parseInt(month as string), 0, 23, 59, 59);
+
+      console.log(`[COMPLUS BILLING] Dohvatam ${brand} garancijske servise za ${month}/${year}`);
+
+      // Dohvati završene garancijske servise za izabrani brend i period
+      const services = await db
+        .select({
+          serviceId: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          completedDate: schema.services.completedDate,
+          cost: schema.services.cost,
+          clientName: schema.clients.fullName,
+          clientPhone: schema.clients.phone,
+          clientAddress: schema.clients.address,
+          clientCity: schema.clients.city,
+          applianceCategory: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          applianceModel: schema.appliances.model,
+          serialNumber: schema.appliances.serialNumber,
+          technicianName: schema.technicians.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .where(
+          and(
+            eq(schema.services.status, 'completed'),
+            eq(schema.services.warrantyStatus, 'u garanciji'),
+            eq(schema.manufacturers.name, brand as string),
+            gte(schema.services.completedDate, startDate.toISOString()),
+            lte(schema.services.completedDate, endDate.toISOString())
+          )
+        )
+        .orderBy(desc(schema.services.completedDate));
+
+      // Formatiraj rezultate
+      const billingServices = services.map(service => ({
+        id: service.serviceId,
+        serviceNumber: service.serviceId.toString(),
+        clientName: service.clientName || 'Nepoznat klijent',
+        clientPhone: service.clientPhone || '',
+        clientAddress: service.clientAddress || '',
+        clientCity: service.clientCity || '',
+        applianceCategory: service.applianceCategory || '',
+        manufacturerName: service.manufacturerName || '',
+        applianceModel: service.applianceModel || '',
+        serialNumber: service.serialNumber || '',
+        technicianName: service.technicianName || 'Nepoznat serviser',
+        completedDate: service.completedDate,
+        cost: service.cost || 0,
+        description: service.description || '',
+        warrantyStatus: service.warrantyStatus || ''
+      }));
+
+      const totalServices = billingServices.length;
+      const totalCost = billingServices.reduce((sum, service) => sum + (service.cost || 0), 0);
+
+      const monthNames = [
+        'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
+        'Jul', 'Avgust', 'Septembar', 'Oktobar', 'Novembar', 'Decembar'
+      ];
+
+      const response = {
+        month: monthNames[parseInt(month as string) - 1],
+        year: parseInt(year as string),
+        brand: brand as string,
+        services: billingServices,
+        totalServices,
+        totalCost
+      };
+
+      console.log(`[COMPLUS BILLING] Pronađeno ${totalServices} servisa, ukupna vrednost: ${totalCost.toFixed(2)}€`);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Greška pri dohvatanju Complus billing podataka:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju podataka za fakturisanje" });
+    }
+  });
+
   // SMS Mobile API endpoints - restore comprehensive SMS functionality
   
   // Admin masovno slanje SMS-a
