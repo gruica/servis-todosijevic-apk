@@ -600,6 +600,36 @@ Potrebno organizovati novi termin.
 ${this.COMPANY_NAME}`;
   }
 
+  // DIREKTNI SMS TEMPLATE-I ZA TEHNIČARE
+
+  /**
+   * SMS klijentu kada tehničar stiže na lokaciju
+   */
+  static technicianArrived(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Vaš serviser ${data.technicianName} je stigao na lokaciju za servis #${data.serviceId} (${data.deviceType}).
+
+Molimo da se pripremite za pregled uređaja.
+
+${this.COMPANY_NAME}`;
+  }
+
+  /**
+   * SMS klijentu kada tehničar kasni
+   */
+  static technicianDelayed(data: SMSTemplateData): string {
+    return `Poštovani ${data.clientName || 'klijente'},
+
+Vaš serviser ${data.technicianName} za servis #${data.serviceId} (${data.deviceType}) je zadržan i stiže sa kašnjenjem.
+
+Molimo za razumevanje. Kontaktiraćemo vas sa tačnim vremenom dolaska.
+
+Za hitne informacije: ${this.CONTACT_PHONE}
+
+${this.COMPANY_NAME}`;
+  }
+
   // GENERIČKE FUNKCIJE
 
   /**
@@ -679,6 +709,11 @@ ${this.COMPANY_NAME}`;
         return this.clientNotAvailableByTechnician(data);
       case 'admin_klijent_nije_dostupan':
         return this.adminClientUnavailableByTechnician(data);
+      // DIREKTNI SMS TEMPLATE-I ZA TEHNIČARE
+      case 'technician_arrived':
+        return this.technicianArrived(data);
+      case 'technician_delayed':
+        return this.technicianDelayed(data);
       default:
         throw new Error(`Nepoznat tip SMS template-a: ${type}`);
     }
@@ -726,7 +761,10 @@ ${this.COMPANY_NAME}`;
       'client_not_available_by_technician': 'Klijent nedostupan od tehničara - klijent',
       'admin_parts_removed_by_technician': 'Delovi uklonjeni od tehničara - admin',
       'admin_part_ordered_by_technician': 'Deo poručen od tehničara - admin',
-      'admin_client_not_available_by_technician': 'Klijent nedostupan od tehničara - admin'
+      'admin_client_not_available_by_technician': 'Klijent nedostupan od tehničara - admin',
+      // DIREKTNI SMS TEMPLATE-I ZA TEHNIČARE
+      'technician_arrived': 'Tehničar stigao na lokaciju - klijent',
+      'technician_delayed': 'Tehničar kasni - klijent'
     };
   }
 }

@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle, FileText } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle, FileText, MessageSquare, Send } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
@@ -644,6 +644,49 @@ export default function TechnicianServices() {
     setDevicePickupDialogOpen(false);
   };
 
+  // Direktno slanje SMS poruka
+  const sendDirectSMS = async (service: TechnicianService, templateType: 'service_arrived' | 'service_delayed') => {
+    try {
+      const response = await apiRequest("POST", "/api/sms/direct-send", {
+        templateType,
+        recipientPhone: service.client?.phone,
+        recipientName: service.client?.fullName,
+        serviceData: {
+          clientName: service.client?.fullName,
+          serviceId: service.id.toString(),
+          deviceType: service.appliance?.category?.name || 'uređaj',
+          technicianName: user?.fullName || 'serviser'
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "✅ SMS uspešno poslat",
+          description: `SMS poruka je poslata klijentu ${service.client?.fullName} (${service.client?.phone})`,
+          variant: "default",
+          duration: 4000,
+        });
+      } else {
+        toast({
+          title: "❌ Greška pri slanju SMS-a",
+          description: result.error || "Nepoznata greška",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      console.error('SMS slanje greška:', error);
+      toast({
+        title: "❌ SMS sistem nedostupan",
+        description: "Greška u komunikaciji sa SMS servisom",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
   // Mutation za vraćanje servisa administratoru
   const returnToAdminMutation = useMutation({
     mutationFn: async (serviceId: number) => {
@@ -830,6 +873,8 @@ export default function TechnicianServices() {
       });
     }
   };
+
+
 
   if (isLoading) {
     return (
@@ -1120,6 +1165,31 @@ export default function TechnicianServices() {
                                 Dopuni Generali podatke
                               </Button>
                             </div>
+
+                            {/* SMS Komunikacija */}
+                            {service.client?.phone && (
+                              <div className="flex gap-2 w-full mt-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="default"
+                                  onClick={() => sendDirectSMS(service, 'service_arrived')}
+                                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex-1 h-10"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  SMS: Stigao sam
+                                </Button>
+                                
+                                <Button 
+                                  variant="outline" 
+                                  size="default"
+                                  onClick={() => sendDirectSMS(service, 'service_delayed')}
+                                  className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 flex-1 h-10"
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  SMS: Kasnim
+                                </Button>
+                              </div>
+                            )}
 
                             {/* Evidencija uklonjenih delova i rezervni delovi */}
                             {(service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled") && (

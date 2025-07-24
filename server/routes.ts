@@ -6278,7 +6278,7 @@ Admin panel - automatska porudžbina
             const admins = await getAdminsWithPhones();
             for (const admin of admins) {
               try {
-                await smsService.notifyAdminPartsRemoved({
+                await smsService.notifyAdminPartsRemovedByTechnician({
                   adminPhone: admin.phone,
                   adminName: admin.fullName,
                   serviceId: validatedData.serviceId.toString(),
@@ -6808,6 +6808,71 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error('SMS komunikacija greška:', error);
       res.status(500).json({ error: 'Greška pri slanju SMS-a' });
+    }
+  });
+
+  // Direktno slanje SMS poruka od strane tehničara
+  app.post("/api/sms/direct-send", jwtAuth, requireRole(['technician']), async (req, res) => {
+    try {
+      const { templateType, recipientPhone, recipientName, serviceData } = req.body;
+      
+      console.log(`📱 [DIREKTNO SMS] Tehnicijar ${req.user.fullName} šalje ${templateType} SMS`);
+      
+      if (!templateType || !recipientPhone || !serviceData) {
+        return res.status(400).json({ error: 'Nedostaju obavezni podaci' });
+      }
+
+      let result;
+      
+      switch (templateType) {
+        case 'service_arrived':
+          result = await smsService.sendTemplatedSMS('technician_arrived', 
+            { phone: recipientPhone, name: recipientName || 'Klijent', role: 'client' },
+            {
+              clientName: serviceData.clientName,
+              serviceId: serviceData.serviceId,
+              deviceType: serviceData.deviceType,
+              technicianName: serviceData.technicianName
+            }
+          );
+          break;
+          
+        case 'service_delayed':
+          result = await smsService.sendTemplatedSMS('technician_delayed',
+            { phone: recipientPhone, name: recipientName || 'Klijent', role: 'client' },
+            {
+              clientName: serviceData.clientName,
+              serviceId: serviceData.serviceId,  
+              deviceType: serviceData.deviceType,
+              technicianName: serviceData.technicianName
+            }
+          );
+          break;
+          
+        default:
+          return res.status(400).json({ error: 'Nepoznat tip SMS template-a' });
+      }
+
+      if (result.success) {
+        console.log(`✅ [DIREKTNO SMS] ${templateType} uspešno poslat na ${recipientPhone}`);
+        res.json({ 
+          success: true, 
+          message: `SMS je uspešno poslat`,
+          messageId: result.messageId 
+        });
+      } else {
+        console.error(`❌ [DIREKTNO SMS] Greška pri slanju ${templateType}:`, result.error);
+        res.status(500).json({ 
+          success: false,
+          error: result.error || 'Greška pri slanju SMS-a'
+        });
+      }
+    } catch (error) {
+      console.error('[DIREKTNO SMS] Sistemska greška:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Greška u SMS sistemu' 
+      });
     }
   });
 
