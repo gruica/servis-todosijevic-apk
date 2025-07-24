@@ -61,15 +61,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Funkcija za dobijanje SMS konfiguracije iz baze
   async function initializeSMSService() {
     try {
-      const smsSettings = await storage.getSystemSettings();
-      if (smsSettings.sms_mobile_api_key && smsSettings.sms_mobile_base_url) {
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+      
+      const apiKey = settingsMap.sms_mobile_api_key;
+      const baseUrl = settingsMap.sms_mobile_base_url;
+      const senderId = settingsMap.sms_mobile_sender_id || 'FRIGO SISTEM';
+      const enabled = settingsMap.sms_mobile_enabled === 'true';
+      
+      console.log('📱 SMS postavke:', { apiKey: apiKey ? '***' : 'nema', baseUrl, senderId, enabled });
+      
+      if (apiKey && baseUrl) {
         smsService = new SMSCommunicationService({
-          apiKey: smsSettings.sms_mobile_api_key,
-          baseUrl: smsSettings.sms_mobile_base_url,
-          senderId: smsSettings.sms_mobile_sender_id || 'FRIGO SISTEM',
-          enabled: smsSettings.sms_mobile_enabled === 'true'
+          apiKey,
+          baseUrl,
+          senderId,
+          enabled
         });
-        console.log('📱 SMS Communication Service inicijalizovan');
+        console.log('✅ SMS Communication Service inicijalizovan uspešno');
+      } else {
+        console.log('⚠️ SMS servis nije inicijalizovan - nedostaju API ključ ili URL');
       }
     } catch (error) {
       console.error('❌ Greška pri inicijalizaciji SMS servisa:', error);
@@ -3220,11 +3231,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Inicijalizuj SMS servis ako nije inicijalizovan
+      if (!smsService) {
+        await initializeSMSService();
+      }
+
+      if (!smsService) {
+        return res.status(500).json({
+          success: false,
+          error: "SMS servis nije dostupan"
+        });
+      }
+
       const results = [];
 
       for (const phone of phoneNumbers) {
         try {
-          const result = await smsCommService.sendCustomMessage(phone, message);
+          const result = await smsService.sendCustomMessage(phone, message);
           results.push({
             phone,
             success: result.success,
