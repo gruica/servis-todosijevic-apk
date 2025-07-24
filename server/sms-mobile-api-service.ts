@@ -143,13 +143,19 @@ export class SMSMobileAPIService {
 
   /**
    * Formatira broj telefona za SMS Mobile API
+   * ISPRAVKA: 067077092 → 38267077092 (bez dodavanja nule)
    */
   formatPhoneNumber(phone: string): string {
     // Ukloni sve što nije broj
     const cleanPhone = phone.replace(/\D/g, '');
     
-    // Ako počinje sa 067, 068, 069 dodaj 382
-    if (cleanPhone.match(/^(067|068|069)/)) {
+    // Ako počinje sa 067, 068, 069 - ukloni početnu nulu i dodaj 382
+    if (cleanPhone.match(/^0(67|68|69)/)) {
+      return `382${cleanPhone.substring(1)}`; // Uklanja početnu nulu
+    }
+    
+    // Ako počinje sa 67, 68, 69 (bez nule) dodaj 382
+    if (cleanPhone.match(/^(67|68|69)/)) {
       return `382${cleanPhone}`;
     }
     
