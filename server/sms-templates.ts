@@ -9,6 +9,7 @@ export interface SMSTemplateData {
   technicianPhone?: string;
   deviceType?: string;
   deviceModel?: string;
+  manufacturerName?: string;
   problemDescription?: string;
   partName?: string;
   estimatedDate?: string;
@@ -153,6 +154,13 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'technician_part_arrived');
   }
 
+  // SUPPLIER SMS OBAVEŠTENJA (Beli - Complus brendovi)
+  
+  static supplierStatusChanged(data: SMSTemplateData): string {
+    const message = `${data.manufacturerName} servis #${data.serviceId} - ${data.clientName}, Status: ${data.oldStatus} -> ${data.newStatus}, Serviser: ${data.technicianName}`;
+    return this.validateSMSLength(message, 'supplier_status_changed');
+  }
+
   // GLAVNI GENERATOR SMS PORUKA
   static generateSMS(type: string, data: SMSTemplateData): string {
     switch (type) {
@@ -182,6 +190,9 @@ export class SMSTemplates {
       // Technician templates  
       case 'technician_new_service': return this.technicianNewService(data);
       case 'technician_part_arrived': return this.technicianPartArrived(data);
+      
+      // Supplier templates
+      case 'supplier_status_changed': return this.supplierStatusChanged(data);
       
       default:
         console.error(`⚠️ Nepoznat SMS template tip: ${type}`);

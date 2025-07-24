@@ -11,7 +11,7 @@ export interface SMSConfig {
 export interface SMSRecipient {
   phone: string;
   name?: string;
-  role?: 'client' | 'technician' | 'business_partner';
+  role?: 'client' | 'technician' | 'business_partner' | 'admin' | 'supplier';
 }
 
 export interface SMSResult {
@@ -225,6 +225,7 @@ export class SMSCommunicationService {
     clientName?: string;
     technicianName?: string;
     deviceType?: string;
+    manufacturerName?: string;
     oldStatus?: string;
     newStatus: string;
     statusDescription?: string;
@@ -235,6 +236,7 @@ export class SMSCommunicationService {
     clientSMS?: SMSResult;
     adminSMS?: SMSResult[];
     businessPartnerSMS?: SMSResult;
+    supplierSMS?: SMSResult;
   }> {
     const results: any = {};
 
@@ -295,6 +297,25 @@ export class SMSCommunicationService {
             newStatus: serviceData.newStatus,
             technicianName: serviceData.technicianName || 'Serviser',
             businessPartnerName: serviceData.businessPartnerName
+          }
+        );
+      }
+
+      // 4. SMS Beli-ju za Electrolux, Elica, Candy, Hoover, Turbo Air aparate
+      const comPlusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
+      if (serviceData.manufacturerName && comPlusBrands.includes(serviceData.manufacturerName)) {
+        console.log(`📱 Šalje SMS Beli-ju za ${serviceData.manufacturerName} aparat`);
+        results.supplierSMS = await this.sendTemplatedSMS('supplier_status_changed',
+          { phone: '067590272', name: 'Beli', role: 'supplier' },
+          {
+            serviceId: serviceData.serviceId,
+            clientName: serviceData.clientName || 'Nepoznat klijent',
+            deviceType: serviceData.deviceType || 'Uređaj',
+            manufacturerName: serviceData.manufacturerName,
+            oldStatus: serviceData.oldStatus,
+            newStatus: serviceData.newStatus,
+            technicianName: serviceData.technicianName || 'Serviser',
+            supplierName: 'Beli'
           }
         );
       }
@@ -768,29 +789,6 @@ export class SMSCommunicationService {
         partName: data.partName,
         supplierName: data.supplierName,
         estimatedDate: data.estimatedDate
-      }
-    );
-  }
-
-  /**
-   * SMS administratoru kada serviser evidencira uklonjene dijelove
-   */
-  async notifyAdminRemovedParts(data: {
-    adminPhone: string;
-    adminName: string;
-    serviceId: string;
-    clientName: string;
-    deviceType: string;
-    technicianName: string;
-  }): Promise<SMSResult> {
-    return this.sendTemplatedSMS('admin_removed_parts',
-      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
-      {
-        adminName: data.adminName,
-        serviceId: data.serviceId,
-        clientName: data.clientName,
-        deviceType: data.deviceType,
-        technicianName: data.technicianName
       }
     );
   }

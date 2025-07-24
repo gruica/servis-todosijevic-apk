@@ -2162,6 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const client = service.clientId ? await storage.getClient(service.clientId) : null;
           const appliance = await storage.getAppliance(service.applianceId);
           const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const manufacturer = appliance?.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
           const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
           const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
           
@@ -2172,6 +2173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientName: client?.fullName,
             technicianName: technician?.fullName,
             deviceType: category?.name || 'Uređaj',
+            manufacturerName: manufacturer?.name,
             oldStatus: service.status,
             newStatus: validStatus,
             statusDescription: STATUS_DESCRIPTIONS[validStatus] || validStatus,
@@ -2190,6 +2192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           if (smsResults.businessPartnerSMS?.success) {
             console.log(`[SMS UNIVERZALNI] ✅ SMS poslovnom partneru uspešno poslat`);
+          }
+          if (smsResults.supplierSMS?.success) {
+            console.log(`[SMS UNIVERZALNI] ✅ SMS Beli-ju (${manufacturer?.name}) uspešno poslat`);
           }
           
         } catch (smsError) {
@@ -4063,6 +4068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const client = service.clientId ? await storage.getClient(service.clientId) : null;
           const appliance = await storage.getAppliance(service.applianceId);
           const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const manufacturer = appliance?.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
           const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
           const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
           
@@ -4073,6 +4079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientName: client?.fullName,
             technicianName: technician?.fullName,
             deviceType: category?.name || 'Uređaj',
+            manufacturerName: manufacturer?.name,
             oldStatus: oldStatus,
             newStatus: status,
             statusDescription: STATUS_DESCRIPTIONS[status] || status,
@@ -4091,6 +4098,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           if (smsResults.businessPartnerSMS?.success) {
             console.log(`[UPDATE-STATUS SMS] ✅ SMS poslovnom partneru uspešno poslat`);
+          }
+          if (smsResults.supplierSMS?.success) {
+            console.log(`[UPDATE-STATUS SMS] ✅ SMS Beli-ju (${manufacturer?.name}) uspešno poslat`);
           }
         } else {
           console.log("[UPDATE-STATUS SMS] SMS servis nije konfigurisan ili nema promene statusa");
