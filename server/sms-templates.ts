@@ -460,6 +460,23 @@ Servis može biti nastavljen.
 ${this.COMPANY_NAME}`;
   }
 
+  /**
+   * SMS administratoru kada serviser evidencira uklonjene dijelove
+   */
+  static adminRemovedParts(data: SMSTemplateData): string {
+    return `${data.adminName || 'Administratore'},
+
+UKLONJENI DIJELOVI - Servis #${data.serviceId}
+
+Klijent: ${data.clientName}
+Uređaj: ${data.deviceType}
+Serviser: ${data.technicianName}
+
+Dijelovi uklonjeni radi popravke u radionici.
+
+${this.COMPANY_NAME}`;
+  }
+
   // TEHNIČKE AKCIJE - SMS TEMPLATE-I ZA KLIJENTE I ADMINISTRATORE
 
   /**
@@ -691,6 +708,8 @@ ${this.COMPANY_NAME}`;
         return this.adminPartsOrdered(data);
       case 'admin_parts_arrived':
         return this.adminPartsArrived(data);
+      case 'admin_removed_parts':
+        return this.adminRemovedParts(data);
       // TEHNIČKE AKCIJE - NOVI TEMPLATE-I
       case 'client_parts_removed':
         return this.clientPartsRemoved(data);
@@ -747,6 +766,7 @@ ${this.COMPANY_NAME}`;
       'admin_technician_assigned': 'Dodeljen serviser - admin',
       'admin_parts_ordered': 'Porudžbina delova - admin',
       'admin_parts_arrived': 'Stigli delovi - admin',
+      'admin_removed_parts': 'Uklonjeni dijelovi - admin',
       // POSLOVNI PARTNERI - AUTOMATSKI TRIGGERI
       'business_partner_technician_assigned': 'Dodela tehničara - partner',
       'business_partner_status_update': 'Promjena statusa - partner',

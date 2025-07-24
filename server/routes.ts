@@ -4797,12 +4797,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create spare part order for specific service (admin or technician)
-  app.post("/api/services/:id/spare-parts", async (req, res) => {
+  app.post("/api/services/:id/spare-parts", jwtAuth, async (req, res) => {
     console.log("🔍 POST /api/services/:id/spare-parts called");
-    console.log("Auth status:", req.isAuthenticated());
-    console.log("User:", req.user);
+    console.log("JWT User:", req.user);
     
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       console.log("❌ User not authenticated");
       return res.sendStatus(401);
     }
@@ -6380,6 +6379,45 @@ Admin panel - automatska porudžbina
       
       if (!updatedService) {
         return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // ===== AUTOMATSKI SMS TRIGGERI ZA EVIDENCIJU UKLONJENIH DJELOVA =====
+      if (smsService && smsService.isConfigured()) {
+        try {
+          console.log(`[SMS EVIDENTIRAJ_UKLONJENE_DELOVE] Početak automatskih SMS triggera za servis #${serviceId}`);
+          
+          // Dohvati podatke o servisu, korisniku, uređaju i tehnčaru
+          const service = await storage.getService(serviceId);
+          if (service) {
+            const client = service.clientId ? await storage.getClient(service.clientId) : null;
+            const technician = service.technicianId ? await storage.getUser(service.technicianId) : null;
+            const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+            const category = appliance?.categoryId ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            
+            // 1. SMS ADMINISTRATORIMA o uklonjenim djelovima
+            const admins = await storage.getUsersByRole('admin');
+            for (const admin of admins) {
+              if (admin.phone) {
+                try {
+                  await smsService.notifyAdminRemovedParts({
+                    adminPhone: admin.phone,
+                    adminName: admin.fullName,
+                    serviceId: serviceId.toString(),
+                    clientName: client?.fullName || 'Nepoznat klijent',
+                    deviceType: category?.name || 'uređaj',
+                    technicianName: technician?.fullName || 'serviser'
+                  });
+                  console.log(`[SMS EVIDENTIRAJ_UKLONJENE_DELOVE] ✅ SMS o uklonjenim djelovima poslat administratoru ${admin.fullName} (${admin.phone})`);
+                } catch (adminSmsError) {
+                  console.error(`[SMS EVIDENTIRAJ_UKLONJENE_DELOVE] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+                }
+              }
+            }
+          }
+          
+        } catch (smsError) {
+          console.error("[SMS EVIDENTIRAJ_UKLONJENE_DELOVE] Globalna greška pri automatskim SMS triggerima:", smsError);
+        }
       }
       
       res.json(updatedService);

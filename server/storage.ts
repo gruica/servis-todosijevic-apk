@@ -46,6 +46,7 @@ export interface IStorage {
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
+  getUsersByRole(role: string): Promise<User[]>;
   getUnverifiedUsers(): Promise<User[]>;
   verifyUser(id: number, adminId: number): Promise<User | undefined>;
   
@@ -980,6 +981,10 @@ export class MemStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
+
+  async getUsersByRole(role: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.role === role);
+  }
   
   async updateUser(id: number, updateUserData: Partial<User>): Promise<User | undefined> {
     const existingUser = this.users.get(id);
@@ -1766,6 +1771,10 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
+  }
+
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
   }
 
   async updateUser(id: number, updateData: Partial<User>): Promise<User | undefined> {

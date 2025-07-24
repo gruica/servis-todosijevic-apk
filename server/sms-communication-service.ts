@@ -684,6 +684,52 @@ export class SMSCommunicationService {
     );
   }
 
+  /**
+   * SMS administratoru kada serviser evidencira uklonjene dijelove
+   */
+  async notifyAdminRemovedParts(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_removed_parts',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
+  /**
+   * SMS administratoru kada serviser evidencira uklonjene dijelove
+   */
+  async notifyAdminRemovedParts(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('admin_removed_parts',
+      { phone: data.adminPhone, name: data.adminName, role: 'admin' },
+      {
+        adminName: data.adminName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      }
+    );
+  }
+
   // ===== ADMIN SMS OBAVEŠTENJA =====
 
   /**
