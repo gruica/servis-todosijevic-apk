@@ -790,6 +790,119 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
   }
 
   /**
+   * Šalje obaveštenje o završenom Beko garancijskom servisu na specificirane email adrese
+   * @param client Podaci o klijentu
+   * @param serviceId ID servisa
+   * @param description Opis završenog rada
+   * @param technicianName Ime servisera
+   * @param manufacturerName Brend uređaja
+   * @param applianceName Naziv uređaja
+   * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
+   */
+  public async sendBekoWarrantyCompletionNotification(
+    client: Client,
+    serviceId: number,
+    description: string,
+    technicianName: string,
+    manufacturerName: string,
+    applianceName: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje obaveštenja o završenom Beko garancijskom servisu #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje Beko obaveštenja`);
+      return false;
+    }
+
+    // Email adrese koje treba da prime obaveštenja o Beko garancijskim servisima
+    const bekoNotificationEmails = [
+      'jelena@frigosistemtodosijevic.com',
+      'mp4@eurotehnikamn.me'
+    ];
+
+    const subject = `Završen Beko garanciski servis #${serviceId} - ${applianceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #155724; margin: 0;">🛡️ ZAVRŠEN BEKO GARANCISKI SERVIS</h2>
+          <p style="margin: 5px 0 0 0; color: #155724; font-weight: bold;">
+            Automatsko obaveštenje o završenom garancijskom servisu
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        <p>Obaveštavamo Vas da je završen garanciski servis za Beko uređaj:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0;">Detalji završenog servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Brend:</strong> ${manufacturerName}</p>
+          <p><strong>Uređaj:</strong> ${applianceName}</p>
+          <p><strong>Status:</strong> Završen (u garanciji)</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum završetka:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+          <p><strong>Opis završenog rada:</strong> ${description}</p>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #495057; margin-top: 0;">Podaci o klijentu</h3>
+          <p><strong>Ime klijenta:</strong> ${client.fullName}</p>
+          <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
+          <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
+          <p><strong>Adresa:</strong> ${client.address || 'Nije dostupna'}</p>
+          <p><strong>Grad:</strong> ${client.city || 'Nije dostupan'}</p>
+        </div>
+
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #155724;">
+            <strong>GARANCISKI SERVIS:</strong> Servis je obavljen u okviru garancijskih uslova. Ne naplaćuje se intervencija.
+          </p>
+        </div>
+
+        <p>Za sve dodatne informacije, kontaktirajte nas na broj 033 402 402.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Podgorica, Crna Gora
+        </p>
+      </div>
+    `;
+
+    // Šaljemo email na sve specificirane adrese
+    try {
+      let successCount = 0;
+      
+      for (const email of bekoNotificationEmails) {
+        console.log(`[EMAIL] Slanje Beko garancijskog obaveštenja na: ${email}`);
+        
+        const result = await this.sendEmail({
+          to: email,
+          subject,
+          html,
+        }, 3);
+        
+        if (result) {
+          successCount++;
+          console.log(`[EMAIL] ✅ Beko obaveštenje uspešno poslato na: ${email}`);
+        } else {
+          console.log(`[EMAIL] ❌ Neuspešno slanje Beko obaveštenja na: ${email}`);
+        }
+      }
+      
+      console.log(`[EMAIL] Ukupno uspešno poslato: ${successCount}/${bekoNotificationEmails.length} Beko obaveštenja`);
+      return successCount > 0;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju Beko garancijskih obaveštenja:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje email korisniku kada je njegov nalog verifikovan 
    * @param userEmail Email adresa korisnika
    * @param userName Ime korisnika

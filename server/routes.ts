@@ -1690,6 +1690,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
                   emailInfo.emailSent = true;
                   
+                  // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
+                  if (updatedService.status === "completed" && 
+                      updatedService.warrantyStatus === "in_warranty") {
+                    
+                    // Proveravamo da li je Beko brend
+                    try {
+                      const appliance = updatedService.applianceId ? await storage.getAppliance(updatedService.applianceId) : null;
+                      if (appliance) {
+                        const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                        
+                        if (manufacturer && manufacturer.name.toLowerCase() === 'beko') {
+                          console.log(`[BEKO EMAIL] Završen Beko garanciski servis #${id}, šaljem dodatno obaveštenje`);
+                          
+                          const category = await storage.getApplianceCategory(appliance.categoryId);
+                          const applianceName = category ? category.name : 'Nepoznat uređaj';
+                          
+                          const bekoEmailSent = await emailService.sendBekoWarrantyCompletionNotification(
+                            client,
+                            id,
+                            clientEmailContent,
+                            technicianName,
+                            manufacturer.name,
+                            applianceName
+                          );
+                          
+                          if (bekoEmailSent) {
+                            console.log(`[BEKO EMAIL] ✅ Uspešno poslato Beko obaveštenje za servis #${id}`);
+                          } else {
+                            console.log(`[BEKO EMAIL] ❌ Neuspešno slanje Beko obaveštenja za servis #${id}`);
+                          }
+                        }
+                      }
+                    } catch (bekoError) {
+                      console.error(`[BEKO EMAIL] Greška pri proveri/slanju Beko obaveštenja:`, bekoError);
+                    }
+                  }
+                  
                   // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
                   // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
                   console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
@@ -1971,7 +2008,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (clientEmailSent) {
                 console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
-                emailInfo.emailSent = true; // Označava da je email uspešno poslat
+                emailInfo.emailSent = true;
+                
+                // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
+                if (validStatus === "completed" && 
+                    updatedService.warrantyStatus === "in_warranty") {
+                  
+                  // Proveravamo da li je Beko brend
+                  try {
+                    const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+                    if (appliance) {
+                      const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                      
+                      if (manufacturer && manufacturer.name.toLowerCase() === 'beko') {
+                        console.log(`[BEKO EMAIL] Završen Beko garanciski servis #${serviceId}, šaljem dodatno obaveštenje`);
+                        
+                        const category = await storage.getApplianceCategory(appliance.categoryId);
+                        const applianceName = category ? category.name : 'Nepoznat uređaj';
+                        
+                        const bekoEmailSent = await emailService.sendBekoWarrantyCompletionNotification(
+                          client,
+                          serviceId,
+                          clientEmailContent,
+                          technicianName,
+                          manufacturer.name,
+                          applianceName
+                        );
+                        
+                        if (bekoEmailSent) {
+                          console.log(`[BEKO EMAIL] ✅ Uspešno poslato Beko obaveštenje za servis #${serviceId}`);
+                        } else {
+                          console.log(`[BEKO EMAIL] ❌ Neuspešno slanje Beko obaveštenja za servis #${serviceId}`);
+                        }
+                      }
+                    }
+                  } catch (bekoError) {
+                    console.error(`[BEKO EMAIL] Greška pri proveri/slanju Beko obaveštenja:`, bekoError);
+                  }
+                } // Označava da je email uspešno poslat
                 
                 // Obavesti administratore o poslatom mail-u klijentu
                 await emailService.notifyAdminAboutEmail(
