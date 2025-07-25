@@ -491,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nevažeći podaci klijenta", details: error.format() });
       }
       console.error("Greška pri kreiranju klijenta:", error);
-      res.status(500).json({ error: "Greška pri kreiranju klijenta", message: error.message });
+      res.status(500).json({ error: "Greška pri kreiranju klijenta", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -529,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Greška pri brisanju klijenta:", error);
-      res.status(500).json({ error: "Greška pri brisanju klijenta", message: error.message });
+      res.status(500).json({ error: "Greška pri brisanju klijenta", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -550,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories || []);
     } catch (error) {
       console.error('Greška pri dobijanju kategorija uređaja:', error);
-      res.status(500).json({ error: "Greška pri dobijanju kategorija uređaja", details: error.message });
+      res.status(500).json({ error: "Greška pri dobijanju kategorija uređaja", details: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -1988,12 +1988,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // 2.5. Automatski SMS obaveštenja za klijenta
             if (client.phone && validStatus === 'completed') {
               try {
-                const settings = await storage.getSystemSettings();
+                const settingsArray = await storage.getSystemSettings();
+                const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
                 const smsConfig = {
-                  apiKey: settings.sms_mobile_api_key || '',
-                  baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-                  senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
-                  enabled: settings.sms_mobile_enabled === 'true'
+                  apiKey: settingsMap.sms_mobile_api_key || '',
+                  baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+                  senderId: settingsMap.sms_mobile_sender_id || null,
+                  enabled: settingsMap.sms_mobile_enabled === 'true'
                 };
 
                 if (smsConfig.enabled && smsConfig.apiKey) {
@@ -2395,12 +2396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users/:id/verify", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log(`Pokušaj verifikacije korisnika sa ID ${req.params.id}`);
-      console.log(`JWT Admin user: ${req.user?.username} (ID: ${req.user?.userId})`);
+      console.log(`JWT Admin user: ${req.user?.username} (ID: ${req.user?.id})`);
       
       // JWT middleware already validated admin role
       
       const userId = parseInt(req.params.id);
-      const adminId = req.user.userId;
+      const adminId = req.user.id;
       
       console.log(`Administrator ${adminId} (${req.user.username}) verifikuje korisnika ${userId}`);
       
@@ -2457,7 +2458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log("POST /api/users - Admin creating new user");
-      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
       
       // JWT middleware already validated admin role
       
@@ -2495,7 +2496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log(`PUT /api/users/${req.params.id} - Admin updating user`);
-      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
       
       // JWT middleware already validated admin role
       
@@ -2563,7 +2564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/users/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log(`DELETE /api/users/${req.params.id} - Admin deleting user`);
-      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.userId})`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
       
       // JWT middleware already validated admin role
       
@@ -2615,8 +2616,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function for technician services logic
   const getTechnicianServices = async (req: Request, res: Response) => {
     try {
-      // Obavezno staviti req.isAuthenticated() ovde za proveru
-      if (!req.isAuthenticated()) {
+      // Session authentication check - this endpoint still uses session-based auth
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
         console.log("Pristup api/my-services - korisnik nije prijavljen");
         return res.status(401).json({ error: "Potrebna je prijava" });
       }
@@ -3962,12 +3963,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const appliance = await storage.getAppliance(service.applianceId);
             const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
             
-            const settings = await storage.getSystemSettings();
+            const settingsArray = await storage.getSystemSettings();
+            const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
             const smsConfig = {
-              apiKey: settings.sms_mobile_api_key || '',
-              baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-              senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
-              enabled: settings.sms_mobile_enabled === 'true'
+              apiKey: settingsMap.sms_mobile_api_key || '',
+              baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+              senderId: settingsMap.sms_mobile_sender_id || null,
+              enabled: settingsMap.sms_mobile_enabled === 'true'
             };
 
             if (smsConfig.enabled && smsConfig.apiKey) {
