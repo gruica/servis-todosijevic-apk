@@ -564,6 +564,21 @@ export default function BusinessServices() {
                   </p>
                 </div>
               )}
+              
+              {/* Akcije u dialogu */}
+              {(selectedService.status === 'scheduled' || selectedService.status === 'pending') && (
+                <div className="pt-4 border-t">
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      setIsDetailsOpen(false);
+                      navigate(`/business/services/edit/${selectedService.id}`);
+                    }}
+                  >
+                    Izmeni servis
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
