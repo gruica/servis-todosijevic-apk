@@ -310,7 +310,7 @@ export default function BusinessServices() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
-                            {(service.status === 'scheduled' || service.status === 'pending') && (
+                            {(service.status !== 'completed' && service.status !== 'cancelled') && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -434,7 +434,7 @@ export default function BusinessServices() {
                 </div>
                 <div className="bg-gray-50 p-3 border-t">
                   <div className="flex gap-2">
-                    {(service.status === 'scheduled' || service.status === 'pending') && (
+                    {(service.status !== 'completed' && service.status !== 'cancelled') && (
                       <Button 
                         className="flex-1" 
                         variant="default" 
@@ -566,7 +566,7 @@ export default function BusinessServices() {
               )}
               
               {/* Akcije u dialogu */}
-              {(selectedService.status === 'scheduled' || selectedService.status === 'pending') && (
+              {(selectedService.status !== 'completed' && selectedService.status !== 'cancelled') && (
                 <div className="pt-4 border-t">
                   <Button 
                     className="w-full"
