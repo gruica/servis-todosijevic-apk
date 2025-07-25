@@ -639,7 +639,7 @@ export default function TechnicianServices() {
     
     updateStatusMutation.mutate({
       serviceId: selectedService.id,
-      status: "customer_refuses_repair",
+      status: "customer_refused_repair",
       notes: selectedService.technicianNotes || "",
       customerRefusalReason: refusalReason
     });
@@ -797,6 +797,8 @@ export default function TechnicianServices() {
         return <Badge className="bg-orange-500">Klijent nije kući</Badge>;
       case "client_not_answering":
         return <Badge className="bg-red-500">Klijent se ne javlja</Badge>;
+      case "customer_refused_repair":
+        return <Badge className="bg-gray-600">Odbio popravku</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

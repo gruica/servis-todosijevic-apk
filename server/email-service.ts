@@ -903,6 +903,139 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
   }
 
   /**
+   * Šalje profesionalni email klijentu kada odbije popravku uređaja
+   * @param client Podaci o klijentu
+   * @param serviceId ID servisa
+   * @param applianceName Naziv uređaja
+   * @param refusalReason Razlog odbijanja popravke
+   * @param technicianName Ime servisera
+   * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
+   */
+  public async sendCustomerRefusalNotification(
+    client: Client,
+    serviceId: number,
+    applianceName: string,
+    refusalReason: string,
+    technicianName: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje obaveštenja klijentu ${client.fullName} o odbijanju popravke servisa #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja o odbijanju popravke`);
+      return false;
+    }
+
+    if (!client.email) {
+      console.warn(`[EMAIL] Ne mogu poslati email klijentu ${client.fullName} - email adresa nije dostupna`);
+      return false;
+    }
+
+    const subject = `Obaveštenje o servisu #${serviceId} - ${applianceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #721c24; margin: 0;">📋 Obaveštenje o servisu</h2>
+          <p style="margin: 5px 0 0 0; color: #721c24; font-weight: bold;">
+            Servis #${serviceId} - ${applianceName}
+          </p>
+        </div>
+        
+        <p>Poštovani/a ${client.fullName},</p>
+        
+        <p>Žao nam je što ste odbili da popravite vaš ${applianceName}.</p>
+        
+        <p>Naš serviser <strong>${technicianName}</strong> je bio spreman da izvrši potrebne radove na vašem uređaju, 
+        međutim razumemo vašu odluku i poštujemo je.</p>
+        
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #856404; font-weight: bold;">
+            Razlog odbijanja popravke:
+          </p>
+          <p style="margin: 5px 0 0 0; color: #856404;">
+            ${refusalReason}
+          </p>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #495057; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Uređaj:</strong> ${applianceName}</p>
+          <p><strong>Status:</strong> Zatvoren zbog odbijanja popravke</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <p>Ukoliko promenite mišljenje ili budete imali potrebu za našim uslugama u budućnosti, 
+        slobodno nas kontaktirajte. Uvek smo na raspolaganju za sve vaše potrebe vezane za popravku kućnih aparata.</p>
+
+        <p>Hvala vam na poverenju!</p>
+        
+        <p>S poštovanjem,<br>
+        <strong>Tim Frigo Sistem Todosijević</strong></p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
+          www.frigosistemtodosijevic.com
+        </p>
+      </div>
+    `;
+
+    const text = `
+Obaveštenje o servisu #${serviceId} - ${applianceName}
+
+Poštovani/a ${client.fullName},
+
+Žao nam je što ste odbili da popravite vaš ${applianceName}.
+
+Naš serviser ${technicianName} je bio spreman da izvrši potrebne radove na vašem uređaju, 
+međutim razumemo vašu odluku i poštujemo je.
+
+Razlog odbijanja popravke: ${refusalReason}
+
+Detalji servisa:
+- Broj servisa: #${serviceId}
+- Uređaj: ${applianceName}
+- Status: Zatvoren zbog odbijanja popravke
+- Serviser: ${technicianName}
+- Datum: ${new Date().toLocaleDateString('sr-ME')}
+
+Ukoliko promenite mišljenje ili budete imali potrebu za našim uslugama u budućnosti, 
+slobodno nas kontaktirajte. Uvek smo na raspolaganju za sve vaše potrebe vezane za popravku kućnih aparata.
+
+Hvala vam na poverenju!
+
+S poštovanjem,
+Tim Frigo Sistem Todosijević
+
+----
+Frigo Sistem Todosijević
+Kontakt telefon: 033 402 402
+Email: info@frigosistemtodosijevic.com
+Adresa: Lastva grbaljska bb, 85317 Kotor, Crna Gora
+www.frigosistemtodosijevic.com
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: client.email,
+        subject,
+        html,
+        text
+      });
+      
+      console.log(`[EMAIL] Rezultat slanja obaveštenja o odbijanju popravke: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju obaveštenja o odbijanju popravke:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje email korisniku kada je njegov nalog verifikovan 
    * @param userEmail Email adresa korisnika
    * @param userName Ime korisnika

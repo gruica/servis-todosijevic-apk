@@ -203,6 +203,7 @@ export const serviceStatusEnum = z.enum([
   "client_not_home", // klijent nije kući
   "client_not_answering", // klijent se ne javlja
   "customer_refuses_repair", // kupac odbija popravku
+  "customer_refused_repair", // kupac je odbio popravku (zatvoreno)
 ]);
 
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;

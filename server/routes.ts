@@ -1995,18 +1995,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (client.email) {
               console.log(`[EMAIL SISTEM] Pokušavam slanje emaila klijentu ${client.fullName} (${client.email})`);
               
-              // Poboljšan sadržaj emaila koji sadrži više detalja
-              const clientEmailContent = technicianNotes || service.description || "";
-              const clientEmailSent = await emailService.sendServiceStatusUpdate(
-                client, 
-                serviceId,
-                statusDescription,
-                clientEmailContent,
-                technicianName,
-                updatedService.warrantyStatus,
-                updatedService.customerRefusesRepair || undefined,
-                updatedService.customerRefusalReason || undefined
-              );
+              let clientEmailSent = false;
+              
+              // SPECIJALNI SLUČAJ: Customer je odbio popravku - šalje se profesionalni email
+              if (validStatus === "customer_refused_repair" && customerRefusalReason) {
+                console.log(`[EMAIL SISTEM] Slanje profesionalnog email-a za odbijanje popravke`);
+                
+                // Dohvati naziv uređaja
+                const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
+                const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+                const applianceName = category ? category.name : "uređaj";
+                
+                clientEmailSent = await emailService.sendCustomerRefusalNotification(
+                  client,
+                  serviceId,
+                  applianceName,
+                  customerRefusalReason,
+                  technicianName
+                );
+              } else {
+                // STANDARDNO obaveštenje o promeni statusa
+                const clientEmailContent = technicianNotes || service.description || "";
+                clientEmailSent = await emailService.sendServiceStatusUpdate(
+                  client, 
+                  serviceId,
+                  statusDescription,
+                  clientEmailContent,
+                  technicianName,
+                  updatedService.warrantyStatus,
+                  updatedService.customerRefusesRepair || undefined,
+                  updatedService.customerRefusalReason || undefined
+                );
+              }
               
               if (clientEmailSent) {
                 console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
