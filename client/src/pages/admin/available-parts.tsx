@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Package, Search, Edit, Trash2, Plus, Check, MapPin, Euro, Calendar, User } from "lucide-react";
+import { AlertCircle, Package, Search, Edit, Trash2, Plus, Check, MapPin, Euro, Calendar, User, UserCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -378,6 +378,18 @@ export default function AvailableParts() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // TODO: Implementirati dodelu serviseru
+                            console.log("Dodeli deo za servis:", part.id);
+                          }}
+                          className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                        >
+                          <UserCheck className="w-3 h-3 mr-1" />
+                          Dodeli za servis
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"

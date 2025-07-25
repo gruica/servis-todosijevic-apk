@@ -84,8 +84,16 @@ export function AvailablePartsManagement() {
     availableParts,
     isLoading: partsLoading,
     error: partsError,
-    partsLength: availableParts?.length
+    partsLength: availableParts?.length,
+    hasData: !!availableParts,
+    isArray: Array.isArray(availableParts)
   });
+
+  // Dodatni debug za pojedinačne delove
+  if (availableParts && Array.isArray(availableParts) && availableParts.length > 0) {
+    console.log("🔍 First available part:", availableParts[0]);
+    console.log("🔍 All parts IDs:", availableParts.map(p => p.id));
+  }
 
   // Dohvati servisere
   const { data: technicians } = useQuery({
@@ -212,9 +220,15 @@ export function AvailablePartsManagement() {
             availableParts,
             isArray: Array.isArray(availableParts),
             length: availableParts?.length,
-            condition: availableParts && Array.isArray(availableParts) && availableParts.length > 0
+            condition: availableParts && Array.isArray(availableParts) && availableParts.length > 0,
+            loading: partsLoading
           })}
-          {availableParts && Array.isArray(availableParts) && availableParts.length > 0 ? (
+          {partsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-500">Učitavaju se dostupni delovi...</p>
+            </div>
+          ) : availableParts && Array.isArray(availableParts) && availableParts.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
