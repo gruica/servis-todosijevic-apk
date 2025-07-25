@@ -72,11 +72,19 @@ export function AvailablePartsManagement() {
   });
 
   // Dohvati dostupne delove sa real-time refresh
-  const { data: availableParts, isLoading: partsLoading, refetch: refetchParts } = useQuery({
+  const { data: availableParts, isLoading: partsLoading, refetch: refetchParts, error: partsError } = useQuery({
     queryKey: ["/api/admin/available-parts"],
     refetchInterval: 5000, // Real-time refresh svakih 5 sekundi
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+  });
+
+  // Debug informacije
+  console.log("🔍 Available Parts Debug:", {
+    availableParts,
+    isLoading: partsLoading,
+    error: partsError,
+    partsLength: availableParts?.length
   });
 
   // Dohvati servisere
@@ -200,6 +208,12 @@ export function AvailablePartsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {console.log("🔍 Rendering condition:", {
+            availableParts,
+            isArray: Array.isArray(availableParts),
+            length: availableParts?.length,
+            condition: availableParts && Array.isArray(availableParts) && availableParts.length > 0
+          })}
           {availableParts && Array.isArray(availableParts) && availableParts.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
