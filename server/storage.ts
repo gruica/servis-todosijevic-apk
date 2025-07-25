@@ -23,7 +23,8 @@ import {
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
-  availableParts, partsActivityLog, notifications, systemSettings, removedParts
+  availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
+  PartsAllocation, InsertPartsAllocation
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -3724,6 +3725,83 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri ažuriranju količine dostupnog dela:', error);
       throw error;
+    }
+  }
+
+  // Parts Allocation methods
+  async allocatePartToTechnician(allocation: InsertPartsAllocation): Promise<any> {
+    try {
+      // Check available part exists and has sufficient quantity
+      const availablePart = await this.getAvailablePart(allocation.availablePartId);
+      if (!availablePart) {
+        throw new Error('Dostupni deo nije pronađen');
+      }
+      
+      if (availablePart.quantity < allocation.allocatedQuantity) {
+        throw new Error('Nedovoljna količina dostupnog dela');
+      }
+
+      // Create allocation record
+      const [newAllocation] = await db
+        .insert(partsAllocations)
+        .values(allocation)
+        .returning();
+
+      // Update available part quantity
+      await this.updateAvailablePartQuantity(allocation.availablePartId, -allocation.allocatedQuantity);
+
+      // Log activity
+      await this.logPartActivity({
+        partId: allocation.availablePartId,
+        action: 'allocated',
+        previousQuantity: availablePart.quantity,
+        newQuantity: availablePart.quantity - allocation.allocatedQuantity,
+        technicianId: allocation.technicianId,
+        serviceId: allocation.serviceId,
+        userId: allocation.allocatedBy,
+        description: `Deo dodeljen serviseru za servis #${allocation.serviceId}: ${allocation.allocatedQuantity} kom`
+      });
+
+      return newAllocation;
+    } catch (error) {
+      console.error('Greška pri dodeli dela serviseru:', error);
+      throw error;
+    }
+  }
+
+  async getPartAllocations(serviceId?: number, technicianId?: number): Promise<any[]> {
+    try {
+      let query = db
+        .select({
+          id: partsAllocations.id,
+          availablePartId: partsAllocations.availablePartId,
+          serviceId: partsAllocations.serviceId,
+          technicianId: partsAllocations.technicianId,
+          allocatedQuantity: partsAllocations.allocatedQuantity,
+          allocatedBy: partsAllocations.allocatedBy,
+          allocationNotes: partsAllocations.allocationNotes,
+          status: partsAllocations.status,
+          allocatedDate: partsAllocations.allocatedDate,
+          partName: availableParts.partName,
+          partNumber: availableParts.partNumber,
+          technicianName: users.fullName,
+          allocatedByName: users.fullName
+        })
+        .from(partsAllocations)
+        .leftJoin(availableParts, eq(partsAllocations.availablePartId, availableParts.id))
+        .leftJoin(users, eq(partsAllocations.technicianId, users.id));
+
+      if (serviceId) {
+        query = query.where(eq(partsAllocations.serviceId, serviceId));
+      }
+      if (technicianId) {
+        query = query.where(eq(partsAllocations.technicianId, technicianId));
+      }
+
+      return await query.orderBy(desc(partsAllocations.allocatedDate));
+    } catch (error) {
+      console.error('Greška pri dohvatanju dodela delova:', error);
+      return [];
     }
   }
 

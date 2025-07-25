@@ -6484,6 +6484,136 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Allocate available part to technician for service (admin only)
+  app.post("/api/admin/available-parts/:partId/allocate", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.partId);
+      const { serviceId, technicianId, allocatedQuantity, allocationNotes } = req.body;
+
+      if (!serviceId || !technicianId || !allocatedQuantity) {
+        return res.status(400).json({ error: "Svi obavezni podaci su potrebni" });
+      }
+
+      // Get service details for notifications
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      // Get technician details
+      const technician = await storage.getUser(technicianId);
+      if (!technician || technician.role !== "technician") {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+
+      // Get part details
+      const part = await storage.getAvailablePart(partId);
+      if (!part) {
+        return res.status(404).json({ error: "Dostupni deo nije pronađen" });
+      }
+
+      // Create allocation
+      const allocation = await storage.allocatePartToTechnician({
+        availablePartId: partId,
+        serviceId,
+        technicianId,
+        allocatedQuantity: parseInt(allocatedQuantity),
+        allocatedBy: req.user.id,
+        allocationNotes: allocationNotes || null,
+        status: "allocated"
+      });
+
+      // Send notifications to all involved parties
+      try {
+        const client = await storage.getClient(service.clientId);
+        const appliance = await storage.getAppliance(service.applianceId);
+
+        // Notify technician
+        await notificationService.createNotification({
+          userId: technicianId,
+          type: "parts_allocated",
+          title: "Rezervni deo dodeljen",
+          message: `Dodeljen vam je rezervni deo "${part.partName}" (${allocatedQuantity} kom) za servis #${serviceId}`,
+          relatedId: serviceId,
+          priority: "normal"
+        });
+
+        // Notify client via SMS
+        if (client?.phone) {
+          const smsData = {
+            clientName: client.fullName,
+            technicianName: technician.fullName,
+            partName: part.partName,
+            quantity: allocatedQuantity,
+            serviceId: serviceId,
+            deviceType: appliance ? appliance.model || 'uređaj' : 'uređaj'
+          };
+
+          await smsService.sendClientPartsAllocated(client.phone, smsData);
+        }
+
+        // Notify all admins via SMS
+        await smsService.sendSMSToAllAdmins('admin_parts_allocated', {
+          clientName: client?.fullName || 'N/A',
+          technicianName: technician.fullName,
+          partName: part.partName,
+          quantity: allocatedQuantity,
+          serviceId: serviceId
+        });
+
+        // Notify business partner if applicable
+        if (service.businessPartnerId) {
+          const businessPartner = await storage.getUser(service.businessPartnerId);
+          if (businessPartner?.phone) {
+            await smsService.sendBusinessPartnerPartsAllocated(businessPartner.phone, {
+              clientName: client?.fullName || 'N/A',
+              technicianName: technician.fullName,
+              partName: part.partName,
+              quantity: allocatedQuantity,
+              serviceId: serviceId
+            });
+          }
+        }
+
+      } catch (notifError) {
+        console.error("Greška pri slanju obaveštenja o dodeli dela:", notifError);
+        // Allocation still succeeded, just log the notification error
+      }
+
+      res.status(201).json({ 
+        allocation,
+        message: "Rezervni deo uspešno dodeljen serviseru" 
+      });
+
+    } catch (error) {
+      console.error("Error allocating part to technician:", error);
+      res.status(500).json({ error: "Greška pri dodeli rezervnog dela" });
+    }
+  });
+
+  // Get part allocations (admin only)
+  app.get("/api/admin/parts-allocations", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { serviceId, technicianId } = req.query;
+      const allocations = await storage.getPartAllocations(
+        serviceId ? parseInt(serviceId as string) : undefined,
+        technicianId ? parseInt(technicianId as string) : undefined
+      );
+      res.json(allocations);
+    } catch (error) {
+      console.error("Error fetching parts allocations:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dodela delova" });
+    }
+  });
+
   // Get available part by ID (admin only)
   app.get("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {

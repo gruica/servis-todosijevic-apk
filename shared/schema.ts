@@ -813,6 +813,44 @@ export const insertPartsActivityLogSchema = createInsertSchema(partsActivityLog)
 export type InsertPartsActivityLog = z.infer<typeof insertPartsActivityLogSchema>;
 export type PartsActivityLog = typeof partsActivityLog.$inferSelect;
 
+// Parts Allocations - tabela za praćenje dodele delova serviserima
+export const partsAllocations = pgTable("parts_allocations", {
+  id: serial("id").primaryKey(),
+  availablePartId: integer("available_part_id").notNull().references(() => availableParts.id),
+  serviceId: integer("service_id").notNull().references(() => services.id),
+  technicianId: integer("technician_id").notNull().references(() => users.id),
+  allocatedQuantity: integer("allocated_quantity").notNull(),
+  allocatedBy: integer("allocated_by").notNull().references(() => users.id), // Admin koji je dodelio
+  allocationNotes: text("allocation_notes"),
+  status: text("status").notNull().default("allocated"), // allocated, used, returned
+  allocatedDate: timestamp("allocated_date").defaultNow().notNull(),
+  usedDate: timestamp("used_date"),
+  returnedDate: timestamp("returned_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPartsAllocationSchema = createInsertSchema(partsAllocations).pick({
+  availablePartId: true,
+  serviceId: true,
+  technicianId: true,
+  allocatedQuantity: true,
+  allocatedBy: true,
+  allocationNotes: true,
+  status: true,
+}).extend({
+  availablePartId: z.number().int().positive("ID dostupnog dela mora biti pozitivan broj"),
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj"),
+  allocatedQuantity: z.number().int().positive("Količina mora biti pozitivan broj"),
+  allocatedBy: z.number().int().positive("ID admina mora biti pozitivan broj"),
+  allocationNotes: z.string().max(500, "Napomene su predugačke").optional(),
+  status: z.enum(["allocated", "used", "returned"]).default("allocated"),
+});
+
+export type InsertPartsAllocation = z.infer<typeof insertPartsAllocationSchema>;
+export type PartsAllocation = typeof partsAllocations.$inferSelect;
+
 // Dodatne relacije
 export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
   user: one(users, {
