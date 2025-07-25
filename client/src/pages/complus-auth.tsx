@@ -29,13 +29,15 @@ export default function ComplusAuthPage() {
 
     try {
       // Prijavi se sa Teodorinim kredencijalima preko JWT auth
-      const response = await apiRequest("/api/jwt-login", "POST", {
+      const response = await apiRequest("POST", "/api/jwt-login", {
         username: username,
         password: password
-      }) as { token?: string };
+      });
 
-      if (response?.token) {
-        localStorage.setItem("token", response.token);
+      const data = await response.json() as { token?: string };
+
+      if (data?.token) {
+        localStorage.setItem("auth_token", data.token);
         navigate("/complus");
       } else {
         setError("Greška pri prijavi na Com Plus panel");
