@@ -44,8 +44,9 @@ interface MonthlyReport {
 }
 
 export default function ComplusBillingReport() {
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(currentDate.getMonth() + 1).padStart(2, '0'));
+  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
 
   const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
   const months = [
@@ -66,14 +67,28 @@ export default function ComplusBillingReport() {
   // Fetch warranty services for all Complus brands in selected period
   const { data: billingData, isLoading } = useQuery({
     queryKey: ['/api/admin/billing/complus', selectedMonth, selectedYear],
-    enabled: !!selectedMonth,
+    enabled: !!selectedMonth && !!selectedYear,
     queryFn: async () => {
       const params = new URLSearchParams({
         month: selectedMonth,
         year: selectedYear.toString()
       });
-      const response = await fetch(`/api/admin/billing/complus?${params}`);
-      if (!response.ok) throw new Error('Greška pri dohvatanju podataka za fakturisanje');
+      
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('auth_token');
+      if (!token) throw new Error('Nema autentifikacije');
+      
+      const response = await fetch(`/api/admin/billing/complus?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Greška pri dohvatanju podataka: ${errorText}`);
+      }
       return await response.json() as MonthlyReport;
     }
   });
