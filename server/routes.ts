@@ -6006,6 +6006,70 @@ Admin panel - automatska porudžbina
     }
   });
   
+  // TEST SMS DODATNI ADMINISTRATOR ENDPOINT
+  app.post("/api/test-sms-teodora", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      const smsConfig = {
+        apiKey: settings.sms_mobile_api_key || '',
+        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settings.sms_mobile_sender_id || null,
+        enabled: settings.sms_mobile_enabled === 'true'
+      };
+
+      if (!smsConfig.enabled || !smsConfig.apiKey) {
+        return res.status(400).json({ error: "SMS servis nije konfigurisan" });
+      }
+
+      const { SMSCommunicationService } = await import('./sms-communication-service.js');
+      const smsService = new SMSCommunicationService(smsConfig);
+
+      // Test SMS sa mock podacima za status promenu
+      console.log('📱 TESTIRANJE SMS DODATNOM ADMINISTRATORU - Teodora Todosijević');
+      const testResults = await smsService.notifyServiceStatusChange({
+        serviceId: 'TEST-001',
+        clientPhone: '067000000',
+        clientName: 'Test Klijent',
+        technicianName: 'Test Serviser',
+        deviceType: 'Test Frižider',
+        manufacturerName: 'Samsung',
+        oldStatus: 'assigned',
+        newStatus: 'in_progress',
+        statusDescription: 'Servis u toku',
+        businessPartnerPhone: undefined,
+        businessPartnerName: undefined
+      });
+
+      res.json({
+        message: 'Test SMS poslat svim administratorima uključujući Teodoru Todosijević',
+        smsEnabled: smsConfig.enabled,
+        results: {
+          adminSMS: testResults.adminSMS,
+          totalAdminsSent: testResults.adminSMS?.length || 0,
+          successfulAdminsSent: testResults.adminSMS?.filter(r => r.success).length || 0
+        }
+      });
+    } catch (error) {
+      console.error('Greška pri test SMS-u:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // API ENDPOINT ZA PARTS ACTIVITY LOG
+  app.get("/api/admin/parts-activity-log", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      
+      // Za sada vraćam prazan array dok se ne implementira kompletna logika
+      const activities: any[] = [];
+      
+      res.json(activities);
+    } catch (error) {
+      console.error('Greška pri dohvatanju aktivnosti:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju aktivnosti rezervnih delova' });
+    }
+  });
+
   // Endpoint za listu dostupnih tabela
   app.get("/api/export/tables", async (req, res) => {
     try {

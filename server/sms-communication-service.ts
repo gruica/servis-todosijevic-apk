@@ -259,30 +259,16 @@ export class SMSCommunicationService {
         );
       }
 
-      // 2. SMS administratorima
-      const { storage } = await import('./storage.js');
-      const admins = await storage.getUsersByRole('admin');
-      const adminResults: SMSResult[] = [];
-      
-      for (const admin of admins) {
-        if (admin.phone) {
-          console.log(`📱 Šalje SMS administratoru ${admin.fullName} o promeni statusa`);
-          const adminResult = await this.sendTemplatedSMS('admin_status_change',
-            { phone: admin.phone, name: admin.fullName, role: 'admin' },
-            {
-              serviceId: serviceData.serviceId,
-              clientName: serviceData.clientName || 'Nepoznat klijent',
-              deviceType: serviceData.deviceType || 'Uređaj',
-              oldStatus: serviceData.oldStatus,
-              newStatus: serviceData.newStatus,
-              technicianName: serviceData.technicianName || 'Nepoznat serviser',
-              adminName: admin.fullName
-            }
-          );
-          adminResults.push(adminResult);
-        }
-      }
-      results.adminSMS = adminResults;
+      // 2. SMS SVE ADMINISTRATORE (uključujući Teodoru Todosijević)
+      console.log(`📱 Šalje SMS svim administratorima o promeni statusa: ${serviceData.oldStatus} -> ${serviceData.newStatus}`);
+      results.adminSMS = await this.sendSMSToAllAdmins('admin_status_change', {
+        serviceId: serviceData.serviceId,
+        clientName: serviceData.clientName || 'Nepoznat klijent',
+        deviceType: serviceData.deviceType || 'Uređaj',
+        oldStatus: serviceData.oldStatus,
+        newStatus: serviceData.newStatus,
+        technicianName: serviceData.technicianName || 'Nepoznat serviser'
+      });
 
       // 3. SMS poslovnom partneru (ako postoji)
       if (serviceData.businessPartnerPhone && serviceData.businessPartnerName) {
@@ -558,6 +544,54 @@ export class SMSCommunicationService {
         reschedulingNotes: data.reschedulingNotes
       }
     );
+  }
+
+  /**
+   * Helper funkcija za slanje SMS svim administratorima uključujući Teodoru Todosijević
+   */
+  private async sendSMSToAllAdmins(
+    templateType: string,
+    templateData: SMSTemplateData,
+    additionalContext?: { serviceId?: string; clientName?: string }
+  ): Promise<SMSResult[]> {
+    const adminResults: SMSResult[] = [];
+    
+    try {
+      // 1. SMS regularnim administratorima iz baze
+      const { storage } = await import('./storage.js');
+      const admins = await storage.getUsersByRole('admin');
+      
+      for (const admin of admins) {
+        if (admin.phone) {
+          console.log(`📱 Šalje SMS administratoru ${admin.fullName}`);
+          const adminResult = await this.sendTemplatedSMS(templateType,
+            { phone: admin.phone, name: admin.fullName, role: 'admin' },
+            { ...templateData, adminName: admin.fullName }
+          );
+          adminResults.push(adminResult);
+        }
+      }
+      
+      // 2. SMS dodatnom administratoru - Teodora Todosijević (067077093)
+      try {
+        const additionalAdminSetting = await storage.getSystemSetting('admin_sms_additional');
+        if (additionalAdminSetting) {
+          console.log(`📱 Šalje SMS dodatnom administratoru Teodora Todosijević`);
+          const teodoraSMSResult = await this.sendTemplatedSMS(templateType,
+            { phone: additionalAdminSetting, name: 'Teodora Todosijević', role: 'admin' },
+            { ...templateData, adminName: 'Teodora Todosijević' }
+          );
+          adminResults.push(teodoraSMSResult);
+        }
+      } catch (error) {
+        console.log('⚠️ Greška pri slanju SMS dodatnom administratoru:', error);
+      }
+      
+    } catch (error) {
+      console.error('❌ Greška pri slanju SMS administratorima:', error);
+    }
+    
+    return adminResults;
   }
 
   /**
