@@ -28,10 +28,10 @@ export default function ComplusAuthPage() {
     }
 
     try {
-      // Prijavi se kao admin korisnik - koristi postojeći admin token
-      const response = await apiRequest("/api/login", "POST", {
-        username: "jelena@frigosistemtodosijevic.me", // Admin korisnik
-        password: "jelena123" // Admin password
+      // Prijavi se sa Teodorinim kredencijalima preko JWT auth
+      const response = await apiRequest("/api/jwt-auth", "POST", {
+        email: username,
+        password: password
       }) as { token?: string };
 
       if (response?.token) {
