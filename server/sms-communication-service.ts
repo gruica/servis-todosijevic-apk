@@ -1128,4 +1128,61 @@ export class SMSCommunicationService {
       }
     );
   }
+
+  /**
+   * Obaveštava sve stranke o dodeli dela serviseru
+   */
+  async notifyPartsAllocated(
+    serviceId: string,
+    clientPhone: string,
+    businessPartnerPhone: string | null,
+    partName: string,
+    quantity: number,
+    technicianName: string,
+    clientName: string
+  ): Promise<SMSResult[]> {
+    const results: SMSResult[] = [];
+
+    const templateData: SMSTemplateData = {
+      serviceId,
+      partName,
+      quantity: quantity.toString(),
+      technicianName,
+      clientName
+    };
+
+    try {
+      // 1. SMS klijentu
+      if (clientPhone) {
+        console.log(`📱 Šaljem SMS klijentu o dodeli dela - Servis #${serviceId}`);
+        const clientResult = await this.sendSMS(
+          { phone: clientPhone, name: clientName },
+          'client_parts_allocated',
+          templateData
+        );
+        results.push(clientResult);
+      }
+
+      // 2. SMS poslovnom partneru (ako postoji)
+      if (businessPartnerPhone) {
+        console.log(`📱 Šaljem SMS poslovnom partneru o dodeli dela - Servis #${serviceId}`);
+        const partnerResult = await this.sendSMS(
+          { phone: businessPartnerPhone, name: 'Poslovni partner' },
+          'business_partner_parts_allocated',
+          templateData
+        );
+        results.push(partnerResult);
+      }
+
+      // 3. SMS administratorima (uključujući Teodoru)
+      console.log(`📱 Šaljem SMS administratorima o dodeli dela - Servis #${serviceId}`);
+      const adminResults = await this.sendSMSToAllAdmins('admin_parts_allocated', templateData);
+      results.push(...adminResults);
+
+      return results;
+    } catch (error) {
+      console.error('❌ Greška pri slanju SMS obaveštenja o dodeli dela:', error);
+      return results;
+    }
+  }
 }

@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Package, UserCheck, Trash2, Plus, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import AllocatePartDialog from "./AllocatePartDialog";
 
 const assignToTechnicianSchema = z.object({
   technicianId: z.string().min(1, "Molimo odaberite servisera"),
@@ -57,6 +58,7 @@ interface Technician {
 export function AvailablePartsManagement() {
   const [selectedPart, setSelectedPart] = useState<AvailablePart | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isAllocateDialogOpen, setIsAllocateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -135,6 +137,11 @@ export function AvailablePartsManagement() {
     setSelectedPart(part);
     form.setValue("quantity", Math.min(1, part.quantity));
     setIsAssignDialogOpen(true);
+  };
+
+  const handleAllocatePart = (part: AvailablePart) => {
+    setSelectedPart(part);
+    setIsAllocateDialogOpen(true);
   };
 
   const onSubmitAssign = (data: AssignToTechnicianForm) => {
@@ -227,11 +234,11 @@ export function AvailablePartsManagement() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleAssignTechnician(part)}
-                            className="flex items-center gap-1"
+                            onClick={() => handleAllocatePart(part)}
+                            className="flex items-center gap-1 bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
                           >
                             <UserCheck className="h-4 w-4" />
-                            Dodeli
+                            Dodeli za servis
                           </Button>
                           <Button
                             variant="outline"
@@ -379,6 +386,20 @@ export function AvailablePartsManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog za alokaciju dela za servis */}
+      {selectedPart && (
+        <AllocatePartDialog
+          open={isAllocateDialogOpen}
+          onOpenChange={setIsAllocateDialogOpen}
+          part={{
+            id: selectedPart.id,
+            partName: selectedPart.partName,
+            quantity: selectedPart.quantity,
+            location: selectedPart.location || "Glavno skladište"
+          }}
+        />
+      )}
     </div>
   );
 }

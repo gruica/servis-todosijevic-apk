@@ -3298,6 +3298,100 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Parts Allocation Methods
+  async createPartsAllocation(allocationData: InsertPartsAllocation): Promise<PartsAllocation> {
+    try {
+      const [allocation] = await db
+        .insert(partsAllocations)
+        .values(allocationData)
+        .returning();
+      return allocation;
+    } catch (error) {
+      console.error('Greška pri kreiranju alokacije delova:', error);
+      throw error;
+    }
+  }
+
+  async getAllocatePartToTechnician(
+    partId: number,
+    serviceId: number,
+    technicianId: number,
+    quantity: number,
+    allocatedBy: number
+  ): Promise<{ allocation: PartsAllocation; remainingQuantity: number } | undefined> {
+    try {
+      // Get the available part
+      const part = await this.getAvailablePart(partId);
+      if (!part) {
+        throw new Error('Deo nije pronađen');
+      }
+
+      if (part.quantity < quantity) {
+        throw new Error('Nema dovoljno delova na stanju');
+      }
+
+      // Create allocation record
+      const allocationData = {
+        availablePartId: partId,
+        serviceId,
+        technicianId,
+        quantity,
+        allocatedDate: new Date(),
+        allocatedBy,
+        status: 'allocated' as const
+      };
+
+      const allocation = await this.createPartsAllocation(allocationData);
+
+      // Update available part quantity
+      const newQuantity = part.quantity - quantity;
+      await this.updateAvailablePart(partId, { quantity: newQuantity });
+
+      return { allocation, remainingQuantity: newQuantity };
+    } catch (error) {
+      console.error('Greška pri dodeli dela serviseru:', error);
+      throw error;
+    }
+  }
+
+  async getPartsAllocationsByService(serviceId: number): Promise<PartsAllocation[]> {
+    try {
+      return await db
+        .select()
+        .from(partsAllocations)
+        .where(eq(partsAllocations.serviceId, serviceId))
+        .orderBy(desc(partsAllocations.allocatedDate));
+    } catch (error) {
+      console.error('Greška pri dohvatanju alokacija delova za servis:', error);
+      return [];
+    }
+  }
+
+  async getPartsAllocationsByTechnician(technicianId: number): Promise<PartsAllocation[]> {
+    try {
+      return await db
+        .select()
+        .from(partsAllocations)
+        .where(eq(partsAllocations.technicianId, technicianId))
+        .orderBy(desc(partsAllocations.allocatedDate));
+    } catch (error) {
+      console.error('Greška pri dohvatanju alokacija delova za servisera:', error);
+      return [];
+    }
+  }
+
+  async getAllPartsAllocations(): Promise<PartsAllocation[]> {
+    try {
+      return await db
+        .select()
+        .from(partsAllocations)
+        .orderBy(desc(partsAllocations.allocatedDate));
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih alokacija delova:', error);
+      return [];
+    }
+  }
+
   // Available parts methods
   async getAllAvailableParts(): Promise<AvailablePart[]> {
     try {

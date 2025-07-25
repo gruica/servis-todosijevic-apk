@@ -14,6 +14,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { eq, and, desc, gte, lte, ne, isNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
+import { SMSCommunicationService } from "./sms-communication-service.js";
 const { availableParts } = schema;
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
@@ -6359,6 +6360,97 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("❌ GENERALI DOPUNA - Greška:", error);
       res.status(500).json({ error: "Greška pri dopunjavanju servisa" });
+    }
+  });
+
+  // Allocate available part to technician for service (admin only)
+  app.post("/api/admin/available-parts/:id/allocate", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const { serviceId, technicianId, quantity } = req.body;
+
+      // Validate input
+      if (!serviceId || !technicianId || !quantity || quantity <= 0) {
+        return res.status(400).json({ 
+          error: "Servis ID, serviser ID i količina su obavezni i količina mora biti pozitivna" 
+        });
+      }
+
+      // Get service and technician details for SMS
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      const technician = await storage.getTechnician(technicianId);
+      if (!technician) {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+
+      const client = await storage.getClient(service.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+
+      const part = await storage.getAvailablePart(partId);
+      if (!part) {
+        return res.status(404).json({ error: "Deo nije pronađen" });
+      }
+
+      // Allocate part to technician
+      const result = await storage.getAllocatePartToTechnician(
+        partId,
+        serviceId,
+        technicianId,
+        quantity,
+        req.user.id
+      );
+
+      if (!result) {
+        return res.status(500).json({ error: "Greška pri dodeli dela serviseru" });
+      }
+
+      // Send SMS notifications to all parties
+      try {
+        const smsService = new SMSCommunicationService();
+        
+        // Get business partner phone if exists
+        let businessPartnerPhone = null;
+        if (service.businessPartnerId) {
+          const partner = await storage.getUser(service.businessPartnerId);
+          businessPartnerPhone = partner?.phone || null;
+        }
+
+        await smsService.notifyPartsAllocated(
+          service.id.toString(),
+          client.phone,
+          businessPartnerPhone,
+          part.partName,
+          quantity,
+          technician.fullName,
+          client.fullName
+        );
+      } catch (smsError) {
+        console.error('❌ SMS notification error:', smsError);
+        // Don't fail the allocation if SMS fails
+      }
+
+      res.json({
+        success: true,
+        message: "Deo je uspešno dodeljen serviseru",
+        allocation: result.allocation,
+        remainingQuantity: result.remainingQuantity
+      });
+
+    } catch (error) {
+      console.error("Error allocating part to technician:", error);
+      res.status(500).json({ 
+        error: error.message || "Greška pri dodeli dela serviseru" 
+      });
     }
   });
 

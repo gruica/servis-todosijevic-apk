@@ -12,6 +12,7 @@ export interface SMSTemplateData {
   manufacturerName?: string;
   problemDescription?: string;
   partName?: string;
+  quantity?: string;
   estimatedDate?: string;
   actualDate?: string;
   cost?: string;
@@ -161,6 +162,22 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'supplier_status_changed');
   }
 
+  // DELOVI DODELJENI SERVISERIMA
+  static clientPartsAllocated(data: SMSTemplateData): string {
+    const message = `Deo ${data.partName} (${data.quantity || '1'} kom) dodeljen serviseru ${data.technicianName} za vas uredjaj. Servis #${data.serviceId}`;
+    return this.validateSMSLength(message, 'client_parts_allocated');
+  }
+
+  static adminPartsAllocated(data: SMSTemplateData): string {
+    const message = `ADMIN: Deo ${data.partName} (${data.quantity || '1'} kom) dodeljen ${data.technicianName} za servis #${data.serviceId} - ${data.clientName}`;
+    return this.validateSMSLength(message, 'admin_parts_allocated');
+  }
+
+  static businessPartnerPartsAllocated(data: SMSTemplateData): string {
+    const message = `Deo ${data.partName} (${data.quantity || '1'} kom) dodeljen za servis #${data.serviceId} - ${data.clientName}. Serviser: ${data.technicianName}`;
+    return this.validateSMSLength(message, 'business_partner_parts_allocated');
+  }
+
   // GLAVNI GENERATOR SMS PORUKA
   static generateSMS(type: string, data: SMSTemplateData): string {
     switch (type) {
@@ -193,6 +210,11 @@ export class SMSTemplates {
       
       // Supplier templates
       case 'supplier_status_changed': return this.supplierStatusChanged(data);
+      
+      // Parts allocation templates
+      case 'client_parts_allocated': return this.clientPartsAllocated(data);
+      case 'admin_parts_allocated': return this.adminPartsAllocated(data);
+      case 'business_partner_parts_allocated': return this.businessPartnerPartsAllocated(data);
       
       default:
         console.error(`⚠️ Nepoznat SMS template tip: ${type}`);
