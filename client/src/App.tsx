@@ -61,6 +61,7 @@ import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 import SMSBulkPage from "@/pages/admin/sms-bulk";
 import ComplusBillingPage from "@/pages/admin/complus-billing";
 import ComplusDashboard from "@/pages/complus";
+import ComplusAuthPage from "@/pages/complus-auth";
 
 function Router() {
   return (
@@ -77,6 +78,7 @@ function Router() {
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
+      <Route path="/complus-auth" component={ComplusAuthPage} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />

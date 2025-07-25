@@ -33,7 +33,7 @@ export default function HomePage() {
             </div>
 
             {/* Kartice za brzi pristup */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
               <ServiceCard 
                 icon={<UsersIcon className="h-8 w-8 text-blue-500" />}
                 title="Admin pristup" 
@@ -69,6 +69,16 @@ export default function HomePage() {
                 primaryColor="bg-orange-100 hover:bg-orange-200"
                 textColor="text-orange-700"
                 role="partner"
+              />
+              <ServiceCard 
+                icon={<SettingsIcon className="h-8 w-8 text-indigo-500" />}
+                title="Com Plus Panel" 
+                description="Administrativni panel za Com Plus brendove" 
+                onClick={() => navigate("/complus-auth")}
+                primaryColor="bg-indigo-100 hover:bg-indigo-200"
+                textColor="text-indigo-700"
+                role="complus"
+                isSpecial={true}
               />
             </div>
 
@@ -199,11 +209,12 @@ interface ServiceCardProps {
   primaryColor: string;
   textColor: string;
   role: string;
+  isSpecial?: boolean;
 }
 
-function ServiceCard({ icon, title, description, onClick, primaryColor, textColor, role }: ServiceCardProps) {
+function ServiceCard({ icon, title, description, onClick, primaryColor, textColor, role, isSpecial }: ServiceCardProps) {
   return (
-    <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md`} onClick={onClick}>
+    <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''}`} onClick={onClick}>
       <CardHeader className="pb-2">
         <div className="flex items-center space-x-2 mb-2">
           {icon}
@@ -212,12 +223,17 @@ function ServiceCard({ icon, title, description, onClick, primaryColor, textColo
       </CardHeader>
       <CardContent>
         <p className="text-gray-700 mb-3">{description}</p>
+        {isSpecial && (
+          <div className="mb-3 text-xs text-indigo-600 font-medium">
+            Electrolux • Elica • Candy • Hoover • Turbo Air
+          </div>
+        )}
         <Button 
           variant="outline" 
           className={`w-full text-white bg-blue-600 hover:bg-blue-700 border-blue-600`}
           onClick={onClick}
         >
-          Prijavi se kao {role}
+          Prijavi se kao {role === 'complus' ? 'Com Plus Admin' : role}
         </Button>
       </CardContent>
     </Card>
