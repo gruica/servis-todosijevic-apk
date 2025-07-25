@@ -6401,6 +6401,25 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Get parts activity log (admin only)
+  app.get("/api/admin/parts-activity-log", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { partId, limit } = req.query;
+      const activities = await storage.getPartActivityLog(
+        partId ? parseInt(partId as string) : undefined,
+        limit ? parseInt(limit as string) : 50
+      );
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching parts activity log:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju log aktivnosti" });
+    }
+  });
+
   // Get available part by ID (admin only)
   app.get("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {

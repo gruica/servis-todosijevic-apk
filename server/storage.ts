@@ -15,6 +15,7 @@ import {
   SparePartOrder, InsertSparePartOrder,
   SparePartUrgency, SparePartStatus,
   AvailablePart, InsertAvailablePart,
+  PartsActivityLog, InsertPartsActivityLog,
   Notification, InsertNotification,
   SystemSetting, InsertSystemSetting,
   RemovedPart, InsertRemovedPart,
@@ -22,7 +23,7 @@ import {
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
-  availableParts, notifications, systemSettings, removedParts
+  availableParts, partsActivityLog, notifications, systemSettings, removedParts
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -3913,6 +3914,54 @@ export class DatabaseStorage implements IStorage {
       return spareParts;
     } catch (error) {
       console.error('Greška pri dohvatanju rezervnih delova za servis:', error);
+      return [];
+    }
+  }
+
+  // Parts Activity Log methods
+  async logPartActivity(data: InsertPartsActivityLog): Promise<PartsActivityLog> {
+    try {
+      const [activityLog] = await db
+        .insert(partsActivityLog)
+        .values(data)
+        .returning();
+      return activityLog;
+    } catch (error) {
+      console.error('Greška pri upisu aktivnosti rezervnog dela:', error);
+      throw error;
+    }
+  }
+
+  async getPartActivityLog(partId?: number, limit: number = 50): Promise<any[]> {
+    try {
+      let query = db
+        .select({
+          id: partsActivityLog.id,
+          partId: partsActivityLog.partId,
+          action: partsActivityLog.action,
+          previousQuantity: partsActivityLog.previousQuantity,
+          newQuantity: partsActivityLog.newQuantity,
+          technicianId: partsActivityLog.technicianId,
+          serviceId: partsActivityLog.serviceId,
+          userId: partsActivityLog.userId,
+          description: partsActivityLog.description,
+          timestamp: partsActivityLog.timestamp,
+          userName: users.fullName,
+          partName: availableParts.partName,
+        })
+        .from(partsActivityLog)
+        .leftJoin(users, eq(partsActivityLog.userId, users.id))
+        .leftJoin(availableParts, eq(partsActivityLog.partId, availableParts.id))
+        .orderBy(desc(partsActivityLog.timestamp));
+
+      if (partId) {
+        query = query.where(eq(partsActivityLog.partId, partId));
+      }
+
+      const activities = await query.limit(limit);
+      return activities;
+    } catch (error) {
+      console.error('Greška pri dohvatanju log aktivnosti:', error);
       return [];
     }
   }

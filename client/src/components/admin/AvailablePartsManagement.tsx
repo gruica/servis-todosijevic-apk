@@ -69,9 +69,12 @@ export function AvailablePartsManagement() {
     },
   });
 
-  // Dohvati dostupne delove
-  const { data: availableParts, isLoading: partsLoading } = useQuery({
+  // Dohvati dostupne delove sa real-time refresh
+  const { data: availableParts, isLoading: partsLoading, refetch: refetchParts } = useQuery({
     queryKey: ["/api/admin/available-parts"],
+    refetchInterval: 5000, // Real-time refresh svakih 5 sekundi
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Dohvati servisere
@@ -82,13 +85,10 @@ export function AvailablePartsManagement() {
   // Dodeli deo serviseru
   const assignToTechnicianMutation = useMutation({
     mutationFn: async (data: AssignToTechnicianForm & { partId: number }) => {
-      return apiRequest(`/api/admin/available-parts/${data.partId}/assign`, {
-        method: "POST",
-        body: JSON.stringify({
-          technicianId: parseInt(data.technicianId),
-          quantity: data.quantity,
-          assignmentNotes: data.assignmentNotes,
-        }),
+      return apiRequest("PUT", `/api/admin/available-parts/${data.partId}/allocate`, {
+        technicianId: parseInt(data.technicianId),
+        quantity: data.quantity,
+        assignmentNotes: data.assignmentNotes,
       });
     },
     onSuccess: () => {
@@ -113,9 +113,7 @@ export function AvailablePartsManagement() {
   // Obrisi deo sa stanja
   const deletePartMutation = useMutation({
     mutationFn: async (partId: number) => {
-      return apiRequest(`/api/admin/available-parts/${partId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/admin/available-parts/${partId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/available-parts"] });
@@ -195,7 +193,7 @@ export function AvailablePartsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {availableParts && availableParts.length > 0 ? (
+          {availableParts && Array.isArray(availableParts) && availableParts.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -212,7 +210,7 @@ export function AvailablePartsManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {availableParts.map((part: AvailablePart) => (
+                  {(availableParts as AvailablePart[]).map((part: AvailablePart) => (
                     <TableRow key={part.id}>
                       <TableCell className="font-medium">{part.partName}</TableCell>
                       <TableCell>{part.partNumber || "Nepoznat"}</TableCell>
@@ -304,7 +302,7 @@ export function AvailablePartsManagement() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {technicians?.filter((tech: Technician) => tech.active).map((tech: Technician) => (
+                            {Array.isArray(technicians) ? technicians.filter((tech: Technician) => tech.active).map((tech: Technician) => (
                               <SelectItem key={tech.id} value={tech.id.toString()}>
                                 {tech.fullName}
                                 {tech.specialization && (
@@ -313,7 +311,7 @@ export function AvailablePartsManagement() {
                                   </span>
                                 )}
                               </SelectItem>
-                            ))}
+                            )) : null}
                           </SelectContent>
                         </Select>
                         <FormMessage />

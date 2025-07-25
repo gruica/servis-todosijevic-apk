@@ -785,6 +785,34 @@ export const insertAvailablePartSchema = createInsertSchema(availableParts).pick
 export type InsertAvailablePart = z.infer<typeof insertAvailablePartSchema>;
 export type AvailablePart = typeof availableParts.$inferSelect;
 
+// Parts Activity Log - tabela za praćenje aktivnosti rezervnih delova
+export const partsActivityLog = pgTable("parts_activity_log", {
+  id: serial("id").primaryKey(),
+  partId: integer("part_id"),
+  action: text("action").notNull(), // 'added', 'allocated', 'returned', 'consumed', 'expired'
+  previousQuantity: integer("previous_quantity"),
+  newQuantity: integer("new_quantity"),
+  technicianId: integer("technician_id"),
+  serviceId: integer("service_id"),
+  userId: integer("user_id").notNull(),
+  description: text("description"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertPartsActivityLogSchema = createInsertSchema(partsActivityLog).pick({
+  partId: true,
+  action: true,
+  previousQuantity: true,
+  newQuantity: true,
+  technicianId: true,
+  serviceId: true,
+  userId: true,
+  description: true,
+});
+
+export type InsertPartsActivityLog = z.infer<typeof insertPartsActivityLogSchema>;
+export type PartsActivityLog = typeof partsActivityLog.$inferSelect;
+
 // Dodatne relacije
 export const requestTrackingRelations = relations(requestTracking, ({ one }) => ({
   user: one(users, {
