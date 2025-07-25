@@ -73,6 +73,26 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 
 ### SMS Service (REMOVED)
 - **Status**: All SMS functionality has been completely removed from the application
+
+## Deployment Configuration
+
+### Health Check Endpoints
+- **Primary**: `/health` - Main health check endpoint for cloud platforms
+- **Secondary**: `/api/health` - API-specific health check
+- **Response**: JSON with status, timestamp, and uptime information
+- **Performance**: Optimized with no logging to ensure fast response times
+
+### Production Optimizations
+- **CORS Logging**: Disabled in production mode to improve performance
+- **API Response Logging**: Minimal logging in production for health check endpoints
+- **Host Configuration**: Dynamic host/port configuration for cloud deployment
+- **Maintenance Service**: Enhanced error handling to prevent startup crashes
+- **Static File Serving**: Optimized caching headers for production assets
+
+### Error Handling
+- **Startup Resilience**: Maintenance service failures don't crash the application
+- **Health Check Performance**: Dedicated fast endpoints for deployment health checks
+- **Graceful Degradation**: Services can run without optional features (maintenance, SMS)
 - **Alternative**: Email notifications only for client communications
 
 ### File Processing

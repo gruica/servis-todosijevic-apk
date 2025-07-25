@@ -21,7 +21,6 @@ import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitS
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
 import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
-import { SMSCommunicationService } from './sms-communication-service';
 // SMS mobile functionality has been completely removed
 
 // Mapiranje status kodova u opisne nazive statusa
@@ -56,6 +55,27 @@ const testEmailSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
+  
+  // Health check endpoints for deployment
+  // Primary health check - used by cloud platforms
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: "1.0.0"
+    });
+  });
+  
+  // Alternative health check route
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "ok", 
+      api: "ready",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
   
   // Inicijalizacija SMS servisa
   let smsService: SMSCommunicationService | null = null;

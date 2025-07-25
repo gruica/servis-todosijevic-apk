@@ -31,23 +31,36 @@ export class MaintenanceService {
    * @param checkInterval Interval u milisekundama koliko često proveravati planove (podrazumevano svakih sat vremena)
    */
   public start(checkInterval: number = 60 * 60 * 1000): void {
-    // Ako već radi, zaustavi pa ponovo pokreni
-    if (this.checkIntervalId) {
-      this.stop();
-    }
-    
-    console.log("Pokretanje servisa za održavanje...");
-    
-    // Odmah pokreni proveru
-    this.checkMaintenanceSchedules()
-      .then(() => console.log("Početna provera planova održavanja završena"))
-      .catch(err => console.error("Greška pri početnoj proveri planova održavanja:", err));
-    
-    // Postavi interval za redovne provere
-    this.checkIntervalId = setInterval(() => {
+    try {
+      // Ako već radi, zaustavi pa ponovo pokreni
+      if (this.checkIntervalId) {
+        this.stop();
+      }
+      
+      console.log("Pokretanje servisa za održavanje...");
+      
+      // Odmah pokreni proveru sa error handling-om
       this.checkMaintenanceSchedules()
-        .catch(err => console.error("Greška pri periodičnoj proveri planova održavanja:", err));
-    }, checkInterval);
+        .then(() => console.log("Početna provera planova održavanja završena"))
+        .catch(err => {
+          console.error("Greška pri početnoj proveri planova održavanja:", err);
+          // Ne prekidaj aplikaciju zbog greške u održavanju
+        });
+      
+      // Postavi interval za redovne provere sa dodatnim error handling-om
+      this.checkIntervalId = setInterval(() => {
+        this.checkMaintenanceSchedules()
+          .catch(err => {
+            console.error("Greška pri periodičnoj proveri planova održavanja:", err);
+            // Log greške ali nastavi sa radom
+          });
+      }, checkInterval);
+      
+      console.log(`Servis za održavanje postavljen sa intervalom od ${checkInterval}ms`);
+    } catch (error) {
+      console.error("Kritična greška pri pokretanju servisa za održavanje:", error);
+      // Ne baci grešku van funkcije da ne prekine startup aplikacije
+    }
   }
   
   /**

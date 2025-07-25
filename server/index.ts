@@ -25,7 +25,10 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   
-  console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+  // Only log CORS in development mode to improve production performance
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+  }
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
@@ -40,14 +43,23 @@ setupAuth(app);
 
 // Session middleware je konfigurisan u setupAuth()
 
+// API logging middleware - optimized for production
 app.use((req, res, next) => {
+  // Skip logging for health check endpoints to improve performance
+  if (req.path === '/health' || req.path === '/api/health') {
+    return next();
+  }
+
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
+    // Only capture response in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      capturedJsonResponse = bodyJson;
+    }
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
 
@@ -55,7 +67,9 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      
+      // Only include response data in development
+      if (capturedJsonResponse && process.env.NODE_ENV !== 'production') {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
@@ -95,16 +109,23 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '0.0.0.0';
+  
   server.listen({
     port,
-    host: "0.0.0.0",
+    host,
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on ${host}:${port} (env: ${app.get("env")})`);
     
-    // Pokreni servis za automatsko održavanje - provera na svakih sat vremena
-    maintenanceService.start();
-    log("Servis za održavanje je pokrenut");
+    // Pokreni servis za automatsko održavanje sa error handling-om
+    try {
+      maintenanceService.start();
+      log("Servis za održavanje je pokrenut");
+    } catch (error) {
+      console.error("Greška pri pokretanju servisa za održavanje:", error);
+      // Aplikacija i dalje može da radi bez servisa za održavanje
+    }
   });
 })();
