@@ -1900,7 +1900,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reschedulingNotes,
         devicePickedUp,
         pickupDate,
-        pickupNotes
+        pickupNotes,
+        customerRefusalReason
       } = req.body;
       
       console.log(`[STATUS UPDATE] Korisnik ${req.user?.username} (${req.user?.role}) ažurira servis #${serviceId} sa statusom: ${status}`);
@@ -1945,7 +1946,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reschedulingNotes: reschedulingNotes !== undefined ? reschedulingNotes : service.reschedulingNotes,
         devicePickedUp: devicePickedUp !== undefined ? devicePickedUp : service.devicePickedUp,
         pickupDate: pickupDate !== undefined ? pickupDate : service.pickupDate,
-        pickupNotes: pickupNotes !== undefined ? pickupNotes : service.pickupNotes
+        pickupNotes: pickupNotes !== undefined ? pickupNotes : service.pickupNotes,
+        customerRefusalReason: customerRefusalReason !== undefined ? customerRefusalReason : service.customerRefusalReason
       });
       
       if (!updatedService) {

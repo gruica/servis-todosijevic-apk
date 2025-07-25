@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle, FileText, MessageSquare, Send } from "lucide-react";
+import { Phone, ClipboardCheck, Clock, Calendar, Package, ClipboardList, LogOut, User, MapPin, Truck, AlertCircle, FileText, MessageSquare, Send, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatDate } from "@/lib/utils";
@@ -338,6 +338,10 @@ export default function TechnicianServices() {
   const [supplementGeneraliOpen, setSupplementGeneraliOpen] = useState(false);
   const [supplementGeneraliService, setSupplementGeneraliService] = useState<TechnicianService | null>(null);
   
+  // State za odbijanje garancije od strane klijenta
+  const [customerRefusalDialogOpen, setCustomerRefusalDialogOpen] = useState(false);
+  const [refusalReason, setRefusalReason] = useState<string>("");
+  
 
 
 
@@ -484,7 +488,8 @@ export default function TechnicianServices() {
       warrantyStatus,
       clientUnavailableReason,
       needsRescheduling,
-      reschedulingNotes
+      reschedulingNotes,
+      customerRefusalReason
     }: { 
       serviceId: number; 
       status: string; 
@@ -497,6 +502,7 @@ export default function TechnicianServices() {
       clientUnavailableReason?: string;
       needsRescheduling?: boolean;
       reschedulingNotes?: string;
+      customerRefusalReason?: string;
     }) => {
       console.log(`[MUTATION] Pozivam API za servis ${serviceId} sa statusom: ${status}`);
       
@@ -510,7 +516,8 @@ export default function TechnicianServices() {
         warrantyStatus,
         clientUnavailableReason,
         needsRescheduling,
-        reschedulingNotes
+        reschedulingNotes,
+        customerRefusalReason
       });
       
       const result = await res.json();
@@ -599,6 +606,12 @@ export default function TechnicianServices() {
     setSupplementGeneraliOpen(true);
   };
 
+  const openCustomerRefusalDialog = (service: TechnicianService) => {
+    setSelectedService(service);
+    setRefusalReason("");
+    setCustomerRefusalDialogOpen(true);
+  };
+
   const openSparePartsOrder = (service: TechnicianService) => {
     console.log("🔧 openSparePartsOrder pozvan sa servisom:", service.id);
     setSparePartsService(service);
@@ -619,6 +632,19 @@ export default function TechnicianServices() {
     });
     
     setClientUnavailableDialogOpen(false);
+  };
+
+  const handleCustomerRefusal = () => {
+    if (!selectedService || !refusalReason.trim()) return;
+    
+    updateStatusMutation.mutate({
+      serviceId: selectedService.id,
+      status: "customer_refuses_repair",
+      notes: selectedService.technicianNotes || "",
+      customerRefusalReason: refusalReason
+    });
+    
+    setCustomerRefusalDialogOpen(false);
   };
 
   const openDevicePickupDialog = (service: TechnicianService) => {
@@ -1124,10 +1150,10 @@ export default function TechnicianServices() {
                               <CallClientButton 
                                 phoneNumber={service.client?.phone || ""}
                                 clientName={service.client?.fullName}
-                                variant="secondary" 
-                                size="default"
+                                variant="default" 
+                                size="lg"
                                 disabled={!service.client?.phone}
-                                className="flex-1 h-10"
+                                className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white"
                               />
                               
                               {service.client?.address && (
@@ -1273,6 +1299,19 @@ export default function TechnicianServices() {
                                       Preuzmi uređaj
                                     </Button>
                                   )}
+                                </div>
+                                
+                                {/* Customer refusal button */}
+                                <div className="flex gap-2 w-full">
+                                  <Button 
+                                    variant="outline" 
+                                    size="default"
+                                    onClick={() => openCustomerRefusalDialog(service)}
+                                    className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 w-full h-11"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Klijent odbija garanciju
+                                  </Button>
                                 </div>
                               </div>
                             )}
@@ -1715,6 +1754,74 @@ export default function TechnicianServices() {
         />
       )}
 
+      {/* Dialog za odbijanje garancije od strane klijenta */}
+      <Dialog open={customerRefusalDialogOpen} onOpenChange={setCustomerRefusalDialogOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              <XCircle className="h-5 w-5 inline mr-2" />
+              Klijent odbija garanciju
+            </DialogTitle>
+            <DialogDescription>
+              Označite servis kada klijent odbije garancijski popravak uređaja.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Osnovne informacije o servisu */}
+            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+              <p className="text-sm text-red-700">
+                <strong>Klijent:</strong> {selectedService?.client?.fullName}<br />
+                <strong>Uređaj:</strong> {selectedService?.appliance?.category?.name} {selectedService?.appliance?.model}<br />
+                <strong>Problem:</strong> {selectedService?.description}
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="refusal-reason" className="text-sm font-medium text-red-700">
+                  Razlog odbijanja garancije *
+                </Label>
+                <Textarea
+                  id="refusal-reason"
+                  placeholder="Opišite zašto klijent odbija garancijski popravak (obavezno polje)..."
+                  value={refusalReason}
+                  onChange={(e) => setRefusalReason(e.target.value)}
+                  className="mt-1 text-sm resize-none border-red-200 focus:border-red-400"
+                  rows={4}
+                  required
+                />
+                <p className="text-xs text-red-600 mt-1">
+                  * Obavezno unesite razlog zašto klijent odbija garancijski popravak
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <Button 
+              variant="outline" 
+              onClick={() => setCustomerRefusalDialogOpen(false)}
+              className="flex-1"
+            >
+              Otkaži
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCustomerRefusal}
+              disabled={!refusalReason.trim() || updateStatusMutation.isPending}
+              className="flex-1"
+            >
+              {updateStatusMutation.isPending ? (
+                <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Potvrdi odbijanje
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
