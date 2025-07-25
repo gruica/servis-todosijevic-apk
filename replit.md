@@ -41,6 +41,8 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 - **Technician assignment**: Services can be assigned to specific technicians
 - **Client relationship**: Each service linked to client and appliance
 - **Status tracking**: pending, assigned, scheduled, in_progress, completed, cancelled
+- **Customer refusal handling**: Option for technicians to mark when customers refuse repairs with mandatory reason field
+- **Email notifications**: Include customer refusal information in completion emails
 
 ### Client & Appliance Management
 - **Client profiles**: Contact information, address, company details
