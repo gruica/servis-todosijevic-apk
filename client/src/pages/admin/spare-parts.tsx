@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { SparePartsManagement } from "@/components/admin/SparePartsManagement";
 import SparePartsOrders from "@/components/admin/SparePartsOrders";
+import { AvailablePartsManagement } from "@/components/admin/AvailablePartsManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminSparePartsPage() {
@@ -15,13 +16,18 @@ export default function AdminSparePartsPage() {
         </div>
         
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="orders">Trenutne porudžbine</TabsTrigger>
+            <TabsTrigger value="available">Rezervni djelovi na stanju</TabsTrigger>
             <TabsTrigger value="management">Upravljanje delovima</TabsTrigger>
           </TabsList>
           
           <TabsContent value="orders" className="space-y-4">
             <SparePartsOrders />
+          </TabsContent>
+          
+          <TabsContent value="available" className="space-y-4">
+            <AvailablePartsManagement />
           </TabsContent>
           
           <TabsContent value="management" className="space-y-4">

@@ -30,7 +30,7 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
 import { pool, db } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne, isNull, like, count, sum, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
@@ -3534,6 +3534,248 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Removed Parts methods
+  // Available Parts methods
+  async getAllAvailableParts(): Promise<any[]> {
+    try {
+      const parts = await db
+        .select({
+          id: availableParts.id,
+          partName: availableParts.partName,
+          partNumber: availableParts.partNumber,
+          quantity: availableParts.quantity,
+          description: availableParts.description,
+          supplierName: availableParts.supplierName,
+          unitCost: availableParts.unitCost,
+          location: availableParts.location,
+          warrantyStatus: availableParts.warrantyStatus,
+          categoryId: availableParts.categoryId,
+          manufacturerId: availableParts.manufacturerId,
+          originalOrderId: availableParts.originalOrderId,
+          addedDate: availableParts.addedDate,
+          addedBy: availableParts.addedBy,
+          notes: availableParts.notes,
+          categoryName: applianceCategories.name,
+          manufacturerName: manufacturers.name,
+          addedByFullName: users.fullName,
+        })
+        .from(availableParts)
+        .leftJoin(applianceCategories, eq(availableParts.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(availableParts.manufacturerId, manufacturers.id))
+        .leftJoin(users, eq(availableParts.addedBy, users.id))
+        .orderBy(desc(availableParts.addedDate));
+
+      return parts.map(part => ({
+        id: part.id,
+        partName: part.partName,
+        partNumber: part.partNumber,
+        quantity: part.quantity,
+        description: part.description,
+        supplierName: part.supplierName,
+        unitCost: part.unitCost,
+        location: part.location,
+        warrantyStatus: part.warrantyStatus,
+        categoryId: part.categoryId,
+        manufacturerId: part.manufacturerId,
+        originalOrderId: part.originalOrderId,
+        addedDate: part.addedDate,
+        addedBy: part.addedBy,
+        notes: part.notes,
+        category: part.categoryName ? { name: part.categoryName } : null,
+        manufacturer: part.manufacturerName ? { name: part.manufacturerName } : null,
+        addedByUser: part.addedByFullName ? { fullName: part.addedByFullName } : null,
+      }));
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnih delova:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePart(id: number): Promise<any | undefined> {
+    try {
+      const [part] = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.id, id));
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async getAvailablePartsByCategory(categoryId: number): Promise<any[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.categoryId, categoryId))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnih delova po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async getAvailablePartsByManufacturer(manufacturerId: number): Promise<any[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.manufacturerId, manufacturerId))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnih delova po proizvođaču:', error);
+      return [];
+    }
+  }
+
+  async getAvailablePartsByWarrantyStatus(warrantyStatus: string): Promise<any[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.warrantyStatus, warrantyStatus))
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dostupnih delova po garancijskom statusu:', error);
+      return [];
+    }
+  }
+
+  async searchAvailableParts(searchTerm: string): Promise<any[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(availableParts)
+        .where(
+          sql`${availableParts.partName} ILIKE ${'%' + searchTerm + '%'} OR 
+              ${availableParts.partNumber} ILIKE ${'%' + searchTerm + '%'} OR 
+              ${availableParts.description} ILIKE ${'%' + searchTerm + '%'}`
+        )
+        .orderBy(desc(availableParts.addedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri pretrazi dostupnih delova:', error);
+      return [];
+    }
+  }
+
+  async createAvailablePart(part: any): Promise<any> {
+    try {
+      const [newPart] = await db
+        .insert(availableParts)
+        .values(part)
+        .returning();
+      return newPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailablePart(id: number, part: Partial<any>): Promise<any | undefined> {
+    try {
+      const [updatedPart] = await db
+        .update(availableParts)
+        .set(part)
+        .where(eq(availableParts.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async deleteAvailablePart(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(availableParts)
+        .where(eq(availableParts.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailablePartQuantity(id: number, quantityChange: number): Promise<any | undefined> {
+    try {
+      const [part] = await db
+        .select()
+        .from(availableParts)
+        .where(eq(availableParts.id, id));
+
+      if (!part) return undefined;
+
+      const newQuantity = Math.max(0, part.quantity + quantityChange);
+      
+      const [updatedPart] = await db
+        .update(availableParts)
+        .set({ quantity: newQuantity })
+        .where(eq(availableParts.id, id))
+        .returning();
+      
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju količine dostupnog dela:', error);
+      throw error;
+    }
+  }
+
+  async markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: any; availablePart: any } | undefined> {
+    try {
+      // Get the spare part order
+      const [order] = await db
+        .select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.id, orderId));
+
+      if (!order) return undefined;
+
+      // Update the order status to received
+      const [updatedOrder] = await db
+        .update(sparePartOrders)
+        .set({
+          status: 'received',
+          receivedDate: new Date(),
+          actualCost: receivedData.actualCost || order.estimatedCost,
+          adminNotes: receivedData.notes || order.adminNotes,
+        })
+        .where(eq(sparePartOrders.id, orderId))
+        .returning();
+
+      // Create available part from the received order
+      const [availablePart] = await db
+        .insert(availableParts)
+        .values({
+          partName: order.partName,
+          partNumber: order.partNumber,
+          quantity: order.quantity,
+          description: order.description,
+          supplierName: order.supplierName,
+          unitCost: receivedData.actualCost || order.estimatedCost,
+          location: receivedData.location || 'Glavno skladište',
+          warrantyStatus: order.warrantyStatus,
+          categoryId: order.applianceId ? null : null, // Will be set based on appliance if available
+          manufacturerId: order.applianceId ? null : null, // Will be set based on appliance if available
+          originalOrderId: order.id,
+          addedDate: new Date(),
+          addedBy: adminId,
+          notes: receivedData.notes,
+        })
+        .returning();
+
+      return { order: updatedOrder, availablePart };
+    } catch (error) {
+      console.error('Greška pri označavanju rezervnog dela kao primljenog:', error);
+      throw error;
+    }
+  }
+
   async getAllRemovedParts(): Promise<RemovedPart[]> {
     try {
       return await db.select().from(removedParts).orderBy(desc(removedParts.id));

@@ -14,6 +14,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { eq, and, desc, gte, lte, ne, isNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
+const { availableParts } = schema;
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
@@ -6068,6 +6069,143 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Greška pri dobijanju lista tabela:", error);
       res.status(500).json({ error: "Greška pri dobijanju lista tabela" });
+    }
+  });
+
+  // ===== AVAILABLE PARTS API ENDPOINTS =====
+  
+  // Get all available parts (admin only)
+  app.get("/api/admin/available-parts", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const parts = await storage.getAllAvailableParts();
+      res.json(parts);
+    } catch (error) {
+      console.error("Error fetching available parts:", error);
+      res.status(500).json({ error: "Failed to fetch available parts" });
+    }
+  });
+
+  // Get available part by ID (admin only)
+  app.get("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const part = await storage.getAvailablePart(parseInt(req.params.id));
+      if (!part) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+      res.json(part);
+    } catch (error) {
+      console.error("Error fetching available part:", error);
+      res.status(500).json({ error: "Failed to fetch available part" });
+    }
+  });
+
+  // Mark spare part as received and move to available parts (admin only)
+  app.post("/api/admin/spare-parts/:id/mark-received", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const orderId = parseInt(req.params.id);
+      const { actualCost, location, notes } = req.body;
+
+      const result = await storage.markSparePartAsReceived(orderId, req.user.id, {
+        actualCost,
+        location: location || 'Glavno skladište',
+        notes
+      });
+
+      if (!result) {
+        return res.status(404).json({ error: "Narudžba rezervnog dela nije pronađena" });
+      }
+
+      res.json({
+        message: "Rezervni deo je uspešno označen kao primljen i premešten u skladište",
+        order: result.order,
+        availablePart: result.availablePart
+      });
+    } catch (error) {
+      console.error("Error marking spare part as received:", error);
+      res.status(500).json({ error: "Failed to mark spare part as received" });
+    }
+  });
+
+  // Assign available part to technician (admin only)
+  app.post("/api/admin/available-parts/:id/assign", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const { technicianId, quantity, assignmentNotes } = req.body;
+
+      if (!technicianId || !quantity || quantity <= 0) {
+        return res.status(400).json({ error: "Potreban je ID servisera i validna količina" });
+      }
+
+      // Get the available part
+      const part = await storage.getAvailablePart(partId);
+      if (!part) {
+        return res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+
+      if (part.quantity < quantity) {
+        return res.status(400).json({ error: "Nema dovoljno delova na stanju" });
+      }
+
+      // Update quantity (reduce by assigned amount)
+      const updatedPart = await storage.updateAvailablePartQuantity(partId, -quantity);
+
+      // If quantity reaches 0, delete the part from available parts
+      if (updatedPart && updatedPart.quantity <= 0) {
+        await storage.deleteAvailablePart(partId);
+      }
+
+      // Get technician info for notification
+      const technician = await storage.getTechnician(technicianId);
+      
+      // Here you could create a notification or record for the technician
+      // For now, we'll just return success
+      
+      res.json({
+        message: `Uspešno dodeljeno ${quantity} kom dela "${part.partName}" serviseru ${technician?.fullName || `ID: ${technicianId}`}`,
+        assignedQuantity: quantity,
+        remainingQuantity: updatedPart ? updatedPart.quantity : 0,
+        assignmentNotes
+      });
+    } catch (error) {
+      console.error("Error assigning part to technician:", error);
+      res.status(500).json({ error: "Failed to assign part to technician" });
+    }
+  });
+
+  // Delete available part (admin only)
+  app.delete("/api/admin/available-parts/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const partId = parseInt(req.params.id);
+      const success = await storage.deleteAvailablePart(partId);
+      
+      if (success) {
+        res.json({ message: "Dostupan deo je uspešno uklonjen sa stanja" });
+      } else {
+        res.status(404).json({ error: "Dostupan deo nije pronađen" });
+      }
+    } catch (error) {
+      console.error("Error deleting available part:", error);
+      res.status(500).json({ error: "Failed to delete available part" });
     }
   });
 
