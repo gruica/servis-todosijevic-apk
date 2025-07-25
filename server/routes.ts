@@ -4983,6 +4983,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark spare part as received (admin only)
+  app.post("/api/admin/spare-parts/:id/mark-received", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const orderId = parseInt(req.params.id);
+      const { actualCost, location, notes } = req.body;
+
+      console.log(`[MARK RECEIVED] Processing order ${orderId} with data:`, { actualCost, location, notes });
+
+      const result = await storage.markSparePartAsReceived(orderId, req.user.id, {
+        actualCost,
+        location,
+        notes
+      });
+
+      if (!result) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+
+      console.log(`[MARK RECEIVED] Successfully processed order ${orderId}`);
+
+      // TODO: Add SMS notifications here when needed
+      
+      res.json({ 
+        success: true, 
+        order: result.order, 
+        availablePart: result.availablePart 
+      });
+    } catch (error) {
+      console.error(`[MARK RECEIVED] Error marking spare part as received:`, error);
+      res.status(500).json({ 
+        error: "Greška pri označavanju dela kao primljenog",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Get spare part order by ID
   app.get("/api/spare-parts/:id", jwtAuth, async (req, res) => {
     try {
