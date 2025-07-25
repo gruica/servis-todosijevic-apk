@@ -1681,7 +1681,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   statusDescription,
                   clientEmailContent,
                   technicianName,
-                  updatedService.warrantyStatus
+                  updatedService.warrantyStatus,
+                  updatedService.customerRefusesRepair || undefined,
+                  updatedService.customerRefusalReason || undefined
                 );
                 
                 if (clientEmailSent) {
@@ -1962,7 +1964,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 statusDescription,
                 clientEmailContent,
                 technicianName,
-                updatedService.warrantyStatus
+                updatedService.warrantyStatus,
+                updatedService.customerRefusesRepair || undefined,
+                updatedService.customerRefusalReason || undefined
               );
               
               if (clientEmailSent) {

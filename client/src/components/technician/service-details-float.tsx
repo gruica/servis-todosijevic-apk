@@ -44,6 +44,8 @@ export function ServiceDetailsFloat({
   const [cost, setCost] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [sendingSMS, setSendingSMS] = useState(false);
+  const [customerRefusesRepair, setCustomerRefusesRepair] = useState(false);
+  const [customerRefusalReason, setCustomerRefusalReason] = useState("");
 
   const handleSendSMS = async (smsType: string) => {
     setSendingSMS(true);
@@ -97,18 +99,27 @@ export function ServiceDetailsFloat({
   };
 
   const handleCompleteService = async () => {
-    if (!technicianNotes.trim() || !usedParts.trim() || !machineNotes.trim() || !cost) {
-      alert("Molimo popunite sva obavezna polja za završetak servisa");
+    if (!technicianNotes.trim()) {
+      alert("Molimo unesite napomenu servisera");
       return;
+    }
+
+    if (!customerRefusesRepair) {
+      if (!usedParts.trim() || !machineNotes.trim() || !cost) {
+        alert("Molimo popunite sva obavezna polja za završetak servisa");
+        return;
+      }
     }
 
     setIsUpdating(true);
     try {
       await onStatusUpdate(service.id, "completed", {
         technicianNotes: technicianNotes.trim(),
-        usedParts: usedParts.trim(),
-        machineNotes: machineNotes.trim(),
-        cost: parseFloat(cost)
+        usedParts: usedParts.trim() || null,
+        machineNotes: machineNotes.trim() || null,
+        cost: cost ? parseFloat(cost) : null,
+        customerRefusesRepair: customerRefusesRepair,
+        customerRefusalReason: customerRefusesRepair ? customerRefusalReason.trim() : null
       });
       onClose();
     } catch (error) {
@@ -117,6 +128,37 @@ export function ServiceDetailsFloat({
       setIsUpdating(false);
     }
   };
+
+  const handleCustomerRefusesRepair = async () => {
+    if (!technicianNotes.trim()) {
+      alert("Molimo unesite napomenu servisera");
+      return;
+    }
+
+    if (!customerRefusalReason.trim()) {
+      alert("Molimo navedite razlog zašto kupac odbija popravku");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await onStatusUpdate(service.id, "completed", {
+        technicianNotes: technicianNotes.trim(),
+        usedParts: usedParts.trim() || null,
+        machineNotes: machineNotes.trim() || null,
+        cost: cost ? parseFloat(cost) : null,
+        customerRefusesRepair: true,
+        customerRefusalReason: customerRefusalReason.trim()
+      });
+      onClose();
+    } catch (error) {
+      console.error("Greška pri završetku servisa:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+
 
   const handleClientNotHome = async () => {
     const note = technicianNotes.trim() || "Klijent nije bio kući na adresi";
@@ -361,11 +403,44 @@ export function ServiceDetailsFloat({
                   />
                 </div>
 
+                {/* Customer Refusal Section */}
+                {service.status === "in_progress" && (
+                  <div className="space-y-2 border-t pt-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="customerRefuses"
+                        checked={customerRefusesRepair}
+                        onChange={(e) => setCustomerRefusesRepair(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="customerRefuses" className="text-sm font-medium text-orange-700">
+                        Kupac odbija popravku
+                      </label>
+                    </div>
+                    
+                    {customerRefusesRepair && (
+                      <div className="space-y-2 ml-6">
+                        <label className="text-sm font-medium flex items-center text-orange-700">
+                          Razlog odbijanja popravke: <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <Textarea
+                          value={customerRefusalReason}
+                          onChange={(e) => setCustomerRefusalReason(e.target.value)}
+                          placeholder="Navedite razlog zašto kupac odbija popravku..."
+                          className="min-h-[60px] text-sm resize-none border-orange-200 focus:border-orange-400"
+                          required={customerRefusesRepair}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center">
                     Cena servisa (€): 
-                    <span className={service.status === "in_progress" ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
-                      {service.status === "in_progress" ? "*" : "(opciono)"}
+                    <span className={service.status === "in_progress" && !customerRefusesRepair ? "text-red-500 ml-1" : "text-gray-400 ml-1"}>
+                      {service.status === "in_progress" && !customerRefusesRepair ? "*" : "(opciono)"}
                     </span>
                   </label>
                   <div className="relative">
@@ -377,7 +452,7 @@ export function ServiceDetailsFloat({
                       onChange={(e) => setCost(e.target.value)}
                       placeholder="0.00"
                       className="w-full pl-10 pr-3 py-2 text-sm border border-input rounded-md bg-background"
-                      required={service.status === "in_progress"}
+                      required={service.status === "in_progress" && !customerRefusesRepair}
                     />
                   </div>
                 </div>
@@ -432,18 +507,35 @@ export function ServiceDetailsFloat({
                   )}
                   
                   {service.status === "in_progress" && (
-                    <Button 
-                      onClick={handleCompleteService}
-                      disabled={isUpdating}
-                      className="w-full"
-                    >
-                      {isUpdating ? (
-                        <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                    <div className="space-y-2">
+                      {customerRefusesRepair ? (
+                        <Button 
+                          onClick={handleCustomerRefusesRepair}
+                          disabled={isUpdating}
+                          className="w-full bg-orange-600 hover:bg-orange-700"
+                        >
+                          {isUpdating ? (
+                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                          ) : (
+                            <ClipboardCheck className="h-4 w-4 mr-2" />
+                          )}
+                          Završi - kupac odbija popravku
+                        </Button>
                       ) : (
-                        <ClipboardCheck className="h-4 w-4 mr-2" />
+                        <Button 
+                          onClick={handleCompleteService}
+                          disabled={isUpdating}
+                          className="w-full"
+                        >
+                          {isUpdating ? (
+                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                          ) : (
+                            <ClipboardCheck className="h-4 w-4 mr-2" />
+                          )}
+                          Završi servis
+                        </Button>
                       )}
-                      Završi servis
-                    </Button>
+                    </div>
                   )}
                 </div>
               </>

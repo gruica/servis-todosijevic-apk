@@ -450,7 +450,9 @@ export class EmailService {
     status: string,
     description: string,
     technicianName: string,
-    warrantyStatus?: string
+    warrantyStatus?: string,
+    customerRefusesRepair?: boolean,
+    customerRefusalReason?: string
   ): Promise<boolean> {
     console.log(`[DEBUG EMAIL] Početak slanja obaveštenja o statusu servisa #${serviceId} klijentu ${client.fullName} (${client.email || 'bez email-a'})`);
     
@@ -468,9 +470,23 @@ export class EmailService {
         : `Završen vangaranciski servis #${serviceId}`;
     }
 
-    // Generiraj warranty status poruku
+    // Generiraj warranty status poruku i customer refusal poruku
     let warrantyMessage = "";
-    let warrantyStyle = "";
+    let customerRefusalMessage = "";
+    
+    // Customer refusal message
+    if (customerRefusesRepair && customerRefusalReason) {
+      customerRefusalMessage = `
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 0; color: #856404; font-weight: bold;">
+            ⚠️ KUPAC JE ODBIO POPRAVKU
+          </p>
+          <p style="margin: 5px 0 0 0; color: #856404;">
+            <strong>Razlog:</strong> ${customerRefusalReason}
+          </p>
+        </div>
+      `;
+    }
     
     if (status === "Završen" && warrantyStatus) {
       if (warrantyStatus === "in_warranty") {
@@ -509,6 +525,7 @@ export class EmailService {
           <p><strong>Opis radova:</strong> ${description}</p>
           <p><strong>Serviser:</strong> ${technicianName}</p>
         </div>
+        ${customerRefusalMessage}
         ${warrantyMessage}
         <p>Za sva dodatna pitanja u vezi servisa, možete nas kontaktirati telefonom na broj 033 402 402 ili odgovorom na ovaj email.</p>
         <p>Hvala Vam što ste izabrali naše usluge!</p>
