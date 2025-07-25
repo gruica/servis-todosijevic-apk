@@ -326,7 +326,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
       if (clientData && existingService.clientId) {
         const updateClientData: any = {};
         if (clientData.fullName) updateClientData.fullName = clientData.fullName;
-        if (clientData.email) updateClientData.email = clientData.email;
+        if (clientData.email !== undefined) updateClientData.email = clientData.email || null; // Podrška za prazan email
         if (clientData.phone) updateClientData.phone = clientData.phone;
         if (clientData.address) updateClientData.address = clientData.address;
         if (clientData.city) updateClientData.city = clientData.city;

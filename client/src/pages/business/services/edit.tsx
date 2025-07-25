@@ -59,12 +59,12 @@ interface Manufacturer {
   name: string;
 }
 
-// Schema za validaciju
+// Schema za validaciju - EMAIL NIJE OBAVEZAN ZA IZMENE
 const editServiceSchema = z.object({
   description: z.string().min(1, "Opis problema je obavezan"),
   scheduledDate: z.string().optional(),
   clientFullName: z.string().min(1, "Ime klijenta je obavezno"),
-  clientEmail: z.string().email("Neispravna email adresa"),
+  clientEmail: z.string().optional().refine((val) => !val || z.string().email().safeParse(val).success, "Neispravna email adresa"),
   clientPhone: z.string().min(1, "Telefon je obavezan"),
   clientAddress: z.string().min(1, "Adresa je obavezna"),
   clientCity: z.string().min(1, "Grad je obavezan"),
@@ -417,9 +417,9 @@ export default function EditBusinessService() {
                     name="clientEmail"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email *</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="klijent@email.com" type="email" {...field} />
+                          <Input placeholder="klijent@email.com (opcionalno)" type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
