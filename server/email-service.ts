@@ -1036,6 +1036,118 @@ www.frigosistemtodosijevic.com
   }
 
   /**
+   * Šalje obaveštenja o odbijanju Beko servisa na specificirane email adrese
+   * @param client Podaci o klijentu
+   * @param serviceId ID servisa
+   * @param applianceName Naziv uređaja
+   * @param refusalReason Razlog odbijanja popravke
+   * @param technicianName Ime servisera
+   * @param manufacturerName Brend uređaja
+   * @returns Promise<boolean> True ako su svi email-i uspešno poslati, false u suprotnom
+   */
+  public async sendBekoCustomerRefusalNotification(
+    client: Client,
+    serviceId: number,
+    applianceName: string,
+    refusalReason: string,
+    technicianName: string,
+    manufacturerName: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje Beko customer refusal obaveštenja za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje Beko customer refusal obaveštenja`);
+      return false;
+    }
+
+    // Email adrese koje treba da prime obaveštenja o Beko customer refusal
+    const bekoNotificationEmails = [
+      'jelena@frigosistemtodosijevic.com',
+      'mp4@eurotehnikamn.me'
+    ];
+
+    const subject = `Beko servis odbijen od strane klijenta #${serviceId} - ${applianceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #721c24; margin: 0;">🚫 BEKO SERVIS ODBIJEN</h2>
+          <p style="margin: 5px 0 0 0; color: #721c24; font-weight: bold;">
+            Servis #${serviceId} - Klijent odbio popravku
+          </p>
+        </div>
+        
+        <p>Obaveštenje o odbijanju Beko servisa:</p>
+        
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Brend:</strong> ${manufacturerName}</p>
+          <p><strong>Uređaj:</strong> ${applianceName}</p>
+          <p><strong>Status:</strong> <span style="color: #dc3545;">Odbijen od strane klijenta</span></p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum odbijanja:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #6c757d;">
+          <h3 style="color: #495057; margin-top: 0;">Podaci o klijentu</h3>
+          <p><strong>Ime i prezime:</strong> ${client.fullName}</p>
+          <p><strong>Telefon:</strong> ${client.phone || 'Nije dostupan'}</p>
+          <p><strong>Email:</strong> ${client.email || 'Nije dostupan'}</p>
+          <p><strong>Adresa:</strong> ${client.address || 'Nije dostupna'}</p>
+          <p><strong>Grad:</strong> ${client.city || 'Nije dostupan'}</p>
+        </div>
+
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #721c24; margin-top: 0;">Razlog odbijanja</h3>
+          <p style="margin: 0; color: #721c24; font-style: italic;">
+            "${refusalReason}"
+          </p>
+        </div>
+
+        <p>Servis je zatvoren zbog odbijanja popravke od strane klijenta.</p>
+        
+        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
+          www.frigosistemtodosijevic.com
+        </p>
+      </div>
+    `;
+
+    console.log(`[EMAIL] Slanje Beko customer refusal obaveštenja na: ${bekoNotificationEmails.join(', ')}`);
+
+    try {
+      let successCount = 0;
+      
+      for (const email of bekoNotificationEmails) {
+        const result = await this.sendEmail({
+          to: email,
+          subject,
+          html,
+        }, 3);
+        
+        if (result) {
+          successCount++;
+          console.log(`[EMAIL] ✅ Beko customer refusal obaveštenje uspešno poslato na: ${email}`);
+        } else {
+          console.log(`[EMAIL] ❌ Neuspešno slanje Beko customer refusal obaveštenja na: ${email}`);
+        }
+      }
+      
+      console.log(`[EMAIL] Ukupno uspešno poslato: ${successCount}/${bekoNotificationEmails.length} Beko customer refusal obaveštenja`);
+      return successCount > 0;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju Beko customer refusal obaveštenja:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje email korisniku kada je njegov nalog verifikovan 
    * @param userEmail Email adresa korisnika
    * @param userName Ime korisnika

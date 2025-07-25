@@ -2001,11 +2001,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (validStatus === "customer_refused_repair" && customerRefusalReason) {
                 console.log(`[EMAIL SISTEM] Slanje profesionalnog email-a za odbijanje popravke`);
                 
-                // Dohvati naziv uređaja
+                // Dohvati naziv uređaja i brend
                 const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
                 const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+                const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
                 const applianceName = category ? category.name : "uređaj";
                 
+                // Pošalji email klijentu
                 clientEmailSent = await emailService.sendCustomerRefusalNotification(
                   client,
                   serviceId,
@@ -2013,6 +2015,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   customerRefusalReason,
                   technicianName
                 );
+                
+                // SPECIJALNI SLUČAJ: Beko aparati - dodatni email-i
+                if (manufacturer && manufacturer.name.toLowerCase() === 'beko') {
+                  console.log(`[BEKO REFUSAL] Beko aparat - šaljem dodatna obaveštenja o odbijanju servisa`);
+                  
+                  try {
+                    const bekoRefusalSent = await emailService.sendBekoCustomerRefusalNotification(
+                      client,
+                      serviceId,
+                      applianceName,
+                      customerRefusalReason,
+                      technicianName,
+                      manufacturer.name
+                    );
+                    
+                    if (bekoRefusalSent) {
+                      console.log(`[BEKO REFUSAL] ✅ Uspešno poslata Beko obaveštenja o odbijanju za servis #${serviceId}`);
+                    } else {
+                      console.log(`[BEKO REFUSAL] ❌ Neuspešno slanje Beko obaveštenja o odbijanju za servis #${serviceId}`);
+                    }
+                  } catch (bekoError) {
+                    console.error(`[BEKO REFUSAL] Greška pri slanju Beko obaveštenja o odbijanju:`, bekoError);
+                  }
+                }
               } else {
                 // STANDARDNO obaveštenje o promeni statusa
                 const clientEmailContent = technicianNotes || service.description || "";
