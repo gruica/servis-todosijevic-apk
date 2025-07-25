@@ -1312,7 +1312,7 @@ export default function TechnicianServices() {
                                     className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 w-full h-11"
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
-                                    Klijent odbija garanciju
+                                    Klijent odbija servis
                                   </Button>
                                 </div>
                               </div>
@@ -1756,16 +1756,16 @@ export default function TechnicianServices() {
         />
       )}
 
-      {/* Dialog za odbijanje garancije od strane klijenta */}
+      {/* Dialog za odbijanje servisa od strane klijenta */}
       <Dialog open={customerRefusalDialogOpen} onOpenChange={setCustomerRefusalDialogOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-red-600">
               <XCircle className="h-5 w-5 inline mr-2" />
-              Klijent odbija garanciju
+              Klijent odbija servis
             </DialogTitle>
             <DialogDescription>
-              Označite servis kada klijent odbije garancijski popravak uređaja.
+              Označite servis kada klijent odbije popravak uređaja.
             </DialogDescription>
           </DialogHeader>
 
@@ -1782,11 +1782,11 @@ export default function TechnicianServices() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="refusal-reason" className="text-sm font-medium text-red-700">
-                  Razlog odbijanja garancije *
+                  Razlog odbijanja servisa *
                 </Label>
                 <Textarea
                   id="refusal-reason"
-                  placeholder="Opišite zašto klijent odbija garancijski popravak (obavezno polje)..."
+                  placeholder="Opišite zašto klijent odbija popravak (obavezno polje)..."
                   value={refusalReason}
                   onChange={(e) => setRefusalReason(e.target.value)}
                   className="mt-1 text-sm resize-none border-red-200 focus:border-red-400"
@@ -1794,7 +1794,7 @@ export default function TechnicianServices() {
                   required
                 />
                 <p className="text-xs text-red-600 mt-1">
-                  * Obavezno unesite razlog zašto klijent odbija garancijski popravak
+                  * Obavezno unesite razlog zašto klijent odbija popravak
                 </p>
               </div>
             </div>
