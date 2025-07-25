@@ -60,6 +60,7 @@ import DataExportPage from "@/pages/admin/data-export";
 import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 import SMSBulkPage from "@/pages/admin/sms-bulk";
 import ComplusBillingPage from "@/pages/admin/complus-billing";
+import ComplusDashboard from "@/pages/complus";
 
 function Router() {
   return (
@@ -108,6 +109,10 @@ function Router() {
       <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
+      
+      {/* Com Plus nezavisan administrativni panel */}
+      <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin"]} />
+      
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
       {/* OCR Test route - accessible to admin and technician */}

@@ -7625,6 +7625,86 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // COM PLUS ENDPOINTS - Specijalizovani panel za Com Plus brendove
+  const COM_PLUS_BRANDS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
+
+  // Get Com Plus services (admin only)
+  app.get("/api/complus/services", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { status, brand, warranty } = req.query;
+      
+      // Get all services with Com Plus manufacturers
+      const allServices = await storage.getAllServices();
+      
+      // Filter for Com Plus brands only
+      let complusServices = allServices.filter((service: any) => 
+        COM_PLUS_BRANDS.includes(service.manufacturerName)
+      );
+
+      // Apply additional filters
+      if (status && status !== "all") {
+        complusServices = complusServices.filter((service: any) => service.status === status);
+      }
+      
+      if (brand && brand !== "all") {
+        complusServices = complusServices.filter((service: any) => service.manufacturerName === brand);
+      }
+      
+      if (warranty && warranty !== "all") {
+        complusServices = complusServices.filter((service: any) => service.warrantyStatus === warranty);
+      }
+
+      res.json(complusServices);
+    } catch (error) {
+      console.error("Error fetching Com Plus services:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju Com Plus servisa" });
+    }
+  });
+
+  // Get Com Plus statistics (admin only)
+  app.get("/api/complus/stats", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const allServices = await storage.getAllServices();
+      
+      // Filter for Com Plus brands only
+      const complusServices = allServices.filter((service: any) => 
+        COM_PLUS_BRANDS.includes(service.manufacturerName)
+      );
+
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const stats = {
+        total: complusServices.length,
+        active: complusServices.filter((s: any) => 
+          ["pending", "assigned", "in_progress"].includes(s.status)
+        ).length,
+        completedThisMonth: complusServices.filter((s: any) => {
+          if (s.status !== "completed" || !s.completedDate) return false;
+          const completedDate = new Date(s.completedDate);
+          return completedDate.getMonth() === currentMonth && 
+                 completedDate.getFullYear() === currentYear;
+        }).length,
+        warranty: complusServices.filter((s: any) => 
+          s.warrantyStatus === "u garanciji"
+        ).length
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching Com Plus stats:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju Com Plus statistika" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
