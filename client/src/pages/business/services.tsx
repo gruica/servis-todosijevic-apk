@@ -309,16 +309,31 @@ export default function BusinessServices() {
                           {service.technician?.fullName || "Nije dodeljen"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedService(service);
-                              setIsDetailsOpen(true);
-                            }}
-                          >
-                            Detalji
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            {(service.status === 'scheduled' || service.status === 'pending') && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/business/services/edit/${service.id}`);
+                                }}
+                              >
+                                Izmeni
+                              </Button>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedService(service);
+                                setIsDetailsOpen(true);
+                              }}
+                            >
+                              Detalji
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -418,17 +433,33 @@ export default function BusinessServices() {
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 border-t">
-                  <Button 
-                    className="w-full" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedService(service);
-                      setIsDetailsOpen(true);
-                    }}
-                  >
-                    Detaljno
-                  </Button>
+                  <div className="flex gap-2">
+                    {(service.status === 'scheduled' || service.status === 'pending') && (
+                      <Button 
+                        className="flex-1" 
+                        variant="default" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/business/services/edit/${service.id}`);
+                        }}
+                      >
+                        Izmeni
+                      </Button>
+                    )}
+                    <Button 
+                      className="flex-1" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedService(service);
+                        setIsDetailsOpen(true);
+                      }}
+                    >
+                      Detaljno
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
