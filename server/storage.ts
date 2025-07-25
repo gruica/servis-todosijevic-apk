@@ -3272,20 +3272,20 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Create available part from the order
-      const availablePartData: InsertAvailablePart = {
+      const availablePartData = {
         partName: order.partName,
-        partNumber: order.partNumber || undefined,
+        partNumber: order.partNumber || null,
         quantity: order.quantity,
-        description: order.description || undefined,
-        supplierName: order.supplierName || undefined,
-        unitCost: receivedData.actualCost || order.estimatedCost || undefined,
-        location: receivedData.location || undefined,
+        description: order.description || null,
+        supplierName: order.supplierName || null,
+        unitCost: receivedData.actualCost || order.estimatedCost || null,
+        location: receivedData.location || 'Glavno skladište',
         warrantyStatus: order.warrantyStatus,
-        categoryId: undefined, // Could be extracted from appliance if needed
-        manufacturerId: undefined, // Could be extracted from appliance if needed
+        categoryId: null, // Could be extracted from appliance if needed
+        manufacturerId: null, // Could be extracted from appliance if needed
         originalOrderId: orderId,
         addedBy: adminId,
-        notes: receivedData.notes || undefined
+        notes: receivedData.notes || null
       };
 
       const availablePart = await this.createAvailablePart(availablePartData);
