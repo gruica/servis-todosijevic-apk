@@ -6626,14 +6626,17 @@ Admin panel - automatska porudžbina
       const partId = parseInt(req.params.partId);
       const { serviceId, technicianId, allocatedQuantity, allocationNotes } = req.body;
 
-      if (!serviceId || !technicianId || !allocatedQuantity) {
-        return res.status(400).json({ error: "Svi obavezni podaci su potrebni" });
+      if (!technicianId || !allocatedQuantity) {
+        return res.status(400).json({ error: "Serviser ID i količina su obavezni" });
       }
 
-      // Get service details for notifications
-      const service = await storage.getService(serviceId);
-      if (!service) {
-        return res.status(404).json({ error: "Servis nije pronađen" });
+      // Get service details for notifications (if serviceId provided)
+      let service = null;
+      if (serviceId) {
+        service = await storage.getService(serviceId);
+        if (!service) {
+          return res.status(404).json({ error: "Servis nije pronađen" });
+        }
       }
 
       // Get technician details
@@ -6651,7 +6654,7 @@ Admin panel - automatska porudžbina
       // Create allocation
       const allocation = await storage.allocatePartToTechnician({
         availablePartId: partId,
-        serviceId,
+        serviceId: serviceId || null,
         technicianId,
         allocatedQuantity: parseInt(allocatedQuantity),
         allocatedBy: req.user.id,
@@ -6661,16 +6664,25 @@ Admin panel - automatska porudžbina
 
       // Send notifications to all involved parties
       try {
-        const client = await storage.getClient(service.clientId);
-        const appliance = await storage.getAppliance(service.applianceId);
+        let client = null;
+        let appliance = null;
+        
+        if (service) {
+          client = await storage.getClient(service.clientId);
+          appliance = await storage.getAppliance(service.applianceId);
+        }
 
         // Notify technician
+        const notificationMessage = serviceId 
+          ? `Dodeljen vam je rezervni deo "${part.partName}" (${allocatedQuantity} kom) za servis #${serviceId}`
+          : `Dodeljen vam je rezervni deo "${part.partName}" (${allocatedQuantity} kom)`;
+          
         await notificationService.createNotification({
           userId: technicianId,
           type: "parts_allocated",
           title: "Rezervni deo dodeljen",
-          message: `Dodeljen vam je rezervni deo "${part.partName}" (${allocatedQuantity} kom) za servis #${serviceId}`,
-          relatedId: serviceId,
+          message: notificationMessage,
+          relatedId: serviceId || null,
           priority: "normal"
         });
 
@@ -6698,7 +6710,7 @@ Admin panel - automatska porudžbina
         });
 
         // Notify business partner if applicable
-        if (service.businessPartnerId) {
+        if (service && service.businessPartnerId) {
           const businessPartner = await storage.getUser(service.businessPartnerId);
           if (businessPartner?.phone) {
             await smsService.sendBusinessPartnerPartsAllocated(businessPartner.phone, {

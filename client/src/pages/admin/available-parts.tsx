@@ -143,11 +143,11 @@ export default function AvailableParts() {
       notes?: string; 
     }) => {
       return apiRequest(`/api/admin/available-parts/${partId}/allocate`, {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify({
           technicianId,
-          quantity,
-          assignmentNotes: notes,
+          allocatedQuantity: quantity,
+          allocationNotes: notes,
         }),
       });
     },
