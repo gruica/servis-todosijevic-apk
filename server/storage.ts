@@ -3727,56 +3727,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: any; availablePart: any } | undefined> {
-    try {
-      // Get the spare part order
-      const [order] = await db
-        .select()
-        .from(sparePartOrders)
-        .where(eq(sparePartOrders.id, orderId));
-
-      if (!order) return undefined;
-
-      // Update the order status to received
-      const [updatedOrder] = await db
-        .update(sparePartOrders)
-        .set({
-          status: 'received',
-          receivedDate: new Date(),
-          actualCost: receivedData.actualCost || order.estimatedCost,
-          adminNotes: receivedData.notes || order.adminNotes,
-        })
-        .where(eq(sparePartOrders.id, orderId))
-        .returning();
-
-      // Create available part from the received order
-      const [availablePart] = await db
-        .insert(availableParts)
-        .values({
-          partName: order.partName,
-          partNumber: order.partNumber,
-          quantity: order.quantity,
-          description: order.description,
-          supplierName: order.supplierName,
-          unitCost: receivedData.actualCost || order.estimatedCost,
-          location: receivedData.location || 'Glavno skladište',
-          warrantyStatus: order.warrantyStatus,
-          categoryId: order.applianceId ? null : null, // Will be set based on appliance if available
-          manufacturerId: order.applianceId ? null : null, // Will be set based on appliance if available
-          originalOrderId: order.id,
-          addedDate: new Date(),
-          addedBy: adminId,
-          notes: receivedData.notes,
-        })
-        .returning();
-
-      return { order: updatedOrder, availablePart };
-    } catch (error) {
-      console.error('Greška pri označavanju rezervnog dela kao primljenog:', error);
-      throw error;
-    }
-  }
-
   async getAllRemovedParts(): Promise<RemovedPart[]> {
     try {
       return await db.select().from(removedParts).orderBy(desc(removedParts.id));
