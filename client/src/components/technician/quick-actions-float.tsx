@@ -123,9 +123,9 @@ export function QuickActionsFloat({
                     <CallClientButton 
                       phoneNumber={service.client.phone}
                       clientName={service.client.fullName}
-                      variant="outline"
+                      variant="default"
                       size="sm"
-                      className="flex-1 text-xs"
+                      className="flex-1 text-xs bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
                     />
                   )}
                   

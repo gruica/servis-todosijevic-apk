@@ -1,9 +1,11 @@
 // Mobile utility functions stub (SMS functionality removed)
 
-export const callPhoneNumber = (phoneNumber: string) => {
+export const callPhoneNumber = async (phoneNumber: string): Promise<boolean> => {
   if (phoneNumber) {
     window.open(`tel:${phoneNumber}`, '_self');
+    return true;
   }
+  return false;
 };
 
 export const openMapWithAddress = async (address: string, city: string | null) => {

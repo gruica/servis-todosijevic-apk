@@ -285,21 +285,22 @@ export function ServiceDetailsFloat({
           <CallClientButton 
             phoneNumber={service.client?.phone || ""}
             clientName={service.client?.fullName}
-            variant="outline"
-            size="sm"
+            variant="default"
+            size="lg"
             disabled={!service.client?.phone}
             showIcon={true}
             fullWidth={true}
+            className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 font-semibold h-12"
           />
           
           {service.client?.address && (
             <Button 
               variant="outline" 
-              size="sm"
+              size="lg"
               onClick={() => openClientLocation(service.client?.address || "", service.client?.city || null)}
-              className="w-full"
+              className="w-full h-12 font-semibold"
             >
-              <MapPin className="h-4 w-4 mr-2" />
+              <MapPin className="h-5 w-5 mr-2" />
               Mapa
             </Button>
           )}

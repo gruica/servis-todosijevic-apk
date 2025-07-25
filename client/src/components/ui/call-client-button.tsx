@@ -12,6 +12,7 @@ interface CallClientButtonProps {
   showIcon?: boolean;
   fullWidth?: boolean;
   disabled?: boolean;
+  className?: string;
 }
 
 /**
@@ -32,7 +33,8 @@ export function CallClientButton({
   size = "default",
   showIcon = true,
   fullWidth = false,
-  disabled = false
+  disabled = false,
+  className = ""
 }: CallClientButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   
@@ -70,13 +72,18 @@ export function CallClientButton({
     }
   };
   
+  const buttonClasses = [
+    fullWidth ? "w-full" : "",
+    className
+  ].filter(Boolean).join(" ");
+
   return (
     <Button
       onClick={handleCall}
       variant={variant}
       size={size}
       disabled={isLoading || disabled}
-      className={fullWidth ? "w-full" : ""}
+      className={buttonClasses}
     >
       {showIcon && <PhoneCall className="h-4 w-4 mr-2" />}
       {isLoading ? "Pozivanje..." : "Pozovi"}
