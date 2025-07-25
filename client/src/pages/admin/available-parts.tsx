@@ -58,6 +58,13 @@ export default function AvailableParts() {
   const [actualCost, setActualCost] = useState("");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Dodela dela serviseru state
+  const [allocateDialog, setAllocateDialog] = useState<{ open: boolean; partId?: number }>({ open: false });
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState("");
+  const [allocateQuantity, setAllocateQuantity] = useState("1");
+  const [allocateNotes, setAllocateNotes] = useState("");
+  
   const queryClient = useQueryClient();
 
   // Query za dostupne delove
@@ -68,6 +75,11 @@ export default function AvailableParts() {
   // Query za pending spare parts orders
   const { data: pendingOrders = [], isLoading: loadingOrders } = useQuery({
     queryKey: ["/api/admin/spare-parts/pending"],
+  });
+
+  // Query za servisere
+  const { data: technicians = [] } = useQuery({
+    queryKey: ["/api/technicians"],
   });
 
   // Mutation za označavanje dela kao primljenog
@@ -122,6 +134,43 @@ export default function AvailableParts() {
     },
   });
 
+  // Mutation za dodelu dela serviseru
+  const allocatePartMutation = useMutation({
+    mutationFn: async ({ partId, technicianId, quantity, notes }: { 
+      partId: number; 
+      technicianId: number; 
+      quantity: number; 
+      notes?: string; 
+    }) => {
+      return apiRequest(`/api/admin/available-parts/${partId}/allocate`, {
+        method: "PUT",
+        body: JSON.stringify({
+          technicianId,
+          quantity,
+          assignmentNotes: notes,
+        }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspeh",
+        description: "Rezervni deo je uspešno dodeljen serviseru",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/available-parts"] });
+      setAllocateDialog({ open: false });
+      setSelectedTechnicianId("");
+      setAllocateQuantity("1");
+      setAllocateNotes("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri dodeljivanju dela serviseru",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleMarkReceived = (orderId: number) => {
     markReceivedMutation.mutate({
       orderId,
@@ -137,6 +186,28 @@ export default function AvailableParts() {
     if (confirm("Da li ste sigurni da želite da obrišete ovaj dostupan deo?")) {
       deletePartMutation.mutate(partId);
     }
+  };
+
+  const handleAllocatePart = (partId: number) => {
+    setAllocateDialog({ open: true, partId });
+  };
+
+  const handleAllocateSubmit = () => {
+    if (!allocateDialog.partId || !selectedTechnicianId) {
+      toast({
+        title: "Greška",
+        description: "Molimo izaberite servisera",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    allocatePartMutation.mutate({
+      partId: allocateDialog.partId,
+      technicianId: parseInt(selectedTechnicianId),
+      quantity: parseInt(allocateQuantity),
+      notes: allocateNotes || undefined,
+    });
   };
 
   const filteredParts = availableParts.filter((part: AvailablePart) =>
@@ -301,6 +372,71 @@ export default function AvailableParts() {
         </Card>
       )}
 
+      {/* Dialog za dodeljivanje dela serviseru */}
+      <Dialog 
+        open={allocateDialog.open} 
+        onOpenChange={(open) => setAllocateDialog({ open, partId: open ? allocateDialog.partId : undefined })}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dodeli rezervni deo serviseru</DialogTitle>
+            <DialogDescription>
+              Izaberite servisera kome želite da dodelite rezervni deo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="technician">Serviser</Label>
+              <Select value={selectedTechnicianId} onValueChange={setSelectedTechnicianId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite servisera" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((tech: any) => (
+                    <SelectItem key={tech.id} value={tech.id.toString()}>
+                      {tech.fullName} - {tech.phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="quantity">Količina</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={allocateQuantity}
+                onChange={(e) => setAllocateQuantity(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="allocateNotes">Napomene (opciono)</Label>
+              <Textarea
+                id="allocateNotes"
+                value={allocateNotes}
+                onChange={(e) => setAllocateNotes(e.target.value)}
+                placeholder="Dodatne napomene o dodeljivanju..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAllocateDialog({ open: false })}
+            >
+              Otkaži
+            </Button>
+            <Button
+              onClick={handleAllocateSubmit}
+              disabled={allocatePartMutation.isPending}
+            >
+              {allocatePartMutation.isPending ? "Dodeljivanje..." : "Dodeli deo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Available Parts Section */}
       <Card>
         <CardHeader>
@@ -381,10 +517,7 @@ export default function AvailableParts() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            // TODO: Implementirati dodelu serviseru
-                            console.log("Dodeli deo za servis:", part.id);
-                          }}
+                          onClick={() => handleAllocatePart(part.id)}
                           className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
                         >
                           <UserCheck className="w-3 h-3 mr-1" />
