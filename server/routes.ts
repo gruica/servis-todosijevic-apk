@@ -4201,7 +4201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(schema.services.status, 'completed'),
-            eq(schema.services.warrantyStatus, 'u garanciji'),
+            eq(schema.services.warrantyStatus, 'in_warranty'),
             or(
               eq(schema.manufacturers.name, 'Electrolux'),
               eq(schema.manufacturers.name, 'Elica'),
@@ -7677,7 +7677,13 @@ Admin panel - automatska porudžbina
       }
       
       if (warranty && warranty !== "all") {
-        complusServices = complusServices.filter((service: any) => service.warrantyStatus === warranty);
+        // Mapiranje iz srpskih naziva u database vrednosti
+        const warrantyMapping: Record<string, string> = {
+          "u garanciji": "in_warranty",
+          "van garancije": "out_of_warranty"
+        };
+        const dbWarranty = warrantyMapping[warranty as string] || warranty;
+        complusServices = complusServices.filter((service: any) => service.warrantyStatus === dbWarranty);
       }
 
       res.json(complusServices);

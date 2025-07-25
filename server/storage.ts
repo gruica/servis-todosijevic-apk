@@ -1982,6 +1982,7 @@ export class DatabaseStorage implements IStorage {
         technicianId: services.technicianId,
         description: services.description,
         status: services.status,
+        warrantyStatus: services.warrantyStatus,
         createdAt: services.createdAt,
         scheduledDate: services.scheduledDate,
         completedDate: services.completedDate,
@@ -2000,11 +2001,16 @@ export class DatabaseStorage implements IStorage {
         clientEmail: clients.email,
         // Dodajemo podatke o uređaju za prikaz
         applianceName: appliances.model,
-        applianceSerialNumber: appliances.serialNumber
+        applianceSerialNumber: appliances.serialNumber,
+        // Dodajemo kategoriju i proizvođača za Complus filtriranje
+        categoryName: applianceCategories.name,
+        manufacturerName: manufacturers.name
       })
       .from(services)
       .innerJoin(clients, eq(services.clientId, clients.id))
       .innerJoin(appliances, eq(services.applianceId, appliances.id))
+      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
       .orderBy(desc(services.createdAt));
       
       // Dodamo limit ako je specificiran za optimizaciju
