@@ -3,7 +3,20 @@
  * Ova skripta će automatski popraviti sve servise identifikovane kao problematične
  * tako što će nevalidan JSON pretvoriti u validne prazne nizove []
  */
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { services } from "../shared/schema";
+import { sql, eq } from "drizzle-orm";
+
+interface ProblematicService {
+  id: number;
+  used_parts: string;
+}
+
+interface FixedService {
+  id: number;
+  old_value: string;
+  new_value: string;
+}
 
 async function fixServiceJsonData() {
   try {
@@ -11,20 +24,19 @@ async function fixServiceJsonData() {
     
     // Problem je u polju used_parts koje bi trebalo biti JSON, ali sadrži nevalidne vrednosti
     // Prvo dohvatimo sve servise
-    const servicesResult = await pool.query(`
-      SELECT id, used_parts 
-      FROM services
-      ORDER BY id DESC
-    `);
+    const servicesResult = await db
+      .select({ id: services.id, used_parts: services.usedParts })
+      .from(services)
+      .orderBy(sql`${services.id} DESC`);
     
-    const services = servicesResult.rows;
-    console.log(`Pronađeno ukupno ${services.length} servisa za analizu.\n`);
+    const servicesData = servicesResult;
+    console.log(`Pronađeno ukupno ${servicesData.length} servisa za analizu.\n`);
     
-    let problematicServices = [];
-    let fixedServices = [];
+    const problematicServices: ProblematicService[] = [];
+    const fixedServices: FixedService[] = [];
     
     // Identifikujemo problematične servise
-    for (const service of services) {
+    for (const service of servicesData) {
       // Ako je used_parts prazan, preskočimo
       if (!service.used_parts) continue;
       
@@ -46,7 +58,7 @@ async function fixServiceJsonData() {
       console.log(`Popravljam servis ID: ${service.id} (used_parts: "${service.used_parts}")`);
       
       // Konvertujemo string vrednost u validni JSON
-      let convertedValue;
+      let convertedValue: string;
       
       // Logika za konverziju:
       // Ako vrednost izgleda kao koristan tekst, stavljamo ga u niz kao string
@@ -59,14 +71,13 @@ async function fixServiceJsonData() {
       }
       
       // Ažuriramo vrednost u bazi
-      const updateResult = await pool.query(`
-        UPDATE services
-        SET used_parts = $1
-        WHERE id = $2
-        RETURNING id
-      `, [convertedValue, service.id]);
+      const updateResult = await db
+        .update(services)
+        .set({ usedParts: convertedValue })
+        .where(eq(services.id, service.id))
+        .returning({ id: services.id });
       
-      if (updateResult.rowCount > 0) {
+      if (updateResult.length > 0) {
         fixedServices.push({
           id: service.id,
           old_value: service.used_parts,
@@ -87,15 +98,14 @@ async function fixServiceJsonData() {
     });
     
     // Provjera da li još ima problematičnih servisa
-    const checkResult = await pool.query(`
-      SELECT id, used_parts 
-      FROM services
-      ORDER BY id DESC
-    `);
+    const checkResult = await db
+      .select({ id: services.id, used_parts: services.usedParts })
+      .from(services)
+      .orderBy(sql`${services.id} DESC`);
     
     let remainingProblems = 0;
     
-    for (const service of checkResult.rows) {
+    for (const service of checkResult) {
       if (!service.used_parts) continue;
       
       try {
@@ -114,8 +124,6 @@ async function fixServiceJsonData() {
     
   } catch (error) {
     console.error("Greška prilikom popravke servisa:", error);
-  } finally {
-    await pool.end();
   }
 }
 
