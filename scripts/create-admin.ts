@@ -16,6 +16,14 @@ async function createAdmin() {
   try {
     console.log("Kreiranje administratorskog naloga...");
 
+    // Get admin password from environment variable
+    const defaultPassword = process.env.ADMIN_PASSWORD;
+    if (!defaultPassword) {
+      console.error("ADMIN_PASSWORD environment variable is required");
+      console.error("Please set ADMIN_PASSWORD in your environment before running this script");
+      process.exit(1);
+    }
+
     // 1. Proveri da li već postoji admin nalog
     const adminCheck = await db
       .select({
@@ -33,7 +41,6 @@ async function createAdmin() {
       }
       
       // Resetuj šifru za admina
-      const defaultPassword = "admin123";
       const hashedPassword = await hashPassword(defaultPassword);
       
       for (const admin of adminCheck) {
@@ -45,13 +52,12 @@ async function createAdmin() {
         console.log(`Resetovana šifra za admina: ${admin.username} (${admin.fullName})`);
       }
       
-      console.log(`\nNova šifra za sve administratore je: ${defaultPassword}`);
+      console.log(`\nNova šifra za sve administratore je uspešno postavljena.`);
     } else {
       // Kreiraj novog admina
       const username = "admin@servistodosijevic.me";
       const fullName = "Administrator Sistema";
-      const password = "admin123";
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPassword(defaultPassword);
       
       const result = await db
         .insert(users)
@@ -71,7 +77,7 @@ async function createAdmin() {
       const newAdmin = result[0];
       console.log(`\nKreiran novi administrator:`);
       console.log(`ID=${newAdmin.id}, Username=${newAdmin.username}, Ime=${newAdmin.fullName}`);
-      console.log(`Šifra za novog administratora je: ${password}`);
+      console.log(`Šifra za novog administratora je uspešno postavljena.`);
     }
 
     console.log("\nProces provere/kreiranja administratorskog naloga je završen.");
