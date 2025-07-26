@@ -138,13 +138,20 @@ export default function SparePartsCatalog() {
   });
 
   // Učitaj katalog
-  const { data: catalog = [], isLoading, error } = useQuery({
+  const { data: catalog = [], isLoading, error } = useQuery<CatalogEntry[]>({
     queryKey: ['/api/admin/spare-parts-catalog'],
     enabled: true
   });
 
   // Učitaj statistike
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{
+    totalParts: number;
+    availableParts: number;
+    categoriesCount: number;
+    manufacturersCount: number;
+    byCategory: Record<string, number>;
+    byManufacturer: Record<string, number>;
+  }>({
     queryKey: ['/api/admin/spare-parts-catalog/stats'],
     enabled: true
   });
@@ -296,14 +303,14 @@ export default function SparePartsCatalog() {
       category: entry.category as any,
       manufacturer: entry.manufacturer,
       compatibleModels: entry.compatibleModels.join(', '),
-      priceEur: entry.priceEur,
-      priceGbp: entry.priceGbp,
+      priceEur: entry.priceEur || undefined,
+      priceGbp: entry.priceGbp || undefined,
       supplierName: entry.supplierName || '',
       supplierUrl: entry.supplierUrl || '',
       imageUrls: entry.imageUrls.join(', '),
       availability: entry.availability as any,
-      stockLevel: entry.stockLevel,
-      minStockLevel: entry.minStockLevel,
+      stockLevel: entry.stockLevel || undefined,
+      minStockLevel: entry.minStockLevel || undefined,
       dimensions: entry.dimensions || '',
       weight: entry.weight || '',
       technicalSpecs: entry.technicalSpecs || '',

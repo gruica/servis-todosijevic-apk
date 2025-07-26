@@ -4144,12 +4144,25 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
-  async getSparePartsCatalogStats(): Promise<{ totalParts: number; byCategory: Record<string, number>; byManufacturer: Record<string, number> }> {
+  async getSparePartsCatalogStats(): Promise<{ 
+    totalParts: number; 
+    availableParts: number;
+    categoriesCount: number;
+    manufacturersCount: number;
+    byCategory: Record<string, number>; 
+    byManufacturer: Record<string, number> 
+  }> {
     try {
       // Total parts count
       const [totalResult] = await db
         .select({ count: count() })
         .from(sparePartsCatalog);
+      
+      // Available parts count
+      const [availableResult] = await db
+        .select({ count: count() })
+        .from(sparePartsCatalog)
+        .where(eq(sparePartsCatalog.availability, 'available'));
       
       // Count by category
       const categoryStats = await db
@@ -4181,6 +4194,9 @@ export class DatabaseStorage implements IStorage {
 
       return {
         totalParts: totalResult.count,
+        availableParts: availableResult.count,
+        categoriesCount: Object.keys(byCategory).length,
+        manufacturersCount: Object.keys(byManufacturer).length,
         byCategory,
         byManufacturer
       };
@@ -4188,6 +4204,9 @@ export class DatabaseStorage implements IStorage {
       console.error('Greška pri dohvatanju statistike kataloga:', error);
       return {
         totalParts: 0,
+        availableParts: 0,
+        categoriesCount: 0,
+        manufacturersCount: 0,
         byCategory: {},
         byManufacturer: {}
       };

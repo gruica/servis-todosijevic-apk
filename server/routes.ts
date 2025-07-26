@@ -8557,16 +8557,7 @@ Admin panel - automatska porudžbina
     }
   });
 
-  // Get catalog statistics
-  app.get("/api/admin/spare-parts-catalog/stats", jwtAuth, requireRole(["admin"]), async (req, res) => {
-    try {
-      const stats = await storage.getSparePartsCatalogStats();
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching catalog statistics:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju statistika kataloga" });
-    }
-  });
+
 
   // Export catalog to CSV
   app.get("/api/admin/spare-parts-catalog/export-csv", jwtAuth, requireRole(["admin"]), async (req, res) => {
@@ -8613,14 +8604,14 @@ Admin panel - automatska porudžbina
     }
   });
 
-  // Get catalog statistics
+  // Get catalog statistics (comprehensive version)
   app.get("/api/admin/spare-parts-catalog/stats", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {
       const stats = await storage.getSparePartsCatalogStats();
       res.json(stats);
     } catch (error) {
-      console.error("Error fetching catalog stats:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju statistike kataloga" });
+      console.error("Error fetching catalog statistics:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistika kataloga" });
     }
   });
 
