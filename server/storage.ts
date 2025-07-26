@@ -3278,6 +3278,52 @@ export class DatabaseStorage implements IStorage {
         throw new Error('Nije moguće ažurirati porudžbinu');
       }
 
+      // Gather service information if available
+      let serviceInfo = {
+        serviceId: null as number | null,
+        clientName: null as string | null,
+        clientPhone: null as string | null,
+        applianceInfo: null as string | null,
+        serviceDescription: null as string | null
+      };
+
+      if (order.serviceId) {
+        try {
+          const service = await this.getService(order.serviceId);
+          if (service) {
+            serviceInfo.serviceId = service.id;
+            serviceInfo.serviceDescription = service.description;
+
+            // Get client info
+            if (service.clientId) {
+              const client = await this.getClient(service.clientId);
+              if (client) {
+                serviceInfo.clientName = client.fullName;
+                serviceInfo.clientPhone = client.phone;
+              }
+            }
+
+            // Get appliance info
+            if (service.applianceId) {
+              const appliance = await this.getAppliance(service.applianceId);
+              if (appliance) {
+                const category = appliance.categoryId ? await this.getApplianceCategory(appliance.categoryId) : null;
+                const manufacturer = appliance.manufacturerId ? await this.getManufacturer(appliance.manufacturerId) : null;
+                
+                serviceInfo.applianceInfo = [
+                  manufacturer?.name,
+                  category?.name,
+                  appliance.model
+                ].filter(Boolean).join(' - ');
+              }
+            }
+          }
+        } catch (serviceError) {
+          console.error('Greška pri dohvatanju informacija o servisu:', serviceError);
+          // Nastavljamo bez servisnih informacija
+        }
+      }
+
       // Create available part from the order
       const availablePartData = {
         partName: order.partName,
@@ -3292,7 +3338,13 @@ export class DatabaseStorage implements IStorage {
         manufacturerId: null, // Could be extracted from appliance if needed
         originalOrderId: orderId,
         addedBy: adminId,
-        notes: receivedData.notes || null
+        notes: receivedData.notes || null,
+        // Add service information
+        serviceId: serviceInfo.serviceId,
+        clientName: serviceInfo.clientName,
+        clientPhone: serviceInfo.clientPhone,
+        applianceInfo: serviceInfo.applianceInfo,
+        serviceDescription: serviceInfo.serviceDescription
       };
 
       const availablePart = await this.createAvailablePart(availablePartData);

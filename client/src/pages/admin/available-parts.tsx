@@ -470,6 +470,7 @@ export default function AvailableParts() {
                   <TableHead>Lokacija</TableHead>
                   <TableHead>Garancija</TableHead>
                   <TableHead>Dobavljač</TableHead>
+                  <TableHead>Servis</TableHead>
                   <TableHead>Datum dodavanja</TableHead>
                   <TableHead>Akcije</TableHead>
                 </TableRow>
@@ -506,6 +507,34 @@ export default function AvailableParts() {
                       </Badge>
                     </TableCell>
                     <TableCell>{part.supplierName || "N/A"}</TableCell>
+                    <TableCell>
+                      {part.serviceId ? (
+                        <div className="space-y-1">
+                          <div className="text-xs font-medium text-blue-600">
+                            Servis #{part.serviceId}
+                          </div>
+                          {part.clientName && (
+                            <div className="text-xs text-muted-foreground">
+                              {part.clientName}
+                            </div>
+                          )}
+                          {part.applianceInfo && (
+                            <div className="text-xs text-muted-foreground">
+                              {part.applianceInfo}
+                            </div>
+                          )}
+                          {part.clientPhone && (
+                            <div className="text-xs text-muted-foreground">
+                              📞 {part.clientPhone}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Nema povezanog servisa
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm">
                         <Calendar className="w-3 h-3 mr-1" />

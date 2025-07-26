@@ -754,6 +754,12 @@ export const availableParts = pgTable("available_parts", {
   addedDate: timestamp("added_date").defaultNow().notNull(), // Kada je deo dodati u skladište
   addedBy: integer("added_by").notNull().references(() => users.id), // Ko je dodao deo
   notes: text("notes"), // Dodatne napomene
+  // Novi podaci o servisu za lakše prepoznavanje
+  serviceId: integer("service_id").references(() => services.id), // Servis za koji je deo namijenjen
+  clientName: text("client_name"), // Ime klijenta za lakše prepoznavanje
+  clientPhone: text("client_phone"), // Telefon klijenta
+  applianceInfo: text("appliance_info"), // Informacije o aparatu (brend, model, kategorija)
+  serviceDescription: text("service_description"), // Opis servisa
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -772,6 +778,11 @@ export const insertAvailablePartSchema = createInsertSchema(availableParts).pick
   originalOrderId: true,
   addedBy: true,
   notes: true,
+  serviceId: true,
+  clientName: true,
+  clientPhone: true,
+  applianceInfo: true,
+  serviceDescription: true,
 }).extend({
   partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
   partNumber: z.string().max(100, "Kataloški broj je predugačak").or(z.literal("")).optional(),
@@ -786,6 +797,11 @@ export const insertAvailablePartSchema = createInsertSchema(availableParts).pick
   originalOrderId: z.number().int().positive("ID originalne porudžbine mora biti pozitivan broj").optional(),
   addedBy: z.number().int().positive("ID korisnika mora biti pozitivan broj"),
   notes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj").optional(),
+  clientName: z.string().max(200, "Ime klijenta je predugačko").or(z.literal("")).optional(),
+  clientPhone: z.string().max(50, "Telefon klijenta je predugačak").or(z.literal("")).optional(),
+  applianceInfo: z.string().max(300, "Informacije o aparatu su predugačke").or(z.literal("")).optional(),
+  serviceDescription: z.string().max(500, "Opis servisa je predugačak").or(z.literal("")).optional(),
 });
 
 export type InsertAvailablePart = z.infer<typeof insertAvailablePartSchema>;
