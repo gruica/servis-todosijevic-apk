@@ -285,7 +285,7 @@ export default function SimpleSparePartsCatalog() {
                     </TableCell>
                     <TableCell>{entry.manufacturer}</TableCell>
                     <TableCell>
-                      {entry.priceEur ? `€${entry.priceEur.toFixed(2)}` : '-'}
+                      {entry.priceEur ? `€${Number(entry.priceEur).toFixed(2)}` : '-'}
                     </TableCell>
                     <TableCell>
                       <Badge className={availabilityColors[entry.availability as keyof typeof availabilityColors]}>
