@@ -1707,57 +1707,50 @@ export class DatabaseStorage implements IStorage {
         companyName: userToInsert.companyName
       });
 
-      // Koristimo direktan zahtev umesto drizle ORM-a zbog problema sa tipovima
-      const query = `
-        INSERT INTO users (username, password, full_name, role, technician_id, email, phone, address, city, company_name, company_id, is_verified, registered_at, verified_at, verified_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        RETURNING id, username, password, full_name, role, technician_id, email, phone, address, city, company_name, company_id, is_verified, registered_at, verified_at, verified_by
-      `;
+      // Koristimo Drizzle ORM sa type-safe insert().returning() pattern
+      console.log("Izvršavanje Drizzle upita za kreiranje korisnika");
       
-      const values = [
-        userToInsert.username,
-        userToInsert.password,
-        userToInsert.fullName,
-        userToInsert.role,
-        userToInsert.technicianId,
-        userToInsert.email,
-        userToInsert.phone,
-        userToInsert.address,
-        userToInsert.city,
-        userToInsert.companyName,
-        userToInsert.companyId,
-        userToInsert.isVerified,
-        userToInsert.registeredAt,
-        userToInsert.verifiedAt,
-        userToInsert.verifiedBy
-      ];
+      const result = await db.insert(users).values({
+        username: userToInsert.username,
+        password: userToInsert.password,
+        fullName: userToInsert.fullName,
+        role: userToInsert.role,
+        technicianId: userToInsert.technicianId,
+        email: userToInsert.email,
+        phone: userToInsert.phone,
+        address: userToInsert.address,
+        city: userToInsert.city,
+        companyName: userToInsert.companyName,
+        companyId: userToInsert.companyId,
+        isVerified: userToInsert.isVerified,
+        registeredAt: userToInsert.registeredAt,
+        verifiedAt: userToInsert.verifiedAt,
+        verifiedBy: userToInsert.verifiedBy
+      }).returning();
       
-      console.log("Izvršavanje SQL upita za kreiranje korisnika");
-      
-      const result = await pool.query(query, values);
-      
-      if (!result.rows || result.rows.length === 0) {
+      if (!result || result.length === 0) {
         throw new Error("Došlo je do greške pri kreiranju korisnika. Korisnik nije vraćen iz baze.");
       }
       
       // Mapiranje rezultata u User objekat
+      const userResult = result[0];
       const user: User = {
-        id: result.rows[0].id,
-        username: result.rows[0].username,
-        password: result.rows[0].password,
-        fullName: result.rows[0].full_name,
-        role: result.rows[0].role,
-        technicianId: result.rows[0].technician_id,
-        email: result.rows[0].email,
-        phone: result.rows[0].phone,
-        address: result.rows[0].address,
-        city: result.rows[0].city,
-        companyName: result.rows[0].company_name,
-        companyId: result.rows[0].company_id,
-        isVerified: result.rows[0].is_verified,
-        registeredAt: new Date(result.rows[0].registered_at),
-        verifiedAt: result.rows[0].verified_at ? new Date(result.rows[0].verified_at) : null,
-        verifiedBy: result.rows[0].verified_by
+        id: userResult.id,
+        username: userResult.username,
+        password: userResult.password,
+        fullName: userResult.fullName,
+        role: userResult.role,
+        technicianId: userResult.technicianId,
+        email: userResult.email,
+        phone: userResult.phone,
+        address: userResult.address,
+        city: userResult.city,
+        companyName: userResult.companyName,
+        companyId: userResult.companyId,
+        isVerified: userResult.isVerified,
+        registeredAt: userResult.registeredAt ? new Date(userResult.registeredAt) : new Date(),
+        verifiedAt: userResult.verifiedAt ? new Date(userResult.verifiedAt) : null,
+        verifiedBy: userResult.verifiedBy
       };
       
       console.log("Korisnik uspešno kreiran:", {

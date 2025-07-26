@@ -70,7 +70,8 @@ async function createTechnicians() {
   } catch (error) {
     console.error("Error:", error);
   } finally {
-    await pool.end();
+    // Drizzle handles connection pooling automatically
+    console.log("Database operations completed.");
   }
 }
 
