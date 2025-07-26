@@ -1,22 +1,28 @@
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { users, technicians } from "../shared/schema";
+import { eq } from "drizzle-orm";
 
 async function listAllAccounts() {
   try {
     console.log("Dohvatanje svih korisničkih naloga iz baze...");
 
     // 1. Dohvati sve administratorske naloge
-    const adminResult = await pool.query(`
-      SELECT id, username, full_name, role 
-      FROM users 
-      WHERE role = 'admin'
-      ORDER BY id
-    `);
+    const adminResult = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        full_name: users.fullName,
+        role: users.role
+      })
+      .from(users)
+      .where(eq(users.role, 'admin'))
+      .orderBy(users.id);
     
     console.log("\n=== ADMINISTRATORSKI NALOZI ===");
-    console.log("Broj administratorskih naloga:", adminResult.rows.length);
+    console.log("Broj administratorskih naloga:", adminResult.length);
     console.log("------------------------------------");
     
-    for (const admin of adminResult.rows) {
+    for (const admin of adminResult) {
       console.log(`ID: ${admin.id}`);
       console.log(`Korisničko ime: ${admin.username}`);
       console.log(`Ime i prezime: ${admin.full_name}`);
@@ -25,20 +31,26 @@ async function listAllAccounts() {
     }
 
     // 2. Dohvati sve serviserske naloge sa vezama ka serviserima
-    const technicianResult = await pool.query(`
-      SELECT u.id, u.username, u.full_name, u.technician_id,
-             t.specialization, t.phone, t.email as tech_email
-      FROM users u
-      JOIN technicians t ON u.technician_id = t.id
-      WHERE u.role = 'technician'
-      ORDER BY t.id
-    `);
+    const technicianResult = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        full_name: users.fullName,
+        technician_id: users.technicianId,
+        specialization: technicians.specialization,
+        phone: technicians.phone,
+        tech_email: technicians.email
+      })
+      .from(users)
+      .innerJoin(technicians, eq(users.technicianId, technicians.id))
+      .where(eq(users.role, 'technician'))
+      .orderBy(technicians.id);
     
     console.log("\n=== SERVISERSKI NALOZI ===");
-    console.log("Broj serviserskih naloga:", technicianResult.rows.length);
+    console.log("Broj serviserskih naloga:", technicianResult.length);
     console.log("------------------------------------");
     
-    for (const tech of technicianResult.rows) {
+    for (const tech of technicianResult) {
       console.log(`ID korisnika: ${tech.id}`);
       console.log(`Korisničko ime: ${tech.username}`);
       console.log(`Ime i prezime: ${tech.full_name}`);
@@ -55,8 +67,6 @@ async function listAllAccounts() {
 
   } catch (error) {
     console.error("Greška pri dohvatanju korisničkih naloga:", error);
-  } finally {
-    await pool.end();
   }
 }
 
