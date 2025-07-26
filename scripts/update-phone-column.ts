@@ -1,4 +1,4 @@
-import { db, pool } from "../server/db";
+import { db } from "../server/db";
 import { sql } from "drizzle-orm";
 
 /**
@@ -10,7 +10,7 @@ async function updatePhoneColumn() {
     console.log("Provera i dodavanje kolone phone u tabelu users...");
     
     // Provera da li već postoji
-    const checkColumnQuery = `
+    const result = await db.execute(sql`
       SELECT 
         column_name 
       FROM 
@@ -18,15 +18,13 @@ async function updatePhoneColumn() {
       WHERE 
         table_name = 'users' AND 
         column_name = 'phone'
-    `;
-    
-    const result = await pool.query(checkColumnQuery);
+    `);
     
     if (result.rows.length === 0) {
       console.log("Kolona 'phone' ne postoji. Dodavanje...");
       
       // Dodavanje kolone phone ako ne postoji
-      await pool.query(`
+      await db.execute(sql`
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS phone TEXT
       `);
@@ -37,7 +35,7 @@ async function updatePhoneColumn() {
     }
     
     // Ažuriranje ostalih kolona ako ne postoje
-    await pool.query(`
+    await db.execute(sql`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS address TEXT,
       ADD COLUMN IF NOT EXISTS city TEXT,
@@ -48,8 +46,6 @@ async function updatePhoneColumn() {
     
   } catch (error) {
     console.error("Greška pri ažuriranju šeme baze:", error);
-  } finally {
-    await pool.end();
   }
 }
 
