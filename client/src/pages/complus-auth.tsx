@@ -29,9 +29,12 @@ export default function ComplusAuthPage() {
 
     try {
       // Prijavi se sa Teodorinim kredencijalima preko JWT auth
-      const response = await apiRequest("POST", "/api/jwt-login", {
-        username: username,
-        password: password
+      const response = await apiRequest("/api/jwt-login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: username,
+          password: password
+        })
       });
 
       const data = await response.json() as { token?: string };
