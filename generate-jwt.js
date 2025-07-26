@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 
-const secret = 'frigo-sistem-jwt-secret-key-2025';
+const secret = process.env.JWT_SECRET || (() => {
+  throw new Error('JWT_SECRET environment variable is required');
+})();
 
 // Podaci korisnika za Jelena (admin)
 const payload = {
