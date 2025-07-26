@@ -2,7 +2,13 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
-const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ1c2VybmFtZSI6ImplbGVuYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLm1lIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzNTExODI0LCJleHAiOjE3NTYxMDM4MjR9.gEJCJPe6q5K4q38FgWOjiXL1OgK12vEGRfFwRmbBskI';
+const JWT_TOKEN = process.env.TEST_JWT_TOKEN;
+
+if (!JWT_TOKEN) {
+  console.error('❌ TEST_JWT_TOKEN environment variable is required');
+  console.log('Please set the TEST_JWT_TOKEN environment variable with a valid admin JWT token');
+  process.exit(1);
+}
 
 async function testCompleteWorkflow() {
   const headers = {
