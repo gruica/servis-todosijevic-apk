@@ -17,8 +17,13 @@ async function resetBusinessPartnerPasswords() {
   try {
     console.log("Dohvatanje poslovnih partnera...");
     
-    // Standardna lozinka za poslovne partnere
-    const standardPassword = "partner123";
+    // Standardna lozinka za poslovne partnere iz environment varijable
+    const standardPassword = process.env.BUSINESS_PARTNER_DEFAULT_PASSWORD;
+    
+    if (!standardPassword) {
+      console.error("❌ BUSINESS_PARTNER_DEFAULT_PASSWORD environment variable is required");
+      return;
+    }
     
     // Dohvati sve korisnike sa ulogom "business"
     const businessPartnersResult = await pool.query(`
@@ -51,7 +56,7 @@ async function resetBusinessPartnerPasswords() {
     }
     
     console.log("\nLozinke uspešno resetovane za sve poslovne partnere.");
-    console.log(`Nova lozinka za sve poslovne partnere je: ${standardPassword}`);
+    console.log("Nova lozinka je postavljena iz environment varijable.");
     
   } catch (error) {
     console.error("Greška pri resetovanju lozinki:", error);
