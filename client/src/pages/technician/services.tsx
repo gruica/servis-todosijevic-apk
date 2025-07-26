@@ -1170,6 +1170,7 @@ export default function TechnicianServices() {
                                 </Button>
                               )}
                               
+                              {/* TEMPORARILY HIDDEN: Detalji button - logic preserved for future restoration
                               <Button 
                                 variant="outline" 
                                 size="default"
@@ -1179,6 +1180,7 @@ export default function TechnicianServices() {
                                 <Package className="h-4 w-4 mr-1" />
                                 Detalji
                               </Button>
+                              */}
                             </div>
                             
                             {/* Generali servis dopunjavanje */}
@@ -1194,7 +1196,7 @@ export default function TechnicianServices() {
                               </Button>
                             </div>
 
-                            {/* SMS Komunikacija */}
+                            {/* TEMPORARILY HIDDEN: SMS Communication buttons - logic preserved for future restoration
                             {service.client?.phone && (
                               <div className="flex gap-2 w-full mt-2">
                                 <Button 
@@ -1218,6 +1220,7 @@ export default function TechnicianServices() {
                                 </Button>
                               </div>
                             )}
+                            */}
 
                             {/* Evidencija uklonjenih delova i rezervni delovi */}
                             {(service.status === "assigned" || service.status === "in_progress" || service.status === "scheduled") && (
