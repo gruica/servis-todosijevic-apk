@@ -140,6 +140,17 @@ function getStatusBadge(status: string) {
 
 function getWarrantyStatusBadge(warrantyStatus: string) {
   const statusConfig: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success", icon: React.ReactNode }> = {
+    "u garanciji": { 
+      label: "U garanciji", 
+      variant: "success", 
+      icon: <Check className="h-3 w-3 mr-1" />
+    },
+    "van garancije": { 
+      label: "Van garancije", 
+      variant: "destructive", 
+      icon: <X className="h-3 w-3 mr-1" />
+    },
+    // Backward compatibility
     in_warranty: { 
       label: "U garanciji", 
       variant: "success", 
@@ -427,7 +438,7 @@ export default function EnhancedServices() {
       applianceId: 0,
       description: "",
       status: "pending",
-      warrantyStatus: "out_of_warranty",
+      warrantyStatus: "van garancije",
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
@@ -686,7 +697,7 @@ export default function EnhancedServices() {
       applianceId: 0,
       description: "",
       status: "pending",
-      warrantyStatus: "out_of_warranty",
+      warrantyStatus: "van garancije",
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: null,
@@ -714,7 +725,7 @@ export default function EnhancedServices() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
-      warrantyStatus: service.warrantyStatus || "out_of_warranty",
+      warrantyStatus: service.warrantyStatus || "van garancije",
       technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || null,
@@ -985,7 +996,7 @@ export default function EnhancedServices() {
                               {getStatusBadge(service.status)}
                             </TableCell>
                             <TableCell>
-                              {getWarrantyStatusBadge(service.warrantyStatus || "out_of_warranty")}
+                              {getWarrantyStatusBadge(service.warrantyStatus || "van garancije")}
                             </TableCell>
                             <TableCell>
                               {service.technicianName ? (
@@ -1245,11 +1256,11 @@ export default function EnhancedServices() {
                           <SelectValue placeholder="Izaberite status garancije" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="in_warranty">
-                            {getWarrantyStatusBadge("in_warranty")}
+                          <SelectItem value="u garanciji">
+                            {getWarrantyStatusBadge("u garanciji")}
                           </SelectItem>
-                          <SelectItem value="out_of_warranty">
-                            {getWarrantyStatusBadge("out_of_warranty")}
+                          <SelectItem value="van garancije">
+                            {getWarrantyStatusBadge("van garancije")}
                           </SelectItem>
                         </SelectContent>
                       </Select>

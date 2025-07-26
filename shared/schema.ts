@@ -210,8 +210,8 @@ export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 
 // Warranty status enum
 export const warrantyStatusEnum = z.enum([
-  "in_warranty", // u garanciji
-  "out_of_warranty", // van garancije
+  "u garanciji", // u garanciji
+  "van garancije", // van garancije
 ]);
 
 export type WarrantyStatus = z.infer<typeof warrantyStatusEnum>;

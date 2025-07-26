@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Mail } from 'lucide-react';
 
 export function TestWarrantyEmail() {
-  const [warrantyStatus, setWarrantyStatus] = useState<"in_warranty" | "out_of_warranty">("in_warranty");
+  const [warrantyStatus, setWarrantyStatus] = useState<"u garanciji" | "van garancije">("u garanciji");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
   const { toast } = useToast();
@@ -31,7 +31,7 @@ export function TestWarrantyEmail() {
         setResult({ success: true, message: data.message });
         toast({
           title: "Email poslat uspešno",
-          description: `Test warranty email (${warrantyStatus === "in_warranty" ? "u garanciji" : "van garancije"}) poslat na gruica@frigosistemtodosijevic.com`,
+          description: `Test warranty email (${warrantyStatus === "u garanciji" ? "u garanciji" : "van garancije"}) poslat na gruica@frigosistemtodosijevic.com`,
         });
       } else {
         setResult({ success: false, message: data.error || "Neuspešno slanje emaila" });
@@ -67,18 +67,18 @@ export function TestWarrantyEmail() {
           <Label className="text-sm font-medium">Odaberite warranty status:</Label>
           <RadioGroup 
             value={warrantyStatus} 
-            onValueChange={(value) => setWarrantyStatus(value as "in_warranty" | "out_of_warranty")}
+            onValueChange={(value) => setWarrantyStatus(value as "u garanciji" | "van garancije")}
             className="mt-2"
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="in_warranty" id="in_warranty" />
-              <Label htmlFor="in_warranty" className="text-sm">
+              <RadioGroupItem value="u garanciji" id="u_garanciji" />
+              <Label htmlFor="u_garanciji" className="text-sm">
                 🛡️ U garanciji
               </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="out_of_warranty" id="out_of_warranty" />
-              <Label htmlFor="out_of_warranty" className="text-sm">
+              <RadioGroupItem value="van garancije" id="van_garancije" />
+              <Label htmlFor="van_garancije" className="text-sm">
                 💰 Van garancije
               </Label>
             </div>
@@ -113,7 +113,7 @@ export function TestWarrantyEmail() {
           <p>• Servis #999</p>
           <p>• Status: Završen</p>
           <p>• Serviser: Gruica Todosijević</p>
-          <p>• Warranty status: {warrantyStatus === "in_warranty" ? "U garanciji" : "Van garancije"}</p>
+          <p>• Warranty status: {warrantyStatus === "u garanciji" ? "U garanciji" : "Van garancije"}</p>
         </div>
       </CardContent>
     </Card>
