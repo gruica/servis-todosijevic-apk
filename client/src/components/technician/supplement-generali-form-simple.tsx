@@ -171,17 +171,17 @@ export function SupplementGeneraliFormSimple({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
       <DialogContent 
-        className={`mobile-centered-dialog max-w-[95vw] sm:max-w-2xl p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+        className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
         style={{
           position: 'fixed',
-          top: isKeyboardOpen ? '20%' : '50%',
+          top: isKeyboardOpen ? '30%' : '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 9999,
-          maxHeight: isKeyboardOpen ? '70vh' : '90vh',
+          maxHeight: isKeyboardOpen ? '60vh' : '80vh',
           overflowY: 'auto',
           width: '95vw',
-          maxWidth: '768px',
+          maxWidth: '500px',
           backgroundColor: 'white',
           border: '1px solid #e5e7eb',
           borderRadius: '8px',
