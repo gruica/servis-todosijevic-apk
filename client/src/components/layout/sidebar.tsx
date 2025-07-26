@@ -16,19 +16,10 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   // Fetch pending spare parts orders count for admin users
   const { data: pendingSparePartsCount = 0 } = useQuery({
     queryKey: ['/api/admin/spare-parts/pending'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/admin/spare-parts/pending');
-        const data = await response.json();
-        return Array.isArray(data) ? data.length : 0;
-      } catch (error) {
-        console.error('Error fetching pending spare parts count:', error);
-        return 0;
-      }
-    },
     enabled: user?.role === 'admin',
     refetchInterval: 30000, // Refresh every 30 seconds
     retry: 1,
+    select: (data: any[]) => Array.isArray(data) ? data.length : 0,
   });
 
   // Define menu items based on user role
