@@ -96,7 +96,7 @@ const availabilityColors = {
   "special_order": "bg-blue-100 text-blue-800"
 };
 
-export default function SparePartsCatalog() {
+function SparePartsCatalog() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
@@ -303,14 +303,14 @@ export default function SparePartsCatalog() {
       category: entry.category as any,
       manufacturer: entry.manufacturer,
       compatibleModels: entry.compatibleModels.join(', '),
-      priceEur: entry.priceEur || undefined,
-      priceGbp: entry.priceGbp || undefined,
+      priceEur: entry.priceEur ? entry.priceEur : undefined,
+      priceGbp: entry.priceGbp ? entry.priceGbp : undefined,
       supplierName: entry.supplierName || '',
       supplierUrl: entry.supplierUrl || '',
       imageUrls: entry.imageUrls.join(', '),
       availability: entry.availability as any,
-      stockLevel: entry.stockLevel || undefined,
-      minStockLevel: entry.minStockLevel || undefined,
+      stockLevel: entry.stockLevel ? entry.stockLevel : undefined,
+      minStockLevel: entry.minStockLevel ? entry.minStockLevel : undefined,
       dimensions: entry.dimensions || '',
       weight: entry.weight || '',
       technicalSpecs: entry.technicalSpecs || '',
@@ -786,3 +786,5 @@ export default function SparePartsCatalog() {
     </div>
   );
 }
+
+export default SparePartsCatalog;

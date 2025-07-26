@@ -1,52 +1,22 @@
-import React, { Suspense, startTransition } from 'react';
+import React from 'react';
 import { AdminLayout } from "@/components/layout/admin-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-
-const SparePartsCatalog = React.lazy(() => import("@/components/admin/SparePartsCatalog"));
-
-function LoadingCard() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Učitavanje kataloga rezervnih delova...
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import SparePartsCatalog from "@/components/admin/SparePartsCatalog";
+import { ErrorBoundary, AsyncWrapper } from '@/components/error-boundary';
 
 export default function AdminSparePartsCatalogPage() {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    startTransition(() => {
-      setMounted(true);
-    });
-  }, []);
-
-  if (!mounted) {
-    return (
-      <AdminLayout>
-        <LoadingCard />
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout>
-      <Suspense fallback={<LoadingCard />}>
-        <SparePartsCatalog />
-      </Suspense>
+      <ErrorBoundary>
+        <AsyncWrapper>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold tracking-tight">Katalog rezervnih delova</h1>
+            </div>
+            
+            <SparePartsCatalog />
+          </div>
+        </AsyncWrapper>
+      </ErrorBoundary>
     </AdminLayout>
   );
 }
