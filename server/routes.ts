@@ -6,7 +6,7 @@ import { setupAuth, comparePassword } from "./auth";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -50,6 +50,19 @@ const emailSettingsSchema = z.object({
 
 const testEmailSchema = z.object({
   recipient: z.string().email(),
+});
+
+// Multer konfiguracija za CSV upload
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.mimetype === 'application/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Samo CSV datoteke su dozvoljene'));
+    }
+  }
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -8332,6 +8345,272 @@ Admin panel - automatska porudžbina
         error: "Greška servera",
         message: "Došlo je do greške pri kreiranju Com Plus servisa. Molimo pokušajte ponovo."
       });
+    }
+  });
+
+  // ===== PARTKEEPR SPARE PARTS CATALOG ENDPOINTS =====
+  
+  // Get all spare parts catalog entries (admin only)
+  app.get("/api/admin/spare-parts-catalog", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const catalog = await storage.getAllSparePartsCatalog();
+      res.json(catalog);
+    } catch (error) {
+      console.error("Error fetching spare parts catalog:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju kataloga rezervnih delova" });
+    }
+  });
+
+  // Get catalog entries by category
+  app.get("/api/admin/spare-parts-catalog/category/:category", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { category } = req.params;
+      const catalog = await storage.getSparePartsCatalogByCategory(category);
+      res.json(catalog);
+    } catch (error) {
+      console.error("Error fetching catalog by category:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju kataloga po kategoriji" });
+    }
+  });
+
+  // Get catalog entries by manufacturer
+  app.get("/api/admin/spare-parts-catalog/manufacturer/:manufacturer", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { manufacturer } = req.params;
+      const catalog = await storage.getSparePartsCatalogByManufacturer(manufacturer);
+      res.json(catalog);
+    } catch (error) {
+      console.error("Error fetching catalog by manufacturer:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju kataloga po proizvođaču" });
+    }
+  });
+
+  // Search spare parts catalog
+  app.get("/api/admin/spare-parts-catalog/search", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Parametar pretrage 'q' je obavezan" });
+      }
+      
+      const catalog = await storage.searchSparePartsCatalog(q);
+      res.json(catalog);
+    } catch (error) {
+      console.error("Error searching catalog:", error);
+      res.status(500).json({ error: "Greška pri pretrazi kataloga" });
+    }
+  });
+
+  // Get catalog entry by part number
+  app.get("/api/admin/spare-parts-catalog/part-number/:partNumber", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { partNumber } = req.params;
+      const part = await storage.getSparePartsCatalogByPartNumber(partNumber);
+      if (!part) {
+        return res.status(404).json({ error: "Deo sa ovim kataloštim brojem nije pronađen" });
+      }
+      res.json(part);
+    } catch (error) {
+      console.error("Error fetching part by number:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dela po kataloškome broju" });
+    }
+  });
+
+  // Get compatible parts for model
+  app.get("/api/admin/spare-parts-catalog/compatible/:model", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { model } = req.params;
+      const catalog = await storage.getSparePartsCatalogByCompatibleModel(model);
+      res.json(catalog);
+    } catch (error) {
+      console.error("Error fetching compatible parts:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju kompatibilnih delova" });
+    }
+  });
+
+  // Create new catalog entry
+  app.post("/api/admin/spare-parts-catalog", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const validatedData = insertSparePartsCatalogSchema.parse(req.body);
+      const newEntry = await storage.createSparePartsCatalogEntry(validatedData);
+      res.status(201).json(newEntry);
+    } catch (error) {
+      console.error("Error creating catalog entry:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Neispravni podaci", details: error.errors });
+      }
+      res.status(500).json({ error: "Greška pri kreiranju katalog unosa" });
+    }
+  });
+
+  // Update catalog entry
+  app.put("/api/admin/spare-parts-catalog/:id", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const updatedEntry = await storage.updateSparePartsCatalogEntry(id, updates);
+      
+      if (!updatedEntry) {
+        return res.status(404).json({ error: "Katalog unos nije pronađen" });
+      }
+      
+      res.json(updatedEntry);
+    } catch (error) {
+      console.error("Error updating catalog entry:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju katalog unosa" });
+    }
+  });
+
+  // Delete catalog entry
+  app.delete("/api/admin/spare-parts-catalog/:id", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteSparePartsCatalogEntry(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Katalog unos nije pronađen" });
+      }
+      
+      res.json({ success: true, message: "Katalog unos je uspešno uklonjen" });
+    } catch (error) {
+      console.error("Error deleting catalog entry:", error);
+      res.status(500).json({ error: "Greška pri brisanju katalog unosa" });
+    }
+  });
+
+  // Import catalog from CSV
+  app.post("/api/admin/spare-parts-catalog/import-csv", jwtAuth, requireRole(["admin"]), upload.single('csvFile'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "CSV datoteka je obavezna" });
+      }
+
+      const csvContent = req.file.buffer.toString('utf-8');
+      const { default: Papa } = await import('papaparse');
+      
+      const parseResult = Papa.parse(csvContent, {
+        header: true,
+        skipEmptyLines: true,
+        transform: (value) => value.trim()
+      });
+
+      if (parseResult.errors.length > 0) {
+        return res.status(400).json({ 
+          error: "Greška pri parsiranju CSV datoteke", 
+          details: parseResult.errors 
+        });
+      }
+
+      const results = await storage.importSparePartsCatalogFromCSV(parseResult.data);
+      
+      res.json({
+        success: true,
+        message: `Uvoz završen: ${results.success} uspešnih unosa, ${results.errors.length} grešaka`,
+        imported: results.success,
+        errors: results.errors
+      });
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      res.status(500).json({ error: "Greška pri uvozu CSV datoteke" });
+    }
+  });
+
+  // Get catalog statistics
+  app.get("/api/admin/spare-parts-catalog/stats", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const stats = await storage.getSparePartsCatalogStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching catalog statistics:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistika kataloga" });
+    }
+  });
+
+  // Export catalog to CSV
+  app.get("/api/admin/spare-parts-catalog/export-csv", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const catalog = await storage.getAllSparePartsCatalog();
+      
+      // Convert to CSV format
+      const csvData = catalog.map(part => ({
+        'Part Number': part.partNumber,
+        'Part Name': part.partName,
+        'Description': part.description,
+        'Category': part.category,
+        'Manufacturer': part.manufacturer,
+        'Compatible Models': part.compatibleModels.join(', '),
+        'Price EUR': part.priceEur,
+        'Price GBP': part.priceGbp,
+        'Supplier Name': part.supplierName,
+        'Supplier URL': part.supplierUrl,
+        'Image URLs': part.imageUrls.join(', '),
+        'Availability': part.availability,
+        'Stock Level': part.stockLevel,
+        'Min Stock Level': part.minStockLevel,
+        'Dimensions': part.dimensions,
+        'Weight': part.weight,
+        'Technical Specs': part.technicalSpecs,
+        'Installation Notes': part.installationNotes,
+        'Warranty Period': part.warrantyPeriod,
+        'Is OEM Part': part.isOemPart ? 'Yes' : 'No',
+        'Alternative Part Numbers': part.alternativePartNumbers.join(', '),
+        'Source Type': part.sourceType,
+        'Created At': part.createdAt,
+        'Last Updated': part.lastUpdated
+      }));
+
+      const { default: Papa } = await import('papaparse');
+      const csv = Papa.unparse(csvData);
+      
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="spare-parts-catalog-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send('\ufeff' + csv); // Add BOM for UTF-8
+    } catch (error) {
+      console.error("Error exporting catalog:", error);
+      res.status(500).json({ error: "Greška pri eksportu kataloga" });
+    }
+  });
+
+  // Get catalog statistics
+  app.get("/api/admin/spare-parts-catalog/stats", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const stats = await storage.getSparePartsCatalogStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching catalog stats:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistike kataloga" });
+    }
+  });
+
+  // Bulk update catalog entries
+  app.patch("/api/admin/spare-parts-catalog/bulk-update", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { ids, updates } = req.body;
+      
+      if (!Array.isArray(ids) || !updates) {
+        return res.status(400).json({ error: "ID lista i ažuriranja su obavezni" });
+      }
+
+      const results = { success: 0, errors: [] as string[] };
+      
+      for (const id of ids) {
+        try {
+          await storage.updateSparePartsCatalogEntry(parseInt(id), updates);
+          results.success++;
+        } catch (error) {
+          results.errors.push(`ID ${id}: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Masovno ažuriranje: ${results.success} uspešnih, ${results.errors.length} grešaka`,
+        updated: results.success,
+        errors: results.errors
+      });
+    } catch (error) {
+      console.error("Error bulk updating catalog:", error);
+      res.status(500).json({ error: "Greška pri masovnom ažuriranju" });
     }
   });
 

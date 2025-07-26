@@ -19,12 +19,13 @@ import {
   Notification, InsertNotification,
   SystemSetting, InsertSystemSetting,
   RemovedPart, InsertRemovedPart,
+  SparePartsCatalog, InsertSparePartsCatalog,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
-  PartsAllocation, InsertPartsAllocation
+  sparePartsCatalog, PartsAllocation, InsertPartsAllocation
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -208,6 +209,19 @@ export interface IStorage {
   
   // Spare Parts Orders methods for business partner details
   getSparePartsByService(serviceId: number): Promise<SparePartOrder[]>;
+
+  // Spare Parts Catalog methods (PartKeepr compatible)
+  getAllSparePartsCatalog(): Promise<SparePartsCatalog[]>;
+  getSparePartsCatalogByCategory(category: string): Promise<SparePartsCatalog[]>;
+  getSparePartsCatalogByManufacturer(manufacturer: string): Promise<SparePartsCatalog[]>;
+  searchSparePartsCatalog(searchTerm: string): Promise<SparePartsCatalog[]>;
+  getSparePartsCatalogByPartNumber(partNumber: string): Promise<SparePartsCatalog | undefined>;
+  getSparePartsCatalogByCompatibleModel(model: string): Promise<SparePartsCatalog[]>;
+  createSparePartsCatalogEntry(entry: InsertSparePartsCatalog): Promise<SparePartsCatalog>;
+  updateSparePartsCatalogEntry(id: number, entry: Partial<SparePartsCatalog>): Promise<SparePartsCatalog | undefined>;
+  deleteSparePartsCatalogEntry(id: number): Promise<boolean>;
+  importSparePartsCatalogFromCSV(csvData: any[]): Promise<{ success: number; errors: string[] }>;
+  getSparePartsCatalogStats(): Promise<{ totalParts: number; byCategory: Record<string, number>; byManufacturer: Record<string, number> }>;
   
   // Session store
   sessionStore: any; // Express session store
@@ -3948,6 +3962,235 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri dohvatanju log aktivnosti:', error);
       return [];
+    }
+  }
+
+  // PartKeepr Catalog methods implementation
+  async getAllSparePartsCatalog(): Promise<SparePartsCatalog[]> {
+    try {
+      const catalog = await db
+        .select()
+        .from(sparePartsCatalog)
+        .orderBy(sparePartsCatalog.partName);
+      return catalog;
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga rezervnih delova:', error);
+      return [];
+    }
+  }
+
+  async getSparePartsCatalogByCategory(category: string): Promise<SparePartsCatalog[]> {
+    try {
+      const catalog = await db
+        .select()
+        .from(sparePartsCatalog)
+        .where(eq(sparePartsCatalog.category, category))
+        .orderBy(sparePartsCatalog.partName);
+      return catalog;
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async getSparePartsCatalogByManufacturer(manufacturer: string): Promise<SparePartsCatalog[]> {
+    try {
+      const catalog = await db
+        .select()
+        .from(sparePartsCatalog)
+        .where(eq(sparePartsCatalog.manufacturer, manufacturer))
+        .orderBy(sparePartsCatalog.partName);
+      return catalog;
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga po proizvođaču:', error);
+      return [];
+    }
+  }
+
+  async searchSparePartsCatalog(searchTerm: string): Promise<SparePartsCatalog[]> {
+    try {
+      const catalog = await db
+        .select()
+        .from(sparePartsCatalog)
+        .where(
+          or(
+            like(sparePartsCatalog.partName, `%${searchTerm}%`),
+            like(sparePartsCatalog.partNumber, `%${searchTerm}%`),
+            like(sparePartsCatalog.description, `%${searchTerm}%`)
+          )
+        )
+        .orderBy(sparePartsCatalog.partName)
+        .limit(100);
+      return catalog;
+    } catch (error) {
+      console.error('Greška pri pretrazi kataloga:', error);
+      return [];
+    }
+  }
+
+  async getSparePartsCatalogByPartNumber(partNumber: string): Promise<SparePartsCatalog | undefined> {
+    try {
+      const [part] = await db
+        .select()
+        .from(sparePartsCatalog)
+        .where(eq(sparePartsCatalog.partNumber, partNumber));
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dela po kataloškome broju:', error);
+      return undefined;
+    }
+  }
+
+  async getSparePartsCatalogByCompatibleModel(model: string): Promise<SparePartsCatalog[]> {
+    try {
+      const catalog = await db
+        .select()
+        .from(sparePartsCatalog)
+        .where(sql`${sparePartsCatalog.compatibleModels} @> ARRAY[${model}]`)
+        .orderBy(sparePartsCatalog.partName);
+      return catalog;
+    } catch (error) {
+      console.error('Greška pri dohvatanju kompatibilnih delova:', error);
+      return [];
+    }
+  }
+
+  async createSparePartsCatalogEntry(entry: InsertSparePartsCatalog): Promise<SparePartsCatalog> {
+    try {
+      const [newEntry] = await db
+        .insert(sparePartsCatalog)
+        .values(entry)
+        .returning();
+      return newEntry;
+    } catch (error) {
+      console.error('Greška pri kreiranju katalog unosa:', error);
+      throw error;
+    }
+  }
+
+  async updateSparePartsCatalogEntry(id: number, entry: Partial<SparePartsCatalog>): Promise<SparePartsCatalog | undefined> {
+    try {
+      const [updatedEntry] = await db
+        .update(sparePartsCatalog)
+        .set({
+          ...entry,
+          lastUpdated: new Date()
+        })
+        .where(eq(sparePartsCatalog.id, id))
+        .returning();
+      return updatedEntry;
+    } catch (error) {
+      console.error('Greška pri ažuriranju katalog unosa:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSparePartsCatalogEntry(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(sparePartsCatalog)
+        .where(eq(sparePartsCatalog.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju katalog unosa:', error);
+      return false;
+    }
+  }
+
+  async importSparePartsCatalogFromCSV(csvData: any[]): Promise<{ success: number; errors: string[] }> {
+    const results = { success: 0, errors: [] as string[] };
+    
+    for (let i = 0; i < csvData.length; i++) {
+      try {
+        const row = csvData[i];
+        const entry: InsertSparePartsCatalog = {
+          partNumber: row.partNumber || row['Part Number'] || '',
+          partName: row.partName || row['Part Name'] || '',
+          description: row.description || row.Description || '',
+          category: row.category || row.Category || 'universal',
+          manufacturer: row.manufacturer || row.Manufacturer || 'Candy',
+          compatibleModels: Array.isArray(row.compatibleModels) 
+            ? row.compatibleModels 
+            : (row.compatibleModels || row['Compatible Models'] || '').split(',').map((m: string) => m.trim()).filter(Boolean),
+          priceEur: row.priceEur || row['Price EUR'] || '',
+          priceGbp: row.priceGbp || row['Price GBP'] || '',
+          supplierName: row.supplierName || row['Supplier Name'] || '',
+          supplierUrl: row.supplierUrl || row['Supplier URL'] || '',
+          imageUrls: Array.isArray(row.imageUrls) 
+            ? row.imageUrls 
+            : (row.imageUrls || row['Image URLs'] || '').split(',').map((url: string) => url.trim()).filter(Boolean),
+          availability: row.availability || row.Availability || 'available',
+          stockLevel: parseInt(row.stockLevel || row['Stock Level'] || '0') || 0,
+          minStockLevel: parseInt(row.minStockLevel || row['Min Stock Level'] || '0') || 0,
+          dimensions: row.dimensions || row.Dimensions || '',
+          weight: row.weight || row.Weight || '',
+          technicalSpecs: row.technicalSpecs || row['Technical Specs'] || '',
+          installationNotes: row.installationNotes || row['Installation Notes'] || '',
+          warrantyPeriod: row.warrantyPeriod || row['Warranty Period'] || '',
+          isOemPart: row.isOemPart !== undefined ? Boolean(row.isOemPart) : true,
+          alternativePartNumbers: Array.isArray(row.alternativePartNumbers) 
+            ? row.alternativePartNumbers 
+            : (row.alternativePartNumbers || row['Alternative Part Numbers'] || '').split(',').map((p: string) => p.trim()).filter(Boolean),
+          sourceType: row.sourceType || row['Source Type'] || 'manual',
+        };
+
+        await this.createSparePartsCatalogEntry(entry);
+        results.success++;
+      } catch (error) {
+        results.errors.push(`Red ${i + 1}: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
+      }
+    }
+
+    return results;
+  }
+
+  async getSparePartsCatalogStats(): Promise<{ totalParts: number; byCategory: Record<string, number>; byManufacturer: Record<string, number> }> {
+    try {
+      // Total parts count
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(sparePartsCatalog);
+      
+      // Count by category
+      const categoryStats = await db
+        .select({
+          category: sparePartsCatalog.category,
+          count: count()
+        })
+        .from(sparePartsCatalog)
+        .groupBy(sparePartsCatalog.category);
+      
+      // Count by manufacturer
+      const manufacturerStats = await db
+        .select({
+          manufacturer: sparePartsCatalog.manufacturer,
+          count: count()
+        })
+        .from(sparePartsCatalog)
+        .groupBy(sparePartsCatalog.manufacturer);
+
+      const byCategory: Record<string, number> = {};
+      categoryStats.forEach(stat => {
+        byCategory[stat.category] = stat.count;
+      });
+
+      const byManufacturer: Record<string, number> = {};
+      manufacturerStats.forEach(stat => {
+        byManufacturer[stat.manufacturer] = stat.count;
+      });
+
+      return {
+        totalParts: totalResult.count,
+        byCategory,
+        byManufacturer
+      };
+    } catch (error) {
+      console.error('Greška pri dohvatanju statistike kataloga:', error);
+      return {
+        totalParts: 0,
+        byCategory: {},
+        byManufacturer: {}
+      };
     }
   }
 }

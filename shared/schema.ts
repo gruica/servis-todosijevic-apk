@@ -835,6 +835,121 @@ export const insertPartsActivityLogSchema = createInsertSchema(partsActivityLog)
 export type InsertPartsActivityLog = z.infer<typeof insertPartsActivityLogSchema>;
 export type PartsActivityLog = typeof partsActivityLog.$inferSelect;
 
+// PartKeepr-compatible spare parts catalog table
+export const sparePartsCatalog = pgTable("spare_parts_catalog", {
+  id: serial("id").primaryKey(),
+  partNumber: text("part_number").notNull().unique(), // Kataloški broj dela (primary identifier)
+  partName: text("part_name").notNull(), // Naziv dela
+  description: text("description"), // Detaljan opis dela
+  category: text("category").notNull(), // Kategorija (washing-machine, dishwasher, oven, etc.)
+  manufacturer: text("manufacturer").notNull().default("Candy"), // Proizvođač
+  compatibleModels: text("compatible_models").array(), // Array kompatibilnih modela
+  priceEur: text("price_eur"), // Cena u evrima
+  priceGbp: text("price_gbp"), // Cena u funtama
+  supplierName: text("supplier_name"), // Dobavljač
+  supplierUrl: text("supplier_url"), // URL dobavljača za deo
+  imageUrls: text("image_urls").array(), // Array URL-ova slika
+  availability: text("availability").default("available"), // available, out_of_stock, discontinued
+  stockLevel: integer("stock_level").default(0), // Količina na stanju
+  minStockLevel: integer("min_stock_level").default(0), // Minimalna količina za upozorenje
+  dimensions: text("dimensions"), // Dimenzije dela
+  weight: text("weight"), // Težina dela
+  technicalSpecs: text("technical_specs"), // Tehnički podaci u JSON formatu
+  installationNotes: text("installation_notes"), // Napomene za ugradnju
+  warrantyPeriod: text("warranty_period"), // Period garancije
+  isOemPart: boolean("is_oem_part").default(true), // Da li je originalan deo
+  alternativePartNumbers: text("alternative_part_numbers").array(), // Alternativni kataloški brojevi
+  sourceType: text("source_type").default("manual"), // manual, partkeepr_import, web_scraping
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id), // Ko je kreirao zapis
+});
+
+// Category enum za spare parts catalog
+export const sparePartCategoryEnum = z.enum([
+  "washing-machine", // Mašina za veš
+  "dishwasher", // Sudopera
+  "oven", // Šporet/pećnica
+  "cooker-hood", // Aspirator
+  "tumble-dryer", // Sušilica
+  "fridge-freezer", // Frižider/zamrzivač
+  "microwave", // Mikrotalasna
+  "universal", // Univerzalni delovi
+]);
+
+// Availability enum
+export const sparePartAvailabilityEnum = z.enum([
+  "available", // Dostupno
+  "out_of_stock", // Nema na stanju
+  "discontinued", // Prestalo da se proizvodi
+  "special_order", // Specijalna porudžbina
+]);
+
+// Source type enum
+export const sparePartSourceTypeEnum = z.enum([
+  "manual", // Uneto ručno
+  "partkeepr_import", // Uvezeno iz PartKeepr
+  "web_scraping", // Dobijeno web scraping-om
+  "supplier_api", // API dobavljača
+]);
+
+export type SparePartCategory = z.infer<typeof sparePartCategoryEnum>;
+export type SparePartAvailability = z.infer<typeof sparePartAvailabilityEnum>;
+export type SparePartSourceType = z.infer<typeof sparePartSourceTypeEnum>;
+
+export const insertSparePartsCatalogSchema = createInsertSchema(sparePartsCatalog).pick({
+  partNumber: true,
+  partName: true,
+  description: true,
+  category: true,
+  manufacturer: true,
+  compatibleModels: true,
+  priceEur: true,
+  priceGbp: true,
+  supplierName: true,
+  supplierUrl: true,
+  imageUrls: true,
+  availability: true,
+  stockLevel: true,
+  minStockLevel: true,
+  dimensions: true,
+  weight: true,
+  technicalSpecs: true,
+  installationNotes: true,
+  warrantyPeriod: true,
+  isOemPart: true,
+  alternativePartNumbers: true,
+  sourceType: true,
+  createdBy: true,
+}).extend({
+  partNumber: z.string().min(3, "Kataloški broj mora imati najmanje 3 karaktera").max(100, "Kataloški broj je predugačak"),
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
+  description: z.string().max(1000, "Opis je predugačak").or(z.literal("")).optional(),
+  category: sparePartCategoryEnum,
+  manufacturer: z.string().min(2, "Naziv proizvođača mora imati najmanje 2 karaktera").max(100, "Naziv proizvođača je predugačak"),
+  compatibleModels: z.array(z.string().max(100, "Model je predugačak")).max(500, "Previše kompatibilnih modela").optional(),
+  priceEur: z.string().max(20, "Cena je predugačka").or(z.literal("")).optional(),
+  priceGbp: z.string().max(20, "Cena je predugačka").or(z.literal("")).optional(),
+  supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
+  supplierUrl: z.string().url("Unesite valjan URL").or(z.literal("")).optional(),
+  imageUrls: z.array(z.string().url("Unesite valjan URL za sliku")).max(20, "Previše slika").optional(),
+  availability: sparePartAvailabilityEnum.default("available"),
+  stockLevel: z.number().int().min(0, "Količina na stanju ne može biti negativna").optional(),
+  minStockLevel: z.number().int().min(0, "Minimalna količina ne može biti negativna").optional(),
+  dimensions: z.string().max(100, "Dimenzije su predugačke").or(z.literal("")).optional(),
+  weight: z.string().max(50, "Težina je predugačka").or(z.literal("")).optional(),
+  technicalSpecs: z.string().max(2000, "Tehnički podaci su predugački").or(z.literal("")).optional(),
+  installationNotes: z.string().max(1000, "Napomene za ugradnju su predugačke").or(z.literal("")).optional(),
+  warrantyPeriod: z.string().max(50, "Period garancije je predugačak").or(z.literal("")).optional(),
+  isOemPart: z.boolean().default(true),
+  alternativePartNumbers: z.array(z.string().max(100, "Alternativni broj je predugačak")).max(50, "Previše alternativnih brojeva").optional(),
+  sourceType: sparePartSourceTypeEnum.default("manual"),
+  createdBy: z.number().int().positive("ID korisnika mora biti pozitivan broj").optional(),
+});
+
+export type InsertSparePartsCatalog = z.infer<typeof insertSparePartsCatalogSchema>;
+export type SparePartsCatalog = typeof sparePartsCatalog.$inferSelect;
+
 // Parts Allocations - tabela za praćenje dodele delova serviserima
 export const partsAllocations = pgTable("parts_allocations", {
   id: serial("id").primaryKey(),

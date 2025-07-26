@@ -90,6 +90,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts" component={AdminSpareParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/available-parts" component={AdminAvailableParts} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/spare-parts-catalog" component={React.lazy(() => import("@/pages/admin/spare-parts-catalog"))} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
       <Route path="/services" component={EnhancedServices} />
       <Route path="/services-basic" component={BasicServicesPage} />
