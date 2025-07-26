@@ -65,6 +65,28 @@ const upload = multer({
   }
 });
 
+// Dodatna multer konfiguracija za catalog CSV upload
+const catalogUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    console.log('Multer file filter - file info:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      fieldname: file.fieldname
+    });
+    
+    if (file.mimetype === 'text/csv' || 
+        file.mimetype === 'application/csv' || 
+        file.mimetype === 'text/plain' ||
+        file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Samo CSV datoteke su dozvoljene'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
@@ -3396,7 +3418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const upload = multer({ storage: uploadStorage });
+  const fileUpload = multer({ storage: uploadStorage });
 
   // Bulk SMS endpoint za masovno slanje SMS poruka
   app.post("/api/sms/bulk-send", jwtAuth, requireRole(['admin']), async (req, res) => {
@@ -3567,7 +3589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Excel import endpoints
-  app.post("/api/excel/import/clients", upload.single('file'), async (req, res) => {
+  app.post("/api/excel/import/clients", fileUpload.single('file'), async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
@@ -3590,7 +3612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/excel/import/appliances", upload.single('file'), async (req, res) => {
+  app.post("/api/excel/import/appliances", fileUpload.single('file'), async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
@@ -3613,7 +3635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/excel/import/services", upload.single('file'), async (req, res) => {
+  app.post("/api/excel/import/services", fileUpload.single('file'), async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
@@ -3637,7 +3659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Kompletna migracija iz starog sistema
-  app.post("/api/excel/import/legacy-complete", upload.single('file'), async (req, res) => {
+  app.post("/api/excel/import/legacy-complete", fileUpload.single('file'), async (req, res) => {
     try {
       if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
@@ -8479,13 +8501,26 @@ Admin panel - automatska porudžbina
   });
 
   // Import catalog from CSV
-  app.post("/api/admin/spare-parts-catalog/import-csv", jwtAuth, requireRole(["admin"]), upload.single('csvFile'), async (req, res) => {
+  app.post("/api/admin/spare-parts-catalog/import-csv", jwtAuth, requireRole(["admin"]), catalogUpload.single('csvFile'), async (req, res) => {
     try {
+      console.log("CSV Import attempt - file info:", req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        hasBuffer: !!req.file.buffer
+      } : "No file");
+
       if (!req.file) {
         return res.status(400).json({ error: "CSV datoteka je obavezna" });
       }
 
+      if (!req.file.buffer) {
+        return res.status(400).json({ error: "Greška pri čitanju CSV datoteke" });
+      }
+
       const csvContent = req.file.buffer.toString('utf-8');
+      console.log("CSV Content preview:", csvContent.substring(0, 200));
+      
       const { default: Papa } = await import('papaparse');
       
       const parseResult = Papa.parse(csvContent, {
@@ -8494,7 +8529,14 @@ Admin panel - automatska porudžbina
         transform: (value) => value.trim()
       });
 
+      console.log("Parse result:", {
+        dataLength: parseResult.data.length,
+        errorsLength: parseResult.errors.length,
+        firstRow: parseResult.data[0]
+      });
+
       if (parseResult.errors.length > 0) {
+        console.log("Parse errors:", parseResult.errors);
         return res.status(400).json({ 
           error: "Greška pri parsiranju CSV datoteke", 
           details: parseResult.errors 
