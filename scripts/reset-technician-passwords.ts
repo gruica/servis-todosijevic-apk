@@ -19,8 +19,14 @@ async function resetTechnicianPasswords() {
   try {
     console.log("Dohvatanje servisera...");
     
-    // Standardna lozinka za servisere
-    const standardPassword = "serviser123";
+    // Standardna lozinka za servisere - učitava se iz environment varijable
+    const standardPassword = process.env.TECHNICIAN_DEFAULT_PASSWORD;
+    
+    if (!standardPassword) {
+      console.error("GREŠKA: Environment varijabla TECHNICIAN_DEFAULT_PASSWORD nije postavljena.");
+      console.error("Molimo postavite lozinku kroz Replit Secrets sistem.");
+      return;
+    }
     
     // 1. Dohvati korisnike koji su povezani sa serviserima (koji imaju technician_id)
     const technicianUsers = await db
@@ -56,7 +62,7 @@ async function resetTechnicianPasswords() {
     }
     
     console.log("\nLozinke uspešno resetovane za sve servisere.");
-    console.log(`Nova lozinka za sve servisere je: ${standardPassword}`);
+    console.log("Nova lozinka je postavljena iz TECHNICIAN_DEFAULT_PASSWORD environment varijable.");
     
   } catch (error) {
     console.error("Greška pri resetovanju lozinki:", error);
