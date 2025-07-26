@@ -3,7 +3,9 @@
  * na stranici servisa. Analiza se vrši testiranjem svakog servisa zasebno
  * i validacijom integriteta referenci i podataka.
  */
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { sql, eq } from "drizzle-orm";
+import { services, clients, appliances, applianceCategories, manufacturers, technicians, users } from "../shared/schema";
 
 // Interfejs za problematičan servis
 interface ProblematicService {
@@ -20,33 +22,30 @@ async function identifyProblematicServices() {
     const problematicServices: ProblematicService[] = [];
     
     // Prvo dohvatamo sve servise
-    const servicesResult = await pool.query(`
-      SELECT s.* 
-      FROM services s
-      ORDER BY s.id DESC
-    `);
-    
-    const services = servicesResult.rows;
-    console.log(`Pronađeno ukupno ${services.length} servisa.\n`);
+    const allServices = await db
+      .select()
+      .from(services)
+      .orderBy(sql`${services.id} DESC`);
+    console.log(`Pronađeno ukupno ${allServices.length} servisa.\n`);
     
     // Analiza svakog servisa
     console.log("Detaljna analiza problematičnih servisa:");
     console.log("-----------------------------------------");
     
-    for (const service of services) {
+    for (const service of allServices) {
       let issues: string[] = [];
       
       // 1. Provjera integriteta klijenta
-      const clientResult = await pool.query(`
-        SELECT * FROM clients 
-        WHERE id = $1
-      `, [service.client_id]);
+      const clientResult = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, service.clientId));
       
-      if (clientResult.rows.length === 0) {
-        issues.push(`Nepostojeći klijent (ID: ${service.client_id})`);
+      if (clientResult.length === 0) {
+        issues.push(`Nepostojeći klijent (ID: ${service.clientId})`);
       } else {
-        const client = clientResult.rows[0];
-        if (!client.full_name) {
+        const client = clientResult[0];
+        if (!client.fullName) {
           issues.push(`Klijent bez imena (ID: ${client.id})`);
         }
         if (!client.phone) {
@@ -55,69 +54,84 @@ async function identifyProblematicServices() {
       }
       
       // 2. Provjera integriteta uređaja
-      const applianceResult = await pool.query(`
-        SELECT a.*, c.name as category_name, m.name as manufacturer_name 
-        FROM appliances a
-        LEFT JOIN appliance_categories c ON a.category_id = c.id
-        LEFT JOIN manufacturers m ON a.manufacturer_id = m.id
-        WHERE a.id = $1
-      `, [service.appliance_id]);
+      const applianceResult = await db
+        .select({
+          id: appliances.id,
+          categoryId: appliances.categoryId,
+          manufacturerId: appliances.manufacturerId,
+          model: appliances.model,
+          serialNumber: appliances.serialNumber,
+          categoryName: applianceCategories.name,
+          manufacturerName: manufacturers.name,
+        })
+        .from(appliances)
+        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .where(eq(appliances.id, service.applianceId));
       
-      if (applianceResult.rows.length === 0) {
-        issues.push(`Nepostojeći uređaj (ID: ${service.appliance_id})`);
+      if (applianceResult.length === 0) {
+        issues.push(`Nepostojeći uređaj (ID: ${service.applianceId})`);
       } else {
-        const appliance = applianceResult.rows[0];
-        if (!appliance.category_name) {
+        const appliance = applianceResult[0];
+        if (!appliance.categoryName) {
           issues.push(`Uređaj bez kategorije ili sa nepostojećom kategorijom (ID: ${appliance.id})`);
         }
-        if (!appliance.manufacturer_name) {
+        if (!appliance.manufacturerName) {
           issues.push(`Uređaj bez proizvođača ili sa nepostojećim proizvođačem (ID: ${appliance.id})`);
         }
       }
       
       // 3. Provjera tehničara (ako je dodeljen)
-      if (service.technician_id) {
-        const technicianResult = await pool.query(`
-          SELECT * FROM technicians 
-          WHERE id = $1
-        `, [service.technician_id]);
+      if (service.technicianId) {
+        const technicianResult = await db
+          .select()
+          .from(technicians)
+          .where(eq(technicians.id, service.technicianId));
         
-        if (technicianResult.rows.length === 0) {
-          issues.push(`Nepostojeći serviser (ID: ${service.technician_id})`);
+        if (technicianResult.length === 0) {
+          issues.push(`Nepostojeći serviser (ID: ${service.technicianId})`);
         }
       }
       
       // 4. Provjera poslovnog partnera (ako postoji)
-      if (service.business_partner_id) {
-        const partnerResult = await pool.query(`
-          SELECT * FROM users 
-          WHERE id = $1 AND role = 'business'
-        `, [service.business_partner_id]);
+      if (service.businessPartnerId) {
+        const partnerResult = await db
+          .select()
+          .from(users)
+          .where(sql`${users.id} = ${service.businessPartnerId} AND ${users.role} = 'business'`);
         
-        if (partnerResult.rows.length === 0) {
-          issues.push(`Nepostojeći poslovni partner (ID: ${service.business_partner_id})`);
+        if (partnerResult.length === 0) {
+          issues.push(`Nepostojeći poslovni partner (ID: ${service.businessPartnerId})`);
         }
       }
       
       // 5. Provjera za JSON podatke koji mogu uzrokovati probleme
       try {
-        if (service.used_parts) JSON.parse(service.used_parts);
+        if (service.usedParts) JSON.parse(service.usedParts);
       } catch (e) {
-        issues.push(`Nevalidan JSON u used_parts (${service.used_parts})`);
+        issues.push(`Nevalidan JSON u used_parts (${service.usedParts})`);
       }
       
       // 6. Provjera za neuobičajeno dugačke tekstualne vrijednosti
-      const textFields = ['description', 'technician_notes', 'machine_notes'];
-      for (const field of textFields) {
-        if (service[field] && service[field].length > 2000) {
-          issues.push(`Neuobičajeno dugačak tekst u polju "${field}" (${service[field].length} karaktera)`);
+      const textFieldChecks = [
+        { field: 'description', value: service.description },
+        { field: 'technician_notes', value: service.technicianNotes },
+        { field: 'machine_notes', value: service.machineNotes }
+      ];
+      for (const { field, value } of textFieldChecks) {
+        if (value && value.length > 2000) {
+          issues.push(`Neuobičajeno dugačak tekst u polju "${field}" (${value.length} karaktera)`);
         }
       }
       
       // 7. Provjera NULL vrijednosti u ne-nullable poljima
-      const requiredFields = ['description', 'status', 'created_at'];
-      for (const field of requiredFields) {
-        if (service[field] === null || service[field] === undefined) {
+      const requiredFieldChecks = [
+        { field: 'description', value: service.description },
+        { field: 'status', value: service.status },
+        { field: 'created_at', value: service.createdAt }
+      ];
+      for (const { field, value } of requiredFieldChecks) {
+        if (value === null || value === undefined) {
           issues.push(`Nedostaje obavezno polje "${field}"`);
         }
       }
@@ -134,11 +148,11 @@ async function identifyProblematicServices() {
           id: service.id,
           cause: issues.join('; '),
           details: {
-            clientId: service.client_id,
-            applianceId: service.appliance_id,
+            clientId: service.clientId,
+            applianceId: service.applianceId,
             description: service.description?.substring(0, 100) + (service.description?.length > 100 ? '...' : ''),
             status: service.status,
-            createdAt: service.created_at
+            createdAt: service.createdAt
           },
           severity
         });
@@ -226,7 +240,8 @@ async function identifyProblematicServices() {
   } catch (error) {
     console.error("Greška prilikom analize servisa:", error);
   } finally {
-    await pool.end();
+    // Drizzle handles connection pooling automatically
+    console.log("Konekcija završena.");
   }
 }
 
