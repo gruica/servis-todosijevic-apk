@@ -1,6 +1,8 @@
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { technicians, users } from "../shared/schema";
+import { eq, sql } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 
@@ -15,25 +17,37 @@ async function createFreshTechnicianUsers() {
     console.log("Povezivanje sa bazom podataka...");
 
     // 1. Dohvati sve servisere
-    const technicians = (await pool.query(`
-      SELECT id, full_name, email, phone, specialization 
-      FROM technicians
-      WHERE active = true
-      ORDER BY id
-    `)).rows;
+    const techniciansData = await db.select({
+      id: technicians.id,
+      full_name: technicians.fullName,
+      email: technicians.email,
+      phone: technicians.phone,
+      specialization: technicians.specialization
+    })
+    .from(technicians)
+    .where(eq(technicians.active, true))
+    .orderBy(technicians.id);
 
-    console.log(`Pronađeno ${technicians.length} aktivnih servisera.`);
+    console.log(`Pronađeno ${techniciansData.length} aktivnih servisera.`);
 
     // 2. Kreiraj novu listu korisnika za kreiranje
-    const usersToCreate = [];
+    const usersToCreate: Array<{
+      username: string;
+      fullName: string;
+      technicianId: number;
+    }> = [];
     
-    for (const tech of technicians) {
+    for (const tech of techniciansData) {
       // Proveri da li postoji korisnik za ovog servisera
-      const existingUser = (await pool.query(`
-        SELECT id, username, full_name 
-        FROM users
-        WHERE technician_id = $1
-      `, [tech.id])).rows[0];
+      const existingUser = await db.select({
+        id: users.id,
+        username: users.username,
+        full_name: users.fullName
+      })
+      .from(users)
+      .where(eq(users.technicianId, tech.id))
+      .limit(1)
+      .then(result => result[0]);
       
       if (existingUser) {
         console.log(`Korisnik već postoji za servisera ${tech.full_name}: ${existingUser.username}`);
@@ -41,11 +55,15 @@ async function createFreshTechnicianUsers() {
       }
       
       // Dodaj servisera za kreiranje
-      usersToCreate.push({
-        username: tech.email,
-        fullName: tech.full_name,
-        technicianId: tech.id
-      });
+      if (tech.email) {
+        usersToCreate.push({
+          username: tech.email,
+          fullName: tech.full_name,
+          technicianId: tech.id
+        });
+      } else {
+        console.log(`PRESKAČEM: Serviser ${tech.full_name} nema email adresu`);
+      }
     }
 
     console.log(`\nPotrebno je kreirati ${usersToCreate.length} novih korisnika.`);
@@ -56,9 +74,11 @@ async function createFreshTechnicianUsers() {
     
     for (const user of usersToCreate) {
       // Prvo, proveri da li korisničko ime već postoji
-      const usernameExists = (await pool.query(`
-        SELECT id FROM users WHERE username = $1
-      `, [user.username])).rowCount > 0;
+      const usernameExists = await db.select({ id: users.id })
+        .from(users)
+        .where(eq(users.username, user.username))
+        .limit(1)
+        .then(result => result.length > 0);
       
       if (usernameExists) {
         console.log(`PRESKAČEM: Korisničko ime ${user.username} već postoji u bazi`);
@@ -66,26 +86,37 @@ async function createFreshTechnicianUsers() {
       }
       
       // Kreiraj korisnika
-      const result = await pool.query(`
-        INSERT INTO users (username, password, full_name, role, technician_id)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, username, full_name, role
-      `, [user.username, hashedPassword, user.fullName, 'technician', user.technicianId]);
-      
-      const newUser = result.rows[0];
+      const [newUser] = await db.insert(users)
+        .values({
+          username: user.username,
+          password: hashedPassword,
+          fullName: user.fullName,
+          role: 'technician',
+          technicianId: user.technicianId
+        })
+        .returning({
+          id: users.id,
+          username: users.username,
+          full_name: users.fullName,
+          role: users.role
+        });
       console.log(`KREIRAN: Korisnik ${newUser.username} (ID=${newUser.id}) za servisera ${user.fullName} (ID=${user.technicianId})`);
     }
 
     // 4. Ispis trenutnog stanja
     console.log("\nTrenutni serviserski nalozi:");
-    const currentUsers = (await pool.query(`
-      SELECT u.id as user_id, u.username, u.full_name as user_name, 
-             u.technician_id, t.full_name as technician_name, t.email as tech_email
-      FROM users u
-      JOIN technicians t ON u.technician_id = t.id
-      WHERE u.role = 'technician'
-      ORDER BY t.id
-    `)).rows;
+    const currentUsers = await db.select({
+      user_id: users.id,
+      username: users.username,
+      user_name: users.fullName,
+      technician_id: users.technicianId,
+      technician_name: technicians.fullName,
+      tech_email: technicians.email
+    })
+    .from(users)
+    .innerJoin(technicians, eq(users.technicianId, technicians.id))
+    .where(eq(users.role, 'technician'))
+    .orderBy(technicians.id);
     
     for (const user of currentUsers) {
       console.log(`Korisnik: ID=${user.user_id}, Username=${user.username}`);
@@ -98,8 +129,6 @@ async function createFreshTechnicianUsers() {
 
   } catch (error) {
     console.error("Greška pri kreiranju korisnika servisera:", error);
-  } finally {
-    await pool.end();
   }
 }
 
