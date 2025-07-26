@@ -1,4 +1,5 @@
-import { db, pool } from "../server/db";
+import { db } from "../server/db";
+import { sql } from "drizzle-orm";
 
 /**
  * Skripta za ažuriranje šeme baze podataka
@@ -9,7 +10,7 @@ async function updateBusinessPartnerColumns() {
   
   try {
     // Dodavanje kolona u users tabelu
-    await pool.query(`
+    await db.execute(sql`
       DO $$
       BEGIN
         BEGIN
@@ -29,7 +30,7 @@ async function updateBusinessPartnerColumns() {
     console.log("✓ Uspešno dodate kolone u users tabelu.");
     
     // Dodavanje kolona u services tabelu
-    await pool.query(`
+    await db.execute(sql`
       DO $$
       BEGIN
         BEGIN
@@ -52,7 +53,7 @@ async function updateBusinessPartnerColumns() {
   } catch (error) {
     console.error("❌ Greška pri ažuriranju kolona za poslovne partnere:", error);
   } finally {
-    await pool.end();
+    // Connection is managed by Drizzle, no need to manually close
   }
 }
 
