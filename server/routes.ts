@@ -7859,6 +7859,93 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Get Com Plus appliances (admin only - filtered by Com Plus brands)
+  app.get("/api/complus/appliances", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const allAppliances = await storage.getAllAppliances();
+      
+      // Filter appliances for Com Plus brands only
+      const complusAppliances = allAppliances.filter((appliance: any) => 
+        COM_PLUS_BRANDS.includes(appliance.manufacturerName)
+      );
+
+      res.json(complusAppliances);
+    } catch (error) {
+      console.error("Error fetching Com Plus appliances:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju Com Plus aparata" });
+    }
+  });
+
+  // Get Com Plus clients (admin only - clients with Com Plus appliances)
+  app.get("/api/complus/clients", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const allServices = await storage.getAllServices();
+      
+      // Get unique client IDs from Com Plus services
+      const complusServices = allServices.filter((service: any) => 
+        COM_PLUS_BRANDS.includes(service.manufacturerName)
+      );
+      
+      const complusClientIds = [...new Set(complusServices.map((s: any) => s.clientId))];
+      
+      // Get client details for Com Plus clients
+      const complusClients = [];
+      for (const clientId of complusClientIds) {
+        const client = await storage.getClient(clientId);
+        if (client) {
+          complusClients.push(client);
+        }
+      }
+
+      res.json(complusClients);
+    } catch (error) {
+      console.error("Error fetching Com Plus clients:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju Com Plus klijenata" });
+    }
+  });
+
+  // Update Com Plus service (admin only)
+  app.put("/api/complus/services/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      const updateData = req.body;
+
+      // Verify this is a Com Plus service before updating
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      // Get appliance and manufacturer to verify it's Com Plus
+      const appliance = await storage.getAppliance(service.applianceId);
+      const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+      
+      if (!manufacturer || !COM_PLUS_BRANDS.includes(manufacturer.name)) {
+        return res.status(403).json({ error: "Možete ažurirati samo Com Plus servise" });
+      }
+
+      // Update the service
+      const updatedService = await storage.updateService(serviceId, updateData);
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error updating Com Plus service:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju Com Plus servisa" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -122,10 +122,20 @@ export default function ComplusDashboard() {
     },
   });
 
-  // Mutation za ažuriranje servisa
+  // Query za Com Plus aparate
+  const { data: appliances = [] } = useQuery<any[]>({
+    queryKey: ["/api/complus/appliances"],
+  });
+
+  // Query za Com Plus klijente
+  const { data: clients = [] } = useQuery<any[]>({
+    queryKey: ["/api/complus/clients"],
+  });
+
+  // Mutation za ažuriranje servisa - koristi Com Plus endpoint
   const updateServiceMutation = useMutation({
     mutationFn: async ({ serviceId, data }: { serviceId: number; data: any }) => {
-      const response = await apiRequest(`/api/admin/services/${serviceId}`, {
+      const response = await apiRequest(`/api/complus/services/${serviceId}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       });
@@ -134,7 +144,7 @@ export default function ComplusDashboard() {
     onSuccess: () => {
       toast({
         title: "Uspešno!",
-        description: "Servis je uspešno ažuriran.",
+        description: "Com Plus servis je uspešno ažuriran.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
       setEditingService(null);
@@ -144,7 +154,7 @@ export default function ComplusDashboard() {
       console.error("Greška pri ažuriranju servisa:", error);
       toast({
         title: "Greška",
-        description: "Došlo je do greške pri ažuriranju servisa.",
+        description: "Greška pri ažuriranju Com Plus servisa.",
         variant: "destructive",
       });
     },
@@ -679,6 +689,96 @@ export default function ComplusDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Com Plus aparate sekcija */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Package className="w-5 h-5 mr-2" />
+              Com Plus aparati ({appliances.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {appliances.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Nema aparata Com Plus brendova</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {appliances.slice(0, 9).map((appliance: any) => (
+                  <div key={appliance.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-sm">{appliance.categoryName}</h3>
+                        <p className="text-sm text-blue-600 font-medium">{appliance.manufacturerName}</p>
+                        <p className="text-sm text-gray-600">{appliance.model}</p>
+                        {appliance.serialNumber && (
+                          <p className="text-xs text-gray-500 mt-1">S/N: {appliance.serialNumber}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {appliance.manufacturerName}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {appliances.length > 9 && (
+                  <div className="col-span-full text-center">
+                    <Button variant="outline" size="sm">
+                      Prikaži sve ({appliances.length})
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Com Plus klijenti sekcija */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Com Plus klijenti ({clients.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {clients.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Nema klijenata sa Com Plus aparatima</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {clients.slice(0, 6).map((client: any) => (
+                  <div key={client.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium">{client.fullName}</h3>
+                        <p className="text-sm text-gray-600">{client.phone}</p>
+                        <p className="text-sm text-gray-500">{client.city}</p>
+                        {client.address && (
+                          <p className="text-xs text-gray-400 mt-1">{client.address}</p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                        Com Plus
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {clients.length > 6 && (
+                  <div className="col-span-full text-center">
+                    <Button variant="outline" size="sm">
+                      Prikaži sve ({clients.length})
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
