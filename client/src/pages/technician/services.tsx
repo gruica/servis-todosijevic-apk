@@ -88,6 +88,7 @@ function SparePartsDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isKeyboardOpen } = useMobileDialogPosition();
 
   const isButtonDisabled = isSubmitting || !partName.trim() || !warrantyStatus;
   
@@ -172,7 +173,24 @@ function SparePartsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent 
+        className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+        style={{
+          position: 'fixed',
+          top: isKeyboardOpen ? '30%' : '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+          maxHeight: isKeyboardOpen ? '60vh' : '80vh',
+          overflowY: 'auto',
+          width: '95vw',
+          maxWidth: '500px',
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          transition: 'top 0.3s ease, max-height 0.3s ease'
+        }}>
         <DialogHeader>
           <DialogTitle>Naruči rezervni deo</DialogTitle>
           <DialogDescription>
@@ -1654,9 +1672,29 @@ export default function TechnicianServices() {
 
       {/* Dialog za označavanje klijenta kao nedostupnog */}
       <Dialog open={clientUnavailableDialogOpen} onOpenChange={setClientUnavailableDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+        <DialogContent 
+          className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+          style={{
+            position: 'fixed',
+            top: isKeyboardOpen ? '30%' : '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            maxHeight: isKeyboardOpen ? '60vh' : '80vh',
+            overflowY: 'auto',
+            width: '95vw',
+            maxWidth: '500px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'top 0.3s ease, max-height 0.3s ease'
+          }}>
           <DialogHeader>
             <DialogTitle>Klijent nedostupan</DialogTitle>
+            <DialogDescription>
+              Prijavite da klijent nije dostupan i dodajte napomene za ponovno zakazivanje servisa.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -1715,9 +1753,29 @@ export default function TechnicianServices() {
 
       {/* Dialog za preuzimanje uređaja */}
       <Dialog open={devicePickupDialogOpen} onOpenChange={setDevicePickupDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+        <DialogContent 
+          className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+          style={{
+            position: 'fixed',
+            top: isKeyboardOpen ? '30%' : '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            maxHeight: isKeyboardOpen ? '60vh' : '80vh',
+            overflowY: 'auto',
+            width: '95vw',
+            maxWidth: '500px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'top 0.3s ease, max-height 0.3s ease'
+          }}>
           <DialogHeader>
             <DialogTitle>Preuzimanje uređaja</DialogTitle>
+            <DialogDescription>
+              Označite da je uređaj preuzet za popravku u radionici. Dodajte napomene o stanju uređaja.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="py-2 sm:py-4">
@@ -1810,7 +1868,24 @@ export default function TechnicianServices() {
 
       {/* Dialog za odbijanje servisa od strane klijenta */}
       <Dialog open={customerRefusalDialogOpen} onOpenChange={setCustomerRefusalDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6">
+        <DialogContent 
+          className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+          style={{
+            position: 'fixed',
+            top: isKeyboardOpen ? '30%' : '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            maxHeight: isKeyboardOpen ? '60vh' : '80vh',
+            overflowY: 'auto',
+            width: '95vw',
+            maxWidth: '500px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'top 0.3s ease, max-height 0.3s ease'
+          }}>
           <DialogHeader>
             <DialogTitle className="text-red-600">
               <XCircle className="h-5 w-5 inline mr-2" />
