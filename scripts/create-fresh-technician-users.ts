@@ -69,7 +69,10 @@ async function createFreshTechnicianUsers() {
     console.log(`\nPotrebno je kreirati ${usersToCreate.length} novih korisnika.`);
 
     // 3. Kreiraj korisnike
-    const password = "serviser123";
+    const password = process.env.DEFAULT_TECHNICIAN_PASSWORD || "temp123";
+    if (!process.env.DEFAULT_TECHNICIAN_PASSWORD) {
+      console.warn("⚠️  WARNING: DEFAULT_TECHNICIAN_PASSWORD environment variable not set. Using temporary password.");
+    }
     const hashedPassword = await hashPassword(password);
     
     for (const user of usersToCreate) {
@@ -125,7 +128,7 @@ async function createFreshTechnicianUsers() {
     }
 
     console.log(`\nProces kreiranja korisničkih naloga servisera je završen.`);
-    console.log(`Šifra za nove naloge servisera je: ${password}`);
+    console.log(`Šifra za nove naloge servisera je postavljena iz environment varijable.`);
 
   } catch (error) {
     console.error("Greška pri kreiranju korisnika servisera:", error);
