@@ -132,6 +132,14 @@ export default function BusinessDashboard() {
               <PlusCircle className="mr-2 h-4 w-4" />
               Novi servisni zahtev
             </Button>
+            <Button
+              variant="default"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate("/business/complus")}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Com Plus servis
+            </Button>
           </div>
         </div>
         

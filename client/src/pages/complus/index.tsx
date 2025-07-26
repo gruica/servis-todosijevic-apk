@@ -72,6 +72,21 @@ export default function ComplusDashboard() {
     cost: "",
     status: ""
   });
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [clientEditFormData, setClientEditFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: ""
+  });
+  const [editingAppliance, setEditingAppliance] = useState<any>(null);
+  const [applianceEditFormData, setApplianceEditFormData] = useState({
+    model: "",
+    serialNumber: "",
+    purchaseDate: "",
+    notes: ""
+  });
   const { toast } = useToast();
 
   // Query za Com Plus servise
@@ -160,6 +175,64 @@ export default function ComplusDashboard() {
     },
   });
 
+  // Mutation za ažuriranje klijenta - COM PLUS client editing
+  const updateClientMutation = useMutation({
+    mutationFn: async ({ clientId, data }: { clientId: number; data: any }) => {
+      const response = await apiRequest(`/api/complus/clients/${clientId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno!",
+        description: "Podaci klijenta su uspešno ažurirani.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/clients"] });
+      setEditingClient(null);
+      setClientEditFormData({ fullName: "", phone: "", email: "", address: "", city: "" });
+    },
+    onError: (error) => {
+      console.error("Greška pri ažuriranju klijenta:", error);
+      toast({
+        title: "Greška",
+        description: "Greška pri ažuriranju Com Plus klijenta.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation za ažuriranje aparata - COM PLUS appliance editing
+  const updateApplianceMutation = useMutation({
+    mutationFn: async ({ applianceId, data }: { applianceId: number; data: any }) => {
+      const response = await apiRequest(`/api/complus/appliances/${applianceId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno!",
+        description: "Podaci aparata su uspešno ažurirani.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/appliances"] });
+      setEditingAppliance(null);
+      setApplianceEditFormData({ model: "", serialNumber: "", purchaseDate: "", notes: "" });
+    },
+    onError: (error) => {
+      console.error("Greška pri ažuriranju aparata:", error);
+      toast({
+        title: "Greška",
+        description: "Greška pri ažuriranju Com Plus aparata.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAssignTechnician = () => {
     if (!selectedService || !selectedTechnician) {
       toast({
@@ -204,6 +277,110 @@ export default function ComplusDashboard() {
 
     updateServiceMutation.mutate({
       serviceId: editingService.id,
+      data: updateData
+    });
+  };
+
+  // Handler funkcije za client editing
+  const handleEditClient = (service: Service) => {
+    // Izvlačimo client podatke iz service objekta
+    setEditingClient({
+      id: service.id, // We'll extract clientId from service
+      clientName: service.clientName,
+      clientPhone: service.clientPhone,
+      clientCity: service.clientCity
+    });
+    setClientEditFormData({
+      fullName: service.clientName || "",
+      phone: service.clientPhone || "",
+      email: "", // We'll need to fetch this
+      address: "", // We'll need to fetch this  
+      city: service.clientCity || ""
+    });
+  };
+
+  const handleSaveClientChanges = () => {
+    if (!editingClient) return;
+
+    // Find the client from services
+    const currentService = services.find(s => s.id === editingClient.id);
+    if (!currentService) return;
+
+    const updateData: any = {};
+    
+    if (clientEditFormData.fullName !== currentService.clientName) {
+      updateData.fullName = clientEditFormData.fullName;
+    }
+    
+    if (clientEditFormData.phone !== currentService.clientPhone) {
+      updateData.phone = clientEditFormData.phone;
+    }
+    
+    if (clientEditFormData.email) {
+      updateData.email = clientEditFormData.email;
+    }
+    
+    if (clientEditFormData.address) {
+      updateData.address = clientEditFormData.address;
+    }
+    
+    if (clientEditFormData.city !== currentService.clientCity) {
+      updateData.city = clientEditFormData.city;
+    }
+
+    // Extract clientId from service (we'll need to add this to the Service interface)
+    const clientId = (currentService as any).clientId || editingClient.id;
+
+    updateClientMutation.mutate({
+      clientId: clientId,
+      data: updateData
+    });
+  };
+
+  // Handler funkcije za appliance editing
+  const handleEditAppliance = (service: Service) => {
+    setEditingAppliance({
+      id: service.id,
+      model: service.model,
+      serialNumber: service.serialNumber
+    });
+    setApplianceEditFormData({
+      model: service.model || "",
+      serialNumber: service.serialNumber || "",
+      purchaseDate: "",
+      notes: ""
+    });
+  };
+
+  const handleSaveApplianceChanges = () => {
+    if (!editingAppliance) return;
+
+    const currentService = services.find(s => s.id === editingAppliance.id);
+    if (!currentService) return;
+
+    const updateData: any = {};
+    
+    if (applianceEditFormData.model !== currentService.model) {
+      updateData.model = applianceEditFormData.model;
+    }
+    
+    if (applianceEditFormData.serialNumber !== currentService.serialNumber) {
+      updateData.serialNumber = applianceEditFormData.serialNumber;
+    }
+    
+    if (applianceEditFormData.purchaseDate) {
+      updateData.purchaseDate = applianceEditFormData.purchaseDate;
+    }
+    
+    if (applianceEditFormData.notes) {
+      updateData.notes = applianceEditFormData.notes;
+    }
+
+    // Extract applianceId from service
+    const applianceId = (currentService as any).applianceId || editingAppliance.id;
+
+    updateApplianceMutation.mutate({
+      applianceId: applianceId,
       data: updateData
     });
   };
@@ -432,6 +609,14 @@ export default function ComplusDashboard() {
                         <td className="py-3 px-4 font-medium">#{service.id}</td>
                         <td className="py-3 px-4">
                           <div className="font-medium">{service.clientName}</div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-blue-600 p-0 h-auto font-normal"
+                            onClick={() => handleEditClient(service)}
+                          >
+                            Izmeni podatke
+                          </Button>
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-600">{service.clientPhone}</td>
                         <td className="py-3 px-4 text-sm text-gray-600">{service.clientCity}</td>
@@ -443,6 +628,14 @@ export default function ComplusDashboard() {
                         <td className="py-3 px-4 text-sm">
                           <div className="font-medium">{service.model}</div>
                           <div className="text-gray-500 text-xs">{service.serialNumber}</div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-blue-600 p-0 h-auto font-normal mt-1"
+                            onClick={() => handleEditAppliance(service)}
+                          >
+                            Izmeni aparat
+                          </Button>
                         </td>
                         <td className="py-3 px-4">
                           <Badge className={getStatusColor(service.status)}>
@@ -784,6 +977,123 @@ export default function ComplusDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* CLIENT EDITING DIALOG - Com Plus client data editing */}
+      <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Izmeni podatke klijenta</DialogTitle>
+            <DialogDescription>
+              Ažurirajte kontakt podatke i informacije o klijentu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Ime i prezime</label>
+              <Input
+                value={clientEditFormData.fullName}
+                onChange={(e) => setClientEditFormData(prev => ({ ...prev, fullName: e.target.value }))}
+                placeholder="Unesite ime i prezime"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Telefon</label>
+              <Input
+                value={clientEditFormData.phone}
+                onChange={(e) => setClientEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="Unesite broj telefona"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={clientEditFormData.email}
+                onChange={(e) => setClientEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Unesite email adresu"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Adresa</label>
+              <Input
+                value={clientEditFormData.address}
+                onChange={(e) => setClientEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Unesite adresu"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Grad</label>
+              <Input
+                value={clientEditFormData.city}
+                onChange={(e) => setClientEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                placeholder="Unesite grad"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setEditingClient(null)}>
+              Otkaži
+            </Button>
+            <Button onClick={handleSaveClientChanges} disabled={updateClientMutation.isPending}>
+              {updateClientMutation.isPending ? "Čuva..." : "Sačuvaj"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* APPLIANCE EDITING DIALOG - Com Plus appliance data editing */}
+      <Dialog open={!!editingAppliance} onOpenChange={(open) => !open && setEditingAppliance(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Izmeni podatke aparata</DialogTitle>
+            <DialogDescription>
+              Ažurirajte specifikacije i informacije o aparatu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Model</label>
+              <Input
+                value={applianceEditFormData.model}
+                onChange={(e) => setApplianceEditFormData(prev => ({ ...prev, model: e.target.value }))}
+                placeholder="Unesite model aparata"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Serijski broj</label>
+              <Input
+                value={applianceEditFormData.serialNumber}
+                onChange={(e) => setApplianceEditFormData(prev => ({ ...prev, serialNumber: e.target.value }))}
+                placeholder="Unesite serijski broj"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Datum kupovine</label>
+              <Input
+                type="date"
+                value={applianceEditFormData.purchaseDate}
+                onChange={(e) => setApplianceEditFormData(prev => ({ ...prev, purchaseDate: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Napomene</label>
+              <Input
+                value={applianceEditFormData.notes}
+                onChange={(e) => setApplianceEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Dodatne napomene o aparatu"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setEditingAppliance(null)}>
+              Otkaži
+            </Button>
+            <Button onClick={handleSaveApplianceChanges} disabled={updateApplianceMutation.isPending}>
+              {updateApplianceMutation.isPending ? "Čuva..." : "Sačuvaj"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

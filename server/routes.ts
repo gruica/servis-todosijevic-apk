@@ -7912,6 +7912,107 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // COM PLUS SERVICE CREATION by business partner Roberto Ivezić
+  app.post("/api/complus/services", jwtAuth, async (req, res) => {
+    try {
+      console.log("=== COM PLUS SERVICE CREATION FROM BUSINESS PARTNER ===");
+      console.log("Business partner user:", req.user);
+      console.log("Form data received:", req.body);
+
+      if (req.user.role !== "business_partner" && req.user.role !== "business") {
+        return res.status(403).json({ error: "Samo poslovni partneri mogu kreirati Com Plus servise" });
+      }
+
+      const formData = req.body;
+      
+      // Kreiranje klijenta
+      let clientId;
+      if (formData.clientId) {
+        clientId = parseInt(formData.clientId);
+      } else {
+        const clientData = {
+          fullName: formData.clientFullName,
+          phone: formData.clientPhone,
+          email: formData.clientEmail || null,
+          address: formData.clientAddress || null,
+          city: formData.clientCity || null,
+          isBusinessPartnerClient: true,
+          createdBy: req.user.id
+        };
+        
+        const newClient = await storage.createClient(clientData);
+        clientId = newClient.id;
+        console.log("Created new client for Com Plus:", clientId);
+      }
+
+      // Kreiranje aparata
+      let applianceId;
+      if (formData.applianceId) {
+        applianceId = parseInt(formData.applianceId);
+      } else {
+        const applianceData = {
+          clientId: clientId,
+          categoryId: parseInt(formData.categoryId),
+          manufacturerId: parseInt(formData.manufacturerId),
+          model: formData.model || null,
+          serialNumber: formData.serialNumber || null,
+          purchaseDate: formData.purchaseDate ? new Date(formData.purchaseDate) : null,
+          notes: formData.applianceNotes || null,
+          isComPlusDevice: true
+        };
+        
+        const newAppliance = await storage.createAppliance(applianceData);
+        applianceId = newAppliance.id;
+        console.log("Created new Com Plus appliance:", applianceId);
+      }
+
+      // Kreiranje servisa
+      const serviceData = {
+        clientId: clientId,
+        applianceId: applianceId,
+        description: formData.description,
+        status: "pending",
+        warrantyStatus: "u garanciji", // Default for Com Plus
+        createdBy: req.user.id,
+        businessPartnerId: req.user.id,
+        isComplusService: true, // Mark as Com Plus service
+        assignedToTedora: true // Route directly to Teodora
+      };
+
+      const newService = await storage.createService(serviceData);
+      console.log("Created Com Plus service:", newService.id);
+
+      // Pošalji notifikaciju Teodori Todosijević (User ID: 43)
+      try {
+        await storage.createNotification({
+          userId: 43, // Teodora ID
+          type: "service_created_by_partner",
+          title: "Novi Com Plus servis od Roberto Ivezića",
+          message: `Kreiran Com Plus servis #${newService.id} za klijenta ${formData.clientFullName}`,
+          relatedServiceId: newService.id,
+          isRead: false,
+          createdAt: new Date()
+        });
+        console.log("Notification sent to Teodora for Com Plus service");
+      } catch (notificationError) {
+        console.error("Error sending notification to Teodora:", notificationError);
+      }
+
+      res.json({
+        success: true,
+        message: "Com Plus servis je uspešno kreiran i prosleđen Teodori Todosijević",
+        service: newService
+      });
+
+    } catch (error) {
+      console.error("❌ COM PLUS SERVICE CREATION ERROR:", error);
+      res.status(500).json({ 
+        error: "Greška pri kreiranju Com Plus servisa",
+        details: error.message 
+      });
+    }
+  });
+
   // Update Com Plus service (admin only)
   app.put("/api/complus/services/:id", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {
@@ -7943,6 +8044,267 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error updating Com Plus service:", error);
       res.status(500).json({ error: "Greška pri ažuriranju Com Plus servisa" });
+    }
+  });
+
+  // Update Com Plus client data (admin only)
+  app.put("/api/complus/clients/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const clientId = parseInt(req.params.id);
+      const updateData = req.body;
+
+      console.log(`[COMPLUS CLIENT UPDATE] Updating client ${clientId} with data:`, updateData);
+
+      // Verify this client has Com Plus services
+      const allServices = await storage.getAllServices();
+      const clientServices = allServices.filter((service: any) => 
+        service.clientId === clientId && COM_PLUS_BRANDS.includes(service.manufacturerName)
+      );
+
+      if (clientServices.length === 0) {
+        return res.status(403).json({ error: "Možete ažurirati samo klijente sa Com Plus servisima" });
+      }
+
+      // Update the client
+      const updatedClient = await storage.updateClient(clientId, updateData);
+      
+      console.log(`[COMPLUS CLIENT UPDATE] Client ${clientId} successfully updated`);
+      res.json(updatedClient);
+    } catch (error) {
+      console.error("Error updating Com Plus client:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju Com Plus klijenta" });
+    }
+  });
+
+  // Update Com Plus appliance data (admin only)  
+  app.put("/api/complus/appliances/:id", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const applianceId = parseInt(req.params.id);
+      const updateData = req.body;
+
+      console.log(`[COMPLUS APPLIANCE UPDATE] Updating appliance ${applianceId} with data:`, updateData);
+
+      // Verify this is a Com Plus appliance
+      const appliance = await storage.getAppliance(applianceId);
+      if (!appliance) {
+        return res.status(404).json({ error: "Aparat nije pronađen" });
+      }
+
+      const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+      if (!manufacturer || !COM_PLUS_BRANDS.includes(manufacturer.name)) {
+        return res.status(403).json({ error: "Možete ažurirati samo Com Plus aparate" });
+      }
+
+      // Update the appliance
+      const updatedAppliance = await storage.updateAppliance(applianceId, updateData);
+      
+      console.log(`[COMPLUS APPLIANCE UPDATE] Appliance ${applianceId} successfully updated`);
+      res.json(updatedAppliance);
+    } catch (error) {
+      console.error("Error updating Com Plus appliance:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju Com Plus aparata" });
+    }
+  });
+
+  // Create Com Plus service by Roberto Ivezić (business_partner role)
+  app.post("/api/complus/services", jwtAuth, async (req, res) => {
+    try {
+      console.log("=== KREIRANJE COM PLUS SERVISA OD STRANE ROBERTO IVEZIĆA ===");
+      console.log("Korisnik:", req.user);
+      console.log("Podaci iz forme:", req.body);
+
+      // Check if user is Roberto Ivezić or admin
+      if (req.user.role !== "business_partner" && req.user.role !== "admin") {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu za kreiranje Com Plus servisa",
+          message: "Samo poslovni partneri i administratori mogu kreirati Com Plus servise"
+        });
+      }
+
+      const {
+        clientId,
+        applianceId,
+        description,
+        // Dodatna polja za uređaj ako se novi kreira
+        categoryId,
+        manufacturerId,
+        model,
+        serialNumber,
+        purchaseDate,
+        applianceNotes,
+        // Dodatna polja za klijenta ako se novi kreira
+        clientFullName,
+        clientPhone,
+        clientEmail,
+        clientAddress,
+        clientCity
+      } = req.body;
+
+      // Osnovna validacija obaveznih polja
+      if (!description || description.trim().length === 0) {
+        console.error("Nedostaje opis servisa");
+        return res.status(400).json({
+          error: "Nedostaje opis servisa",
+          message: "Opis servisa je obavezno polje."
+        });
+      }
+
+      let finalClientId = clientId;
+      let finalApplianceId = applianceId;
+
+      // KREIRANJE NOVOG KLIJENTA AKO JE POTREBNO
+      if (!finalClientId && clientFullName && clientPhone) {
+        console.log("Kreiranje novog klijenta za Com Plus servis...");
+        
+        const clientData = {
+          fullName: clientFullName.trim(),
+          phone: clientPhone.trim(),
+          email: clientEmail?.trim() || null,
+          address: clientAddress?.trim() || null,
+          city: clientCity?.trim() || null
+        };
+
+        try {
+          const newClient = await storage.createClient(clientData);
+          finalClientId = newClient.id;
+          console.log(`Kreiran novi klijent sa ID: ${finalClientId}`);
+        } catch (clientError) {
+          console.error("Greška pri kreiranju klijenta:", clientError);
+          return res.status(500).json({
+            error: "Greška pri kreiranju klijenta",
+            message: "Došlo je do greške pri kreiranju klijenta. Molimo pokušajte ponovo."
+          });
+        }
+      }
+
+      // KREIRANJE NOVOG APARATA AKO JE POTREBNO
+      if (!finalApplianceId && categoryId && manufacturerId) {
+        console.log("Kreiranje novog aparata za Com Plus servis...");
+
+        // Verify this is a Com Plus manufacturer
+        const manufacturer = await storage.getManufacturer(manufacturerId);
+        if (!manufacturer || !COM_PLUS_BRANDS.includes(manufacturer.name)) {
+          return res.status(400).json({
+            error: "Nevaljan proizvođač",
+            message: "Možete kreirati servise samo za Com Plus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)"
+          });
+        }
+        
+        const applianceData = {
+          clientId: finalClientId!,
+          categoryId: categoryId,
+          manufacturerId: manufacturerId,
+          model: model?.trim() || null,
+          serialNumber: serialNumber?.trim() || null,
+          purchaseDate: purchaseDate || null,
+          notes: applianceNotes?.trim() || null
+        };
+
+        try {
+          const newAppliance = await storage.createAppliance(applianceData);
+          finalApplianceId = newAppliance.id;
+          console.log(`Kreiran novi aparat sa ID: ${finalApplianceId}`);
+        } catch (applianceError) {
+          console.error("Greška pri kreiranju aparata:", applianceError);
+          return res.status(500).json({
+            error: "Greška pri kreiranju aparata",
+            message: "Došlo je do greške pri kreiranju aparata. Molimo pokušajte ponovo."
+          });
+        }
+      }
+
+      // Konačna validacija da imamo sve potrebne ID-jeve
+      if (!finalClientId || !finalApplianceId) {
+        return res.status(400).json({
+          error: "Nedostaju podaci",
+          message: "Morate odabrati ili kreirati klijenta i aparat."
+        });
+      }
+
+      // KREIRANJE COM PLUS SERVISA
+      const serviceData = {
+        clientId: finalClientId,
+        applianceId: finalApplianceId,
+        description: description.trim(),
+        status: "pending" as const,
+        warrantyStatus: "u garanciji" as const, // Default for Com Plus services
+        businessPartnerId: req.user.id,
+        partnerCompanyName: req.user.companyName || "Roberto Ivezić - Com Plus Partner"
+      };
+
+      console.log("Kreiranje Com Plus servisa sa podacima:", serviceData);
+      
+      const newService = await storage.createService(serviceData);
+      console.log(`Kreiran novi Com Plus servis sa ID: ${newService.id}`);
+
+      // SLANJE OBAVEŠTENJA TEODORI TODOSIJEVIĆ (COM PLUS ADMINISTRATOR)
+      try {
+        const teodora = await storage.getUserByUsername("teodora@frigosistemtodosijevic.com");
+        if (teodora) {
+          const notificationService = new NotificationService(storage);
+          await notificationService.createNotification({
+            userId: teodora.id,
+            type: "service_created_by_partner",
+            title: "Novi Com Plus servis od Roberto Ivezića",
+            message: `Roberto Ivezić je kreirao novi Com Plus servis #${newService.id}`,
+            relatedServiceId: newService.id,
+            isRead: false
+          });
+          console.log(`Obaveštenje poslato Teodori za Com Plus servis #${newService.id}`);
+        }
+      } catch (notifError) {
+        console.error("Greška pri slanju obaveštenja Teodori:", notifError);
+        // Continue execution even if notification fails
+      }
+
+      // EMAIL OBAVEŠTENJA TEODORI
+      try {
+        if (emailService) {
+          const client = await storage.getClient(finalClientId);
+          const appliance = await storage.getAppliance(finalApplianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+
+          await emailService.sendBusinessPartnerServiceNotification({
+            serviceId: newService.id,
+            partnerName: req.user.fullName || "Roberto Ivezić",
+            companyName: req.user.companyName || "Roberto Ivezić - Com Plus Partner", 
+            clientName: client ? client.fullName : "Nepoznat klijent",
+            clientPhone: client ? client.phone : "Nepoznat telefon",
+            deviceCategory: category ? category.name : "Nepoznat tip aparata",
+            deviceManufacturer: manufacturer ? manufacturer.name : "Nepoznat proizvođač",
+            deviceModel: appliance ? appliance.model : null,
+            description: description,
+            adminEmail: "teodora@frigosistemtodosijevic.com" // Direct to Teodora instead of Jelena
+          });
+          console.log("Email obaveštenje poslato Teodori za novi Com Plus servis");
+        }
+      } catch (emailError) {
+        console.error("Greška pri slanju email obaveštenja:", emailError);
+        // Continue execution even if email fails
+      }
+
+      res.status(201).json({
+        ...newService,
+        success: true,
+        message: "Com Plus servis je uspešno kreiran i prosleđen Teodori Todosijević",
+        redirectTo: "complus"
+      });
+
+    } catch (error) {
+      console.error("Greška pri kreiranju Com Plus servisa:", error);
+      res.status(500).json({
+        error: "Greška servera",
+        message: "Došlo je do greške pri kreiranju Com Plus servisa. Molimo pokušajte ponovo."
+      });
     }
   });
 
