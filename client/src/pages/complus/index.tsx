@@ -65,6 +65,8 @@ export default function ComplusDashboard() {
   const [warrantyFilter, setWarrantyFilter] = useState("all");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState("");
+  const [viewingService, setViewingService] = useState<Service | null>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const { toast } = useToast();
 
   // Query za Com Plus servise
@@ -385,9 +387,88 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-1">
-                            <Button size="sm" variant="ghost" className="p-1" title="Pogledaj detalje">
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="p-1" 
+                                  title="Pogledaj detalje"
+                                  onClick={() => setViewingService(service)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Detalji servisa #{viewingService?.id}</DialogTitle>
+                                  <DialogDescription>
+                                    Kompletne informacije o Com Plus servisu
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* Osnovne informacije */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">KLIJENT</h4>
+                                      <p className="font-medium">{viewingService?.clientName}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.clientPhone}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.clientCity}</p>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">UREĐAJ</h4>
+                                      <p className="font-medium">{viewingService?.manufacturerName}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.model}</p>
+                                      <p className="text-xs text-gray-500">S/N: {viewingService?.serialNumber}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Status i garancija */}
+                                  <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">STATUS</h4>
+                                      <Badge className={getStatusColor(viewingService?.status || "")}>
+                                        {getStatusText(viewingService?.status || "")}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">GARANCIJA</h4>
+                                      <Badge variant={viewingService?.warrantyStatus === "u garanciji" ? "default" : "secondary"}>
+                                        {viewingService?.warrantyStatus}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">CENA</h4>
+                                      <p className="font-medium">{viewingService?.cost ? `${viewingService.cost}€` : "Nije definisana"}</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Serviser */}
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-gray-600 mb-2">SERVISER</h4>
+                                    <p className="font-medium">{viewingService?.technicianName || "Nije dodeljen"}</p>
+                                  </div>
+
+                                  {/* Opis */}
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-gray-600 mb-2">OPIS PROBLEMA</h4>
+                                    <p className="text-sm bg-gray-50 p-3 rounded">{viewingService?.description}</p>
+                                  </div>
+
+                                  {/* Datumi */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">KREIRAN</h4>
+                                      <p className="text-sm">{viewingService?.createdAt ? format(new Date(viewingService.createdAt), 'dd.MM.yyyy') : '-'}</p>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">ZAVRŠEN</h4>
+                                      <p className="text-sm">{viewingService?.completedDate ? format(new Date(viewingService.completedDate), 'dd.MM.yyyy HH:mm') : '-'}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                             {service.status === "pending" && (
                               <Dialog>
                                 <DialogTrigger asChild>
@@ -457,9 +538,74 @@ export default function ComplusDashboard() {
                                 </DialogContent>
                               </Dialog>
                             )}
-                            <Button size="sm" variant="ghost" className="p-1" title="Uredi servis">
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="p-1" 
+                                  title="Uredi servis"
+                                  onClick={() => setEditingService(service)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-lg">
+                                <DialogHeader>
+                                  <DialogTitle>Uredi Com Plus servis #{editingService?.id}</DialogTitle>
+                                  <DialogDescription>
+                                    Uredite osnovne informacije o servisu
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Opis problema</label>
+                                    <textarea 
+                                      className="w-full min-h-[100px] px-3 py-2 text-sm border rounded-md"
+                                      defaultValue={editingService?.description}
+                                      placeholder="Opišite problem sa uređajem..."
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Cena servisa (€)</label>
+                                    <input 
+                                      type="number"
+                                      className="w-full px-3 py-2 text-sm border rounded-md"
+                                      defaultValue={editingService?.cost || ""}
+                                      placeholder="0.00"
+                                      step="0.01"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Status servisa</label>
+                                    <Select defaultValue={editingService?.status}>
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Na čekanju</SelectItem>
+                                        <SelectItem value="assigned">Dodeljen</SelectItem>
+                                        <SelectItem value="scheduled">Zakazan</SelectItem>
+                                        <SelectItem value="in_progress">U toku</SelectItem>
+                                        <SelectItem value="completed">Završen</SelectItem>
+                                        <SelectItem value="cancelled">Otkazan</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div className="flex justify-end space-x-2 pt-4">
+                                    <Button variant="outline" onClick={() => setEditingService(null)}>
+                                      Otkaži
+                                    </Button>
+                                    <Button>
+                                      Sačuvaj izmene
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           </div>
                         </td>
                       </tr>
