@@ -30,6 +30,36 @@ import { RemovedPartsForm } from "@/components/technician/removed-parts-form";
 import { DialogDescription } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 
+// Hook za mobilno pozicioniranje dialoga
+function useMobileDialogPosition() {
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      // Detect keyboard on mobile by checking viewport height change
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const windowHeight = window.screen.height;
+      const keyboardThreshold = windowHeight * 0.75; // 75% of screen height
+      
+      setIsKeyboardOpen(viewportHeight < keyboardThreshold);
+    };
+    
+    // Modern browsers support visual viewport
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    } else {
+      // Fallback for older browsers
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+  
+  return { isKeyboardOpen };
+}
+
 // Functional Spare Parts Dialog Component
 function SparePartsDialog({ 
   isOpen, 
@@ -302,6 +332,8 @@ export default function TechnicianServices() {
   const isMobile = useIsMobile();
   // Mobile environment detection
   const isMobileDevice = isMobileEnvironment();
+  // Mobile dialog positioning
+  const { isKeyboardOpen } = useMobileDialogPosition();
   const [activeTab, setActiveTab] = useState<string>("active");
   const [selectedService, setSelectedService] = useState<TechnicianService | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -1361,7 +1393,24 @@ export default function TechnicianServices() {
 
       {/* Status update dialog - optimizovan za mobilne uređaje */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+        <DialogContent 
+          className={`mobile-centered-dialog max-w-[95vw] sm:max-w-[500px] p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+          style={{
+            position: 'fixed',
+            top: isKeyboardOpen ? '30%' : '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            maxHeight: isKeyboardOpen ? '60vh' : '80vh',
+            overflowY: 'auto',
+            width: '95vw',
+            maxWidth: '500px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            transition: 'top 0.3s ease, max-height 0.3s ease'
+          }}>
           <DialogHeader>
             <DialogTitle>
               {newStatus === "in_progress" ? "Započni servis" : 
