@@ -2,7 +2,10 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjQzLCJ1c2VybmFtZSI6InRlb2RvcmFAZnJpZ29zaXN0ZW10b2Rvc2lqZXZpYy5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTM1MTI0NzcsImV4cCI6MTc1NjEwNDQ3N30.FIOTG410GmcwMePxQygqGdgU8jHTYWRUH8Pdrrerqn8';
+const token = process.env.TEST_JWT_TOKEN || (() => {
+  console.error('🚨 TEST ERROR: TEST_JWT_TOKEN environment variable is required');
+  throw new Error('TEST_JWT_TOKEN environment variable must be set for testing');
+})();
 
 async function testComplusAssign() {
   try {

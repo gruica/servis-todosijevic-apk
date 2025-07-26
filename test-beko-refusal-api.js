@@ -8,8 +8,11 @@ const testData = {
   technicianNotes: "TEST customer refusal email za Beko mašinu za veš"
 };
 
-// Admin JWT token
-const adminToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MTAsInVzZXJuYW1lIjoiamVsZW5hQGZyaWdvc2lzdGVtdG9kb3NpamV2aWMubWUiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTM0NzQ4NjYsImV4cCI6MTc1NjA2Njg2Nn0.FJE0KkGz_TbJVFo-j9vVTb6MNH8CdE_5qsn1bxBfcjs";
+// Admin JWT token from environment
+const adminToken = process.env.TEST_JWT_TOKEN || (() => {
+  console.error('🚨 TEST ERROR: TEST_JWT_TOKEN environment variable is required');
+  throw new Error('TEST_JWT_TOKEN environment variable must be set for testing');
+})();
 
 console.log('🧪 TESTIRANJE BEKO CUSTOMER REFUSAL EMAIL SISTEMA');
 console.log('===================================================');

@@ -7,7 +7,10 @@ const adminPayload = {
   role: 'admin'
 };
 
-const JWT_SECRET = process.env.JWT_SECRET || 'frigo-sistem-jwt-secret-key-2025';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.error('🚨 SECURITY ERROR: JWT_SECRET environment variable is required');
+  throw new Error('JWT_SECRET environment variable must be set');
+})();
 
 const token = jwt.sign(adminPayload, JWT_SECRET, { expiresIn: '30d' });
 

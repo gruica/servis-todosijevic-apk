@@ -2,7 +2,10 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'frigo-sistem-jwt-secret-key-2025';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  console.error('🚨 SECURITY WARNING: JWT_SECRET environment variable is required');
+  throw new Error('JWT_SECRET environment variable must be set for security');
+})();
 const JWT_EXPIRES_IN = '30d';
 
 export interface JWTPayload {
