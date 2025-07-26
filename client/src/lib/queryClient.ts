@@ -19,29 +19,34 @@ export function getAuthHeaders(): Record<string, string> {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
+  options: {
+    method?: string;
+    body?: string;
+    headers?: Record<string, string>;
+  } = {}
 ): Promise<Response> {
   // Get JWT token from localStorage
   const token = localStorage.getItem('auth_token');
   
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    ...options.headers,
+  };
   
   // Add JWT token if available
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  // Add content type if data is provided
-  if (data) {
+  // Add content type if body is provided
+  if (options.body) {
     headers['Content-Type'] = 'application/json';
   }
 
   const res = await fetch(url, {
-    method,
+    method: options.method || 'GET',
     headers,
-    body: data ? JSON.stringify(data) : undefined,
+    body: options.body,
     credentials: "include",
   });
 

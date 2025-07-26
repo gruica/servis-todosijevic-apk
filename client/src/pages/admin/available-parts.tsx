@@ -68,17 +68,17 @@ export default function AvailableParts() {
   const queryClient = useQueryClient();
 
   // Query za dostupne delove
-  const { data: availableParts = [], isLoading: loadingParts } = useQuery({
+  const { data: availableParts = [], isLoading: loadingParts } = useQuery<AvailablePart[]>({
     queryKey: ["/api/admin/available-parts"],
   });
 
   // Query za pending spare parts orders
-  const { data: pendingOrders = [], isLoading: loadingOrders } = useQuery({
+  const { data: pendingOrders = [], isLoading: loadingOrders } = useQuery<PendingOrder[]>({
     queryKey: ["/api/admin/spare-parts/pending"],
   });
 
   // Query za servisere
-  const { data: technicians = [] } = useQuery({
+  const { data: technicians = [] } = useQuery<{ id: number; fullName: string; phone: string; email: string }[]>({
     queryKey: ["/api/technicians"],
   });
 
