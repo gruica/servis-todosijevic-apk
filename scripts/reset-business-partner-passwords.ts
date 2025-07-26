@@ -1,7 +1,9 @@
 /**
  * Skripta za resetovanje lozinki poslovnih partnera na standardnu vrednost
  */
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { users } from "../shared/schema";
+import { eq } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
@@ -26,13 +28,15 @@ async function resetBusinessPartnerPasswords() {
     }
     
     // Dohvati sve korisnike sa ulogom "business"
-    const businessPartnersResult = await pool.query(`
-      SELECT id, username, full_name, company_name 
-      FROM users 
-      WHERE role = 'business'
-    `);
-    
-    const businessPartners = businessPartnersResult.rows;
+    const businessPartners = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        companyName: users.companyName
+      })
+      .from(users)
+      .where(eq(users.role, 'business'));
     
     console.log(`Pronađeno ${businessPartners.length} poslovnih partnera.\n`);
     
@@ -45,14 +49,13 @@ async function resetBusinessPartnerPasswords() {
     for (const partner of businessPartners) {
       const hashedPassword = await hashPassword(standardPassword);
       
-      // Direktan SQL upit za ažuriranje lozinke
-      await pool.query(`
-        UPDATE users
-        SET password = $1
-        WHERE id = $2
-      `, [hashedPassword, partner.id]);
+      // Ažuriranje lozinke koristeći Drizzle query builder
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, partner.id));
       
-      console.log(`Resetovana lozinka za partnera: ${partner.full_name} (${partner.company_name || 'bez firme'})`);
+      console.log(`Resetovana lozinka za partnera: ${partner.fullName} (${partner.companyName || 'bez firme'})`);
     }
     
     console.log("\nLozinke uspešno resetovane za sve poslovne partnere.");
@@ -61,7 +64,8 @@ async function resetBusinessPartnerPasswords() {
   } catch (error) {
     console.error("Greška pri resetovanju lozinki:", error);
   } finally {
-    await pool.end();
+    // Drizzle connection will be automatically managed
+    console.log("Konekcija sa bazom zatvorena.");
   }
 }
 
