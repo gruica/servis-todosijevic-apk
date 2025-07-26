@@ -205,9 +205,28 @@
     
     /* Keyboard open state adjustments */
     .mobile-centered-dialog.keyboard-open {
-      top: 30% !important;
-      max-height: 60vh !important;
+      top: 20% !important;
+      max-height: 70vh !important;
       transform: translate(-50%, -50%) !important;
+    }
+    
+    /* Generali dialog specific optimizations */
+    .mobile-centered-dialog .dialog-header {
+      position: sticky !important;
+      top: 0 !important;
+      background-color: white !important;
+      z-index: 10 !important;
+      padding-bottom: 16px !important;
+      border-bottom: 1px solid #e5e7eb !important;
+    }
+    
+    .mobile-centered-dialog .dialog-footer {
+      position: sticky !important;
+      bottom: 0 !important;
+      background-color: white !important;
+      z-index: 10 !important;
+      padding-top: 16px !important;
+      border-top: 1px solid #e5e7eb !important;
     }
     
     .service-details-mobile p {

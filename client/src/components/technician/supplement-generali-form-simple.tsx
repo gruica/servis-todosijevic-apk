@@ -1,4 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Hook za mobilno pozicioniranje dialoga
+function useMobileDialogPosition() {
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      // Detect keyboard on mobile by checking viewport height change
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const windowHeight = window.screen.height;
+      const keyboardThreshold = windowHeight * 0.75; // 75% of screen height
+      
+      setIsKeyboardOpen(viewportHeight < keyboardThreshold);
+    };
+    
+    // Modern browsers support visual viewport
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    } else {
+      // Fallback for older browsers
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+  
+  return { isKeyboardOpen };
+}
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -43,6 +73,7 @@ export function SupplementGeneraliFormSimple({
 }: SupplementGeneraliFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isKeyboardOpen } = useMobileDialogPosition();
 
   const form = useForm<SupplementGeneraliService>({
     resolver: zodResolver(supplementGeneraliServiceSchema),
@@ -139,8 +170,25 @@ export function SupplementGeneraliFormSimple({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleDialogClose()}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+      <DialogContent 
+        className={`mobile-centered-dialog max-w-[95vw] sm:max-w-2xl p-4 sm:p-6 overflow-y-auto ${isKeyboardOpen ? 'keyboard-open' : ''}`}
+        style={{
+          position: 'fixed',
+          top: isKeyboardOpen ? '20%' : '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+          maxHeight: isKeyboardOpen ? '70vh' : '90vh',
+          overflowY: 'auto',
+          width: '95vw',
+          maxWidth: '768px',
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          transition: 'top 0.3s ease, max-height 0.3s ease'
+        }}>
+        <DialogHeader className="dialog-header">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -358,7 +406,7 @@ export function SupplementGeneraliFormSimple({
               )}
             />
 
-            <DialogFooter className="sticky bottom-0 bg-white border-t pt-4 z-10">
+            <DialogFooter className="dialog-footer">
               <div className="flex flex-col md:flex-row gap-2 w-full">
                 <Button
                   type="button"
