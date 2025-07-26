@@ -1285,7 +1285,6 @@ export default function TechnicianServices() {
                                   variant="outline" 
                                   size="default"
                                   onClick={() => {
-                                    alert("TEST: Dugme je kliknuto za servis " + service.id);
                                     console.log("🔧 DUGME KLIKNUTO! Pozivam openSparePartsOrder za servis:", service.id);
                                     console.log("🔧 SERVICE DATA:", service);
                                     setSparePartsService(service);
