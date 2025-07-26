@@ -67,6 +67,11 @@ export default function ComplusDashboard() {
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    description: "",
+    cost: "",
+    status: ""
+  });
   const { toast } = useToast();
 
   // Query za Com Plus servise
@@ -117,6 +122,34 @@ export default function ComplusDashboard() {
     },
   });
 
+  // Mutation za ažuriranje servisa
+  const updateServiceMutation = useMutation({
+    mutationFn: async ({ serviceId, data }: { serviceId: number; data: any }) => {
+      const response = await apiRequest(`/api/admin/services/${serviceId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno!",
+        description: "Servis je uspešno ažuriran.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      setEditingService(null);
+      setEditFormData({ description: "", cost: "", status: "" });
+    },
+    onError: (error) => {
+      console.error("Greška pri ažuriranju servisa:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri ažuriranju servisa.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAssignTechnician = () => {
     if (!selectedService || !selectedTechnician) {
       toast({
@@ -130,6 +163,38 @@ export default function ComplusDashboard() {
     assignTechnicianMutation.mutate({
       serviceId: selectedService.id,
       technicianId: parseInt(selectedTechnician)
+    });
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setEditFormData({
+      description: service.description || "",
+      cost: service.cost?.toString() || "",
+      status: service.status || ""
+    });
+  };
+
+  const handleSaveChanges = () => {
+    if (!editingService) return;
+
+    const updateData: any = {};
+    
+    if (editFormData.description !== editingService.description) {
+      updateData.description = editFormData.description;
+    }
+    
+    if (editFormData.cost !== editingService.cost?.toString()) {
+      updateData.cost = parseFloat(editFormData.cost) || 0;
+    }
+    
+    if (editFormData.status !== editingService.status) {
+      updateData.status = editFormData.status;
+    }
+
+    updateServiceMutation.mutate({
+      serviceId: editingService.id,
+      data: updateData
     });
   };
 
@@ -545,7 +610,7 @@ export default function ComplusDashboard() {
                                   variant="ghost" 
                                   className="p-1" 
                                   title="Uredi servis"
-                                  onClick={() => setEditingService(service)}
+                                  onClick={() => handleEditService(service)}
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
@@ -562,7 +627,8 @@ export default function ComplusDashboard() {
                                     <label className="text-sm font-medium">Opis problema</label>
                                     <textarea 
                                       className="w-full min-h-[100px] px-3 py-2 text-sm border rounded-md"
-                                      defaultValue={editingService?.description}
+                                      value={editFormData.description}
+                                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
                                       placeholder="Opišite problem sa uređajem..."
                                     />
                                   </div>
@@ -572,7 +638,8 @@ export default function ComplusDashboard() {
                                     <input 
                                       type="number"
                                       className="w-full px-3 py-2 text-sm border rounded-md"
-                                      defaultValue={editingService?.cost || ""}
+                                      value={editFormData.cost}
+                                      onChange={(e) => setEditFormData({...editFormData, cost: e.target.value})}
                                       placeholder="0.00"
                                       step="0.01"
                                     />
@@ -580,7 +647,7 @@ export default function ComplusDashboard() {
                                   
                                   <div className="space-y-2">
                                     <label className="text-sm font-medium">Status servisa</label>
-                                    <Select defaultValue={editingService?.status}>
+                                    <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
                                       <SelectTrigger>
                                         <SelectValue />
                                       </SelectTrigger>
@@ -599,8 +666,8 @@ export default function ComplusDashboard() {
                                     <Button variant="outline" onClick={() => setEditingService(null)}>
                                       Otkaži
                                     </Button>
-                                    <Button>
-                                      Sačuvaj izmene
+                                    <Button onClick={handleSaveChanges} disabled={updateServiceMutation.isPending}>
+                                      {updateServiceMutation.isPending ? "Snimam..." : "Sačuvaj izmene"}
                                     </Button>
                                   </div>
                                 </div>
