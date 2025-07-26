@@ -1,6 +1,8 @@
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
-import { pool } from "../server/db";
+import { db } from "../server/db";
+import { users } from "../shared/schema";
+import { eq } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 
@@ -15,30 +17,32 @@ async function createAdmin() {
     console.log("Kreiranje administratorskog naloga...");
 
     // 1. Proveri da li već postoji admin nalog
-    const adminCheck = await pool.query(`
-      SELECT id, username, full_name 
-      FROM users 
-      WHERE role = 'admin'
-    `);
+    const adminCheck = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName
+      })
+      .from(users)
+      .where(eq(users.role, 'admin'));
     
-    if (adminCheck.rows.length > 0) {
+    if (adminCheck.length > 0) {
       console.log("Administratorski nalozi već postoje:");
-      for (const admin of adminCheck.rows) {
-        console.log(`ID=${admin.id}, Username=${admin.username}, Ime=${admin.full_name}`);
+      for (const admin of adminCheck) {
+        console.log(`ID=${admin.id}, Username=${admin.username}, Ime=${admin.fullName}`);
       }
       
       // Resetuj šifru za admina
       const defaultPassword = "admin123";
       const hashedPassword = await hashPassword(defaultPassword);
       
-      for (const admin of adminCheck.rows) {
-        await pool.query(`
-          UPDATE users
-          SET password = $1
-          WHERE id = $2
-        `, [hashedPassword, admin.id]);
+      for (const admin of adminCheck) {
+        await db
+          .update(users)
+          .set({ password: hashedPassword })
+          .where(eq(users.id, admin.id));
         
-        console.log(`Resetovana šifra za admina: ${admin.username} (${admin.full_name})`);
+        console.log(`Resetovana šifra za admina: ${admin.username} (${admin.fullName})`);
       }
       
       console.log(`\nNova šifra za sve administratore je: ${defaultPassword}`);
@@ -49,15 +53,24 @@ async function createAdmin() {
       const password = "admin123";
       const hashedPassword = await hashPassword(password);
       
-      const result = await pool.query(`
-        INSERT INTO users (username, password, full_name, role)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, username, full_name, role
-      `, [username, hashedPassword, fullName, 'admin']);
+      const result = await db
+        .insert(users)
+        .values({
+          username,
+          password: hashedPassword,
+          fullName,
+          role: 'admin'
+        })
+        .returning({
+          id: users.id,
+          username: users.username,
+          fullName: users.fullName,
+          role: users.role
+        });
       
-      const newAdmin = result.rows[0];
+      const newAdmin = result[0];
       console.log(`\nKreiran novi administrator:`);
-      console.log(`ID=${newAdmin.id}, Username=${newAdmin.username}, Ime=${newAdmin.full_name}`);
+      console.log(`ID=${newAdmin.id}, Username=${newAdmin.username}, Ime=${newAdmin.fullName}`);
       console.log(`Šifra za novog administratora je: ${password}`);
     }
 
@@ -66,7 +79,9 @@ async function createAdmin() {
   } catch (error) {
     console.error("Greška pri kreiranju administratorskog naloga:", error);
   } finally {
-    await pool.end();
+    // Note: No need to manually close Drizzle db connection
+    // as it manages connections automatically
+    process.exit(0);
   }
 }
 
