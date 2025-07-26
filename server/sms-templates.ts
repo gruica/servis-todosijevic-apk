@@ -162,6 +162,12 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'supplier_status_changed');
   }
 
+  static supplierPartsOrdered(data: SMSTemplateData): string {
+    const urgencyText = data.urgency === 'urgent' ? 'HITNO' : data.urgency === 'high' ? 'BRZO' : '';
+    const message = `${urgencyText} Deo poručen za ${data.manufacturerName} servis #${data.serviceId}. Klijent: ${data.clientName}, Deo: ${data.partName}, Naručio: ${data.orderedBy}`;
+    return this.validateSMSLength(message, 'supplier_parts_ordered');
+  }
+
   // DELOVI DODELJENI TEHNIČARIMA
   static clientPartsAllocated(data: SMSTemplateData): string {
     const message = `Deo ${data.partName} (${data.quantity || '1'} kom) dodeljen tehničaru ${data.technicianName} za vas uredjaj. Servis #${data.serviceId}`;
@@ -210,6 +216,7 @@ export class SMSTemplates {
       
       // Supplier templates
       case 'supplier_status_changed': return this.supplierStatusChanged(data);
+      case 'supplier_parts_ordered': return this.supplierPartsOrdered(data);
       
       // Parts allocation templates
       case 'client_parts_allocated': return this.clientPartsAllocated(data);

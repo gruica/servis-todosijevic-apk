@@ -828,6 +828,35 @@ export class SMSCommunicationService {
   }
 
   /**
+   * SMS dobavljaču kada se poruče rezervni dijelovi za Com Plus brendove  
+   */
+  async notifySupplierPartsOrdered(data: {
+    supplierPhone: string;
+    supplierName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    partName: string;
+    manufacturerName: string;
+    orderedBy: string;
+    urgency: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('supplier_parts_ordered', 
+      { phone: data.supplierPhone, name: data.supplierName, role: 'supplier' },
+      {
+        supplierName: data.supplierName,
+        serviceId: data.serviceId,
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        partName: data.partName,
+        manufacturerName: data.manufacturerName,
+        orderedBy: data.orderedBy,
+        urgency: data.urgency
+      }
+    );
+  }
+
+  /**
    * SMS administratoru kada serviser evidencira uklonjene dijelove
    */
   async notifyAdminRemovedParts(data: {

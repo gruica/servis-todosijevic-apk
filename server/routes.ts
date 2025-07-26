@@ -5453,27 +5453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log(`[SPARE PARTS] Proizvođač uređaja: ${manufacturerName}`);
               
-              // AŽURIRANA LOGIKA: Samo Complus servisna firma (Beko je obustavila elektronske servise)
-              const complussupportedBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air', 'beko'];
+              // AŽURIRANA LOGIKA: Com Plus brendovi (Electrolux, Elica, Candy, Hoover, Turbo Air)
+              const complusBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
               
-              // NAPOMENA: Beko je obustavila elektronske servise - sve notifikacije se šalju na mp4@eurotehnikamn.me
-              if (manufacturerName === 'beko') {
-                console.log(`[SPARE PARTS] Uređaj je Beko - šaljem notifikaciju na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)...`);
-                
-                // Specifična notifikacija za Beko servise
-                const bekoEmailResult = await emailService.sendBekoServiceNotification(
-                  validatedData.serviceId,
-                  validatedData.partName,
-                  validatedData.partNumber || 'N/A',
-                  clientName,
-                  technicianName,
-                  validatedData.urgency || 'medium',
-                  validatedData.description || ''
-                );
-                
-                console.log(`[SPARE PARTS] Rezultat slanja Beko notifikacije na mp4@eurotehnikamn.me: ${bekoEmailResult ? 'Uspešno' : 'Neuspešno'}`);
-              } else if (complussupportedBrands.includes(manufacturerName) && manufacturerName !== 'beko') {
-                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, šaljem prošireni email Complus servis firmi sa kompletnim kontekstom...`);
+              // Com Plus brendovi se šalju na servis@complus.me
+              if (complusBrands.includes(manufacturerName)) {
+                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName} (Com Plus brend) - šaljem prošireni email Complus servis firmi sa kompletnim kontekstom...`);
                 
                 // Dobijamo dodatne podatke za kompletne informacije
                 const category = await storage.getApplianceCategory(appliance.categoryId);
@@ -5494,8 +5479,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
                 
                 console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+              } else if (manufacturerName === 'beko') {
+                console.log(`[SPARE PARTS] Uređaj je Beko - šaljem notifikaciju na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)...`);
+                
+                // Specifična notifikacija za Beko servise
+                const bekoEmailResult = await emailService.sendBekoServiceNotification(
+                  validatedData.serviceId,
+                  validatedData.partName,
+                  validatedData.partNumber || 'N/A',
+                  clientName,
+                  technicianName,
+                  validatedData.urgency || 'medium',
+                  validatedData.description || ''
+                );
+                
+                console.log(`[SPARE PARTS] Rezultat slanja Beko notifikacije na mp4@eurotehnikamn.me: ${bekoEmailResult ? 'Uspešno' : 'Neuspešno'}`);
               } else {
-                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, ne šaljem email nijednoj servisnoj firmi (nije podržan brend)`);
+                console.log(`[SPARE PARTS] Uređaj je ${manufacturerName}, ne šaljem email nijednoj servisnoj firmi (nije Com Plus brend)`);
               }
             } else {
               console.warn(`[SPARE PARTS] Ne mogu da pronađem podatke o uređaju, ne šaljem email servisnim firmama`);
@@ -5626,6 +5626,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`[SMS SISTEM] ✅ SMS o porudžbini delova poslat administratoru ${admin.fullName} (${admin.phone})`);
               } catch (adminSmsError) {
                 console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a administratoru o porudžbini:`, adminSmsError);
+              }
+            }
+            
+            // 3. SMS COM PLUS BROJU 067590272 za Com Plus brendove
+            const serviceAppliance = await storage.getAppliance(service.applianceId);
+            if (serviceAppliance) {
+              const manufacturer = await storage.getManufacturer(serviceAppliance.manufacturerId);
+              const manufacturerName = manufacturer?.name?.toLowerCase();
+              const complusBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
+              
+              if (complusBrands.includes(manufacturerName)) {
+                try {
+                  await smsService.notifySupplierPartsOrdered({
+                    supplierPhone: '067590272',
+                    supplierName: 'Com Plus',
+                    serviceId: validatedData.serviceId.toString(),
+                    clientName: client?.fullName || 'Nepoznat klijent',
+                    deviceType: deviceType,
+                    partName: validatedData.partName,
+                    manufacturerName: manufacturer?.name || manufacturerName,
+                    orderedBy: technicianName,
+                    urgency: validatedData.urgency || 'normal'
+                  });
+                  console.log(`[SMS SISTEM] ✅ SMS o porudžbini Com Plus delova poslat na 067590272`);
+                } catch (complusSmsError) {
+                  console.error(`[SMS SISTEM] ❌ Greška pri slanju SMS-a Com Plus broju o porudžbini:`, complusSmsError);
+                }
               }
             }
           }
