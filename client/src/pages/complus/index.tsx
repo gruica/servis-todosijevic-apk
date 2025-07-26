@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Activity, 
   Users, 
@@ -41,10 +44,18 @@ interface Service {
   status: string;
   warrantyStatus: string;
   technicianName: string;
+  technicianId: number | null;
   createdAt: string;
   scheduledDate: string;
   completedDate: string;
   cost: number;
+}
+
+interface Technician {
+  id: number;
+  fullName: string;
+  phone: string;
+  specialization: string;
 }
 
 export default function ComplusDashboard() {
@@ -52,6 +63,9 @@ export default function ComplusDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [brandFilter, setBrandFilter] = useState("all");
   const [warrantyFilter, setWarrantyFilter] = useState("all");
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedTechnician, setSelectedTechnician] = useState("");
+  const { toast } = useToast();
 
   // Query za Com Plus servise
   const { data: services = [], isLoading } = useQuery<Service[]>({
@@ -67,6 +81,55 @@ export default function ComplusDashboard() {
   }>({
     queryKey: ["/api/complus/stats"],
   });
+
+  // Query za tehnician-e
+  const { data: technicians = [] } = useQuery<Technician[]>({
+    queryKey: ["/api/technicians"],
+  });
+
+  // Mutation za dodelu servisa tehnician-u
+  const assignTechnicianMutation = useMutation({
+    mutationFn: async ({ serviceId, technicianId }: { serviceId: number; technicianId: number }) => {
+      const response = await apiRequest(`/api/admin/services/${serviceId}/assign-technician`, {
+        method: 'PUT',
+        body: JSON.stringify({ technicianId })
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno!",
+        description: "Servis je uspešno dodeljen serviseru.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      setSelectedService(null);
+      setSelectedTechnician("");
+    },
+    onError: (error) => {
+      console.error("Greška pri dodeli servisa:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri dodeli servisa serviseru.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAssignTechnician = () => {
+    if (!selectedService || !selectedTechnician) {
+      toast({
+        title: "Greška",
+        description: "Molimo izaberite servis i servisera.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    assignTechnicianMutation.mutate({
+      serviceId: selectedService.id,
+      technicianId: parseInt(selectedTechnician)
+    });
+  };
 
   // Filtriranje servisa
   const filteredServices = services.filter((service: Service) => {
@@ -322,14 +385,80 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-1">
-                            <Button size="sm" variant="ghost" className="p-1">
+                            <Button size="sm" variant="ghost" className="p-1" title="Pogledaj detalje">
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="p-1">
+                            {service.status === "pending" && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="p-1 text-blue-600"
+                                    title="Dodeli servisera"
+                                    onClick={() => setSelectedService(service)}
+                                  >
+                                    <UserCheck className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Dodeli servisera</DialogTitle>
+                                    <DialogDescription>
+                                      Izaberite servisera koji će biti odgovoran za ovaj Com Plus servis.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Servis #{selectedService?.id} - {selectedService?.clientName}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {selectedService?.manufacturerName} {selectedService?.model}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">
+                                        Izaberi servisera:
+                                      </label>
+                                      <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Izaberi servisera..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {technicians.map((tech) => (
+                                            <SelectItem key={tech.id} value={tech.id.toString()}>
+                                              {tech.fullName} - {tech.specialization}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedService(null);
+                                          setSelectedTechnician("");
+                                        }}
+                                      >
+                                        Otkaži
+                                      </Button>
+                                      <Button
+                                        onClick={handleAssignTechnician}
+                                        disabled={assignTechnicianMutation.isPending}
+                                      >
+                                        {assignTechnicianMutation.isPending ? "Dodeljivanje..." : "Dodeli"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            <Button size="sm" variant="ghost" className="p-1" title="Uredi servis">
                               <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="p-1 text-red-600">
-                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </td>

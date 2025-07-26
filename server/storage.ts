@@ -2004,13 +2004,16 @@ export class DatabaseStorage implements IStorage {
         applianceSerialNumber: appliances.serialNumber,
         // Dodajemo kategoriju i proizvođača za Complus filtriranje
         categoryName: applianceCategories.name,
-        manufacturerName: manufacturers.name
+        manufacturerName: manufacturers.name,
+        // Dodajemo ime servisera za prikaz
+        technicianName: technicians.fullName
       })
       .from(services)
       .innerJoin(clients, eq(services.clientId, clients.id))
       .innerJoin(appliances, eq(services.applianceId, appliances.id))
       .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
       .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+      .leftJoin(technicians, eq(services.technicianId, technicians.id))
       .orderBy(desc(services.createdAt));
       
       // Dodamo limit ako je specificiran za optimizaciju
