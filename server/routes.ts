@@ -1728,7 +1728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
                   if (updatedService.status === "completed" && 
-                      updatedService.warrantyStatus === "in_warranty") {
+                      updatedService.warrantyStatus === "u garanciji") {
                     
                     // Proveravamo da li je Beko brend
                     try {
@@ -2096,7 +2096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
                 if (validStatus === "completed" && 
-                    updatedService.warrantyStatus === "in_warranty") {
+                    updatedService.warrantyStatus === "u garanciji") {
                   
                   // Proveravamo da li je Beko brend
                   try {
@@ -4363,7 +4363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(schema.services.status, 'completed'),
-            eq(schema.services.warrantyStatus, 'in_warranty'),
+            eq(schema.services.warrantyStatus, 'u garanciji'),
             or(
               eq(schema.manufacturers.name, 'Electrolux'),
               eq(schema.manufacturers.name, 'Elica'),
@@ -6718,7 +6718,7 @@ Admin panel - automatska porudžbina
         city: "Podgorica"
       };
 
-      const { warrantyStatus = "in_warranty" } = req.body;
+      const { warrantyStatus = "u garanciji" } = req.body;
       
       console.log(`[TEST EMAIL] Šalje test warranty email na ${testClient.email} sa statusom: ${warrantyStatus}`);
       
