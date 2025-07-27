@@ -364,7 +364,12 @@ export function SupplementGeneraliFormSimple({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsCameraOpen(true)}
+                  onClick={() => {
+                    console.log("🎯 OCR Camera button clicked!");
+                    console.log("🎯 Current isCameraOpen state:", isCameraOpen);
+                    setIsCameraOpen(true);
+                    console.log("🎯 Setting isCameraOpen to true");
+                  }}
                   className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 text-blue-700 hover:text-blue-800"
                   disabled={isSubmitting}
                 >
@@ -497,9 +502,13 @@ export function SupplementGeneraliFormSimple({
         </Form>
         
         {/* Napredna OCR Kamera komponenta */}
+        {console.log("🎯 Rendering OCR Camera with isOpen:", isCameraOpen)}
         <EnhancedOCRCamera
           isOpen={isCameraOpen}
-          onClose={() => setIsCameraOpen(false)}
+          onClose={() => {
+            console.log("🎯 OCR Camera onClose called");
+            setIsCameraOpen(false);
+          }}
           onDataScanned={handleScannedData}
           manufacturerHint={manufacturerName ? 
             manufacturerName.toLowerCase().includes('beko') ? 'beko' :
