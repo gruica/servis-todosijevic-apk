@@ -893,6 +893,57 @@ export const sparePartSourceTypeEnum = z.enum([
   "supplier_api", // API dobavljača
 ]);
 
+// Web scraping sources table
+export const webScrapingSources = pgTable("web_scraping_sources", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Naziv izvora (Quinnspares, eSpares, etc.)
+  baseUrl: text("base_url").notNull(), // Osnovna URL adresa
+  isActive: boolean("is_active").default(true).notNull(), // Da li je aktivan za scraping
+  lastScrapeDate: timestamp("last_scrape_date"), // Poslednji put kad je scrape-ovan
+  totalPartsScraped: integer("total_parts_scraped").default(0), // Ukupno delova scraped
+  successfulScrapes: integer("successful_scrapes").default(0), // Uspešni scrape-ovi
+  failedScrapes: integer("failed_scrapes").default(0), // Neuspešni scrape-ovi
+  averageResponseTime: integer("average_response_time").default(0), // Prosečno vreme odgovora (ms)
+  scrapingConfig: text("scraping_config"), // JSON konfiguracija za scraping
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Web scraping logs table
+export const webScrapingLogs = pgTable("web_scraping_logs", {
+  id: serial("id").primaryKey(),
+  sourceId: integer("source_id").notNull().references(() => webScrapingSources.id),
+  status: text("status").notNull(), // started, completed, failed, partial
+  startTime: timestamp("start_time").defaultNow().notNull(),
+  endTime: timestamp("end_time"),
+  totalPages: integer("total_pages").default(0), // Ukupno stranica processed
+  processedPages: integer("processed_pages").default(0), // Uspešno processed stranice
+  newParts: integer("new_parts").default(0), // Novi delovi dodati
+  updatedParts: integer("updated_parts").default(0), // Ažurirani postojeći delovi
+  errors: text("errors"), // JSON niz grešaka
+  duration: integer("duration").default(0), // Vreme izvršavanja u sekundama
+  createdBy: integer("created_by").references(() => users.id), // Ko je pokrenuo scraping
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Web scraping queue table
+export const webScrapingQueue = pgTable("web_scraping_queue", {
+  id: serial("id").primaryKey(),
+  sourceId: integer("source_id").notNull().references(() => webScrapingSources.id),
+  priority: integer("priority").default(1), // 1=low, 2=medium, 3=high
+  status: text("status").default("pending"), // pending, processing, completed, failed
+  scheduledTime: timestamp("scheduled_time").defaultNow().notNull(),
+  maxPages: integer("max_pages").default(100), // Maksimalno stranica za scrape
+  targetCategories: text("target_categories").array(), // Kategorije za scrape
+  targetManufacturers: text("target_manufacturers").array(), // Proizvođači za scrape
+  createdBy: integer("created_by").references(() => users.id),
+  processedAt: timestamp("processed_at"),
+  completedAt: timestamp("completed_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type SparePartCategory = z.infer<typeof sparePartCategoryEnum>;
 export type SparePartAvailability = z.infer<typeof sparePartAvailabilityEnum>;
 export type SparePartSourceType = z.infer<typeof sparePartSourceTypeEnum>;

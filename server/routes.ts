@@ -8647,6 +8647,98 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ===== WEB SCRAPING ENDPOINTS =====
+  
+  // Get scraping sources (mock data for MVP)
+  app.get("/api/admin/web-scraping/sources", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const sources = [{
+        id: 1,
+        name: 'Quinnspares',
+        baseUrl: 'https://www.quinnspares.com',
+        isActive: true,
+        lastScrapeDate: null,
+        totalPartsScraped: 0,
+        successfulScrapes: 0,
+        failedScrapes: 0
+      }];
+      res.json(sources);
+    } catch (error) {
+      console.error("Error fetching scraping sources:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju izvora za scraping" });
+    }
+  });
+
+  // Get scraping logs (empty for MVP)
+  app.get("/api/admin/web-scraping/logs", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const logs: any[] = [];
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching scraping logs:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju logova scraping-a" });
+    }
+  });
+
+  // Start Quinnspares scraping
+  app.post("/api/admin/web-scraping/start-quinnspares", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { maxPages, targetManufacturers } = req.body;
+      
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo Quinnspares scraping...`);
+      
+      // Dynamic import of web scraping service
+      import('./web-scraping-service.js').then(({ webScrapingService }) => {
+        webScrapingService.scrapeQuinnspares(
+          maxPages || 50, 
+          targetManufacturers || ['Candy', 'Beko', 'Electrolux', 'Hoover']
+        ).then((result) => {
+          console.log(`✅ Quinnspares scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
+        }).catch((error) => {
+          console.error("❌ Greška u Quinnspares scraping:", error);
+        });
+      }).catch((error) => {
+        console.error("❌ Greška pri učitavanju web scraping servisa:", error);
+      });
+
+      res.json({
+        message: "Quinnspares scraping je pokrenuta u pozadini",
+        logId: 1
+      });
+      
+    } catch (error) {
+      console.error("Error starting Quinnspares scraping:", error);
+      res.status(500).json({ error: "Greška pri pokretanju Quinnspares scraping-a" });
+    }
+  });
+
+  // Start full scraping
+  app.post("/api/admin/web-scraping/start-full", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo potpun web scraping...`);
+      
+      // Dynamic import of web scraping service
+      import('./web-scraping-service.js').then(({ webScrapingService }) => {
+        webScrapingService.runFullScraping().then((result) => {
+          console.log(`✅ Potpun scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
+        }).catch((error) => {
+          console.error("❌ Greška u potpunom scraping:", error);
+        });
+      }).catch((error) => {
+        console.error("❌ Greška pri učitavanju web scraping servisa:", error);
+      });
+
+      res.json({
+        message: "Potpun web scraping je pokrenuta u pozadini",
+        logId: 1
+      });
+      
+    } catch (error) {
+      console.error("Error starting full scraping:", error);
+      res.status(500).json({ error: "Greška pri pokretanju potpunog web scraping-a" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

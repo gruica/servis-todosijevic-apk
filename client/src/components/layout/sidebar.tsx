@@ -33,6 +33,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
     { path: "/admin/available-parts", label: "Dostupni djelovi", icon: "package", highlight: true },
     { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: "category", highlight: true },
+    { path: "/admin/web-scraping", label: "Web Scraping", icon: "travel_explore", highlight: true },
     { path: "/appliances", label: "Bijela tehnika", icon: "home_repair_service" },
     { path: "/users", label: "Upravljaj korisnicima", icon: "group" },
     { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: "verified_user" },

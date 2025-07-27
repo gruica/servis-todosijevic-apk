@@ -25,7 +25,8 @@ import {
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
-  sparePartsCatalog, PartsAllocation, InsertPartsAllocation
+  sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
+  webScrapingSources, webScrapingLogs, webScrapingQueue
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -223,8 +224,15 @@ export interface IStorage {
   importSparePartsCatalogFromCSV(csvData: any[]): Promise<{ success: number; errors: string[] }>;
   getSparePartsCatalogStats(): Promise<{ totalParts: number; byCategory: Record<string, number>; byManufacturer: Record<string, number> }>;
   
-  // Session store
-  sessionStore: any; // Express session store
+  // Web Scraping methods
+  createScrapingSource(source: any): Promise<any>;
+  getScrapingSources(): Promise<any[]>;
+  updateScrapingSource(id: number, data: any): Promise<any>;
+  createScrapingLog(log: any): Promise<any>;
+  getScrapingLogs(sourceId?: number): Promise<any[]>;
+  createScrapingQueueItem(item: any): Promise<any>;
+  getScrapingQueue(): Promise<any[]>;
+  updateScrapingQueueItem(id: number, data: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -4210,6 +4218,135 @@ export class DatabaseStorage implements IStorage {
         byCategory: {},
         byManufacturer: {}
       };
+    }
+  }
+
+  // ===== WEB SCRAPING METHODS =====
+  
+  async createScrapingSource(source: any): Promise<any> {
+    try {
+      const [newSource] = await db
+        .insert(webScrapingSources)
+        .values(source)
+        .returning();
+      return newSource;
+    } catch (error) {
+      console.error('Greška pri kreiranju scraping izvora:', error);
+      throw error;
+    }
+  }
+
+  async getScrapingSources(): Promise<any[]> {
+    try {
+      const sources = await db
+        .select()
+        .from(webScrapingSources)
+        .orderBy(webScrapingSources.name);
+      return sources;
+    } catch (error) {
+      console.error('Greška pri dohvatanju scraping izvora:', error);
+      return [];
+    }
+  }
+
+  async updateScrapingSource(id: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(webScrapingSources)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(webScrapingSources.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Greška pri ažuriranju scraping izvora:', error);
+      throw error;
+    }
+  }
+
+  async createScrapingLog(log: any): Promise<any> {
+    try {
+      const [newLog] = await db
+        .insert(webScrapingLogs)
+        .values(log)
+        .returning();
+      return newLog;
+    } catch (error) {
+      console.error('Greška pri kreiranju scraping log-a:', error);
+      throw error;
+    }
+  }
+
+  async getScrapingLogs(sourceId?: number): Promise<any[]> {
+    try {
+      let query = db
+        .select()
+        .from(webScrapingLogs)
+        .orderBy(desc(webScrapingLogs.createdAt))
+        .limit(100);
+      
+      if (sourceId) {
+        query = query.where(eq(webScrapingLogs.sourceId, sourceId));
+      }
+      
+      const logs = await query;
+      return logs;
+    } catch (error) {
+      console.error('Greška pri dohvatanju scraping logova:', error);
+      return [];
+    }
+  }
+
+  async createScrapingQueueItem(item: any): Promise<any> {
+    try {
+      const [newItem] = await db
+        .insert(webScrapingQueue)
+        .values(item)
+        .returning();
+      return newItem;
+    } catch (error) {
+      console.error('Greška pri kreiranju scraping queue item-a:', error);
+      throw error;
+    }
+  }
+
+  async getScrapingQueue(): Promise<any[]> {
+    try {
+      const queue = await db
+        .select()
+        .from(webScrapingQueue)
+        .orderBy(desc(webScrapingQueue.priority), webScrapingQueue.scheduledTime);
+      return queue;
+    } catch (error) {
+      console.error('Greška pri dohvatanju scraping queue:', error);
+      return [];
+    }
+  }
+
+  async updateScrapingQueueItem(id: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(webScrapingQueue)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(webScrapingQueue.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Greška pri ažuriranju scraping queue item-a:', error);
+      throw error;
+    }
+  }
+
+  async updateScrapingLog(id: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(webScrapingLogs)
+        .set(data)
+        .where(eq(webScrapingLogs.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Greška pri ažuriranju scraping log-a:', error);
+      throw error;
     }
   }
 }
