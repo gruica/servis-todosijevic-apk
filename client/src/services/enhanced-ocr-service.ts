@@ -1,4 +1,5 @@
 import { createWorker } from 'tesseract.js';
+import { mobileOCRFallback } from './mobile-ocr-fallback';
 
 export interface ScannedData {
   model?: string;
@@ -64,23 +65,15 @@ export class EnhancedOCRService {
   async initialize(config: OCRConfig = {}): Promise<void> {
     try {
       console.log('🔧 Inicijalizujem Enhanced OCR...');
-      this.worker = await createWorker();
-      console.log('🔧 Worker kreiran...');
       
-      await this.worker.loadLanguage('eng');
-      console.log('🔧 Jezik učitan...');
-      
-      await this.worker.initialize('eng');
-      console.log('🔧 OCR inicijalizovan...');
-      
-      // Napredne postavke za bolju detekciju
-      await this.worker.setParameters({
-        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ',
-        tessedit_pageseg_mode: '6', // Uniform block of text
-        tessedit_ocr_engine_mode: '2', // LSTM OCR engine
-        classify_bln_numeric_mode: '1'
+      // Dodaj timeout za inicijalizaciju
+      const initPromise = this.initializeWorker();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout pri inicijalizaciji OCR-a')), 15000);
       });
-      console.log('🔧 Parametri postavljen...');
+      
+      await Promise.race([initPromise, timeoutPromise]);
+      console.log('🔧 Worker uspešno inicijalizovan...');
 
       // Inicijalizuj canvas za predobradu slike
       if (config.preprocessImage) {
@@ -92,9 +85,52 @@ export class EnhancedOCRService {
       console.log('✅ Enhanced OCR uspešno inicijalizovan!');
     } catch (error) {
       console.error('❌ Greška pri inicijalizaciji Enhanced OCR:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška';
+      const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška pri inicijalizaciji';
+      
+      // Cleanup ako je došlo do greške
+      if (this.worker) {
+        try {
+          await this.worker.terminate();
+        } catch (e) {
+          console.warn('Greška pri cleanup-u worker-a:', e);
+        }
+        this.worker = null;
+      }
+      
       throw new Error(`Inicijalizacija OCR-a nije uspela: ${errorMessage}`);
     }
+  }
+  
+  private async initializeWorker(): Promise<void> {
+    // Detektuj da li je mobilni uređaj
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    console.log('📱 Detektovan uređaj:', isMobile ? 'mobilni' : 'desktop');
+    
+    // Jednostavan pristup kreiranja worker-a
+    this.worker = await createWorker();
+    console.log('🔧 Worker kreiran...');
+    
+    await this.worker.loadLanguage('eng');
+    console.log('🔧 Jezik učitan...');
+    
+    await this.worker.initialize('eng');
+    console.log('🔧 OCR inicijalizovan...');
+    
+    // Jednostavnije postavke za mobilne uređaje
+    const params = isMobile ? {
+      tessedit_pageseg_mode: '6',
+      tessedit_ocr_engine_mode: '1', // Legacy engine je stabilniji na mobilnim
+      tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: '
+    } : {
+      tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ',
+      tessedit_pageseg_mode: '6',
+      tessedit_ocr_engine_mode: '2',
+      classify_bln_numeric_mode: '1'
+    };
+    
+    await this.worker.setParameters(params);
+    console.log('🔧 Parametri postavljeni za', isMobile ? 'mobilni' : 'desktop', 'uređaj');
   }
 
   private async preprocessImage(imageData: string): Promise<string> {
@@ -152,8 +188,26 @@ export class EnhancedOCRService {
   }
 
   async scanImage(imageData: string, config: OCRConfig = {}): Promise<ScannedData> {
+    // Provjeri da li je mobilni uređaj i koristi fallback ako je potrebno
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     if (!this.worker) {
-      await this.initialize(config);
+      try {
+        await this.initialize(config);
+      } catch (error) {
+        console.warn('OCR inicijalizacija nije uspela, koristim fallback:', error);
+        
+        if (isMobile) {
+          const fallbackResult = await mobileOCRFallback.scanImageWithFallback(imageData);
+          return {
+            confidence: fallbackResult.confidence,
+            extractedText: fallbackResult.message,
+            model: undefined,
+            serialNumber: undefined
+          };
+        }
+        throw error;
+      }
     }
 
     let processedImage = imageData;

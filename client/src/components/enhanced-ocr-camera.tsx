@@ -49,13 +49,19 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     
     try {
       setScanProgress(10);
+      setError(null);
+      console.log('🚀 Pokrećem inicijalizaciju Enhanced OCR...');
+      
       await enhancedOCRService.initialize(config);
       setIsInitialized(true);
       setScanProgress(0);
+      console.log('✅ Enhanced OCR uspešno inicijalizovan u komponenti!');
     } catch (err) {
-      console.error('Enhanced OCR initialization error:', err);
-      setError('Greška pri inicijalizaciji naprednog skenera');
+      console.error('❌ Enhanced OCR initialization error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Nepoznata greška';
+      setError(`Greška pri inicijalizaciji skenera: ${errorMessage}`);
       setScanProgress(0);
+      setIsInitialized(false);
     }
   }, [isInitialized, config]);
 
