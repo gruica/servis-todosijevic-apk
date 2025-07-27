@@ -10,7 +10,11 @@ async function hashPassword(password) {
 }
 
 async function generateTeodoraPassword() {
-  const hashedPassword = await hashPassword('Teodora123');
+  const password = process.env.TEODORA_NEW_PASSWORD || (() => {
+    console.error('❌ SECURITY: TEODORA_NEW_PASSWORD environment variable is required');
+    process.exit(1);
+  })();
+  const hashedPassword = await hashPassword(password);
   console.log(`UPDATE users SET password = '${hashedPassword}' WHERE username = 'teodora@frigosistemtodosijevic.com';`);
 }
 

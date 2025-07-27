@@ -7,7 +7,10 @@ async function resetJelenaPassword() {
   try {
     console.log('🔄 Resetovanje lozinke za Jelenu...');
     
-    const password = 'jelena123';
+    const password = process.env.JELENA_NEW_PASSWORD || (() => {
+      console.error('❌ SECURITY: JELENA_NEW_PASSWORD environment variable is required');
+      process.exit(1);
+    })();
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
     const hashedPassword = hash + '.' + salt;

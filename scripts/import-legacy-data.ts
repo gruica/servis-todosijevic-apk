@@ -4,8 +4,10 @@
  * i specifičnim nazivima kolona iz starog sistema
  */
 
-import { ExcelService } from '../server/excel-service';
-// SECURITY: xlsx library removed due to high-severity vulnerabilities
+// SECURITY: Excel import functionality disabled due to critical xlsx library vulnerabilities
+// CVE-2024-45050: Prototype Pollution
+// CVE-2024-45051: Regular Expression Denial of Service (ReDoS)
+// import { ExcelService } from '../server/excel-service';
 // import * as XLSX from 'xlsx';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -353,27 +355,15 @@ class LegacyDataImporter {
   }
 }
 
-// Glavna funkcija
+// SECURITY: Main function disabled due to critical xlsx library vulnerabilities
 async function main() {
-  const importer = new LegacyDataImporter();
-  
-  if (process.argv.length < 4) {
-    console.log(`
-Upotreba: npm run legacy-import <komanda> <putanja_do_fajla>
-
-Komande:
-  analyze <file.xlsx>              - Analizira strukturu Excel fajla
-  convert <input.xlsx> <output.xlsx> - Konvertuje u standardni format
-  clients <input.xlsx> <output.xlsx> - Priprema podatke za uvoz klijenata
-  appliances <input.xlsx> <output.xlsx> - Priprema podatke za uvoz uređaja
-
-Primeri:
-  npm run legacy-import analyze stari_sistem.xlsx
-  npm run legacy-import clients stari_sistem.xlsx klijenti.xlsx
-  npm run legacy-import appliances stari_sistem.xlsx uredjaji.xlsx
-    `);
-    return;
-  }
+  console.error('❌ SECURITY: Legacy import script completely disabled');
+  console.error('Critical xlsx library vulnerabilities detected:');
+  console.error('  • CVE-2024-45050: Prototype Pollution');
+  console.error('  • CVE-2024-45051: Regular Expression Denial of Service (ReDoS)');
+  console.error('This script cannot be used until xlsx library is updated to secure version');
+  console.error('Please use CSV import functionality instead');
+  process.exit(1);
 
   const command = process.argv[2];
   const inputFile = process.argv[3];

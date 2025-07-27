@@ -6,7 +6,10 @@ const fetch = require('node-fetch');
 async function testCSVImport() {
   try {
     // Korišćenje ispravnog JWT tokena sa userId poljem za admin korisnika (ID 10)
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ1c2VybmFtZSI6ImplbGVuYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLm1lIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzNTc1MTczLCJleHAiOjE3NTM1Nzg3NzN9.9jDjesY87x4YY5p3GX3VhR9kYmUcTeFj2ebJHkOr8DE';
+    const token = process.env.ADMIN_JWT_TOKEN || (() => {
+      console.error('❌ SECURITY: ADMIN_JWT_TOKEN environment variable is required');
+      process.exit(1);
+    })();
 
     // Kreiranje FormData sa CSV datotekom
     const form = new FormData();

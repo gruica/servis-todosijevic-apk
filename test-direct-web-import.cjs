@@ -5,7 +5,10 @@ async function testDirectWebImport() {
   try {
     console.log('🔑 Testiram direktan uvoz rezervnih delova...');
 
-    const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ1c2VybmFtZSI6ImplbGVuYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLm1lIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzNjAyNjU5LCJleHAiOjE3NTYxOTQ2NTl9.cl_EGZ8Tqrh5teAZsAkCyqL06xMazV0a_W1wqLuoavU';
+    const JWT_TOKEN = process.env.ADMIN_JWT_TOKEN || (() => {
+      console.error('❌ SECURITY: ADMIN_JWT_TOKEN environment variable is required');
+      process.exit(1);
+    })();
 
     // Direktno dodaj autentične rezervne delove preko API-ja
     const testoviRezerviDelovi = [
