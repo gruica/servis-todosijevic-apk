@@ -5,7 +5,8 @@
  */
 
 import { ExcelService } from '../server/excel-service';
-import * as XLSX from 'xlsx';
+// SECURITY: xlsx library removed due to high-severity vulnerabilities
+// import * as XLSX from 'xlsx';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 

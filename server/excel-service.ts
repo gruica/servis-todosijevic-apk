@@ -125,16 +125,13 @@ export class ExcelService {
   }
 
   /**
-   * Kreira Excel buffer iz podataka
+   * SECURITY: Excel functionality disabled due to critical xlsx library vulnerabilities
+   * CVE-2024-45050: Prototype Pollution
+   * CVE-2024-45051: Regular Expression Denial of Service (ReDoS)
    */
   private async createExcelBuffer(data: any[], sheetName: string): Promise<Buffer> {
-    const XLSX = await import('xlsx');
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    
-    // Generiši buffer
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    console.error('❌ SECURITY: Excel export disabled due to critical vulnerabilities in xlsx library');
+    throw new Error('Excel functionality temporarily disabled for security reasons. Please export data as CSV instead.');
   }
 
   /**
@@ -270,7 +267,7 @@ export class ExcelService {
   }
 
   /**
-   * Uvozi klijente iz Excel fajla
+   * SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
    */
   public async importClients(buffer: Buffer): Promise<{ 
     total: number;
@@ -278,11 +275,8 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
+    throw new Error('Excel import temporarily disabled for security reasons. Please use CSV format instead.');
     
     const result = {
       total: data.length,
@@ -327,7 +321,7 @@ export class ExcelService {
   }
 
   /**
-   * Uvozi uređaje iz Excel fajla
+   * SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
    */
   public async importAppliances(buffer: Buffer): Promise<{ 
     total: number;
@@ -335,11 +329,8 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
+    throw new Error('Excel import temporarily disabled for security reasons. Please use CSV format instead.');
     
     const result = {
       total: data.length,
@@ -464,7 +455,7 @@ export class ExcelService {
   }
 
   /**
-   * Uvozi servise iz Excel fajla
+   * SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
    */
   public async importServices(buffer: Buffer): Promise<{ 
     total: number;
@@ -472,11 +463,8 @@ export class ExcelService {
     failed: number;
     errors: Array<{ row: number; error: string }>;
   }> {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
+    throw new Error('Excel import temporarily disabled for security reasons. Please use CSV format instead.');
     
     const result = {
       total: data.length,
@@ -600,7 +588,7 @@ export class ExcelService {
   }
 
   /**
-   * Kompletna migracija iz starog sistema - čita jednu Excel tabelu i kreira sve entitete
+   * SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
    */
   public async importLegacyComplete(buffer: Buffer): Promise<{ 
     total: number;
@@ -613,11 +601,8 @@ export class ExcelService {
       servicesCreated: number;
     };
   }> {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // SECURITY: Excel import disabled due to critical xlsx library vulnerabilities
+    throw new Error('Excel import temporarily disabled for security reasons. Please use CSV format instead.');
     
     const result = {
       total: data.length,
