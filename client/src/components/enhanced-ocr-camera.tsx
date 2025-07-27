@@ -28,6 +28,9 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const [scanHistory, setScanHistory] = useState<ScannedData[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState('camera');
+  const [autoScanEnabled, setAutoScanEnabled] = useState(true);
+  const [isAutoScanning, setIsAutoScanning] = useState(false);
+  const autoScanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // OCR konfiguracija
   const [config, setConfig] = useState<OCRConfig>({
@@ -118,6 +121,128 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     }
   }, [isScanning, isInitialized, initializeOCR, config, onDataScanned]);
 
+  // Funkcija za brzu detekciju nalepnice (light OCR bez kompletnog skeniranja)
+  const detectLabelInFrame = useCallback(async () => {
+    if (!webcamRef.current || isScanning || isAutoScanning) return false;
+
+    try {
+      const imageSrc = webcamRef.current.getScreenshot({
+        width: 640, // Manja rezolucija za brzu detekciju
+        height: 480
+      });
+      
+      if (!imageSrc) return false;
+
+      // Brza analiza slike - tražimo karakteristike nalepnica
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      return new Promise<boolean>((resolve) => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+          
+          // Analiza piksela - tražimo bele/svetle oblasti (tipične za nalepnice)
+          const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+          if (!imageData) {
+            resolve(false);
+            return;
+          }
+          
+          let lightPixels = 0;
+          let darkPixels = 0;
+          const centerX = Math.floor(canvas.width / 2);
+          const centerY = Math.floor(canvas.height / 2);
+          const checkRadius = 100; // Oblast oko centra slike
+          
+          // Analiziraj oblast u centru slike
+          for (let y = centerY - checkRadius; y < centerY + checkRadius; y += 4) {
+            for (let x = centerX - checkRadius; x < centerX + checkRadius; x += 4) {
+              if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+                const index = (y * canvas.width + x) * 4;
+                const r = imageData.data[index];
+                const g = imageData.data[index + 1];
+                const b = imageData.data[index + 2];
+                const brightness = (r + g + b) / 3;
+                
+                if (brightness > 200) lightPixels++; // Svetli piksel (nalepnica)
+                else if (brightness < 100) darkPixels++; // Tamni piksel (tekst)
+              }
+            }
+          }
+          
+          // Ako imamo dovoljno kontrasta (svetla nalepnica sa tamnim tekstom)
+          const contrastRatio = lightPixels > 0 ? darkPixels / lightPixels : 0;
+          const hasEnoughLightArea = lightPixels > 100;
+          const hasGoodContrast = contrastRatio > 0.1 && contrastRatio < 2.0;
+          
+          resolve(hasEnoughLightArea && hasGoodContrast);
+        };
+        
+        img.onerror = () => resolve(false);
+        img.src = imageSrc;
+      });
+      
+    } catch (err) {
+      console.error('Label detection error:', err);
+      return false;
+    }
+  }, [webcamRef, isScanning, isAutoScanning]);
+
+  // Automatsko skeniranje kada se detektuje nalepnica
+  const startAutoScan = useCallback(async () => {
+    if (!autoScanEnabled || isScanning || isAutoScanning) return;
+    
+    setIsAutoScanning(true);
+    
+    try {
+      const labelDetected = await detectLabelInFrame();
+      
+      if (labelDetected) {
+        // Čekaj 2 sekunde da korisnik stabilizuje kameru
+        if (autoScanTimeoutRef.current) {
+          clearTimeout(autoScanTimeoutRef.current);
+        }
+        
+        autoScanTimeoutRef.current = setTimeout(async () => {
+          // Ponovo proveri da li je nalepnica još uvek tu
+          const stillThere = await detectLabelInFrame();
+          if (stillThere && autoScanEnabled && !isScanning) {
+            captureAndScan();
+          }
+          setIsAutoScanning(false);
+        }, 2000);
+      } else {
+        setIsAutoScanning(false);
+      }
+    } catch (err) {
+      console.error('Auto scan error:', err);
+      setIsAutoScanning(false);
+    }
+  }, [autoScanEnabled, isScanning, isAutoScanning, detectLabelInFrame, captureAndScan]);
+
+  // Kontinuirani auto-scan kada je kamera aktivna
+  useEffect(() => {
+    if (activeTab === 'camera' && autoScanEnabled && isInitialized && !isScanning) {
+      const interval = setInterval(() => {
+        startAutoScan();
+      }, 1500); // Proveri svakih 1.5 sekundi
+      
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, autoScanEnabled, isInitialized, isScanning, startAutoScan]);
+
+  // Cleanup auto-scan timeout na unmount
+  useEffect(() => {
+    return () => {
+      if (autoScanTimeoutRef.current) {
+        clearTimeout(autoScanTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const calculateDataScore = (data: ScannedData): number => {
     let score = data.confidence;
     if (data.model) score += 30;
@@ -182,7 +307,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
             </Button>
           </div>
           <DialogDescription>
-            Skenirajte serijski broj, model ili druge podatke sa generalne nalepnice aparata. Pozicionirajte kameru tako da tekst bude u okviru i kliknite "Skeniraj".
+            Skenirajte serijski broj, model ili druge podatke sa generalne nalepnice aparata. {autoScanEnabled ? 'Auto-skeniranje je aktivno - samo usmerite kameru na nalepnicu!' : 'Pozicionirajte kameru tako da tekst bude u okviru i kliknite "Skeniraj".'}
           </DialogDescription>
         </DialogHeader>
 
@@ -216,8 +341,10 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                     </div>
                     
                     <div className="absolute -top-8 left-0 right-0 text-center">
-                      <Badge variant="secondary" className="bg-blue-500 text-white text-xs md:text-sm">
-                        Fokusiraj na nalepnicu - držite stabilno
+                      <Badge variant="secondary" className={`${isAutoScanning ? 'bg-orange-500 animate-pulse' : autoScanEnabled ? 'bg-green-500' : 'bg-blue-500'} text-white text-xs md:text-sm`}>
+                        {isAutoScanning ? '🔍 Detektujem nalepnicu...' : 
+                         autoScanEnabled ? '⚡ Auto-skeniranje aktivno' : 
+                         'Fokusiraj na nalepnicu - držite stabilno'}
                       </Badge>
                     </div>
                     
@@ -232,6 +359,10 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                       </Badge>
                       <Badge variant={config.multipleAttempts ? "default" : "outline"} className="text-xs">
                         Više pokušaja
+                      </Badge>
+                      <Badge variant={autoScanEnabled ? "default" : "outline"} className={`text-xs ${isAutoScanning ? 'animate-pulse bg-orange-500' : ''}`}>
+                        <Zap className="h-2.5 w-2.5 mr-1" />
+                        Auto
                       </Badge>
                     </div>
                   </div>
@@ -290,6 +421,27 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                   onCheckedChange={(checked) => setConfig(prev => ({ ...prev, multipleAttempts: checked }))}
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Automatsko skeniranje</h4>
+                  <p className="text-sm text-gray-600">Automatski počinje skeniranje kada detektuje nalepnicu</p>
+                </div>
+                <Switch
+                  checked={autoScanEnabled}
+                  onCheckedChange={setAutoScanEnabled}
+                />
+              </div>
+
+              {autoScanEnabled && (
+                <Alert>
+                  <Zap className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Auto-skeniranje aktivno! Samo usmerite kameru na nalepnicu i sačekajte 2 sekunde.
+                    {isAutoScanning && <span className="text-blue-600 font-medium"> Detektujem...</span>}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="space-y-2">
                 <h4 className="font-medium">Proizvođač aparata</h4>
