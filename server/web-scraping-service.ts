@@ -22,11 +22,12 @@ export interface ScrapedPart {
   supplierName: string;
   supplierUrl: string;
   imageUrls?: string[];
-  availability: string;
+  availability: 'available' | 'out_of_stock' | 'discontinued' | 'special_order';
   stockLevel?: number;
   compatibleModels?: string[];
   technicalSpecs?: string;
   sourceType: 'web_scraping';
+  isOemPart: boolean;
 }
 
 export class WebScrapingService {
@@ -185,7 +186,7 @@ export class WebScrapingService {
           title,
           description,
           price,
-          partNumber: partNumber || this.generatePartNumber(title),
+          partNumber,
           availability,
           mainImage,
           compatibleModels,
@@ -220,7 +221,8 @@ export class WebScrapingService {
         imageUrls: partData.mainImage ? [partData.mainImage] : [],
         availability: this.mapAvailability(partData.availability),
         compatibleModels: partData.compatibleModels.length > 0 ? partData.compatibleModels : undefined,
-        sourceType: 'web_scraping'
+        sourceType: 'web_scraping',
+        isOemPart: false // Web scraped delovi su uglavnom aftermarket
       };
       
       return scrapedPart;
@@ -272,7 +274,7 @@ export class WebScrapingService {
     return 'universal'; // Default kategorija
   }
 
-  private mapAvailability(availability: string): string {
+  private mapAvailability(availability: string): 'available' | 'out_of_stock' | 'discontinued' | 'special_order' {
     const av = availability.toLowerCase();
     if (av.includes('out') || av.includes('stock') || av.includes('nema')) return 'out_of_stock';
     if (av.includes('discontinued') || av.includes('prestalo')) return 'discontinued';

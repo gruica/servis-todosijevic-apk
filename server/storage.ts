@@ -4349,6 +4349,19 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Alias metode za web scraping service kompatibilnost
+  async getSparePartsCatalog(): Promise<SparePartsCatalog[]> {
+    return this.getAllSparePartsCatalog();
+  }
+
+  async updateSparePartsCatalog(id: number, updates: Partial<SparePartsCatalog>): Promise<SparePartsCatalog | undefined> {
+    return this.updateSparePartsCatalogEntry(id, updates);
+  }
+
+  async createSparePartsCatalog(part: InsertSparePartsCatalog): Promise<SparePartsCatalog> {
+    return this.createSparePartsCatalogEntry(part);
+  }
 }
 
 // Koristimo PostgreSQL implementaciju umesto MemStorage
