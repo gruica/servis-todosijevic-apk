@@ -21,12 +21,12 @@ export class MobileOCRFallback {
         };
       }
 
-      // Za Samsung uređaje, vrati success sa porukom za manuelni unos
+      // Za mobilne uređaje, vrati success sa jasnom porukom
       return {
         success: true,
-        message: 'Slika je uspešno uhvaćena. Molim vas da manuelno unesete podatke sa slike.',
-        confidence: 50,
-        extractedText: 'Manuelni unos potreban - tesseract.js nije kompatibilan sa ovim uređajem'
+        message: 'Slika je uspešno uhvaćena!\n\nOCR skeniranje na mobilnim uređajima trenutno nije dostupno, molim vas da manuelno unesete podatke sa slike u formu.\n\nModel i serijski broj obično se nalaze na nalepnici aparata.',
+        confidence: 75,
+        extractedText: 'Manuelni unos podataka sa slike'
       };
 
     } catch (error) {

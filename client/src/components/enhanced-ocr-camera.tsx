@@ -47,6 +47,16 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const initializeOCR = useCallback(async () => {
     if (isInitialized) return;
     
+    // Za mobilne uređaje koristi direktni pristup bez tesseract.js
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      console.log('📱 Mobilni uređaj detektovan - koristim jednostavan pristup');
+      setIsInitialized(true);
+      setScanProgress(0);
+      return;
+    }
+    
     try {
       setScanProgress(10);
       setError(null);
@@ -96,23 +106,48 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
       setScanProgress(60);
 
-      // Skeniraj sa naprednim podešavanjima
-      const scannedData = await enhancedOCRService.scanImage(imageSrc, config);
+      // Provjeri da li je mobilni uređaj
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      let scannedData;
+      if (isMobile) {
+        // Za mobilne uređaje koristi fallback pristup
+        console.log('📱 Koristim mobilni fallback pristup');
+        const { mobileOCRFallback } = await import('@/services/mobile-ocr-fallback');
+        const fallbackResult = await mobileOCRFallback.scanImageWithFallback(imageSrc);
+        
+        scannedData = {
+          confidence: fallbackResult.confidence,
+          extractedText: fallbackResult.message,
+          model: undefined,
+          serialNumber: undefined
+        };
+      } else {
+        // Za desktop koristi Enhanced OCR
+        scannedData = await enhancedOCRService.scanImage(imageSrc, config);
+      }
       
       setScanProgress(80);
       setLastScannedData(scannedData);
       setScanHistory(prev => [scannedData, ...prev.slice(0, 4)]); // Drži poslednje 5 skenova
       setScanProgress(100);
 
-      // Automatski prihvati ako je pouzdanost visoka i ima dovoljno podataka
-      const score = calculateDataScore(scannedData);
-      if (score > 100) {
-        setTimeout(() => {
-          onDataScanned(scannedData);
-          setActiveTab('results');
-        }, 1500);
-      } else {
+      // Za mobilne uređaje prikaži rezultat, za desktop automatski prihvati ako je dobar
+      if (isMobile) {
+        // Na mobilnom uvek pokaži rezultat korisniku da vidi poruku
         setActiveTab('results');
+        console.log('📱 Mobilni rezultat prikazan korisniku');
+      } else {
+        // Desktop logika
+        const score = calculateDataScore(scannedData);
+        if (score > 100) {
+          setTimeout(() => {
+            onDataScanned(scannedData);
+            setActiveTab('results');
+          }, 1500);
+        } else {
+          setActiveTab('results');
+        }
       }
 
     } catch (err) {
