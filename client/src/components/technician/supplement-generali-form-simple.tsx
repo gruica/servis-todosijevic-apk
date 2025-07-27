@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
 import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan, X } from "lucide-react";
-import { MobileSimpleCamera } from "@/components/mobile-simple-camera-clean";
+import { MobileSimpleCamera } from "@/components/mobile-simple-camera";
 import { ScannedData } from "@/services/enhanced-ocr-service";
 
 interface SupplementGeneraliFormProps {
