@@ -186,14 +186,12 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsList className="mx-4 grid w-auto grid-cols-3">
             <TabsTrigger value="camera">Kamera</TabsTrigger>
             <TabsTrigger value="settings">Podešavanja</TabsTrigger>
             <TabsTrigger value="results">Rezultati</TabsTrigger>
           </TabsList>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <TabsContent value="camera" className="flex-1 flex flex-col relative bg-black mt-2">
               {/* Kamera kontejner sa flex-1 da zauzme prostor */}
               <div className="flex-1 relative overflow-hidden min-h-0">
@@ -389,8 +387,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
               </div>
             )}
           </TabsContent>
-          </Tabs>
-        </div>
+        </Tabs>
 
         {/* Kontrole kamere - uvek vidljive na dnu dialoga */}
         <div className="bg-white border-t p-4">
