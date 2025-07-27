@@ -4239,7 +4239,20 @@ export class DatabaseStorage implements IStorage {
   async getScrapingSources(): Promise<any[]> {
     try {
       const sources = await db
-        .select()
+        .select({
+          id: webScrapingSources.id,
+          name: webScrapingSources.name,
+          baseUrl: webScrapingSources.baseUrl,
+          isActive: webScrapingSources.isActive,
+          lastScrapeDate: webScrapingSources.lastScrapeDate,
+          totalPartsScraped: webScrapingSources.totalPartsScraped,
+          successfulScrapes: webScrapingSources.successfulScrapes,
+          failedScrapes: webScrapingSources.failedScrapes,
+          averageResponseTime: webScrapingSources.averageResponseTime,
+          scrapingConfig: webScrapingSources.scrapingConfig,
+          createdAt: webScrapingSources.createdAt,
+          updatedAt: webScrapingSources.updatedAt
+        })
         .from(webScrapingSources)
         .orderBy(webScrapingSources.name);
       return sources;
@@ -4279,7 +4292,21 @@ export class DatabaseStorage implements IStorage {
   async getScrapingLogs(sourceId?: number): Promise<any[]> {
     try {
       let query = db
-        .select()
+        .select({
+          id: webScrapingLogs.id,
+          sourceId: webScrapingLogs.sourceId,
+          status: webScrapingLogs.status,
+          startTime: webScrapingLogs.startTime,
+          endTime: webScrapingLogs.endTime,
+          totalPages: webScrapingLogs.totalPages,
+          processedPages: webScrapingLogs.processedPages,
+          newParts: webScrapingLogs.newParts,
+          updatedParts: webScrapingLogs.updatedParts,
+          errors: webScrapingLogs.errors,
+          duration: webScrapingLogs.duration,
+          createdBy: webScrapingLogs.createdBy,
+          createdAt: webScrapingLogs.createdAt
+        })
         .from(webScrapingLogs)
         .orderBy(desc(webScrapingLogs.createdAt))
         .limit(100);
