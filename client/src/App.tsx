@@ -122,8 +122,8 @@ function Router() {
       
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
-      {/* OCR Test route - accessible to admin and technician */}
-      <RoleProtectedRoute path="/ocr-test" component={OCRTestPage} allowedRoles={["admin", "technician"]} />
+      {/* OCR Test route - javno dostupna za testiranje kamera funkcionalnosti */}
+      <Route path="/ocr-test" component={OCRTestPage} />
       
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServices} allowedRoles={["technician"]} />
