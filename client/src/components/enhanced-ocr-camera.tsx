@@ -187,114 +187,88 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col">
           <TabsList className="mx-4 grid w-auto grid-cols-3">
             <TabsTrigger value="camera">Kamera</TabsTrigger>
             <TabsTrigger value="settings">Podešavanja</TabsTrigger>
             <TabsTrigger value="results">Rezultati</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="camera" className="flex-1 flex flex-col relative bg-black mt-2">
-            {/* Kamera kontejner sa flex-1 da zauzme prostor */}
-            <div className="flex-1 relative overflow-hidden">
-              <Webcam
-                ref={webcamRef}
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={videoConstraints}
-                className="w-full h-full object-cover"
-              />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsContent value="camera" className="flex-1 flex flex-col relative bg-black mt-2">
+              {/* Kamera kontejner sa flex-1 da zauzme prostor */}
+              <div className="flex-1 relative overflow-hidden min-h-0">
+                <Webcam
+                  ref={webcamRef}
+                  audio={false}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={videoConstraints}
+                  className="w-full h-full object-cover"
+                />
 
-              {/* Napredni overlay */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Fokusni okvir sa grid linijama */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 md:w-80 h-32 md:h-40 border-2 border-blue-400 rounded-lg">
-                  {/* Grid linije za bolje pozicioniranje */}
-                  <div className="absolute inset-2 border border-blue-300 opacity-50">
-                    <div className="absolute top-1/3 left-0 right-0 border-t border-blue-300"></div>
-                    <div className="absolute top-2/3 left-0 right-0 border-t border-blue-300"></div>
-                    <div className="absolute left-1/3 top-0 bottom-0 border-l border-blue-300"></div>
-                    <div className="absolute left-2/3 top-0 bottom-0 border-l border-blue-300"></div>
+                {/* Napredni overlay */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Fokusni okvir sa grid linijama */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 md:w-80 h-32 md:h-40 border-2 border-blue-400 rounded-lg">
+                    {/* Grid linije za bolje pozicioniranje */}
+                    <div className="absolute inset-2 border border-blue-300 opacity-50">
+                      <div className="absolute top-1/3 left-0 right-0 border-t border-blue-300"></div>
+                      <div className="absolute top-2/3 left-0 right-0 border-t border-blue-300"></div>
+                      <div className="absolute left-1/3 top-0 bottom-0 border-l border-blue-300"></div>
+                      <div className="absolute left-2/3 top-0 bottom-0 border-l border-blue-300"></div>
+                    </div>
+                    
+                    <div className="absolute -top-8 left-0 right-0 text-center">
+                      <Badge variant="secondary" className="bg-blue-500 text-white text-xs md:text-sm">
+                        Fokusiraj na nalepnicu - držite stabilno
+                      </Badge>
+                    </div>
+                    
+                    {/* Status indikatori */}
+                    <div className="absolute -bottom-8 left-0 right-0 flex justify-center gap-1 md:gap-2">
+                      <Badge variant={isInitialized ? "default" : "secondary"} className="text-xs">
+                        {isInitialized ? <CheckCircle className="h-2.5 w-2.5 mr-1" /> : <AlertCircle className="h-2.5 w-2.5 mr-1" />}
+                        OCR
+                      </Badge>
+                      <Badge variant={config.preprocessImage ? "default" : "outline"} className="text-xs">
+                        Pre-obrada
+                      </Badge>
+                      <Badge variant={config.multipleAttempts ? "default" : "outline"} className="text-xs">
+                        Više pokušaja
+                      </Badge>
+                    </div>
                   </div>
-                  
-                  <div className="absolute -top-8 left-0 right-0 text-center">
-                    <Badge variant="secondary" className="bg-blue-500 text-white text-xs md:text-sm">
-                      Fokusiraj na nalepnicu - držite stabilno
-                    </Badge>
-                  </div>
-                  
-                  {/* Status indikatori */}
-                  <div className="absolute -bottom-8 left-0 right-0 flex justify-center gap-1 md:gap-2">
-                    <Badge variant={isInitialized ? "default" : "secondary"} className="text-xs">
-                      {isInitialized ? <CheckCircle className="h-2.5 w-2.5 mr-1" /> : <AlertCircle className="h-2.5 w-2.5 mr-1" />}
-                      OCR
-                    </Badge>
-                    <Badge variant={config.preprocessImage ? "default" : "outline"} className="text-xs">
-                      Pre-obrada
-                    </Badge>
-                    <Badge variant={config.multipleAttempts ? "default" : "outline"} className="text-xs">
-                      Više pokušaja
-                    </Badge>
+
+                  {/* Zatamnjenje oko okvira */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 md:w-80 h-32 md:h-40 bg-transparent border-2 border-transparent rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"></div>
                   </div>
                 </div>
 
-                {/* Zatamnjenje oko okvira */}
-                <div className="absolute inset-0 bg-black bg-opacity-40">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 md:w-80 h-32 md:h-40 bg-transparent border-2 border-transparent rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"></div>
-                </div>
+                {/* Progress bar */}
+                {scanProgress > 0 && (
+                  <div className="absolute bottom-20 left-4 right-4">
+                    <Progress value={scanProgress} className="h-3" />
+                    <p className="text-white text-xs md:text-sm text-center mt-2">
+                      {scanProgress < 40 ? 'Inicijalizujem skener...' :
+                       scanProgress < 60 ? 'Hvatam visoko-rezolucijsku sliku...' :
+                       scanProgress < 80 ? 'Analiziram sa naprednim algoritmima...' :
+                       'Završavam analizu...'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {error && (
+                  <div className="absolute bottom-20 left-4 right-4">
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">{error}</AlertDescription>
+                    </Alert>
+                  </div>
+                )}
               </div>
-
-              {/* Progress bar */}
-              {scanProgress > 0 && (
-                <div className="absolute bottom-20 left-4 right-4">
-                  <Progress value={scanProgress} className="h-3" />
-                  <p className="text-white text-xs md:text-sm text-center mt-2">
-                    {scanProgress < 40 ? 'Inicijalizujem skener...' :
-                     scanProgress < 60 ? 'Hvatam visoko-rezolucijsku sliku...' :
-                     scanProgress < 80 ? 'Analiziram sa naprednim algoritmima...' :
-                     'Završavam analizu...'}
-                  </p>
-                </div>
-              )}
-
-              {/* Error message */}
-              {error && (
-                <div className="absolute bottom-20 left-4 right-4">
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">{error}</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-            </div>
-
-            {/* Kontrole kamere - izvučene iz overlay-a u poseban div */}
-            <div className="bg-black/90 p-4 border-t border-gray-700">
-              <div className="flex justify-center gap-3">
-                <Button 
-                  onClick={captureAndScan} 
-                  disabled={isScanning || !isInitialized}
-                  className="px-6 md:px-8 py-2.5 md:py-3"
-                  size="lg"
-                >
-                  {isScanning ? (
-                    <>
-                      <Zap className="mr-2 h-4 md:h-5 w-4 md:w-5 animate-spin" />
-                      Skeniram...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="mr-2 h-4 md:h-5 w-4 md:w-5" />
-                      Skeniraj
-                    </>
-                  )}
-                </Button>
-                <Button onClick={handleClose} variant="outline" size="lg" className="px-4 md:px-6">
-                  <X className="h-4 md:h-5 w-4 md:w-5" />
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
           <TabsContent value="settings" className="p-4 space-y-4">
             <div className="space-y-4">
@@ -417,6 +391,33 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Kontrole kamere - uvek vidljive na dnu dialoga */}
+        <div className="bg-white border-t p-4">
+          <div className="flex justify-center gap-3">
+            <Button 
+              onClick={captureAndScan} 
+              disabled={isScanning || !isInitialized || activeTab !== 'camera'}
+              className="px-6 md:px-8 py-2.5 md:py-3"
+              size="lg"
+            >
+              {isScanning ? (
+                <>
+                  <Zap className="mr-2 h-4 md:h-5 w-4 md:w-5 animate-spin" />
+                  Skeniram...
+                </>
+              ) : (
+                <>
+                  <Camera className="mr-2 h-4 md:h-5 w-4 md:w-5" />
+                  Skeniraj
+                </>
+              )}
+            </Button>
+            <Button onClick={handleClose} variant="outline" size="lg" className="px-4 md:px-6">
+              <X className="h-4 md:h-5 w-4 md:w-5" />
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
