@@ -29,15 +29,12 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-
       
-      // Prvo proveravamo da li je getUserMedia dostupna
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('getUserMedia nije podržana u ovom browser-u');
+        throw new Error('getUserMedia није podržana u ovom browser-u');
       }
 
-      // Probamo sa jednostavnijim constraints za Samsung uređaje
-      let constraints = {
+      const constraints = {
         video: {
           facingMode: { ideal: "environment" },
           width: { ideal: 1280 },
@@ -46,69 +43,25 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
         audio: false
       };
 
-
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        
-        // Eksplicitno pokretanje video-a za mobilne uređaje
-        try {
-          await videoRef.current.play();
-          console.log('✅ Video stream uspešno pokrenut');
-        } catch (playError) {
-          console.warn('⚠️ Upozorenje pri pokretanju video-a:', playError);
-          // Pokušaj asinhron
-          setTimeout(async () => {
-            try {
-              if (videoRef.current) {
-                await videoRef.current.play();
-                console.log('✅ Video stream pokrenut nakon delay-a');
-              }
-            } catch (delayedError) {
-              console.error('❌ Video stream se ne može pokrenuti:', delayedError);
-            }
-          }, 100);
-        }
+        // Jednostavno pokretanje bez složenih async logika
+        videoRef.current.play().catch(console.warn);
       }
     } catch (err) {
-      console.error('❌ Greška pri pokretanju kamere:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Nepoznata greška';
       
-      // Pokušaj sa fallback constraints
-      try {
-        console.log('📱 Pokušavam sa fallback constraints...');
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
-        
-        console.log('✅ Fallback kamera uspešno pokrenuta!');
-        setStream(fallbackStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = fallbackStream;
-          
-          // Eksplicitno pokretanje fallback video-a
-          try {
-            await videoRef.current.play();
-            console.log('✅ Fallback video stream uspešno pokrenut');
-          } catch (fallbackPlayError) {
-            console.warn('⚠️ Upozorenje pri pokretanju fallback video-a:', fallbackPlayError);
-          }
-        }
-      } catch (fallbackErr) {
-        console.error('❌ Fallback greška:', fallbackErr);
-        const errorMsg = fallbackErr instanceof Error ? fallbackErr.message : 'Nepoznata greška';
-        
-        if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
-          setError('Pristup kameri je odbačen. Dozvolite pristup kameri u browser-u.');
-        } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('DevicesNotFoundError')) {
-          setError('Kamera nije pronađena na uređaju.');
-        } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('TrackStartError')) {
-          setError('Kamera je već u upotrebi od strane druge aplikacije.');
-        } else {
-          setError(`Greška kamere: ${errorMsg}`);
-        }
+      if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
+        setError('Pristup kameri je odbačen. Dozvolite pristup kameri u browser-u.');
+      } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('DevicesNotFoundError')) {
+        setError('Kamera nije pronađena na uređaju.');
+      } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('TrackStartError')) {
+        setError('Kamera je već u upotrebi od strane druge aplikacije.');
+      } else {
+        setError(`Greška kamere: ${errorMsg}`);
       }
     }
   }, []);
