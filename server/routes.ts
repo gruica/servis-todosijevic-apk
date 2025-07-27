@@ -8649,19 +8649,10 @@ Admin panel - automatska porudžbina
 
   // ===== WEB SCRAPING ENDPOINTS =====
   
-  // Get scraping sources (mock data for MVP)
+  // Get scraping sources
   app.get("/api/admin/web-scraping/sources", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const sources = [{
-        id: 1,
-        name: 'Quinnspares',
-        baseUrl: 'https://www.quinnspares.com',
-        isActive: true,
-        lastScrapeDate: null,
-        totalPartsScraped: 0,
-        successfulScrapes: 0,
-        failedScrapes: 0
-      }];
+      const sources = await storage.getScrapingSources();
       res.json(sources);
     } catch (error) {
       console.error("Error fetching scraping sources:", error);
@@ -8669,14 +8660,69 @@ Admin panel - automatska porudžbina
     }
   });
 
-  // Get scraping logs (empty for MVP)
+  // Get scraping logs
   app.get("/api/admin/web-scraping/logs", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {
-      const logs: any[] = [];
+      const { sourceId } = req.query;
+      const logs = await storage.getScrapingLogs(sourceId ? parseInt(sourceId as string) : undefined);
       res.json(logs);
     } catch (error) {
       console.error("Error fetching scraping logs:", error);
       res.status(500).json({ error: "Greška pri dohvatanju logova scraping-a" });
+    }
+  });
+
+  // Start full scraping (all sources)
+  app.post("/api/admin/web-scraping/start-full", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo potpun web scraping...`);
+      
+      // Kreiraj log zapis
+      const logEntry = await storage.createScrapingLog({
+        sourceId: 1, // General entry
+        status: 'started',
+        totalPages: 200, // Ukupno za sve izvore
+        createdBy: req.user?.id
+      });
+
+      // Pokreni potpun scraping u pozadini
+      import('./web-scraping-service.js').then(({ webScrapingService }) => {
+        webScrapingService.runFullScraping().then(async (result) => {
+          await storage.updateScrapingLog(logEntry.id, {
+            status: result.success ? 'completed' : 'partial',
+            endTime: new Date(),
+            newParts: result.newParts,
+            updatedParts: result.updatedParts,
+            duration: result.duration,
+            errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null
+          });
+          
+          console.log(`✅ Potpun scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
+        }).catch(async (error) => {
+          console.error("❌ Greška u potpunom scraping:", error);
+          await storage.updateScrapingLog(logEntry.id, {
+            status: 'failed',
+            endTime: new Date(),
+            errors: JSON.stringify([error.message])
+          });
+        });
+      }).catch(async (error) => {
+        console.error("❌ Greška pri učitavanju web scraping servisa:", error);
+        await storage.updateScrapingLog(logEntry.id, {
+          status: 'failed',
+          endTime: new Date(),
+          errors: JSON.stringify([error.message])
+        });
+      });
+
+      res.json({
+        message: "Potpun web scraping je pokrenuta u pozadini",
+        logId: logEntry.id
+      });
+      
+    } catch (error) {
+      console.error("Error starting full scraping:", error);
+      res.status(500).json({ error: "Greška pri pokretanju potpunog web scraping-a" });
     }
   });
 
@@ -8687,55 +8733,55 @@ Admin panel - automatska porudžbina
       
       console.log(`🚀 Admin ${req.user?.fullName} pokrenuo Quinnspares scraping...`);
       
-      // Dynamic import of web scraping service
+      // Kreiraj log zapis
+      const logEntry = await storage.createScrapingLog({
+        sourceId: 1, // Quinnspares
+        status: 'started',
+        totalPages: maxPages || 50,
+        createdBy: req.user?.id
+      });
+
+      // Pokreni scraping u pozadini
       import('./web-scraping-service.js').then(({ webScrapingService }) => {
         webScrapingService.scrapeQuinnspares(
           maxPages || 50, 
           targetManufacturers || ['Candy', 'Beko', 'Electrolux', 'Hoover']
-        ).then((result) => {
+        ).then(async (result) => {
+          await storage.updateScrapingLog(logEntry.id, {
+            status: result.success ? 'completed' : 'partial',
+            endTime: new Date(),
+            newParts: result.newParts,
+            updatedParts: result.updatedParts,
+            duration: result.duration,
+            errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null
+          });
+          
           console.log(`✅ Quinnspares scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
-        }).catch((error) => {
+        }).catch(async (error) => {
           console.error("❌ Greška u Quinnspares scraping:", error);
+          await storage.updateScrapingLog(logEntry.id, {
+            status: 'failed',
+            endTime: new Date(),
+            errors: JSON.stringify([error.message])
+          });
         });
-      }).catch((error) => {
+      }).catch(async (error) => {
         console.error("❌ Greška pri učitavanju web scraping servisa:", error);
+        await storage.updateScrapingLog(logEntry.id, {
+          status: 'failed',
+          endTime: new Date(),
+          errors: JSON.stringify([error.message])
+        });
       });
 
       res.json({
         message: "Quinnspares scraping je pokrenuta u pozadini",
-        logId: 1
+        logId: logEntry.id
       });
       
     } catch (error) {
       console.error("Error starting Quinnspares scraping:", error);
       res.status(500).json({ error: "Greška pri pokretanju Quinnspares scraping-a" });
-    }
-  });
-
-  // Start full scraping
-  app.post("/api/admin/web-scraping/start-full", jwtAuth, requireRole(["admin"]), async (req, res) => {
-    try {
-      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo potpun web scraping...`);
-      
-      // Dynamic import of web scraping service
-      import('./web-scraping-service.js').then(({ webScrapingService }) => {
-        webScrapingService.runFullScraping().then((result) => {
-          console.log(`✅ Potpun scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
-        }).catch((error) => {
-          console.error("❌ Greška u potpunom scraping:", error);
-        });
-      }).catch((error) => {
-        console.error("❌ Greška pri učitavanju web scraping servisa:", error);
-      });
-
-      res.json({
-        message: "Potpun web scraping je pokrenuta u pozadini",
-        logId: 1
-      });
-      
-    } catch (error) {
-      console.error("Error starting full scraping:", error);
-      res.status(500).json({ error: "Greška pri pokretanju potpunog web scraping-a" });
     }
   });
 
