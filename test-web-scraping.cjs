@@ -1,8 +1,22 @@
 const jwt = require('jsonwebtoken');
 const fetch = require('node-fetch');
 
-// Koristi aktuelni JWT token iz sistema
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ1c2VybmFtZSI6ImplbGVuYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLm1lIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzNjAyMjUwLCJleHAiOjE3NTYxOTQyNTB9.JPFI6ytOZtUrg2OYvinR1QiNcuUHPkpX718fK0RzOWk';
+// Generate JWT token using environment variables
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+  console.error('❌ JWT_SECRET environment variable is required');
+  process.exit(1);
+}
+
+const payload = {
+  userId: 10,
+  username: 'jelena@frigosistemtodosijevic.me',
+  role: 'admin',
+  fullName: 'Admin',
+  id: 10
+};
+
+const token = jwt.sign(payload, secret, { expiresIn: '1h' });
 
 console.log('🔑 Koristim validni JWT Token:', token.substring(0, 50) + '...');
 
