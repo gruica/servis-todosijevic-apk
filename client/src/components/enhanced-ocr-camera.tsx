@@ -81,8 +81,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
       const imageSrc = webcamRef.current.getScreenshot({
         width: 1920,
-        height: 1080,
-        quality: 0.9
+        height: 1080
       });
       
       if (!imageSrc) {

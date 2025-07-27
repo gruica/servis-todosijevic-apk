@@ -62,61 +62,89 @@ export class EnhancedOCRService {
   };
 
   async initialize(config: OCRConfig = {}): Promise<void> {
-    this.worker = await createWorker();
-    await this.worker.loadLanguage('eng');
-    await this.worker.initialize('eng');
-    
-    // Napredne postavke za bolju detekciju
-    await this.worker.setParameters({
-      tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ',
-      tessedit_pageseg_mode: '6', // Uniform block of text
-      tessedit_ocr_engine_mode: '2', // LSTM OCR engine
-      classify_bln_numeric_mode: '1'
-    });
+    try {
+      console.log('🔧 Inicijalizujem Enhanced OCR...');
+      this.worker = await createWorker();
+      console.log('🔧 Worker kreiran...');
+      
+      await this.worker.loadLanguage('eng');
+      console.log('🔧 Jezik učitan...');
+      
+      await this.worker.initialize('eng');
+      console.log('🔧 OCR inicijalizovan...');
+      
+      // Napredne postavke za bolju detekciju
+      await this.worker.setParameters({
+        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ',
+        tessedit_pageseg_mode: '6', // Uniform block of text
+        tessedit_ocr_engine_mode: '2', // LSTM OCR engine
+        classify_bln_numeric_mode: '1'
+      });
+      console.log('🔧 Parametri postavljen...');
 
-    // Inicijalizuj canvas za predobradu slike
-    if (config.preprocessImage) {
-      this.canvas = document.createElement('canvas');
-      this.ctx = this.canvas.getContext('2d');
+      // Inicijalizuj canvas za predobradu slike
+      if (config.preprocessImage) {
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        console.log('🔧 Canvas kreiran za predobradu...');
+      }
+      
+      console.log('✅ Enhanced OCR uspešno inicijalizovan!');
+    } catch (error) {
+      console.error('❌ Greška pri inicijalizaciji Enhanced OCR:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška';
+      throw new Error(`Inicijalizacija OCR-a nije uspela: ${errorMessage}`);
     }
   }
 
-  private preprocessImage(imageData: string): string {
+  private async preprocessImage(imageData: string): Promise<string> {
     if (!this.canvas || !this.ctx) return imageData;
 
-    const img = new Image();
-    img.onload = () => {
-      const { width, height } = img;
-      this.canvas!.width = width;
-      this.canvas!.height = height;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const { width, height } = img;
+          this.canvas!.width = width;
+          this.canvas!.height = height;
+          
+          // Nacrtaj originalnu sliku
+          this.ctx!.drawImage(img, 0, 0);
+          
+          // Dobij image data
+          const imgData = this.ctx!.getImageData(0, 0, width, height);
+          const data = imgData.data;
+          
+          // Primeni kontrast i brightness filter
+          for (let i = 0; i < data.length; i += 4) {
+            // Povećaj kontrast
+            data[i] = this.clamp((data[i] - 128) * 1.5 + 128);     // Red
+            data[i + 1] = this.clamp((data[i + 1] - 128) * 1.5 + 128); // Green
+            data[i + 2] = this.clamp((data[i + 2] - 128) * 1.5 + 128); // Blue
+            
+            // Konvertuj u grayscale za bolju detekciju teksta
+            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            data[i] = gray;
+            data[i + 1] = gray;
+            data[i + 2] = gray;
+          }
+          
+          // Vrati obrađenu sliku
+          this.ctx!.putImageData(imgData, 0, 0);
+          resolve(this.canvas!.toDataURL('image/jpeg', 0.9));
+        } catch (error) {
+          console.error('Greška pri predobradi slike:', error);
+          resolve(imageData); // Vrati originalnu sliku ako ima grešku
+        }
+      };
       
-      // Nacrtaj originalnu sliku
-      this.ctx!.drawImage(img, 0, 0);
+      img.onerror = () => {
+        console.error('Greška pri učitavanju slike za predobradu');
+        resolve(imageData); // Vrati originalnu sliku ako ima grešku
+      };
       
-      // Dobij image data
-      const imgData = this.ctx!.getImageData(0, 0, width, height);
-      const data = imgData.data;
-      
-      // Primeni kontrast i brightness filter
-      for (let i = 0; i < data.length; i += 4) {
-        // Povećaj kontrast
-        data[i] = this.clamp((data[i] - 128) * 1.5 + 128);     // Red
-        data[i + 1] = this.clamp((data[i + 1] - 128) * 1.5 + 128); // Green
-        data[i + 2] = this.clamp((data[i + 2] - 128) * 1.5 + 128); // Blue
-        
-        // Konvertuj u grayscale za bolju detekciju teksta
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        data[i] = gray;
-        data[i + 1] = gray;
-        data[i + 2] = gray;
-      }
-      
-      // Vrati obrađenu sliku
-      this.ctx!.putImageData(imgData, 0, 0);
-    };
-    
-    img.src = imageData;
-    return this.canvas.toDataURL('image/jpeg', 0.9);
+      img.src = imageData;
+    });
   }
 
   private clamp(value: number): number {
@@ -130,7 +158,7 @@ export class EnhancedOCRService {
 
     let processedImage = imageData;
     if (config.preprocessImage) {
-      processedImage = this.preprocessImage(imageData);
+      processedImage = await this.preprocessImage(imageData);
     }
 
     const results: ScannedData[] = [];
@@ -173,7 +201,8 @@ export class EnhancedOCRService {
     }
 
     // Koristi specifične pattern-e za detektovani proizvođač
-    const patterns = this.manufacturerPatterns[detectedManufacturer || 'generic'];
+    const manufacturerKey = detectedManufacturer || 'generic';
+    const patterns = this.manufacturerPatterns[manufacturerKey as keyof typeof this.manufacturerPatterns];
 
     for (const line of lines) {
       // Pokušaj prepoznavanja modela
