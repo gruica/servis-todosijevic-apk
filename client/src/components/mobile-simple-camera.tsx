@@ -52,6 +52,25 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Eksplicitno pokretanje video-a za mobilne uređaje
+        try {
+          await videoRef.current.play();
+          console.log('✅ Video stream uspešno pokrenut');
+        } catch (playError) {
+          console.warn('⚠️ Upozorenje pri pokretanju video-a:', playError);
+          // Pokušaj asinhron
+          setTimeout(async () => {
+            try {
+              if (videoRef.current) {
+                await videoRef.current.play();
+                console.log('✅ Video stream pokrenut nakon delay-a');
+              }
+            } catch (delayedError) {
+              console.error('❌ Video stream se ne može pokrenuti:', delayedError);
+            }
+          }, 100);
+        }
       }
     } catch (err) {
       console.error('❌ Greška pri pokretanju kamere:', err);
@@ -68,6 +87,14 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
         setStream(fallbackStream);
         if (videoRef.current) {
           videoRef.current.srcObject = fallbackStream;
+          
+          // Eksplicitno pokretanje fallback video-a
+          try {
+            await videoRef.current.play();
+            console.log('✅ Fallback video stream uspešno pokrenut');
+          } catch (fallbackPlayError) {
+            console.warn('⚠️ Upozorenje pri pokretanju fallback video-a:', fallbackPlayError);
+          }
         }
       } catch (fallbackErr) {
         console.error('❌ Fallback greška:', fallbackErr);
@@ -230,6 +257,19 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
                 playsInline
                 muted
                 className="w-full h-full object-cover"
+                onLoadedMetadata={() => {
+                  console.log('✅ Video metadata učitana uspešno');
+                  if (videoRef.current) {
+                    console.log(`📐 Video dimenzije: ${videoRef.current.videoWidth}x${videoRef.current.videoHeight}`);
+                  }
+                }}
+                onCanPlay={() => {
+                  console.log('✅ Video spreman za reprodukciju');
+                }}
+                onError={(e) => {
+                  console.error('❌ Video greška:', e);
+                  setError('Greška pri prikazivanju video stream-a');
+                }}
               />
               
               {/* Fokus okvir */}
