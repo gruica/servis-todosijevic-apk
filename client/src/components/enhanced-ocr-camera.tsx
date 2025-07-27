@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, X, RotateCcw, Zap, Settings, CheckCircle, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { Camera, X, RotateCcw, Zap, Settings, CheckCircle, AlertCircle, Maximize2, Minimize2, Flashlight, FlashlightOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const [activeTab, setActiveTab] = useState('camera');
   const [autoScanEnabled, setAutoScanEnabled] = useState(true);
   const [isAutoScanning, setIsAutoScanning] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
   const autoScanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // OCR konfiguracija
@@ -44,8 +45,37 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     height: { ideal: 1080, max: 1080 },
     facingMode: { ideal: "environment" },
     focusMode: { ideal: "continuous" },
-    zoom: { ideal: 1.0 }
+    zoom: { ideal: 1.0 },
+    torch: flashEnabled,
+    advanced: [{ torch: flashEnabled }]
   };
+
+  // Funkcija za toggle flash-a
+  const toggleFlash = useCallback(async () => {
+    if (webcamRef.current && webcamRef.current.video) {
+      try {
+        const stream = webcamRef.current.video.srcObject as MediaStream;
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        
+        if (capabilities.torch) {
+          await track.applyConstraints({
+            advanced: [{ torch: !flashEnabled } as any]
+          });
+          setFlashEnabled(!flashEnabled);
+          console.log(`Flash ${!flashEnabled ? 'uključen' : 'isključen'}`);
+        } else {
+          console.log('Flash nije podržan na ovom uređaju');
+          setError('Flash nije podržan na ovom uređaju');
+          setTimeout(() => setError(null), 3000);
+        }
+      } catch (error) {
+        console.error('Greška prilikom kontrole flash-a:', error);
+        setError('Greška prilikom kontrole flash-a');
+        setTimeout(() => setError(null), 3000);
+      }
+    }
+  }, [flashEnabled, webcamRef]);
 
   const initializeOCR = useCallback(async () => {
     if (isInitialized) return;
@@ -306,31 +336,41 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
             <TabsContent value="camera" className="flex-1 flex flex-col relative bg-black mt-2">
               {/* Kontrole iznad kamere - uvek dostupne */}
               <div className="bg-white/90 backdrop-blur border-b p-3">
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   {/* Toggle za auto skeniranje */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Auto:</span>
+                    <span className="text-xs font-medium">Auto:</span>
                     <Switch
                       checked={autoScanEnabled}
                       onCheckedChange={setAutoScanEnabled}
                     />
                   </div>
                   
+                  {/* Flash dugme */}
+                  <Button
+                    onClick={toggleFlash}
+                    variant={flashEnabled ? "default" : "outline"}
+                    size="sm"
+                    className={`px-2 py-1 ${flashEnabled ? 'bg-yellow-500 hover:bg-yellow-600' : ''}`}
+                  >
+                    {flashEnabled ? <Flashlight className="h-3 w-3" /> : <FlashlightOff className="h-3 w-3" />}
+                  </Button>
+                  
                   {/* Glavno dugme za skeniranje */}
                   <Button 
                     onClick={captureAndScan} 
                     disabled={isScanning}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    size="default"
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
                   >
                     {isScanning ? (
                       <>
-                        <Zap className="mr-2 h-4 w-4 animate-spin" />
+                        <Zap className="mr-1 h-3 w-3 animate-spin" />
                         Skeniram...
                       </>
                     ) : (
                       <>
-                        <Camera className="mr-2 h-4 w-4" />
+                        <Camera className="mr-1 h-3 w-3" />
                         Skeniraj
                       </>
                     )}

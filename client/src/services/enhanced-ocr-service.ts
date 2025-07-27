@@ -138,9 +138,14 @@ export class EnhancedOCRService {
     // Pokušaj sa različitim parametrima ako je omogućeno
     if (config.multipleAttempts) {
       const attempts = [
-        { pageseg: '6', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ' },
-        { pageseg: '7', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/' },
-        { pageseg: '8', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ' }
+        // Za serijske brojeve i model brojeve
+        { pageseg: '6', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ', psm: 'single_block' },
+        // Za kratki tekst (model/serijski broj)
+        { pageseg: '8', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/', psm: 'single_word' },
+        // Za pojedinačne karaktere u grupama
+        { pageseg: '7', whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/.: ', psm: 'single_text_line' },
+        // Specijalno za brojeve sa boljim threshold-om
+        { pageseg: '6', whitelist: '0123456789-/', psm: 'single_block', threshold: 120 }
       ];
 
       for (const attempt of attempts) {
