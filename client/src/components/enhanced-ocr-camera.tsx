@@ -69,6 +69,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   }, [isOpen, initializeOCR, isInitialized]);
 
   const captureAndScan = useCallback(async () => {
+    console.log('captureAndScan called', { isScanning, webcamRef: !!webcamRef.current });
     if (!webcamRef.current || isScanning) return;
 
     try {
@@ -542,11 +543,26 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
         </Tabs>
 
         {/* Kontrole kamere - uvek vidljive na dnu dialoga */}
-        <div className="bg-white border-t p-4">
+        <div className="bg-white border-t p-4 space-y-3">
+          {/* Toggle za auto skeniranje */}
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-sm font-medium">Auto-skeniranje:</span>
+            <Switch
+              checked={autoScanEnabled}
+              onCheckedChange={setAutoScanEnabled}
+            />
+            {isAutoScanning && (
+              <Badge variant="secondary" className="bg-orange-500 text-white animate-pulse">
+                Detektujem...
+              </Badge>
+            )}
+          </div>
+
+          {/* Dugmad za akcije */}
           <div className="flex justify-center gap-3">
             <Button 
               onClick={captureAndScan} 
-              disabled={isScanning || !isInitialized || activeTab !== 'camera'}
+              disabled={isScanning || !isInitialized}
               className="px-6 md:px-8 py-2.5 md:py-3"
               size="lg"
             >
