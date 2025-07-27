@@ -203,10 +203,12 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
               <div className="flex-1">
                 <p className="font-medium text-sm">{error}</p>
                 <div className="mt-2 text-xs space-y-1">
-                  <p>📱 Samsung uputstvo:</p>
-                  <p>1. Kliknite na "🔒" pored adrese</p>
-                  <p>2. Izaberite "Dozvoli" za kameru</p>
-                  <p>3. Kliknite dugme ispod</p>
+                  <p>📱 Dozvolite kameru:</p>
+                  <p>1. Kliknite na 🔒 ili ⓘ levo od adrese</p>
+                  <p>2. Pronađite "Camera" ili "Kamera"</p>
+                  <p>3. Promenite na "Allow" ili "Dozvoli"</p>
+                  <p>4. Osvežite stranicu (F5)</p>
+                  <p>5. Kliknite dugme ispod</p>
                 </div>
                 <Button
                   onClick={startCamera}
