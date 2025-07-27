@@ -164,7 +164,10 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[90vh]'} p-0 overflow-hidden`}>
+      <DialogContent 
+        className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[90vh]'} p-0 overflow-hidden`}
+        style={{ zIndex: 10999 }}
+      >
         <DialogHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
