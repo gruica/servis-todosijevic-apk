@@ -25,29 +25,37 @@ export class EnhancedOCRService {
   private manufacturerPatterns = {
     beko: {
       model: [
+        // Specifični Beko model format sa WTV, WMB, itd.
+        /\b([A-Z]{2,4}\s*[0-9]{3,4}\s*[A-Z]{1,3})\b/,
+        // Model format: WTV 9612 XS
+        /\b([A-Z]{2,4}\s+[0-9]{3,4}\s+[A-Z]{1,3})\b/,
+        // Kompaktni model format: WTV9612XS
+        /\b([A-Z]{2,4}[0-9]{3,4}[A-Z]{1,3})\b/,
         // Product: oznaka specifična za Beko
         /(?:PRODUCT|Produkt)[:.\s]*([A-Z0-9]+[\/\-]?[A-Z0-9]*)/i,
-        /Product[:.\s]*([A-Z0-9]{4,})/i,
         // Standardne model oznake
-        /(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{2,}[A-Z0-9]*)/i,
-        // Beko tipični model format
-        /\b([A-Z]{2,4}[0-9]{2,6}[A-Z]*[\/\-]?[A-Z0-9]*)\b/,
-        // Model sa slash ili dash
-        /\b([A-Z0-9]{3,}[\/\-][A-Z0-9]{2,})\b/
+        /(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{2,}[A-Z0-9]*)/i
       ],
       serial: [
+        // Beko specifični serijski format: 24 - 601087 - 01
+        /Serial\s*No[:.\s]*([0-9]{1,3}\s*-\s*[0-9]{6}\s*-\s*[0-9]{2})/i,
+        /Serial[:.\s]*([0-9]{1,3}\s*-\s*[0-9]{6}\s*-\s*[0-9]{2})/i,
+        // SN format sa dash-evima
+        /SN[:.\s]*([0-9]{1,3}\s*-\s*[0-9]{6}\s*-\s*[0-9]{2})/i,
+        // Kompaktni format bez razmaka: 24-601087-01
+        /\b([0-9]{1,3}-[0-9]{6}-[0-9]{2})\b/,
         // SN: oznaka specifična za Beko
-        /SN[:.\s]*([A-Z0-9]{6,})/i,
-        /S\/N[:.\s]*([A-Z0-9]{6,})/i,
-        /Serial[:.\s]*Number[:.\s]*([A-Z0-9]{6,})/i,
-        // Dugačke numeričke sekvence tipične za Beko
-        /\b([0-9]{8,15})\b/,
-        // Alfanumerički serijski sa prefiksom
-        /\b([A-Z]{2,3}[0-9]{6,})\b/,
-        // Bilo koja dugačka alfanumerička sekvenca
-        /\b([A-Z0-9]{8,15})\b/
+        /SN[:.\s]*([A-Z0-9\s\-]{6,})/i,
+        /S\/N[:.\s]*([A-Z0-9\s\-]{6,})/i,
+        /Serial[:.\s]*Number[:.\s]*([A-Z0-9\s\-]{6,})/i
       ],
-      code: [/(?:P\/N|PN)[:.\s]*([0-9]{8,})/i]
+      code: [
+        // Product Code format: 7148246809
+        /Product\s*Code[:.\s]*([0-9]{8,12})/i,
+        /(?:P\/N|PN)[:.\s]*([0-9]{8,12})/i,
+        // Dugačke numeričke sekvence za product code
+        /\b([0-9]{10})\b/
+      ]
     },
     electrolux: {
       model: [/(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{3,}[A-Z0-9]*)/i, /^([A-Z]{2,4}[0-9]{4,6}[A-Z]?)$/i],
@@ -245,6 +253,7 @@ export class EnhancedOCRService {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 3) {
             result.productNumber = this.cleanData(match[1]);
+            console.log(`🏷️ Pronađen product code: ${result.productNumber} (pattern: ${pattern})`);
             break;
           }
         }
@@ -278,7 +287,8 @@ export class EnhancedOCRService {
   }
 
   private cleanData(data: string): string {
-    return data.trim().replace(/[^\w\-\/]/g, '').toUpperCase();
+    // Zadržaj razmake i crtice za Beko serijske brojeve
+    return data.trim().replace(/[^\w\-\/\s]/g, '').toUpperCase();
   }
 
   private enhancedFallbackExtraction(lines: string[], result: ScannedData): void {
