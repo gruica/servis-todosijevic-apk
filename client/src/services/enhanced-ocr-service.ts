@@ -25,12 +25,17 @@ export class EnhancedOCRService {
   private manufacturerPatterns = {
     beko: {
       model: [
+        // Beko frižider format: RCNA (MODEL NUMBER) i KS4030N (MODEL TYPE)
+        /MODEL\s*NUMBER[:.\s]*([A-Z]{3,6})/i,
+        /MODEL\s*TYPE[:.\s]*([A-Z]{2}[0-9]{4}[A-Z])/i,
         // Specifični Beko model format sa WTV, WMB, itd.
         /\b([A-Z]{2,4}\s*[0-9]{3,4}\s*[A-Z]{1,3})\b/,
         // Model format: WTV 9612 XS
         /\b([A-Z]{2,4}\s+[0-9]{3,4}\s+[A-Z]{1,3})\b/,
         // Kompaktni model format: WTV9612XS
         /\b([A-Z]{2,4}[0-9]{3,4}[A-Z]{1,3})\b/,
+        // Kratki alfanumerički formati kao što je RCNA
+        /\b([A-Z]{3,4})\b/,
         // Product: oznaka specifična za Beko
         /(?:PRODUCT|Produkt)[:.\s]*([A-Z0-9]+[\/\-]?[A-Z0-9]*)/i,
         // Standardne model oznake
@@ -58,9 +63,50 @@ export class EnhancedOCRService {
       ]
     },
     electrolux: {
-      model: [/(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{3,}[A-Z0-9]*)/i, /^([A-Z]{2,4}[0-9]{4,6}[A-Z]?)$/i],
-      serial: [/(?:S\/N|SN)[:.\s]*([A-Z0-9]{8,})/i, /^([A-Z]{2}[0-9]{8,})$/i],
-      code: [/(?:P\/N|PN)[:.\s]*([0-9]{9,})/i]
+      model: [
+        // Electrolux specifični format: ETW36433W OQ1
+        /\b([A-Z]{3}[0-9]{5}[A-Z]+\s*[A-Z0-9]*)\b/,
+        // Electrolux kratki format sa ETW, EWF, EWW
+        /\b([A-Z]{3}[0-9]{5}[A-Z])\b/,
+        /(?:Mod|Model|Type)[:.\s]*([A-Z0-9\s]{5,})/i,
+        /(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{3,}[A-Z0-9]*)/i
+      ],
+      serial: [
+        // Electrolux Ser No format: 513000001
+        /Ser\s*No[:.\s]*([0-9]{8,})/i,
+        /Serial\s*No[:.\s]*([0-9]{8,})/i,
+        /(?:S\/N|SN)[:.\s]*([A-Z0-9]{8,})/i,
+        // Dugačke numeričke sekvence za Electrolux
+        /\b([0-9]{9})\b/
+      ],
+      code: [
+        // Electrolux product kodovi
+        /(?:P\/N|PN|Product)[:.\s]*([A-Z0-9]{6,})/i,
+        /\b([0-9]{8,12})\b/
+      ]
+    },
+    candy: {
+      model: [
+        // Candy Type format: F3M9
+        /Type[:.\s]*([A-Z0-9]{2,6})/i,
+        // Candy tipični alfanumerični kratki modeli
+        /\b([A-Z][0-9][A-Z][0-9])\b/,
+        /\b([A-Z]{1,3}[0-9]{1,3}[A-Z]{0,3})\b/,
+        /(?:MOD|MODEL)[:.\s]*([A-Z0-9\-]{4,})/i
+      ],
+      serial: [
+        // Candy Mod No format: 37 86424180063
+        /Mod\s*No[:.\s]*([0-9\s]{8,})/i,
+        /(?:S\/N|SN|Serial)[:.\s]*([A-Z0-9]{6,})/i,
+        // Dugačke numeričke sekvence sa razmacima
+        /\b([0-9]{2}\s*[0-9]{11})\b/,
+        /\b([0-9]{11,15})\b/
+      ],
+      code: [
+        // Candy product kodovi - dugačke numeričke sekvence
+        /\b([0-9]{11,13})\b/,
+        /(?:P\/N|PN|Cod)[:.\s]*([A-Z0-9]{6,})/i
+      ]
     },
     samsung: {
       model: [/(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9-]+[A-Z]*)/i, /^([A-Z]{2,4}[0-9-]{3,}[A-Z]*)$/i],
@@ -278,8 +324,11 @@ export class EnhancedOCRService {
     if (focus) return focus;
 
     const upperText = text.toUpperCase();
-    if (upperText.includes('BEKO')) return 'beko';
-    if (upperText.includes('ELECTROLUX')) return 'electrolux';
+    
+    // Poboljšana detekcija brendova na osnovu specifičnih oznaka sa nalepnica
+    if (upperText.includes('BEKO') || upperText.includes('MODEL NUMBER') || upperText.includes('MODEL TYPE')) return 'beko';
+    if (upperText.includes('ELECTROLUX') || upperText.includes('SER NO') || upperText.includes('ETW') || upperText.includes('EWF')) return 'electrolux';
+    if (upperText.includes('CANDY') || upperText.includes('MOD NO') || upperText.includes('TYPE F')) return 'candy';
     if (upperText.includes('SAMSUNG')) return 'samsung';
     if (upperText.includes('LG')) return 'lg';
     

@@ -148,20 +148,27 @@ export function SupplementGeneraliForm({
     console.log("📷 Napredni skaner - pronađeni podaci:", scannedData);
     
     // Automatski popuni polja sa skeniranim podacima
-    if (scannedData.model && scannedData.model.length >= 3) {
+    if (scannedData.model && scannedData.model.length >= 2) {
       form.setValue("model", scannedData.model);
     }
-    if (scannedData.serialNumber && scannedData.serialNumber.length >= 6) {
+    if (scannedData.serialNumber && scannedData.serialNumber.length >= 4) {
       form.setValue("serialNumber", scannedData.serialNumber);
     }
     
     // Dodaj dodatne informacije u napomene ako postoje
     let additionalInfo = [];
     if (scannedData.productNumber) {
-      additionalInfo.push(`Product broj: ${scannedData.productNumber}`);
+      additionalInfo.push(`Product kod: ${scannedData.productNumber}`);
     }
     if (scannedData.manufacturerCode && scannedData.manufacturerCode !== 'generic') {
-      additionalInfo.push(`Detektovan proizvođač: ${scannedData.manufacturerCode}`);
+      const brandNames = {
+        'beko': 'Beko',
+        'candy': 'Candy', 
+        'electrolux': 'Electrolux',
+        'samsung': 'Samsung',
+        'lg': 'LG'
+      };
+      additionalInfo.push(`Brend: ${brandNames[scannedData.manufacturerCode] || scannedData.manufacturerCode}`);
     }
     if (scannedData.year) {
       additionalInfo.push(`Godina: ${scannedData.year}`);
@@ -170,7 +177,7 @@ export function SupplementGeneraliForm({
     if (additionalInfo.length > 0) {
       const currentNotes = form.getValues("supplementNotes") || "";
       const newNotes = currentNotes + (currentNotes ? "\n" : "") + 
-        `Skenirani podaci: ${additionalInfo.join(", ")}`;
+        `OCR skener: ${additionalInfo.join(", ")}`;
       form.setValue("supplementNotes", newNotes);
     }
     
