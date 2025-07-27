@@ -24,8 +24,29 @@ export class EnhancedOCRService {
   // Napredni pattern mapiranje za različite proizvođače
   private manufacturerPatterns = {
     beko: {
-      model: [/(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{2,}[A-Z0-9]*)/i, /^([A-Z]{3,4}[0-9]{3,5}[A-Z]?)$/i],
-      serial: [/(?:S\/N|SN)[:.\s]*([0-9]{8,12})/i, /^([0-9]{10,12})$/i],
+      model: [
+        // Product: oznaka specifična za Beko
+        /(?:PRODUCT|Produkt)[:.\s]*([A-Z0-9]+[\/\-]?[A-Z0-9]*)/i,
+        /Product[:.\s]*([A-Z0-9]{4,})/i,
+        // Standardne model oznake
+        /(?:MOD|MODEL)[:.\s]*([A-Z]{2,}[0-9]{2,}[A-Z0-9]*)/i,
+        // Beko tipični model format
+        /\b([A-Z]{2,4}[0-9]{2,6}[A-Z]*[\/\-]?[A-Z0-9]*)\b/,
+        // Model sa slash ili dash
+        /\b([A-Z0-9]{3,}[\/\-][A-Z0-9]{2,})\b/
+      ],
+      serial: [
+        // SN: oznaka specifična za Beko
+        /SN[:.\s]*([A-Z0-9]{6,})/i,
+        /S\/N[:.\s]*([A-Z0-9]{6,})/i,
+        /Serial[:.\s]*Number[:.\s]*([A-Z0-9]{6,})/i,
+        // Dugačke numeričke sekvence tipične za Beko
+        /\b([0-9]{8,15})\b/,
+        // Alfanumerički serijski sa prefiksom
+        /\b([A-Z]{2,3}[0-9]{6,})\b/,
+        // Bilo koja dugačka alfanumerička sekvenca
+        /\b([A-Z0-9]{8,15})\b/
+      ],
       code: [/(?:P\/N|PN)[:.\s]*([0-9]{8,})/i]
     },
     electrolux: {
@@ -151,10 +172,17 @@ export class EnhancedOCRService {
       for (const attempt of attempts) {
         await this.worker.setParameters({
           tessedit_char_whitelist: attempt.whitelist,
-          tessedit_pageseg_mode: attempt.pageseg
+          tessedit_pageseg_mode: attempt.pageseg,
+          // Dodatni parametri za bolju detekciju
+          classify_bln_numeric_mode: '1',
+          tessedit_ocr_engine_mode: '2',
+          // Poboljšaj threshold za bolju preciznost
+          tessedit_char_blacklist: '',
+          preserve_interword_spaces: '1'
         });
 
         const { data: { text, confidence } } = await this.worker.recognize(processedImage);
+        console.log(`OCR pokušaj ${attempts.indexOf(attempt) + 1}:`, { text, confidence });
         const parsed = this.parseText(text, confidence, config.manufacturerFocus);
         results.push(parsed);
       }
@@ -171,22 +199,29 @@ export class EnhancedOCRService {
     const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     const result: ScannedData = { confidence, extractedText: text };
 
+    console.log('🔍 OCR čitanje:', { text, lines, confidence });
+
     // Detektuj proizvođača iz teksta
     const detectedManufacturer = this.detectManufacturer(text, manufacturerFocus);
     if (detectedManufacturer) {
       result.manufacturerCode = detectedManufacturer;
     }
 
+    console.log('🏭 Detektovani proizvođač:', detectedManufacturer);
+
     // Koristi specifične pattern-e za detektovani proizvođač
     const patterns = this.manufacturerPatterns[detectedManufacturer || 'generic'];
 
     for (const line of lines) {
+      console.log(`📝 Analiziram liniju: "${line}"`);
+      
       // Pokušaj prepoznavanja modela
       if (!result.model) {
         for (const pattern of patterns.model) {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 3) {
             result.model = this.cleanData(match[1]);
+            console.log(`📱 Pronađen model: ${result.model} (pattern: ${pattern})`);
             break;
           }
         }
@@ -198,6 +233,7 @@ export class EnhancedOCRService {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 6) {
             result.serialNumber = this.cleanData(match[1]);
+            console.log(`🔢 Pronađen serijski: ${result.serialNumber} (pattern: ${pattern})`);
             break;
           }
         }

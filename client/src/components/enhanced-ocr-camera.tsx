@@ -33,11 +33,11 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const [flashEnabled, setFlashEnabled] = useState(false);
   const autoScanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // OCR konfiguracija
+  // OCR konfiguracija - uvek koristi "beko" za optimalne rezultate
   const [config, setConfig] = useState<OCRConfig>({
     preprocessImage: true,
     multipleAttempts: true,
-    manufacturerFocus: manufacturerHint || 'generic'
+    manufacturerFocus: 'beko' // Forsiraj Beko pattern-e za najbolje rezultate
   });
 
   const videoConstraints = {
