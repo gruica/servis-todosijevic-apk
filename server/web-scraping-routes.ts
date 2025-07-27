@@ -116,6 +116,59 @@ export function setupWebScrapingRoutes(app: express.Application) {
 
   // ===== SCRAPING EXECUTION ENDPOINTS =====
 
+  // Start scraping for specific source
+  app.post("/api/admin/web-scraping/sources/:id/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { maxPages, targetManufacturers } = req.body;
+      
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo scraping za source ${id}...`);
+      
+      // Kreiraj log zapis
+      const logEntry = await storage.createScrapingLog({
+        sourceId: parseInt(id),
+        status: 'started',
+        totalPages: maxPages || 50,
+        createdBy: req.user?.id
+      });
+
+      // Pokreni scraping u pozadini
+      webScrapingService.scrapeQuinnspares(
+        maxPages || 50, 
+        targetManufacturers || ['Candy', 'Beko', 'Electrolux', 'Hoover']
+      ).then(async (result) => {
+        // Ažuriraj log sa rezultatima
+        await storage.updateScrapingLog(logEntry.id, {
+          status: result.success ? 'completed' : 'failed',
+          endTime: new Date(),
+          newParts: result.newParts,
+          updatedParts: result.updatedParts,
+          duration: result.duration,
+          errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null
+        });
+        
+        console.log(`✅ Source ${id} scraping završen: ${result.newParts} novih, ${result.updatedParts} ažuriranih`);
+      }).catch(async (error) => {
+        console.error(`❌ Greška u source ${id} scraping:`, error);
+        await storage.updateScrapingLog(logEntry.id, {
+          status: 'failed',
+          endTime: new Date(),
+          errors: JSON.stringify([error.message])
+        });
+      });
+
+      res.json({
+        message: `Scraping za source ${id} je pokrenuta u pozadini`,
+        logId: logEntry.id,
+        status: 'started'
+      });
+      
+    } catch (error) {
+      console.error("Error starting source scraping:", error);
+      res.status(500).json({ error: "Greška pri pokretanju scraping-a" });
+    }
+  });
+
   // Start manual scraping for Quinnspares
   app.post("/api/admin/web-scraping/start-quinnspares", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {

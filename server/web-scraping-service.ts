@@ -321,8 +321,141 @@ export class WebScrapingService {
       const page = await browser.newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
       
-      // Originalna Puppeteer logika ovde...
-      console.log('⚠️ Puppeteer implementacija u toku...');
+      // Stvarna Puppeteer implementacija
+      console.log('🎯 Pokretanje stvarnog Puppeteer scraping-a...');
+      
+      for (const manufacturer of targetManufacturers) {
+        try {
+          console.log(`🏭 Scraping ${manufacturer} rezervnih delova...`);
+          
+          // URL-ovi za različite proizvođače
+          const manufacturerUrls = {
+            'candy': 'https://www.quinnspares.com/candy/c-1022.html',
+            'beko': 'https://www.quinnspares.com/beko/c-1651.html', 
+            'electrolux': 'https://www.quinnspares.com/electrolux/c-1109.html',
+            'hoover': 'https://www.quinnspares.com/hoover/c-1170.html'
+          };
+          
+          const manufacturerUrl = manufacturerUrls[manufacturer.toLowerCase()];
+          if (!manufacturerUrl) continue;
+          
+          console.log(`📍 Navigiram na ${manufacturerUrl}`);
+          await page.goto(manufacturerUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+          
+          // Pronađi sve linkove proizvoda na stranici
+          const productLinks = await page.evaluate(() => {
+            const links: string[] = [];
+            // Traži različite tipove linkova za proizvode
+            const selectors = [
+              'a[href*="/product/"]',
+              'a[href*="/part/"]', 
+              'a[href*="/spare-part/"]',
+              '.product-item a',
+              '.product-card a',
+              '.product a'
+            ];
+            
+            for (const selector of selectors) {
+              document.querySelectorAll(selector).forEach(link => {
+                const href = (link as HTMLAnchorElement).href;
+                if (href && !links.includes(href)) {
+                  links.push(href);
+                }
+              });
+            }
+            return links.slice(0, 50); // Ograniči na 50 proizvoda po manufactureru
+          });
+          
+          console.log(`🔍 Pronađeno ${productLinks.length} proizvoda za ${manufacturer}`);
+          
+          // Procesiruj proizvode (maksimalno 10 po manufacturer-u za test)
+          for (let i = 0; i < Math.min(productLinks.length, 10); i++) {
+            try {
+              const productUrl = productLinks[i];
+              console.log(`📦 Obrađujem proizvod ${i + 1}: ${productUrl}`);
+              
+              await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 20000 });
+              
+              // Izvuci podatke o proizvodu
+              const productData = await page.evaluate(() => {
+                const getTextContent = (selector: string): string => {
+                  const element = document.querySelector(selector);
+                  return element?.textContent?.trim() || '';
+                };
+                
+                const title = getTextContent('h1') || 
+                            getTextContent('.product-title') || 
+                            getTextContent('.title') || 
+                            getTextContent('.product-name');
+                            
+                const description = getTextContent('.product-description') || 
+                                 getTextContent('.description') ||
+                                 getTextContent('.product-details');
+                                 
+                const price = getTextContent('.price') || 
+                            getTextContent('.product-price') || 
+                            getTextContent('[class*="price"]');
+                            
+                const partNumber = getTextContent('.part-number') || 
+                                 getTextContent('.sku') || 
+                                 getTextContent('.code') ||
+                                 getTextContent('[class*="part"]');
+                                 
+                const availability = getTextContent('.availability') || 
+                                   getTextContent('.stock') || 
+                                   'available';
+                
+                return {
+                  title,
+                  description,
+                  price,
+                  partNumber,
+                  availability,
+                  url: window.location.href
+                };
+              });
+              
+              // Kreiraj rezervni deo ako ima validne podatke
+              if (productData.title && productData.title.length > 3) {
+                const scrapedPart: ScrapedPart = {
+                  partNumber: productData.partNumber || `QS-${manufacturer.toUpperCase()}-${Date.now().toString().slice(-6)}`,
+                  partName: this.cleanPartName(productData.title),
+                  description: productData.description || `${manufacturer} rezervni deo - ${productData.title}`,
+                  category: this.mapCategory(productData.title, productData.description),
+                  manufacturer,
+                  priceGbp: productData.price.replace(/[^\d.,]/g, '') || '0.00',
+                  supplierName: 'Quinnspares',
+                  supplierUrl: productData.url,
+                  imageUrls: [],
+                  availability: this.mapAvailability(productData.availability),
+                  sourceType: 'web_scraping',
+                  isOemPart: false
+                };
+                
+                const result = await this.savePart(scrapedPart);
+                if (result.isNew) {
+                  newParts++;
+                  console.log(`✅ Novi deo: ${scrapedPart.partName}`);
+                } else {
+                  updatedParts++;
+                  console.log(`🔄 Ažuriran deo: ${scrapedPart.partName}`);
+                }
+              }
+              
+              // Pauza između zahteva
+              await this.randomDelay(1000, 2000);
+              
+            } catch (productError) {
+              errors.push(`Greška pri obradi proizvoda ${productLinks[i]}: ${productError.message}`);
+              console.error(`❌ Greška pri obradi proizvoda: ${productError.message}`);
+            }
+          }
+          
+        } catch (manufacturerError) {
+          errors.push(`Greška pri scraping-u ${manufacturer}: ${manufacturerError.message}`);
+          console.error(`❌ Greška pri scraping-u ${manufacturer}: ${manufacturerError.message}`);
+        }
+      }
       
       return {
         success: true,
@@ -388,12 +521,22 @@ export class WebScrapingService {
         }
       });
       
-      // Ako nema direktnih linkova, kreiraj search URL-ove
+      // Ako nema direktnih linkova, kreiraj manufacturer URL-ove na osnovu pronađenih pattern-a
       if (manufacturerLinks.length === 0) {
+        console.log('📍 Kreiram direktne manufacturer URL-ove...');
+        const manufacturerUrls = {
+          'candy': 'https://www.quinnspares.com/candy/c-1022.html',
+          'beko': 'https://www.quinnspares.com/beko/c-1651.html', 
+          'electrolux': 'https://www.quinnspares.com/electrolux/c-1109.html',
+          'hoover': 'https://www.quinnspares.com/hoover/c-1170.html'
+        };
+        
         for (const manufacturer of targetManufacturers) {
-          const searchUrl = `https://www.quinnspares.com/search?q=${encodeURIComponent(manufacturer)}`;
-          manufacturerLinks.push(searchUrl);
-          console.log(`🔍 Kreiran search URL za ${manufacturer}: ${searchUrl}`);
+          const manufacturerUrl = manufacturerUrls[manufacturer.toLowerCase()];
+          if (manufacturerUrl) {
+            manufacturerLinks.push(manufacturerUrl);
+            console.log(`🏭 Dodajem ${manufacturer} URL: ${manufacturerUrl}`);
+          }
         }
       }
       
@@ -437,17 +580,17 @@ export class WebScrapingService {
             if (products.length > 0) {
               console.log(`🔍 Pronađeno ${products.length} proizvoda sa ${selector}`);
               
-              // Obradi prvo 5 proizvoda sa stranice
-              products.slice(0, 5).each(async (_, productElement) => {
+              // Obradi proizvode sa stranice (sekvencijalno)
+              for (let i = 0; i < Math.min(products.length, 5); i++) {
                 try {
-                  const product = page$(productElement);
-                  const title = product.find('h1, h2, h3, .title, .name, .product-name').first().text().trim();
-                  const price = product.find('.price, .cost, [class*="price"]').first().text().trim();
-                  const partNumber = product.find('.part-number, .sku, .code').first().text().trim();
-                  const description = product.find('.description, .details').first().text().trim();
+                  const productElement = products.eq(i);
+                  const title = productElement.find('h1, h2, h3, .title, .name, .product-name').first().text().trim();
+                  const price = productElement.find('.price, .cost, [class*="price"]').first().text().trim();
+                  const partNumber = productElement.find('.part-number, .sku, .code').first().text().trim();
+                  const description = productElement.find('.description, .details').first().text().trim();
                   
                   if (title && title.length > 3) {
-                    // Generiraj test rezervni deo
+                    // Generiraj rezervni deo
                     const manufacturer = targetManufacturers.find(m => 
                       title.toLowerCase().includes(m.toLowerCase()) || 
                       link.toLowerCase().includes(m.toLowerCase())
@@ -480,7 +623,7 @@ export class WebScrapingService {
                 } catch (productError) {
                   errors.push(`Greška pri obradi proizvoda: ${productError.message}`);
                 }
-              });
+              }
               
               foundProducts = true;
               break;
