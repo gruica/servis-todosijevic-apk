@@ -164,7 +164,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[90vh]'} p-0 overflow-hidden`}>
+      <DialogContent className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[85vh] md:h-[90vh]'} p-0 overflow-hidden flex flex-col`}>
         <DialogHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
             <TabsTrigger value="results">Rezultati</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="camera" className="flex-1 relative bg-black mt-2">
+          <TabsContent value="camera" className="flex-1 relative bg-black mt-2 overflow-hidden">
             {/* Kamera */}
             <Webcam
               ref={webcamRef}
@@ -266,29 +266,29 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
               </div>
             )}
 
-            {/* Kontrole kamere */}
-            <div className="absolute bottom-4 left-4 right-4">
+            {/* Kontrole kamere - pozicionirane za bolju vidljivost na mobilnim uređajima */}
+            <div className="absolute bottom-4 md:bottom-4 left-4 right-4 pb-safe">
               <div className="flex justify-center gap-3">
                 <Button 
                   onClick={captureAndScan} 
                   disabled={isScanning || !isInitialized}
-                  className="px-8 py-3"
+                  className="px-6 md:px-8 py-2.5 md:py-3"
                   size="lg"
                 >
                   {isScanning ? (
                     <>
-                      <Zap className="mr-2 h-5 w-5 animate-spin" />
+                      <Zap className="mr-2 h-4 md:h-5 w-4 md:w-5 animate-spin" />
                       Skeniram...
                     </>
                   ) : (
                     <>
-                      <Camera className="mr-2 h-5 w-5" />
+                      <Camera className="mr-2 h-4 md:h-5 w-4 md:w-5" />
                       Skeniraj
                     </>
                   )}
                 </Button>
-                <Button onClick={handleClose} variant="outline" size="lg">
-                  <X className="h-5 w-5" />
+                <Button onClick={handleClose} variant="outline" size="lg" className="px-4 md:px-6">
+                  <X className="h-4 md:h-5 w-4 md:w-5" />
                 </Button>
               </div>
             </div>
