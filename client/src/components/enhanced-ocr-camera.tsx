@@ -81,8 +81,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
       const imageSrc = webcamRef.current.getScreenshot({
         width: 1920,
-        height: 1080,
-        quality: 0.9
+        height: 1080
       });
       
       if (!imageSrc) {
@@ -390,7 +389,8 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
               </div>
             )}
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
 
         {/* Kontrole kamere - uvek vidljive na dnu dialoga */}
         <div className="bg-white border-t p-4">
