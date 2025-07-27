@@ -28,18 +28,61 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: videoConstraints,
-        audio: false
-      });
+      console.log('📱 Pokušavam da pristupim kameri...');
       
+      // Prvo proveravamo da li je getUserMedia dostupna
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia nije podržana u ovom browser-u');
+      }
+
+      // Probamo sa jednostavnijim constraints za Samsung uređaje
+      let constraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      };
+
+      console.log('📱 Koristim constraints:', constraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('✅ Kamera uspešno pokrenuta!');
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err) {
-      console.error('Greška pri pokretanju kamere:', err);
-      setError('Nije moguće pristupiti kameri. Molim vas proverite dozvole.');
+      console.error('❌ Greška pri pokretanju kamere:', err);
+      
+      // Pokušaj sa fallback constraints
+      try {
+        console.log('📱 Pokušavam sa fallback constraints...');
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        
+        console.log('✅ Fallback kamera uspešno pokrenuta!');
+        setStream(fallbackStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+        }
+      } catch (fallbackErr) {
+        console.error('❌ Fallback greška:', fallbackErr);
+        const errorMsg = fallbackErr instanceof Error ? fallbackErr.message : 'Nepoznata greška';
+        
+        if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
+          setError('Pristup kameri je odbačen. Dozvolite pristup kameri u browser-u.');
+        } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('DevicesNotFoundError')) {
+          setError('Kamera nije pronađena na uređaju.');
+        } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('TrackStartError')) {
+          setError('Kamera je već u upotrebi od strane druge aplikacije.');
+        } else {
+          setError(`Greška kamere: ${errorMsg}`);
+        }
+      }
     }
   }, []);
 
@@ -153,38 +196,77 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
       {/* Camera/Image Display */}
       <div className="flex-1 relative">
         {error && (
-          <div className="absolute top-4 left-4 right-4 bg-red-500/90 text-white p-3 rounded-lg z-10">
-            ⚠️ {error}
+          <div className="absolute top-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg z-10">
+            <div className="flex items-start gap-2">
+              <div className="text-lg">⚠️</div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">{error}</p>
+                <div className="mt-2 text-xs space-y-1">
+                  <p>📱 Samsung uputstvo:</p>
+                  <p>1. Kliknite na "🔒" pored adrese</p>
+                  <p>2. Izaberite "Dozvoli" za kameru</p>
+                  <p>3. Kliknite dugme ispod</p>
+                </div>
+                <Button
+                  onClick={startCamera}
+                  size="sm"
+                  className="mt-3 bg-white/20 hover:bg-white/30 text-white border-white/50 text-xs"
+                >
+                  🔄 Pokušaj ponovo
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
         {!capturedImage ? (
-          <div className="relative w-full h-full">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Grid overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="w-full h-full border-2 border-white/30 rounded-lg m-4">
-                <div className="absolute top-1/3 left-0 right-0 h-px bg-white/20"></div>
-                <div className="absolute top-2/3 left-0 right-0 h-px bg-white/20"></div>
-                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/20"></div>
-                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/20"></div>
+          stream ? (
+            <div className="relative w-full h-full">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Fokus okvir */}
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-80 h-60 border-2 border-white/70 rounded-lg">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white"></div>
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white"></div>
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white"></div>
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white"></div>
+                </div>
+              </div>
+
+              {/* Instruction text */}
+              <div className="absolute bottom-20 left-4 right-4 bg-black/80 text-white p-4 rounded-lg">
+                <p className="text-sm text-center font-medium">
+                  📱 Fokusirajte nalepnicu aparata u okvir
+                </p>
+                <p className="text-xs text-center mt-1 text-gray-300">
+                  Podaci se unose manuelno nakon fotografisanja
+                </p>
               </div>
             </div>
-
-            {/* Instruction text */}
-            <div className="absolute bottom-20 left-4 right-4 bg-black/70 text-white p-4 rounded-lg">
-              <p className="text-sm text-center">
-                📱 Pozicionirajte kameru tako da nalepnica aparata bude u okviru i kliknite "Snimi"
-              </p>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-black">
+              <div className="text-center text-white p-6">
+                <div className="text-6xl mb-4">📱</div>
+                <p className="text-lg mb-4">Kamera nije dostupna</p>
+                <p className="text-sm mb-6 text-gray-300">
+                  Dozvolite pristup kameri i pokušajte ponovo
+                </p>
+                <Button
+                  onClick={startCamera}
+                  className="bg-blue-600 hover:bg-blue-700 px-6 py-3"
+                >
+                  🔄 Pokušaj ponovo
+                </Button>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="relative w-full h-full flex items-center justify-center bg-black">
             <img
