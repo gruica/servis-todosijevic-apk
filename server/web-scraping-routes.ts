@@ -116,6 +116,44 @@ export function setupWebScrapingRoutes(app: express.Application) {
 
   // ===== SCRAPING EXECUTION ENDPOINTS =====
 
+  // GET endpoint za testiranje scraping-a
+  app.get("/api/web-scraping/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log(`🚀 GET API endpoint /api/web-scraping/scrape pozvan od strane user-a: ${req.user?.fullName || 'Nepoznat'}`);
+      
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo direktan scraping test...`);
+      
+      const result = await webScrapingService.scrapeQuinnspares(
+        2, // maxPages
+        ['Beko', 'Candy', 'Electrolux', 'Hoover'] // svi proizvođači
+      );
+
+      console.log(`✅ Scraping rezultat:`, result);
+
+      return res.json({
+        success: result.success,
+        message: `Scraping test završen`,
+        scrapedParts: [],
+        addedParts: [],
+        duplicates: [],
+        errors: result.errors || [],
+        duration: result.duration,
+        newParts: result.newParts,
+        updatedParts: result.updatedParts
+      });
+      
+    } catch (error) {
+      console.error("❌ Error in GET scraping test:", error);
+      return res.status(500).json({ 
+        error: "Greška pri GET scraping testu: " + error.message,
+        success: false,
+        newParts: 0,
+        updatedParts: 0,
+        errors: [error.message]
+      });
+    }
+  });
+
   // Direct scraping endpoint for custom configurations
   app.post("/api/web-scraping/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {
