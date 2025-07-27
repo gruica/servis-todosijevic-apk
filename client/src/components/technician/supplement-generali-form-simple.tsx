@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
 import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan, X } from "lucide-react";
-import { MobileSimpleCamera } from "@/components/mobile-simple-camera";
+import { MobileSimpleCamera } from "@/components/mobile-simple-camera-clean";
 import { ScannedData } from "@/services/enhanced-ocr-service";
 
 interface SupplementGeneraliFormProps {
@@ -502,11 +502,9 @@ export function SupplementGeneraliFormSimple({
         </Form>
         
         {/* Mobilna OCR Kamera komponenta */}
-        {console.log("🎯 Rendering Mobile Simple Camera with isOpen:", isCameraOpen)}
         <MobileSimpleCamera
           isOpen={isCameraOpen}
           onClose={() => {
-            console.log("🎯 Mobile Camera onClose called");
             setIsCameraOpen(false);
           }}
           onDataScanned={handleScannedData}

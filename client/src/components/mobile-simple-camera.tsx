@@ -29,7 +29,7 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
   const startCamera = useCallback(async () => {
     try {
       setError(null);
-      console.log('📱 Pokušavam da pristupim kameri...');
+
       
       // Prvo proveravamo da li je getUserMedia dostupna
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -46,10 +46,9 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
         audio: false
       };
 
-      console.log('📱 Koristim constraints:', constraints);
+
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      console.log('✅ Kamera uspešno pokrenuta!');
+
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
