@@ -319,6 +319,48 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
             <TabsTrigger value="results">Rezultati</TabsTrigger>
           </TabsList>
             <TabsContent value="camera" className="flex-1 flex flex-col relative bg-black mt-2">
+              {/* Kontrole iznad kamere - uvek dostupne */}
+              <div className="bg-white/90 backdrop-blur border-b p-3">
+                <div className="flex items-center justify-center gap-3">
+                  {/* Toggle za auto skeniranje */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Auto:</span>
+                    <Switch
+                      checked={autoScanEnabled}
+                      onCheckedChange={setAutoScanEnabled}
+                      size="sm"
+                    />
+                  </div>
+                  
+                  {/* Glavno dugme za skeniranje */}
+                  <Button 
+                    onClick={captureAndScan} 
+                    disabled={isScanning || !isInitialized}
+                    className="px-4 py-2"
+                    size="default"
+                  >
+                    {isScanning ? (
+                      <>
+                        <Zap className="mr-2 h-4 w-4 animate-spin" />
+                        Skeniram...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="mr-2 h-4 w-4" />
+                        Skeniraj
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Status auto skeniranja */}
+                  {isAutoScanning && (
+                    <Badge variant="secondary" className="bg-orange-500 text-white animate-pulse text-xs">
+                      Detektujem...
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
               {/* Kamera kontejner sa flex-1 da zauzme prostor */}
               <div className="flex-1 relative overflow-hidden min-h-0">
                 <Webcam
@@ -542,44 +584,12 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
           </TabsContent>
         </Tabs>
 
-        {/* Kontrole kamere - uvek vidljive na dnu dialoga */}
-        <div className="bg-white border-t p-4 space-y-3">
-          {/* Toggle za auto skeniranje */}
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-sm font-medium">Auto-skeniranje:</span>
-            <Switch
-              checked={autoScanEnabled}
-              onCheckedChange={setAutoScanEnabled}
-            />
-            {isAutoScanning && (
-              <Badge variant="secondary" className="bg-orange-500 text-white animate-pulse">
-                Detektujem...
-              </Badge>
-            )}
-          </div>
-
-          {/* Dugmad za akcije */}
-          <div className="flex justify-center gap-3">
-            <Button 
-              onClick={captureAndScan} 
-              disabled={isScanning || !isInitialized}
-              className="px-6 md:px-8 py-2.5 md:py-3"
-              size="lg"
-            >
-              {isScanning ? (
-                <>
-                  <Zap className="mr-2 h-4 md:h-5 w-4 md:w-5 animate-spin" />
-                  Skeniram...
-                </>
-              ) : (
-                <>
-                  <Camera className="mr-2 h-4 md:h-5 w-4 md:w-5" />
-                  Skeniraj
-                </>
-              )}
-            </Button>
-            <Button onClick={handleClose} variant="outline" size="lg" className="px-4 md:px-6">
-              <X className="h-4 md:h-5 w-4 md:w-5" />
+        {/* Jednostavno dugme za zatvaranje na dnu */}
+        <div className="bg-white border-t p-3">
+          <div className="flex justify-center">
+            <Button onClick={handleClose} variant="outline" size="lg" className="px-6">
+              <X className="h-4 w-4 mr-2" />
+              Zatvori
             </Button>
           </div>
         </div>
