@@ -8648,6 +8648,46 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // DIRECT WEB SCRAPING ENDPOINT - registrovan pre catch-all ruta
+  app.post("/api/web-scraping/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log(`🚀 DIRECT API endpoint /api/web-scraping/scrape pozvan od strane user-a: ${req.user?.fullName || 'Nepoznat'}`);
+      console.log(`📋 Request body:`, req.body);
+      
+      const { manufacturer } = req.body;
+      
+      if (!manufacturer) {
+        console.log("❌ Nedostaje proizvođač u request-u");
+        return res.status(400).json({ error: "Proizvođač je obavezan" });
+      }
+
+      console.log(`🚀 Pokreće se scraping za ${manufacturer}...`);
+      
+      // Import web scraping service
+      const { webScrapingService } = await import('./web-scraping-service.js');
+      
+      const result = await webScrapingService.scrapeQuinnspares(2, [manufacturer]);
+
+      console.log(`✅ Scraping rezultat:`, result);
+
+      return res.json({
+        success: true,
+        message: `Scraping za ${manufacturer} završen`,
+        scrapedParts: [],
+        addedParts: [],
+        duplicates: [],
+        errors: result.errors || [],
+        duration: result.duration,
+        newParts: result.newParts,
+        updatedParts: result.updatedParts
+      });
+      
+    } catch (error) {
+      console.error("❌ Error in direct scraping:", error);
+      return res.status(500).json({ error: "Greška pri direktnom scraping-u: " + error.message });
+    }
+  });
+
   // WEB SCRAPING ENDPOINTS moved to web-scraping-routes.ts
 
   // Register Web Scraping routes

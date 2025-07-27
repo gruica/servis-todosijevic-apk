@@ -35,31 +35,40 @@ export class WebScrapingService {
   private browser: any = null;
   
   async initBrowser() {
-    if (!this.browser) {
+    // Forsiraj zatvaranje postojeće instance
+    if (this.browser) {
       try {
-        this.browser = await puppeteer.launch({
-          headless: true,
-          executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-          ]
-        });
-        console.log('✅ Puppeteer browser uspešno pokrenut');
+        await this.browser.close();
       } catch (error) {
-        console.error('⚠️ Puppeteer greška:', error.message);
-        console.log('🔄 Prebacujem na fetch mode...');
-        this.browser = null; // Koristićemo fetch kao fallback
+        console.log('Zatvaranje postojećeg browser-a');
       }
+      this.browser = null;
     }
+    
+    try {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ]
+      });
+      console.log('✅ Puppeteer browser uspešno pokrenut');
+    } catch (error) {
+      console.error('⚠️ Puppeteer greška:', error.message);
+      console.log('🔄 Prebacujem na fetch mode...');
+      this.browser = null; // Koristićemo fetch kao fallback
+    }
+    
     return this.browser;
   }
 
@@ -74,93 +83,26 @@ export class WebScrapingService {
   async scrapeQuinnspares(maxPages: number = 50, targetManufacturers: string[] = ['Candy', 'Beko', 'Electrolux', 'Hoover']): Promise<ScrapingResult> {
     const startTime = Date.now();
     const errors: string[] = [];
-    let newParts = 0;
-    let updatedParts = 0;
     
     try {
       console.log('🚀 Pokretanje Quinnspares scraping-a...');
       
-      const browser = await this.initBrowser();
-      
-      if (browser) {
-        // Koristi Puppeteer pristup
-        return await this.scrapeQuinnsparesPuppeteer(browser, maxPages, targetManufacturers, startTime, errors);
-      } else {
-        // Koristi fetch pristup kao fallback
-        return await this.scrapeQuinnsparesFetch(maxPages, targetManufacturers, startTime, errors);
-      }
-      
-      for (const manufacturer of targetManufacturers) {
-        try {
-          console.log(`📋 Scraping ${manufacturer} delova...`);
-          
-          // Navigiraj na manufacturer stranicu
-          const manufacturerUrl = `https://www.quinnspares.com/brand/${manufacturer.toLowerCase()}`;
-          await page.goto(manufacturerUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-          
-          // Izvuci linkove proizvoda
-          const productLinks = await page.evaluate(() => {
-            const links: string[] = [];
-            const productElements = document.querySelectorAll('a[href*="/product/"]');
-            productElements.forEach(link => {
-              const href = (link as HTMLAnchorElement).href;
-              if (href && !links.includes(href)) {
-                links.push(href);
-              }
-            });
-            return links.slice(0, 100); // Limitiraj na 100 proizvoda po manufactureru
-          });
-          
-          console.log(`🔍 Pronađeno ${productLinks.length} proizvoda za ${manufacturer}`);
-          
-          for (let i = 0; i < Math.min(productLinks.length, maxPages); i++) {
-            try {
-              const productUrl = productLinks[i];
-              await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 20000 });
-              
-              const scrapedPart = await this.extractQuinnsparesPart(page, manufacturer);
-              if (scrapedPart) {
-                const result = await this.savePart(scrapedPart);
-                if (result.isNew) {
-                  newParts++;
-                } else {
-                  updatedParts++;
-                }
-              }
-              
-              // Dodaj delay između zahteva
-              await this.randomDelay(1000, 3000);
-              
-            } catch (error) {
-              errors.push(`Greška pri scraping-u ${productLinks[i]}: ${error}`);
-              console.error(`❌ Greška pri scraping-u proizvoda: ${error}`);
-            }
-          }
-          
-        } catch (error) {
-          errors.push(`Greška pri scraping-u ${manufacturer}: ${error}`);
-          console.error(`❌ Greška pri scraping-u ${manufacturer}: ${error}`);
-        }
-      }
+      // Direktno koristi fetch pristup zbog Puppeteer inkompatibilnosti
+      return await this.scrapeQuinnsparesFetch(maxPages, targetManufacturers, startTime, errors);
       
     } catch (error) {
       errors.push(`Kritična greška: ${error}`);
       console.error(`💥 Kritična greška: ${error}`);
-    } finally {
-      await this.closeBrowser();
+      
+      const duration = Math.round((Date.now() - startTime) / 1000);
+      return {
+        success: false,
+        newParts: 0,
+        updatedParts: 0,
+        errors,
+        duration
+      };
     }
-    
-    const duration = Math.round((Date.now() - startTime) / 1000);
-    
-    console.log(`✅ Scraping završen: ${newParts} novih, ${updatedParts} ažuriranih, ${errors.length} grešaka za ${duration}s`);
-    
-    return {
-      success: errors.length < 50, // Uspešan ako je manje od 50 grešaka
-      newParts,
-      updatedParts,
-      errors,
-      duration
-    };
   }
 
   private async extractQuinnsparesPart(page: any, manufacturer: string): Promise<ScrapedPart | null> {
@@ -312,8 +254,8 @@ export class WebScrapingService {
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 
-  // Puppeteer pristup (originalna implementacija)
-  async scrapeQuinnsparesPuppeteer(browser: any, maxPages: number, targetManufacturers: string[], startTime: number, errors: string[]): Promise<ScrapingResult> {
+  // PRIVREMENO DEAKTIVISAN PUPPETEER KOD - KORISTI FETCH
+  async scrapeQuinnsparesPuppeteer_DISABLED(browser: any, maxPages: number, targetManufacturers: string[], startTime: number, errors: string[]): Promise<ScrapingResult> {
     let newParts = 0;
     let updatedParts = 0;
     
@@ -342,31 +284,98 @@ export class WebScrapingService {
           console.log(`📍 Navigiram na ${manufacturerUrl}`);
           await page.goto(manufacturerUrl, { waitUntil: 'networkidle2', timeout: 30000 });
           
-          // Pronađi sve linkove proizvoda na stranici
+          // Sačekaj da se stranica učita i pronađi sve linkove proizvoda
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Sačekaj 3 sekunde za učitavanje
+          
           const productLinks = await page.evaluate(() => {
             const links: string[] = [];
-            // Traži različite tipove linkova za proizvode
+            // Široki spektar selektora za Quinnspares
             const selectors = [
               'a[href*="/product/"]',
               'a[href*="/part/"]', 
               'a[href*="/spare-part/"]',
+              'a[href*=".html"][href*="-"]', // Tipični Quinnspares pattern 
               '.product-item a',
               '.product-card a',
-              '.product a'
+              '.product a',
+              '.item a',
+              '.listing a',
+              '.grid-item a',
+              'a[title*="Part"]',
+              'a[title*="Spare"]',
+              '[data-product] a',
+              '.product-list a'
             ];
             
+            console.log('🔍 Pokušavam pronaći proizvode na stranici...');
+            console.log('📄 Document title:', document.title);
+            console.log('📄 URL:', window.location.href);
+            
+            // Svi linkovi na stranici za debug
+            const allLinks = Array.from(document.querySelectorAll('a')).map(a => a.href).filter(href => href);
+            console.log(`📄 Ukupno linkova na stranici: ${allLinks.length}`);
+            console.log(`📄 Prva 10 linkova:`, allLinks.slice(0, 10));
+            
             for (const selector of selectors) {
-              document.querySelectorAll(selector).forEach(link => {
+              const elements = document.querySelectorAll(selector);
+              console.log(`🔍 Selector '${selector}' našao ${elements.length} elemenata`);
+              
+              elements.forEach(link => {
                 const href = (link as HTMLAnchorElement).href;
-                if (href && !links.includes(href)) {
+                if (href && !links.includes(href) && href.includes('quinnspares.com')) {
                   links.push(href);
+                  console.log(`✅ Dodat link: ${href}`);
                 }
               });
             }
-            return links.slice(0, 50); // Ograniči na 50 proizvoda po manufactureru
+            
+            console.log(`🎯 Ukupno filtiranih linkova: ${links.length}`);
+            return links.slice(0, 20); // Ograniči na 20 proizvoda za test
           });
           
           console.log(`🔍 Pronađeno ${productLinks.length} proizvoda za ${manufacturer}`);
+          
+          if (productLinks.length === 0) {
+            console.log('❌ NEMA PRONAĐENIH PROIZVODA - sprovođim debug analizu...');
+            
+            // Debug: proveri HTML sadržaj stranice
+            const pageInfo = await page.evaluate(() => {
+              return {
+                title: document.title,
+                url: window.location.href,
+                totalLinks: document.querySelectorAll('a').length,
+                bodyTextPreview: document.body.innerText.substring(0, 200),
+                firstFiveLinks: Array.from(document.querySelectorAll('a')).slice(0, 5).map(a => ({
+                  href: a.href,
+                  text: a.textContent?.trim()?.substring(0, 30)
+                })),
+                // Proveravamo da li postoje neki uobičajeni selektori
+                hasProductClass: !!document.querySelector('.product'),
+                hasProductItems: !!document.querySelector('.product-item'),
+                hasGridItems: !!document.querySelector('.grid-item'),
+                hasListItems: !!document.querySelector('.list-item'),
+                categoryUrl: window.location.href.includes('/c-'),
+                bodyClasses: document.body.className
+              };
+            });
+            
+            console.log('🔍 DEBUG - DETALJNA ANALIZA STRANICE:');
+            console.log(`   📄 Naslov stranice: "${pageInfo.title}"`);
+            console.log(`   🌐 Trenutni URL: ${pageInfo.url}`);
+            console.log(`   🔗 Ukupno linkova na stranici: ${pageInfo.totalLinks}`);
+            console.log(`   📂 Da li je kategorijska stranica: ${pageInfo.categoryUrl}`);
+            console.log(`   🎯 Klase body elementa: "${pageInfo.bodyClasses}"`);
+            console.log(`   🔍 Ima .product elemente: ${pageInfo.hasProductClass}`);
+            console.log(`   🔍 Ima .product-item elemente: ${pageInfo.hasProductItems}`);
+            console.log(`   🔍 Ima .grid-item elemente: ${pageInfo.hasGridItems}`);
+            console.log(`   🔍 Ima .list-item elemente: ${pageInfo.hasListItems}`);
+            console.log(`   📝 Početak teksta: "${pageInfo.bodyTextPreview}"`);
+            console.log(`   🔗 Prva 5 linkova:`, pageInfo.firstFiveLinks);
+            
+            // Screenshot za debug
+            await page.screenshot({ path: 'debug-quinnspares-page.png', fullPage: true });
+            console.log('📸 Debug screenshot snimljen: debug-quinnspares-page.png');
+          }
           
           // Procesiruj proizvode (maksimalno 10 po manufacturer-u za test)
           for (let i = 0; i < Math.min(productLinks.length, 10); i++) {

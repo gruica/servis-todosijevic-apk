@@ -116,6 +116,47 @@ export function setupWebScrapingRoutes(app: express.Application) {
 
   // ===== SCRAPING EXECUTION ENDPOINTS =====
 
+  // Direct scraping endpoint for custom configurations
+  app.post("/api/web-scraping/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log(`🚀 API endpoint /api/web-scraping/scrape pozvan od strane user-a: ${req.user?.fullName || 'Nepoznat'}`);
+      console.log(`📋 Request body:`, req.body);
+      
+      const { manufacturer, urls, maxPages, maxItems } = req.body;
+      
+      // Modificirana validacija - ne zahtevamo urls jer scrapeQuinnspares ima svoju logiku
+      if (!manufacturer) {
+        console.log("❌ Nedostaje proizvođač u request-u");
+        return res.status(400).json({ error: "Proizvođač je obavezan" });
+      }
+
+      console.log(`🚀 Admin ${req.user?.fullName} pokrenuo direktan scraping za ${manufacturer}...`);
+      
+      const result = await webScrapingService.scrapeQuinnspares(
+        maxPages || 2, 
+        [manufacturer]
+      );
+
+      console.log(`✅ Scraping rezultat:`, result);
+
+      return res.json({
+        success: true,
+        message: `Scraping za ${manufacturer} završen`,
+        scrapedParts: [],
+        addedParts: [],
+        duplicates: [],
+        errors: result.errors || [],
+        duration: result.duration,
+        newParts: result.newParts,
+        updatedParts: result.updatedParts
+      });
+      
+    } catch (error) {
+      console.error("❌ Error in direct scraping:", error);
+      return res.status(500).json({ error: "Greška pri direktnom scraping-u: " + error.message });
+    }
+  });
+
   // Start scraping for specific source
   app.post("/api/admin/web-scraping/sources/:id/scrape", jwtAuth, requireRole(["admin"]), async (req, res) => {
     try {
