@@ -1,5 +1,4 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { DialogDescription } from '@/components/ui/dialog';
 import { Camera, X, RotateCcw, Check } from 'lucide-react';
@@ -319,6 +318,6 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
     </div>
   );
 
-  // Render kao portal izvan trenutnog DOM tree-a
-  return createPortal(cameraElement, document.body);
+  // Render direktno bez portal-a za stabilnost
+  return cameraElement;
 }
