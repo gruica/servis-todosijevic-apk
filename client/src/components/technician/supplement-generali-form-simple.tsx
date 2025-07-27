@@ -41,7 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
 import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan, X } from "lucide-react";
-import { EnhancedOCRCamera } from "@/components/enhanced-ocr-camera";
+import { MobileSimpleCamera } from "@/components/mobile-simple-camera";
 import { ScannedData } from "@/services/enhanced-ocr-service";
 
 interface SupplementGeneraliFormProps {
@@ -373,8 +373,8 @@ export function SupplementGeneraliFormSimple({
                   className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 text-blue-700 hover:text-blue-800"
                   disabled={isSubmitting}
                 >
-                  <Scan className="h-4 w-4" />
-                  Napredni skener
+                  <Camera className="h-4 w-4" />
+                  Uslikaj
                 </Button>
               </div>
 
@@ -501,23 +501,15 @@ export function SupplementGeneraliFormSimple({
           </form>
         </Form>
         
-        {/* Napredna OCR Kamera komponenta */}
-        {console.log("🎯 Rendering OCR Camera with isOpen:", isCameraOpen)}
-        <EnhancedOCRCamera
+        {/* Mobilna OCR Kamera komponenta */}
+        {console.log("🎯 Rendering Mobile Simple Camera with isOpen:", isCameraOpen)}
+        <MobileSimpleCamera
           isOpen={isCameraOpen}
           onClose={() => {
-            console.log("🎯 OCR Camera onClose called");
+            console.log("🎯 Mobile Camera onClose called");
             setIsCameraOpen(false);
           }}
           onDataScanned={handleScannedData}
-          manufacturerHint={manufacturerName ? 
-            manufacturerName.toLowerCase().includes('beko') ? 'beko' :
-            manufacturerName.toLowerCase().includes('electrolux') ? 'electrolux' :
-            manufacturerName.toLowerCase().includes('samsung') ? 'samsung' :
-            manufacturerName.toLowerCase().includes('lg') ? 'lg' :
-            'generic'
-            : 'generic'
-          }
         />
       </DialogContent>
     </Dialog>
