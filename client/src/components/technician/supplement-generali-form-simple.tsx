@@ -40,9 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SupplementGeneraliService, supplementGeneraliServiceSchema } from "@shared/schema";
-import { FileText, Calendar, Mail, MapPin, Hash, Package, Camera, Scan, X } from "lucide-react";
-import { MobileSimpleCamera } from "@/components/mobile-simple-camera";
-import { ScannedData } from "@/services/enhanced-ocr-service";
+import { FileText, Calendar, Mail, MapPin, Hash, Package, X } from "lucide-react";
 
 interface SupplementGeneraliFormProps {
   serviceId: number;
@@ -75,7 +73,6 @@ export function SupplementGeneraliFormSimple({
 }: SupplementGeneraliFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const { isKeyboardOpen } = useMobileDialogPosition();
 
   const form = useForm<SupplementGeneraliService>({
@@ -95,10 +92,7 @@ export function SupplementGeneraliFormSimple({
   const supplementMutation = useMutation({
     mutationFn: async (data: SupplementGeneraliService) => {
       const { serviceId: _, ...supplementData } = data;
-      const response = await apiRequest(`/api/services/${serviceId}/supplement-generali`, { 
-        method: "PATCH", 
-        body: JSON.stringify(supplementData) 
-      });
+      const response = await apiRequest("PATCH", `/api/services/${serviceId}/supplement-generali`, supplementData);
       return response.json();
     },
     onSuccess: () => {
@@ -135,60 +129,12 @@ export function SupplementGeneraliFormSimple({
     }
   });
 
-  const handleScannedData = (scannedData: ScannedData) => {
-    console.log("📷 Napredni skaner - pronađeni podaci:", scannedData);
-    
-    // Automatski popuni polja sa skeniranim podacima
-    if (scannedData.model && scannedData.model.length >= 3) {
-      form.setValue("model", scannedData.model);
-    }
-    if (scannedData.serialNumber && scannedData.serialNumber.length >= 6) {
-      form.setValue("serialNumber", scannedData.serialNumber);
+  const onSubmit = async (data: SupplementGeneraliService, event?: React.FormEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
     
-    // Dodaj dodatne informacije u napomene ako postoje
-    let additionalInfo = [];
-    if (scannedData.productNumber) {
-      additionalInfo.push(`Product broj: ${scannedData.productNumber}`);
-    }
-    if (scannedData.manufacturerCode && scannedData.manufacturerCode !== 'generic') {
-      additionalInfo.push(`Detektovan proizvođač: ${scannedData.manufacturerCode}`);
-    }
-    if (scannedData.year) {
-      additionalInfo.push(`Godina: ${scannedData.year}`);
-    }
-    
-    if (additionalInfo.length > 0) {
-      const currentNotes = form.getValues("supplementNotes") || "";
-      const newNotes = currentNotes + (currentNotes ? "\n" : "") + 
-        `Skenirani podaci: ${additionalInfo.join(", ")}`;
-      form.setValue("supplementNotes", newNotes);
-    }
-    
-    // Prikaži detaljnu informaciju
-    const scannedFields = [];
-    if (scannedData.model) scannedFields.push("model");
-    if (scannedData.serialNumber) scannedFields.push("serijski broj");
-    if (scannedData.productNumber) scannedFields.push("product broj");
-    if (scannedData.manufacturerCode && scannedData.manufacturerCode !== 'generic') scannedFields.push("proizvođač");
-    
-    if (scannedFields.length > 0) {
-      toast({
-        title: `Napredni skaner - ${scannedFields.length} podataka pronađeno`,
-        description: `Uspešno detektovani: ${scannedFields.join(", ")}. Pouzdanost: ${Math.round(scannedData.confidence)}%`,
-      });
-    } else {
-      toast({
-        title: "Skeniranje završeno",
-        description: "Nisu pronađeni jasni podaci. Pokušajte sa boljim osvetljenjem ili pozicioniranjem.",
-        variant: "destructive"
-      });
-    }
-    
-    setIsCameraOpen(false);
-  };
-
-  const onSubmit = async (data: SupplementGeneraliService) => {
     setIsSubmitting(true);
     try {
       await supplementMutation.mutateAsync(data);
@@ -355,28 +301,10 @@ export function SupplementGeneraliFormSimple({
 
             {/* Aparat podaci */}
             <div className="space-y-4 p-4 border rounded-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Podaci o aparatu
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    console.log("🎯 OCR Camera button clicked!");
-                    console.log("🎯 Current isCameraOpen state:", isCameraOpen);
-                    setIsCameraOpen(true);
-                    console.log("🎯 Setting isCameraOpen to true");
-                  }}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 text-blue-700 hover:text-blue-800"
-                  disabled={isSubmitting}
-                >
-                  <Camera className="h-4 w-4" />
-                  Uslikaj
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Podaci o aparatu
+              </h3>
 
               {/* Serijski broj */}
               <FormField
@@ -500,15 +428,6 @@ export function SupplementGeneraliFormSimple({
             </DialogFooter>
           </form>
         </Form>
-        
-        {/* Mobilna OCR Kamera komponenta */}
-        <MobileSimpleCamera
-          isOpen={isCameraOpen}
-          onClose={() => {
-            setIsCameraOpen(false);
-          }}
-          onDataScanned={handleScannedData}
-        />
       </DialogContent>
     </Dialog>
   );

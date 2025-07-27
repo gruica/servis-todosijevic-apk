@@ -47,31 +47,15 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const initializeOCR = useCallback(async () => {
     if (isInitialized) return;
     
-    // Za mobilne uređaje koristi direktni pristup bez tesseract.js
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      console.log('📱 Mobilni uređaj detektovan - koristim jednostavan pristup');
-      setIsInitialized(true);
-      setScanProgress(0);
-      return;
-    }
-    
     try {
       setScanProgress(10);
-      setError(null);
-      console.log('🚀 Pokrećem inicijalizaciju Enhanced OCR...');
-      
       await enhancedOCRService.initialize(config);
       setIsInitialized(true);
       setScanProgress(0);
-      console.log('✅ Enhanced OCR uspešno inicijalizovan u komponenti!');
     } catch (err) {
-      console.error('❌ Enhanced OCR initialization error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Nepoznata greška';
-      setError(`Greška pri inicijalizaciji skenera: ${errorMessage}`);
+      console.error('Enhanced OCR initialization error:', err);
+      setError('Greška pri inicijalizaciji naprednog skenera');
       setScanProgress(0);
-      setIsInitialized(false);
     }
   }, [isInitialized, config]);
 
@@ -97,7 +81,8 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
       const imageSrc = webcamRef.current.getScreenshot({
         width: 1920,
-        height: 1080
+        height: 1080,
+        quality: 0.9
       });
       
       if (!imageSrc) {
@@ -106,48 +91,23 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
       setScanProgress(60);
 
-      // Provjeri da li je mobilni uređaj
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      let scannedData;
-      if (isMobile) {
-        // Za mobilne uređaje koristi fallback pristup
-        console.log('📱 Koristim mobilni fallback pristup');
-        const { mobileOCRFallback } = await import('@/services/mobile-ocr-fallback');
-        const fallbackResult = await mobileOCRFallback.scanImageWithFallback(imageSrc);
-        
-        scannedData = {
-          confidence: fallbackResult.confidence,
-          extractedText: fallbackResult.message,
-          model: undefined,
-          serialNumber: undefined
-        };
-      } else {
-        // Za desktop koristi Enhanced OCR
-        scannedData = await enhancedOCRService.scanImage(imageSrc, config);
-      }
+      // Skeniraj sa naprednim podešavanjima
+      const scannedData = await enhancedOCRService.scanImage(imageSrc, config);
       
       setScanProgress(80);
       setLastScannedData(scannedData);
       setScanHistory(prev => [scannedData, ...prev.slice(0, 4)]); // Drži poslednje 5 skenova
       setScanProgress(100);
 
-      // Za mobilne uređaje prikaži rezultat, za desktop automatski prihvati ako je dobar
-      if (isMobile) {
-        // Na mobilnom uvek pokaži rezultat korisniku da vidi poruku
-        setActiveTab('results');
-        console.log('📱 Mobilni rezultat prikazan korisniku');
-      } else {
-        // Desktop logika
-        const score = calculateDataScore(scannedData);
-        if (score > 100) {
-          setTimeout(() => {
-            onDataScanned(scannedData);
-            setActiveTab('results');
-          }, 1500);
-        } else {
+      // Automatski prihvati ako je pouzdanost visoka i ima dovoljno podataka
+      const score = calculateDataScore(scannedData);
+      if (score > 100) {
+        setTimeout(() => {
+          onDataScanned(scannedData);
           setActiveTab('results');
-        }
+        }, 1500);
+      } else {
+        setActiveTab('results');
       }
 
     } catch (err) {
@@ -204,10 +164,7 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
-        className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[90vh]'} p-0 overflow-hidden`}
-        style={{ zIndex: 10999 }}
-      >
+      <DialogContent className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[90vh]'} p-0 overflow-hidden`}>
         <DialogHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">

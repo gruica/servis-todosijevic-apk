@@ -835,69 +835,6 @@ export const insertPartsActivityLogSchema = createInsertSchema(partsActivityLog)
 export type InsertPartsActivityLog = z.infer<typeof insertPartsActivityLogSchema>;
 export type PartsActivityLog = typeof partsActivityLog.$inferSelect;
 
-// Consumed Parts - tabela za praćenje potrošenih rezervnih delova po servisima
-export const consumedParts = pgTable("consumed_parts", {
-  id: serial("id").primaryKey(),
-  serviceId: integer("service_id").notNull().references(() => services.id),
-  technicianId: integer("technician_id").notNull().references(() => users.id),
-  partNumber: text("part_number").notNull(), // Kataloški broj potrošenog dela
-  partName: text("part_name").notNull(), // Naziv dela
-  manufacturer: text("manufacturer"), // Proizvođač dela
-  quantity: integer("quantity").notNull().default(1), // Količina potrošena
-  unitCost: text("unit_cost"), // Jedinična cena dela
-  totalCost: text("total_cost"), // Ukupna cena (quantity * unitCost)
-  supplierName: text("supplier_name"), // Dobavljač
-  warrantyPeriod: text("warranty_period"), // Period garancije dela
-  installationNotes: text("installation_notes"), // Napomene za ugradnju
-  consumedDate: timestamp("consumed_date").defaultNow().notNull(), // Datum potrošnje
-  scannedFromLabel: boolean("scanned_from_label").default(false), // Da li je skeniran sa nalepnice
-  ocrConfidence: integer("ocr_confidence"), // Procenat pouzdanosti OCR-a (0-100)
-  verifiedByTechnician: boolean("verified_by_technician").default(false), // Da li je verifikovan
-  associatedCatalogPartId: integer("associated_catalog_part_id").references(() => sparePartsCatalog.id), // Link ka katalogu
-  notes: text("notes"), // Dodatne napomene
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertConsumedPartSchema = createInsertSchema(consumedParts).pick({
-  serviceId: true,
-  technicianId: true,
-  partNumber: true,
-  partName: true,
-  manufacturer: true,
-  quantity: true,
-  unitCost: true,
-  totalCost: true,
-  supplierName: true,
-  warrantyPeriod: true,
-  installationNotes: true,
-  scannedFromLabel: true,
-  ocrConfidence: true,
-  verifiedByTechnician: true,
-  associatedCatalogPartId: true,
-  notes: true,
-}).extend({
-  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
-  technicianId: z.number().int().positive("ID tehničara mora biti pozitivan broj"),
-  partNumber: z.string().min(2, "Kataloški broj mora imati najmanje 2 karaktera").max(100, "Kataloški broj je predugačak"),
-  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
-  manufacturer: z.string().max(100, "Naziv proizvođača je predugačak").or(z.literal("")).optional(),
-  quantity: z.number().int().positive("Količina mora biti pozitivna"),
-  unitCost: z.string().max(50, "Cena je predugačka").or(z.literal("")).optional(),
-  totalCost: z.string().max(50, "Ukupna cena je predugačka").or(z.literal("")).optional(),
-  supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
-  warrantyPeriod: z.string().max(50, "Period garancije je predugačak").or(z.literal("")).optional(),
-  installationNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
-  scannedFromLabel: z.boolean().default(false),
-  ocrConfidence: z.number().int().min(0).max(100).optional(),
-  verifiedByTechnician: z.boolean().default(false),
-  associatedCatalogPartId: z.number().int().positive().optional(),
-  notes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
-});
-
-export type InsertConsumedPart = z.infer<typeof insertConsumedPartSchema>;
-export type ConsumedPart = typeof consumedParts.$inferSelect;
-
 // PartKeepr-compatible spare parts catalog table
 export const sparePartsCatalog = pgTable("spare_parts_catalog", {
   id: serial("id").primaryKey(),

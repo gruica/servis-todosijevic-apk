@@ -110,10 +110,7 @@ export function OCRCamera({ isOpen, onClose, onDataScanned }: OCRCameraProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
-        className="max-w-md mx-auto h-[90vh] p-0 overflow-hidden"
-        style={{ zIndex: 10999 }}
-      >
+      <DialogContent className="max-w-md mx-auto h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />

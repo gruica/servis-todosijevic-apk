@@ -1728,7 +1728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
                   if (updatedService.status === "completed" && 
-                      updatedService.warrantyStatus === "u garanciji") {
+                      updatedService.warrantyStatus === "in_warranty") {
                     
                     // Proveravamo da li je Beko brend
                     try {
@@ -2096,7 +2096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
                 if (validStatus === "completed" && 
-                    updatedService.warrantyStatus === "u garanciji") {
+                    updatedService.warrantyStatus === "in_warranty") {
                   
                   // Proveravamo da li je Beko brend
                   try {
@@ -4363,7 +4363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(schema.services.status, 'completed'),
-            eq(schema.services.warrantyStatus, 'u garanciji'),
+            eq(schema.services.warrantyStatus, 'in_warranty'),
             or(
               eq(schema.manufacturers.name, 'Electrolux'),
               eq(schema.manufacturers.name, 'Elica'),
@@ -6718,7 +6718,7 @@ Admin panel - automatska porudžbina
         city: "Podgorica"
       };
 
-      const { warrantyStatus = "u garanciji" } = req.body;
+      const { warrantyStatus = "in_warranty" } = req.body;
       
       console.log(`[TEST EMAIL] Šalje test warranty email na ${testClient.email} sa statusom: ${warrantyStatus}`);
       
@@ -8368,160 +8368,6 @@ Admin panel - automatska porudžbina
         error: "Greška servera",
         message: "Došlo je do greške pri kreiranju Com Plus servisa. Molimo pokušajte ponovo."
       });
-    }
-  });
-
-  // ===== CONSUMED PARTS ENDPOINTS =====
-
-  // Create consumed part (technician only)
-  app.post("/api/consumed-parts", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin" && req.user.role !== "technician") {
-      return res.status(403).json({ error: "Pristup dozvoljen samo administratorima i tehničarima" });
-    }
-
-    try {
-      const consumedPartData = req.body;
-      // Ako je tehničar, automatski postaviti tehničar ID
-      if (req.user.role === "technician") {
-        consumedPartData.technicianId = req.user.id;
-      }
-
-      const newConsumedPart = await storage.createConsumedPart(consumedPartData);
-      res.status(201).json(newConsumedPart);
-    } catch (error) {
-      console.error("Error creating consumed part:", error);
-      res.status(500).json({ error: "Failed to create consumed part" });
-    }
-  });
-
-  // Get consumed parts by service
-  app.get("/api/services/:id/consumed-parts", jwtAuth, async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.id);
-      const consumedParts = await storage.getConsumedPartsByService(serviceId);
-      res.json(consumedParts);
-    } catch (error) {
-      console.error("Error fetching consumed parts by service:", error);
-      res.status(500).json({ error: "Failed to fetch consumed parts" });
-    }
-  });
-
-  // Get consumed parts by technician
-  app.get("/api/technicians/:id/consumed-parts", jwtAuth, async (req, res) => {
-    try {
-      const technicianId = parseInt(req.params.id);
-      
-      // Tehničari mogu videti samo svoje potrošene delove
-      if (req.user.role === "technician" && req.user.id !== technicianId) {
-        return res.status(403).json({ error: "Možete videti samo svoje potrošene delove" });
-      }
-
-      const consumedParts = await storage.getConsumedPartsByTechnician(technicianId);
-      res.json(consumedParts);
-    } catch (error) {
-      console.error("Error fetching consumed parts by technician:", error);
-      res.status(500).json({ error: "Failed to fetch consumed parts" });
-    }
-  });
-
-  // Get all consumed parts (admin only)
-  app.get("/api/admin/consumed-parts", jwtAuth, requireRole(["admin"]), async (req, res) => {
-    try {
-      const consumedParts = await storage.getAllConsumedParts();
-      res.json(consumedParts);
-    } catch (error) {
-      console.error("Error fetching all consumed parts:", error);
-      res.status(500).json({ error: "Failed to fetch consumed parts" });
-    }
-  });
-
-  // Update consumed part
-  app.put("/api/consumed-parts/:id", jwtAuth, async (req, res) => {
-    try {
-      const partId = parseInt(req.params.id);
-      const updates = req.body;
-
-      const updatedPart = await storage.updateConsumedPart(partId, updates);
-      if (!updatedPart) {
-        return res.status(404).json({ error: "Potrošeni deo nije pronađen" });
-      }
-
-      res.json(updatedPart);
-    } catch (error) {
-      console.error("Error updating consumed part:", error);
-      res.status(500).json({ error: "Failed to update consumed part" });
-    }
-  });
-
-  // Verify consumed part by technician
-  app.patch("/api/consumed-parts/:id/verify", jwtAuth, async (req, res) => {
-    if (req.user.role !== "technician") {
-      return res.status(403).json({ error: "Samo tehničari mogu verifikovati potrošene delove" });
-    }
-
-    try {
-      const partId = parseInt(req.params.id);
-      const verifiedPart = await storage.verifyConsumedPart(partId, req.user.id);
-      
-      if (!verifiedPart) {
-        return res.status(404).json({ error: "Potrošeni deo nije pronađen ili nije vaš" });
-      }
-
-      res.json(verifiedPart);
-    } catch (error) {
-      console.error("Error verifying consumed part:", error);
-      res.status(500).json({ error: "Failed to verify consumed part" });
-    }
-  });
-
-  // Search consumed parts by part number
-  app.get("/api/consumed-parts/search", jwtAuth, async (req, res) => {
-    try {
-      const { partNumber } = req.query;
-      if (!partNumber || typeof partNumber !== 'string') {
-        return res.status(400).json({ error: "Part number je obavezan parametar" });
-      }
-
-      const consumedParts = await storage.searchConsumedPartsByPartNumber(partNumber);
-      res.json(consumedParts);
-    } catch (error) {
-      console.error("Error searching consumed parts:", error);
-      res.status(500).json({ error: "Failed to search consumed parts" });
-    }
-  });
-
-  // Link consumed part to catalog part
-  app.patch("/api/consumed-parts/:id/link-catalog/:catalogId", jwtAuth, requireRole(["admin"]), async (req, res) => {
-    try {
-      const consumedPartId = parseInt(req.params.id);
-      const catalogPartId = parseInt(req.params.catalogId);
-
-      const linkedPart = await storage.linkConsumedPartToCatalog(consumedPartId, catalogPartId);
-      if (!linkedPart) {
-        return res.status(404).json({ error: "Potrošeni deo nije pronađen" });
-      }
-
-      res.json(linkedPart);
-    } catch (error) {
-      console.error("Error linking consumed part to catalog:", error);
-      res.status(500).json({ error: "Failed to link consumed part to catalog" });
-    }
-  });
-
-  // Delete consumed part
-  app.delete("/api/consumed-parts/:id", jwtAuth, requireRole(["admin"]), async (req, res) => {
-    try {
-      const partId = parseInt(req.params.id);
-      const deleted = await storage.deleteConsumedPart(partId);
-      
-      if (!deleted) {
-        return res.status(404).json({ error: "Potrošeni deo nije pronađen" });
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting consumed part:", error);
-      res.status(500).json({ error: "Failed to delete consumed part" });
     }
   });
 

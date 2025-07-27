@@ -47,7 +47,6 @@ export function SupplementGeneraliForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const activeInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   // Removed all problematic refs that were causing freezing
 
   const form = useForm<SupplementGeneraliService>({
@@ -93,10 +92,7 @@ export function SupplementGeneraliForm({
   const supplementMutation = useMutation({
     mutationFn: async (data: SupplementGeneraliService) => {
       const { serviceId: _, ...supplementData } = data;
-      const response = await apiRequest(`/api/services/${serviceId}/supplement-generali`, { 
-        method: "PATCH", 
-        body: JSON.stringify(supplementData) 
-      });
+      const response = await apiRequest("PATCH", `/api/services/${serviceId}/supplement-generali`, supplementData);
       return response.json();
     },
     onSuccess: () => {
