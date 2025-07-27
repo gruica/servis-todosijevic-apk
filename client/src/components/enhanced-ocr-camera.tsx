@@ -290,26 +290,11 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className={`${isFullscreen ? 'max-w-full h-full' : 'max-w-4xl h-[85vh] md:h-[90vh]'} p-0 overflow-hidden flex flex-col`}>
-        <DialogHeader className="p-4 pb-2">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Napredni skener generalija
-              {config.manufacturerFocus !== 'generic' && (
-                <Badge variant="secondary">{config.manufacturerFocus}</Badge>
-              )}
-            </DialogTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleFullscreen}
-            >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-          </div>
-          <DialogDescription>
-            Skenirajte serijski broj, model ili druge podatke sa generalne nalepnice aparata. {autoScanEnabled ? 'Auto-skeniranje je aktivno - samo usmerite kameru na nalepnicu!' : 'Pozicionirajte kameru tako da tekst bude u okviru i kliknite "Skeniraj".'}
-          </DialogDescription>
+        <DialogHeader className="p-2 pb-1">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Camera className="h-4 w-4" />
+            Skener
+          </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
@@ -328,15 +313,14 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                     <Switch
                       checked={autoScanEnabled}
                       onCheckedChange={setAutoScanEnabled}
-                      size="sm"
                     />
                   </div>
                   
                   {/* Glavno dugme za skeniranje */}
                   <Button 
                     onClick={captureAndScan} 
-                    disabled={isScanning || !isInitialized}
-                    className="px-4 py-2"
+                    disabled={isScanning}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
                     size="default"
                   >
                     {isScanning ? (
@@ -362,13 +346,21 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
               </div>
 
               {/* Kamera kontejner sa flex-1 da zauzme prostor */}
-              <div className="flex-1 relative overflow-hidden min-h-0">
+              <div className="flex-1 relative overflow-hidden min-h-0" style={{ minHeight: '65vh' }}>
                 <Webcam
                   ref={webcamRef}
                   audio={false}
                   screenshotFormat="image/jpeg"
                   videoConstraints={videoConstraints}
                   className="w-full h-full object-cover"
+                  onUserMedia={() => {
+                    console.log('Kamera inicijalizovana');
+                    setIsInitialized(true);
+                  }}
+                  onUserMediaError={(err) => {
+                    console.error('Greška prilikom pristupa kameri:', err);
+                    setError('Greška prilikom pristupa kameri. Molimo proverite dozvolje.');
+                  }}
                 />
 
                 {/* Napredni overlay */}
