@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { DialogDescription } from '@/components/ui/dialog';
 import { Camera, X, RotateCcw, Check } from 'lucide-react';
@@ -174,8 +175,8 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black z-[9999] flex flex-col">
+  const cameraElement = (
+    <div className="fixed inset-0 bg-black z-[99999] flex flex-col" style={{ zIndex: 99999 }}>
       <DialogDescription className="sr-only">
         Jednostavna kamera za mobilne uređaje - uhvatite sliku aparata i manuelno unesite podatke
       </DialogDescription>
@@ -323,4 +324,7 @@ export function MobileSimpleCamera({ isOpen, onClose, onDataScanned }: MobileSim
       </div>
     </div>
   );
+
+  // Render kao portal izvan trenutnog DOM tree-a
+  return createPortal(cameraElement, document.body);
 }
