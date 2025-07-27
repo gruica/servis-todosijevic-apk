@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Package, TrendingUp, Archive, Download } from 'lucide-react';
+import { Search, Package, TrendingUp, Archive, Download, Upload } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,12 +82,12 @@ export default function SimpleSparePartsCatalog() {
   const queryClient = useQueryClient();
 
   // Učitavanje statistika
-  const { data: stats, isLoading: statsLoading } = useQuery<StatsData>({
+  const { data: stats, isLoading: statsLoading, refetch: statsRefetch } = useQuery<StatsData>({
     queryKey: ['/api/admin/spare-parts-catalog/stats']
   });
 
   // Učitavanje kataloga
-  const { data: catalog, isLoading: catalogLoading } = useQuery<CatalogEntry[]>({
+  const { data: catalog, isLoading: catalogLoading, refetch } = useQuery<CatalogEntry[]>({
     queryKey: ['/api/admin/spare-parts-catalog']
   });
 
@@ -160,6 +160,49 @@ export default function SimpleSparePartsCatalog() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('csvFile', file);
+
+      const response = await fetch('/api/admin/spare-parts-catalog/import-csv', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Import failed');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Uspešno",
+        description: `Uvezeno ${result.imported} rezervnih delova`,
+      });
+
+      // Refresh the catalog
+      refetch();
+      statsRefetch();
+    } catch (error) {
+      toast({
+        title: "Greška",
+        description: error instanceof Error ? error.message : "Neuspešan uvoz CSV datoteke",
+        variant: "destructive",
+      });
+    }
+
+    // Reset file input
+    event.target.value = '';
   };
 
   return (
@@ -256,6 +299,25 @@ export default function SimpleSparePartsCatalog() {
                 <Download className="h-4 w-4 mr-2" />
                 Izvezi CSV
               </Button>
+              
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVImport}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  id="csv-import"
+                />
+                <Button
+                  variant="outline"
+                  asChild
+                >
+                  <label htmlFor="csv-import" className="cursor-pointer flex items-center">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Uvezi CSV
+                  </label>
+                </Button>
+              </div>
             </div>
           </div>
 
