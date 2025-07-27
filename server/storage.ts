@@ -163,6 +163,17 @@ export interface IStorage {
   createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
   updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
   deleteSparePartOrder(id: number): Promise<boolean>;
+
+  // Consumed Parts Management
+  createConsumedPart(consumedPart: InsertConsumedPart): Promise<ConsumedPart>;
+  getConsumedPartsByService(serviceId: number): Promise<ConsumedPart[]>;
+  getConsumedPartsByTechnician(technicianId: number): Promise<ConsumedPart[]>;
+  getAllConsumedParts(): Promise<ConsumedPart[]>;
+  updateConsumedPart(id: number, updates: Partial<ConsumedPart>): Promise<ConsumedPart | undefined>;
+  deleteConsumedPart(id: number): Promise<boolean>;
+  verifyConsumedPart(id: number, technicianId: number): Promise<ConsumedPart | undefined>;
+  searchConsumedPartsByPartNumber(partNumber: string): Promise<ConsumedPart[]>;
+  linkConsumedPartToCatalog(consumedPartId: number, catalogPartId: number): Promise<ConsumedPart | undefined>;
   markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: SparePartOrder; availablePart: AvailablePart } | undefined>;
 
   // Available parts methods
@@ -3274,6 +3285,142 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine rezervnog dela:', error);
       return false;
+    }
+  }
+
+  // ===== CONSUMED PARTS MANAGEMENT =====
+
+  async createConsumedPart(consumedPart: InsertConsumedPart): Promise<ConsumedPart> {
+    try {
+      const [newConsumedPart] = await db
+        .insert(consumedParts)
+        .values(consumedPart)
+        .returning();
+      return newConsumedPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju potrošenog dela:', error);
+      throw error;
+    }
+  }
+
+  async getConsumedPartsByService(serviceId: number): Promise<ConsumedPart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(consumedParts)
+        .where(eq(consumedParts.serviceId, serviceId))
+        .orderBy(desc(consumedParts.consumedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju potrošenih delova po servisu:', error);
+      throw error;
+    }
+  }
+
+  async getConsumedPartsByTechnician(technicianId: number): Promise<ConsumedPart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(consumedParts)
+        .where(eq(consumedParts.technicianId, technicianId))
+        .orderBy(desc(consumedParts.consumedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju potrošenih delova po tehničaru:', error);
+      throw error;
+    }
+  }
+
+  async getAllConsumedParts(): Promise<ConsumedPart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(consumedParts)
+        .orderBy(desc(consumedParts.consumedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih potrošenih delova:', error);
+      throw error;
+    }
+  }
+
+  async updateConsumedPart(id: number, updates: Partial<ConsumedPart>): Promise<ConsumedPart | undefined> {
+    try {
+      const [updatedPart] = await db
+        .update(consumedParts)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(consumedParts.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju potrošenog dela:', error);
+      throw error;
+    }
+  }
+
+  async deleteConsumedPart(id: number): Promise<boolean> {
+    try {
+      const [deletedPart] = await db
+        .delete(consumedParts)
+        .where(eq(consumedParts.id, id))
+        .returning();
+      return !!deletedPart;
+    } catch (error) {
+      console.error('Greška pri brisanju potrošenog dela:', error);
+      throw error;
+    }
+  }
+
+  async verifyConsumedPart(id: number, technicianId: number): Promise<ConsumedPart | undefined> {
+    try {
+      const [verifiedPart] = await db
+        .update(consumedParts)
+        .set({ 
+          verifiedByTechnician: true, 
+          updatedAt: new Date() 
+        })
+        .where(and(
+          eq(consumedParts.id, id),
+          eq(consumedParts.technicianId, technicianId)
+        ))
+        .returning();
+      return verifiedPart;
+    } catch (error) {
+      console.error('Greška pri verifikaciji potrošenog dela:', error);
+      throw error;
+    }
+  }
+
+  // Pretražuje potrošene delove po kataloškome broju
+  async searchConsumedPartsByPartNumber(partNumber: string): Promise<ConsumedPart[]> {
+    try {
+      const parts = await db
+        .select()
+        .from(consumedParts)
+        .where(like(consumedParts.partNumber, `%${partNumber}%`))
+        .orderBy(desc(consumedParts.consumedDate));
+      return parts;
+    } catch (error) {
+      console.error('Greška pri pretrazi potrošenih delova po kataloškome broju:', error);
+      throw error;
+    }
+  }
+
+  // Povezuje potrošeni deo sa katalogom
+  async linkConsumedPartToCatalog(consumedPartId: number, catalogPartId: number): Promise<ConsumedPart | undefined> {
+    try {
+      const [linkedPart] = await db
+        .update(consumedParts)
+        .set({ 
+          associatedCatalogPartId: catalogPartId,
+          updatedAt: new Date() 
+        })
+        .where(eq(consumedParts.id, consumedPartId))
+        .returning();
+      return linkedPart;
+    } catch (error) {
+      console.error('Greška pri povezivanju potrošenog dela sa katalogom:', error);
+      throw error;
     }
   }
 

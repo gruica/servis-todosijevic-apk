@@ -22,6 +22,7 @@ import { CallClientButton } from "@/components/ui/call-client-button";
 import { openMapWithAddress } from "@/lib/mobile-utils";
 import { SparePartsOrderForm } from "@/components/spare-parts/SparePartsOrderForm";
 import { RemovedPartsForm, RemovedPartsList } from "@/components/technician/removed-parts-form";
+import ConsumedPartsSection from "@/components/technician/consumed-parts-section";
 
 type ServiceDetailsFloatProps = {
   isOpen: boolean;
@@ -566,6 +567,14 @@ export function ServiceDetailsFloat({
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Consumed Parts Section - OCR Camera */}
+        {(service.status === "assigned" || service.status === "scheduled" || service.status === "in_progress") && (
+          <ConsumedPartsSection 
+            serviceId={service.id} 
+            technicianId={service.technicianId || service.assignedTechnicianId || 1} 
+          />
         )}
 
         {/* Removed Parts Management */}
