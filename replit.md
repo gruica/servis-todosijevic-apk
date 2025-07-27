@@ -133,12 +133,17 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 - Zero-tolerance policy za bezbednosne greške ili ranjivosti
 - Kod ne sme omogućavati zloupotrabu ili rušenje aplikacije
 - Profesionalni pristup bez ponavljanja osnovnih grešaka
+- **KRITIČNO**: Sve implementacije moraju biti testirane na prvom pokušaju
+- **OBAVEZNO**: Kompatibilnost sa web sajtovima mora biti validirana pre koda
+- **BEZBEDNOST**: Aplikacija ne sme biti kompromitovana kroz bilo koju funkcionalnost
 
 ### Technical Requirements
 - Kompletno testiranje funkcionalnosti pre prezentacije
 - Striktno poštovanje database constraint-a i schema validacije
 - Autentični podaci iz ovlašćenih izvora - bez mock ili placeholder podataka
 - Sveobuhvatan error handling i security validation
+- **EFIKASNOST**: Implementacije bez ponovnih debugging iteracija
+- **INTEGRITET**: Sve funkcionalnosti moraju očuvati stabilnost aplikacije
 
 ## Changelog
 
