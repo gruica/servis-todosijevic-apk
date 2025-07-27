@@ -5,13 +5,7 @@ async function testLiveQuinnsparesScaping() {
   try {
     console.log('🌐 Pokretanje live Quinnspares.com web scraping testa...');
     
-    const JWT_TOKEN = process.env.ADMIN_JWT_TOKEN;
-    
-    if (!JWT_TOKEN) {
-      console.error('❌ GREŠKA: ADMIN_JWT_TOKEN environment varijabla nije postavljena');
-      console.error('   Molimo postavite ADMIN_JWT_TOKEN u Replit Secrets');
-      return;
-    }
+    const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJ1c2VybmFtZSI6ImplbGVuYUBmcmlnb3Npc3RlbXRvZG9zaWpldmljLm1lIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzUzNjAzMTE3LCJleHAiOjE3NTYxOTUxMTd9.P3XNM-ya1PsJzqNxKfW4beZSlAwHGcQSM4dVFowqp2Q';
     
     // Test sa Candy brendom - poznata kategorija sa autentičnim delovima
     const scrapingConfig = {
