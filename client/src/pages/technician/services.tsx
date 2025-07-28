@@ -999,9 +999,9 @@ export default function TechnicianServices() {
               <NotificationsDropdown />
               <TechnicianProfileWidget />
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm"
-                className="text-white hover:bg-white/20 p-2"
+                className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/50 px-3 py-2 font-medium"
                 onClick={() => {
                   logoutMutation.mutate(undefined, {
                     onSuccess: () => {
