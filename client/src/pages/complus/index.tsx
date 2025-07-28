@@ -64,6 +64,9 @@ export default function ComplusDashboard() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [warrantyFilter, setWarrantyFilter] = useState("all");
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedServiceForAssign, setSelectedServiceForAssign] = useState<Service | null>(null);
+  const [selectedServiceForRemove, setSelectedServiceForRemove] = useState<Service | null>(null);
+  const [selectedServiceForDelete, setSelectedServiceForDelete] = useState<Service | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -152,7 +155,7 @@ export default function ComplusDashboard() {
         description: "Servis je uspešno povučen od servisera.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
-      setSelectedService(null);
+      setSelectedServiceForRemove(null);
     },
     onError: (error) => {
       console.error("Greška pri povlačenju servisa:", error);
@@ -163,6 +166,55 @@ export default function ComplusDashboard() {
       });
     },
   });
+
+  // Mutation za brisanje servisa
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      const response = await apiRequest(`/api/admin/services/${serviceId}`, {
+        method: 'DELETE'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno!",
+        description: "Servis je uspešno obrisan.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/stats"] });
+      setSelectedServiceForDelete(null);
+    },
+    onError: (error) => {
+      console.error("Greška pri brisanju servisa:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške pri brisanju servisa.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handler funkcije za upravljanje servisima
+  const handleAssignTechnician = () => {
+    if (selectedServiceForAssign && selectedTechnician) {
+      assignTechnicianMutation.mutate({
+        serviceId: selectedServiceForAssign.id,
+        technicianId: parseInt(selectedTechnician)
+      });
+    }
+  };
+
+  const handleRemoveTechnician = () => {
+    if (selectedServiceForRemove) {
+      removeTechnicianMutation.mutate(selectedServiceForRemove.id);
+    }
+  };
+
+  const handleDeleteService = () => {
+    if (selectedServiceForDelete) {
+      deleteServiceMutation.mutate(selectedServiceForDelete.id);
+    }
+  };
 
   // Query za Com Plus aparate
   const { data: appliances = [] } = useQuery<any[]>({
@@ -260,25 +312,7 @@ export default function ComplusDashboard() {
     },
   });
 
-  const handleAssignTechnician = () => {
-    if (!selectedService || !selectedTechnician) {
-      toast({
-        title: "Greška",
-        description: "Molimo izaberite servis i servisera.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    assignTechnicianMutation.mutate({
-      serviceId: selectedService.id,
-      technicianId: parseInt(selectedTechnician)
-    });
-  };
-
-  const handleRemoveTechnician = (serviceId: number) => {
-    removeTechnicianMutation.mutate(serviceId);
-  };
 
   const handleEditService = (service: Service) => {
     setEditingService(service);
@@ -712,6 +746,19 @@ export default function ComplusDashboard() {
                                 title="Povuci servisera"
                               >
                                 <XCircle className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            {/* Obriši servis - prikazuje se za sve servise osim završenih */}
+                            {!["completed"].includes(service.status) && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="p-1 text-red-600 hover:bg-red-50"
+                                onClick={() => setSelectedServiceForDelete(service)}
+                                title="Obriši servis"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             )}
                             <Dialog>
@@ -1273,6 +1320,128 @@ export default function ComplusDashboard() {
             </Button>
             <Button onClick={handleSaveApplianceChanges} disabled={updateApplianceMutation.isPending}>
               {updateApplianceMutation.isPending ? "Čuva..." : "Sačuvaj"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG ZA DODELU SERVISERA */}
+      <Dialog open={!!selectedServiceForAssign} onOpenChange={(open) => !open && setSelectedServiceForAssign(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dodeli servisera</DialogTitle>
+            <DialogDescription>
+              Izaberite servisera za servis #{selectedServiceForAssign?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Klijent: <strong>{selectedServiceForAssign?.clientName}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">Uređaj: <strong>{selectedServiceForAssign?.manufacturerName} {selectedServiceForAssign?.model}</strong></p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Serviser</label>
+              <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite servisera" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((technician) => (
+                    <SelectItem key={technician.id} value={technician.id.toString()}>
+                      {technician.fullName} - {technician.specialization}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => {
+              setSelectedServiceForAssign(null);
+              setSelectedTechnician("");
+            }}>
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleAssignTechnician} 
+              disabled={assignTechnicianMutation.isPending || !selectedTechnician}
+            >
+              {assignTechnicianMutation.isPending ? "Dodeljivanje..." : "Dodeli"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG ZA POVLAČENJE SERVISERA */}
+      <Dialog open={!!selectedServiceForRemove} onOpenChange={(open) => !open && setSelectedServiceForRemove(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Povuci servisera</DialogTitle>
+            <DialogDescription>
+              Da li ste sigurni da želite da povučete servisera od servisa #{selectedServiceForRemove?.id}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Klijent: <strong>{selectedServiceForRemove?.clientName}</strong></p>
+              <p className="text-sm text-gray-600 mb-2">Uređaj: <strong>{selectedServiceForRemove?.manufacturerName} {selectedServiceForRemove?.model}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">Trenutni serviser: <strong>{selectedServiceForRemove?.technicianName}</strong></p>
+            </div>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-sm text-orange-800">
+                Servis će biti vraćen u status "pending" i serviser će biti obavešten o promeni.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setSelectedServiceForRemove(null)}>
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleRemoveTechnician} 
+              disabled={removeTechnicianMutation.isPending}
+              variant="destructive"
+            >
+              {removeTechnicianMutation.isPending ? "Povlačenje..." : "Povuci servisera"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG ZA BRISANJE SERVISA */}
+      <Dialog open={!!selectedServiceForDelete} onOpenChange={(open) => !open && setSelectedServiceForDelete(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Obriši servis</DialogTitle>
+            <DialogDescription>
+              Da li ste sigurni da želite da trajno obrišete servis #{selectedServiceForDelete?.id}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Klijent: <strong>{selectedServiceForDelete?.clientName}</strong></p>
+              <p className="text-sm text-gray-600 mb-2">Uređaj: <strong>{selectedServiceForDelete?.manufacturerName} {selectedServiceForDelete?.model}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">Status: <strong>{getStatusText(selectedServiceForDelete?.status || "")}</strong></p>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">
+                ⚠️ Upozorenje: Ova akcija se ne može poništiti!
+              </p>
+              <p className="text-sm text-red-700 mt-1">
+                Svi podaci o servisu će biti trajno obrisani iz sistema.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setSelectedServiceForDelete(null)}>
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleDeleteService} 
+              disabled={deleteServiceMutation.isPending}
+              variant="destructive"
+            >
+              {deleteServiceMutation.isPending ? "Brisanje..." : "Obriši servis"}
             </Button>
           </div>
         </DialogContent>
