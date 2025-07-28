@@ -56,7 +56,12 @@ export default function AuthPage() {
       } else if (user.role === "customer") {
         navigate("/customer");
       } else if (user.role === "admin") {
-        navigate("/admin");
+        // Specijalna logika za Com Plus admin (Teodora)
+        if (user.companyName === "Com Plus") {
+          navigate("/complus");
+        } else {
+          navigate("/admin");
+        }
       } else if (user.role === "business_partner" || user.role === "business") {
         navigate("/business");
       } else {
