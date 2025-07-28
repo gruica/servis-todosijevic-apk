@@ -108,9 +108,7 @@ export default function ComplusDashboard() {
   const { data: technicians = [] } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
   });
-  
-  console.log("🔧 Tehnicians loaded:", technicians.length, technicians);
-  console.log("🎯 Services data:", services.map(s => ({id: s.id, status: s.status, technicianId: s.technicianId, technicianName: s.technicianName})));
+
 
   // Mutation za dodelu servisa tehnician-u
   const assignTechnicianMutation = useMutation({
@@ -691,13 +689,31 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {/* Test ikone */}
-                            <Button size="sm" variant="ghost" className="p-1 text-blue-600">
-                              <UserCheck className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="p-1 text-orange-600">
-                              <XCircle className="w-4 h-4" />
-                            </Button>
+                            {/* Dodeli servisera - prikazuje se za pending servise */}
+                            {service.status === "pending" && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="p-1 text-blue-600 hover:bg-blue-50"
+                                onClick={() => setSelectedServiceForAssign(service)}
+                                title="Dodeli servisera"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            {/* Povuci servisera - prikazuje se za servise sa dodeljenim serviserom koji nisu završeni */}
+                            {service.technicianId && !["completed", "cancelled"].includes(service.status) && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="p-1 text-orange-600 hover:bg-orange-50"
+                                onClick={() => setSelectedServiceForRemove(service)}
+                                title="Povuci servisera"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button 
