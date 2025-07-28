@@ -754,17 +754,21 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex items-center space-x-1 flex-shrink-0">
+                            {console.log(`Servis #${service.id}: status="${service.status}", technicianId="${service.technicianId}"`)}
                             {/* Dodeli servisera - prikazuje se za pending servise */}
                             {service.status === "pending" && (
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="p-1 text-blue-600 hover:bg-blue-50"
-                                onClick={() => setSelectedServiceForAssign(service)}
-                                title="Dodeli servisera"
-                              >
-                                <UserCheck className="w-4 h-4" />
-                              </Button>
+                              <>
+                                {console.log(`🔵 PRIKAZUJEM DODELI SERVISERA za servis #${service.id}`)}
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="p-1 text-blue-600 hover:bg-blue-50"
+                                  onClick={() => setSelectedServiceForAssign(service)}
+                                  title="Dodeli servisera"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </Button>
+                              </>
                             )}
 
                             {/* Povuci servisera - prikazuje se za servise sa dodeljenim serviserom koji nisu završeni */}
