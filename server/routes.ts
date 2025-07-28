@@ -2728,22 +2728,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`DELETE /api/users/${req.params.id} - Admin deleting user`);
       console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
-      
-      // JWT middleware already validated admin role
+      console.log(`Request headers:`, req.headers.authorization);
       
       const userId = parseInt(req.params.id);
+      console.log(`Attempting to delete user ID: ${userId}`);
       
       // Don't allow deleting yourself
       if (req.user?.id === userId) {
+        console.log("Self-deletion attempt blocked");
         return res.status(400).json({ error: "Ne možete izbrisati svoj korisnički nalog" });
       }
       
       const success = await storage.deleteUser(userId);
+      console.log(`Delete operation result: ${success}`);
       
       if (!success) {
+        console.log("User not found or delete failed");
         return res.status(404).json({ error: "Korisnik nije pronađen" });
       }
       
+      console.log("User deleted successfully");
       res.status(200).json({ message: "Korisnik uspješno izbrisan" });
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -4683,13 +4687,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin delete routes for invalid/expired clients and services
-  app.delete("/api/admin/clients/:id", async (req, res) => {
+  app.delete("/api/admin/clients/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za brisanje klijenata" });
-      }
+      console.log(`DELETE /api/admin/clients/${req.params.id} - Admin deleting client`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
+      console.log(`Request headers:`, req.headers.authorization);
 
       const clientId = parseInt(req.params.id);
+      console.log(`Attempting to delete client ID: ${clientId}`);
+      
       if (isNaN(clientId)) {
         return res.status(400).json({ error: "Neispravan ID klijenta" });
       }
@@ -4719,14 +4725,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Delete client
+      console.log("Executing client delete query...");
       const deletedClient = await db.delete(schema.clients)
         .where(eq(schema.clients.id, clientId))
         .returning();
+      console.log(`Client delete query result:`, deletedClient);
 
       if (deletedClient.length === 0) {
+        console.log("Client not found or delete failed");
         return res.status(404).json({ error: "Klijent nije pronađen" });
       }
 
+      console.log("Client deleted successfully");
       res.json({ 
         success: true, 
         message: "Klijent je uspešno obrisan",
@@ -5007,17 +5017,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/services/:id", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin") {
+      console.log("Access denied - user is not admin");
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
     try {
       const serviceId = parseInt(req.params.id);
+      console.log(`DELETE /api/admin/services/${serviceId} - Admin deleting service`);
+      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
+      console.log(`Request headers:`, req.headers.authorization);
+      
       const deleted = await storage.deleteAdminService(serviceId);
+      console.log(`Service delete operation result: ${deleted}`);
       
       if (!deleted) {
+        console.log("Service not found or delete failed");
         return res.status(404).json({ error: "Service not found" });
       }
       
+      console.log("Service deleted successfully");
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting service:", error);
