@@ -17,10 +17,14 @@ import {
   AlertCircle,
   XCircle,
   Home,
-  Bell
+  Bell,
+  Play
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 // Service status map
 const statusConfig = {
@@ -29,7 +33,8 @@ const statusConfig = {
   in_progress: { color: "bg-orange-500", textColor: "text-orange-700", bgColor: "bg-orange-50", label: "U toku" },
   scheduled: { color: "bg-purple-500", textColor: "text-purple-700", bgColor: "bg-purple-50", label: "Zakazan" },
   completed: { color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "Završen" },
-  cancelled: { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", label: "Otkazan" }
+  cancelled: { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", label: "Otkazan" },
+  waiting_parts: { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", label: "Čeka delove" }
 };
 
 interface Service {
@@ -56,6 +61,93 @@ interface Service {
 
 function ServiceCard({ service }: { service: Service }) {
   const statusInfo = statusConfig[service.status];
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Professional service action mutations
+  const startWorkMutation = useMutation({
+    mutationFn: (serviceId: number) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'in_progress' })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      toast({
+        title: "Rad započet",
+        description: "Status servisa promenjen na 'U toku'",
+      });
+    }
+  });
+
+  const requestPartsMutation = useMutation({
+    mutationFn: (serviceId: number) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'waiting_parts' })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      toast({
+        title: "Zahtev za delove poslat",
+        description: "Administrator je obavešten o potrebnim rezervnim delovima",
+      });
+    }
+  });
+
+  const completeServiceMutation = useMutation({
+    mutationFn: (serviceId: number) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'completed' })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      toast({
+        title: "Servis završen",
+        description: "Klijent će biti obavešten o završetku servisa",
+      });
+    }
+  });
+
+  const partsReceivedMutation = useMutation({
+    mutationFn: (serviceId: number) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'in_progress' })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      toast({
+        title: "Rad nastavljen",
+        description: "Status servisa vraćen na 'U toku' - nastavi sa popravkom",
+      });
+    }
+  });
+
+  // Handler functions
+  const handleStartWork = (serviceId: number) => {
+    startWorkMutation.mutate(serviceId);
+  };
+
+  const handleRequestParts = (serviceId: number) => {
+    requestPartsMutation.mutate(serviceId);
+  };
+
+  const handleClientIssue = (serviceId: number) => {
+    toast({
+      title: "Prijavi problem",
+      description: "Kontaktiraj administratora telefonom za hitne probleme",
+    });
+  };
+
+  const handleCompleteService = (serviceId: number) => {
+    completeServiceMutation.mutate(serviceId);
+  };
+
+  const handlePartsReceived = (serviceId: number) => {
+    partsReceivedMutation.mutate(serviceId);
+  };
   
   const handleCallClient = () => {
     if (service.client?.phone) {
@@ -147,7 +239,7 @@ function ServiceCard({ service }: { service: Service }) {
           )}
         </div>
         
-        {/* Action Buttons */}
+        {/* Contact Buttons */}
         <div className="flex gap-2 mt-4">
           {service.client?.phone && (
             <Button 
@@ -170,6 +262,71 @@ function ServiceCard({ service }: { service: Service }) {
             </Button>
           )}
         </div>
+
+        {/* Professional Service Actions */}
+        <div className="mt-4 space-y-2">
+          {/* Start Work Action */}
+          {service.status === 'assigned' && (
+            <Button 
+              onClick={() => handleStartWork(service.id)}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Počni rad na servisu
+            </Button>
+          )}
+
+          {/* In Progress Actions */}
+          {service.status === 'in_progress' && (
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                onClick={() => handleRequestParts(service.id)}
+                variant="outline"
+                className="h-12 border-orange-200 text-orange-700 hover:bg-orange-50"
+              >
+                <Package className="h-4 w-4 mr-1" />
+                Poruči deo
+              </Button>
+              <Button 
+                onClick={() => handleClientIssue(service.id)}
+                variant="outline"
+                className="h-12 border-red-200 text-red-700 hover:bg-red-50"
+              >
+                <AlertCircle className="h-4 w-4 mr-1" />
+                Problem
+              </Button>
+            </div>
+          )}
+
+          {/* Complete Service Action */}
+          {service.status === 'in_progress' && (
+            <Button 
+              onClick={() => handleCompleteService(service.id)}
+              className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Završi servis
+            </Button>
+          )}
+
+          {/* Waiting for Parts Actions */}
+          {service.status === 'waiting_parts' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium text-yellow-800">Čekaju se rezervni delovi</span>
+              </div>
+              <Button 
+                onClick={() => handlePartsReceived(service.id)}
+                variant="outline"
+                className="w-full h-10 border-green-200 text-green-700 hover:bg-green-50"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Delovi stigli - nastavi rad
+              </Button>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -185,7 +342,7 @@ export default function TechnicianServicesMobile() {
   
   // Filter services by status
   const activeServices = useMemo(() => 
-    services.filter((s: Service) => ['pending', 'assigned', 'in_progress', 'scheduled'].includes(s.status))
+    services.filter((s: Service) => ['pending', 'assigned', 'in_progress', 'scheduled', 'waiting_parts'].includes(s.status))
   , [services]);
   
   const completedServices = useMemo(() => 
