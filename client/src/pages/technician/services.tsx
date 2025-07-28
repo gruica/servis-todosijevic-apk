@@ -995,9 +995,9 @@ export default function TechnicianServices() {
                 <p className="text-blue-100 text-sm">{user?.fullName || user?.username}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <NotificationsDropdown />
-              {/* Jasno vidljivo Logout dugme */}
+              {/* MAKSIMALNO VIDLJIVO CRVENO LOGOUT DUGME */}
               <button
                 onClick={() => {
                   logoutMutation.mutate(undefined, {
@@ -1017,12 +1017,22 @@ export default function TechnicianServices() {
                   });
                 }}
                 disabled={logoutMutation.isPending}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 shadow-lg transition-colors disabled:opacity-50"
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold text-base flex items-center gap-2 shadow-2xl border-2 border-red-400 transform hover:scale-105 transition-all duration-200"
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: 'white',  
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 16px rgba(220, 38, 38, 0.4)',
+                  border: '2px solid #fca5a5'
+                }}
               >
                 {logoutMutation.isPending ? (
-                  <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
+                  <div className="animate-spin h-5 w-5 border-t-2 border-b-2 border-white rounded-full"></div>
                 ) : (
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-5 w-5" />
                 )}
                 ODJAVI SE
               </button>
