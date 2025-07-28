@@ -110,6 +110,7 @@ export default function ComplusDashboard() {
   });
   
   console.log("🔧 Tehnicians loaded:", technicians.length, technicians);
+  console.log("🎯 Services data:", services.map(s => ({id: s.id, status: s.status, technicianId: s.technicianId, technicianName: s.technicianName})));
 
   // Mutation za dodelu servisa tehnician-u
   const assignTechnicianMutation = useMutation({
@@ -690,6 +691,13 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex items-center space-x-1 flex-shrink-0">
+                            {/* Test ikone */}
+                            <Button size="sm" variant="ghost" className="p-1 text-blue-600">
+                              <UserCheck className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="p-1 text-orange-600">
+                              <XCircle className="w-4 h-4" />
+                            </Button>
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button 
