@@ -981,240 +981,209 @@ export default function TechnicianServices() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-4 md:px-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Moji servisi</h1>
-        <div className="flex gap-2 items-center">
-          <Button 
-            variant="outline" 
-            onClick={() => openQuickActions()}
-            className="hidden sm:flex"
-          >
-            <Package className="mr-2 h-4 w-4" />
-            Brze akcije
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setActiveTab("picked_up")}
-            className="hidden sm:flex"
-          >
-            <Truck className="mr-2 h-4 w-4" />
-            Preuzeti
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setActiveTab("problematic")}
-            className="hidden sm:flex"
-          >
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Problematični
-          </Button>
-          <NotificationsDropdown />
-          <TechnicianProfileWidget />
-          <Button 
-            variant="destructive" 
-            onClick={() => {
-              logoutMutation.mutate(undefined, {
-                onSuccess: () => {
-                  toast({
-                    title: "Odjava uspješna",
-                    description: "Uspješno ste se odjavili.",
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Mobile-First Header */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-xl">
+        <div className="px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <User className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Moji Servisi</h1>
+                <p className="text-blue-100 text-sm">{user?.fullName || user?.username}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <NotificationsDropdown />
+              <TechnicianProfileWidget />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-white/20 p-2"
+                onClick={() => {
+                  logoutMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      toast({
+                        title: "Odjava uspješna",
+                        description: "Uspješno ste se odjavili.",
+                      });
+                    },
+                    onError: (error: Error) => {
+                      toast({
+                        title: "Greška pri odjavi",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    },
                   });
-                },
-                onError: (error: Error) => {
-                  toast({
-                    title: "Greška pri odjavi",
-                    description: error.message,
-                    variant: "destructive",
-                  });
-                },
-              });
-            }}
-            disabled={logoutMutation.isPending}
-          >
-            {logoutMutation.isPending ? (
-              <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
-            ) : (
-              <LogOut className="mr-2 h-4 w-4" />
-            )}
-            Odjavi se
-          </Button>
+                }}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? (
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Odjavi se
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Mobile prečice za filtriranje */}
-      <div className="sm:hidden mb-4">
-        <div className="flex gap-2 justify-center">
-          <Button 
-            variant={activeTab === "picked_up" ? "default" : "outline"}
-            onClick={() => setActiveTab("picked_up")}
-            className="flex-1"
-            size="sm"
-          >
-            <Truck className="mr-2 h-4 w-4" />
-            Preuzeti
-          </Button>
-          <Button 
-            variant={activeTab === "problematic" ? "default" : "outline"}
-            onClick={() => setActiveTab("problematic")}
-            className="flex-1"
-            size="sm"
-          >
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Problematični
-          </Button>
-        </div>
-        {/* Povratak na osnovne tab-ove */}
-        {(activeTab === "picked_up" || activeTab === "problematic") && (
-          <div className="flex justify-center mt-2">
+      {/* Content Area */}
+      <div className="px-4 pb-6">
+        {/* Quick Action Buttons */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <Button 
-              variant="ghost"
-              onClick={() => setActiveTab("active")}
-              size="sm"
+              onClick={() => openQuickActions()}
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg h-14"
             >
-              ← Nazad na osnovne servise
+              <Package className="mr-2 h-5 w-5" />
+              <span className="font-semibold">Brze Akcije</span>
+            </Button>
+            <Button 
+              onClick={() => setActiveTab("picked_up")}
+              variant={activeTab === "picked_up" ? "default" : "outline"}
+              className="h-14 shadow-lg"
+            >
+              <Truck className="mr-2 h-5 w-5" />
+              <span className="font-semibold">Preuzeti</span>
             </Button>
           </div>
-        )}
-      </div>
+          
+          {/* Problematic Services Button */}
+          <Button 
+            onClick={() => setActiveTab("problematic")}
+            variant={activeTab === "problematic" ? "default" : "outline"}
+            className="w-full h-14 shadow-lg bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+          >
+            <AlertCircle className="mr-2 h-5 w-5" />
+            <span className="font-semibold">Problematični Servisi</span>
+          </Button>
+          
+          {/* Back Button for special tabs */}
+          {(activeTab === "picked_up" || activeTab === "problematic") && (
+            <div className="flex justify-center mt-3">
+              <Button 
+                variant="ghost"
+                onClick={() => setActiveTab("active")}
+                className="text-blue-600"
+              >
+                ← Nazad na osnovne servise
+              </Button>
+            </div>
+          )}
+        </div>
 
-      <Tabs defaultValue="active" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-4">
-          <TabsTrigger value="active">Aktivni</TabsTrigger>
-          <TabsTrigger value="waiting_parts">Čeka delove</TabsTrigger>
-          <TabsTrigger value="completed">Završeni</TabsTrigger>
-          <TabsTrigger value="other">Ostalo</TabsTrigger>
-        </TabsList>
+        {/* Professional Tab System */}
+        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="px-4 pt-4">
+              <TabsList className="grid w-full grid-cols-3 bg-blue-50 rounded-lg p-1">
+                <TabsTrigger 
+                  value="active" 
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white font-semibold"
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  Aktivni
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="completed" 
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white font-semibold"
+                >
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  Završeni
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="other" 
+                  className="data-[state=active]:bg-gray-600 data-[state=active]:text-white font-semibold"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Ostali
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-        {/* Waiting Parts Tab */}
-        <TabsContent value="waiting_parts" className="space-y-4">
-          <WaitingForPartsFolder />
-        </TabsContent>
-
-        {["active", "completed", "other"].map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-4">
-            {filteredServices.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-gray-500">Nema servisa u ovoj kategoriji</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[calc(100vh-220px)]">
-                <div className="space-y-6 pr-2 pb-4">
-                  {sortedCities.map((city) => {
-                    console.log(`📍 Rendering city ${city} with services:`, groupedServices[city].map(s => ({ id: s.id, client: s.client?.fullName, description: s.description })));
-                    return (
-                      <div key={city} className="space-y-3">
-                      <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 border-b">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <h3 className="font-semibold text-lg text-primary">{city}</h3>
-                          <Badge variant="outline" className="ml-2">
-                            {groupedServices[city].length} servis{groupedServices[city].length === 1 ? '' : 'a'}
-                          </Badge>
-                        </div>
-                        <Button 
-                          variant="ghost" 
+            <ScrollArea className="h-[60vh] px-4 pb-4">
+              <TabsContent value="active" className="mt-4 space-y-4">
+                {filteredServices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 text-lg">Nema aktivnih servisa</p>
+                  </div>
+                ) : (
+                  sortedCities.map((city) => (
+                    <div key={city} className="space-y-3">
+                      <div className="flex items-center justify-between bg-gradient-to-r from-blue-100 to-indigo-100 p-3 rounded-lg">
+                        <h3 className="font-semibold text-blue-800 flex items-center">
+                          <MapPin className="mr-2 h-4 w-4" />
+                          {city} ({groupedServices[city]?.length || 0})
+                        </h3>
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => openQuickActions(city)}
-                          className="h-8 px-2"
+                          className="text-blue-600 hover:bg-blue-200"
                         >
-                          <Package className="h-3 w-3" />
+                          <Package className="h-4 w-4" />
                         </Button>
                       </div>
-                      {groupedServices[city].map((service) => (
-                        <Card 
+                      
+                      {groupedServices[city]?.map((service) => (
+                        <ServiceCard 
                           key={service.id} 
-                          className={`overflow-hidden mb-4 ${
-                            highlightedServiceId === service.id 
-                              ? 'ring-2 ring-blue-500 ring-offset-2 bg-blue-50/50 border-blue-200' 
-                              : ''
-                          }`}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start gap-3">
-                              <div className="flex-1 min-w-0">
-                                <CardTitle className="text-lg font-semibold leading-tight">
-                                  {service.client?.fullName}
-                                </CardTitle>
-                                <CardDescription className="text-sm mt-1">
-                                  {service.appliance?.category?.name} {service.appliance?.model}
-                                </CardDescription>
-                              </div>
-                              <div className="flex-shrink-0">
-                                {getStatusBadge(service.status)}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pb-2">
-                            <div className="space-y-2">
-                              {/* Opis problema */}
-                              <div className="flex items-start">
-                                <ClipboardList className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
-                                <span className="text-sm">{service.description}</span>
-                              </div>
+                          service={service} 
+                          onOpenDetails={() => openFloatingService(service)}
+                        />
+                      ))}
+                    </div>
+                  ))
+                )}
+              </TabsContent>
 
-                              {/* Kontakt klijenta */}
-                              {service.client?.phone && (
-                                <div className="flex items-center">
-                                  <Phone className="h-4 w-4 mr-2 opacity-70" />
-                                  <span className="text-sm font-medium">{service.client.phone}</span>
-                                </div>
-                              )}
+              <TabsContent value="completed" className="mt-4 space-y-4">
+                {filteredServices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 text-lg">Nema završenih servisa</p>
+                  </div>
+                ) : (
+                  filteredServices.map((service) => (
+                    <ServiceCard 
+                      key={service.id} 
+                      service={service} 
+                      onOpenDetails={() => openFloatingService(service)}
+                    />
+                  ))
+                )}
+              </TabsContent>
 
-                              {/* Adresa klijenta */}
-                              {service.client?.address && (
-                                <div className="flex items-start">
-                                  <MapPin className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
-                                  <span className="text-sm">{service.client.address}, {service.client.city}</span>
-                                </div>
-                              )}
+              <TabsContent value="other" className="mt-4 space-y-4">
+                {filteredServices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 text-lg">Nema ostalih servisa</p>
+                  </div>
+                ) : (
+                  filteredServices.map((service) => (
+                    <ServiceCard 
+                      key={service.id} 
+                      service={service} 
+                      onOpenDetails={() => openFloatingService(service)}
+                    />
+                  ))
+                )}
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </Card>
+      </div>
 
-                              {/* Datum kreiranja */}
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-2 opacity-70" />
-                                <span className="text-sm">Kreiran: {formatDate(service.createdAt)}</span>
-                              </div>
-
-                              {/* Zakazan datum */}
-                              {service.scheduledDate && (
-                                <div className="flex items-center">
-                                  <Clock className="h-4 w-4 mr-2 opacity-70" />
-                                  <span className="text-sm">Zakazan: {formatDate(service.scheduledDate)}</span>
-                                </div>
-                              )}
-
-                              {/* Napomene servisera ako postoje */}
-                              {service.technicianNotes && (
-                                <div className="flex items-start">
-                                  <User className="h-4 w-4 mr-2 mt-0.5 opacity-70 flex-shrink-0" />
-                                  <span className="text-sm text-muted-foreground">
-                                    <strong>Napomena:</strong> {service.technicianNotes}
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Cena ako je definisana */}
-                              {service.cost && (
-                                <div className="flex items-center">
-                                  <Package className="h-4 w-4 mr-2 opacity-70" />
-                                  <span className="text-sm font-medium text-green-600">
-                                    Cena: {service.cost}€
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Indikator da je uređaj preuzet */}
-                              {service.devicePickedUp && (
-                                <div className="flex items-center">
-                                  <Truck className="h-4 w-4 mr-2 text-blue-600" />
-                                  <span className="text-sm font-medium text-blue-600">
-                                    Uređaj preuzet {service.pickupDate ? `(${formatDate(service.pickupDate)})` : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                          <CardFooter className="flex flex-col gap-3 pt-3">
+      {/* All Dialogs and Floating Components */}
                             {/* Prva grupa - Kontakt i informacije */}
                             <div className="flex gap-2 w-full">
                               <CallClientButton 
@@ -1417,9 +1386,6 @@ export default function TechnicianServices() {
                         </Card>
                       ))}
                     </div>
-                    );
-                  })}
-                </div>
               </ScrollArea>
             )}
           </TabsContent>
