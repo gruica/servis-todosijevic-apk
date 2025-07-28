@@ -995,13 +995,10 @@ export default function TechnicianServices() {
                 <p className="text-blue-100 text-sm">{user?.fullName || user?.username}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <NotificationsDropdown />
-              <TechnicianProfileWidget />
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/50 px-3 py-2 font-medium"
+              {/* Jasno vidljivo Logout dugme */}
+              <button
                 onClick={() => {
                   logoutMutation.mutate(undefined, {
                     onSuccess: () => {
@@ -1020,14 +1017,15 @@ export default function TechnicianServices() {
                   });
                 }}
                 disabled={logoutMutation.isPending}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 shadow-lg transition-colors disabled:opacity-50"
               >
                 {logoutMutation.isPending ? (
-                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+                  <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full"></div>
                 ) : (
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className="h-4 w-4" />
                 )}
-                Odjavi se
-              </Button>
+                ODJAVI SE
+              </button>
             </div>
           </div>
         </div>
