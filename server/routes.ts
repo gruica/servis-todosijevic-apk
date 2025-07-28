@@ -6530,8 +6530,8 @@ Admin panel - automatska porudžbina
     try {
       // Dopuna Generali podataka za servis
 
-      if (req.user?.role !== "technician") {
-        return res.status(403).json({ error: "Samo serviseri mogu dopunjavati Generali servise" });
+      if (req.user?.role !== "technician" && req.user?.role !== "business_partner") {
+        return res.status(403).json({ error: "Samo serviseri i poslovni partneri mogu dopunjavati Generali servise" });
       }
 
       const serviceId = parseInt(req.params.id);
@@ -6563,11 +6563,20 @@ Admin panel - automatska porudžbina
 
       // Povuci korisničke podatke da bi dobio technicianId
       const userDetails = await storage.getUser(req.user.id);
-      if (!userDetails || !userDetails.technicianId) {
+      
+      // Za servisere je potreban technicianId, za poslovne partnere nije
+      if (req.user.role === "technician" && (!userDetails || !userDetails.technicianId)) {
         return res.status(403).json({ error: "Nemate ulogu servisera" });
       }
 
-      // Serviseri mogu dopunjavati Generali podatke za bilo koji servis
+      // Za poslovne partnere, proveri da li su oni kreatori servisa
+      if (req.user.role === "business_partner") {
+        if (service.businessPartnerId !== req.user.id) {
+          return res.status(403).json({ error: "Možete dopunjavati samo servise koje ste vi kreirali" });
+        }
+      }
+
+      // Serviseri i poslovni partneri mogu dopunjavati Generali podatke
       // (uklonjena ograničavajuća provera dodele servisa)
 
       // Dopuni podatke o klijentu ako su navedeni
