@@ -5105,6 +5105,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Povlačenje servisera od servisa
+  app.put("/api/admin/services/:id/remove-technician", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      // Dobij podatke o servisu pre povlačenja
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      if (!service.technicianId) {
+        return res.status(400).json({ error: "Servis nema dodeljenog servisera" });
+      }
+
+      // Povuci servisera - postavi status na pending i ukloni technicianId
+      const updatedService = await storage.updateService(serviceId, {
+        status: 'pending',
+        technicianId: null
+      });
+
+      if (!updatedService) {
+        return res.status(404).json({ error: "Greška pri povlačenju servisera" });
+      }
+
+      console.log(`Admin povukao servisera od servisa #${serviceId}`);
+
+      // SMS obaveštenje administratorima o povlačenju servisera
+      if (smsService && smsService.isConfigured()) {
+        try {
+          const admins = await getAdminsWithPhones();
+          const client = await storage.getClient(service.clientId);
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          const technician = await storage.getTechnician(service.technicianId);
+          
+          const deviceType = category ? category.name : 'Nepoznat uređaj';
+
+          for (const admin of admins) {
+            try {
+              await smsService.sendCustomMessage(admin.phone,
+                `[FRIGO SISTEM] Serviser ${technician?.fullName || 'Nepoznat'} povučen od servisa #${serviceId} (${client?.fullName || 'Nepoznat klijent'} - ${deviceType}). Status: Na čekanju.`
+              );
+              console.log(`SMS o povlačenju servisera poslat administratoru ${admin.fullName}`);
+            } catch (adminSmsError) {
+              console.error(`Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+            }
+          }
+        } catch (adminSmsError) {
+          console.error('Greška pri slanju admin SMS obaveštenja o povlačenju servisera:', adminSmsError);
+        }
+      }
+      
+      res.json(updatedService);
+    } catch (error) {
+      console.error("Error removing technician:", error);
+      res.status(500).json({ error: "Greška pri povlačenju servisera" });
+    }
+  });
+
   // Vraćanje servisa od tehnčara u admin bazu
   app.post("/api/admin/services/:id/return-from-technician", jwtAuth, requireRole("admin"), async (req, res) => {
     try {
