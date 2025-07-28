@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,14 +92,33 @@ export default function ComplusDashboard() {
   });
   const { toast } = useToast();
 
+  // Debug servisa sa useEffect
+  useEffect(() => {
+    if (services.length > 0) {
+      console.log(`🔍 COM PLUS UČITAO ${services.length} servisa`);
+      const pendingServices = services.filter(s => s.status === "pending");
+      console.log(`📋 PENDING SERVISI: ${pendingServices.length}`, pendingServices.map(s => `#${s.id}`));
+      
+      // Ispituj servis #175 specifično
+      const service175 = services.find(s => s.id === 175);
+      if (service175) {
+        console.log(`✅ SERVIS #175 PRONAĐEN:`, {
+          id: service175.id,
+          status: service175.status,
+          technicianId: service175.technicianId,
+          shouldShowAssignButton: service175.status === "pending",
+          shouldShowRemoveButton: service175.technicianId && !["completed", "cancelled"].includes(service175.status),
+          shouldShowDeleteButton: !["completed"].includes(service175.status)
+        });
+      } else {
+        console.log(`❌ SERVIS #175 NIJE PRONAĐEN u services array`);
+      }
+    }
+  }, [services]);
+
   // Query za Com Plus servise
   const { data: services = [], isLoading } = useQuery<Service[]>({
     queryKey: ["/api/complus/services", statusFilter, brandFilter, warrantyFilter],
-    onSuccess: (data) => {
-      console.log(`🔍 COM PLUS UČITAO ${data.length} servisa`);
-      const pendingServices = data.filter(s => s.status === "pending");
-      console.log(`📋 PENDING SERVISI: ${pendingServices.length}`, pendingServices.map(s => `#${s.id}`));
-    }
   });
 
   // Query za Com Plus statistike
@@ -759,21 +778,17 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex items-center space-x-1 flex-shrink-0">
-                            {console.log(`Servis #${service.id}: status="${service.status}", technicianId="${service.technicianId}"`)}
                             {/* Dodeli servisera - prikazuje se za pending servise */}
                             {service.status === "pending" && (
-                              <>
-                                {console.log(`🔵 PRIKAZUJEM DODELI SERVISERA za servis #${service.id}`)}
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="p-1 text-blue-600 hover:bg-blue-50"
-                                  onClick={() => setSelectedServiceForAssign(service)}
-                                  title="Dodeli servisera"
-                                >
-                                  <UserCheck className="w-4 h-4" />
-                                </Button>
-                              </>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="p-1 text-blue-600 hover:bg-blue-50"
+                                onClick={() => setSelectedServiceForAssign(service)}
+                                title="Dodeli servisera"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </Button>
                             )}
 
                             {/* Povuci servisera - prikazuje se za servise sa dodeljenim serviserom koji nisu završeni */}
