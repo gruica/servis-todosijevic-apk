@@ -467,7 +467,10 @@ export default function ComplusDashboard() {
                 <Download className="w-4 h-4 mr-2" />
                 Izvoz CSV
               </Button>
-              <Button className="flex items-center bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="flex items-center bg-blue-600 hover:bg-blue-700"
+                onClick={() => window.location.href = '/business/services/new'}
+              >
                 <Package className="w-4 h-4 mr-2" />
                 Novi servis
               </Button>
@@ -617,7 +620,7 @@ export default function ComplusDashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[1400px]">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4">ID</th>
@@ -630,7 +633,7 @@ export default function ComplusDashboard() {
                       <th className="text-left py-3 px-4">Garancija</th>
                       <th className="text-left py-3 px-4">Serviser</th>
                       <th className="text-left py-3 px-4">Cena</th>
-                      <th className="text-left py-3 px-4">Akcije</th>
+                      <th className="text-left py-3 px-4 min-w-[120px]">Akcije</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -683,7 +686,7 @@ export default function ComplusDashboard() {
                         <td className="py-3 px-4 font-medium">
                           {service.cost ? `${service.cost}€` : "-"}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 min-w-[120px]">
                           <div className="flex items-center space-x-1">
                             <Dialog>
                               <DialogTrigger asChild>
