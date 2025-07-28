@@ -136,22 +136,25 @@ export default function NewBusinessServiceRequest() {
         console.log("Slanje zahteva za kreiranje servisa:", data);
         
         // Koristimo specijalizovanu business partner rutu sa JWT autentifikacijom
-        const serviceResponse = await apiRequest("POST", "/api/business/services-jwt", {
-          // Podaci o klijentu
-          clientFullName: data.clientFullName.trim(),
-          clientPhone: data.clientPhone.trim(),
-          clientEmail: data.clientEmail?.trim() || "",
-          clientAddress: data.clientAddress?.trim() || "",
-          clientCity: data.clientCity?.trim() || "",
-          
-          // Podaci o uređaju
-          categoryId: data.categoryId,
-          manufacturerId: data.manufacturerId,
-          model: data.model.trim(),
-          serialNumber: data.serialNumber?.trim() || "",
-          
-          // Opis servisa
-          description: data.description.trim()
+        const serviceResponse = await apiRequest("/api/business/services-jwt", {
+          method: "POST",
+          body: JSON.stringify({
+            // Podaci o klijentu
+            clientFullName: data.clientFullName.trim(),
+            clientPhone: data.clientPhone.trim(),
+            clientEmail: data.clientEmail?.trim() || "",
+            clientAddress: data.clientAddress?.trim() || "",
+            clientCity: data.clientCity?.trim() || "",
+            
+            // Podaci o uređaju
+            categoryId: data.categoryId,
+            manufacturerId: data.manufacturerId,
+            model: data.model.trim(),
+            serialNumber: data.serialNumber?.trim() || "",
+            
+            // Opis servisa
+            description: data.description.trim()
+          })
         });
         
         if (!serviceResponse.ok) {
