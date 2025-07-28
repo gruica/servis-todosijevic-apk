@@ -42,7 +42,15 @@ export function RoleProtectedRoute({
     } else if (user.role === "customer") {
       redirectPath = "/customer";
     } else if (user.role === "admin") {
-      redirectPath = "/admin";
+      // Ako je Com Plus login, ne preusmeravaj na /admin
+      const isComplusLogin = localStorage.getItem("complus_login") === "true";
+      if (!isComplusLogin) {
+        redirectPath = "/admin";
+      } else {
+        // Ukloni flag nakon prepoznavanja
+        localStorage.removeItem("complus_login");
+        return <Route path={path} component={Component} />;
+      }
     } else if (user.role === "business" || user.role === "partner") {
       redirectPath = "/business";
     }
