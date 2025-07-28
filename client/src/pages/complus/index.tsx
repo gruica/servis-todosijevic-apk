@@ -508,10 +508,10 @@ export default function ComplusDashboard() {
   // Filtriranje servisa
   const filteredServices = services.filter((service: Service) => {
     const matchesSearch = 
-      service.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.clientPhone.includes(searchTerm) ||
-      service.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      (service.clientName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (service.clientPhone || "").includes(searchTerm) ||
+      (service.model || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (service.serialNumber || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     const matchesBrand = brandFilter === "all" || service.manufacturerName === brandFilter;
