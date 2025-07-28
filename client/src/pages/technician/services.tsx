@@ -539,7 +539,10 @@ export default function TechnicianServices() {
       clientUnavailableReason,
       needsRescheduling,
       reschedulingNotes,
-      customerRefusalReason
+      customerRefusalReason,
+      devicePickedUp,
+      pickupDate,
+      pickupNotes
     }: { 
       serviceId: number; 
       status: string; 
@@ -553,21 +556,30 @@ export default function TechnicianServices() {
       needsRescheduling?: boolean;
       reschedulingNotes?: string;
       customerRefusalReason?: string;
+      devicePickedUp?: boolean;
+      pickupDate?: string;
+      pickupNotes?: string;
     }) => {
       console.log(`[MUTATION] Pozivam API za servis ${serviceId} sa statusom: ${status}`);
       
-      const res = await apiRequest("PUT", `/api/services/${serviceId}/status`, { 
-        status, 
-        technicianNotes: notes,
-        usedParts,
-        machineNotes,
-        cost,
-        isCompletelyFixed,
-        warrantyStatus,
-        clientUnavailableReason,
-        needsRescheduling,
-        reschedulingNotes,
-        customerRefusalReason
+      const res = await apiRequest(`/api/services/${serviceId}/status`, { 
+        method: "PUT",
+        body: JSON.stringify({
+          status, 
+          technicianNotes: notes,
+          usedParts,
+          machineNotes,
+          cost,
+          isCompletelyFixed,
+          warrantyStatus,
+          clientUnavailableReason,
+          needsRescheduling,
+          reschedulingNotes,
+          customerRefusalReason,
+          devicePickedUp,
+          pickupDate,
+          pickupNotes
+        })
       });
       
       const result = await res.json();
@@ -723,16 +735,19 @@ export default function TechnicianServices() {
   // Direktno slanje SMS poruka
   const sendDirectSMS = async (service: TechnicianService, templateType: 'service_arrived' | 'service_delayed') => {
     try {
-      const response = await apiRequest("POST", "/api/sms/direct-send", {
-        templateType,
-        recipientPhone: service.client?.phone,
-        recipientName: service.client?.fullName,
-        serviceData: {
-          clientName: service.client?.fullName,
-          serviceId: service.id.toString(),
-          deviceType: service.appliance?.category?.name || 'uređaj',
-          technicianName: user?.fullName || 'serviser'
-        }
+      const response = await apiRequest("/api/sms/direct-send", {
+        method: "POST",
+        body: JSON.stringify({
+          templateType,
+          recipientPhone: service.client?.phone,
+          recipientName: service.client?.fullName,
+          serviceData: {
+            clientName: service.client?.fullName,
+            serviceId: service.id.toString(),
+            deviceType: service.appliance?.category?.name || 'uređaj',
+            technicianName: user?.fullName || 'serviser'
+          }
+        })
       });
 
       const result = await response.json();
@@ -766,10 +781,13 @@ export default function TechnicianServices() {
   // Mutation za vraćanje servisa administratoru
   const returnToAdminMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      const res = await apiRequest("PUT", `/api/services/${serviceId}`, {
-        status: "pending",
-        technicianId: null,
-        technicianNotes: `Servis vraćen administratoru zbog problema sa klijentom`
+      const res = await apiRequest(`/api/services/${serviceId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          status: "pending",
+          technicianId: null,
+          technicianNotes: `Servis vraćen administratoru zbog problema sa klijentom`
+        })
       });
       return res.json();
     },
