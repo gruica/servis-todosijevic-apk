@@ -544,21 +544,26 @@ export default function ComplusDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      {/* Modern Header with Gradient */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Com Plus Administrativni Panel</h1>
-              <p className="text-gray-600">Upravljanje servisima za Electrolux, Elica, Candy, Hoover, Turbo Air</p>
-            </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" className="flex items-center">
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Com Plus Admin</h1>
+                <p className="text-blue-100">Upravljanje servisima - Electrolux, Elica, Candy, Hoover, Turbo Air</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="secondary" className="flex items-center bg-white/10 hover:bg-white/20 text-white border-white/30">
                 <Download className="w-4 h-4 mr-2" />
                 Izvoz CSV
               </Button>
               <Button 
-                className="flex items-center bg-blue-600 hover:bg-blue-700"
+                className="flex items-center bg-white text-blue-600 hover:bg-gray-50 font-medium"
                 onClick={() => window.location.href = '/business/services/new'}
               >
                 <Package className="w-4 h-4 mr-2" />
@@ -569,76 +574,92 @@ export default function ComplusDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Statistike */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Modern Dashboard Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ukupno servisa</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.total || 0}</div>
-              <p className="text-xs text-muted-foreground">Com Plus brendovi</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700 mb-1">Ukupno servisa</p>
+                  <p className="text-3xl font-bold text-blue-900">{stats?.total || 0}</p>
+                  <p className="text-xs text-blue-600 mt-1">Com Plus brendovi</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aktivni servisi</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.active || 0}</div>
-              <p className="text-xs text-muted-foreground">U toku i dodeljeni</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-amber-700 mb-1">Aktivni servisi</p>
+                  <p className="text-3xl font-bold text-amber-900">{stats?.active || 0}</p>
+                  <p className="text-xs text-amber-600 mt-1">U toku i dodeljeni</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Završeni ovaj mesec</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.completedThisMonth || 0}</div>
-              <p className="text-xs text-muted-foreground">Tekući mesec</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700 mb-1">Završeni ovaj mesec</p>
+                  <p className="text-3xl font-bold text-green-900">{stats?.completedThisMonth || 0}</p>
+                  <p className="text-xs text-green-600 mt-1">Tekući mesec</p>
+                </div>
+                <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Garancijski servisi</CardTitle>
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.warranty || 0}</div>
-              <p className="text-xs text-muted-foreground">U garanciji</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-violet-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700 mb-1">Garancijski servisi</p>
+                  <p className="text-3xl font-bold text-purple-900">{stats?.warranty || 0}</p>
+                  <p className="text-xs text-purple-600 mt-1">U garanciji</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filteri */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Filter className="w-5 h-5 mr-2" />
+        {/* Modern Filters Panel */}
+        <Card className="mb-8 border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+            <CardTitle className="flex items-center text-lg">
+              <Filter className="w-5 h-5 mr-3 text-blue-600" />
               Filteri i pretraga
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="relative col-span-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Pretraži klijente, telefon, model..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-gray-200">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -652,7 +673,7 @@ export default function ComplusDashboard() {
               </Select>
 
               <Select value={brandFilter} onValueChange={setBrandFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-gray-200">
                   <SelectValue placeholder="Brend" />
                 </SelectTrigger>
                 <SelectContent>
@@ -664,7 +685,7 @@ export default function ComplusDashboard() {
               </Select>
 
               <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 border-gray-200">
                   <SelectValue placeholder="Garancija" />
                 </SelectTrigger>
                 <SelectContent>
@@ -674,112 +695,141 @@ export default function ComplusDashboard() {
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" onClick={() => {
-                setSearchTerm("");
-                setStatusFilter("all");
-                setBrandFilter("all");
-                setWarrantyFilter("all");
-              }}>
+              <Button 
+                variant="outline" 
+                className="h-11 border-gray-200 hover:bg-gray-50"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setBrandFilter("all");
+                  setWarrantyFilter("all");
+                }}
+              >
                 Resetuj filtere
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Lista servisa */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Com Plus servisi ({filteredServices.length})</span>
+        {/* Modern Services Table */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg border-b">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center space-x-3">
+                <Users className="w-5 h-5 text-blue-600" />
+                <span>Com Plus servisi ({filteredServices.length})</span>
+              </div>
               <div className="flex items-center space-x-2">
-                <Badge variant="outline">{brandFilter === "all" ? "Svi brendovi" : brandFilter}</Badge>
-                <Badge variant="outline">{statusFilter === "all" ? "Svi statusi" : getStatusText(statusFilter)}</Badge>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                  {brandFilter === "all" ? "Svi brendovi" : brandFilter}
+                </Badge>
+                <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                  {statusFilter === "all" ? "Svi statusi" : getStatusText(statusFilter)}
+                </Badge>
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Učitavanje Com Plus servisa...</p>
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">Učitavanje Com Plus servisa...</p>
               </div>
             ) : filteredServices.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Nema Com Plus servisa koji odgovaraju filterima</p>
+              <div className="text-center py-12">
+                <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">Nema Com Plus servisa koji odgovaraju filterima</p>
+                <p className="text-gray-400 text-sm mt-2">Pokušajte da promenite filtere ili dodajte novi servis</p>
               </div>
             ) : (
-              <div className="w-full">
-                <table className="w-full table-auto">
+              <div className="overflow-x-auto">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b bg-gray-50 text-xs">
-                      <th className="text-left py-2 px-2 w-12">ID</th>
-                      <th className="text-left py-2 px-2 w-36">Klijent</th>
-                      <th className="text-left py-2 px-2 w-24">Telefon</th>
-                      <th className="text-left py-2 px-2 w-20">Grad</th>
-                      <th className="text-left py-2 px-2 w-20">Brend</th>
-                      <th className="text-left py-2 px-2 w-32">Model</th>
-                      <th className="text-left py-2 px-2 w-24">Status</th>
-                      <th className="text-left py-2 px-2 w-20">Garancija</th>
-                      <th className="text-left py-2 px-2 w-24">Serviser</th>
-                      <th className="text-left py-2 px-2 w-16">Cena</th>
-                      <th className="text-left py-2 px-2 w-32">Akcije</th>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">ID</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Klijent</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Kontakt</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Uređaj</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Status</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Serviser</th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700 text-sm">Cena</th>
+                      <th className="text-center py-4 px-4 font-semibold text-gray-700 text-sm">Akcije</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-100">
                     {filteredServices.map((service: Service) => (
-                      <tr key={service.id} className="border-b hover:bg-gray-50 text-xs">
-                        <td className="py-2 px-2 font-medium">#{service.id}</td>
-                        <td className="py-2 px-2">
-                          <div className="font-medium text-xs truncate">{service.clientName}</div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-blue-600 p-0 h-auto font-normal"
-                            onClick={() => handleEditClient(service)}
-                          >
-                            Izmeni
-                          </Button>
+                      <tr key={service.id} className="hover:bg-blue-50/30 transition-colors duration-200">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              #{service.id}
+                            </span>
+                          </div>
                         </td>
-                        <td className="py-2 px-2 text-xs truncate">{service.clientPhone}</td>
-                        <td className="py-2 px-2 text-xs truncate">{service.clientCity}</td>
-                        <td className="py-2 px-2">
-                          <Badge variant="outline" className="text-[10px] px-1 py-0">
-                            {service.manufacturerName}
-                          </Badge>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900 text-sm">{service.clientName}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-blue-600 p-0 h-auto font-normal justify-start hover:text-blue-800"
+                              onClick={() => handleEditClient(service)}
+                            >
+                              Izmeni podatke
+                            </Button>
+                          </div>
                         </td>
-                        <td className="py-2 px-2">
-                          <div className="text-xs font-medium truncate">{service.model}</div>
-                          <div className="text-[10px] text-gray-500 truncate">{service.serialNumber}</div>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-900">{service.clientPhone}</span>
+                            <span className="text-xs text-gray-500">{service.clientCity}</span>
+                          </div>
                         </td>
-                        <td className="py-2 px-2">
-                          <Badge className={`${getStatusColor(service.status)} text-[10px] px-1 py-0`}>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col">
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="outline" className="text-xs">
+                                {service.manufacturerName}
+                              </Badge>
+                              <Badge variant={service.warrantyStatus === "u garanciji" ? "default" : "secondary"} className="text-xs">
+                                {service.warrantyStatus === "u garanciji" ? "Garancija" : "Van gar."}
+                              </Badge>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 mt-1">{service.model}</span>
+                            <span className="text-xs text-gray-500">S/N: {service.serialNumber}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge className={`${getStatusColor(service.status)} text-sm px-3 py-1 font-medium`}>
                             {getStatusText(service.status)}
                           </Badge>
                         </td>
-                        <td className="py-2 px-2">
-                          <Badge variant={service.warrantyStatus === "u garanciji" ? "default" : "secondary"} className="text-[10px] px-1 py-0">
-                            {service.warrantyStatus === "u garanciji" ? "U gar." : "Van gar."}
-                          </Badge>
+                        <td className="py-4 px-4">
+                          <span className="text-sm font-medium text-gray-900">
+                            {service.technicianName || (
+                              <span className="text-gray-400 italic">Nije dodeljen</span>
+                            )}
+                          </span>
                         </td>
-                        <td className="py-2 px-2 text-xs truncate">
-                          {service.technicianName || "Nedodejen"}
+                        <td className="py-4 px-4">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {service.cost ? `${service.cost}€` : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </span>
                         </td>
-                        <td className="py-2 px-2 text-xs font-medium">
-                          {service.cost ? `${service.cost}€` : "-"}
-                        </td>
-                        <td className="py-2 px-2">
-                          <div className="flex items-center space-x-1">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center justify-center space-x-1">
                             {/* Dodeli servisera - prikazuje se za pending servise */}
                             {service.status === "pending" && (
                               <Button 
                                 size="sm" 
-                                variant="ghost" 
-                                className="p-1 text-blue-600 hover:bg-blue-50"
+                                variant="outline" 
+                                className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
                                 onClick={() => setSelectedServiceForAssign(service)}
                                 title="Dodeli servisera"
                               >
-                                <UserCheck className="w-3 h-3" />
+                                <UserCheck className="w-4 h-4" />
                               </Button>
                             )}
 
@@ -787,12 +837,12 @@ export default function ComplusDashboard() {
                             {service.technicianId && !["completed", "cancelled"].includes(service.status) && (
                               <Button 
                                 size="sm" 
-                                variant="ghost" 
-                                className="p-1 text-orange-600 hover:bg-orange-50"
+                                variant="outline" 
+                                className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
                                 onClick={() => setSelectedServiceForRemove(service)}
                                 title="Povuci servisera"
                               >
-                                <XCircle className="w-3 h-3" />
+                                <XCircle className="w-4 h-4" />
                               </Button>
                             )}
 
@@ -800,24 +850,25 @@ export default function ComplusDashboard() {
                             {!["completed"].includes(service.status) && (
                               <Button 
                                 size="sm" 
-                                variant="ghost" 
-                                className="p-1 text-red-600 hover:bg-red-50"
+                                variant="outline" 
+                                className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                                 onClick={() => setSelectedServiceForDelete(service)}
                                 title="Obriši servis"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             )}
+                            
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button 
                                   size="sm" 
-                                  variant="ghost" 
-                                  className="p-1 text-gray-600 hover:bg-gray-50" 
+                                  variant="outline" 
+                                  className="h-8 w-8 p-0 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300" 
                                   title="Pogledaj detalje"
                                   onClick={() => setViewingService(service)}
                                 >
-                                  <Eye className="w-3 h-3" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
