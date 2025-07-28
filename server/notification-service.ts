@@ -588,7 +588,7 @@ export class NotificationService {
           userId: admin.id,
           type: "service_created_by_partner",
           title: "Novi servis od poslovnog partnera",
-          message: `Poslovni partner "${service.partnerCompanyName}" je kreirao novi servis: ${service.description}`,
+          message: `Poslovni partner "${service.partnerCompanyName}" je kreiran novi servis: ${service.description}`,
           relatedServiceId: serviceId,
           relatedUserId: partnerId,
           priority: "high",

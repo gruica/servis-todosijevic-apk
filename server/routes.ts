@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, comparePassword } from "./auth";
-// import { registerBusinessPartnerRoutes } from "./business-partner-routes"; // Disabled - using JWT endpoints instead
+import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
@@ -382,7 +382,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Registruj rute za poslovne partnere
-  // registerBusinessPartnerRoutes(app); // Disabled - using JWT endpoints instead
+  // Business partner routes are now integrated directly in this file - deactivated duplicate registration
+  // registerBusinessPartnerRoutes(app);
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
@@ -7471,7 +7472,7 @@ Admin panel - automatska porudžbina
       try {
         await NotificationService.notifyServiceCreatedByPartner(
           newService.id,
-          partnerCompanyName
+          partnerId
         );
       } catch (notificationError) {
         console.error("Greška pri slanju obaveštenja:", notificationError);
