@@ -72,7 +72,7 @@ function ServiceCard({ service }: { service: Service }) {
         body: JSON.stringify({ status: 'in_progress' })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
         title: "Rad započet",
         description: "Status servisa promenjen na 'U toku'",
@@ -87,7 +87,7 @@ function ServiceCard({ service }: { service: Service }) {
         body: JSON.stringify({ status: 'waiting_parts' })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
         title: "Zahtev za delove poslat",
         description: "Administrator je obavešten o potrebnim rezervnim delovima",
@@ -102,7 +102,7 @@ function ServiceCard({ service }: { service: Service }) {
         body: JSON.stringify({ status: 'completed' })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
         title: "Servis završen",
         description: "Klijent će biti obavešten o završetku servisa",
@@ -117,7 +117,7 @@ function ServiceCard({ service }: { service: Service }) {
         body: JSON.stringify({ status: 'in_progress' })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/technician/services-jwt'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
         title: "Rad nastavljen",
         description: "Status servisa vraćen na 'U toku' - nastavi sa popravkom",
@@ -335,9 +335,28 @@ function ServiceCard({ service }: { service: Service }) {
 export default function TechnicianServicesMobile() {
   const [activeTab, setActiveTab] = useState("active");
   
-  // Fetch services data
+  // Fetch services data with JWT authentication
   const { data: services = [], isLoading } = useQuery({
-    queryKey: ['/api/technician/services-jwt'],
+    queryKey: ['/api/my-services'],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No auth token found');
+      }
+      
+      const response = await fetch('/api/my-services', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch services: ${response.status}`);
+      }
+      
+      return response.json();
+    }
   });
   
   // Filter services by status
