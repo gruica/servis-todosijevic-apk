@@ -108,6 +108,8 @@ export default function ComplusDashboard() {
   const { data: technicians = [] } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
   });
+  
+  console.log("🔧 Tehnicians loaded:", technicians.length, technicians);
 
   // Mutation za dodelu servisa tehnician-u
   const assignTechnicianMutation = useMutation({
@@ -620,20 +622,20 @@ export default function ComplusDashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1400px]">
+                <table className="table-fixed w-full min-w-[1400px]">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4">ID</th>
-                      <th className="text-left py-3 px-4">Klijent</th>
-                      <th className="text-left py-3 px-4">Telefon</th>
-                      <th className="text-left py-3 px-4">Grad</th>
-                      <th className="text-left py-3 px-4">Brend</th>
-                      <th className="text-left py-3 px-4">Model</th>
-                      <th className="text-left py-3 px-4">Status</th>
-                      <th className="text-left py-3 px-4">Garancija</th>
-                      <th className="text-left py-3 px-4">Serviser</th>
-                      <th className="text-left py-3 px-4">Cena</th>
-                      <th className="text-left py-3 px-4 min-w-[120px]">Akcije</th>
+                      <th className="text-left py-3 px-4 w-16">ID</th>
+                      <th className="text-left py-3 px-4 w-48">Klijent</th>
+                      <th className="text-left py-3 px-4 w-32">Telefon</th>
+                      <th className="text-left py-3 px-4 w-32">Grad</th>
+                      <th className="text-left py-3 px-4 w-32">Brend</th>
+                      <th className="text-left py-3 px-4 w-48">Model</th>
+                      <th className="text-left py-3 px-4 w-32">Status</th>
+                      <th className="text-left py-3 px-4 w-28">Garancija</th>
+                      <th className="text-left py-3 px-4 w-32">Serviser</th>
+                      <th className="text-left py-3 px-4 w-24">Cena</th>
+                      <th className="text-left py-3 px-4 w-32">Akcije</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -686,8 +688,8 @@ export default function ComplusDashboard() {
                         <td className="py-3 px-4 font-medium">
                           {service.cost ? `${service.cost}€` : "-"}
                         </td>
-                        <td className="py-3 px-4 min-w-[120px]">
-                          <div className="flex items-center space-x-1">
+                        <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
+                          <div className="flex items-center space-x-1 flex-shrink-0">
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button 
