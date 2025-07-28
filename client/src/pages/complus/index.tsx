@@ -710,20 +710,20 @@ export default function ComplusDashboard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="table-fixed w-full min-w-[1400px]">
+                <table className="w-full min-w-[1600px] table-auto">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 w-16">ID</th>
-                      <th className="text-left py-3 px-4 w-48">Klijent</th>
-                      <th className="text-left py-3 px-4 w-32">Telefon</th>
-                      <th className="text-left py-3 px-4 w-32">Grad</th>
-                      <th className="text-left py-3 px-4 w-32">Brend</th>
-                      <th className="text-left py-3 px-4 w-48">Model</th>
-                      <th className="text-left py-3 px-4 w-32">Status</th>
-                      <th className="text-left py-3 px-4 w-28">Garancija</th>
-                      <th className="text-left py-3 px-4 w-32">Serviser</th>
-                      <th className="text-left py-3 px-4 w-24">Cena</th>
-                      <th className="text-left py-3 px-4 w-32">Akcije</th>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left py-3 px-4 min-w-[60px]">ID</th>
+                      <th className="text-left py-3 px-4 min-w-[200px]">Klijent</th>
+                      <th className="text-left py-3 px-4 min-w-[120px]">Telefon</th>
+                      <th className="text-left py-3 px-4 min-w-[100px]">Grad</th>
+                      <th className="text-left py-3 px-4 min-w-[80px]">Brend</th>
+                      <th className="text-left py-3 px-4 min-w-[200px]">Model</th>
+                      <th className="text-left py-3 px-4 min-w-[100px]">Status</th>
+                      <th className="text-left py-3 px-4 min-w-[100px]">Garancija</th>
+                      <th className="text-left py-3 px-4 min-w-[120px]">Serviser</th>
+                      <th className="text-left py-3 px-4 min-w-[80px]">Cena</th>
+                      <th className="text-left py-3 px-4 min-w-[180px] bg-red-200 font-bold">AKCIJE</th>
                     </tr>
                   </thead>
                   <tbody>
