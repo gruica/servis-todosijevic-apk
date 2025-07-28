@@ -95,6 +95,11 @@ export default function ComplusDashboard() {
   // Query za Com Plus servise
   const { data: services = [], isLoading } = useQuery<Service[]>({
     queryKey: ["/api/complus/services", statusFilter, brandFilter, warrantyFilter],
+    onSuccess: (data) => {
+      console.log(`🔍 COM PLUS UČITAO ${data.length} servisa`);
+      const pendingServices = data.filter(s => s.status === "pending");
+      console.log(`📋 PENDING SERVISI: ${pendingServices.length}`, pendingServices.map(s => `#${s.id}`));
+    }
   });
 
   // Query za Com Plus statistike

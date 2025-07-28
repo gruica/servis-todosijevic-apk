@@ -7942,11 +7942,26 @@ Admin panel - automatska porudžbina
       
       // Get all services with Com Plus manufacturers
       const allServices = await storage.getAllServices();
+      console.log(`🏭 COM PLUS: Ukupno servisa iz baze: ${allServices.length}`);
       
       // Filter for Com Plus brands only
       let complusServices = allServices.filter((service: any) => 
         COM_PLUS_BRANDS.includes(service.manufacturerName)
       );
+      console.log(`🏭 COM PLUS: Filtrirano ${complusServices.length} Com Plus servisa`);
+      
+      // Debug za servis #175
+      const service175 = allServices.find((s: any) => s.id === 175);
+      if (service175) {
+        console.log(`🏭 SERVIS #175:`, {
+          id: service175.id,
+          manufacturerName: service175.manufacturerName,
+          status: service175.status,
+          isComPlus: COM_PLUS_BRANDS.includes(service175.manufacturerName)
+        });
+      } else {
+        console.log(`🏭 SERVIS #175: Nije pronađen u getAllServices`);
+      }
 
       // Apply additional filters
       if (status && status !== "all") {
@@ -7971,6 +7986,27 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error fetching Com Plus services:", error);
       res.status(500).json({ error: "Greška pri dohvatanju Com Plus servisa" });
+    }
+  });
+
+  // TEST endpoint za debugging Com Plus servisa (ukloni posle)
+  app.get("/api/complus/services-test", async (req, res) => {
+    try {
+      const allServices = await storage.getAllServices();
+      console.log(`🔍 TEST: Ukupno servisa iz baze: ${allServices.length}`);
+      
+      const complusServices = allServices.filter((service: any) => 
+        COM_PLUS_BRANDS.includes(service.manufacturerName)
+      ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      console.log(`🔍 TEST: Com Plus servisi: ${complusServices.length}`);
+      const top5 = complusServices.slice(0, 5);
+      console.log(`🔍 TEST: Top 5 najnovijih:`, top5.map((s: any) => `#${s.id} (${s.manufacturerName}, ${s.status})`));
+      
+      res.json(complusServices);
+    } catch (error) {
+      console.error("Test error:", error);
+      res.status(500).json({ error: "Test greška" });
     }
   });
 
