@@ -194,27 +194,7 @@ export default function ComplusDashboard() {
     },
   });
 
-  // Handler funkcije za upravljanje servisima
-  const handleAssignTechnician = () => {
-    if (selectedServiceForAssign && selectedTechnician) {
-      assignTechnicianMutation.mutate({
-        serviceId: selectedServiceForAssign.id,
-        technicianId: parseInt(selectedTechnician)
-      });
-    }
-  };
 
-  const handleRemoveTechnician = () => {
-    if (selectedServiceForRemove) {
-      removeTechnicianMutation.mutate(selectedServiceForRemove.id);
-    }
-  };
-
-  const handleDeleteService = () => {
-    if (selectedServiceForDelete) {
-      deleteServiceMutation.mutate(selectedServiceForDelete.id);
-    }
-  };
 
   // Query za Com Plus aparate
   const { data: appliances = [] } = useQuery<any[]>({
@@ -312,7 +292,58 @@ export default function ComplusDashboard() {
     },
   });
 
+  // Handler funkcije za servis akcije
+  const handleAssignTechnician = () => {
+    if (!selectedServiceForAssign || !selectedTechnician) {
+      toast({
+        title: "Greška",
+        description: "Molimo izaberite servis i servisera.",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    assignTechnicianMutation.mutate({
+      serviceId: selectedServiceForAssign.id,
+      technicianId: parseInt(selectedTechnician)
+    });
+    
+    // Resetuj state nakon mutation
+    setSelectedServiceForAssign(null);
+    setSelectedTechnician("");
+  };
+
+  const handleRemoveTechnician = () => {
+    if (!selectedServiceForRemove) {
+      toast({
+        title: "Greška",
+        description: "Servis nije izabran.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    removeTechnicianMutation.mutate(selectedServiceForRemove.id);
+    
+    // Resetuj state nakon mutation
+    setSelectedServiceForRemove(null);
+  };
+
+  const handleDeleteService = () => {
+    if (!selectedServiceForDelete) {
+      toast({
+        title: "Greška",
+        description: "Servis nije izabran.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    deleteServiceMutation.mutate(selectedServiceForDelete.id);
+    
+    // Resetuj state nakon mutation
+    setSelectedServiceForDelete(null);
+  };
 
   const handleEditService = (service: Service) => {
     setEditingService(service);
