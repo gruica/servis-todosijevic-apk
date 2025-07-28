@@ -92,6 +92,11 @@ export default function ComplusDashboard() {
   });
   const { toast } = useToast();
 
+  // Query za Com Plus servise
+  const { data: services = [], isLoading } = useQuery<Service[]>({
+    queryKey: ["/api/complus/services", statusFilter, brandFilter, warrantyFilter],
+  });
+
   // Debug servisa sa useEffect
   useEffect(() => {
     if (services.length > 0) {
@@ -115,11 +120,6 @@ export default function ComplusDashboard() {
       }
     }
   }, [services]);
-
-  // Query za Com Plus servise
-  const { data: services = [], isLoading } = useQuery<Service[]>({
-    queryKey: ["/api/complus/services", statusFilter, brandFilter, warrantyFilter],
-  });
 
   // Query za Com Plus statistike
   const { data: stats = {} } = useQuery<{
@@ -778,12 +778,19 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex items-center space-x-1 flex-shrink-0">
+                            {/* Debug za servis #175 */}
+                            {service.id === 175 && (
+                              <span className="text-xs text-red-600 mr-2">
+                                DEBUG: status={service.status}, pending={service.status === "pending" ? "YES" : "NO"}
+                              </span>
+                            )}
+                            
                             {/* Dodeli servisera - prikazuje se za pending servise */}
                             {service.status === "pending" && (
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-blue-600 hover:bg-blue-50"
+                                className="p-1 text-blue-600 hover:bg-blue-50 border border-blue-300"
                                 onClick={() => setSelectedServiceForAssign(service)}
                                 title="Dodeli servisera"
                               >
@@ -796,7 +803,7 @@ export default function ComplusDashboard() {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-orange-600 hover:bg-orange-50"
+                                className="p-1 text-orange-600 hover:bg-orange-50 border border-orange-300"
                                 onClick={() => setSelectedServiceForRemove(service)}
                                 title="Povuci servisera"
                               >
@@ -809,7 +816,7 @@ export default function ComplusDashboard() {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-red-600 hover:bg-red-50"
+                                className="p-1 text-red-600 hover:bg-red-50 border border-red-300"
                                 onClick={() => setSelectedServiceForDelete(service)}
                                 title="Obriši servis"
                               >
