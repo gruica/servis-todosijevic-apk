@@ -150,7 +150,7 @@ export default function Dashboard() {
   const totalAppliances = enrichedApplianceStats?.reduce((sum, stat) => sum + stat.count, 0) || 1;
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Sidebar */}
       <Sidebar 
         isMobileOpen={sidebarOpen} 
@@ -158,12 +158,18 @@ export default function Dashboard() {
       />
       
       {/* Main content wrapper */}
-      <div className="flex flex-col flex-1 overflow-hidden ml-0 lg:ml-64">
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 shadow-xl">
           <div className="px-6 py-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
                   <Home className="w-6 h-6 text-blue-600" />
                 </div>
