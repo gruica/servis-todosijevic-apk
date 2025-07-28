@@ -709,95 +709,77 @@ export default function ComplusDashboard() {
                 <p className="text-gray-600">Nema Com Plus servisa koji odgovaraju filterima</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1600px] table-auto">
+              <div className="w-full">
+                <table className="w-full table-auto">
                   <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="text-left py-3 px-4 min-w-[60px]">ID</th>
-                      <th className="text-left py-3 px-4 min-w-[200px]">Klijent</th>
-                      <th className="text-left py-3 px-4 min-w-[120px]">Telefon</th>
-                      <th className="text-left py-3 px-4 min-w-[100px]">Grad</th>
-                      <th className="text-left py-3 px-4 min-w-[80px]">Brend</th>
-                      <th className="text-left py-3 px-4 min-w-[200px]">Model</th>
-                      <th className="text-left py-3 px-4 min-w-[100px]">Status</th>
-                      <th className="text-left py-3 px-4 min-w-[100px]">Garancija</th>
-                      <th className="text-left py-3 px-4 min-w-[120px]">Serviser</th>
-                      <th className="text-left py-3 px-4 min-w-[80px]">Cena</th>
-                      <th className="text-left py-3 px-4 min-w-[180px] bg-red-200 font-bold">AKCIJE</th>
+                    <tr className="border-b bg-gray-50 text-xs">
+                      <th className="text-left py-2 px-2 w-12">ID</th>
+                      <th className="text-left py-2 px-2 w-36">Klijent</th>
+                      <th className="text-left py-2 px-2 w-24">Telefon</th>
+                      <th className="text-left py-2 px-2 w-20">Grad</th>
+                      <th className="text-left py-2 px-2 w-20">Brend</th>
+                      <th className="text-left py-2 px-2 w-32">Model</th>
+                      <th className="text-left py-2 px-2 w-24">Status</th>
+                      <th className="text-left py-2 px-2 w-20">Garancija</th>
+                      <th className="text-left py-2 px-2 w-24">Serviser</th>
+                      <th className="text-left py-2 px-2 w-16">Cena</th>
+                      <th className="text-left py-2 px-2 w-32">Akcije</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredServices.map((service: Service) => (
-                      <tr key={service.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium">#{service.id}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{service.clientName}</div>
+                      <tr key={service.id} className="border-b hover:bg-gray-50 text-xs">
+                        <td className="py-2 px-2 font-medium">#{service.id}</td>
+                        <td className="py-2 px-2">
+                          <div className="font-medium text-xs truncate">{service.clientName}</div>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-xs text-blue-600 p-0 h-auto font-normal"
+                            className="text-[10px] text-blue-600 p-0 h-auto font-normal"
                             onClick={() => handleEditClient(service)}
                           >
-                            Izmeni podatke
+                            Izmeni
                           </Button>
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{service.clientPhone}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{service.clientCity}</td>
-                        <td className="py-3 px-4">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        <td className="py-2 px-2 text-xs truncate">{service.clientPhone}</td>
+                        <td className="py-2 px-2 text-xs truncate">{service.clientCity}</td>
+                        <td className="py-2 px-2">
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">
                             {service.manufacturerName}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-sm">
-                          <div className="font-medium">{service.model}</div>
-                          <div className="text-gray-500 text-xs">{service.serialNumber}</div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs text-blue-600 p-0 h-auto font-normal mt-1"
-                            onClick={() => handleEditAppliance(service)}
-                          >
-                            Izmeni aparat
-                          </Button>
+                        <td className="py-2 px-2">
+                          <div className="text-xs font-medium truncate">{service.model}</div>
+                          <div className="text-[10px] text-gray-500 truncate">{service.serialNumber}</div>
                         </td>
-                        <td className="py-3 px-4">
-                          <Badge className={getStatusColor(service.status)}>
+                        <td className="py-2 px-2">
+                          <Badge className={`${getStatusColor(service.status)} text-[10px] px-1 py-0`}>
                             {getStatusText(service.status)}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4">
-                          <Badge variant={service.warrantyStatus === "u garanciji" ? "default" : "secondary"}>
-                            {service.warrantyStatus}
+                        <td className="py-2 px-2">
+                          <Badge variant={service.warrantyStatus === "u garanciji" ? "default" : "secondary"} className="text-[10px] px-1 py-0">
+                            {service.warrantyStatus === "u garanciji" ? "U gar." : "Van gar."}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">
-                          {service.technicianName || "Nedodeljen"}
+                        <td className="py-2 px-2 text-xs truncate">
+                          {service.technicianName || "Nedodejen"}
                         </td>
-                        <td className="py-3 px-4 font-medium">
+                        <td className="py-2 px-2 text-xs font-medium">
                           {service.cost ? `${service.cost}€` : "-"}
                         </td>
-                        <td className="py-3 px-4 min-w-[120px] whitespace-nowrap bg-red-100">
-                          <div className="flex items-center space-x-1 flex-shrink-0">
-                            {/* VELIKI TEST DA VIDIM DA LI SE KOLONA PRIKAZUJE */}
-                            <span className="text-2xl font-bold text-red-600">TEST</span>
-                            
-                            {/* Debug za servis #175 */}
-                            {service.id === 175 && (
-                              <span className="text-xs text-red-600 mr-2">
-                                DEBUG: status={service.status}, pending={service.status === "pending" ? "YES" : "NO"}
-                              </span>
-                            )}
-                            
+                        <td className="py-2 px-2">
+                          <div className="flex items-center space-x-1">
                             {/* Dodeli servisera - prikazuje se za pending servise */}
                             {service.status === "pending" && (
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-blue-600 hover:bg-blue-50 border border-blue-300"
+                                className="p-1 text-blue-600 hover:bg-blue-50"
                                 onClick={() => setSelectedServiceForAssign(service)}
                                 title="Dodeli servisera"
                               >
-                                <UserCheck className="w-4 h-4" />
+                                <UserCheck className="w-3 h-3" />
                               </Button>
                             )}
 
@@ -806,11 +788,11 @@ export default function ComplusDashboard() {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-orange-600 hover:bg-orange-50 border border-orange-300"
+                                className="p-1 text-orange-600 hover:bg-orange-50"
                                 onClick={() => setSelectedServiceForRemove(service)}
                                 title="Povuci servisera"
                               >
-                                <XCircle className="w-4 h-4" />
+                                <XCircle className="w-3 h-3" />
                               </Button>
                             )}
 
@@ -819,11 +801,11 @@ export default function ComplusDashboard() {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                className="p-1 text-red-600 hover:bg-red-50 border border-red-300"
+                                className="p-1 text-red-600 hover:bg-red-50"
                                 onClick={() => setSelectedServiceForDelete(service)}
                                 title="Obriši servis"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3 h-3" />
                               </Button>
                             )}
                             <Dialog>
@@ -831,11 +813,11 @@ export default function ComplusDashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="ghost" 
-                                  className="p-1" 
+                                  className="p-1 text-gray-600 hover:bg-gray-50" 
                                   title="Pogledaj detalje"
                                   onClick={() => setViewingService(service)}
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  <Eye className="w-3 h-3" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
