@@ -776,8 +776,11 @@ export default function ComplusDashboard() {
                         <td className="py-3 px-4 font-medium">
                           {service.cost ? `${service.cost}€` : "-"}
                         </td>
-                        <td className="py-3 px-4 min-w-[120px] whitespace-nowrap">
+                        <td className="py-3 px-4 min-w-[120px] whitespace-nowrap bg-red-100">
                           <div className="flex items-center space-x-1 flex-shrink-0">
+                            {/* VELIKI TEST DA VIDIM DA LI SE KOLONA PRIKAZUJE */}
+                            <span className="text-2xl font-bold text-red-600">TEST</span>
+                            
                             {/* Debug za servis #175 */}
                             {service.id === 175 && (
                               <span className="text-xs text-red-600 mr-2">
