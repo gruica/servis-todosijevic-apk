@@ -17,7 +17,7 @@ import {
   LogOut,
   Bell
 } from "lucide-react";
-import NotificationsDropdown from "@/components/notifications-dropdown";
+// TEMPORARILY DISABLED: import NotificationsDropdown from "@/components/notifications-dropdown";
 
 interface Service {
   id: number;
@@ -154,7 +154,10 @@ export default function TechnicianServices() {
               </div>
             </div>
             <div className="flex flex-col items-end space-y-2">
-              <NotificationsDropdown />
+              {/* TEMPORARILY DISABLED: <NotificationsDropdown /> */}
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <Bell className="w-5 h-5 text-blue-600" />
+              </div>
               {/* VELIKI TEXT LINK ZA LOGOUT */}
               <button
                 onClick={() => logoutMutation.mutate()}
