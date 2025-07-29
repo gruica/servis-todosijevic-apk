@@ -12,7 +12,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq, and, desc, gte, lte, ne, isNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { SMSCommunicationService } from "./sms-communication-service.js";
 const { availableParts } = schema;
@@ -4983,10 +4983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin services API endpoints
-  app.get("/api/admin/services", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin pristup potreban" });
-    }
+  app.get("/api/admin/services", jwtAuth, requireRole(['admin', 'complus_admin']), async (req, res) => {
 
     try {
       const services = await storage.getAdminServices();
@@ -9206,7 +9203,7 @@ Admin panel - automatska porudžbina
   });
 
   // Get business partner pending count for sidebar
-  app.get("/api/admin/business-partner-pending-count", jwtAuth, requireRole(['admin']), async (req, res) => {
+  app.get("/api/admin/business-partner-pending-count", jwtAuth, requireRole(['admin', 'complus_admin']), async (req, res) => {
     try {
       const pendingCount = await db.select({ count: count() })
         .from(schema.services)
