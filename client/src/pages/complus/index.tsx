@@ -820,33 +820,30 @@ export default function ComplusDashboard() {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center justify-center space-x-1">
-                            {/* UPRAVLJANJE SERVISERA - pametno dugme koje menja funkciju */}
-                            {!["completed", "cancelled"].includes(service.status) && (
-                              <>
-                                {!service.technicianId ? (
-                                  // Dodeli servisera - za servise bez servisera
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-                                    onClick={() => setSelectedServiceForAssign(service)}
-                                    title="Dodeli servisera"
-                                  >
-                                    <UserCheck className="w-4 h-4" />
-                                  </Button>
-                                ) : (
-                                  // Povuci servisera - za servise sa dodeljenim serviserom
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
-                                    onClick={() => setSelectedServiceForRemove(service)}
-                                    title="Povuci servisera"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </>
+                            {/* Dodeli servisera - prikazuje se za pending servise */}
+                            {service.status === "pending" && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                                onClick={() => setSelectedServiceForAssign(service)}
+                                title="Dodeli servisera"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            {/* Povuci servisera - prikazuje se za servise sa dodeljenim serviserom koji nisu završeni */}
+                            {service.technicianId && !["completed", "cancelled"].includes(service.status) && (
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                                onClick={() => setSelectedServiceForRemove(service)}
+                                title="Povuci servisera"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
                             )}
 
                             {/* Obriši servis - prikazuje se za sve servise osim završenih */}
@@ -862,26 +859,351 @@ export default function ComplusDashboard() {
                               </Button>
                             )}
                             
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 w-8 p-0 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300" 
-                              title="Pogledaj detalje"
-                              onClick={() => setViewingService(service)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-8 w-8 p-0 border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300" 
+                                  title="Pogledaj detalje"
+                                  onClick={() => setViewingService(service)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Detalji servisa #{viewingService?.id}</DialogTitle>
+                                  <DialogDescription>
+                                    Kompletne informacije o Com Plus servisu
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* Osnovne informacije */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">KLIJENT</h4>
+                                      <p className="font-medium">{viewingService?.clientName}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.clientPhone}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.clientCity}</p>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">UREĐAJ</h4>
+                                      <p className="font-medium">{viewingService?.manufacturerName}</p>
+                                      <p className="text-sm text-gray-600">{viewingService?.model}</p>
+                                      <p className="text-xs text-gray-500">S/N: {viewingService?.serialNumber}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Status i garancija */}
+                                  <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">STATUS</h4>
+                                      <Badge className={getStatusColor(viewingService?.status || "")}>
+                                        {getStatusText(viewingService?.status || "")}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">GARANCIJA</h4>
+                                      <Badge variant={viewingService?.warrantyStatus === "u garanciji" ? "default" : "secondary"}>
+                                        {viewingService?.warrantyStatus}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">CENA</h4>
+                                      <p className="font-medium">{viewingService?.cost ? `${viewingService.cost}€` : "Nije definisana"}</p>
+                                    </div>
+                                  </div>
 
-                            {/* Uredi servis */}
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300" 
-                              title="Uredi servis"
-                              onClick={() => handleEditService(service)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                                  {/* Serviser */}
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-gray-600 mb-2">SERVISER</h4>
+                                    <p className="font-medium">{viewingService?.technicianName || "Nije dodeljen"}</p>
+                                  </div>
+
+                                  {/* Opis */}
+                                  <div>
+                                    <h4 className="font-semibold text-sm text-gray-600 mb-2">OPIS PROBLEMA</h4>
+                                    <p className="text-sm bg-gray-50 p-3 rounded">{viewingService?.description}</p>
+                                  </div>
+
+                                  {/* Datumi */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">KREIRAN</h4>
+                                      <p className="text-sm">{viewingService?.createdAt ? format(new Date(viewingService.createdAt), 'dd.MM.yyyy') : '-'}</p>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-sm text-gray-600 mb-2">ZAVRŠEN</h4>
+                                      <p className="text-sm">{viewingService?.completedDate ? format(new Date(viewingService.completedDate), 'dd.MM.yyyy HH:mm') : '-'}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            {service.status === "pending" && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="p-1 text-blue-600"
+                                    title="Dodeli servisera"
+                                    onClick={() => setSelectedService(service)}
+                                  >
+                                    <UserCheck className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Dodeli servisera</DialogTitle>
+                                    <DialogDescription>
+                                      Izaberite servisera koji će biti odgovoran za ovaj Com Plus servis.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Servis #{selectedService?.id} - {selectedService?.clientName}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {selectedService?.manufacturerName} {selectedService?.model}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">
+                                        Izaberi servisera:
+                                      </label>
+                                      <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Izaberi servisera..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {technicians.map((tech) => (
+                                            <SelectItem key={tech.id} value={tech.id.toString()}>
+                                              {tech.fullName} - {tech.specialization}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedService(null);
+                                          setSelectedTechnician("");
+                                        }}
+                                      >
+                                        Otkaži
+                                      </Button>
+                                      <Button
+                                        onClick={handleAssignTechnician}
+                                        disabled={assignTechnicianMutation.isPending}
+                                      >
+                                        {assignTechnicianMutation.isPending ? "Dodeljivanje..." : "Dodeli"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            {service.technicianId && service.status !== "completed" && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="p-1 text-orange-600"
+                                    title="Povuci od servisera"
+                                    onClick={() => setSelectedService(service)}
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Povuci servis od servisera</DialogTitle>
+                                    <DialogDescription>
+                                      Da li ste sigurni da želite da povučete ovaj servis od servisera?
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Servis #{service.id} - {service.clientName}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        Trenutno dodeljen: <strong>{service.technicianName}</strong>
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {service.manufacturerName} {service.model}
+                                      </p>
+                                    </div>
+                                    
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setSelectedService(null)}
+                                      >
+                                        Otkaži
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => handleRemoveTechnician(service.id)}
+                                        disabled={removeTechnicianMutation.isPending}
+                                      >
+                                        {removeTechnicianMutation.isPending ? "Povlačim..." : "Povuci servis"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            {(service.status === "assigned" || service.status === "in_progress") && service.technicianId && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="p-1 text-green-600"
+                                    title="Promeni servisera"
+                                    onClick={() => setSelectedService(service)}
+                                  >
+                                    <UserCheck className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Promeni servisera</DialogTitle>
+                                    <DialogDescription>
+                                      Izaberite novog servisera za ovaj Com Plus servis.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <p className="text-sm text-gray-600 mb-2">
+                                        Servis #{service.id} - {service.clientName}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        Trenutno: <strong>{service.technicianName}</strong>
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {service.manufacturerName} {service.model}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-sm font-medium mb-2">
+                                        Novi serviser:
+                                      </label>
+                                      <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Izaberi novog servisera..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {technicians.filter(tech => tech.id !== service.technicianId).map((tech) => (
+                                            <SelectItem key={tech.id} value={tech.id.toString()}>
+                                              {tech.fullName} - {tech.specialization}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="flex justify-end space-x-2">
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedService(null);
+                                          setSelectedTechnician("");
+                                        }}
+                                      >
+                                        Otkaži
+                                      </Button>
+                                      <Button
+                                        onClick={handleAssignTechnician}
+                                        disabled={assignTechnicianMutation.isPending}
+                                      >
+                                        {assignTechnicianMutation.isPending ? "Promena..." : "Promeni servisera"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="p-1" 
+                                  title="Uredi servis"
+                                  onClick={() => handleEditService(service)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-lg">
+                                <DialogHeader>
+                                  <DialogTitle>Uredi Com Plus servis #{editingService?.id}</DialogTitle>
+                                  <DialogDescription>
+                                    Uredite osnovne informacije o servisu
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Opis problema</label>
+                                    <textarea 
+                                      className="w-full min-h-[100px] px-3 py-2 text-sm border rounded-md"
+                                      value={editFormData.description}
+                                      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                                      placeholder="Opišite problem sa uređajem..."
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Cena servisa (€)</label>
+                                    <input 
+                                      type="number"
+                                      className="w-full px-3 py-2 text-sm border rounded-md"
+                                      value={editFormData.cost}
+                                      onChange={(e) => setEditFormData({...editFormData, cost: e.target.value})}
+                                      placeholder="0.00"
+                                      step="0.01"
+                                    />
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Status servisa</label>
+                                    <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Na čekanju</SelectItem>
+                                        <SelectItem value="assigned">Dodeljen</SelectItem>
+                                        <SelectItem value="scheduled">Zakazan</SelectItem>
+                                        <SelectItem value="in_progress">U toku</SelectItem>
+                                        <SelectItem value="completed">Završen</SelectItem>
+                                        <SelectItem value="cancelled">Otkazan</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  <div className="flex justify-end space-x-2 pt-4">
+                                    <Button variant="outline" onClick={() => setEditingService(null)}>
+                                      Otkaži
+                                    </Button>
+                                    <Button onClick={handleSaveChanges} disabled={updateServiceMutation.isPending}>
+                                      {updateServiceMutation.isPending ? "Snimam..." : "Sačuvaj izmene"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           </div>
                         </td>
                       </tr>
@@ -892,241 +1214,6 @@ export default function ComplusDashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* DIALOG ZA DODELU SERVISERA */}
-      <Dialog open={!!selectedServiceForAssign} onOpenChange={(open) => !open && setSelectedServiceForAssign(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Dodeli servisera</DialogTitle>
-            <DialogDescription>
-              Izaberite servisera koji će biti odgovoran za ovaj Com Plus servis.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">
-                Servis #{selectedServiceForAssign?.id} - {selectedServiceForAssign?.clientName}
-              </p>
-              <p className="text-sm text-gray-600">
-                {selectedServiceForAssign?.manufacturerName} {selectedServiceForAssign?.model}
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Izaberi servisera:
-              </label>
-              <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Izaberi servisera..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {technicians.map((tech) => (
-                    <SelectItem key={tech.id} value={tech.id.toString()}>
-                      {tech.fullName} - {tech.specialization}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedServiceForAssign(null);
-                  setSelectedTechnician("");
-                }}
-              >
-                Otkaži
-              </Button>
-              <Button
-                onClick={handleAssignTechnician}
-                disabled={assignTechnicianMutation.isPending}
-              >
-                {assignTechnicianMutation.isPending ? "Dodeljivanje..." : "Dodeli"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* DIALOG ZA POVLAČENJE SERVISERA */}
-      <Dialog open={!!selectedServiceForRemove} onOpenChange={(open) => !open && setSelectedServiceForRemove(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Povuci servis od servisera</DialogTitle>
-            <DialogDescription>
-              Da li ste sigurni da želite da povučete ovaj servis od servisera?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">
-                Servis #{selectedServiceForRemove?.id} - {selectedServiceForRemove?.clientName}
-              </p>
-              <p className="text-sm text-gray-600">
-                Trenutno dodeljen: <strong>{selectedServiceForRemove?.technicianName}</strong>
-              </p>
-              <p className="text-sm text-gray-600">
-                {selectedServiceForRemove?.manufacturerName} {selectedServiceForRemove?.model}
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setSelectedServiceForRemove(null)}>
-                Otkaži
-              </Button>
-              <Button 
-                onClick={() => {
-                  if (selectedServiceForRemove) {
-                    removeTechnicianMutation.mutate(selectedServiceForRemove.id);
-                  }
-                }}
-                disabled={removeTechnicianMutation.isPending}
-                variant="destructive"
-              >
-                {removeTechnicianMutation.isPending ? "Povlačenje..." : "Povuci servisera"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* DIALOG ZA PREGLED DETALJA SERVISA */}
-      <Dialog open={!!viewingService} onOpenChange={(open) => !open && setViewingService(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detalji servisa #{viewingService?.id}</DialogTitle>
-            <DialogDescription>
-              Kompletne informacije o Com Plus servisu
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* Osnovne informacije */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">KLIJENT</h4>
-                <p className="font-medium">{viewingService?.clientName}</p>
-                <p className="text-sm text-gray-600">{viewingService?.clientPhone}</p>
-                <p className="text-sm text-gray-600">{viewingService?.clientCity}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">UREĐAJ</h4>
-                <p className="font-medium">{viewingService?.manufacturerName}</p>
-                <p className="text-sm text-gray-600">{viewingService?.model}</p>
-                <p className="text-xs text-gray-500">S/N: {viewingService?.serialNumber}</p>
-              </div>
-            </div>
-            
-            {/* Status i garancija */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">STATUS</h4>
-                <Badge className={getStatusColor(viewingService?.status || "")}>
-                  {getStatusText(viewingService?.status || "")}
-                </Badge>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">GARANCIJA</h4>
-                <Badge variant={viewingService?.warrantyStatus === "u garanciji" ? "default" : "secondary"}>
-                  {viewingService?.warrantyStatus}
-                </Badge>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">CENA</h4>
-                <p className="font-medium">{viewingService?.cost ? `${viewingService.cost}€` : "Nije definisana"}</p>
-              </div>
-            </div>
-
-            {/* Serviser */}
-            <div>
-              <h4 className="font-semibold text-sm text-gray-600 mb-2">SERVISER</h4>
-              <p className="font-medium">{viewingService?.technicianName || "Nije dodeljen"}</p>
-            </div>
-
-            {/* Opis */}
-            <div>
-              <h4 className="font-semibold text-sm text-gray-600 mb-2">OPIS PROBLEMA</h4>
-              <p className="text-sm bg-gray-50 p-3 rounded">{viewingService?.description}</p>
-            </div>
-
-            {/* Datumi */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">KREIRAN</h4>
-                <p className="text-sm">{viewingService?.createdAt ? format(new Date(viewingService.createdAt), 'dd.MM.yyyy') : '-'}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-gray-600 mb-2">ZAVRŠEN</h4>
-                <p className="text-sm">{viewingService?.completedDate ? format(new Date(viewingService.completedDate), 'dd.MM.yyyy HH:mm') : '-'}</p>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* DIALOG ZA UREĐIVANJE SERVISA */}
-      <Dialog open={!!editingService} onOpenChange={(open) => !open && setEditingService(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Uredi Com Plus servis #{editingService?.id}</DialogTitle>
-            <DialogDescription>
-              Uredite osnovne informacije o servisu
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Opis problema</label>
-              <textarea 
-                className="w-full min-h-[100px] px-3 py-2 text-sm border rounded-md"
-                value={editFormData.description}
-                onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                placeholder="Opišite problem sa uređajem..."
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Cena servisa (€)</label>
-              <input 
-                type="number"
-                className="w-full px-3 py-2 text-sm border rounded-md"
-                value={editFormData.cost}
-                onChange={(e) => setEditFormData({...editFormData, cost: e.target.value})}
-                placeholder="0.00"
-                step="0.01"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status servisa</label>
-              <Select value={editFormData.status} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Na čekanju</SelectItem>
-                  <SelectItem value="assigned">Dodeljen</SelectItem>
-                  <SelectItem value="scheduled">Zakazan</SelectItem>
-                  <SelectItem value="in_progress">U toku</SelectItem>
-                  <SelectItem value="completed">Završen</SelectItem>
-                  <SelectItem value="cancelled">Otkazan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setEditingService(null)}>
-                Otkaži
-              </Button>
-              <Button onClick={handleSaveChanges} disabled={updateServiceMutation.isPending}>
-                {updateServiceMutation.isPending ? "Snimam..." : "Sačuvaj izmene"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
         {/* Com Plus aparate sekcija */}
         <Card className="mt-6">
@@ -1219,7 +1306,6 @@ export default function ComplusDashboard() {
         </Card>
       </div>
 
-      {/* Svi Dialog komponenti - stavljam unutar glavne div strukture */}
       {/* CLIENT EDITING DIALOG - Com Plus client data editing */}
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
         <DialogContent className="max-w-lg">
@@ -1337,9 +1423,88 @@ export default function ComplusDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* DIALOG ZA DODELU SERVISERA */}
+      <Dialog open={!!selectedServiceForAssign} onOpenChange={(open) => !open && setSelectedServiceForAssign(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dodeli servisera</DialogTitle>
+            <DialogDescription>
+              Izaberite servisera za servis #{selectedServiceForAssign?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Klijent: <strong>{selectedServiceForAssign?.clientName}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">Uređaj: <strong>{selectedServiceForAssign?.manufacturerName} {selectedServiceForAssign?.model}</strong></p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Serviser</label>
+              <Select value={selectedTechnician} onValueChange={setSelectedTechnician}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite servisera" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((technician) => (
+                    <SelectItem key={technician.id} value={technician.id.toString()}>
+                      {technician.fullName} - {technician.specialization}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => {
+              setSelectedServiceForAssign(null);
+              setSelectedTechnician("");
+            }}>
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleAssignTechnician} 
+              disabled={assignTechnicianMutation.isPending || !selectedTechnician}
+            >
+              {assignTechnicianMutation.isPending ? "Dodeljivanje..." : "Dodeli"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-
-
+      {/* DIALOG ZA POVLAČENJE SERVISERA */}
+      <Dialog open={!!selectedServiceForRemove} onOpenChange={(open) => !open && setSelectedServiceForRemove(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Povuci servisera</DialogTitle>
+            <DialogDescription>
+              Da li ste sigurni da želite da povučete servisera od servisa #{selectedServiceForRemove?.id}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Klijent: <strong>{selectedServiceForRemove?.clientName}</strong></p>
+              <p className="text-sm text-gray-600 mb-2">Uređaj: <strong>{selectedServiceForRemove?.manufacturerName} {selectedServiceForRemove?.model}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">Trenutni serviser: <strong>{selectedServiceForRemove?.technicianName}</strong></p>
+            </div>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-sm text-orange-800">
+                Servis će biti vraćen u status "pending" i serviser će biti obavešten o promeni.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button variant="outline" onClick={() => setSelectedServiceForRemove(null)}>
+              Otkaži
+            </Button>
+            <Button 
+              onClick={handleRemoveTechnician} 
+              disabled={removeTechnicianMutation.isPending}
+              variant="destructive"
+            >
+              {removeTechnicianMutation.isPending ? "Povlačenje..." : "Povuci servisera"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* DIALOG ZA BRISANJE SERVISA */}
       <Dialog open={!!selectedServiceForDelete} onOpenChange={(open) => !open && setSelectedServiceForDelete(null)}>
