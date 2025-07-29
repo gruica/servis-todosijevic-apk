@@ -39,6 +39,7 @@ import { formatDate } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
 
 // Service status map
 const statusConfig = {
@@ -183,6 +184,7 @@ function ServiceCard({ service }: { service: Service }) {
   const [showRefusalDialog, setShowRefusalDialog] = useState(false);
   const [showUnavailableDialog, setShowUnavailableDialog] = useState(false);
   const [showSparePartsDialog, setShowSparePartsDialog] = useState(false);
+  const [showGeneraliDialog, setShowGeneraliDialog] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
   const [unavailableReason, setUnavailableReason] = useState('');
   const [sparePartsData, setSparePartsData] = useState({
@@ -215,6 +217,10 @@ function ServiceCard({ service }: { service: Service }) {
 
   const handleCustomerUnavailable = () => {
     setShowUnavailableDialog(true);
+  };
+
+  const handleGeneraliSupplement = () => {
+    setShowGeneraliDialog(true);
   };
 
   const submitCustomerRefusal = () => {
@@ -411,6 +417,16 @@ function ServiceCard({ service }: { service: Service }) {
                 </Button>
               </div>
               
+              {/* Generali Data Supplement Button */}
+              <Button 
+                onClick={handleGeneraliSupplement}
+                variant="outline"
+                className="w-full h-12 border-purple-200 text-purple-700 hover:bg-purple-50"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Dopuni Generali podatke
+              </Button>
+              
               <div className="grid grid-cols-2 gap-2">
                 <Button 
                   onClick={handleCustomerRefusal}
@@ -450,6 +466,24 @@ function ServiceCard({ service }: { service: Service }) {
           )}
         </div>
       </CardContent>
+      
+      {/* Generali Supplement Dialog */}
+      <SupplementGeneraliFormSimple
+        serviceId={service.id}
+        serviceName={`Servis #${service.id}`}
+        currentClientEmail={service.client?.email || null}
+        currentClientAddress={service.client?.address || null}
+        currentClientCity={service.client?.city || null}
+        currentSerialNumber={service.appliance?.serialNumber || null}
+        currentModel={service.appliance?.model || null}
+        manufacturerName={service.appliance?.manufacturer?.name || null}
+        isOpen={showGeneraliDialog}
+        onClose={() => setShowGeneraliDialog(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+          setShowGeneraliDialog(false);
+        }}
+      />
       
       {/* Customer Refusal Dialog */}
       <Dialog open={showRefusalDialog} onOpenChange={setShowRefusalDialog}>
