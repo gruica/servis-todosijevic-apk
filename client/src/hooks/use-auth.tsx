@@ -1,5 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect } from "react";
-import { useLocation } from "wouter";
+import { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
   useMutation,
@@ -21,7 +20,6 @@ type AuthContextType = {
   isTechnician: boolean; // Provera da li je korisnik serviser
   isBusinessPartner: boolean; // Provera da li je korisnik poslovni partner
   isClient: boolean; // Provera da li je korisnik klijent
-  isComplusAdmin: boolean; // Provera da li je korisnik Com Plus administrator
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -29,7 +27,6 @@ type LoginData = Pick<InsertUser, "username" | "password">;
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const [location, navigate] = useLocation();
   const {
     data: user,
     error,
@@ -71,17 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error: error?.message,
     hasUser: !!user 
   });
-
-  // Automatsko preusmeravanje za complus_admin korisnike
-  useEffect(() => {
-    if (user && user.role === 'complus_admin' && !isLoading) {
-      // Ako complus_admin korisnik nije već na Com Plus panel stranici
-      if (location !== '/complus') {
-        console.log("🔄 Auto-redirecting complus_admin to /complus");
-        navigate('/complus');
-      }
-    }
-  }, [user, isLoading, location, navigate]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -192,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTechnician = user?.role === "technician";
   const isBusinessPartner = user?.role === "business_partner";
   const isClient = user?.role === "client";
-  const isComplusAdmin = user?.role === "complus_admin";
 
   return (
     <AuthContext.Provider
@@ -209,7 +194,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isTechnician: isTechnician || false,
         isBusinessPartner: isBusinessPartner || false,
         isClient: isClient || false,
-        isComplusAdmin: isComplusAdmin || false,
       }}
     >
       {children}

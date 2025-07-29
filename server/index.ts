@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
-import { verifyToken } from './jwt-auth';
 
 import { storage } from "./storage";
 // Mobile SMS Service has been completely removed
@@ -37,98 +36,6 @@ app.use((req, res, next) => {
   }
   
   next();
-});
-
-// Registruj JWT endpoint-e PRE auth middleware setup-a
-app.get('/api/my-services-test', async (req, res) => {
-  console.log('🔧 TEST MY-SERVICES: Endpoint pozvan bez JWT autentifikacije');
-  res.json({ message: 'Test endpoint radi', services: [], timestamp: new Date().toISOString() });
-});
-
-// API endpoint za servise servisera (mobilni pristup) - registrovan PRE setupAuth
-app.get('/api/my-services', async (req, res) => {
-  console.log('🔧 MY-SERVICES: Endpoint pozvan - početak funkcije');
-  
-  try {
-    console.log('🔧 MY-SERVICES: U try bloku');
-    
-    // JWT autentifikacija
-    const authHeader = req.headers.authorization;
-    console.log('🔧 MY-SERVICES: Auth header:', authHeader ? 'prisutan' : 'nije prisutan');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('🔧 MY-SERVICES: Vraćam 401 - nema header-a');
-      return res.status(401).json({ error: 'Token nije pronađen' });
-    }
-
-    const token = authHeader.substring(7);
-    console.log('🔧 MY-SERVICES: Token dužina:', token.length);
-    
-    // Test da li uopšte izvršavamo JWT verifikaciju
-    const JWT_SECRET = process.env.JWT_SECRET;
-    console.log('🔧 MY-SERVICES: JWT_SECRET:', JWT_SECRET ? 'prisutan' : 'nije prisutan');
-    
-    if (!JWT_SECRET) {
-      console.log('🔧 MY-SERVICES: JWT_SECRET nije konfigurisan');
-      return res.status(500).json({ error: 'JWT konfiguracija nije pronađena' });
-    }
-
-    console.log('🔧 MY-SERVICES: Pokušavam verifikaciju tokena...');
-
-    console.log('🔧 MY-SERVICES: Pozivam verifyToken funkciju...');
-    
-    // Debug - proverim direktno JWT_SECRET iz jwt-auth
-    console.log('🔧 MY-SERVICES: JWT_SECRET iz index.ts:', JWT_SECRET);
-    console.log('🔧 MY-SERVICES: JWT_SECRET iz env var:', process.env.JWT_SECRET);
-    
-    const decoded = verifyToken(token);
-    console.log('🔧 MY-SERVICES: verifyToken returned:', decoded);
-    
-    if (!decoded) {
-      console.log('🔧 MY-SERVICES: Token verifikacija neuspešna - vracam error');
-      return res.status(401).json({ error: 'Neispravan token' });
-    }
-    
-    console.log('🔧 MY-SERVICES: Token uspešno dekodiran:', decoded);
-
-    console.log('🔧 MY-SERVICES: JWT verifikacija prošla, proveravam ulogu...');
-    // Proveri da li je korisnik serviser
-    if (!decoded || decoded.role !== 'technician') {
-      console.log('🔧 MY-SERVICES: Korisnik nije tehničar:', decoded?.role);
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
-    }
-
-    const technicianId = decoded.technicianId;
-    if (!technicianId) {
-      console.log('🔧 MY-SERVICES: TechnicianId nije dostupan u token-u');
-      return res.status(400).json({ error: 'Tehničar ID nije dostupan' });
-    }
-
-    console.log(`🔧 MY-SERVICES: Dohvatanje servisa za tehničara ${technicianId}...`);
-
-    try {
-      console.log('🔧 MY-SERVICES: Pozivam storage.getServicesByTechnician...');
-      console.log('🔧 MY-SERVICES: Storage objekat:', typeof storage);
-      
-      // Dohvati servise iz baze podataka
-      const services = await storage.getServicesByTechnician(technicianId);
-      console.log(`🔧 MY-SERVICES: Pronađeno ${services.length} servisa za tehničara ${technicianId}`);
-
-      res.json({ 
-        success: true,
-        technicianId: technicianId,
-        services: services,
-        count: services.length
-      });
-    } catch (storageError) {
-      console.error('🔧 MY-SERVICES: Storage greška:', storageError);
-      res.status(500).json({ error: 'Greška pri dohvatanju servisa iz baze' });
-    }
-    
-  } catch (error) {
-    console.error('🔧 MY-SERVICES: Catch block greška:', error);
-    res.status(500).json({ error: 'Greška pri dohvatanju servisa' });
-  }
 });
 
 // NAKON body parser-a postavi session middleware
@@ -177,18 +84,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// Registruj kritične API endpoint-e PRE ostalih middleware-ova
-app.get('/api/my-services-test', async (req, res) => {
-  console.log('🔧 TEST MY-SERVICES: Endpoint pozvan bez JWT autentifikacije');
-  res.json({ message: 'Test endpoint radi', services: [], timestamp: new Date().toISOString() });
-});
-
-
-
 (async () => {
   // Mobile SMS Service has been completely removed
   
   const server = await registerRoutes(app);
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+    throw err;
+  });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -198,14 +105,6 @@ app.get('/api/my-services-test', async (req, res) => {
   } else {
     serveStatic(app);
   }
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.

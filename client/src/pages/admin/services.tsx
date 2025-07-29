@@ -182,10 +182,7 @@ export default function AdminServices() {
   // Update service mutation
   const updateServiceMutation = useMutation({
     mutationFn: async (data: { id: number; updates: Partial<AdminService> }) => {
-      const response = await apiRequest(`/api/admin/services/${data.id}`, {
-        method: "PUT",
-        body: JSON.stringify(data.updates)
-      });
+      const response = await apiRequest("PUT", `/api/admin/services/${data.id}`, data.updates);
       return response.json();
     },
     onSuccess: () => {
@@ -208,9 +205,7 @@ export default function AdminServices() {
   // Delete service mutation
   const deleteServiceMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/admin/services/${id}`, {
-        method: "DELETE"
-      });
+      await apiRequest("DELETE", `/api/admin/services/${id}`);
     },
     onSuccess: () => {
       toast({
@@ -231,12 +226,9 @@ export default function AdminServices() {
 
   const returnServiceMutation = useMutation({
     mutationFn: async (data: { serviceId: number; reason: string; notes: string }) => {
-      await apiRequest(`/api/admin/services/${data.serviceId}/return-from-technician`, {
-        method: "POST",
-        body: JSON.stringify({
-          reason: data.reason,
-          notes: data.notes
-        })
+      await apiRequest("POST", `/api/admin/services/${data.serviceId}/return-from-technician`, {
+        reason: data.reason,
+        notes: data.notes
       });
     },
     onSuccess: () => {
@@ -261,11 +253,8 @@ export default function AdminServices() {
   // Assign technician mutation
   const assignTechnicianMutation = useMutation({
     mutationFn: async (data: { serviceId: number; technicianId: number }) => {
-      const response = await apiRequest(`/api/admin/services/${data.serviceId}/assign-technician`, {
-        method: "PUT",
-        body: JSON.stringify({
-          technicianId: data.technicianId
-        })
+      const response = await apiRequest("PUT", `/api/admin/services/${data.serviceId}/assign-technician`, {
+        technicianId: data.technicianId,
       });
       return response.json();
     },
@@ -656,7 +645,7 @@ export default function AdminServices() {
                   <SelectContent>
                     <SelectItem value="all">Svi gradovi</SelectItem>
                     {Array.from(new Set(services.map(s => s.client?.city).filter(Boolean))).sort().map((city) => (
-                      <SelectItem key={city} value={city || ""}>
+                      <SelectItem key={city} value={city}>
                         {city}
                       </SelectItem>
                     ))}

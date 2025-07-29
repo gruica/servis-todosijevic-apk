@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Wrench, Clock, CheckCircle, AlertCircle, Eye, Phone, Mail, Calendar, Package, Settings, MapPin, User, Receipt, Activity, Building2, TrendingUp, BarChart3, FileText, Users, Award, MessageSquare } from "lucide-react";
+import { PlusCircle, Wrench, Clock, CheckCircle, AlertCircle, Eye, Phone, Mail, Calendar, Package, Settings, MapPin, User, Receipt, Activity, Building2, TrendingUp, BarChart3, FileText, Users, Award } from "lucide-react";
 import { useLocation } from "wouter";
 
 // Enhanced service interface with detailed information
@@ -157,15 +157,6 @@ export default function BusinessDashboard() {
                 >
                   <Users className="mr-2 h-5 w-5" />
                   Novi klijent
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg"
-                  className="bg-green-50/80 backdrop-blur-sm hover:bg-green-100 border-green-200 hover:border-green-300 text-green-700"
-                  onClick={() => navigate("/business/messages")}
-                >
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  Poruke adminu
                 </Button>
                 <Button 
                   size="lg"
