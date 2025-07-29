@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Activity, 
@@ -64,6 +65,7 @@ interface Technician {
 export default function ComplusDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { logoutMutation } = useAuth();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -554,12 +556,12 @@ export default function ComplusDashboard() {
 
   // Logout funkcija
   const handleLogout = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("complus_login");
-    setLocation("/complus-auth");
-    toast({
-      title: "Uspešno!",
-      description: "Uspešno ste se odjavili iz Com Plus panela.",
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        // Takođe ukloni i Com Plus specifične podatke
+        localStorage.removeItem("complus_login");
+        setLocation("/complus-auth");
+      }
     });
   };
 
