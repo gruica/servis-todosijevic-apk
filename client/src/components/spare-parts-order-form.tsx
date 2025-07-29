@@ -58,7 +58,7 @@ export default function SparePartsOrderForm({
   const queryClient = useQueryClient();
 
   // Brand detection logika
-  const detectBrand = (manufacturer: string): "beko" | "other" => {
+  const detectBrand = (manufacturer: string): "beko" | "complus" => {
     const manufacturerLower = manufacturer.toLowerCase();
     if (manufacturerLower.includes("beko")) {
       return "beko";
@@ -69,10 +69,10 @@ export default function SparePartsOrderForm({
         manufacturerLower.includes("candy") || 
         manufacturerLower.includes("hoover") || 
         manufacturerLower.includes("turbo air")) {
-      return "other";
+      return "complus";
     }
-    // Default na ostale brendove za nepoznate brendove
-    return "other";
+    // Default na Complus za nepoznate brendove
+    return "complus";
   };
 
   const submitOrderMutation = useMutation({

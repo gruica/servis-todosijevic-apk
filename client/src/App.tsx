@@ -55,7 +55,7 @@ import NewBusinessServiceRequest from "@/pages/business/services/new";
 import EditBusinessService from "@/pages/business/services/edit.tsx";
 import NewBusinessClient from "@/pages/business/clients/new";
 import BusinessMessages from "@/pages/business/messages";
-
+import BusinessComplus from "@/pages/business/complus";
 
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
@@ -68,7 +68,10 @@ import EmailVerificationDemo from "@/pages/email-verification-demo";
 import DataExportPage from "@/pages/admin/data-export";
 import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 import SMSBulkPage from "@/pages/admin/sms-bulk";
+import ComplusBillingPage from "@/pages/admin/complus-billing";
 import BusinessPartnersAdminPage from "@/pages/admin/business-partners";
+import ComplusDashboard from "@/pages/complus";
+import ComplusAuthPage from "@/pages/complus-auth";
 
 function Router() {
   return (
@@ -85,7 +88,7 @@ function Router() {
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
-
+      <Route path="/complus-auth" component={ComplusAuthPage} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
@@ -120,7 +123,10 @@ function Router() {
       <RoleProtectedRoute path="/admin/sms-bulk" component={SMSBulkPage} allowedRoles={["admin"]} />
 
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
-
+      <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
+      
+      {/* Com Plus nezavisan administrativni panel */}
+      <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin", "complus_admin"]} />
       
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
@@ -148,7 +154,7 @@ function Router() {
       <RoleProtectedRoute path="/business/services/edit/:id" component={EditBusinessService} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/clients/new" component={NewBusinessClient} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/messages" component={BusinessMessages} allowedRoles={["business_partner", "business"]} />
-
+      <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business"]} />
       
       <Route component={NotFound} />
     </Switch>

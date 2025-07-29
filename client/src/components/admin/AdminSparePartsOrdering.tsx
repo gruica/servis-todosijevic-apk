@@ -34,7 +34,7 @@ const BEKO_MANUFACTURERS = ["Beko"];
 const COMPLUS_MANUFACTURERS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
 
 function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePartsOrderingProps) {
-  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'other' | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [enteredServiceId, setEnteredServiceId] = useState(serviceId?.toString() || '');
   const [debouncedServiceId, setDebouncedServiceId] = useState(serviceId?.toString() || '');
@@ -202,7 +202,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       description: formData.description,
       warrantyStatus: formData.warrantyStatus,
       urgency: formData.urgency,
-      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'info@frigosistemtodosijevic.com'
+      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
     };
 
     orderSparePartMutation.mutate(orderData);
@@ -235,7 +235,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
   }, []);
 
   const handleComplusSelection = useCallback(() => {
-    setSelectedBrand('other');
+    setSelectedBrand('complus');
   }, []);
 
   const handleCancelClick = useCallback(() => {
