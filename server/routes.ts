@@ -98,6 +98,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
   
+
+
+
+
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
   // Get all technicians (admin and complus_admin only)
@@ -2778,6 +2782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dohvatanju Com Plus servisa" });
     }
   });
+
+
 
   // System health endpoint
   app.get("/health", (req, res) => {
