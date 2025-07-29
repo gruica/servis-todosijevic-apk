@@ -2440,14 +2440,27 @@
       if (!subject?.trim() || !content?.trim()) {
         return res.status(400).json({ error: "Naslov i sadržaj poruke su obavezni" });
       }
+
+      // Get business partner user info
+      const businessPartner = await db.query.users.findFirst({
+        where: eq(schema.users.id, req.user.id)
+      });
+
+      if (!businessPartner) {
+        return res.status(404).json({ error: "Business partner nije pronađen" });
+      }
       
       const newMessage = await db.insert(schema.businessPartnerMessages).values({
         businessPartnerId: req.user.id,
         subject: subject.trim(),
         content: content.trim(),
         messageType: messageType || 'inquiry',
-        messagePriority: messagePriority || 'medium',
-        messageStatus: 'unread',
+        priority: messagePriority || 'normal',
+        status: 'unread',
+        senderName: businessPartner.fullName || 'Unknown',
+        senderEmail: businessPartner.email,
+        senderCompany: businessPartner.companyName || 'Unknown Company',
+        senderPhone: businessPartner.phone,
         isStarred: false
       }).returning();
       
@@ -2476,7 +2489,7 @@
       }
       
       await db.update(schema.businessPartnerMessages)
-        .set({ messageStatus: 'read' })
+        .set({ status: 'read' })
         .where(eq(schema.businessPartnerMessages.id, messageId));
       
       res.json({ success: true });

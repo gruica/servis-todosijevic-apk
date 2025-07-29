@@ -846,6 +846,7 @@ export const messagePriorityEnum = pgEnum("message_priority", ["low", "normal", 
 
 export const businessPartnerMessages = pgTable("business_partner_messages", {
   id: serial("id").primaryKey(),
+  businessPartnerId: integer("business_partner_id").notNull().references(() => users.id),
   subject: text("subject").notNull(),
   content: text("content").notNull(),
   messageType: messageTypeEnum("message_type").notNull(),
@@ -1211,6 +1212,14 @@ export const availablePartsRelations = relations(availableParts, ({ one }) => ({
   }),
   addedByUser: one(users, {
     fields: [availableParts.addedBy],
+    references: [users.id],
+  }),
+}));
+
+// Business Partner Messages Relations
+export const businessPartnerMessagesRelations = relations(businessPartnerMessages, ({ one }) => ({
+  businessPartner: one(users, {
+    fields: [businessPartnerMessages.businessPartnerId],
     references: [users.id],
   }),
 }));
