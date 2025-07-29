@@ -126,7 +126,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
       
       {/* Com Plus nezavisan administrativni panel */}
-      <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin", "complus_admin"]} />
       
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       

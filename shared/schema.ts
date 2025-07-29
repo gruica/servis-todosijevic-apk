@@ -1,4 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, pgEnum } from "drizzle-orm/pg-core";
+
+// User roles enum
+export const userRoleEnum = pgEnum("user_role", ["customer", "technician", "admin", "business_partner", "complus_admin"]);
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -9,7 +12,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").default("customer").notNull(), // Promenjen default na customer
+  role: userRoleEnum("role").default("customer").notNull(), // Promenjen default na customer
   technicianId: integer("technician_id"), // Reference to technician if user is a technician
   email: text("email"), // Email adresa korisnika
   phone: text("phone"), // Broj telefona korisnika
