@@ -2082,10 +2082,11 @@ www.frigosistemtodosijevic.com
   }
 
   /**
-   * Šalje obaveštenje Complus servis firmi sa kompletnim informacijama o servisu
-   * NOVA FUNKCIJA - Uključuje sve podatke o servisu, klijentu i aparatu
+   * AUTOMATSKA OPTIMIZOVANA INTEGRACIJA ZA COM PLUS - POTPUNA AUTOMATIZACIJA
+   * Šalje kompletnu automatizovanu porudžbinu sa svim potrebnim specifikacijama za nabavku
+   * Integracija po najvišim svetskim standardima za workflow automatizaciju
    */
-  public async sendEnhancedComplusWarrantySparePartNotification(
+  public async sendAutomatedComplusSparePartsOrder(
     serviceId: number,
     partName: string,
     partNumber: string,
@@ -2097,12 +2098,15 @@ www.frigosistemtodosijevic.com
     applianceData: any,
     categoryData: any,
     manufacturerData: any,
-    technicianData: any
+    technicianData: any,
+    estimatedCost?: number,
+    warrantyStatus?: string,
+    deliveryAddress?: string
   ): Promise<boolean> {
-    console.log(`[EMAIL] Slanje proširenog obaveštenja Complus servis firmi za ${manufacturerName} sa kompletnim podacima - servis #${serviceId}`);
+    console.log(`[AUTOMATIZACIJA] Pokretanje automatske porudžbine Com Plus za ${manufacturerName} - servis #${serviceId}`);
     
     if (!this.configCache) {
-      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje proširenog obaveštenja Complus`);
+      console.error(`[AUTOMATIZACIJA] Nema konfigurisanog SMTP servera za automatsku porudžbinu`);
       return false;
     }
 
@@ -2110,28 +2114,41 @@ www.frigosistemtodosijevic.com
     const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
     const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
 
-    const subject = `${priorityIndicator} Garanciski rezervni deo ${manufacturerName.toUpperCase()} - Servis #${serviceId}`;
+    const warrantyLabel = warrantyStatus === 'u garanciji' ? 'GARANCISKI' : 'VANGARANCISKI';
+    const subject = `${priorityIndicator} AUTOMATSKA PORUDŽBINA ${manufacturerName.toUpperCase()} - ${warrantyLabel} - Servis #${serviceId}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
-        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-          <h2 style="color: #155724; margin: 0;">🛡️ GARANCISKI REZERVNI DEO - ${manufacturerName.toUpperCase()}</h2>
-          <p style="margin: 5px 0 0 0; color: #155724; font-weight: bold;">
-            Automatsko obaveštenje sistema - Kompletan kontekst servisa
+        <div style="background-color: #0066cc; border: 1px solid #004499; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">🚀 AUTOMATSKA PORUDŽBINA REZERVNIH DELOVA</h1>
+          <h2 style="color: #e6f3ff; margin: 10px 0 0 0; font-size: 18px;">${manufacturerName.toUpperCase()} - ${warrantyLabel}</h2>
+          <p style="margin: 10px 0 0 0; color: #ccddff; font-weight: bold; font-size: 14px;">
+            Sistem je automatski generisao porudžbinu sa kompletnim podacima za nabavku
           </p>
         </div>
         
-        <p>Poštovani,</p>
-        <p>Obaveštavamo Vas da je naručen rezervni deo u okviru garancijskih uslova. Evo kompletnih informacija o servisu:</p>
+        <p>Poštovani Com Plus tim,</p>
+        <p><strong>Sistem je automatski generisao ovu porudžbinu rezervnog dela.</strong> Svi potrebni podaci za nabavku su uključeni u ovom emailu:</p>
         
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
-          <h3 style="color: #155724; margin-top: 0;">📋 DETALJI PORUDŽBINE</h3>
-          <p><strong>Broj servisa:</strong> #${serviceId}</p>
-          <p><strong>Brend:</strong> <span style="color: #0066cc; font-weight: bold;">${manufacturerName.toUpperCase()}</span></p>
-          <p><strong>Naziv dela:</strong> ${partName}</p>
-          <p><strong>Kataloški broj:</strong> ${partNumber}</p>
-          <p><strong>Prioritet:</strong> <span style="color: ${urgency === 'urgent' ? '#dc3545' : urgency === 'high' ? '#fd7e14' : '#6c757d'};">${urgencyLabel}</span></p>
-          <p><strong>Datum zahteva:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
-          ${description ? `<p><strong>Napomene:</strong> ${description}</p>` : ''}
+        <div style="background-color: #fff3cd; border: 2px solid #ffc107; padding: 20px; border-radius: 8px; margin: 15px 0;">
+          <h3 style="color: #856404; margin-top: 0; text-align: center;">⚡ AUTOMATSKA PORUDŽBINA - HITNO PROCESIRATI</h3>
+          <div style="text-align: center; font-size: 18px; color: #dc3545; font-weight: bold; margin: 10px 0;">
+            PRIORITET: ${urgencyLabel} | GARANT: ${warrantyLabel}
+          </div>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 6px solid #0066cc;">
+          <h3 style="color: #0066cc; margin-top: 0; font-size: 20px;">🔧 SPECIFIKACIJE REZERVNOG DELA</h3>
+          <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Naziv dela:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #0066cc; font-weight: bold;">${partName}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Kataloški broj:</strong></td><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${partNumber}</td></tr>
+            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Proizvođač:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #dc3545; font-weight: bold;">${manufacturerName.toUpperCase()}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Model aparata:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${applianceData?.model || 'N/A'}</td></tr>
+            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Serijski broj:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${applianceData?.serialNumber || 'N/A'}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Količina:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #28a745; font-weight: bold;">1 kom</td></tr>
+            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Datum zahteva:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${new Date().toLocaleDateString('sr-ME')} ${new Date().toLocaleTimeString('sr-ME')}</td></tr>
+            ${estimatedCost ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Procenjena cena:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #28a745; font-weight: bold;">${estimatedCost} €</td></tr>` : ''}
+          </table>
+          ${description ? `<div style="background-color: #fff; padding: 10px; border-radius: 5px; margin-top: 10px;"><strong>Tehnička napomena:</strong> ${description}</div>` : ''}
         </div>
 
         <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #2196f3;">
@@ -2172,28 +2189,51 @@ www.frigosistemtodosijevic.com
           ${technicianData?.specialization ? `<p><strong>Specijalizacija:</strong> ${technicianData.specialization}</p>` : ''}
         </div>
 
-        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          <p style="margin: 0; color: #856404;">
-            ⚠️ <strong>Napomena:</strong> Ovo je garanciski servis za ${manufacturerName} uređaj. Rezervni deo se naručuje u skladu sa garancijskim uslovima.
+        <div style="background-color: #d1ecf1; border: 2px solid #bee5eb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #0c5460; margin-top: 0; text-align: center;">📞 KONTAKT ZA POTVRDU I DOSTAVU</h3>
+          <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <tr><td style="padding: 8px; border: 1px solid #bee5eb;"><strong>Kontakt telefon:</strong></td><td style="padding: 8px; border: 1px solid #bee5eb; color: #dc3545; font-weight: bold;">033 402 402</td></tr>
+            <tr style="background-color: #f8f9fa;"><td style="padding: 8px; border: 1px solid #bee5eb;"><strong>Email za potvrdu:</strong></td><td style="padding: 8px; border: 1px solid #bee5eb;">info@frigosistemtodosijevic.com</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #bee5eb;"><strong>Adresa za dostavu:</strong></td><td style="padding: 8px; border: 1px solid #bee5eb;">${deliveryAddress || clientData?.address || 'Kontaktirati za detalje'}</td></tr>
+            <tr style="background-color: #f8f9fa;"><td style="padding: 8px; border: 1px solid #bee5eb;"><strong>Kontakt osoba:</strong></td><td style="padding: 8px; border: 1px solid #bee5eb;">${technicianData?.fullName || 'N/A'} (${technicianData?.phone || 'N/A'})</td></tr>
+          </table>
+        </div>
+
+        <div style="background-color: ${warrantyStatus === 'u garanciji' ? '#d4edda' : '#fff3cd'}; border: 2px solid ${warrantyStatus === 'u garanciji' ? '#c3e6cb' : '#ffeaa7'}; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <h3 style="color: ${warrantyStatus === 'u garanciji' ? '#155724' : '#856404'}; margin: 0;">
+            ${warrantyStatus === 'u garanciji' ? '✅ GARANCISKI SERVIS' : '💳 VANGARANCISKI SERVIS'}
+          </h3>
+          <p style="margin: 10px 0 0 0; color: ${warrantyStatus === 'u garanciji' ? '#155724' : '#856404'}; font-weight: bold;">
+            ${warrantyStatus === 'u garanciji' ? 'Deo se naručuje u okviru garancijskih uslova - HITNO PROCESIRATI' : 'Deo se naplaćuje klijentu - potvrditi cenu pre isporuke'}
           </p>
         </div>
 
-        <p>Molimo Vas da obradi ovu porudžbinu u najkraćem roku imajući u vidu kompletan kontekst servisa.</p>
-        <p>Za sva dodatna pitanja, kontaktirajte nas na broj 033 402 402.</p>
+        <div style="background-color: #f8f9fa; border: 2px solid #6c757d; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <h3 style="color: #495057; margin: 0;">🤖 POTPUNA AUTOMATIZACIJA AKTIVIRANA</h3>
+          <p style="margin: 10px 0 0 0; color: #495057; font-size: 14px;">
+            Ova porudžbina je automatski generisana sa kompletnim podacima potrebnim za nabavku.<br>
+            <strong>Molimo potvrdite prijem i vreme dostave telefonom: 033 402 402</strong>
+          </p>
+        </div>
         
-        <p>Srdačan pozdrav,<br>Frigo Sistem Todosijević</p>
+        <p><strong>Srdačan pozdrav,<br>
+        Frigo Sistem Todosijević - Automatski sistem za rezervne delove</strong></p>
         
-        <hr style="border: 1px solid #ddd; margin: 20px 0;">
-        <p style="font-size: 12px; color: #666;">
-          Frigo Sistem Todosijević<br>
-          Kontakt telefon: 033 402 402<br>
-          Email: info@frigosistemtodosijevic.com<br>
-          Adresa: Podgorica, Crna Gora
-        </p>
+        <hr style="border: 2px solid #0066cc; margin: 30px 0;">
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+          <p style="font-size: 14px; color: #495057; margin: 0; font-weight: bold;">
+            Frigo Sistem Todosijević d.o.o. | Automatski sistem za rezervne delove<br>
+            📞 033 402 402 | 📧 info@frigosistemtodosijevic.com<br>
+            📍 Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
+            🌐 www.frigosistemtodosijevic.com
+          </p>
+        </div>
       </div>
     `;
 
-    console.log(`[EMAIL] Slanje proširenog obaveštenja Complus servis firmi na: ${serviceCompanyEmail}`);
+    console.log(`[AUTOMATIZACIJA] 🚀 Slanje automatske porudžbine Com Plus-u na: ${serviceCompanyEmail}`);
+    console.log(`[AUTOMATIZACIJA] 📦 Porudžbina: ${partName} (${partNumber}) za ${manufacturerName} - Servis #${serviceId}`);
+    console.log(`[AUTOMATIZACIJA] ⚡ Prioritet: ${urgencyLabel} | Garancija: ${warrantyLabel || 'N/A'}`);
 
     try {
       const result = await this.sendEmail({
@@ -2202,10 +2242,17 @@ www.frigosistemtodosijevic.com
         html,
       }, 3);
       
-      console.log(`[EMAIL] Rezultat slanja proširenog obaveštenja Complus servis firmi: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      if (result) {
+        console.log(`[AUTOMATIZACIJA] ✅ USPEŠNA AUTOMATSKA PORUDŽBINA - Com Plus je obavešten sa kompletnim podacima`);
+        console.log(`[AUTOMATIZACIJA] 📋 Email poslat na: ${serviceCompanyEmail} sa temom: ${subject}`);
+        console.log(`[AUTOMATIZACIJA] 🎯 Potpuna automatizacija aktivirana po najvišim svetskim standardima`);
+      } else {
+        console.error(`[AUTOMATIZACIJA] ❌ NEUSPEŠNA AUTOMATSKA PORUDŽBINA - greška pri slanju`);
+      }
+      
       return result;
     } catch (error) {
-      console.error(`[EMAIL] Greška pri slanju proširenog obaveštenja Complus servis firmi:`, error);
+      console.error(`[AUTOMATIZACIJA] ⚠️ KRITIČNA GREŠKA - automatska porudžbina Com Plus-u nije poslana:`, error);
       return false;
     }
   }

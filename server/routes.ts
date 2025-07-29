@@ -5617,7 +5617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Dobijamo dodatne podatke za kompletne informacije
                 const category = await storage.getApplianceCategory(appliance.categoryId);
                 
-                const complusEmailResult = await emailService.sendEnhancedComplusWarrantySparePartNotification(
+                const complusEmailResult = await emailService.sendAutomatedComplusSparePartsOrder(
                   validatedData.serviceId,
                   validatedData.partName,
                   validatedData.partNumber || 'N/A',
@@ -5629,10 +5629,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   appliance,      // Kompletni podaci o aparatu
                   category,       // Podaci o kategoriji aparata
                   manufacturer,   // Podaci o proizvođaču
-                  technician      // Podaci o tehničaru
+                  technician,     // Podaci o tehničaru
+                  validatedData.estimatedCost,  // Procenjena cena
+                  validatedData.warrantyStatus, // Status garancije
+                  client?.address  // Adresa za dostavu
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                console.log(`[AUTOMATIZACIJA] ✅ Rezultat automatske porudžbine Com Plus: ${complusEmailResult ? 'USPEŠNO POSLANO' : 'GREŠKA PRILIKOM SLANJA'}`);
+                
+                if (complusEmailResult) {
+                  console.log(`[AUTOMATIZACIJA] 🚀 POTPUNA AUTOMATIZACIJA AKTIVIRANA - Com Plus je obavešten sa kompletnim podacima za nabavku`);
+                  console.log(`[AUTOMATIZACIJA] 📋 Podaci poslati: ${validatedData.partName} (${validatedData.partNumber}) za ${manufacturerName} servis #${validatedData.serviceId}`);
+                } else {
+                  console.error(`[AUTOMATIZACIJA] ⚠️ PROBLEM SA AUTOMATIZACIJOM - porudžbina Com Plus-u nije uspešno poslana`);
+                }
               } else if (manufacturerName === 'beko') {
                 console.log(`[SPARE PARTS] Uređaj je Beko - šaljem notifikaciju na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)...`);
                 
@@ -6153,13 +6163,42 @@ Admin panel - automatska porudžbina
           );
           console.log(`[SPARE PARTS ORDER] Beko notifikacija poslata na mp4@eurotehnikamn.me`);
         } else {
-          // Za ostale brendove, koristi standardni email
-          await emailService.sendEmail(
-            targetEmail,
-            emailSubject,
-            emailContent
-          );
-          console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+          // Za Com Plus brendove, koristi optimizovanu automatsku porudžbinu
+          if (serviceId) {
+            const service = await storage.getService(serviceId);
+            const client = service ? await storage.getClient(service.clientId) : null;
+            const appliance = service ? await storage.getAppliance(service.applianceId) : null;
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+            const technician = service?.technicianId ? await storage.getTechnician(service.technicianId) : null;
+
+            await emailService.sendAutomatedComplusSparePartsOrder(
+              serviceId,
+              partName,
+              productCode,
+              urgency,
+              description || '',
+              manufacturer?.name || brand,
+              service,
+              client,
+              appliance,
+              category,
+              manufacturer,
+              technician,
+              null, // estimatedCost
+              warrantyStatus,
+              client?.address // deliveryAddress
+            );
+            console.log(`[AUTOMATIZACIJA] ✅ Admin automatska porudžbina Com Plus-u poslana za servis #${serviceId}`);
+          } else {
+            // Fallback za admin porudžbinu bez servisa
+            await emailService.sendEmail({
+              to: targetEmail,
+              subject: emailSubject,
+              html: emailContent.replace(/\n/g, '<br>')
+            });
+            console.log(`[SPARE PARTS ORDER] Fallback email poslat na ${targetEmail} za ${brand} rezervni deo`);
+          }
         }
       } catch (emailError) {
         console.error('[SPARE PARTS ORDER] Greška pri slanju email-a:', emailError);
