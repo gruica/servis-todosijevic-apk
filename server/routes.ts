@@ -1162,6 +1162,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
+
+  // Delete service (admin only)
+  app.delete("/api/admin/services/:id", jwtAuth, requireRole(['admin', 'complus_admin']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      
+      console.log(`🗑️ ADMIN DELETE: Brisanje servisa #${serviceId}`);
+      
+      // Proverava da li servis postoji
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Brisanje povezanih zapisa (notifications, spare parts orders, removed parts)
+      await Promise.all([
+        // Delete related notifications
+        db.delete(schema.notifications)
+          .where(eq(schema.notifications.relatedServiceId, serviceId)),
+        
+        // Delete related spare parts orders
+        db.delete(schema.sparePartsOrders)
+          .where(eq(schema.sparePartsOrders.serviceId, serviceId)),
+        
+        // Delete related removed parts
+        db.delete(schema.removedParts)
+          .where(eq(schema.removedParts.serviceId, serviceId))
+      ]);
+      
+      // Delete the service itself
+      await db.delete(schema.services)
+        .where(eq(schema.services.id, serviceId));
+      
+      console.log(`✅ ADMIN DELETE: Servis #${serviceId} uspešno obrisan sa svim povezanim podacima`);
+      
+      res.json({ 
+        success: true, 
+        message: `Servis #${serviceId} je uspešno obrisan` 
+      });
+      
+    } catch (error) {
+      console.error("Greška pri brisanju servisa:", error);
+      res.status(500).json({ error: "Greška pri brisanju servisa" });
+    }
+  });
   
   // Business Partner API Endpoints - Enhanced with detailed service information
   app.get("/api/business/services", jwtAuth, async (req, res) => {
