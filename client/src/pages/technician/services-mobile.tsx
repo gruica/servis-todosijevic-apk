@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Clock, 
   MapPin, 
@@ -24,7 +29,10 @@ import {
   X,
   LogOut,
   Settings,
-  HelpCircle
+  HelpCircle,
+  UserX,
+  Pause,
+  PhoneOff
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 // TEMPORARILY DISABLED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
@@ -40,7 +48,10 @@ const statusConfig = {
   scheduled: { color: "bg-purple-500", textColor: "text-purple-700", bgColor: "bg-purple-50", label: "Zakazan" },
   completed: { color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "Završen" },
   cancelled: { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", label: "Otkazan" },
-  waiting_parts: { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", label: "Čeka delove" }
+  waiting_parts: { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", label: "Čeka delove" },
+  client_not_home: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent nije kod kuće" },
+  client_not_answering: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent se ne javlja" },
+  customer_refused_repair: { color: "bg-gray-500", textColor: "text-gray-700", bgColor: "bg-gray-50", label: "Odbio servis" }
 };
 
 interface Service {
@@ -131,20 +142,63 @@ function ServiceCard({ service }: { service: Service }) {
     }
   });
 
+  // New mutations for customer interactions
+  const customerRefusalMutation = useMutation({
+    mutationFn: ({ serviceId, reason }: { serviceId: number; reason: string }) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          status: 'customer_refused_repair',
+          customerRefusalReason: reason
+        })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+      toast({
+        title: "Servis zatvorjen",
+        description: "Klijent je obavešten o odbijanju servisa",
+      });
+    }
+  });
+
+  const customerUnavailableMutation = useMutation({
+    mutationFn: ({ serviceId, reason }: { serviceId: number; reason: string }) => 
+      apiRequest(`/api/services/${serviceId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          status: reason === 'not_home' ? 'client_not_home' : 'client_not_answering',
+          clientUnavailableReason: reason
+        })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+      toast({
+        title: "SMS poslat",
+        description: "Klijent je obavešten SMS porukom o reschedule",
+      });
+    }
+  });
+
+  // Dialog state management
+  const [showRefusalDialog, setShowRefusalDialog] = useState(false);
+  const [showUnavailableDialog, setShowUnavailableDialog] = useState(false);
+  const [showSparePartsDialog, setShowSparePartsDialog] = useState(false);
+  const [refusalReason, setRefusalReason] = useState('');
+  const [unavailableReason, setUnavailableReason] = useState('');
+  const [sparePartsData, setSparePartsData] = useState({
+    partName: '',
+    catalogNumber: '',
+    urgency: 'normal' as 'normal' | 'high' | 'urgent',
+    description: ''
+  });
+
   // Handler functions
   const handleStartWork = (serviceId: number) => {
     startWorkMutation.mutate(serviceId);
   };
 
   const handleRequestParts = (serviceId: number) => {
-    requestPartsMutation.mutate(serviceId);
-  };
-
-  const handleClientIssue = (serviceId: number) => {
-    toast({
-      title: "Prijavi problem",
-      description: "Kontaktiraj administratora telefonom za hitne probleme",
-    });
+    setShowSparePartsDialog(true);
   };
 
   const handleCompleteService = (serviceId: number) => {
@@ -153,6 +207,59 @@ function ServiceCard({ service }: { service: Service }) {
 
   const handlePartsReceived = (serviceId: number) => {
     partsReceivedMutation.mutate(serviceId);
+  };
+
+  const handleCustomerRefusal = () => {
+    setShowRefusalDialog(true);
+  };
+
+  const handleCustomerUnavailable = () => {
+    setShowUnavailableDialog(true);
+  };
+
+  const submitCustomerRefusal = () => {
+    if (refusalReason.trim()) {
+      customerRefusalMutation.mutate({ serviceId: service.id, reason: refusalReason });
+      setShowRefusalDialog(false);
+      setRefusalReason('');
+    }
+  };
+
+  const submitCustomerUnavailable = () => {
+    if (unavailableReason) {
+      customerUnavailableMutation.mutate({ serviceId: service.id, reason: unavailableReason });
+      setShowUnavailableDialog(false);
+      setUnavailableReason('');
+    }
+  };
+
+  const submitSparePartsRequest = () => {
+    if (sparePartsData.partName.trim() && sparePartsData.catalogNumber.trim()) {
+      // Call spare parts API endpoint
+      apiRequest(`/api/services/${service.id}/spare-parts`, {
+        method: 'POST',
+        body: JSON.stringify(sparePartsData)
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+        toast({
+          title: "Rezervni deo naručen",
+          description: "Administrator je obavešten o potrebnom rezervnom delu",
+        });
+        setShowSparePartsDialog(false);
+        setSparePartsData({
+          partName: '',
+          catalogNumber: '',
+          urgency: 'normal',
+          description: ''
+        });
+      }).catch((error) => {
+        toast({
+          title: "Greška",
+          description: "Greška pri naručivanju rezervnog dela",
+          variant: "destructive"
+        });
+      });
+    }
   };
   
   const handleCallClient = () => {
@@ -284,35 +391,44 @@ function ServiceCard({ service }: { service: Service }) {
 
           {/* In Progress Actions */}
           {service.status === 'in_progress' && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                onClick={() => handleRequestParts(service.id)}
-                variant="outline"
-                className="h-12 border-orange-200 text-orange-700 hover:bg-orange-50"
-              >
-                <Package className="h-4 w-4 mr-1" />
-                Poruči deo
-              </Button>
-              <Button 
-                onClick={() => handleClientIssue(service.id)}
-                variant="outline"
-                className="h-12 border-red-200 text-red-700 hover:bg-red-50"
-              >
-                <AlertCircle className="h-4 w-4 mr-1" />
-                Problem
-              </Button>
-            </div>
-          )}
-
-          {/* Complete Service Action */}
-          {service.status === 'in_progress' && (
-            <Button 
-              onClick={() => handleCompleteService(service.id)}
-              className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Završi servis
-            </Button>
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={() => handleRequestParts(service.id)}
+                  variant="outline"
+                  className="h-12 border-orange-200 text-orange-700 hover:bg-orange-50"
+                >
+                  <Package className="h-4 w-4 mr-1" />
+                  Poruči deo
+                </Button>
+                <Button 
+                  onClick={handleCustomerUnavailable}
+                  variant="outline"
+                  className="h-12 border-yellow-200 text-yellow-700 hover:bg-yellow-50"
+                >
+                  <PhoneOff className="h-4 w-4 mr-1" />
+                  Nedostupan
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={handleCustomerRefusal}
+                  variant="outline"
+                  className="h-12 border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  <UserX className="h-4 w-4 mr-1" />
+                  Odbija servis
+                </Button>
+                <Button 
+                  onClick={() => handleCompleteService(service.id)}
+                  className="h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Završi
+                </Button>
+              </div>
+            </>
           )}
 
           {/* Waiting for Parts Actions */}
@@ -334,6 +450,164 @@ function ServiceCard({ service }: { service: Service }) {
           )}
         </div>
       </CardContent>
+      
+      {/* Customer Refusal Dialog */}
+      <Dialog open={showRefusalDialog} onOpenChange={setShowRefusalDialog}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle>Klijent odbija servis</DialogTitle>
+            <DialogDescription>
+              Unesite razlog zbog kog klijent odbija popravku aparata
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="refusal-reason">Razlog odbijanja</Label>
+              <Textarea
+                id="refusal-reason"
+                value={refusalReason}
+                onChange={(e) => setRefusalReason(e.target.value)}
+                placeholder="Opišite razlog zbog kog klijent odbija popravku..."
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowRefusalDialog(false)}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitCustomerRefusal}
+                disabled={!refusalReason.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                Potvrdi odbijanje
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Unavailable Dialog */}
+      <Dialog open={showUnavailableDialog} onOpenChange={setShowUnavailableDialog}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle>Klijent nedostupan</DialogTitle>
+            <DialogDescription>
+              Izaberite razlog zašto klijent nije dostupan
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Razlog nedostupnosti</Label>
+              <Select value={unavailableReason} onValueChange={setUnavailableReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite razlog..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_home">Nije kod kuće</SelectItem>
+                  <SelectItem value="not_answering">Ne odgovara na pozive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowUnavailableDialog(false)}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitCustomerUnavailable}
+                disabled={!unavailableReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+              >
+                Pošalji SMS
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Spare Parts Request Dialog */}
+      <Dialog open={showSparePartsDialog} onOpenChange={setShowSparePartsDialog}>
+        <DialogContent className="max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle>Naruči rezervni deo</DialogTitle>
+            <DialogDescription>
+              Unesite podatke o potrebnom rezervnom delu
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="part-name">Naziv dela</Label>
+              <Input
+                id="part-name"
+                value={sparePartsData.partName}
+                onChange={(e) => setSparePartsData(prev => ({ ...prev, partName: e.target.value }))}
+                placeholder="Naziv rezervnog dela..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="catalog-number">Kataloški broj</Label>
+              <Input
+                id="catalog-number"
+                value={sparePartsData.catalogNumber}
+                onChange={(e) => setSparePartsData(prev => ({ ...prev, catalogNumber: e.target.value }))}
+                placeholder="Kataloški broj dela..."
+              />
+            </div>
+            <div>
+              <Label>Hitnost</Label>
+              <Select 
+                value={sparePartsData.urgency} 
+                onValueChange={(value: 'normal' | 'high' | 'urgent') => 
+                  setSparePartsData(prev => ({ ...prev, urgency: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normalno (7-10 dana)</SelectItem>
+                  <SelectItem value="high">Brzo (5-7 dana)</SelectItem>
+                  <SelectItem value="urgent">Hitno (3-5 dana)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="description">Opis</Label>
+              <Textarea
+                id="description"
+                value={sparePartsData.description}
+                onChange={(e) => setSparePartsData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Dodatni opis ili napomene..."
+                rows={2}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowSparePartsDialog(false)}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitSparePartsRequest}
+                disabled={!sparePartsData.partName.trim() || !sparePartsData.catalogNumber.trim()}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                Naruči deo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
