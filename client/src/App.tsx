@@ -54,6 +54,7 @@ import BusinessServices from "@/pages/business/services";
 import NewBusinessServiceRequest from "@/pages/business/services/new";
 import EditBusinessService from "@/pages/business/services/edit.tsx";
 import NewBusinessClient from "@/pages/business/clients/new";
+import BusinessMessages from "@/pages/business/messages";
 import BusinessComplus from "@/pages/business/complus";
 
 // Import the new HomePage
@@ -152,6 +153,7 @@ function Router() {
       <RoleProtectedRoute path="/business/services/new" component={NewBusinessServiceRequest} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/services/edit/:id" component={EditBusinessService} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/clients/new" component={NewBusinessClient} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/messages" component={BusinessMessages} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business"]} />
       
       <Route component={NotFound} />

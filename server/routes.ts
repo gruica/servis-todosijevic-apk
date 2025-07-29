@@ -9007,6 +9007,96 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Business Partner Messages API Endpoints
+  
+  // Get messages for business partner
+  app.get("/api/business/messages", jwtAuth, requireRole(['business_partner', 'business']), async (req, res) => {
+    try {
+      const messages = await db.query.businessPartnerMessages.findMany({
+        where: (messages, { eq }) => eq(messages.businessPartnerId, req.user.id),
+        with: {
+          businessPartner: {
+            columns: {
+              fullName: true,
+              companyName: true,
+              email: true
+            }
+          },
+          replies: {
+            with: {
+              admin: {
+                columns: {
+                  fullName: true
+                }
+              }
+            },
+            orderBy: (replies, { asc }) => [asc(replies.createdAt)]
+          }
+        },
+        orderBy: (messages, { desc }) => [desc(messages.createdAt)]
+      });
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching business partner messages:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju poruka" });
+    }
+  });
+
+  // Send new message from business partner to admin
+  app.post("/api/business/messages", jwtAuth, requireRole(['business_partner', 'business']), async (req, res) => {
+    try {
+      const { subject, content, messageType, messagePriority } = req.body;
+      
+      if (!subject?.trim() || !content?.trim()) {
+        return res.status(400).json({ error: "Naslov i sadržaj poruke su obavezni" });
+      }
+      
+      const newMessage = await db.insert(schema.businessPartnerMessages).values({
+        businessPartnerId: req.user.id,
+        subject: subject.trim(),
+        content: content.trim(),
+        messageType: messageType || 'inquiry',
+        messagePriority: messagePriority || 'medium',
+        messageStatus: 'unread',
+        isStarred: false
+      }).returning();
+      
+      res.json(newMessage[0]);
+    } catch (error) {
+      console.error("Error creating business partner message:", error);
+      res.status(500).json({ error: "Greška pri slanju poruke" });
+    }
+  });
+
+  // Mark message as read (business partner)
+  app.patch("/api/business/messages/:id/read", jwtAuth, requireRole(['business_partner', 'business']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const message = await db.query.businessPartnerMessages.findFirst({
+        where: (messages, { eq, and }) => and(
+          eq(messages.id, messageId),
+          eq(messages.businessPartnerId, req.user.id)
+        )
+      });
+      
+      if (!message) {
+        return res.status(404).json({ error: "Poruka nije pronađena" });
+      }
+      
+      await db.update(schema.businessPartnerMessages)
+        .set({ messageStatus: 'read' })
+        .where(eq(schema.businessPartnerMessages.id, messageId));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking business partner message as read:", error);
+      res.status(500).json({ error: "Greška pri označavanju poruke kao pročitane" });
+    }
+  });
+
   // Business Partner Admin API Endpoints
   app.get("/api/admin/business-partner-services", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
