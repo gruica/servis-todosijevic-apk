@@ -1219,8 +1219,8 @@ export default function ComplusDashboard() {
         </Card>
       </div>
 
-      {/* Dialog komponenti */}
-      {/* CLIENT EDITING DIALOG */}
+      {/* Svi Dialog komponenti - stavljam unutar glavne div strukture */}
+      {/* CLIENT EDITING DIALOG - Com Plus client data editing */}
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
