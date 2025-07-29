@@ -1357,7 +1357,7 @@
 
   // Get Com Plus services (admin only)
   app.get("/api/complus/services", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -1436,7 +1436,7 @@
 
   // Get Com Plus statistics (admin only)
   app.get("/api/complus/stats", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -1476,7 +1476,7 @@
 
   // Get Com Plus appliances (admin only - filtered by Com Plus brands)
   app.get("/api/complus/appliances", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -1497,7 +1497,7 @@
 
   // Get Com Plus clients (admin only - clients with Com Plus appliances)
   app.get("/api/complus/clients", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
