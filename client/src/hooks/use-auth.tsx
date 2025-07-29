@@ -72,16 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasUser: !!user 
   });
 
-  // Automatsko preusmeravanje za complus_admin korisnike
-  useEffect(() => {
-    if (user && user.role === 'complus_admin' && !isLoading) {
-      // Ako complus_admin korisnik nije već na Com Plus panel stranici
-      if (location !== '/complus') {
-        console.log("🔄 Auto-redirecting complus_admin to /complus");
-        navigate('/complus');
-      }
-    }
-  }, [user, isLoading, location, navigate]);
+
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -130,7 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+      const res = await apiRequest("/api/register", {
+        method: "POST",
+        body: JSON.stringify(credentials)
+      });
       const data = await res.json();
       console.log("Odgovor nakon registracije:", data);
       return data;
@@ -191,8 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "admin";
   const isTechnician = user?.role === "technician";
   const isBusinessPartner = user?.role === "business_partner";
-  const isClient = user?.role === "client";
-  const isComplusAdmin = user?.role === "complus_admin";
+  const isClient = user?.role === "customer";
+
 
   return (
     <AuthContext.Provider
@@ -209,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isTechnician: isTechnician || false,
         isBusinessPartner: isBusinessPartner || false,
         isClient: isClient || false,
-        isComplusAdmin: isComplusAdmin || false,
+
       }}
     >
       {children}

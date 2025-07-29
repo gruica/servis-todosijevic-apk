@@ -32,7 +32,7 @@ const APPLIANCE_CATEGORIES = [
 
 export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePartsDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'other' | null>(null);
   const [deviceModel, setDeviceModel] = useState('');
   const [productCode, setProductCode] = useState('');
   const [applianceCategory, setApplianceCategory] = useState('');
@@ -116,7 +116,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       description,
       warrantyStatus,
       urgency,
-      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
+      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'info@frigosistemtodosijevic.com'
     };
 
     orderSparePartMutation.mutate(orderData);
@@ -164,15 +164,15 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
 
               <Card 
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedBrand('complus')}
+                onClick={() => setSelectedBrand('other')}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Package className="h-5 w-5 text-green-600" />
-                    Electrolux/Elica/Candy/Hoover/Turbo Air
+                    Ostali brendovi
                   </CardTitle>
                   <CardDescription>
-                    Email će biti poslat na: servis@complus.me
+                    Email će biti poslat na: info@frigosistemtodosijevic.com
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -182,7 +182,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
           <>
             <DialogHeader>
               <DialogTitle>
-                Poruči {selectedBrand === 'beko' ? 'Beko' : 'Electrolux/Elica/Candy/Hoover/Turbo Air'} rezervni deo
+                Poruči {selectedBrand === 'beko' ? 'Beko' : 'ostali brendovi'} rezervni deo
               </DialogTitle>
               <DialogDescription>
                 Popunite podatke o rezervnom delu koji trebate. Narudžbina će biti poslata na odgovarajući email servisa.

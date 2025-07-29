@@ -1,7 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, pgEnum } from "drizzle-orm/pg-core";
 
 // User roles enum
-export const userRoleEnum = pgEnum("user_role", ["customer", "technician", "admin", "business_partner", "complus_admin"]);
+export const userRoleEnum = pgEnum("user_role", ["customer", "technician", "admin", "business_partner"]);
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";

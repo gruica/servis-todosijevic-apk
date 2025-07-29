@@ -30,7 +30,7 @@ interface FormData {
 
 export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: AdminSparePartsOrderingSimpleProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<'beko' | 'other' | null>(null);
   const [serviceNumber, setServiceNumber] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [formData, setFormData] = useState<FormData>({
@@ -86,7 +86,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
           manufacturer.includes('hoover') || 
           manufacturer.includes('turbo air')
         ) {
-          setSelectedBrand('complus');
+          setSelectedBrand('other');
         }
       }
       
@@ -195,7 +195,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
       description: formData.description,
       warrantyStatus: formData.warrantyStatus,
       urgency: formData.urgency,
-      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
+      emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'info@frigosistemtodosijevic.com'
     };
 
     mutation.mutate(orderData);
