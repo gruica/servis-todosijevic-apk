@@ -378,8 +378,8 @@ function ServiceCard({ service }: { service: Service }) {
 
         {/* Professional Service Actions */}
         <div className="mt-4 space-y-2">
-          {/* Start Work Action */}
-          {service.status === 'assigned' && (
+          {/* Start Work Action - Available for pending, scheduled, assigned */}
+          {(service.status === 'pending' || service.status === 'scheduled' || service.status === 'assigned') && (
             <Button 
               onClick={() => handleStartWork(service.id)}
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium"
@@ -389,8 +389,8 @@ function ServiceCard({ service }: { service: Service }) {
             </Button>
           )}
 
-          {/* In Progress Actions */}
-          {service.status === 'in_progress' && (
+          {/* In Progress Actions - Available for in_progress and also for pending/scheduled/assigned */}
+          {(service.status === 'in_progress' || service.status === 'pending' || service.status === 'scheduled' || service.status === 'assigned') && (
             <>
               <div className="grid grid-cols-2 gap-2">
                 <Button 
