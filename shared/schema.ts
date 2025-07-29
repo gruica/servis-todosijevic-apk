@@ -659,6 +659,7 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   applianceId: integer("appliance_id"), // Nullable for admin orders
   partName: text("part_name").notNull(),
   partNumber: text("part_number"), // Kataloški broj dela
+  specificPart: text("specific_part"), // Specificiranje koji deo je potreban
   quantity: integer("quantity").notNull().default(1),
   description: text("description"), // Dodatni opis potrebe
   urgency: text("urgency").notNull().default("normal"), // normal, high, urgent
@@ -705,6 +706,7 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   applianceId: true,
   partName: true,
   partNumber: true,
+  specificPart: true,
   quantity: true,
   description: true,
   urgency: true,
@@ -723,6 +725,7 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj").optional(),
   partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
   partNumber: z.string().max(100, "Kataloški broj je predugačak").or(z.literal("")).optional(),
+  specificPart: z.string().min(3, "Specifikacija dela mora imati najmanje 3 karaktera").max(300, "Specifikacija dela je predugačka").or(z.literal("")).optional(),
   quantity: z.number().int().positive("Količina mora biti pozitivan broj"),
   description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
   urgency: sparePartUrgencyEnum.default("normal"),

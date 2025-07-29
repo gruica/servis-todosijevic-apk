@@ -2092,13 +2092,14 @@ www.frigosistemtodosijevic.com
     partNumber: string,
     urgency: string,
     description: string,
-    manufacturerName: string,
-    serviceData: any,
-    clientData: any,
-    applianceData: any,
-    categoryData: any,
-    manufacturerData: any,
-    technicianData: any,
+    specificPart?: string,
+    manufacturerName?: string,
+    serviceData?: any,
+    clientData?: any,
+    applianceData?: any,
+    categoryData?: any,
+    manufacturerData?: any,
+    technicianData?: any,
     estimatedCost?: number,
     warrantyStatus?: string,
     deliveryAddress?: string
@@ -2141,7 +2142,8 @@ www.frigosistemtodosijevic.com
           <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
             <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Naziv dela:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #0066cc; font-weight: bold;">${partName}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Kataloški broj:</strong></td><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${partNumber}</td></tr>
-            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Proizvođač:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #dc3545; font-weight: bold;">${manufacturerName.toUpperCase()}</td></tr>
+            ${specificPart ? `<tr style="background-color: #f0f8ff;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Specifikacija dela:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #0066cc; font-style: italic; font-weight: bold;">${specificPart}</td></tr>` : ''}
+            <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Proizvođač:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #dc3545; font-weight: bold;">${manufacturerName?.toUpperCase() || 'N/A'}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Model aparata:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${applianceData?.model || 'N/A'}</td></tr>
             <tr style="background-color: #e9ecef;"><td style="padding: 8px; border: 1px solid #ddd;"><strong>Serijski broj:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${applianceData?.serialNumber || 'N/A'}</td></tr>
             <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Količina:</strong></td><td style="padding: 8px; border: 1px solid #ddd; color: #28a745; font-weight: bold;">1 kom</td></tr>

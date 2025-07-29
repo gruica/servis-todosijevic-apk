@@ -5623,6 +5623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   validatedData.partNumber || 'N/A',
                   validatedData.urgency || 'medium',
                   validatedData.description || '',
+                  validatedData.specificPart,
                   manufacturer?.name || manufacturerName,
                   service,        // Kompletni podaci o servisu
                   client,         // Kompletni podaci o klijentu  
@@ -5972,6 +5973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         productCode,
         applianceCategory,
         partName,
+        specificPart,
         quantity = 1,
         description,
         warrantyStatus,
@@ -6021,7 +6023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partName,
         partNumber: productCode,
         quantity,
-        description: `${applianceCategory} - ${deviceModel}${applianceSerialNumber ? `\nSerijski broj: ${applianceSerialNumber}` : ''}\n${description || ''}`.trim(),
+        description: `${applianceCategory} - ${deviceModel}${specificPart ? `\nSpecifikacija: ${specificPart}` : ''}${applianceSerialNumber ? `\nSerijski broj: ${applianceSerialNumber}` : ''}\n${description || ''}`.trim(),
         urgency,
         status: 'pending',
         warrantyStatus: warrantyStatus || 'u garanciji',
@@ -6132,7 +6134,7 @@ PODACI O APARATU (ADMIN UNOS):
 • Produkt kod: ${productCode}
 
 REZERVNI DEO:
-• Naziv dela: ${partName}
+• Naziv dela: ${partName}${specificPart ? `\n• Specifikacija: ${specificPart}` : ''}
 • Količina: ${quantity}
 • Garancijski status: ${warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
 • Hitnost: ${urgency === 'high' ? '🚨 HITNO' : urgency === 'normal' ? 'Normalna' : 'Niska'}

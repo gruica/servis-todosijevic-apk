@@ -21,6 +21,7 @@ interface FormData {
   productCode: string;
   applianceCategory: string;
   partName: string;
+  specificPart: string;
   quantity: number;
   description: string;
   warrantyStatus: 'u garanciji' | 'van garancije';
@@ -37,6 +38,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
     productCode: '',
     applianceCategory: '',
     partName: '',
+    specificPart: '',
     quantity: 1,
     description: '',
     warrantyStatus: 'u garanciji',
@@ -138,6 +140,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
         productCode: '',
         applianceCategory: '',
         partName: '',
+        specificPart: '',
         quantity: 1,
         description: '',
         warrantyStatus: 'u garanciji',
@@ -187,6 +190,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
       productCode: formData.productCode,
       applianceCategory: formData.applianceCategory,
       partName: formData.partName,
+      specificPart: formData.specificPart,
       quantity: formData.quantity,
       description: formData.description,
       warrantyStatus: formData.warrantyStatus,
@@ -377,6 +381,16 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: 
                 required
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="specificPart">Dodatna specifikacija dela</Label>
+            <Input
+              id="specificPart"
+              value={formData.specificPart}
+              onChange={(e) => updateFormField('specificPart', e.target.value)}
+              placeholder="npr. sa grejačem, komplet sa filterom, levi deo..."
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-4">

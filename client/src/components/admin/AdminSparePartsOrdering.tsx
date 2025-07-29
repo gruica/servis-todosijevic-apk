@@ -44,6 +44,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     productCode: '',
     applianceCategory: '',
     partName: '',
+    specificPart: '',
     quantity: 1,
     description: '',
     warrantyStatus: 'u garanciji' as 'u garanciji' | 'van garancije',
@@ -196,6 +197,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       productCode: formData.productCode,
       applianceCategory: formData.applianceCategory,
       partName: formData.partName,
+      specificPart: formData.specificPart,
       quantity: formData.quantity,
       description: formData.description,
       warrantyStatus: formData.warrantyStatus,
@@ -212,6 +214,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       productCode: '',
       applianceCategory: '',
       partName: '',
+      specificPart: '',
       quantity: 1,
       description: '',
       warrantyStatus: 'u garanciji',
@@ -408,6 +411,16 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
               onChange={handlePartNameChange}
               placeholder="npr. Pumpa za vodu, Filter, Grejač"
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="specificPart">Dodatna specifikacija dela</Label>
+            <Input
+              id="specificPart"
+              value={formData.specificPart}
+              onChange={(e) => setFormData(prev => ({ ...prev, specificPart: e.target.value }))}
+              placeholder="npr. sa grejačem, komplet sa filterom, levi deo..."
             />
           </div>
 

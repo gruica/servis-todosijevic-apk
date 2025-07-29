@@ -17,6 +17,7 @@ interface SparePartItem {
   id: number;
   partNumber: string;
   description: string;
+  specificPart?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -48,7 +49,8 @@ export default function SparePartsOrderForm({
     partNumber: "",
     description: "",
     quantity: 1,
-    unitPrice: 0
+    unitPrice: 0,
+    specificPart: ""
   });
   const [urgency, setUrgency] = useState<"low" | "medium" | "high">("medium");
   const [supplierNotes, setSupplierNotes] = useState("");
@@ -112,6 +114,7 @@ export default function SparePartsOrderForm({
       id: Date.now(), // Temporary ID
       partNumber: newPart.partNumber,
       description: newPart.description,
+      specificPart: newPart.specificPart,
       quantity: newPart.quantity,
       unitPrice: newPart.unitPrice,
       totalPrice
@@ -122,7 +125,8 @@ export default function SparePartsOrderForm({
       partNumber: "",
       description: "",
       quantity: 1,
-      unitPrice: 0
+      unitPrice: 0,
+      specificPart: ""
     });
   };
 
@@ -171,14 +175,27 @@ export default function SparePartsOrderForm({
     const firstPart = parts[0];
     const brand = detectBrand(applianceManufacturer);
     
+    // Kreiraj detaljni opis koji uključuje specifikacije
+    let detailedDescription = parts.map(part => {
+      let partDesc = `${part.partNumber}: ${part.description} (${part.quantity}x)`;
+      if (part.specificPart) {
+        partDesc += `\n  Specifikacija: ${part.specificPart}`;
+      }
+      return partDesc;
+    }).join('\n');
+    
+    if (supplierNotes) {
+      detailedDescription += `\n\nNapomene: ${supplierNotes}`;
+    }
+
     const orderData = {
       serviceId,
       technicianId,
       partName: firstPart.description,
       partNumber: firstPart.partNumber,
+      specificPart: firstPart.specificPart || "",
       quantity: parts.reduce((sum, part) => sum + part.quantity, 0),
-      description: parts.map(part => `${part.partNumber}: ${part.description} (${part.quantity}x)`).join('\n') + 
-                   (supplierNotes ? `\n\nNapomene: ${supplierNotes}` : ''),
+      description: detailedDescription,
       urgency: urgency === "high" ? "high" : urgency === "low" ? "low" : "normal",
       warrantyStatus,
       brand,
@@ -196,7 +213,8 @@ export default function SparePartsOrderForm({
       partNumber: "",
       description: "",
       quantity: 1,
-      unitPrice: 0
+      unitPrice: 0,
+      specificPart: ""
     });
     setUrgency("medium");
     setSupplierNotes("");
@@ -278,6 +296,17 @@ export default function SparePartsOrderForm({
                 />
               </div>
               <div>
+                <Label htmlFor="specificPart" className="text-xs">Specifikacija dela (opcionalno)</Label>
+                <Textarea
+                  id="specificPart"
+                  value={newPart.specificPart}
+                  onChange={(e) => setNewPart({...newPart, specificPart: e.target.value})}
+                  placeholder="Specificirajte tačno koji deo vam treba - npr: elektronska kartica glavna sa kondenzatorom, motor za centrifugu, grejač donji sa senzorom temperature, itd."
+                  className="mt-1 min-h-[60px]"
+                  rows={3}
+                />
+              </div>
+              <div>
                 <Label htmlFor="unitPrice" className="text-xs">Jedinična cena (€)</Label>
                 <Input
                   id="unitPrice"
@@ -309,6 +338,11 @@ export default function SparePartsOrderForm({
                       <div className="flex-1">
                         <div className="font-medium text-sm">{part.partNumber}</div>
                         <div className="text-xs text-gray-600">{part.description}</div>
+                        {part.specificPart && (
+                          <div className="text-xs text-blue-600 mt-1 italic">
+                            Specifikacija: {part.specificPart}
+                          </div>
+                        )}
                         <div className="text-xs text-gray-500">
                           {part.quantity} × {part.unitPrice.toFixed(2)}€ = {part.totalPrice.toFixed(2)}€
                         </div>
