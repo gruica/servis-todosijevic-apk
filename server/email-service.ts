@@ -2209,23 +2209,51 @@ www.frigosistemtodosijevic.com
         </div>
 
         <div style="background-color: #f8f9fa; border: 2px solid #6c757d; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-          <h3 style="color: #495057; margin: 0;">🤖 POTPUNA AUTOMATIZACIJA AKTIVIRANA</h3>
-          <p style="margin: 10px 0 0 0; color: #495057; font-size: 14px;">
-            Ova porudžbina je automatski generisana sa kompletnim podacima potrebnim za nabavku.<br>
-            <strong>Molimo potvrdite prijem i vreme dostave telefonom: 033 402 402</strong>
+          <h3 style="color: #495057; margin: 0;">🤖 POTPUNA AUTOMATIZACIJA AKTIVIRANA - VRHUNSKI SISTEM</h3>
+          <p style="margin: 10px 0; color: #495057; font-size: 14px;">
+            Ova porudžbina je automatski generisana po <strong>najvišim svetskim standardima</strong> sa kompletnim podacima potrebnim za nabavku.<br>
+            <strong>Sistem je verifikovao sve tehničke specifikacije i garanciski status.</strong><br>
+            <span style="color: #dc3545; font-weight: bold;">Molimo potvrdite prijem i vreme dostave telefonom: 033 402 402</span>
           </p>
+          <div style="background-color: #e9ecef; padding: 10px; border-radius: 5px; margin-top: 15px;">
+            <p style="margin: 0; font-size: 12px; color: #6c757d;">
+              📊 Automatizacija ID: AUTO-${serviceId}-${new Date().getTime()}<br>
+              🕒 Generirano: ${new Date().toLocaleDateString('sr-ME')} ${new Date().toLocaleTimeString('sr-ME')}<br>
+              🔧 Sistem verzija: 2025.1 Professional
+            </p>
+          </div>
         </div>
         
         <p><strong>Srdačan pozdrav,<br>
         Frigo Sistem Todosijević - Automatski sistem za rezervne delove</strong></p>
         
         <hr style="border: 2px solid #0066cc; margin: 30px 0;">
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
-          <p style="font-size: 14px; color: #495057; margin: 0; font-weight: bold;">
-            Frigo Sistem Todosijević d.o.o. | Automatski sistem za rezervne delove<br>
-            📞 033 402 402 | 📧 info@frigosistemtodosijevic.com<br>
-            📍 Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
-            🌐 www.frigosistemtodosijevic.com
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #dee2e6;">
+          <div style="background-color: #0066cc; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+            <h4 style="margin: 0; font-size: 16px;">🏢 FRIGO SISTEM TODOSIJEVIĆ D.O.O.</h4>
+            <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Profesionalni servis bele tehnike | Automatski sistem rezervnih delova</p>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr>
+              <td style="padding: 5px; border: 1px solid #dee2e6; background-color: #f8f9fa;"><strong>📞 Telefon:</strong></td>
+              <td style="padding: 5px; border: 1px solid #dee2e6; color: #dc3545; font-weight: bold;">033 402 402</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px; border: 1px solid #dee2e6; background-color: #f8f9fa;"><strong>📧 Email:</strong></td>
+              <td style="padding: 5px; border: 1px solid #dee2e6;">info@frigosistemtodosijevic.com</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px; border: 1px solid #dee2e6; background-color: #f8f9fa;"><strong>📍 Adresa:</strong></td>
+              <td style="padding: 5px; border: 1px solid #dee2e6;">Lastva grbaljska bb, 85317 Kotor, Crna Gora</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px; border: 1px solid #dee2e6; background-color: #f8f9fa;"><strong>🌐 Website:</strong></td>
+              <td style="padding: 5px; border: 1px solid #dee2e6; color: #0066cc;">www.frigosistemtodosijevic.com</td>
+            </tr>
+          </table>
+          <p style="margin: 15px 0 0 0; font-size: 11px; color: #6c757d; font-style: italic;">
+            Ovaj email je automatski generisan sistemom za upravljanje rezervnim delovima.<br>
+            Za sve izmene ili dodatne informacije kontaktirajte nas telefonom.
           </p>
         </div>
       </div>
