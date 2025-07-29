@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, Download, Euro, CheckCircle } from 'lucide-react';
+import { Calendar, FileText, Download, Euro, CheckCircle, User, Phone, MapPin, Wrench, Package, Clock, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BillingService {
@@ -113,6 +113,95 @@ export default function ComplusBillingReport() {
     document.body.removeChild(link);
   };
 
+  // Handle print functionality for comprehensive report
+  const handlePrintReport = () => {
+    if (!billingData?.services.length) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const printContent = `
+      <html>
+        <head>
+          <title>ComPlus Fakturisanje - ${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            .summary { background: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+            .service-card { border: 1px solid #ddd; margin-bottom: 20px; padding: 15px; page-break-inside: avoid; }
+            .service-header { background: #e3f2fd; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 5px 5px 0 0; }
+            .info-section { display: inline-block; width: 30%; vertical-align: top; margin-right: 3%; margin-bottom: 15px; }
+            .info-title { font-weight: bold; color: #1976d2; margin-bottom: 8px; }
+            .info-item { margin-bottom: 5px; }
+            .cost-highlight { font-size: 18px; font-weight: bold; color: #2e7d32; }
+            @media print { body { margin: 0; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>ComPlus Fakturisanje</h1>
+            <h2>${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</h2>
+            <p>Detaljni izveštaj o završenim garancijskim servisima</p>
+          </div>
+          
+          <div class="summary">
+            <h3>Rezime meseca</h3>
+            <p><strong>Ukupno servisa:</strong> ${billingData.totalServices}</p>
+            <p><strong>Ukupna vrednost:</strong> ${billingData.totalCost.toFixed(2)} €</p>
+            <p><strong>Brendovi:</strong> ${billingData.brandBreakdown.map(b => `${b.brand} (${b.count})`).join(', ')}</p>
+          </div>
+          
+          ${billingData.services.map(service => `
+            <div class="service-card">
+              <div class="service-header">
+                <h3>Servis #${service.serviceNumber} - <span class="cost-highlight">${service.cost?.toFixed(2) || '0.00'} €</span></h3>
+                <p>Završeno: ${format(new Date(service.completedDate), 'dd.MM.yyyy')}</p>
+              </div>
+              
+              <div class="info-section">
+                <div class="info-title">📋 Podaci o klijentu</div>
+                <div class="info-item"><strong>Ime:</strong> ${service.clientName}</div>
+                <div class="info-item"><strong>Telefon:</strong> ${service.clientPhone}</div>
+                <div class="info-item"><strong>Adresa:</strong> ${service.clientAddress}</div>
+                <div class="info-item"><strong>Grad:</strong> ${service.clientCity}</div>
+              </div>
+              
+              <div class="info-section">
+                <div class="info-title">🔧 Podaci o aparatu</div>
+                <div class="info-item"><strong>Tip:</strong> ${service.applianceCategory}</div>
+                <div class="info-item"><strong>Brend:</strong> ${service.manufacturerName}</div>
+                <div class="info-item"><strong>Model:</strong> ${service.applianceModel}</div>
+                <div class="info-item"><strong>Serijski broj:</strong> ${service.serialNumber}</div>
+              </div>
+              
+              <div class="info-section">
+                <div class="info-title">👨‍🔧 Podaci o servisu</div>
+                <div class="info-item"><strong>Serviser:</strong> ${service.technicianName}</div>
+                <div class="info-item"><strong>Status:</strong> ${service.warrantyStatus}</div>
+                <div class="info-item"><strong>Troškovi:</strong> <span class="cost-highlight">${service.cost?.toFixed(2) || '0.00'} €</span></div>
+              </div>
+              
+              ${service.description ? `
+                <div style="clear: both; margin-top: 15px; padding: 10px; background: #f9f9f9; border-left: 4px solid #ccc;">
+                  <strong>Opis problema:</strong><br>
+                  ${service.description}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+          
+          <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
+            Izveštaj generisan: ${format(new Date(), 'dd.MM.yyyy HH:mm')} | Frigo Sistem Todosijević
+          </div>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -126,7 +215,7 @@ export default function ComplusBillingReport() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 
             <div>
               <label className="text-sm font-medium mb-2 block">Godina</label>
@@ -160,14 +249,23 @@ export default function ComplusBillingReport() {
               </Select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
+              <Button 
+                onClick={handlePrintReport}
+                disabled={!billingData?.services.length}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Štampaj izveštaj
+              </Button>
               <Button 
                 onClick={handleExportToCSV}
                 disabled={!billingData?.services.length}
-                className="w-full"
+                className="flex-1"
+                variant="outline"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Izvezi CSV (Svi Complus)
+                CSV
               </Button>
             </div>
           </div>
@@ -230,67 +328,132 @@ export default function ComplusBillingReport() {
                 </Card>
               </div>
 
-              {/* Services Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    Complus Garancija (Svi Brendovi) - {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Servis #</th>
-                          <th className="text-left p-2">Klijent</th>
-                          <th className="text-left p-2">Grad</th>
-                          <th className="text-left p-2">Uređaj</th>
-                          <th className="text-left p-2">Model</th>
-                          <th className="text-left p-2">Serviser</th>
-                          <th className="text-left p-2">Završeno</th>
-                          <th className="text-left p-2">Cena</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {billingData.services.map(service => (
-                          <tr key={service.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 font-medium">#{service.serviceNumber}</td>
-                            <td className="p-2">
-                              <div>
-                                <div className="font-medium">{service.clientName}</div>
-                                <div className="text-xs text-gray-500">{service.clientPhone}</div>
-                              </div>
-                            </td>
-                            <td className="p-2">{service.clientCity}</td>
-                            <td className="p-2">
-                              <div>
-                                <div className="font-medium">{service.applianceCategory}</div>
-                                <div className="text-xs text-gray-500">{service.manufacturerName}</div>
-                              </div>
-                            </td>
-                            <td className="p-2">
-                              <div>
-                                <div className="font-medium">{service.applianceModel}</div>
-                                <div className="text-xs text-gray-500">{service.serialNumber}</div>
-                              </div>
-                            </td>
-                            <td className="p-2">{service.technicianName}</td>
-                            <td className="p-2">
-                              {format(new Date(service.completedDate), 'dd.MM.yyyy')}
-                            </td>
-                            <td className="p-2">
-                              <Badge variant={service.cost > 0 ? "default" : "secondary"}>
+              {/* Detailed Services List */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Detaljni pregled servisa - {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
+                </h3>
+                
+                {billingData.services.map(service => (
+                  <Card key={service.id} className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Service Header */}
+                        <div className="lg:col-span-3 border-b pb-4 mb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="default" className="text-base px-3 py-1">
+                                Servis #{service.serviceNumber}
+                              </Badge>
+                              <Badge 
+                                variant={service.cost > 0 ? "default" : "secondary"}
+                                className="text-base px-3 py-1"
+                              >
                                 {service.cost?.toFixed(2) || '0.00'} €
                               </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Clock className="h-4 w-4" />
+                              Završeno: {format(new Date(service.completedDate), 'dd.MM.yyyy')}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Client Information */}
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <User className="h-4 w-4 text-blue-600" />
+                            Podaci o klijentu
+                          </h4>
+                          <div className="space-y-2 bg-blue-50 p-4 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-600" />
+                              <span className="font-medium">{service.clientName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-gray-600" />
+                              <span>{service.clientPhone}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-gray-600" />
+                              <span>{service.clientAddress}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-gray-600" />
+                              <span className="font-medium">{service.clientCity}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Appliance Information */}
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <Package className="h-4 w-4 text-green-600" />
+                            Podaci o aparatu
+                          </h4>
+                          <div className="space-y-2 bg-green-50 p-4 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-gray-600" />
+                              <span className="font-medium">{service.applianceCategory}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {service.manufacturerName}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="text-sm">
+                                <span className="text-gray-600">Model:</span>
+                                <span className="font-medium ml-1">{service.applianceModel}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-gray-600">Serijski broj:</span>
+                                <span className="font-mono text-xs ml-1">{service.serialNumber}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Service Information */}
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-orange-600" />
+                            Podaci o servisu
+                          </h4>
+                          <div className="space-y-2 bg-orange-50 p-4 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Wrench className="h-4 w-4 text-gray-600" />
+                              <span className="font-medium">{service.technicianName}</span>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="text-sm">
+                                <span className="text-gray-600">Status:</span>
+                                <Badge variant="default" className="ml-1 text-xs">
+                                  {service.warrantyStatus}
+                                </Badge>
+                              </div>
+                              <div className="text-sm">
+                                <span className="text-gray-600">Troškovi:</span>
+                                <span className="font-bold text-green-600 ml-1">
+                                  {service.cost?.toFixed(2) || '0.00'} €
+                                </span>
+                              </div>
+                            </div>
+                            {service.description && (
+                              <div className="mt-3 p-3 bg-white rounded border-l-4 border-l-gray-300">
+                                <div className="text-xs text-gray-600 mb-1">Opis problema:</div>
+                                <div className="text-sm">{service.description}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
