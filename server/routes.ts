@@ -2385,6 +2385,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new message to business partner (admin)
+  app.post("/api/admin/business-partner-messages", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { businessPartnerId, subject, content, messageType, priority } = req.body;
+      
+      if (!businessPartnerId || !subject?.trim() || !content?.trim()) {
+        return res.status(400).json({ error: "BusinessPartnerId, subject i content su obavezni" });
+      }
+
+      // Get business partner info
+      const businessPartner = await storage.getUser(businessPartnerId);
+      if (!businessPartner || businessPartner.role !== 'business_partner') {
+        return res.status(400).json({ error: "Nevaljan business partner" });
+      }
+
+      // Get admin info
+      const admin = await storage.getUser(req.user.id);
+      
+      const newMessage = await db.insert(schema.businessPartnerMessages)
+        .values({
+          businessPartnerId: businessPartnerId,
+          subject: subject.trim(),
+          content: content.trim(),
+          messageType: messageType || 'update',
+          priority: priority || 'normal',
+          status: 'unread',
+          isStarred: false,
+          senderName: admin?.fullName || 'Administrator',
+          senderEmail: admin?.email || 'admin@frigosistemtodosijevic.me',
+          senderCompany: 'Frigo Sistem Todosijević',
+          senderPhone: admin?.phone || '067077092',
+          relatedServiceId: null,
+          relatedClientName: null,
+          attachments: null,
+          adminResponse: null,
+          adminRespondedAt: null,
+          adminRespondedBy: null
+        })
+        .returning();
+      
+      res.json(newMessage[0]);
+    } catch (error) {
+      console.error("Error creating admin message to business partner:", error);
+      console.error("Error details:", error.message);
+      console.error("Stack trace:", error.stack);
+      res.status(500).json({ error: "Greška pri kreiranju poruke" });
+    }
+  });
+
   // Reply to business partner message (admin)
   app.post("/api/admin/business-partner-messages/:id/reply", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
