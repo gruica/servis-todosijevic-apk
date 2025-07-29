@@ -1182,9 +1182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         db.delete(schema.notifications)
           .where(eq(schema.notifications.relatedServiceId, serviceId)),
         
-        // Delete related spare parts orders
-        db.delete(schema.sparePartsOrders)
-          .where(eq(schema.sparePartsOrders.serviceId, serviceId)),
+        // Delete related spare parts orders where serviceId matches
+        db.delete(schema.sparePartOrders)
+          .where(sql`service_id = ${serviceId}`),
         
         // Delete related removed parts
         db.delete(schema.removedParts)
