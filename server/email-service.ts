@@ -1608,32 +1608,30 @@ www.frigosistemtodosijevic.com
     }
   }
 
-  /**
-   * Šalje obaveštenje servis firmi o rezervnom delu u garanciji
-   */
-  public async sendWarrantySparePartNotification(
-    serviceId: number,
-    partName: string,
-    partNumber: string,
-    clientName: string,
-    technicianName: string,
-    urgency: string,
-    description?: string
-  ): Promise<boolean> {
-    console.log(`[EMAIL] Početak slanja obaveštenja servis firmi o garancijskom rezervnom delu za servis #${serviceId}`);
-    
-    // Provera da li je SMTP konfiguracija dostupna
-    if (!this.configCache) {
-      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja servis firmi`);
-      return false;
-    }
-
+  // Professional warranty spare parts notification method
+  async sendWarrantySparePartNotification({
+    serviceId,
+    partName,
+    partNumber,
+    urgency,
+    clientName,
+    technicianName,
+    description
+  }: {
+    serviceId: number;
+    partName: string;
+    partNumber: string;
+    urgency: string;
+    clientName: string;
+    technicianName: string;
+    description?: string;
+  }) {
     const serviceCompanyEmail = 'servis@eurotehnikamn.me';
     const urgencyLabel = urgency === 'urgent' ? 'HITNO' : urgency === 'high' ? 'Visoka' : urgency === 'medium' ? 'Srednja' : 'Niska';
     const priorityIndicator = urgency === 'urgent' ? '🚨 HITNO' : urgency === 'high' ? '⚡ Visoka' : '📋';
 
-    const subject = `${priorityIndicator} Garanciski rezervni deo - Servis #${serviceId}`;
-    const html = `
+    const warrantySubject = `${priorityIndicator} Garanciski rezervni deo - Servis #${serviceId}`;
+    const warrantyHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
           <h2 style="color: #155724; margin: 0;">🛡️ GARANCISKI REZERVNI DEO</h2>
@@ -1683,8 +1681,8 @@ www.frigosistemtodosijevic.com
     try {
       const result = await this.sendEmail({
         to: serviceCompanyEmail,
-        subject,
-        html,
+        subject: warrantySubject,
+        html: warrantyHtml,
       }, 3); // 3 pokušaja slanja za važne obavštenja
       
       console.log(`[EMAIL] Rezultat slanja obaveštenja servis firmi: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
