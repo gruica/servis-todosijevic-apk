@@ -20,12 +20,13 @@ import {
   SystemSetting, InsertSystemSetting,
   RemovedPart, InsertRemovedPart,
   SparePartsCatalog, InsertSparePartsCatalog,
+  PartsInventory, InsertPartsInventory,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
-  sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
+  sparePartsCatalog, partsInventory, PartsAllocation, InsertPartsAllocation,
   webScrapingSources, webScrapingLogs, webScrapingQueue
 } from "@shared/schema";
 import session from "express-session";
@@ -222,6 +223,45 @@ export interface IStorage {
   updateSparePartsCatalogEntry(id: number, entry: Partial<SparePartsCatalog>): Promise<SparePartsCatalog | undefined>;
   deleteSparePartsCatalogEntry(id: number): Promise<boolean>;
   importSparePartsCatalogFromCSV(csvData: any[]): Promise<{ success: number; errors: string[] }>;
+
+  // Professional Parts Inventory Management methods
+  getAllPartsInventory(): Promise<PartsInventory[]>;
+  getPartsInventoryItem(id: number): Promise<PartsInventory | undefined>;
+  getPartsInventoryByStatus(status: string): Promise<PartsInventory[]>;
+  getPartsInventoryByLocation(location: string): Promise<PartsInventory[]>;
+  getPartsInventoryByService(serviceId: number): Promise<PartsInventory[]>;
+  getPartsInventoryByTechnician(technicianId: number): Promise<PartsInventory[]>;
+  searchPartsInventory(searchTerm: string): Promise<PartsInventory[]>;
+  createPartsInventoryItem(item: InsertPartsInventory): Promise<PartsInventory>;
+  updatePartsInventoryItem(id: number, item: Partial<PartsInventory>): Promise<PartsInventory | undefined>;
+  deletePartsInventoryItem(id: number): Promise<boolean>;
+  
+  // Inventory workflow methods
+  receivePartsFromOrder(orderId: number, receivingData: {
+    actualCost?: string;
+    supplierInvoiceNumber?: string;
+    warehouseLocation?: string;
+    batchNumber?: string;
+    receivingNotes?: string;
+    receivedByAdminId: number;
+  }): Promise<PartsInventory>;
+  
+  allocatePartsToService(inventoryId: number, serviceId: number, technicianId: number, allocatedByAdminId: number): Promise<PartsInventory | undefined>;
+  
+  dispatchPartsToTechnician(inventoryId: number, dispatchData: {
+    dispatchedByAdminId: number;
+    dispatchNotes?: string;
+  }): Promise<PartsInventory | undefined>;
+  
+  confirmPartsInstallation(inventoryId: number, installationData: {
+    installedByTechnicianId: number;
+    installationNotes?: string;
+  }): Promise<PartsInventory | undefined>;
+  
+  returnPartsToWarehouse(inventoryId: number, returnData: {
+    currentLocation: string;
+    returnNotes?: string;
+  }): Promise<PartsInventory | undefined>;
   getSparePartsCatalogStats(): Promise<{ totalParts: number; byCategory: Record<string, number>; byManufacturer: Record<string, number> }>;
   
   // Web Scraping methods
@@ -4388,6 +4428,315 @@ export class DatabaseStorage implements IStorage {
 
   async createSparePartsCatalog(part: InsertSparePartsCatalog): Promise<SparePartsCatalog> {
     return this.createSparePartsCatalogEntry(part);
+  }
+
+  // ============================================================================
+  // PROFESSIONAL PARTS INVENTORY MANAGEMENT SYSTEM
+  // Inventory workflow: pending → received → allocated → dispatched → installed
+  // ============================================================================
+
+  async getAllPartsInventory(): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .orderBy(desc(partsInventory.receivedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory delova:', error);
+      return [];
+    }
+  }
+
+  async getPartsInventoryItem(id: number): Promise<PartsInventory | undefined> {
+    try {
+      const [item] = await db
+        .select()
+        .from(partsInventory)
+        .where(eq(partsInventory.id, id));
+      return item;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory item-a:', error);
+      return undefined;
+    }
+  }
+
+  async getPartsInventoryByStatus(status: string): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .where(eq(partsInventory.status, status))
+        .orderBy(desc(partsInventory.receivedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po statusu:', error);
+      return [];
+    }
+  }
+
+  async getPartsInventoryByLocation(location: string): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .where(eq(partsInventory.currentLocation, location))
+        .orderBy(desc(partsInventory.receivedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po lokaciji:', error);
+      return [];
+    }
+  }
+
+  async getPartsInventoryByService(serviceId: number): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .where(eq(partsInventory.allocatedToServiceId, serviceId))
+        .orderBy(desc(partsInventory.allocatedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po servisu:', error);
+      return [];
+    }
+  }
+
+  async getPartsInventoryByTechnician(technicianId: number): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .where(eq(partsInventory.allocatedToTechnicianId, technicianId))
+        .orderBy(desc(partsInventory.allocatedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po serviseru:', error);
+      return [];
+    }
+  }
+
+  async searchPartsInventory(searchTerm: string): Promise<PartsInventory[]> {
+    try {
+      const inventory = await db
+        .select()
+        .from(partsInventory)
+        .where(
+          or(
+            like(partsInventory.partName, `%${searchTerm}%`),
+            like(partsInventory.partNumber, `%${searchTerm}%`),
+            like(partsInventory.manufacturer, `%${searchTerm}%`)
+          )
+        )
+        .orderBy(desc(partsInventory.receivedDate));
+      return inventory;
+    } catch (error) {
+      console.error('Greška pri pretrazi inventory:', error);
+      return [];
+    }
+  }
+
+  async createPartsInventoryItem(item: InsertPartsInventory): Promise<PartsInventory> {
+    try {
+      const [newItem] = await db
+        .insert(partsInventory)
+        .values(item)
+        .returning();
+      return newItem;
+    } catch (error) {
+      console.error('Greška pri kreiranju inventory item-a:', error);
+      throw error;
+    }
+  }
+
+  async updatePartsInventoryItem(id: number, item: Partial<PartsInventory>): Promise<PartsInventory | undefined> {
+    try {
+      const [updatedItem] = await db
+        .update(partsInventory)
+        .set({ ...item, updatedAt: new Date() })
+        .where(eq(partsInventory.id, id))
+        .returning();
+      return updatedItem;
+    } catch (error) {
+      console.error('Greška pri ažuriranju inventory item-a:', error);
+      return undefined;
+    }
+  }
+
+  async deletePartsInventoryItem(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(partsInventory)
+        .where(eq(partsInventory.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error('Greška pri brisanju inventory item-a:', error);
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // PROFESSIONAL INVENTORY WORKFLOW METHODS
+  // ============================================================================
+
+  async receivePartsFromOrder(orderId: number, receivingData: {
+    actualCost?: string;
+    supplierInvoiceNumber?: string;
+    warehouseLocation?: string;
+    batchNumber?: string;
+    receivingNotes?: string;
+    receivedByAdminId: number;
+  }): Promise<PartsInventory> {
+    try {
+      // Get original order
+      const order = await this.getSparePartOrder(orderId);
+      if (!order) {
+        throw new Error('Originalna porudžbina nije pronađena');
+      }
+
+      // Create inventory item from order
+      const inventoryItem: InsertPartsInventory = {
+        originalOrderId: orderId,
+        partName: order.partName,
+        partNumber: order.partNumber || undefined,
+        manufacturer: order.manufacturer || undefined,
+        quantity: order.quantity,
+        status: 'received',
+        currentLocation: 'main_warehouse',
+        actualCost: receivingData.actualCost,
+        supplierInvoiceNumber: receivingData.supplierInvoiceNumber,
+        warehouseLocation: receivingData.warehouseLocation,
+        batchNumber: receivingData.batchNumber,
+        receivedByAdminId: receivingData.receivedByAdminId,
+        receivingNotes: receivingData.receivingNotes,
+      };
+
+      const newInventoryItem = await this.createPartsInventoryItem(inventoryItem);
+
+      // Update original order status to 'received'
+      await this.updateSparePartOrder(orderId, { status: 'received' });
+
+      console.log('✅ PROFESSIONAL INVENTORY: Deo uspešno primljen u magacin:', {
+        inventoryId: newInventoryItem.id,
+        partName: newInventoryItem.partName,
+        quantity: newInventoryItem.quantity,
+        warehouseLocation: newInventoryItem.warehouseLocation
+      });
+
+      return newInventoryItem;
+    } catch (error) {
+      console.error('Greška pri primanju delova iz porudžbine:', error);
+      throw error;
+    }
+  }
+
+  async allocatePartsToService(inventoryId: number, serviceId: number, technicianId: number, allocatedByAdminId: number): Promise<PartsInventory | undefined> {
+    try {
+      const updatedItem = await this.updatePartsInventoryItem(inventoryId, {
+        status: 'allocated',
+        allocatedToServiceId: serviceId,
+        allocatedToTechnicianId: technicianId,
+        allocatedDate: new Date(),
+        allocatedByAdminId: allocatedByAdminId,
+      });
+
+      if (updatedItem) {
+        console.log('✅ PROFESSIONAL INVENTORY: Deo uspešno dodeljen servisu:', {
+          inventoryId: updatedItem.id,
+          serviceId: serviceId,
+          technicianId: technicianId,
+          partName: updatedItem.partName
+        });
+      }
+
+      return updatedItem;
+    } catch (error) {
+      console.error('Greška pri dodeli delova servisu:', error);
+      return undefined;
+    }
+  }
+
+  async dispatchPartsToTechnician(inventoryId: number, dispatchData: {
+    dispatchedByAdminId: number;
+    dispatchNotes?: string;
+  }): Promise<PartsInventory | undefined> {
+    try {
+      const updatedItem = await this.updatePartsInventoryItem(inventoryId, {
+        status: 'dispatched',
+        currentLocation: 'technician_van',
+        dispatchedDate: new Date(),
+        dispatchedByAdminId: dispatchData.dispatchedByAdminId,
+        dispatchNotes: dispatchData.dispatchNotes,
+      });
+
+      if (updatedItem) {
+        console.log('✅ PROFESSIONAL INVENTORY: Deo uspešno otpremljen serviseru:', {
+          inventoryId: updatedItem.id,
+          partName: updatedItem.partName,
+          location: 'technician_van'
+        });
+      }
+
+      return updatedItem;
+    } catch (error) {
+      console.error('Greška pri otpremanju delova serviseru:', error);
+      return undefined;
+    }
+  }
+
+  async confirmPartsInstallation(inventoryId: number, installationData: {
+    installedByTechnicianId: number;
+    installationNotes?: string;
+  }): Promise<PartsInventory | undefined> {
+    try {
+      const updatedItem = await this.updatePartsInventoryItem(inventoryId, {
+        status: 'installed',
+        currentLocation: 'client_location',
+        installedDate: new Date(),
+        installedByTechnicianId: installationData.installedByTechnicianId,
+        installationNotes: installationData.installationNotes,
+      });
+
+      if (updatedItem) {
+        console.log('✅ PROFESSIONAL INVENTORY: Deo uspešno ugrađen kod klijenta:', {
+          inventoryId: updatedItem.id,
+          partName: updatedItem.partName,
+          location: 'client_location'
+        });
+      }
+
+      return updatedItem;
+    } catch (error) {
+      console.error('Greška pri potvrdi ugradnje delova:', error);
+      return undefined;
+    }
+  }
+
+  async returnPartsToWarehouse(inventoryId: number, returnData: {
+    currentLocation: string;
+    returnNotes?: string;
+  }): Promise<PartsInventory | undefined> {
+    try {
+      const updatedItem = await this.updatePartsInventoryItem(inventoryId, {
+        status: 'returned',
+        currentLocation: returnData.currentLocation,
+        installationNotes: returnData.returnNotes,
+      });
+
+      if (updatedItem) {
+        console.log('✅ PROFESSIONAL INVENTORY: Deo uspešno vraćen:', {
+          inventoryId: updatedItem.id,
+          partName: updatedItem.partName,
+          location: returnData.currentLocation
+        });
+      }
+
+      return updatedItem;
+    } catch (error) {
+      console.error('Greška pri vraćanju delova:', error);
+      return undefined;
+    }
   }
 }
 

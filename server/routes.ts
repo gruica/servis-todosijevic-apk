@@ -6304,6 +6304,250 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ============================================================================
+  // PROFESSIONAL PARTS INVENTORY MANAGEMENT SYSTEM API ENDPOINTS
+  // ============================================================================
+
+  // Get all inventory items (admin only)
+  app.get("/api/admin/parts-inventory", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const inventory = await storage.getAllPartsInventory();
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju inventory' });
+    }
+  });
+
+  // Get inventory items by status
+  app.get("/api/admin/parts-inventory/status/:status", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { status } = req.params;
+      const inventory = await storage.getPartsInventoryByStatus(status);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po statusu:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju inventory po statusu' });
+    }
+  });
+
+  // Get inventory items by location
+  app.get("/api/admin/parts-inventory/location/:location", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { location } = req.params;
+      const inventory = await storage.getPartsInventoryByLocation(location);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po lokaciji:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju inventory po lokaciji' });
+    }
+  });
+
+  // Get inventory items for service
+  app.get("/api/admin/parts-inventory/service/:serviceId", jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const inventory = await storage.getPartsInventoryByService(serviceId);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po servisu:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju inventory po servisu' });
+    }
+  });
+
+  // Get inventory items for technician
+  app.get("/api/admin/parts-inventory/technician/:technicianId", jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      const inventory = await storage.getPartsInventoryByTechnician(technicianId);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri dohvatanju inventory po serviseru:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju inventory po serviseru' });
+    }
+  });
+
+  // Search inventory
+  app.get("/api/admin/parts-inventory/search", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: 'Search term je obavezan' });
+      }
+      const inventory = await storage.searchPartsInventory(q);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Greška pri pretrazi inventory:', error);
+      res.status(500).json({ error: 'Greška pri pretrazi inventory' });
+    }
+  });
+
+  // Receive parts from order into inventory (workflow: pending → received)
+  app.post("/api/admin/parts-inventory/receive/:orderId", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { actualCost, supplierInvoiceNumber, warehouseLocation, batchNumber, receivingNotes } = req.body;
+      const adminId = req.user.id;
+
+      const inventoryItem = await storage.receivePartsFromOrder(orderId, {
+        actualCost,
+        supplierInvoiceNumber,
+        warehouseLocation,
+        batchNumber,
+        receivingNotes,
+        receivedByAdminId: adminId
+      });
+
+      console.log('✅ PROFESSIONAL INVENTORY API: Deo uspešno primljen u magacin:', {
+        inventoryId: inventoryItem.id,
+        orderId,
+        partName: inventoryItem.partName
+      });
+
+      res.json({
+        success: true,
+        message: 'Deo uspešno primljen u magacin',
+        inventoryItem
+      });
+    } catch (error) {
+      console.error('Greška pri primanju delova:', error);
+      res.status(500).json({ error: error.message || 'Greška pri primanju delova' });
+    }
+  });
+
+  // Allocate parts to service (workflow: received → allocated)
+  app.post("/api/admin/parts-inventory/:inventoryId/allocate", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const inventoryId = parseInt(req.params.inventoryId);
+      const { serviceId, technicianId } = req.body;
+      const adminId = req.user.id;
+
+      if (!serviceId || !technicianId) {
+        return res.status(400).json({ error: 'ServiceId i technicianId su obavezni' });
+      }
+
+      const updatedItem = await storage.allocatePartsToService(inventoryId, serviceId, technicianId, adminId);
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Inventory item nije pronađen' });
+      }
+
+      console.log('✅ PROFESSIONAL INVENTORY API: Deo uspešno dodeljen servisu:', {
+        inventoryId,
+        serviceId,
+        technicianId
+      });
+
+      res.json({
+        success: true,
+        message: 'Deo uspešno dodeljen servisu',
+        inventoryItem: updatedItem
+      });
+    } catch (error) {
+      console.error('Greška pri dodeli delova servisu:', error);
+      res.status(500).json({ error: error.message || 'Greška pri dodeli delova servisu' });
+    }
+  });
+
+  // Dispatch parts to technician (workflow: allocated → dispatched)
+  app.post("/api/admin/parts-inventory/:inventoryId/dispatch", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const inventoryId = parseInt(req.params.inventoryId);
+      const { dispatchNotes } = req.body;
+      const adminId = req.user.id;
+
+      const updatedItem = await storage.dispatchPartsToTechnician(inventoryId, {
+        dispatchedByAdminId: adminId,
+        dispatchNotes
+      });
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Inventory item nije pronađen' });
+      }
+
+      console.log('✅ PROFESSIONAL INVENTORY API: Deo uspešno otpremljen serviseru:', {
+        inventoryId,
+        technicianId: updatedItem.allocatedToTechnicianId
+      });
+
+      res.json({
+        success: true,
+        message: 'Deo uspešno otpremljen serviseru',
+        inventoryItem: updatedItem
+      });
+    } catch (error) {
+      console.error('Greška pri otpremanju delova:', error);
+      res.status(500).json({ error: error.message || 'Greška pri otpremanju delova' });
+    }
+  });
+
+  // Confirm parts installation (workflow: dispatched → installed)
+  app.post("/api/parts-inventory/:inventoryId/install", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const inventoryId = parseInt(req.params.inventoryId);
+      const { installationNotes } = req.body;
+      const technicianId = req.user.technicianId || req.user.id;
+
+      const updatedItem = await storage.confirmPartsInstallation(inventoryId, {
+        installedByTechnicianId: technicianId,
+        installationNotes
+      });
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Inventory item nije pronađen' });
+      }
+
+      console.log('✅ PROFESSIONAL INVENTORY API: Deo uspešno ugrađen:', {
+        inventoryId,
+        technicianId
+      });
+
+      res.json({
+        success: true,
+        message: 'Deo uspešno ugrađen kod klijenta',
+        inventoryItem: updatedItem
+      });
+    } catch (error) {
+      console.error('Greška pri potvrdi ugradnje:', error);
+      res.status(500).json({ error: error.message || 'Greška pri potvrdi ugradnje' });
+    }
+  });
+
+  // Return parts to warehouse (workflow: any → returned)
+  app.post("/api/admin/parts-inventory/:inventoryId/return", jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const inventoryId = parseInt(req.params.inventoryId);
+      const { currentLocation, returnNotes } = req.body;
+
+      if (!currentLocation) {
+        return res.status(400).json({ error: 'CurrentLocation je obavezan' });
+      }
+
+      const updatedItem = await storage.returnPartsToWarehouse(inventoryId, {
+        currentLocation,
+        returnNotes
+      });
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: 'Inventory item nije pronađen' });
+      }
+
+      console.log('✅ PROFESSIONAL INVENTORY API: Deo uspešno vraćen:', {
+        inventoryId,
+        location: currentLocation
+      });
+
+      res.json({
+        success: true,
+        message: 'Deo uspešno vraćen',
+        inventoryItem: updatedItem
+      });
+    } catch (error) {
+      console.error('Greška pri vraćanju delova:', error);
+      res.status(500).json({ error: error.message || 'Greška pri vraćanju delova' });
+    }
+  });
+
   // Data export endpoints - CSV and Excel
   app.get("/api/export/data/:table", async (req, res) => {
     try {

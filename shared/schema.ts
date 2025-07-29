@@ -740,7 +740,106 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
 export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
 export type SparePartOrder = typeof sparePartOrders.$inferSelect;
 
-// Tabela za dostupne rezervne delove (available parts)
+// Professional Parts Inventory Management System
+export const partsInventory = pgTable("parts_inventory", {
+  id: serial("id").primaryKey(),
+  originalOrderId: integer("original_order_id").references(() => sparePartOrders.id), // Originalna porudžbina
+  partName: text("part_name").notNull(),
+  partNumber: text("part_number"),
+  manufacturer: text("manufacturer"),
+  quantity: integer("quantity").notNull().default(1),
+  
+  // Inventory Status Tracking
+  status: text("status", { enum: ["received", "allocated", "dispatched", "installed", "returned"] }).notNull().default("received"),
+  currentLocation: text("current_location", { enum: ["main_warehouse", "field_storage", "technician_van", "client_location", "repair_center", "supplier"] }).notNull().default("main_warehouse"),
+  
+  // Service Assignment
+  allocatedToServiceId: integer("allocated_to_service_id").references(() => services.id),
+  allocatedToTechnicianId: integer("allocated_to_technician_id").references(() => technicians.id),
+  allocatedDate: timestamp("allocated_date"),
+  allocatedByAdminId: integer("allocated_by_admin_id").references(() => users.id),
+  
+  // Dispatch Tracking  
+  dispatchedDate: timestamp("dispatched_date"),
+  dispatchedByAdminId: integer("dispatched_by_admin_id").references(() => users.id),
+  dispatchNotes: text("dispatch_notes"),
+  
+  // Installation Tracking
+  installedDate: timestamp("installed_date"),
+  installedByTechnicianId: integer("installed_by_technician_id").references(() => technicians.id),
+  installationNotes: text("installation_notes"),
+  
+  // Physical Tracking
+  actualCost: text("actual_cost"),
+  supplierInvoiceNumber: text("supplier_invoice_number"),
+  warehouseLocation: text("warehouse_location"), // A1, B2, C3 - fizička lokacija u magacinu
+  batchNumber: text("batch_number"),
+  expiryDate: timestamp("expiry_date"),
+  
+  // Audit Trail
+  receivedDate: timestamp("received_date").defaultNow().notNull(),
+  receivedByAdminId: integer("received_by_admin_id").references(() => users.id).notNull(),
+  receivingNotes: text("receiving_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Parts Inventory Validation Schemas
+export const insertPartsInventorySchema = createInsertSchema(partsInventory).pick({
+  originalOrderId: true,
+  partName: true,
+  partNumber: true,
+  manufacturer: true,
+  quantity: true,
+  status: true,
+  currentLocation: true,
+  actualCost: true,
+  supplierInvoiceNumber: true,
+  warehouseLocation: true,
+  batchNumber: true,
+  expiryDate: true,
+  receivedByAdminId: true,
+  receivingNotes: true,
+}).extend({
+  originalOrderId: z.number().int().positive("ID originalne porudžbine mora biti pozitivan broj").optional(),
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
+  partNumber: z.string().max(100, "Broj dela je predugačak").optional(),
+  manufacturer: z.string().max(100, "Proizvođač je predugačak").optional(),
+  quantity: z.number().int().min(1, "Količina mora biti najmanje 1").max(999, "Količina je prevelika"),
+  actualCost: z.string().max(20, "Cena je predugačka").optional(),
+  supplierInvoiceNumber: z.string().max(100, "Broj fakture je predugačak").optional(),
+  warehouseLocation: z.string().max(20, "Lokacija u magacinu je predugačka").optional(),
+  batchNumber: z.string().max(50, "Batch broj je predugačak").optional(),
+  receivedByAdminId: z.number().int().positive("ID administratora mora biti pozitivan broj"),
+  receivingNotes: z.string().max(500, "Napomene su predugačke").optional(),
+});
+
+export type InsertPartsInventory = z.infer<typeof insertPartsInventorySchema>;
+export type PartsInventory = typeof partsInventory.$inferSelect;
+
+// Tabela za dostupne rezervne delove (available parts) - LEGACY
+// Professional Inventory Management System - Status Enums
+export const sparePartsStatusEnum = pgEnum("spare_parts_status", [
+  "pending",      // Na čekanju - tek poručeno
+  "ordered",      // Poručen - poslato dobavljaču
+  "received",     // Stigao - u magacinu, spreman za dodelu
+  "allocated",    // Dodeljen - dodeljen određenom servisu
+  "dispatched",   // Otpremljen - poslat serviseru/na teren
+  "installed",    // Ugađen - ugrađen u aparat
+  "returned",     // Vraćen - neispravka ili nekorišćen
+  "cancelled"     // Otkazan
+]);
+
+export const inventoryLocationEnum = pgEnum("inventory_location", [
+  "main_warehouse",    // Glavni magacin
+  "field_storage",     // Teren magacin
+  "technician_van",    // Vozilo servisera
+  "client_location",   // Kod klijenta
+  "repair_center",     // Servisni centar
+  "supplier"           // Kod dobavljača
+]);
+
 export const messageTypeEnum = pgEnum("message_type", ["inquiry", "complaint", "request", "update", "urgent"]);
 export const messageStatusEnum = pgEnum("message_status", ["unread", "read", "replied", "archived"]);
 export const messagePriorityEnum = pgEnum("message_priority", ["low", "normal", "high", "urgent"]);
