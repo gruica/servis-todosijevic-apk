@@ -20,6 +20,7 @@ import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-ve
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
+import { BusinessPartnerNotificationService } from "./business-partner-notifications";
 import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
 import { setupWebScrapingRoutes } from './web-scraping-routes';
 // SMS mobile functionality has been completely removed
@@ -8853,6 +8854,65 @@ Admin panel - automatska porudžbina
 
   // Register Web Scraping routes
   setupWebScrapingRoutes(app);
+
+  // Business Partner Notifications API endpoints
+  
+  // Get all business partner notifications (admin only)
+  app.get("/api/admin/business-partner-notifications", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const notifications = await BusinessPartnerNotificationService.getBusinessPartnerNotifications(100);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Greška pri dobijanju BP notifikacija:", error);
+      res.status(500).json({ error: "Greška pri dobijanju notifikacija" });
+    }
+  });
+
+  // Get unread business partner notifications count (admin only)
+  app.get("/api/admin/business-partner-notifications/unread-count", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const count = await BusinessPartnerNotificationService.getUnreadBusinessPartnerNotificationsCount();
+      res.json(count);
+    } catch (error) {
+      console.error("Greška pri dobijanju broja nepročitanih BP notifikacija:", error);
+      res.status(500).json({ error: "Greška pri dobijanju broja notifikacija" });
+    }
+  });
+
+  // Mark business partner notification as read (admin only)
+  app.patch("/api/admin/business-partner-notifications/:id/read", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await BusinessPartnerNotificationService.markBusinessPartnerNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju BP notifikacije kao pročitane:", error);
+      res.status(500).json({ error: "Greška pri označavanju notifikacije" });
+    }
+  });
+
+  // Mark all business partner notifications as read (admin only)
+  app.patch("/api/admin/business-partner-notifications/mark-all-read", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      await BusinessPartnerNotificationService.markAllBusinessPartnerNotificationsAsRead();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju svih BP notifikacija kao pročitane:", error);
+      res.status(500).json({ error: "Greška pri označavanju notifikacija" });
+    }
+  });
+
+  // Delete business partner notification (admin only)
+  app.delete("/api/admin/business-partner-notifications/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await BusinessPartnerNotificationService.deleteBusinessPartnerNotification(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri brisanju BP notifikacije:", error);
+      res.status(500).json({ error: "Greška pri brisanju notifikacije" });
+    }
+  });
 
   // Business Partner Admin API Endpoints
   app.get("/api/admin/business-partner-services", jwtAuth, requireRole(['admin']), async (req, res) => {

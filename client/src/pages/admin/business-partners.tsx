@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { BusinessPartnerNotifications } from "@/components/admin/business-partner-notifications";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
@@ -298,10 +299,14 @@ export default function BusinessPartnersAdminPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               Pregled zahteva
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Notifikacije
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -576,6 +581,10 @@ export default function BusinessPartnersAdminPage() {
                 </ScrollArea>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <BusinessPartnerNotifications />
           </TabsContent>
 
           <TabsContent value="analytics">
