@@ -8854,6 +8854,223 @@ Admin panel - automatska porudžbina
   // Register Web Scraping routes
   setupWebScrapingRoutes(app);
 
+  // Business Partner Admin API Endpoints
+  app.get("/api/admin/business-partner-services", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Fetch all services created by business partners
+      const services = await db.query.services.findMany({
+        where: (services, { isNotNull }) => isNotNull(services.businessPartnerId),
+        with: {
+          client: {
+            columns: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+              address: true,
+              city: true
+            }
+          },
+          appliance: {
+            with: {
+              category: {
+                columns: { name: true, icon: true }
+              },
+              manufacturer: {
+                columns: { name: true }
+              }
+            }
+          },
+          technician: {
+            columns: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+              specialization: true
+            }
+          },
+          businessPartner: {
+            columns: {
+              id: true,
+              fullName: true,
+              companyName: true,
+              phone: true,
+              email: true
+            }
+          }
+        },
+        orderBy: (services, { desc }) => [desc(services.createdAt)]
+      });
+
+      // Process services to add calculated fields
+      const enrichedServices = services
+        .filter(service => service.businessPartner) // Only business partner services
+        .map(service => {
+          const createdAt = new Date(service.createdAt);
+          const now = new Date();
+          const responseTime = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)); // in hours
+          
+          // Determine priority based on service status and age
+          let priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium';
+          if (service.status === 'pending' && responseTime > 24) priority = 'urgent';
+          else if (service.status === 'pending' && responseTime > 8) priority = 'high';
+          else if (service.status === 'completed') priority = 'low';
+          
+          // Check if overdue (more than 24h for pending)
+          const isOverdue = service.status === 'pending' && responseTime > 24;
+          
+          return {
+            ...service,
+            priority,
+            responseTime,
+            isOverdue,
+            businessPartnerCompany: service.businessPartner?.companyName || 'Unknown'
+          };
+        });
+
+      res.json(enrichedServices);
+    } catch (error) {
+      console.error("Error fetching business partner services:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju business partner servisa" });
+    }
+  });
+
+  app.get("/api/admin/business-partner-stats", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Get all business partner services
+      const services = await db.query.services.findMany({
+        where: (services, { isNotNull }) => isNotNull(services.businessPartnerId),
+        with: {
+          businessPartner: {
+            columns: { companyName: true }
+          }
+        }
+      });
+
+      const now = new Date();
+      const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      // Calculate statistics
+      const totalRequests = services.length;
+      const pendingRequests = services.filter(s => s.status === 'pending').length;
+      const activeRequests = services.filter(s => ['assigned', 'scheduled', 'in_progress'].includes(s.status)).length;
+      const completedRequests = services.filter(s => s.status === 'completed').length;
+      const thisMonthRequests = services.filter(s => new Date(s.createdAt) >= thisMonth).length;
+      
+      // Calculate overdue requests (pending > 24h)
+      const overdueRequests = services.filter(s => {
+        if (s.status !== 'pending') return false;
+        const createdAt = new Date(s.createdAt);
+        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        return hoursDiff > 24;
+      }).length;
+      
+      // Calculate average response time for completed services
+      const completedServices = services.filter(s => s.status === 'completed');
+      const avgResponseTime = completedServices.length > 0 
+        ? Math.round(completedServices.reduce((sum, s) => {
+            const createdAt = new Date(s.createdAt);
+            const updatedAt = new Date(s.updatedAt);
+            return sum + (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          }, 0) / completedServices.length)
+        : 0;
+      
+      // Get unique partner count
+      const uniquePartners = new Set(services.map(s => s.businessPartner?.companyName).filter(Boolean));
+      const partnerCount = uniquePartners.size;
+      
+      // Calculate top partners
+      const partnerStats = Array.from(uniquePartners).map(companyName => {
+        const partnerServices = services.filter(s => s.businessPartner?.companyName === companyName);
+        const completedPartnerServices = partnerServices.filter(s => s.status === 'completed');
+        
+        const avgResponseTime = completedPartnerServices.length > 0
+          ? Math.round(completedPartnerServices.reduce((sum, s) => {
+              const createdAt = new Date(s.createdAt);
+              const updatedAt = new Date(s.updatedAt);
+              return sum + (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+            }, 0) / completedPartnerServices.length)
+          : 0;
+        
+        return {
+          companyName,
+          requestCount: partnerServices.length,
+          avgResponseTime,
+          satisfactionScore: Math.round(85 + Math.random() * 15) // Mock satisfaction score for now
+        };
+      }).sort((a, b) => b.requestCount - a.requestCount).slice(0, 5);
+
+      res.json({
+        totalRequests,
+        pendingRequests,
+        activeRequests,
+        completedRequests,
+        averageResponseTime: avgResponseTime,
+        overdueRequests,
+        partnerCount,
+        thisMonthRequests,
+        topPartners: partnerStats
+      });
+    } catch (error) {
+      console.error("Error fetching business partner stats:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistike business partnera" });
+    }
+  });
+
+  app.put("/api/admin/business-partner-services/:id/priority", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { priority } = req.body;
+      
+      if (!['low', 'medium', 'high', 'urgent'].includes(priority)) {
+        return res.status(400).json({ error: "Nevaljan prioritet" });
+      }
+      
+      // Update service priority (we'll store this in service technicianNotes for now)
+      const existingService = await db.query.services.findFirst({
+        where: eq(schema.services.id, parseInt(id))
+      });
+      
+      if (!existingService) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      const updatedNotes = `Priority: ${priority}${existingService.technicianNotes ? '\n' + existingService.technicianNotes : ''}`;
+      
+      await db.update(schema.services)
+        .set({ 
+          technicianNotes: updatedNotes,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(schema.services.id, parseInt(id)));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating service priority:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju prioriteta" });
+    }
+  });
+
+  // Get business partner pending count for sidebar
+  app.get("/api/admin/business-partner-pending-count", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const pendingCount = await db.select({ count: count() })
+        .from(schema.services)
+        .where(
+          and(
+            isNotNull(schema.services.businessPartnerId),
+            eq(schema.services.status, 'pending')
+          )
+        );
+      
+      res.json({ count: pendingCount[0]?.count || 0 });
+    } catch (error) {
+      console.error("Error fetching business partner pending count:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju broja pending BP zahteva" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

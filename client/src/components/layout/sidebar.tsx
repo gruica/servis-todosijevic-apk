@@ -22,6 +22,15 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     select: (data: any[]) => Array.isArray(data) ? data.length : 0,
   });
 
+  // Fetch pending business partner requests count for admin users
+  const { data: pendingBusinessPartnerCount = 0 } = useQuery({
+    queryKey: ['/api/admin/business-partner-pending-count'],
+    enabled: user?.role === 'admin',
+    refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 1,
+    select: (data: any) => data?.count || 0,
+  });
+
   // Define menu items based on user role
   // Verzija 2 - Samo najbitnije opcije
   const adminMenuItems = [
@@ -30,6 +39,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/admin/services", label: "Servisi", icon: "build" },
     { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: "package", highlight: true },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "group" },
+    { path: "/admin/business-partners", label: "Business Partneri", icon: "business", highlight: true, badge: pendingBusinessPartnerCount },
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
     { path: "/admin/available-parts", label: "Dostupni djelovi", icon: "package", highlight: true },
     { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: "category", highlight: true },
@@ -132,6 +142,11 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                     {item.path === "/admin/spare-parts" && pendingSparePartsCount > 0 && (
                       <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded animate-pulse">
                         {pendingSparePartsCount}
+                      </span>
+                    )}
+                    {item.path === "/admin/business-partners" && pendingBusinessPartnerCount > 0 && (
+                      <span className="ml-2 bg-purple-500 text-white text-xs px-2 py-1 rounded animate-pulse">
+                        {pendingBusinessPartnerCount}
                       </span>
                     )}
                   </div>
