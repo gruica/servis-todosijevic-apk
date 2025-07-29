@@ -2564,6 +2564,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COM PLUS ENDPOINTS - Specijalizovani panel za Com Plus brendove
   const COM_PLUS_BRANDS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
 
+  // Get Com Plus statistics (admin and complus_admin only)
+  app.get("/api/complus/stats", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      console.log(`📊 COM PLUS STATS: Računam statistike za Com Plus brendove`);
+      
+      // Count total Com Plus services
+      const totalResult = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.services)
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .where(inArray(schema.manufacturers.name, COM_PLUS_BRANDS));
+      
+      // Count active services (pending, assigned, in_progress, scheduled)
+      const activeResult = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.services)
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .where(
+          and(
+            inArray(schema.manufacturers.name, COM_PLUS_BRANDS),
+            inArray(schema.services.status, ['pending', 'assigned', 'in_progress', 'scheduled', 'waiting_parts'])
+          )
+        );
+      
+      // Count completed services this month
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      
+      const completedThisMonthResult = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.services)
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .where(
+          and(
+            inArray(schema.manufacturers.name, COM_PLUS_BRANDS),
+            eq(schema.services.status, 'completed'),
+            sql`DATE(${schema.services.completedDate}) >= ${firstDayOfMonth.toISOString().split('T')[0]}`,
+            sql`DATE(${schema.services.completedDate}) <= ${lastDayOfMonth.toISOString().split('T')[0]}`
+          )
+        );
+      
+      // Count warranty services
+      const warrantyResult = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.services)
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .where(
+          and(
+            inArray(schema.manufacturers.name, COM_PLUS_BRANDS),
+            eq(schema.services.warrantyStatus, 'u garanciji')
+          )
+        );
+      
+      const stats = {
+        total: Number(totalResult[0]?.count || 0),
+        active: Number(activeResult[0]?.count || 0),
+        completedThisMonth: Number(completedThisMonthResult[0]?.count || 0),
+        warranty: Number(warrantyResult[0]?.count || 0)
+      };
+      
+      console.log(`📊 COM PLUS STATS: Rezultat`, stats);
+      res.json(stats);
+    } catch (error) {
+      console.error('Greška pri dohvatanju Com Plus statistika:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju statistika' });
+    }
+  });
+
   // Get Com Plus services (admin and complus_admin only)
   app.get("/api/complus/services", jwtAuth, async (req, res) => {
     if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
