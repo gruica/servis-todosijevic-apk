@@ -132,9 +132,18 @@ export default function ComplusDashboard() {
   });
 
   // Query za tehnician-e
-  const { data: technicians = [] } = useQuery<Technician[]>({
+  const { data: technicians = [], isLoading: isLoadingTechnicians } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
   });
+
+  // Debug console log for technicians
+  React.useEffect(() => {
+    console.log("🔧 TECHNICIANS DATA:", {
+      count: technicians.length,
+      isLoading: isLoadingTechnicians,
+      technicians: technicians.map(t => ({ id: t.id, name: t.fullName, active: t.active }))
+    });
+  }, [technicians, isLoadingTechnicians]);
 
 
   // Mutation za dodelu servisa tehnician-u

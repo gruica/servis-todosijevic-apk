@@ -100,6 +100,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
+  // Get all technicians (admin and complus_admin only)
+  app.get('/api/technicians', jwtAuth, async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'complus_admin') {
+      return res.status(403).json({ error: 'Admin pristup potreban' });
+    }
+
+    try {
+      const technicians = await storage.getAllTechnicians();
+      res.json(technicians);
+    } catch (error) {
+      console.error('Greška pri dohvatanju tehničara:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju tehničara' });
+    }
+  });
+
   // Backend endpoint za statistike servisera
   app.get('/api/technicians/:id/stats', jwtAuth, async (req, res) => {
     try {
