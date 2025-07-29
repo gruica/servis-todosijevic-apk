@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Settings, Home, Menu, X, ClipboardCheck } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
+// REMOVED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 interface CustomerLayoutProps {
   children: ReactNode;
@@ -122,7 +122,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
             <span className="ml-2 text-sm text-gray-500">| Klijent</span>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationsDropdown />
+            {/* TEMPORARILY REMOVED: <NotificationsDropdown /> */}
             <Button
               variant="outline"
               size="sm"

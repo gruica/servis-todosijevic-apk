@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
+// REMOVED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 interface BusinessLayoutProps {
   children: ReactNode;
@@ -137,7 +137,7 @@ export default function BusinessLayout({ children }: BusinessLayoutProps) {
             <span className="ml-2 text-sm text-gray-500">| Poslovni partner</span>
           </div>
           <div className="flex items-center gap-2">
-            <NotificationsDropdown />
+            {/* TEMPORARILY REMOVED: <NotificationsDropdown /> */}
             <Button
               variant="outline"
               size="sm"

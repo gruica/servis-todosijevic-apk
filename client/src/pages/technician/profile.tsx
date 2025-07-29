@@ -12,7 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Loader2, Lock, User, CheckCircle2, Phone, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
-import { NotificationsDropdown } from "@/components/notifications-dropdown";
+// REMOVED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
 
 // Šema za validaciju promjene šifre
 const changePasswordSchema = z.object({
@@ -64,7 +64,10 @@ export default function TechnicianProfilePage() {
   // Mutacija za promjenu šifre
   const changePasswordMutation = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      const response = await apiRequest("POST", "/api/change-password", data);
+      const response = await apiRequest("/api/change-password", {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
       return await response.json();
     },
     onSuccess: () => {
@@ -127,7 +130,7 @@ export default function TechnicianProfilePage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Moj profil</h1>
         <div className="flex items-center gap-4">
-          <NotificationsDropdown />
+          {/* TEMPORARILY REMOVED: <NotificationsDropdown /> */}
           <Button 
             variant="destructive" 
             onClick={() => {

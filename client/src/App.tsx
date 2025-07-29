@@ -20,7 +20,6 @@ import AdminWebScrapingPage from "@/pages/admin/web-scraping";
 import Appliances from "@/pages/appliances";
 import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
-import TechnicianServicesWorking from "@/pages/technician/services-working";
 import TechnicianServicesMobile from "@/pages/technician/services-mobile";
 import TechnicianProfile from "@/pages/technician/profile";
 import TechnicianServicesList from "@/pages/technician-services";
@@ -128,7 +127,6 @@ function Router() {
       
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServicesMobile} allowedRoles={["technician"]} />
-      <RoleProtectedRoute path="/tech/legacy" component={TechnicianServicesWorking} allowedRoles={["technician"]} />
       <RoleProtectedRoute path="/tech/profile" component={TechnicianProfile} allowedRoles={["technician"]} />
       
       {/* Customer routes */}
