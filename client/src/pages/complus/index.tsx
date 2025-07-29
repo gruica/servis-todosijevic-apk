@@ -122,7 +122,7 @@ export default function ComplusDashboard() {
   }, [services]);
 
   // Query za Com Plus statistike
-  const { data: stats = {} } = useQuery<{
+  const { data: stats = { total: 0, active: 0, completedThisMonth: 0, warranty: 0 } } = useQuery<{
     total: number;
     active: number;
     completedThisMonth: number;
@@ -140,7 +140,7 @@ export default function ComplusDashboard() {
   // Mutation za dodelu servisa tehnician-u
   const assignTechnicianMutation = useMutation({
     mutationFn: async ({ serviceId, technicianId }: { serviceId: number; technicianId: number }) => {
-      const response = await apiRequest(`/api/admin/services/${serviceId}/assign-technician`, {
+      const response = await apiRequest(`/api/services/${serviceId}`, {
         method: 'PUT',
         body: JSON.stringify({ technicianId })
       });
@@ -168,8 +168,9 @@ export default function ComplusDashboard() {
   // Mutation za povlačenje servisa od servisera
   const removeTechnicianMutation = useMutation({
     mutationFn: async (serviceId: number) => {
-      const response = await apiRequest(`/api/admin/services/${serviceId}/remove-technician`, {
-        method: 'PUT'
+      const response = await apiRequest(`/api/services/${serviceId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ technicianId: null })
       });
       return response.json();
     },
