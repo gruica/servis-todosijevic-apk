@@ -113,7 +113,7 @@ export default function ComplusBillingReport() {
     document.body.removeChild(link);
   };
 
-  // Handle print functionality for comprehensive report
+  // Handle print functionality for horizontal table layout (20 services per page)
   const handlePrintReport = () => {
     if (!billingData?.services.length) return;
     
@@ -125,73 +125,124 @@ export default function ComplusBillingReport() {
         <head>
           <title>ComPlus Fakturisanje - ${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-            .summary { background: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-            .service-card { border: 1px solid #ddd; margin-bottom: 20px; padding: 15px; page-break-inside: avoid; }
-            .service-header { background: #e3f2fd; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 5px 5px 0 0; }
-            .info-section { display: inline-block; width: 30%; vertical-align: top; margin-right: 3%; margin-bottom: 15px; }
-            .info-title { font-weight: bold; color: #1976d2; margin-bottom: 8px; }
-            .info-item { margin-bottom: 5px; }
-            .cost-highlight { font-size: 18px; font-weight: bold; color: #2e7d32; }
-            @media print { body { margin: 0; } .no-print { display: none; } }
+            @page { size: A4 landscape; margin: 15mm; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              font-size: 9px; 
+              line-height: 1.2; 
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 15px; 
+              border-bottom: 2px solid #333; 
+              padding-bottom: 8px; 
+            }
+            .header h1 { margin: 0; font-size: 16px; }
+            .header h2 { margin: 5px 0; font-size: 14px; }
+            .header p { margin: 0; font-size: 10px; }
+            .summary { 
+              background: #f5f5f5; 
+              padding: 8px; 
+              margin-bottom: 10px; 
+              font-size: 10px;
+              display: flex;
+              justify-content: space-between;
+            }
+            .services-table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              font-size: 8px;
+            }
+            .services-table th { 
+              background: #e3f2fd; 
+              border: 1px solid #ccc; 
+              padding: 4px 2px; 
+              text-align: left; 
+              font-weight: bold;
+              white-space: nowrap;
+            }
+            .services-table td { 
+              border: 1px solid #ccc; 
+              padding: 3px 2px; 
+              vertical-align: top;
+              max-width: 80px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .services-table tr:nth-child(even) { background: #f9f9f9; }
+            .services-table tr:hover { background: #f0f8ff; }
+            .service-number { font-weight: bold; color: #1976d2; }
+            .cost { font-weight: bold; color: #2e7d32; }
+            .brand { font-size: 7px; color: #666; }
+            .phone { font-size: 7px; }
+            .serial { font-size: 6px; font-family: monospace; }
+            .footer { 
+              margin-top: 10px; 
+              text-align: center; 
+              font-size: 8px; 
+              color: #666; 
+            }
+            @media print { 
+              body { margin: 0; } 
+              .no-print { display: none; }
+              .services-table { page-break-inside: auto; }
+              .services-table tr { page-break-inside: avoid; }
+            }
           </style>
         </head>
         <body>
           <div class="header">
             <h1>ComPlus Fakturisanje</h1>
             <h2>${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</h2>
-            <p>Detaljni izveštaj o završenim garancijskim servisima</p>
+            <p>Završeni garancijski servisi - Svi ComPlus brendovi</p>
           </div>
           
           <div class="summary">
-            <h3>Rezime meseca</h3>
-            <p><strong>Ukupno servisa:</strong> ${billingData.totalServices}</p>
-            <p><strong>Ukupna vrednost:</strong> ${billingData.totalCost.toFixed(2)} €</p>
-            <p><strong>Brendovi:</strong> ${billingData.brandBreakdown.map(b => `${b.brand} (${b.count})`).join(', ')}</p>
+            <div><strong>Ukupno servisa:</strong> ${billingData.totalServices}</div>
+            <div><strong>Ukupna vrednost:</strong> ${billingData.totalCost.toFixed(2)} €</div>
+            <div><strong>Brendovi:</strong> ${billingData.brandBreakdown.map(b => `${b.brand} (${b.count})`).join(', ')}</div>
           </div>
           
-          ${billingData.services.map(service => `
-            <div class="service-card">
-              <div class="service-header">
-                <h3>Servis #${service.serviceNumber} - <span class="cost-highlight">${service.cost?.toFixed(2) || '0.00'} €</span></h3>
-                <p>Završeno: ${format(new Date(service.completedDate), 'dd.MM.yyyy')}</p>
-              </div>
-              
-              <div class="info-section">
-                <div class="info-title">📋 Podaci o klijentu</div>
-                <div class="info-item"><strong>Ime:</strong> ${service.clientName}</div>
-                <div class="info-item"><strong>Telefon:</strong> ${service.clientPhone}</div>
-                <div class="info-item"><strong>Adresa:</strong> ${service.clientAddress}</div>
-                <div class="info-item"><strong>Grad:</strong> ${service.clientCity}</div>
-              </div>
-              
-              <div class="info-section">
-                <div class="info-title">🔧 Podaci o aparatu</div>
-                <div class="info-item"><strong>Tip:</strong> ${service.applianceCategory}</div>
-                <div class="info-item"><strong>Brend:</strong> ${service.manufacturerName}</div>
-                <div class="info-item"><strong>Model:</strong> ${service.applianceModel}</div>
-                <div class="info-item"><strong>Serijski broj:</strong> ${service.serialNumber}</div>
-              </div>
-              
-              <div class="info-section">
-                <div class="info-title">👨‍🔧 Podaci o servisu</div>
-                <div class="info-item"><strong>Serviser:</strong> ${service.technicianName}</div>
-                <div class="info-item"><strong>Status:</strong> ${service.warrantyStatus}</div>
-                <div class="info-item"><strong>Troškovi:</strong> <span class="cost-highlight">${service.cost?.toFixed(2) || '0.00'} €</span></div>
-              </div>
-              
-              ${service.description ? `
-                <div style="clear: both; margin-top: 15px; padding: 10px; background: #f9f9f9; border-left: 4px solid #ccc;">
-                  <strong>Opis problema:</strong><br>
-                  ${service.description}
-                </div>
-              ` : ''}
-            </div>
-          `).join('')}
+          <table class="services-table">
+            <thead>
+              <tr>
+                <th style="width: 6%;">Servis #</th>
+                <th style="width: 14%;">Klijent</th>
+                <th style="width: 9%;">Telefon</th>
+                <th style="width: 12%;">Adresa</th>
+                <th style="width: 8%;">Grad</th>
+                <th style="width: 10%;">Uređaj</th>
+                <th style="width: 8%;">Brend</th>
+                <th style="width: 10%;">Model</th>
+                <th style="width: 9%;">Serijski #</th>
+                <th style="width: 9%;">Serviser</th>
+                <th style="width: 7%;">Završeno</th>
+                <th style="width: 6%;">Cena</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${billingData.services.map(service => `
+                <tr>
+                  <td class="service-number">#${service.serviceNumber}</td>
+                  <td>${service.clientName}</td>
+                  <td class="phone">${service.clientPhone}</td>
+                  <td>${service.clientAddress}</td>
+                  <td>${service.clientCity}</td>
+                  <td>${service.applianceCategory}</td>
+                  <td class="brand">${service.manufacturerName}</td>
+                  <td>${service.applianceModel}</td>
+                  <td class="serial">${service.serialNumber}</td>
+                  <td>${service.technicianName}</td>
+                  <td>${format(new Date(service.completedDate), 'dd.MM.yy')}</td>
+                  <td class="cost">${service.cost?.toFixed(2) || '0.00'}€</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
           
-          <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
-            Izveštaj generisan: ${format(new Date(), 'dd.MM.yyyy HH:mm')} | Frigo Sistem Todosijević
+          <div class="footer">
+            Izveštaj generisan: ${format(new Date(), 'dd.MM.yyyy HH:mm')} | Frigo Sistem Todosijević | ComPlus Fakturisanje
           </div>
         </body>
       </html>
