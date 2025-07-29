@@ -1122,7 +1122,7 @@ export default function ComplusDashboard() {
                                       </Button>
                                       <Button
                                         variant="destructive"
-                                        onClick={() => handleRemoveTechnician(service.id)}
+                                        onClick={handleRemoveTechnician}
                                         disabled={removeTechnicianMutation.isPending}
                                       >
                                         {removeTechnicianMutation.isPending ? "Povlačim..." : "Povuci servis"}
