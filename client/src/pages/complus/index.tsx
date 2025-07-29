@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -60,6 +62,9 @@ interface Technician {
 }
 
 export default function ComplusDashboard() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [brandFilter, setBrandFilter] = useState("all");
@@ -91,7 +96,6 @@ export default function ComplusDashboard() {
     purchaseDate: "",
     notes: ""
   });
-  const { toast } = useToast();
 
   // Query za Com Plus servise
   const { data: services = [], isLoading } = useQuery<Service[]>({
@@ -516,6 +520,49 @@ export default function ComplusDashboard() {
     });
   };
 
+  // CSV Export funkcija
+  const handleExportToCSV = () => {
+    if (!filteredServices.length) {
+      toast({
+        title: "Nema podataka",
+        description: "Nema servisa za izvoz u CSV.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const csvHeaders = 'Broj,Klijent,Telefon,Grad,Uređaj,Brend,Model,Serijski broj,Status,Garancija,Serviser,Kreiran,Završen,Cena,Opis\n';
+    
+    const csvData = filteredServices.map(service => 
+      `${service.id},"${service.clientName}","${service.clientPhone}","${service.clientCity}","${service.categoryName}","${service.manufacturerName}","${service.model || ''}","${service.serialNumber || ''}","${getStatusText(service.status)}","${service.warrantyStatus}","${service.technicianName || 'Nedodeljen'}","${format(new Date(service.createdAt), 'dd.MM.yyyy')}","${service.completedDate ? format(new Date(service.completedDate), 'dd.MM.yyyy') : ''}","${service.cost || 0}","${service.description.replace(/"/g, '""')}"`
+    ).join('\n');
+
+    const blob = new Blob([csvHeaders + csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ComPlus_servisi_${format(new Date(), 'dd-MM-yyyy')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Uspešno!",
+      description: `Izvezeno je ${filteredServices.length} servisa u CSV fajl.`,
+    });
+  };
+
+  // Logout funkcija
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("complus_login");
+    setLocation("/complus-auth");
+    toast({
+      title: "Uspešno!",
+      description: "Uspešno ste se odjavili iz Com Plus panela.",
+    });
+  };
+
   // Filtriranje servisa
   const filteredServices = services.filter((service: Service) => {
     const matchesSearch = 
@@ -569,7 +616,11 @@ export default function ComplusDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="secondary" className="flex items-center bg-white/10 hover:bg-white/20 text-white border-white/30">
+              <Button 
+                variant="secondary" 
+                className="flex items-center bg-white/10 hover:bg-white/20 text-white border-white/30"
+                onClick={handleExportToCSV}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Izvoz CSV
               </Button>
@@ -579,6 +630,14 @@ export default function ComplusDashboard() {
               >
                 <Package className="w-4 h-4 mr-2" />
                 Novi servis
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="flex items-center bg-red-500/10 hover:bg-red-500/20 text-white border-red-300/30"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Odjavi se
               </Button>
             </div>
           </div>
