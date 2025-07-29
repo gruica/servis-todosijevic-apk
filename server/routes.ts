@@ -4403,7 +4403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(
           and(
             eq(schema.services.status, 'completed'),
-            eq(schema.services.warrantyStatus, 'in_warranty'),
+            eq(schema.services.warrantyStatus, 'u garanciji'),
             or(
               eq(schema.manufacturers.name, 'Electrolux'),
               eq(schema.manufacturers.name, 'Elica'),
