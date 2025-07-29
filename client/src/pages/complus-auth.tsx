@@ -20,15 +20,8 @@ export default function ComplusAuthPage() {
     setIsLoading(true);
     setError("");
 
-    // Validacija Com Plus kredencijala
-    if (username !== "teodora@frigosistemtodosijevic.com" || password !== "Teodora123") {
-      setError("Neispravni Com Plus kredencijali");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Prijavi se sa Teodorinim kredencijalima preko JWT auth
+      // Prijavi se preko standardne JWT autentifikacije
       const response = await apiRequest("/api/jwt-login", {
         method: "POST",
         body: JSON.stringify({
@@ -37,19 +30,25 @@ export default function ComplusAuthPage() {
         })
       });
 
-      const data = await response.json() as { token?: string };
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Neispravni kredencijali" }));
+        throw new Error(errorData.error || "Neispravni kredencijali");
+      }
 
-      if (data?.token) {
+      const data = await response.json() as { user?: any, token?: string };
+
+      // Proveri da li je korisnik complus_admin ili admin
+      if (data?.user && (data.user.role === 'complus_admin' || data.user.role === 'admin') && data?.token) {
         localStorage.setItem("auth_token", data.token);
         // Postavi flag da je Com Plus login
         localStorage.setItem("complus_login", "true");
         navigate("/complus");
       } else {
-        setError("Greška pri prijavi na Com Plus panel");
+        setError("Nemate dozvolu za pristup Com Plus panelu. Potrebna je complus_admin ili admin uloga.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Com Plus login error:", error);
-      setError("Greška pri povezivanju sa Com Plus panelom");
+      setError(error.message || "Greška pri povezivanju sa Com Plus panelom");
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +78,7 @@ export default function ComplusAuthPage() {
                 <Input
                   id="username"
                   type="email"
-                  placeholder="teodora@frigosistemtodosijevic.com"
+                  placeholder="Unesite vaš email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
