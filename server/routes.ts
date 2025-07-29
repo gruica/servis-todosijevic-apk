@@ -21,6 +21,7 @@ import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitS
 import { emailVerificationService } from "./email-verification";
 import { NotificationService } from "./notification-service";
 import { BusinessPartnerNotificationService } from "./business-partner-notifications";
+import { BusinessPartnerMessageService } from "./business-partner-messages";
 import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
 import { setupWebScrapingRoutes } from './web-scraping-routes';
 // SMS mobile functionality has been completely removed
@@ -8855,6 +8856,98 @@ Admin panel - automatska porudžbina
   // Register Web Scraping routes
   setupWebScrapingRoutes(app);
 
+  // Business Partner Messages API endpoints
+  
+  // Get all business partner messages (admin only)
+  app.get("/api/admin/business-partner-messages", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messages = await BusinessPartnerMessageService.getAllBusinessPartnerMessages(100);
+      res.json(messages);
+    } catch (error) {
+      console.error("Greška pri dobijanju BP poruka:", error);
+      res.status(500).json({ error: "Greška pri dobijanju poruka" });
+    }
+  });
+
+  // Get business partner message statistics (admin only)
+  app.get("/api/admin/business-partner-messages/stats", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const stats = await BusinessPartnerMessageService.getBusinessPartnerMessageStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Greška pri dobijanju BP poruka statistika:", error);
+      res.status(500).json({ error: "Greška pri dobijanju statistika" });
+    }
+  });
+
+  // Mark business partner message as read (admin only)
+  app.patch("/api/admin/business-partner-messages/:id/read", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await BusinessPartnerMessageService.markMessageAsRead(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju BP poruke kao pročitane:", error);
+      res.status(500).json({ error: "Greška pri označavanju poruke" });
+    }
+  });
+
+  // Reply to business partner message (admin only)
+  app.post("/api/admin/business-partner-messages/:id/reply", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: "Sadržaj odgovora je obavezan" });
+      }
+
+      await BusinessPartnerMessageService.replyToMessage(messageId, req.user.id, content);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri odgovoru na BP poruku:", error);
+      res.status(500).json({ error: "Greška pri slanju odgovora" });
+    }
+  });
+
+  // Star/unstar business partner message (admin only)
+  app.patch("/api/admin/business-partner-messages/:id/star", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const { isStarred } = req.body;
+      
+      await BusinessPartnerMessageService.toggleStarMessage(messageId, isStarred);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri označavanju BP poruke kao važne:", error);
+      res.status(500).json({ error: "Greška pri označavanju poruke" });
+    }
+  });
+
+  // Archive business partner message (admin only)
+  app.patch("/api/admin/business-partner-messages/:id/archive", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await BusinessPartnerMessageService.archiveMessage(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri arhiviranju BP poruke:", error);
+      res.status(500).json({ error: "Greška pri arhiviranju poruke" });
+    }
+  });
+
+  // Delete business partner message (admin only)
+  app.delete("/api/admin/business-partner-messages/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await BusinessPartnerMessageService.deleteMessage(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Greška pri brisanju BP poruke:", error);
+      res.status(500).json({ error: "Greška pri brisanju poruke" });
+    }
+  });
+
   // Business Partner Notifications API endpoints
   
   // Get all business partner notifications (admin only)
@@ -9132,5 +9225,80 @@ Admin panel - automatska porudžbina
   });
 
   const httpServer = createServer(app);
+  // Business Partner Messages API Endpoints
+  const businessPartnerMessageService = new BusinessPartnerMessageService();
+
+  // Get all business partner messages
+  app.get("/api/admin/business-partner-messages", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messages = await businessPartnerMessageService.getAllMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching business partner messages:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju poruka" });
+    }
+  });
+
+  // Create new business partner message
+  app.post("/api/admin/business-partner-messages", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { subject, content, messageType, priority } = req.body;
+      
+      const messageData = {
+        subject,
+        content,
+        messageType,
+        priority: priority || 'normal',
+        status: 'unread' as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isStarred: false
+      };
+
+      const message = await businessPartnerMessageService.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating business partner message:", error);
+      res.status(500).json({ error: "Greška pri kreiranju poruke" });
+    }
+  });
+
+  // Update business partner message
+  app.put("/api/admin/business-partner-messages/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const message = await businessPartnerMessageService.updateMessage(messageId, updateData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating business partner message:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju poruke" });
+    }
+  });
+
+  // Delete business partner message
+  app.delete("/api/admin/business-partner-messages/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      await businessPartnerMessageService.deleteMessage(messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting business partner message:", error);
+      res.status(500).json({ error: "Greška pri brisanju poruke" });
+    }
+  });
+
+  // Get message statistics
+  app.get("/api/admin/business-partner-messages/stats", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const stats = await businessPartnerMessageService.getMessageStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching message stats:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistika poruka" });
+    }
+  });
+
   return httpServer;
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -738,6 +738,38 @@ export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
 export type SparePartOrder = typeof sparePartOrders.$inferSelect;
 
 // Tabela za dostupne rezervne delove (available parts)
+export const messageTypeEnum = pgEnum("message_type", ["inquiry", "complaint", "request", "update", "urgent"]);
+export const messageStatusEnum = pgEnum("message_status", ["unread", "read", "replied", "archived"]);
+export const messagePriorityEnum = pgEnum("message_priority", ["low", "normal", "high", "urgent"]);
+
+export const businessPartnerMessages = pgTable("business_partner_messages", {
+  id: serial("id").primaryKey(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(),
+  messageType: messageTypeEnum("message_type").notNull(),
+  priority: messagePriorityEnum("priority").notNull().default('normal'),
+  status: messageStatusEnum("status").notNull().default('unread'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isStarred: boolean("is_starred").default(false).notNull(),
+  
+  // Sender information
+  senderName: text("sender_name").notNull(),
+  senderEmail: text("sender_email").notNull(),
+  senderCompany: text("sender_company").notNull(),
+  senderPhone: text("sender_phone"),
+  
+  // Related data
+  relatedServiceId: integer("related_service_id"),
+  relatedClientName: text("related_client_name"),
+  attachments: text("attachments").array(),
+  
+  // Admin response
+  adminResponse: text("admin_response"),
+  adminRespondedAt: timestamp("admin_responded_at"),
+  adminRespondedBy: text("admin_responded_by"),
+});
+
 export const availableParts = pgTable("available_parts", {
   id: serial("id").primaryKey(),
   partName: text("part_name").notNull(),

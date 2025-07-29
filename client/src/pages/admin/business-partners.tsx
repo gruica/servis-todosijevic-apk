@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BusinessPartnerNotifications } from "@/components/admin/business-partner-notifications";
+import BusinessPartnerMessages from "@/components/admin/business-partner-messages";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
@@ -308,13 +309,16 @@ export default function BusinessPartnersAdminPage() {
               <MessageSquare className="h-4 w-4" />
               Notifikacije
             </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Poruke
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs bg-purple-100 text-purple-700 animate-pulse">
+                Phase 3
+              </Badge>
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analitika
-            </TabsTrigger>
-            <TabsTrigger value="partners" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Partneri
             </TabsTrigger>
           </TabsList>
 
@@ -587,6 +591,10 @@ export default function BusinessPartnersAdminPage() {
             <BusinessPartnerNotifications />
           </TabsContent>
 
+          <TabsContent value="messages" className="space-y-6">
+            <BusinessPartnerMessages />
+          </TabsContent>
+
           <TabsContent value="analytics">
             <Card>
               <CardHeader>
@@ -599,23 +607,6 @@ export default function BusinessPartnersAdminPage() {
                 <div className="text-center py-12">
                   <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">Analitika će biti implementirana u sledećoj fazi</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="partners">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Upravljanje partnerima
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Partner management će biti implementiran u sledećoj fazi</p>
                 </div>
               </CardContent>
             </Card>
