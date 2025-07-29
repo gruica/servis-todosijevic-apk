@@ -67,6 +67,8 @@ export default function ComplusDashboard() {
   const [selectedServiceForAssign, setSelectedServiceForAssign] = useState<Service | null>(null);
   const [selectedServiceForRemove, setSelectedServiceForRemove] = useState<Service | null>(null);
   const [selectedServiceForDelete, setSelectedServiceForDelete] = useState<Service | null>(null);
+  const [selectedServicesForBulkDelete, setSelectedServicesForBulkDelete] = useState<number[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState("");
   const [viewingService, setViewingService] = useState<Service | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -218,7 +220,39 @@ export default function ComplusDashboard() {
     },
   });
 
-
+  // Mutation za bulk brisanje servisa
+  const bulkDeleteServicesMutation = useMutation({
+    mutationFn: async (serviceIds: number[]) => {
+      const results = await Promise.allSettled(
+        serviceIds.map(id => 
+          apiRequest(`/api/admin/services/${id}`, { method: 'DELETE' })
+        )
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      return { successful, failed, total: serviceIds.length };
+    },
+    onSuccess: ({ successful, failed, total }) => {
+      toast({
+        title: "Bulk brisanje završeno!",
+        description: `Uspešno obrisano: ${successful}/${total} servisa. ${failed > 0 ? `Neuspešno: ${failed}` : ''}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/complus/stats"] });
+      setSelectedServicesForBulkDelete([]);
+      setShowBulkDeleteDialog(false);
+    },
+    onError: (error) => {
+      console.error("Greška pri bulk brisanju:", error);
+      toast({
+        title: "Greška",
+        description: "Greška pri bulk brisanju servisa.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Query za Com Plus aparate
   const { data: appliances = [] } = useQuery<any[]>({
@@ -367,6 +401,50 @@ export default function ComplusDashboard() {
     
     // Resetuj state nakon mutation
     setSelectedServiceForDelete(null);
+  };
+
+  // Funkcija za pronalaženje duplikata
+  const findDuplicateServices = () => {
+    const groups: { [key: string]: Service[] } = {};
+    
+    services.forEach(service => {
+      const key = `${service.clientName}|${service.categoryName}|${service.manufacturerName}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(service);
+    });
+    
+    return Object.entries(groups)
+      .filter(([_, serviceGroup]) => serviceGroup.length > 1)
+      .map(([key, serviceGroup]) => {
+        const sortedServices = serviceGroup.sort((a, b) => a.id - b.id);
+        return {
+          key,
+          toKeep: sortedServices[0],
+          toDelete: sortedServices.slice(1)
+        };
+      });
+  };
+
+  // Funkcija za bulk select duplikata
+  const handleSelectDuplicatesForDeletion = () => {
+    const duplicates = findDuplicateServices();
+    const servicesToDelete = duplicates.flatMap(group => group.toDelete.map(s => s.id));
+    setSelectedServicesForBulkDelete(servicesToDelete);
+    setShowBulkDeleteDialog(true);
+  };
+
+  // Funkcija za bulk brisanje
+  const handleBulkDeleteServices = () => {
+    if (selectedServicesForBulkDelete.length === 0) {
+      toast({
+        title: "Greška",
+        description: "Nema selektovanih servisa za brisanje.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    bulkDeleteServicesMutation.mutate(selectedServicesForBulkDelete);
   };
 
   const handleEditService = (service: Service) => {
