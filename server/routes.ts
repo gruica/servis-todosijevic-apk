@@ -2561,6 +2561,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COM PLUS ENDPOINTS - Specijalizovani panel za Com Plus brendove
+  const COM_PLUS_BRANDS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
+
+  // Get Com Plus services (admin and complus_admin only)
+  app.get("/api/complus/services", jwtAuth, async (req, res) => {
+    if (req.user.role !== "admin" && req.user.role !== "complus_admin") {
+      return res.status(403).json({ error: "Admin pristup potreban" });
+    }
+
+    try {
+      const { status, brand, warranty } = req.query;
+      
+      console.log(`🏭 COM PLUS: Dohvatam Com Plus servise sa JOIN query-jem`);
+      
+      // Direct query sa JOIN da dobijemo manufacturerName
+      const complusServicesQuery = await db
+        .select({
+          id: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          businessPartnerId: schema.services.businessPartnerId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          scheduledDate: schema.services.scheduledDate,
+          completedDate: schema.services.completedDate,
+          cost: schema.services.cost,
+          technicianNotes: schema.services.technicianNotes,
+          createdAt: schema.services.createdAt,
+          usedParts: schema.services.usedParts,
+          machineNotes: schema.services.machineNotes,
+          // Related data
+          clientName: schema.clients.fullName,
+          clientContact: schema.clients.phone,
+          clientLocation: schema.clients.city,
+          applianceInfo: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          technicianName: schema.technicians.fullName,
+          businessPartnerName: schema.users.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .leftJoin(schema.users, eq(schema.services.businessPartnerId, schema.users.id))
+        .where(inArray(schema.manufacturers.name, COM_PLUS_BRANDS))
+        .orderBy(desc(schema.services.createdAt));
+
+      let complusServices = complusServicesQuery;
+      console.log(`🏭 COM PLUS: Pronađeno ${complusServices.length} Com Plus servisa`);
+
+      // Apply additional filters
+      if (status && status !== "all") {
+        complusServices = complusServices.filter((service: any) => service.status === status);
+      }
+      
+      if (brand && brand !== "all") {
+        complusServices = complusServices.filter((service: any) => service.manufacturerName === brand);
+      }
+      
+      if (warranty && warranty !== "all") {
+        // Mapiranje iz srpskih naziva u database vrednosti
+        const warrantyMapping: Record<string, string> = {
+          "u garanciji": "in_warranty",
+          "van garancije": "out_of_warranty"
+        };
+        const dbWarranty = warrantyMapping[warranty as string] || warranty;
+        complusServices = complusServices.filter((service: any) => service.warrantyStatus === dbWarranty);
+      }
+
+      console.log(`🏭 COM PLUS: Nakon filtriranja ${complusServices.length} servisa`);
+      res.json(complusServices);
+    } catch (error) {
+      console.error("Error fetching Com Plus services:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju Com Plus servisa" });
+    }
+  });
+
   // System health endpoint
   app.get("/health", (req, res) => {
     res.json({ 
