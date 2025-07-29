@@ -31,7 +31,7 @@ import TechnicianServicesList from "@/pages/technician-services";
 import CreateTechnicianUser from "@/pages/create-technician-user";
 import MaintenanceSchedules from "@/pages/maintenance-schedules";
 import EmailSettings from "@/pages/email-settings";
-import EmailTest from "@/pages/email-test";
+
 import SQLAdmin from "@/pages/sql-admin";
 import ExcelImportExport from "@/pages/excel-import-export";
 import ExcelImport from "@/pages/admin/excel-import";
@@ -59,11 +59,11 @@ import BusinessComplus from "@/pages/business/complus";
 // Import the new HomePage
 import HomePage from "@/pages/home-page";
 import DiagnosticsPage from "@/pages/diagnostics";
-import OCRTestPage from "@/pages/ocr-test";
+
 import DiagnosticServicesPage from "@/pages/diagnostic-services";
 import SystemDiagnostics from "@/pages/system-diagnostics";
 import EmailVerificationDemo from "@/pages/email-verification-demo";
-import AdminCleanup from "@/pages/admin-cleanup";
+
 import DataExportPage from "@/pages/admin/data-export";
 import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 import SMSBulkPage from "@/pages/admin/sms-bulk";
@@ -82,7 +82,7 @@ function Router() {
       <Route path="/diagnostics" component={DiagnosticsPage} />
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />
       <Route path="/system-diagnostics" component={SystemDiagnostics} />
-      <Route path="/services-debug" component={React.lazy(() => import('@/pages/services-debug'))} />
+
       <Route path="/email-verification-demo" component={EmailVerificationDemo} />
       
       <Route path="/auth" component={AuthPage} />
@@ -112,7 +112,7 @@ function Router() {
       <RoleProtectedRoute path="/technician-services" component={TechnicianServicesList} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/maintenance-schedules" component={MaintenanceSchedules} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/email-settings" component={EmailSettings} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/email-test" component={EmailTest} allowedRoles={["admin"]} />
+
       <RoleProtectedRoute path="/sql-admin" component={SQLAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/excel" component={ExcelImportExport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
@@ -120,7 +120,7 @@ function Router() {
 
       <RoleProtectedRoute path="/admin/sms-mobile-api-config" component={SMSMobileAPIConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-bulk" component={SMSBulkPage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/cleanup" component={AdminCleanup} allowedRoles={["admin"]} />
+
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
       
@@ -129,8 +129,7 @@ function Router() {
       
       <RoleProtectedRoute path="/profile" component={UserProfile} allowedRoles={["admin"]} />
       
-      {/* OCR Test route - javno dostupna za testiranje kamera funkcionalnosti */}
-      <Route path="/ocr-test" component={OCRTestPage} />
+
       
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServicesMobile} allowedRoles={["technician"]} />

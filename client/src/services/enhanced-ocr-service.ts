@@ -261,21 +261,18 @@ export class EnhancedOCRService {
       result.manufacturerCode = detectedManufacturer;
     }
 
-    console.log('🏭 Detektovani proizvođač:', detectedManufacturer);
+
 
     // Koristi specifične pattern-e za detektovani proizvođač
-    const patterns = this.manufacturerPatterns[detectedManufacturer || 'generic'];
+    const patterns = this.manufacturerPatterns[detectedManufacturer as keyof typeof this.manufacturerPatterns] || this.manufacturerPatterns.generic;
 
     for (const line of lines) {
-      console.log(`📝 Analiziram liniju: "${line}"`);
-      
       // Pokušaj prepoznavanja modela
       if (!result.model) {
         for (const pattern of patterns.model) {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 3) {
             result.model = this.cleanData(match[1]);
-            console.log(`📱 Pronađen model: ${result.model} (pattern: ${pattern})`);
             break;
           }
         }
@@ -287,7 +284,6 @@ export class EnhancedOCRService {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 6) {
             result.serialNumber = this.cleanData(match[1]);
-            console.log(`🔢 Pronađen serijski: ${result.serialNumber} (pattern: ${pattern})`);
             break;
           }
         }
@@ -299,7 +295,6 @@ export class EnhancedOCRService {
           const match = line.match(pattern);
           if (match && match[1] && match[1].length >= 3) {
             result.productNumber = this.cleanData(match[1]);
-            console.log(`🏷️ Pronađen product code: ${result.productNumber} (pattern: ${pattern})`);
             break;
           }
         }

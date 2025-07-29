@@ -49,24 +49,11 @@ export default function AuthPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      console.log("Auth page: User already logged in, redirecting based on role:", user.role);
-      // Redirect to different pages based on user role
-      if (user.role === "technician") {
-        navigate("/tech");
-      } else if (user.role === "customer") {
-        navigate("/customer");
-      } else if (user.role === "admin") {
-        // Specijalna logika za Com Plus admin (Teodora)
-        if (user.companyName === "Com Plus") {
-          navigate("/complus");
-        } else {
-          navigate("/admin");
-        }
-      } else if (user.role === "business_partner" || user.role === "business") {
-        navigate("/business");
-      } else {
-        navigate("/");
-      }
+      const redirectPath = user.role === "technician" ? "/tech" :
+                         user.role === "customer" ? "/customer" :
+                         user.role === "admin" ? (user.companyName === "Com Plus" ? "/complus" : "/admin") :
+                         (user.role === "business_partner" || user.role === "business") ? "/business" : "/";
+      navigate(redirectPath);
     }
   }, [user, navigate]);
   
@@ -74,21 +61,9 @@ export default function AuthPage() {
   useEffect(() => {
     const logoutRequested = localStorage.getItem("logoutRequested");
     if (logoutRequested === "true") {
-      console.log("Explicit logout requested, cleaning up auth state");
-      
-      // Popravljamo localStorage
       localStorage.removeItem("logoutRequested");
-      
-      // Popravljamo queryClient cache
       queryClient.setQueryData(["/api/user"], null);
-      
-      // Popravljamo sesiju - dodatni korak za osiguranje
-      fetch("/api/logout", {
-        method: "POST",
-        credentials: "include"
-      }).then(() => {
-        console.log("Sesija očišćena nakon zahteva za odjavom");
-      });
+      fetch("/api/logout", { method: "POST", credentials: "include" });
     }
   }, []);
 
@@ -135,6 +110,7 @@ export default function AuthPage() {
       username: values.username,
       password: values.password,
       fullName: values.fullName,
+      email: values.username, // Koristimo username kao email
       phone: values.phone,
       address: values.address,
       city: values.city,
