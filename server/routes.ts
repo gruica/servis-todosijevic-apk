@@ -1145,6 +1145,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   });
+
+  // Admin Services Endpoint - za admin panel
+  app.get("/api/admin/services", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('Admin dohvatanje svih servisa');
+      
+      // Dohvati sve servise sa kompletnim podacima
+      const services = await storage.getAdminServices();
+      
+      console.log(`Admin API vraća ${services.length} servisa`);
+      
+      res.json(services);
+    } catch (error) {
+      console.error("Greška pri dobijanju admin servisa:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa" });
+    }
+  });
   
   // Business Partner API Endpoints - Enhanced with detailed service information
   app.get("/api/business/services", jwtAuth, async (req, res) => {
