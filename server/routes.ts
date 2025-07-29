@@ -94,6 +94,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
+  // Backend endpoint za statistike servisera
+  app.get('/api/technicians/:id/stats', jwtAuth, async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.id);
+      
+      // Proveri da li korisnik može pristupiti podacima (admin ili vlastiti podaci)
+      if (req.user.role !== 'admin' && req.user.technicianId !== technicianId) {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+
+      const services = await storage.getServicesByTechnician(technicianId);
+      
+      const stats = {
+        total_services: services.length,
+        completed_services: services.filter(s => s.status === 'completed').length,
+        pending_services: services.filter(s => ['pending', 'assigned', 'in_progress', 'scheduled', 'waiting_parts'].includes(s.status)).length,
+        this_month_completed: services.filter(s => {
+          if (s.status !== 'completed') return false;
+          const completedDate = new Date(s.updatedAt);
+          const now = new Date();
+          return completedDate.getMonth() === now.getMonth() && completedDate.getFullYear() === now.getFullYear();
+        }).length,
+        average_completion_days: 5.2, // Mock vrednost za sada
+        customer_rating: 4.8 // Mock vrednost za sada
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Greška pri dobijanju statistika servisera:', error);
+      res.status(500).json({ error: 'Greška pri dobijanju statistika' });
+    }
+  });
+
   app.get("/health", (req, res) => {
     res.status(200).json({ 
       status: "healthy", 

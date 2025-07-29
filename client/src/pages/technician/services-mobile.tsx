@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -449,59 +450,69 @@ export default function TechnicianServicesMobile() {
               {/* Menu Items */}
               <div className="p-6 space-y-4">
                 {/* Profile */}
-                <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Moj profil</p>
-                    <p className="text-sm text-gray-500">Pregled i izmena podataka</p>
-                  </div>
-                </button>
+                <Link href="/tech/my-profile">
+                  <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Moj profil</p>
+                      <p className="text-sm text-gray-500">Pregled i izmena podataka</p>
+                    </div>
+                  </button>
+                </Link>
 
                 {/* Notifications */}
-                <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-yellow-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Obaveštenja</p>
-                    <p className="text-sm text-gray-500">7 nepročitanih poruka</p>
-                  </div>
-                </button>
+                <Link href="/tech/notifications">
+                  <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Obaveštenja</p>
+                      <p className="text-sm text-gray-500">7 nepročitanih poruka</p>
+                    </div>
+                  </button>
+                </Link>
 
                 {/* Settings */}
-                <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Settings className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Postavke</p>
-                    <p className="text-sm text-gray-500">Konfiguracija aplikacije</p>
-                  </div>
-                </button>
+                <Link href="/tech/settings">
+                  <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <Settings className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Postavke</p>
+                      <p className="text-sm text-gray-500">Konfiguracija aplikacije</p>
+                    </div>
+                  </button>
+                </Link>
 
                 {/* Help */}
-                <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <HelpCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Pomoć</p>
-                    <p className="text-sm text-gray-500">Uputstva i podrška</p>
-                  </div>
-                </button>
+                <Link href="/tech/help">
+                  <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <HelpCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Pomoć</p>
+                      <p className="text-sm text-gray-500">Uputstva i podrška</p>
+                    </div>
+                  </button>
+                </Link>
 
                 {/* Contact */}
-                <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Kontakt</p>
-                    <p className="text-sm text-gray-500">067 077 092</p>
-                  </div>
-                </button>
+                <Link href="/tech/contact">
+                  <button className="w-full flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-gray-900">Kontakt</p>
+                      <p className="text-sm text-gray-500">067 077 092</p>
+                    </div>
+                  </button>
+                </Link>
 
                 {/* Divider */}
                 <hr className="my-6" />

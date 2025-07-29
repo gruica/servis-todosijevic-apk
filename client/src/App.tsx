@@ -22,6 +22,11 @@ import Users from "@/pages/users";
 import UserProfile from "@/pages/user-profile";
 import TechnicianServicesMobile from "@/pages/technician/services-mobile";
 import TechnicianProfile from "@/pages/technician/profile";
+import TechnicianMyProfile from "@/pages/technician/my-profile";
+import TechnicianNotifications from "@/pages/technician/notifications";
+import TechnicianSettings from "@/pages/technician/settings";
+import TechnicianHelp from "@/pages/technician/help";
+import TechnicianContact from "@/pages/technician/contact";
 import TechnicianServicesList from "@/pages/technician-services";
 import CreateTechnicianUser from "@/pages/create-technician-user";
 import MaintenanceSchedules from "@/pages/maintenance-schedules";
@@ -128,6 +133,11 @@ function Router() {
       {/* Technician routes */}
       <RoleProtectedRoute path="/tech" component={TechnicianServicesMobile} allowedRoles={["technician"]} />
       <RoleProtectedRoute path="/tech/profile" component={TechnicianProfile} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/my-profile" component={TechnicianMyProfile} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/notifications" component={TechnicianNotifications} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/settings" component={TechnicianSettings} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/help" component={TechnicianHelp} allowedRoles={["technician"]} />
+      <RoleProtectedRoute path="/tech/contact" component={TechnicianContact} allowedRoles={["technician"]} />
       
       {/* Customer routes */}
       <RoleProtectedRoute path="/customer" component={CustomerServiceRequest} allowedRoles={["customer"]} />
