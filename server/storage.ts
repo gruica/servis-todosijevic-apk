@@ -3058,22 +3058,46 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAdminService(id: number): Promise<boolean> {
     try {
+      console.log(`[DELETE SERVICE] Započinje brisanje servisa ID: ${id}`);
+      
       // Validacija da li je ID valjan
       if (isNaN(id) || id <= 0) {
         console.error('Nevaljan ID servisa za brisanje:', id);
         return false;
       }
 
-      // Prvo obriši sve povezane notifikacije samo ako postoje
-      await db
+      // Proverava da li servis uopšte postoji
+      const existingService = await db
+        .select()
+        .from(services)
+        .where(eq(services.id, id))
+        .limit(1);
+      
+      console.log(`[DELETE SERVICE] Servis sa ID ${id} postoji:`, existingService.length > 0);
+      
+      if (existingService.length === 0) {
+        console.log(`[DELETE SERVICE] Servis sa ID ${id} ne postoji u bazi`);
+        return false;
+      }
+
+      // Prvo obriši sve povezane notifikacije
+      console.log(`[DELETE SERVICE] Brišem povezane notifikacije za servis ${id}`);
+      const deletedNotifications = await db
         .delete(notifications)
-        .where(eq(notifications.relatedServiceId, id));
+        .where(eq(notifications.relatedServiceId, id))
+        .returning();
+      
+      console.log(`[DELETE SERVICE] Obrisano ${deletedNotifications.length} notifikacija`);
 
       // Zatim obriši sam servis
+      console.log(`[DELETE SERVICE] Brišem sam servis ${id}`);
       const result = await db
         .delete(services)
         .where(eq(services.id, id))
         .returning();
+
+      console.log(`[DELETE SERVICE] Rezultat brisanja servisa:`, result.length > 0 ? 'USPEŠNO' : 'NEUSPEŠNO');
+      console.log(`[DELETE SERVICE] Obrisani servis podaci:`, result.length > 0 ? result[0].id : 'nema podataka');
 
       return result.length > 0;
     } catch (error) {
