@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, X, RotateCcw, Zap, Settings, CheckCircle, AlertCircle, Maximize2, Minimize2, Flashlight, FlashlightOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { enhancedOCRService, ScannedData, OCRConfig } from '@/services/enhanced-ocr-service';
+import { robustOCRService } from '@/services/robust-ocr-service';
+import { cameraDiagnosticsService } from '@/services/camera-diagnostics';
+import { advancedCameraService, CameraStreamAnalysis } from '@/services/advanced-camera-features';
+import { ocrPerformanceOptimizer, PreprocessingConfig } from '@/services/ocr-performance-optimizer';
 
 interface EnhancedOCRCameraProps {
   isOpen: boolean;
@@ -32,6 +36,12 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   const [isAutoScanning, setIsAutoScanning] = useState(false);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const autoScanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [cameraCapabilities, setCameraCapabilities] = useState<any>(null);
+  const [diagnosticsComplete, setDiagnosticsComplete] = useState(false);
+  const [streamAnalysis, setStreamAnalysis] = useState<CameraStreamAnalysis | null>(null);
+  const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(true);
+  const [performanceOptimization, setPerformanceOptimization] = useState(true);
+  const streamAnalysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // OCR konfiguracija - uvek koristi "beko" za optimalne rezultate
   const [config, setConfig] = useState<OCRConfig>({
@@ -40,15 +50,54 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     manufacturerFocus: 'beko' // Forsiraj Beko pattern-e za najbolje rezultate
   });
 
-  const videoConstraints = {
-    width: { ideal: 1920, max: 1920 },
-    height: { ideal: 1080, max: 1080 },
-    facingMode: { ideal: "environment" },
-    focusMode: { ideal: "continuous" },
-    zoom: { ideal: 1.0 },
-    torch: flashEnabled,
-    advanced: [{ torch: flashEnabled }]
-  };
+  // Dinamički video constraints na osnovu camera capabilities
+  const videoConstraints = useMemo(() => {
+    const baseConstraints: any = {
+      facingMode: { ideal: "environment" }
+    };
+
+    if (cameraCapabilities) {
+      // Optimizuj rezoluciju na osnovu capabilities
+      if (cameraCapabilities.maxResolution) {
+        baseConstraints.width = { 
+          ideal: Math.min(1920, cameraCapabilities.maxResolution.width),
+          max: cameraCapabilities.maxResolution.width
+        };
+        baseConstraints.height = { 
+          ideal: Math.min(1080, cameraCapabilities.maxResolution.height),
+          max: cameraCapabilities.maxResolution.height
+        };
+      } else {
+        baseConstraints.width = { ideal: 1280, max: 1920 };
+        baseConstraints.height = { ideal: 720, max: 1080 };
+      }
+
+      // Dodaj napredne constraints ako su podržani
+      if (cameraCapabilities.constraints.canUseFocus) {
+        baseConstraints.focusMode = { ideal: "continuous" };
+      }
+      
+      if (cameraCapabilities.constraints.canUseZoom) {
+        baseConstraints.zoom = { ideal: 1.0 };
+      }
+
+      // Torch handling
+      if (cameraCapabilities.constraints.canUseTorch && flashEnabled) {
+        baseConstraints.torch = flashEnabled;
+        baseConstraints.advanced = [{ torch: flashEnabled }];
+      }
+    } else {
+      // Fallback constraints za nepoznate capabilities
+      baseConstraints.width = { ideal: 1280, max: 1920 };
+      baseConstraints.height = { ideal: 720, max: 1080 };
+      
+      if (flashEnabled) {
+        baseConstraints.advanced = [{ torch: flashEnabled }];
+      }
+    }
+
+    return baseConstraints;
+  }, [cameraCapabilities, flashEnabled]);
 
   // Funkcija za toggle flash-a
   const toggleFlash = useCallback(async () => {
@@ -81,16 +130,71 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     if (isInitialized) return;
     
     try {
-      setScanProgress(10);
-      await enhancedOCRService.initialize(config);
-      setIsInitialized(true);
-      setScanProgress(0);
+      console.log('🚀 ENHANCED OCR: Pokretanje robust inicijalizacije...');
+      setScanProgress(5);
+      
+      // Prvo izvrši dijagnostiku kamere
+      if (!diagnosticsComplete) {
+        console.log('🔍 Izvršavam camera dijagnostiku...');
+        const diagnosticsResult = await cameraDiagnosticsService.performFullDiagnostics();
+        setCameraCapabilities(diagnosticsResult.capabilities);
+        setDiagnosticsComplete(true);
+        
+        if (!diagnosticsResult.success) {
+          console.warn('⚠️ Camera dijagnostika: Problem detected', diagnosticsResult.errors);
+          // Ali nastavi sa OCR inicijalizacijom
+        }
+      }
+      
+      setScanProgress(20);
+      
+      // Inicijalizuj napredne servise
+      if (advancedFeaturesEnabled) {
+        console.log('⚡ Inicijalizujem napredne camera funkcionalnosti...');
+        await advancedCameraService.initialize();
+        setScanProgress(30);
+      }
+
+      if (performanceOptimization) {
+        console.log('🎯 Inicijalizujem OCR performance optimizer...');
+        await ocrPerformanceOptimizer.initialize();
+        setScanProgress(40);
+      }
+
+      // Inicijalizuj robust OCR servis
+      const ocrResult = await robustOCRService.initializeRobust(config);
+      
+      if (ocrResult.success) {
+        console.log('✅ Robust OCR inicijalizovan za', ocrResult.timeElapsed, 'ms');
+        setIsInitialized(true);
+        setScanProgress(0);
+        
+        // Pokreni stream analizu ako je enabled
+        if (advancedFeaturesEnabled && webcamRef.current?.video) {
+          startStreamAnalysis();
+        }
+      } else {
+        throw new Error(ocrResult.error || 'OCR inicijalizacija neuspešna');
+      }
+      
     } catch (err) {
-      console.error('Enhanced OCR initialization error:', err);
-      setError('Greška pri inicijalizaciji naprednog skenera');
+      console.error('❌ Enhanced OCR initialization error:', err);
+      setError(`Greška pri inicijalizaciji: ${err instanceof Error ? err.message : 'Nepoznata greška'}`);
       setScanProgress(0);
+      
+      // Pokušaj fallback na stari servis
+      try {
+        console.log('🔄 Pokušavam fallback na osnovni OCR...');
+        await enhancedOCRService.initialize(config);
+        setIsInitialized(true);
+        setError(null);
+        console.log('✅ Fallback OCR inicijalizovan');
+      } catch (fallbackErr) {
+        console.error('❌ I fallback OCR failed:', fallbackErr);
+        setError('OCR servis trenutno nije dostupan. Pokušajte ponovo.');
+      }
     }
-  }, [isInitialized, config]);
+  }, [isInitialized, config, diagnosticsComplete]);
 
   useEffect(() => {
     if (isOpen && !isInitialized) {
@@ -99,35 +203,77 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
   }, [isOpen, initializeOCR, isInitialized]);
 
   const captureAndScan = useCallback(async () => {
-    console.log('captureAndScan called', { isScanning, webcamRef: !!webcamRef.current });
+    console.log('🎯 CAPTURE AND SCAN: Pokretanje', { isScanning, webcamRef: !!webcamRef.current });
     if (!webcamRef.current || isScanning) return;
 
     try {
       setIsScanning(true);
       setError(null);
-      setScanProgress(20);
+      setScanProgress(10);
 
+      // Osiguraj da je OCR inicijalizovan
       if (!isInitialized) {
+        console.log('📋 OCR nije inicijalizovan, pokretam inicijalizaciju...');
         await initializeOCR();
       }
 
-      setScanProgress(40);
+      setScanProgress(30);
 
-      const imageSrc = webcamRef.current.getScreenshot({
+      // Optimizuj screenshot parametre na osnovu camera capabilities
+      const screenshotOptions = cameraCapabilities?.maxResolution ? {
+        width: Math.min(1920, cameraCapabilities.maxResolution.width),
+        height: Math.min(1080, cameraCapabilities.maxResolution.height)
+      } : {
         width: 1920,
         height: 1080
-      });
+      };
+
+      console.log('📸 Uzimam screenshot sa opcijama:', screenshotOptions);
+      const imageSrc = webcamRef.current.getScreenshot(screenshotOptions);
       
       if (!imageSrc) {
         throw new Error('Nije moguće uhvatiti sliku sa kamere');
       }
 
+      setScanProgress(50);
+
+      // Optimizuj sliku pre OCR-a ako je performance optimization enabled
+      let processedImageSrc = imageSrc;
+      if (performanceOptimization) {
+        console.log('⚡ Optimizujem sliku za OCR...');
+        const optimizationResult = await ocrPerformanceOptimizer.optimizeImageForOCR(imageSrc, {
+          enhanceContrast: true,
+          sharpenImage: true,
+          denoiseImage: false,
+          normalizeRotation: false,
+          cropToFocus: true,
+          scaleOptimization: true
+        });
+        
+        if (optimizationResult.success) {
+          console.log(`✅ Slika optimizovana za ${optimizationResult.processingTime}ms, score: ${optimizationResult.qualityScore}`);
+          // Note: U realnoj implementaciji bi processedImageSrc = optimizationResult.optimizedImage
+        }
+      }
+
       setScanProgress(60);
 
-      // Skeniraj sa naprednim podešavanjima
-      const scannedData = await enhancedOCRService.scanImage(imageSrc, config);
+      // Koristi robust OCR scanning
+      console.log('🔍 Pokretam robust OCR skeniranje...');
+      let scannedData: any;
       
+      if (robustOCRService.isWorkerReady()) {
+        // Pokušaj sa robust servisom
+        scannedData = await robustOCRService.scanImageRobust(processedImageSrc, config);
+        console.log('✅ Robust OCR završen:', scannedData);
+      } else {
+        // Fallback na osnovni servis
+        console.log('🔄 Fallback na osnovni OCR servis...');
+        scannedData = await enhancedOCRService.scanImage(processedImageSrc, config);
+      }
+
       setScanProgress(80);
+
       setLastScannedData(scannedData);
       setScanHistory(prev => [scannedData, ...prev.slice(0, 4)]); // Drži poslednje 5 skenova
       setScanProgress(100);
@@ -144,8 +290,9 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
       }
 
     } catch (err) {
-      console.error('Enhanced scanning error:', err);
-      setError('Greška pri skeniranju. Pokušajte sa boljim osvetljenjem ili držite kameru stabilno.');
+      console.error('❌ Enhanced scanning error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Nepoznata greška';
+      setError(`Greška pri skeniranju: ${errorMessage}. Pokušajte sa boljim osvetljenjem ili držite kameru stabilno.`);
     } finally {
       setIsScanning(false);
       setTimeout(() => setScanProgress(0), 2000);
@@ -299,9 +446,58 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
     setIsFullscreen(!isFullscreen);
   };
 
+  // Real-time stream analysis
+  const startStreamAnalysis = useCallback(() => {
+    if (!advancedFeaturesEnabled || !webcamRef.current?.video) return;
+    
+    // Cleanup postojeći interval
+    if (streamAnalysisIntervalRef.current) {
+      clearInterval(streamAnalysisIntervalRef.current);
+    }
+    
+    streamAnalysisIntervalRef.current = setInterval(async () => {
+      try {
+        if (webcamRef.current?.video && isInitialized) {
+          const videoElement = webcamRef.current.video;
+          
+          // Set current stream u advanced camera service
+          if (videoElement.srcObject instanceof MediaStream) {
+            advancedCameraService.setCurrentStream(videoElement.srcObject);
+          }
+          
+          // Analiziraj trenutni stream
+          const analysis = await advancedCameraService.analyzeCurrentStream(videoElement);
+          setStreamAnalysis(analysis);
+          
+          // Auto-optimizacija camera settings na osnovu analize
+          if (videoElement.srcObject instanceof MediaStream) {
+            await advancedCameraService.optimizeCameraSettings(
+              videoElement.srcObject, 
+              analysis
+            );
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Stream analysis greška:', error);
+      }
+    }, 2000); // Analiziraj svakih 2 sekunde
+    
+    console.log('📊 Stream analysis pokrenuta');
+  }, [advancedFeaturesEnabled, isInitialized]);
+
+  const stopStreamAnalysis = useCallback(() => {
+    if (streamAnalysisIntervalRef.current) {
+      clearInterval(streamAnalysisIntervalRef.current);
+      streamAnalysisIntervalRef.current = null;
+    }
+    setStreamAnalysis(null);
+    console.log('🛑 Stream analysis zaustavljena');
+  }, []);
+
   const handleClose = () => {
     resetScan();
     setScanHistory([]);
+    stopStreamAnalysis();
     onClose();
   };
 
@@ -393,9 +589,14 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                   screenshotFormat="image/jpeg"
                   videoConstraints={videoConstraints}
                   className="w-full h-full object-cover"
-                  onUserMedia={() => {
+                  onUserMedia={(stream) => {
                     console.log('Kamera inicijalizovana');
                     setIsInitialized(true);
+                    
+                    // Pokreni stream analizu kada je kamera ready
+                    if (advancedFeaturesEnabled) {
+                      setTimeout(() => startStreamAnalysis(), 1000);
+                    }
                   }}
                   onUserMediaError={(err) => {
                     console.error('Greška prilikom pristupa kameri:', err);
@@ -423,8 +624,8 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                       </Badge>
                     </div>
                     
-                    {/* Status indikatori */}
-                    <div className="absolute -bottom-8 left-0 right-0 flex justify-center gap-1 md:gap-2">
+                    {/* Status indikatori i stream analysis */}
+                    <div className="absolute -bottom-12 left-0 right-0 flex justify-center gap-1 md:gap-2 flex-wrap">
                       <Badge variant={isInitialized ? "default" : "secondary"} className="text-xs">
                         {isInitialized ? <CheckCircle className="h-2.5 w-2.5 mr-1" /> : <AlertCircle className="h-2.5 w-2.5 mr-1" />}
                         OCR
@@ -439,7 +640,44 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                         <Zap className="h-2.5 w-2.5 mr-1" />
                         Auto
                       </Badge>
+                      
+                      {/* Advanced features indicators */}
+                      {advancedFeaturesEnabled && streamAnalysis && (
+                        <>
+                          <Badge 
+                            variant={streamAnalysis.isStable ? "default" : "destructive"} 
+                            className="text-xs"
+                          >
+                            {streamAnalysis.isStable ? '📷 Stabilno' : '📱 Nestabilno'}
+                          </Badge>
+                          <Badge 
+                            variant={streamAnalysis.brightness > 40 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            💡 {streamAnalysis.brightness}%
+                          </Badge>
+                          <Badge 
+                            variant={streamAnalysis.sharpness > 50 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            🎯 {streamAnalysis.sharpness}%
+                          </Badge>
+                        </>
+                      )}
                     </div>
+                  
+                    {/* Real-time guidance */}
+                    {advancedFeaturesEnabled && streamAnalysis && streamAnalysis.recommendation !== 'good' && (
+                      <div className="absolute -bottom-24 left-0 right-0 px-4">
+                        <Alert className="bg-black/80 border-yellow-500 text-white">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            {advancedCameraService.getStabilizationGuidance(streamAnalysis).icon}{' '}
+                            {advancedCameraService.getStabilizationGuidance(streamAnalysis).message}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
                   </div>
 
                   {/* Zatamnjenje oko okvira */}
@@ -475,6 +713,73 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
 
           <TabsContent value="settings" className="p-4 space-y-4">
             <div className="space-y-4">
+              {/* Camera Diagnostics Panel */}
+              {cameraCapabilities && (
+                <div className="space-y-3 border rounded p-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Camera Dijagnostika
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>Kamera:</span>
+                        <Badge variant={cameraCapabilities.hasCamera ? "default" : "destructive"} className="text-xs">
+                          {cameraCapabilities.hasCamera ? '✅' : '❌'}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Flash:</span>
+                        <Badge variant={cameraCapabilities.hasTorch ? "default" : "secondary"} className="text-xs">
+                          {cameraCapabilities.hasTorch ? '✅' : '⚠️'}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Focus:</span>
+                        <Badge variant={cameraCapabilities.constraints.canUseFocus ? "default" : "secondary"} className="text-xs">
+                          {cameraCapabilities.constraints.canUseFocus ? '✅' : '❌'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="text-xs">
+                        <span className="font-medium">Tip:</span> {cameraCapabilities.deviceType}
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-medium">Browser:</span> {cameraCapabilities.browserInfo.name}
+                      </div>
+                      {cameraCapabilities.maxResolution && (
+                        <div className="text-xs">
+                          <span className="font-medium">Max rezolucija:</span> {cameraCapabilities.maxResolution.width}x{cameraCapabilities.maxResolution.height}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* OCR Status Panel */}
+              <div className="border rounded p-3">
+                <h4 className="font-medium flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4" />
+                  OCR Status
+                </h4>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span>Robust OCR:</span>
+                    <Badge variant={robustOCRService.isWorkerReady() ? "default" : "secondary"} className="text-xs">
+                      {robustOCRService.isWorkerReady() ? '✅ Spreman' : '⏳ Inicijalizuje'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pokušaji:</span>
+                    <span>{robustOCRService.getInitializationAttempts()}/3</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium">Pre-obrada slike</h4>
@@ -505,6 +810,37 @@ export function EnhancedOCRCamera({ isOpen, onClose, onDataScanned, manufacturer
                 <Switch
                   checked={autoScanEnabled}
                   onCheckedChange={setAutoScanEnabled}
+                />
+              </div>
+
+              {/* Advanced Features Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Napredne funkcionalnosti</h4>
+                  <p className="text-sm text-gray-600">Real-time analiza, auto-optimizacija i stabilization guidance</p>
+                </div>
+                <Switch
+                  checked={advancedFeaturesEnabled}
+                  onCheckedChange={(checked) => {
+                    setAdvancedFeaturesEnabled(checked);
+                    if (checked && isInitialized) {
+                      setTimeout(() => startStreamAnalysis(), 500);
+                    } else {
+                      stopStreamAnalysis();
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Performance Optimization Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Performance optimizacija</h4>
+                  <p className="text-sm text-gray-600">Napredna predobrada slike za bolje OCR rezultate</p>
+                </div>
+                <Switch
+                  checked={performanceOptimization}
+                  onCheckedChange={setPerformanceOptimization}
                 />
               </div>
 
