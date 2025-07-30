@@ -60,22 +60,23 @@ export class SMSTemplates {
   // ADMINISTRATORSKI SMS OBAVEŠTENJA (KOMPAKTNI FORMAT)
   
   static adminStatusChange(data: SMSTemplateData): string {
-    const message = `PROMENA STANJA - Servis #${data.serviceId}. Klijent: ${data.clientName || 'Nepoznat'}, Uredjaj: ${data.deviceType || 'Nepoznat'}, Stanje: ${data.oldStatus} -> ${data.newStatus}`;
+    const message = `PROMENA - Servis #${data.serviceId}: ${data.clientName} (${data.clientPhone}), ${data.deviceType} ${data.manufacturerName || ''}, ${data.oldStatus}->${data.newStatus}, Tehnicar: ${data.technicianName}`;
     return this.validateSMSLength(message, 'admin_status_change');
   }
 
   static adminNewService(data: SMSTemplateData): string {
-    const message = `NOVI SERVIS #${data.serviceId} - Klijent: ${data.clientName}, Tel: ${data.clientPhone}, Uredjaj: ${data.deviceType}, Kreirao: ${data.createdBy || 'Upravljanje'}`;
+    const message = `NOVI SERVIS #${data.serviceId} - ${data.clientName} (${data.clientPhone}), ${data.deviceType} ${data.manufacturerName || ''}, Model: ${data.deviceModel || 'N/A'}, Kreirao: ${data.createdBy || 'Upravljanje'}`;
     return this.validateSMSLength(message, 'admin_new_service');
   }
 
   static adminTechnicianAssigned(data: SMSTemplateData): string {
-    const message = `DODELJEN TEHNICAR - Servis #${data.serviceId}, Tehnicar: ${data.technicianName}, Klijent: ${data.clientName}, Tel: ${data.clientPhone}`;
+    const message = `DODELJEN - ${data.technicianName} (${data.technicianPhone || 'N/A'}) za servis #${data.serviceId}: ${data.clientName} (${data.clientPhone}), ${data.deviceType} ${data.manufacturerName || ''}`;
     return this.validateSMSLength(message, 'admin_technician_assigned');
   }
 
   static adminPartsOrdered(data: SMSTemplateData): string {
-    const message = `PORUCEN DEO - Servis #${data.serviceId}, Deo: ${data.partName}, Klijent: ${data.clientName}, Tehnicar: ${data.technicianName}, Vreme: ${data.estimatedDate || '5-7 dana'}`;
+    const urgencyText = data.urgency === 'urgent' ? '[HITNO] ' : data.urgency === 'high' ? '[BRZO] ' : '';
+    const message = `${urgencyText}PORUCEN DEO - ${data.partName} za servis #${data.serviceId}: ${data.clientName}, ${data.deviceType}, Tehnicar: ${data.technicianName}, Vreme: ${data.estimatedDate || '5-7d'}`;
     return this.validateSMSLength(message, 'admin_parts_ordered');
   }
 
@@ -97,7 +98,8 @@ export class SMSTemplates {
   // KLIJENTSKI SMS OBAVEŠTENJA (KRATKI FORMAT)
 
   static clientServiceCompleted(data: SMSTemplateData): string {
-    const message = `Servis #${data.serviceId} za ${data.deviceType} je završen. Hvala na poverenju! Tel: 067051141`;
+    const costInfo = data.cost && parseFloat(data.cost) > 0 ? `, cena: ${data.cost}€` : '';
+    const message = `Servis #${data.serviceId} za ${data.deviceType} ${data.manufacturerName || ''} uspešno završen. Tehnicar: ${data.technicianName}${costInfo}. Hvala! Tel: 067051141`;
     return this.validateSMSLength(message, 'client_service_completed');
   }
 
@@ -107,7 +109,8 @@ export class SMSTemplates {
   }
 
   static clientSparePartOrdered(data: SMSTemplateData): string {
-    const message = `Porucen deo ${data.partName} za servis #${data.serviceId}. Pristice za ${data.estimatedDate || '5-7 dana'}. Tel: 067051141`;
+    const urgencyText = data.urgency === 'urgent' ? ' HITNO' : data.urgency === 'high' ? ' BRZO' : '';
+    const message = `Porucen deo "${data.partName}" za vas ${data.deviceType} ${data.manufacturerName || ''}${urgencyText}. Pristice za ${data.estimatedDate || '5-7 dana'}. Tel: 067051141`;
     return this.validateSMSLength(message, 'client_spare_part_ordered');
   }
 
@@ -124,7 +127,7 @@ export class SMSTemplates {
   // POSLOVNI PARTNERI SMS OBAVEŠTENJA (KRATKI FORMAT)
 
   static businessPartnerAssigned(data: SMSTemplateData): string {
-    const message = `Servis #${data.serviceId} za ${data.clientName} (${data.deviceType}) dodeljen tehničaru ${data.technicianName}. Stanje: upravljanje.`;
+    const message = `DODELJEN - Servis #${data.serviceId}: ${data.clientName} (${data.clientPhone}), ${data.deviceType} ${data.manufacturerName || ''}, Tehnicar: ${data.technicianName} (${data.technicianPhone || 'N/A'})`;
     return this.validateSMSLength(message, 'business_partner_assigned');
   }
 
@@ -146,7 +149,7 @@ export class SMSTemplates {
   // TEHNIČKI SMS OBAVEŠTENJA (KRATKI FORMAT)
 
   static technicianNewService(data: SMSTemplateData): string {
-    const message = `Novi servis #${data.serviceId}. Klijent: ${data.clientName}, Tel: ${data.clientPhone}, Uredjaj: ${data.deviceType}. Proveri sistem.`;
+    const message = `NOVI SERVIS #${data.serviceId} - ${data.clientName} (${data.clientPhone}), ${data.deviceType} ${data.manufacturerName || ''}, Model: ${data.deviceModel || 'N/A'}. Problem: ${data.problemDescription || 'Proveri sistem'}`;
     return this.validateSMSLength(message, 'technician_new_service');
   }
 
