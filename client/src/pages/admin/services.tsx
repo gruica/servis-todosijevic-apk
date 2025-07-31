@@ -119,6 +119,7 @@ export default function AdminServices() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [isSparePartsOpen, setIsSparePartsOpen] = useState(false);
   const [returnReason, setReturnReason] = useState("");
   const [returnNotes, setReturnNotes] = useState("");
   
@@ -1040,6 +1041,27 @@ export default function AdminServices() {
                       <p className="mt-1 text-sm">{selectedService.isCompletelyFixed ? "Da" : "Ne"}</p>
                     </div>
                   </div>
+                  
+                  {/* Dugme za poručivanje rezervnih delova */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Rezervni delovi</Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Poručite rezervne delove direktno za ovaj servis
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => setIsSparePartsOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        Poruči delove
+                      </Button>
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             )}
@@ -1276,6 +1298,69 @@ export default function AdminServices() {
                 disabled={returnServiceMutation.isPending || !returnReason}
               >
                 {returnServiceMutation.isPending ? "Vraćam..." : "Vrati servis"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Spare Parts Ordering Dialog */}
+        <Dialog open={isSparePartsOpen} onOpenChange={setIsSparePartsOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Poruči rezervne delove - Servis #{selectedService?.id}</DialogTitle>
+              <DialogDescription>
+                Poručite rezervne delove direktno za ovaj servis. Svi podaci o servisu će biti automatski popunjeni.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedService && (
+              <div className="space-y-4">
+                {/* Service Info Card */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-900 mb-2">Informacije o servisu</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Klijent:</span> {selectedService.client.fullName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Telefon:</span> {selectedService.client.phone}
+                    </div>
+                    <div>
+                      <span className="font-medium">Uređaj:</span> {selectedService.appliance.category.name}
+                    </div>
+                    <div>
+                      <span className="font-medium">Proizvođač:</span> {selectedService.appliance.manufacturer.name}
+                    </div>
+                    {selectedService.appliance.model && (
+                      <div>
+                        <span className="font-medium">Model:</span> {selectedService.appliance.model}
+                      </div>
+                    )}
+                    {selectedService.appliance.serialNumber && (
+                      <div>
+                        <span className="font-medium">Serijski broj:</span> {selectedService.appliance.serialNumber}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Spare Parts Form */}
+                <AdminSparePartsOrderingSimple 
+                  serviceId={selectedService.id}
+                  onSuccess={() => {
+                    setIsSparePartsOpen(false);
+                    toast({
+                      title: "Uspešno poručeno",
+                      description: "Rezervni deo je uspešno poručen.",
+                    });
+                  }}
+                />
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsSparePartsOpen(false)}>
+                Zatvori
               </Button>
             </DialogFooter>
           </DialogContent>
