@@ -72,9 +72,18 @@ interface BusinessPartnerService {
 interface BusinessPartnerStats {
   totalRequests: number;
   pendingRequests: number;
+  activeRequests: number;
   completedRequests: number;
   averageResponseTime: number;
-  satisfactionRate: number;
+  overdueRequests: number;
+  partnerCount: number;
+  thisMonthRequests: number;
+  topPartners: Array<{
+    companyName: string;
+    requestCount: number;
+    avgResponseTime: number;
+    satisfactionScore: number;
+  }>;
 }
 
 export default function BusinessPartnerManagementFixed() {
@@ -98,13 +107,21 @@ export default function BusinessPartnerManagementFixed() {
     queryFn: () => apiRequest("/api/admin/business-partner-stats")
   });
 
+  console.log("📊 Business Partner Stats Raw Data:", statsData);
+
   const stats: BusinessPartnerStats = statsData || {
     totalRequests: 0,
     pendingRequests: 0,
+    activeRequests: 0,
     completedRequests: 0,
     averageResponseTime: 0,
-    satisfactionRate: 0
+    overdueRequests: 0,
+    partnerCount: 0,
+    thisMonthRequests: 0,
+    topPartners: []
   };
+
+  console.log("📊 Business Partner Stats Processed:", stats);
 
   // Translations
   const statusTranslations: Record<string, string> = {
@@ -248,7 +265,7 @@ export default function BusinessPartnerManagementFixed() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -273,6 +290,18 @@ export default function BusinessPartnerManagementFixed() {
             </CardContent>
           </Card>
 
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-600 text-sm font-medium">Aktivni</p>
+                  <p className="text-2xl font-bold text-orange-900">{stats.activeRequests}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -293,6 +322,18 @@ export default function BusinessPartnerManagementFixed() {
                   <p className="text-2xl font-bold text-purple-900">{stats.averageResponseTime}h</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-600 text-sm font-medium">Prekoračeni</p>
+                  <p className="text-2xl font-bold text-red-900">{stats.overdueRequests}</p>
+                </div>
+                <Timer className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
