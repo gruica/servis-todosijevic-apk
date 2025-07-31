@@ -22,6 +22,7 @@ import { CallClientButton } from "@/components/ui/call-client-button";
 import { openMapWithAddress } from "@/lib/mobile-utils";
 import { SparePartsOrderForm } from "@/components/spare-parts/SparePartsOrderForm";
 import { RemovedPartsForm, RemovedPartsList } from "@/components/technician/removed-parts-form";
+import { ServiceCompletionForm } from "@/components/technician/ServiceCompletionForm";
 
 type ServiceDetailsFloatProps = {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export function ServiceDetailsFloat({
   const [sendingSMS, setSendingSMS] = useState(false);
   const [customerRefusesRepair, setCustomerRefusesRepair] = useState(false);
   const [customerRefusalReason, setCustomerRefusalReason] = useState("");
+  const [showCompletionForm, setShowCompletionForm] = useState(false);
 
   const handleSendSMS = async (smsType: string) => {
     setSendingSMS(true);
@@ -581,7 +583,38 @@ export function ServiceDetailsFloat({
             <RemovedPartsList serviceId={service.id} />
           </div>
         )}
+
+        {/* Service Completion Report */}
+        {service.status === "completed" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-green-600" />
+                Izveštaj o završetku
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => setShowCompletionForm(true)}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Kreiraj izveštaj o završetku
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Popunite detaljne informacije o izvršenom servisu
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {/* Service Completion Form Dialog */}
+      <ServiceCompletionForm
+        service={service}
+        isOpen={showCompletionForm}
+        onClose={() => setShowCompletionForm(false)}
+      />
     </FloatingSheet>
   );
 }

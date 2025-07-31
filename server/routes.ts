@@ -6,7 +6,7 @@ import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -9366,6 +9366,92 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error deleting business partner message:", error);
       res.status(500).json({ error: "Greška pri brisanju poruke" });
+    }
+  });
+
+  // =============================================
+  // SERVICE COMPLETION REPORTS ENDPOINTS
+  // =============================================
+
+  // Create service completion report
+  app.post("/api/service-completion-reports", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const validatedData = insertServiceCompletionReportSchema.parse(req.body);
+      const report = await storage.createServiceCompletionReport(validatedData);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating service completion report:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Neispravni podaci", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Greška pri kreiranju izveštaja o završetku servisa" });
+      }
+    }
+  });
+
+  // Get service completion report by service ID
+  app.get("/api/service-completion-reports/service/:serviceId", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const report = await storage.getServiceCompletionReport(serviceId);
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching service completion report:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju izveštaja" });
+    }
+  });
+
+  // Get service completion report by ID
+  app.get("/api/service-completion-reports/:id", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const report = await storage.getServiceCompletionReportById(reportId);
+      if (!report) {
+        return res.status(404).json({ error: "Izveštaj nije pronađen" });
+      }
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching service completion report by ID:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju izveštaja" });
+    }
+  });
+
+  // Update service completion report
+  app.put("/api/service-completion-reports/:id", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const updateData = req.body;
+      const report = await storage.updateServiceCompletionReport(reportId, updateData);
+      if (!report) {
+        return res.status(404).json({ error: "Izveštaj nije pronađen" });
+      }
+      res.json(report);
+    } catch (error) {
+      console.error("Error updating service completion report:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju izveštaja" });
+    }
+  });
+
+  // Get all service completion reports for technician
+  app.get("/api/technicians/:technicianId/completion-reports", jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      const reports = await storage.getCompletionReportsByTechnician(technicianId);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching completion reports for technician:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju izveštaja servisera" });
+    }
+  });
+
+  // Get all service completion reports (admin only)
+  app.get("/api/admin/service-completion-reports", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const reports = await storage.getAllServiceCompletionReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching all completion reports:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju svih izveštaja" });
     }
   });
 

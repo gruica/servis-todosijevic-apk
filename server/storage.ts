@@ -4413,6 +4413,96 @@ export class DatabaseStorage implements IStorage {
   async createSparePartsCatalog(part: InsertSparePartsCatalog): Promise<SparePartsCatalog> {
     return this.createSparePartsCatalogEntry(part);
   }
+
+  // Service completion reports methods
+  async createServiceCompletionReport(data: schema.InsertServiceCompletionReport): Promise<schema.ServiceCompletionReport> {
+    try {
+      const reportData = {
+        ...data,
+        technicianId: data.technicianId || await this.getTechnicianIdFromService(data.serviceId),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const [result] = await db.insert(schema.serviceCompletionReports)
+        .values(reportData)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Greška pri kreiranju izveštaja o završetku servisa:', error);
+      throw error;
+    }
+  }
+
+  async getServiceCompletionReport(serviceId: number): Promise<schema.ServiceCompletionReport | null> {
+    try {
+      const [result] = await db.select()
+        .from(schema.serviceCompletionReports)
+        .where(eq(schema.serviceCompletionReports.serviceId, serviceId))
+        .limit(1);
+      return result || null;
+    } catch (error) {
+      console.error('Greška pri dohvatanju izveštaja o završetku servisa:', error);
+      return null;
+    }
+  }
+
+  async getServiceCompletionReportById(id: number): Promise<schema.ServiceCompletionReport | null> {
+    try {
+      const [result] = await db.select()
+        .from(schema.serviceCompletionReports)
+        .where(eq(schema.serviceCompletionReports.id, id))
+        .limit(1);
+      return result || null;
+    } catch (error) {
+      console.error('Greška pri dohvatanju izveštaja po ID-u:', error);
+      return null;
+    }
+  }
+
+  async updateServiceCompletionReport(id: number, data: Partial<schema.ServiceCompletionReport>): Promise<schema.ServiceCompletionReport | null> {
+    try {
+      const [result] = await db.update(schema.serviceCompletionReports)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(schema.serviceCompletionReports.id, id))
+        .returning();
+      return result || null;
+    } catch (error) {
+      console.error('Greška pri ažuriranju izveštaja o završetku servisa:', error);
+      return null;
+    }
+  }
+
+  async getCompletionReportsByTechnician(technicianId: number): Promise<schema.ServiceCompletionReport[]> {
+    try {
+      return await db.select()
+        .from(schema.serviceCompletionReports)
+        .where(eq(schema.serviceCompletionReports.technicianId, technicianId))
+        .orderBy(desc(schema.serviceCompletionReports.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju izveštaja za servisera:', error);
+      return [];
+    }
+  }
+
+  async getAllServiceCompletionReports(): Promise<schema.ServiceCompletionReport[]> {
+    try {
+      return await db.select()
+        .from(schema.serviceCompletionReports)
+        .orderBy(desc(schema.serviceCompletionReports.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih izveštaja o završetku servisa:', error);
+      return [];
+    }
+  }
+
+  private async getTechnicianIdFromService(serviceId: number): Promise<number> {
+    const service = await this.getService(serviceId);
+    if (!service?.technicianId) {
+      throw new Error('Servis nema dodeljenog servisera');
+    }
+    return service.technicianId;
+  }
 }
 
 // Koristimo PostgreSQL implementaciju umesto MemStorage

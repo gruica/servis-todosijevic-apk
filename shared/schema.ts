@@ -703,6 +703,49 @@ export type SparePartUrgency = z.infer<typeof sparePartUrgencyEnum>;
 export type SparePartStatus = z.infer<typeof sparePartStatusEnum>;
 export type SparePartWarrantyStatus = z.infer<typeof sparePartWarrantyStatusEnum>;
 
+// Tabela za detaljno dokumentovanje završenih servisa
+export const serviceCompletionReports = pgTable('service_completion_reports', {
+  id: serial('id').primaryKey(),
+  serviceId: integer('service_id').notNull().references(() => services.id),
+  technicianId: integer('technician_id').notNull().references(() => technicians.id),
+  workDescription: text('work_description').notNull(), // Detaljni opis izvršenih radova
+  problemDiagnosis: text('problem_diagnosis').notNull(), // Dijagnoza problema
+  solutionDescription: text('solution_description').notNull(), // Opis primenjenog rešenja
+  warrantyStatus: text('warranty_status').notNull(), // 'u_garanciji', 'van_garancije'
+  warrantyPeriod: text('warranty_period'), // Garancijski period za izvršene radove
+  usedSpareParts: text('used_spare_parts').default('[]'), // Lista korišćenih rezervnih delova kao JSON string
+  laborTime: integer('labor_time'), // Vreme rada u minutima
+  totalCost: text('total_cost'), // Ukupna cena servisa
+  clientSatisfaction: integer('client_satisfaction'), // Ocena zadovoljstva 1-5
+  additionalNotes: text('additional_notes'), // Dodatne napomene
+  techniciansSignature: text('technicians_signature'), // Digitalni potpis servisera
+  photosBeforeWork: text('photos_before_work').default('[]'), // Fotografije pre rada kao JSON string
+  photosAfterWork: text('photos_after_work').default('[]'), // Fotografije posle rada kao JSON string
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+});
+
+// Schema za kreiranje izveštaja o završetku servisa
+export const insertServiceCompletionReportSchema = z.object({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  workDescription: z.string().min(10, "Opis rada mora biti detaljniji (min 10 karaktera)").max(1000, "Opis rada je predugačak"),
+  problemDiagnosis: z.string().min(10, "Dijagnoza mora biti detaljnija (min 10 karaktera)").max(500, "Dijagnoza je predugačka"),
+  solutionDescription: z.string().min(10, "Opis rešenja mora biti detaljniji (min 10 karaktera)").max(500, "Opis rešenja je predugačak"),
+  warrantyStatus: z.enum(["u_garanciji", "van_garancije"]),
+  warrantyPeriod: z.string().max(50, "Garancijski period je predugačak").optional(),
+  usedSpareParts: z.string().default('[]'),
+  laborTime: z.number().int().min(1, "Vreme rada mora biti najmanje 1 minut").max(1440, "Vreme rada ne može biti više od 24 sata").optional(),
+  totalCost: z.string().max(20, "Cena je predugačka").optional(),
+  clientSatisfaction: z.number().int().min(1, "Ocena mora biti između 1 i 5").max(5, "Ocena mora biti između 1 i 5").optional(),
+  additionalNotes: z.string().max(1000, "Dodatne napomene su predugačke").optional(),
+  techniciansSignature: z.string().max(100, "Potpis je predugačak").optional(),
+  photosBeforeWork: z.string().default('[]'),
+  photosAfterWork: z.string().default('[]'),
+});
+
+export type InsertServiceCompletionReport = z.infer<typeof insertServiceCompletionReportSchema>;
+export type ServiceCompletionReport = typeof serviceCompletionReports.$inferSelect;
+
 export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pick({
   serviceId: true,
   technicianId: true,
