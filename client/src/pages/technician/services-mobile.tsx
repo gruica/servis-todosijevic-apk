@@ -205,7 +205,8 @@ function ServiceCard({ service }: { service: Service }) {
     warrantyInfo: '',
     clientSignature: false,
     workQuality: 5,
-    clientSatisfaction: 5
+    clientSatisfaction: 5,
+    isWarrantyService: false
   });
 
   // Handler functions
@@ -316,7 +317,8 @@ function ServiceCard({ service }: { service: Service }) {
         warrantyInfo: '',
         clientSignature: false,
         workQuality: 5,
-        clientSatisfaction: 5
+        clientSatisfaction: 5,
+        isWarrantyService: false
       });
     }).catch((error) => {
       console.error("Completion Error:", error);
@@ -761,15 +763,37 @@ function ServiceCard({ service }: { service: Service }) {
               />
             </div>
 
+            <div className="flex items-center space-x-2 mb-4">
+              <input
+                type="checkbox"
+                id="warranty-service"
+                checked={completionData.isWarrantyService}
+                onChange={(e) => setCompletionData(prev => ({ 
+                  ...prev, 
+                  isWarrantyService: e.target.checked,
+                  // Resetuj cenu ako je garanciski servis
+                  cost: e.target.checked ? '0' : prev.cost
+                }))}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="warranty-service" className="text-sm font-medium">
+                Servis u garanciji (besplatan)
+              </Label>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="cost">Cena servisa (RSD)</Label>
+                <Label htmlFor="cost">
+                  Cena servisa (EUR) {completionData.isWarrantyService && <span className="text-green-600 text-xs">(Garanciski - 0€)</span>}
+                </Label>
                 <Input
                   id="cost"
                   type="number"
-                  value={completionData.cost}
+                  value={completionData.isWarrantyService ? '0' : completionData.cost}
                   onChange={(e) => setCompletionData(prev => ({ ...prev, cost: e.target.value }))}
                   placeholder="0"
+                  disabled={completionData.isWarrantyService}
+                  className={completionData.isWarrantyService ? "bg-green-50 text-green-700" : ""}
                 />
               </div>
               

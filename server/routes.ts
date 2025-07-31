@@ -9627,11 +9627,12 @@ Admin panel - automatska porudžbina
         workPerformed: completionData.workPerformed,
         usedParts: completionData.usedParts || null,
         machineNotes: completionData.machineNotes || null,
-        cost: completionData.cost ? parseFloat(completionData.cost) : null,
+        cost: completionData.isWarrantyService ? 0 : (completionData.cost ? parseFloat(completionData.cost) : null),
         warrantyInfo: completionData.warrantyInfo || null,
         workQuality: completionData.workQuality || 5,
         clientSatisfaction: completionData.clientSatisfaction || 5,
         clientSignature: completionData.clientSignature || false,
+        isWarrantyService: completionData.isWarrantyService || false,
         completedAt: new Date()
       };
 
@@ -9643,7 +9644,7 @@ Admin panel - automatska porudžbina
       // 2. Update service status to completed
       const updatedService = await storage.updateServiceStatus(serviceId, "completed", {
         technicianNotes: completionData.technicianNotes,
-        cost: completionData.cost ? parseFloat(completionData.cost) : null,
+        cost: completionData.isWarrantyService ? 0 : (completionData.cost ? parseFloat(completionData.cost) : null),
         completedDate: new Date()
       });
       
