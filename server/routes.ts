@@ -9620,20 +9620,22 @@ Admin panel - automatska porudžbina
       
       console.log("🎯 SERVICE COMPLETION: Received completion data:", completionData);
 
-      // 1. Create detailed service completion report
+      // 1. Create detailed service completion report - map to correct schema fields
       const reportData = {
         serviceId: serviceId,
-        technicianNotes: completionData.technicianNotes,
-        workPerformed: completionData.workPerformed,
-        usedParts: completionData.usedParts || null,
-        machineNotes: completionData.machineNotes || null,
-        cost: completionData.isWarrantyService ? 0 : (completionData.cost ? parseFloat(completionData.cost) : null),
-        warrantyInfo: completionData.warrantyInfo || null,
-        workQuality: completionData.workQuality || 5,
+        workDescription: completionData.workPerformed || completionData.technicianNotes || 'Servis završen',
+        problemDiagnosis: completionData.technicianNotes || 'Standardni servis',
+        solutionDescription: completionData.workPerformed || 'Izvršeni potrebni radovi',
+        warrantyStatus: completionData.isWarrantyService ? 'u_garanciji' : 'van_garancije',
+        warrantyPeriod: completionData.warrantyInfo || null,
+        usedSpareParts: JSON.stringify(completionData.usedParts ? [completionData.usedParts] : []),
+        laborTime: null, // This can be added to frontend if needed
+        totalCost: completionData.isWarrantyService ? '0' : (completionData.cost || null),
         clientSatisfaction: completionData.clientSatisfaction || 5,
-        clientSignature: completionData.clientSignature || false,
-        isWarrantyService: completionData.isWarrantyService || false,
-        completedAt: new Date()
+        additionalNotes: completionData.machineNotes || null,
+        techniciansSignature: completionData.clientSignature ? 'Digitalno potpisano' : null,
+        photosBeforeWork: '[]',
+        photosAfterWork: '[]'
       };
 
       console.log("🎯 SERVICE COMPLETION: Creating completion report with data:", reportData);
