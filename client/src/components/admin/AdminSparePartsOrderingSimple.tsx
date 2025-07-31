@@ -131,6 +131,7 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
 
   const mutation = useMutation({
     mutationFn: async (orderData: any) => {
+      console.log('🔧 AdminSparePartsOrderingSimple: Šaljem porudžbinu:', JSON.stringify(orderData, null, 2));
       const response = await apiRequest('POST', '/api/admin/spare-parts/order', orderData);
       return response.json();
     },
@@ -168,8 +169,16 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔧 AdminSparePartsOrderingSimple: handleSubmit pozvan', {
+      selectedBrand,
+      formData,
+      serviceNumber,
+      serialNumber
+    });
 
     if (!selectedBrand) {
+      console.log('❌ AdminSparePartsOrderingSimple: selectedBrand je prazan');
       toast({
         title: "Greška",
         description: "Molimo odaberite brend aparata.",
