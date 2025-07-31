@@ -61,7 +61,7 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       if (!targetId) return null;
       const id = parseInt(targetId.toString());
       if (isNaN(id) || id <= 0) return null;
-      const response = await apiRequest('GET', `/api/admin/services/${id}`);
+      const response = await apiRequest(`/api/admin/services/${id}`);
       return response.json();
     },
     enabled: !!(debouncedServiceNumber || serviceId) && !isNaN(parseInt((debouncedServiceNumber || serviceId || '').toString())) && parseInt((debouncedServiceNumber || serviceId || '').toString()) > 0
@@ -69,7 +69,7 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const response = await apiRequest('POST', '/api/admin/spare-parts-order', {
+      const response = await apiRequest('/api/admin/spare-parts-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)

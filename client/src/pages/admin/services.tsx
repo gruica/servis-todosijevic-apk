@@ -42,7 +42,7 @@ import {
   Building
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
-import AdminSparePartsOrderingSimple from "@/components/admin/AdminSparePartsOrderingSimple";
+import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 
 interface AdminService {
   id: number;
