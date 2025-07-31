@@ -47,11 +47,24 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
 
   const orderSparePartMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const response = await apiRequest('/api/admin/spare-parts/order', {
+      console.log('🔧 FRONTEND: Šaljem porudžbinu sa podacima:', orderData);
+      const response = await fetch('/api/admin/spare-parts/order', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
         body: JSON.stringify(orderData)
       });
-      return response.json();
+      
+      const result = await response.json();
+      console.log('🔧 FRONTEND: Odgovor servera:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Greška pri poručivanju');
+      }
+      
+      return result;
     },
     onSuccess: () => {
       toast({

@@ -5951,6 +5951,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`🔧 ADMIN SPARE PARTS ORDER DEBUG: endpoint called by user ${req.user?.username}`);
       console.log(`🔧 Request body serviceId: ${req.body.serviceId}`);
+      console.log('🔧 FULL REQUEST BODY:', JSON.stringify(req.body, null, 2));
+      
       const {
         serviceId,
         applianceSerialNumber,
@@ -5966,10 +5968,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailTarget
       } = req.body;
 
+      // Debug validacija polja
+      console.log('🔧 BACKEND VALIDATION CHECK:', {
+        brand: `"${brand}" (${typeof brand}) - ${brand ? '✅ OK' : '❌ PRAZAN'}`,
+        deviceModel: `"${deviceModel}" (${typeof deviceModel}) - ${deviceModel ? '✅ OK' : '❌ PRAZAN'}`,
+        productCode: `"${productCode}" (${typeof productCode}) - ${productCode ? '✅ OK' : '❌ PRAZAN'}`,
+        applianceCategory: `"${applianceCategory}" (${typeof applianceCategory}) - ${applianceCategory ? '✅ OK' : '❌ PRAZAN'}`,
+        partName: `"${partName}" (${typeof partName}) - ${partName ? '✅ OK' : '❌ PRAZAN'}`
+      });
+
       // Validacija obaveznih polja
       if (!brand || !deviceModel || !productCode || !applianceCategory || !partName) {
-        return res.status(400).json({ error: "Obavezna polja nisu popunjena" });
+        const emptyFields = [];
+        if (!brand) emptyFields.push('brand');
+        if (!deviceModel) emptyFields.push('deviceModel');
+        if (!productCode) emptyFields.push('productCode');
+        if (!applianceCategory) emptyFields.push('applianceCategory');
+        if (!partName) emptyFields.push('partName');
+        
+        console.log('❌ BACKEND VALIDATION FAILED: Prazna polja:', emptyFields);
+        return res.status(400).json({ 
+          error: "Obavezna polja nisu popunjena",
+          emptyFields: emptyFields
+        });
       }
+      
+      console.log('✅ BACKEND VALIDATION PASSED: Svi podaci su OK');
 
       // AŽURIRANA VALIDACIJA: Beko je obustavila elektronske servise
       const validBrandEmails = {
