@@ -54,6 +54,19 @@ export function ServiceDetailsFloat({
     console.log("🎯 DEBUG: showCompletionForm state promenjen:", showCompletionForm);
   }, [showCompletionForm]);
 
+  // Debug tracking za servis status kada se komponenta renderuje
+  useEffect(() => {
+    if (service) {
+      console.log("🎯 SERVICE DEBUG:", {
+        id: service.id,
+        status: service.status,
+        customerRefusesRepair,
+        showInProgressButtons: service.status === "in_progress",
+        showCompleteButton: service.status === "in_progress" && !customerRefusesRepair,
+      });
+    }
+  }, [service, customerRefusesRepair]);
+
   const handleSendSMS = async (smsType: string) => {
     setSendingSMS(true);
     try {
@@ -506,7 +519,12 @@ export function ServiceDetailsFloat({
                         </Button>
                       ) : (
                         <Button 
-                          onClick={handleCompleteService}
+                          onClick={() => {
+                            console.log("🎯 DIREKTNO DEBUG: Dugme 'Završi servis' kliknuto!");
+                            console.log("🎯 DEBUG: service status:", service.status);
+                            console.log("🎯 DEBUG: isUpdating:", isUpdating);
+                            handleCompleteService();
+                          }}
                           disabled={isUpdating}
                           className="w-full bg-green-600 hover:bg-green-700"
                         >
