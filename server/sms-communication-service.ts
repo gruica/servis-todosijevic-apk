@@ -332,6 +332,26 @@ export class SMSCommunicationService {
     );
   }
 
+  async notifyBusinessPartnerServiceCompleted(serviceData: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    technicianName: string;
+  }): Promise<SMSResult> {
+    return this.sendTemplatedSMS('business_partner_service_completed',
+      { phone: serviceData.partnerPhone, name: serviceData.partnerName, role: 'business_partner' },
+      {
+        partnerName: serviceData.partnerName,
+        serviceId: serviceData.serviceId,
+        clientName: serviceData.clientName,
+        deviceType: serviceData.deviceType,
+        technicianName: serviceData.technicianName
+      }
+    );
+  }
+
   async notifyClientNotAvailable(serviceData: {
     clientPhone: string;
     clientName: string;

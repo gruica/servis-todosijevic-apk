@@ -9723,5 +9723,127 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Send completion SMS to all parties for a specific service
+  app.post('/api/services/:id/send-completion-sms', jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      console.log(`🎯 MANUAL SMS: Šaljem completion SMS za servis #${serviceId}`);
+      
+      // Get service details with all related data
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Servis nije pronađen' });
+      }
+      
+      // Get SMS configuration
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+      const smsConfig = {
+        apiKey: settingsMap.sms_mobile_api_key || '',
+        baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settingsMap.sms_mobile_sender_id || null,
+        enabled: settingsMap.sms_mobile_enabled === 'true'
+      };
+
+      if (!smsConfig.enabled || !smsConfig.apiKey) {
+        return res.status(400).json({ error: 'SMS sistem nije konfigurisan' });
+      }
+
+      const { SMSCommunicationService } = await import('./sms-communication-service.js');
+      const smsService = new SMSCommunicationService(smsConfig);
+      
+      const results = [];
+      
+      // Get all related data
+      const client = await storage.getClient(service.clientId);
+      const appliance = await storage.getAppliance(service.applianceId);
+      const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+      const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+      const technician = await storage.getTechnician(service.technicianId);
+      
+      // 1. SMS klijentu
+      if (client && client.phone) {
+        try {
+          const clientResult = await smsService.notifyServiceCompleted({
+            clientPhone: client.phone,
+            clientName: client.fullName,
+            serviceId: serviceId.toString(),
+            deviceType: category?.name || 'Uređaj',
+            manufacturerName: manufacturer?.name || '',
+            technicianName: technician?.fullName || 'Servis',
+            cost: service.cost || '0'
+          });
+          
+          results.push({
+            recipient: 'Klijent',
+            name: client.fullName,
+            phone: client.phone,
+            status: 'poslat',
+            result: clientResult
+          });
+          
+          console.log(`🎯 MANUAL SMS: ✅ Poslat klijentu ${client.fullName} (${client.phone})`);
+        } catch (error) {
+          results.push({
+            recipient: 'Klijent',
+            name: client.fullName,
+            phone: client.phone,
+            status: 'greška',
+            error: error.message
+          });
+          console.error(`🎯 MANUAL SMS: ❌ Greška za klijenta:`, error);
+        }
+      }
+      
+      // 2. SMS poslovnom partneru (ako postoji)
+      if (service.businessPartnerId) {
+        try {
+          const partner = await storage.getUser(service.businessPartnerId);
+          if (partner && partner.phone) {
+            const partnerResult = await smsService.notifyBusinessPartnerServiceCompleted({
+              partnerPhone: partner.phone,
+              partnerName: partner.fullName,
+              serviceId: serviceId.toString(),
+              clientName: client?.fullName || 'Nepoznat klijent',
+              deviceType: category?.name || 'Uređaj',
+              technicianName: technician?.fullName || 'Servis'
+            });
+            
+            results.push({
+              recipient: 'Poslovni partner',
+              name: partner.fullName,
+              phone: partner.phone,
+              status: 'poslat',
+              result: partnerResult
+            });
+            
+            console.log(`🎯 MANUAL SMS: ✅ Poslat partneru ${partner.fullName} (${partner.phone})`);
+          }
+        } catch (error) {
+          console.error(`🎯 MANUAL SMS: ❌ Greška za poslovnog partnera:`, error);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `SMS obaveštenja o završetku servisa #${serviceId} su poslata`,
+        results: results,
+        serviceDetails: {
+          id: service.id,
+          client: client?.fullName,
+          device: `${manufacturer?.name || ''} ${category?.name || 'Uređaj'}`.trim(),
+          technician: technician?.fullName
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('🎯 MANUAL SMS ERROR:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju SMS obaveštenja',
+        details: error.message 
+      });
+    }
+  });
+
   return httpServer;
 }

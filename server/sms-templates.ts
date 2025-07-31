@@ -186,6 +186,11 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'business_partner_completed');
   }
 
+  static businessPartnerServiceCompleted(data: SMSTemplateData): string {
+    const message = `Servis #${data.serviceId} - ${data.clientName} (${data.deviceType}) završen. Tehničar: ${data.technicianName}. Hvala na saradnji!`;
+    return this.validateSMSLength(message, 'business_partner_service_completed');
+  }
+
   static businessPartnerPartsOrdered(data: SMSTemplateData): string {
     const message = `Porucen deo ${data.partName} za servis #${data.serviceId} (${data.clientName}, ${data.deviceType}). Pristice za ${data.estimatedDate || '5-7 dana'}.`;
     return this.validateSMSLength(message, 'business_partner_parts_ordered');
@@ -261,6 +266,7 @@ export class SMSTemplates {
       // Business partner templates
       case 'business_partner_assigned': return this.businessPartnerAssigned(data);
       case 'business_partner_completed': return this.businessPartnerCompleted(data);
+      case 'business_partner_service_completed': return this.businessPartnerServiceCompleted(data);
       case 'business_partner_parts_ordered': return this.businessPartnerPartsOrdered(data);
       case 'business_partner_status_changed': return this.businessPartnerStatusChanged(data);
       
