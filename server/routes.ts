@@ -9466,5 +9466,149 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // ===== SERVICE COMPLETION REPORTS ENDPOINTS =====
+  
+  // Get all service completion reports (admin only)
+  app.get('/api/admin/service-completion-reports', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const reports = await storage.getAllServiceCompletionReports();
+      res.json(reports);
+    } catch (error) {
+      console.error('Error fetching service completion reports:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju izveštaja o završetku servisa' });
+    }
+  });
+
+  // Get service completion report by ID
+  app.get('/api/service-completion-reports/:id', jwtAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const report = await storage.getServiceCompletionReport(reportId);
+      
+      if (!report) {
+        return res.status(404).json({ error: 'Izveštaj nije pronađen' });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error('Error fetching service completion report:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju izveštaja' });
+    }
+  });
+
+  // Get service completion reports by service ID
+  app.get('/api/services/:serviceId/completion-reports', jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const reports = await storage.getServiceCompletionReportsByService(serviceId);
+      res.json(reports);
+    } catch (error) {
+      console.error('Error fetching service completion reports by service:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju izveštaja za servis' });
+    }
+  });
+
+  // Get service completion reports by technician ID
+  app.get('/api/technicians/:technicianId/completion-reports', jwtAuth, async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      
+      // Check if user is the technician or admin
+      if (req.user.role !== 'admin' && req.user.technicianId !== technicianId) {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+
+      const reports = await storage.getServiceCompletionReportsByTechnician(technicianId);
+      res.json(reports);
+    } catch (error) {
+      console.error('Error fetching service completion reports by technician:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju izveštaja servisera' });
+    }
+  });
+
+  // Create service completion report
+  app.post('/api/service-completion-reports', jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const reportData = req.body;
+      
+      // Validate service exists
+      const service = await storage.getService(reportData.serviceId);
+      if (!service) {
+        return res.status(404).json({ error: 'Servis nije pronađen' });
+      }
+
+      // Auto-set technician ID from the service or JWT user
+      if (!reportData.technicianId) {
+        if (service.technicianId) {
+          reportData.technicianId = service.technicianId;
+        } else if (req.user.technicianId) {
+          reportData.technicianId = req.user.technicianId;
+        } else {
+          return res.status(400).json({ error: 'Nema dodeljenog servisera za ovaj servis' });
+        }
+      }
+
+      const newReport = await storage.createServiceCompletionReport(reportData);
+      
+      // Complete the service after creating the report
+      await storage.updateService(reportData.serviceId, { 
+        status: 'completed',
+        completedDate: new Date().toISOString()
+      });
+
+      res.status(201).json({
+        success: true,
+        report: newReport,
+        message: 'Izveštaj o završetku servisa je uspešno kreiran'
+      });
+    } catch (error) {
+      console.error('Error creating service completion report:', error);
+      res.status(500).json({ error: 'Greška pri kreiranju izveštaja o završetku servisa' });
+    }
+  });
+
+  // Update service completion report
+  app.put('/api/service-completion-reports/:id', jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const updateData = req.body;
+
+      const updatedReport = await storage.updateServiceCompletionReport(reportId, updateData);
+      
+      if (!updatedReport) {
+        return res.status(404).json({ error: 'Izveštaj nije pronađen' });
+      }
+
+      res.json({
+        success: true,
+        report: updatedReport,
+        message: 'Izveštaj je uspešno ažuriran'
+      });
+    } catch (error) {
+      console.error('Error updating service completion report:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju izveštaja' });
+    }
+  });
+
+  // Delete service completion report (admin only)
+  app.delete('/api/service-completion-reports/:id', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      const deleted = await storage.deleteServiceCompletionReport(reportId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Izveštaj nije pronađen' });
+      }
+
+      res.json({
+        success: true,
+        message: 'Izveštaj je uspešno obrisan'
+      });
+    } catch (error) {
+      console.error('Error deleting service completion report:', error);
+      res.status(500).json({ error: 'Greška pri brisanju izveštaja' });
+    }
+  });
+
   return httpServer;
 }

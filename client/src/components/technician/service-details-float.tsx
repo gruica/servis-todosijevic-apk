@@ -100,35 +100,9 @@ export function ServiceDetailsFloat({
     }
   };
 
-  const handleCompleteService = async () => {
-    if (!technicianNotes.trim()) {
-      alert("Molimo unesite napomenu servisera");
-      return;
-    }
-
-    if (!customerRefusesRepair) {
-      if (!usedParts.trim() || !machineNotes.trim() || !cost) {
-        alert("Molimo popunite sva obavezna polja za završetak servisa");
-        return;
-      }
-    }
-
-    setIsUpdating(true);
-    try {
-      await onStatusUpdate(service.id, "completed", {
-        technicianNotes: technicianNotes.trim(),
-        usedParts: usedParts.trim() || null,
-        machineNotes: machineNotes.trim() || null,
-        cost: cost ? parseFloat(cost) : null,
-        customerRefusesRepair: customerRefusesRepair,
-        customerRefusalReason: customerRefusesRepair ? customerRefusalReason.trim() : null
-      });
-      onClose();
-    } catch (error) {
-      console.error("Greška pri završetku servisa:", error);
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleCompleteService = () => {
+    // Otvori completion form dialog umesto direktno zatvaranja servisa
+    setShowCompletionForm(true);
   };
 
   const handleCustomerRefusesRepair = async () => {
@@ -526,15 +500,11 @@ export function ServiceDetailsFloat({
                         </Button>
                       ) : (
                         <Button 
-                          onClick={handleCompleteService}
+                          onClick={() => setShowCompletionForm(true)}
                           disabled={isUpdating}
-                          className="w-full"
+                          className="w-full bg-green-600 hover:bg-green-700"
                         >
-                          {isUpdating ? (
-                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
-                          ) : (
-                            <ClipboardCheck className="h-4 w-4 mr-2" />
-                          )}
+                          <FileText className="h-4 w-4 mr-2" />
                           Završi servis
                         </Button>
                       )}
@@ -584,29 +554,7 @@ export function ServiceDetailsFloat({
           </div>
         )}
 
-        {/* Service Completion Report */}
-        {service.status === "completed" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4 text-green-600" />
-                Izveštaj o završetku
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => setShowCompletionForm(true)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Kreiraj izveštaj o završetku
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Popunite detaljne informacije o izvršenom servisu
-              </p>
-            </CardContent>
-          </Card>
-        )}
+
       </div>
 
       {/* Service Completion Form Dialog */}

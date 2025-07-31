@@ -1242,3 +1242,5 @@ export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+

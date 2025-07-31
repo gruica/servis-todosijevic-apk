@@ -20,13 +20,14 @@ import {
   SystemSetting, InsertSystemSetting,
   RemovedPart, InsertRemovedPart,
   SparePartsCatalog, InsertSparePartsCatalog,
+  ServiceCompletionReport, InsertServiceCompletionReport,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
   sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
-  webScrapingSources, webScrapingLogs, webScrapingQueue
+  webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -233,6 +234,15 @@ export interface IStorage {
   createScrapingQueueItem(item: any): Promise<any>;
   getScrapingQueue(): Promise<any[]>;
   updateScrapingQueueItem(id: number, data: any): Promise<any>;
+
+  // Service Completion Report methods
+  getAllServiceCompletionReports(): Promise<ServiceCompletionReport[]>;
+  getServiceCompletionReport(id: number): Promise<ServiceCompletionReport | undefined>;
+  getServiceCompletionReportsByService(serviceId: number): Promise<ServiceCompletionReport[]>;
+  getServiceCompletionReportsByTechnician(technicianId: number): Promise<ServiceCompletionReport[]>;
+  createServiceCompletionReport(report: InsertServiceCompletionReport): Promise<ServiceCompletionReport>;
+  updateServiceCompletionReport(id: number, report: Partial<ServiceCompletionReport>): Promise<ServiceCompletionReport | undefined>;
+  deleteServiceCompletionReport(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
