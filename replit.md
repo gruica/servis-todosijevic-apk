@@ -42,7 +42,7 @@ Preferred communication style: Simple, everyday language.
 - **Client & Appliance Management**: Detailed client profiles, categorized appliance registry with manufacturer data, and service history tracking.
 - **Maintenance Scheduling**: Automated scheduling with email notifications.
 - **Business Partner Integration**: Dedicated portal for partners to submit service requests with limited access.
-- **Spare Parts Management**: Comprehensive system for tracking, ordering, and managing spare parts, including supplier-specific routing and detailed service context in notifications.
+- **Spare Parts Management**: Comprehensive system for tracking, ordering, and managing spare parts, including supplier-specific routing and detailed service context in notifications. Brand selection (Beko/Complus) is required for all spare parts orders with automatic email routing to appropriate suppliers.
 - **Notifications**: In-app and SMS notifications for all key events, with role-specific templates and comprehensive tracking. Email notifications for clients and business partners, with specific Beko warranty handling.
 - **Data Export**: CSV export functionality for various database tables.
 
