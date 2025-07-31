@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package } from 'lucide-react';
 
 interface DirectSparePartsOrderFormProps {
   serviceId?: number | null;
@@ -24,6 +26,7 @@ interface DirectSparePartsOrderFormProps {
 }
 
 interface FormData {
+  selectedBrand: 'beko' | 'complus' | null;
   deviceModel: string;
   productCode: string;
   applianceCategory: string;
@@ -36,6 +39,7 @@ interface FormData {
 
 export default function DirectSparePartsOrderForm({ serviceId, prefilledData, onSuccess }: DirectSparePartsOrderFormProps) {
   const [formData, setFormData] = useState<FormData>({
+    selectedBrand: null,
     deviceModel: prefilledData?.deviceModel || '',
     productCode: prefilledData?.partNumber || '',
     applianceCategory: prefilledData?.applianceCategory || '',
@@ -80,6 +84,16 @@ export default function DirectSparePartsOrderForm({ serviceId, prefilledData, on
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.selectedBrand) {
+      toast({
+        title: "Brend je obavezan",
+        description: "Molimo odaberite brend aparata.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!formData.partName.trim()) {
       toast({
         title: "Naziv dela je obavezan",
@@ -89,11 +103,59 @@ export default function DirectSparePartsOrderForm({ serviceId, prefilledData, on
       return;
     }
     
-    mutation.mutate({ ...formData, serviceId });
+    mutation.mutate({ 
+      ...formData, 
+      serviceId,
+      brand: formData.selectedBrand,
+      emailTarget: formData.selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Brand Selection */}
+      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <Label className="text-sm font-medium text-blue-900 mb-3 block">
+          Brend aparata *
+        </Label>
+        <div className="grid grid-cols-2 gap-3">
+          <Card 
+            className={`cursor-pointer transition-all ${
+              formData.selectedBrand === 'beko' 
+                ? 'ring-2 ring-blue-500 bg-blue-100' 
+                : 'hover:shadow-md hover:bg-gray-50'
+            }`}
+            onClick={() => updateFormField('selectedBrand', 'beko')}
+          >
+            <CardHeader className="p-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Package className="h-4 w-4 text-blue-600" />
+                Beko
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card 
+            className={`cursor-pointer transition-all ${
+              formData.selectedBrand === 'complus' 
+                ? 'ring-2 ring-green-500 bg-green-100' 
+                : 'hover:shadow-md hover:bg-gray-50'
+            }`}
+            onClick={() => updateFormField('selectedBrand', 'complus')}
+          >
+            <CardHeader className="p-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Package className="h-4 w-4 text-green-600" />
+                Electrolux/Elica/Candy/Hoover/Turbo Air
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+        <p className="text-xs text-gray-600 mt-2">
+          Email će biti poslat na: {formData.selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : formData.selectedBrand === 'complus' ? 'servis@complus.me' : 'odaberite brend'}
+        </p>
+      </div>
+
       {/* Form Fields */}
       <div className="grid grid-cols-2 gap-4">
         <div>
