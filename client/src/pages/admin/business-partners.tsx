@@ -154,14 +154,41 @@ export default function BusinessPartnersAdminPage() {
   // Quick action mutations
   const assignTechnicianMutation = useMutation({
     mutationFn: async ({ serviceId, technicianId }: { serviceId: number; technicianId: number }) => {
-      return apiRequest(`/api/admin/services/${serviceId}/assign-technician`, {
+      return apiRequest(`/api/admin/business-partner-services/${serviceId}/assign-technician`, {
         method: "PUT",
         body: JSON.stringify({ technicianId })
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/business-partner-services"] });
-      toast({ title: "Uspešno", description: "Serviser je dodeljen zahtevu." });
+      toast({ title: "Uspešno", description: "Serviser je dodeljen business partner zahtevu." });
+    },
+    onError: () => {
+      toast({ 
+        title: "Greška", 
+        description: "Došlo je do greške pri dodeljivanju servisera.",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ serviceId, status }: { serviceId: number; status: string }) => {
+      return apiRequest(`/api/admin/business-partner-services/${serviceId}/update-status`, {
+        method: "PUT",
+        body: JSON.stringify({ status })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/business-partner-services"] });
+      toast({ title: "Uspešno", description: "Status servisa je ažuriran." });
+    },
+    onError: () => {
+      toast({ 
+        title: "Greška", 
+        description: "Došlo je do greške pri ažuriranju statusa.",
+        variant: "destructive" 
+      });
     }
   });
 
@@ -175,6 +202,32 @@ export default function BusinessPartnersAdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/business-partner-services"] });
       toast({ title: "Uspešno", description: "Prioritet je ažuriran." });
+    },
+    onError: () => {
+      toast({ 
+        title: "Greška", 
+        description: "Došlo je do greške pri ažuriranju prioriteta.",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      return apiRequest(`/api/admin/business-partner-services/${serviceId}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/business-partner-services"] });
+      toast({ title: "Uspešno", description: "Business partner servis je obrisan." });
+    },
+    onError: () => {
+      toast({ 
+        title: "Greška", 
+        description: "Došlo je do greške pri brisanju servisa.",
+        variant: "destructive" 
+      });
     }
   });
 

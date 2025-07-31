@@ -9007,7 +9007,9 @@ Admin panel - automatska porudžbina
   // Business Partner Admin API Endpoints
   app.get("/api/admin/business-partner-services", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      // Fetch all services created by business partners
+      console.log("🔍 BP Services Request - User:", req.user?.id, req.user?.role);
+      
+      // Fetch all services created by business partners using raw SQL for debugging
       const services = await db.query.services.findMany({
         where: (services, { isNotNull }) => isNotNull(services.businessPartnerId),
         with: {
@@ -9053,6 +9055,8 @@ Admin panel - automatska porudžbina
         orderBy: (services, { desc }) => [desc(services.createdAt)]
       });
 
+      console.log("📊 Found services:", services.length, "with BP:", services.filter(s => s.businessPartner).length);
+
       // Process services to add calculated fields
       const enrichedServices = services
         .filter(service => service.businessPartner) // Only business partner services
@@ -9079,15 +9083,18 @@ Admin panel - automatska porudžbina
           };
         });
 
+      console.log("✅ Returning enriched services:", enrichedServices.length);
       res.json(enrichedServices);
     } catch (error) {
-      console.error("Error fetching business partner services:", error);
+      console.error("❌ Error fetching business partner services:", error);
       res.status(500).json({ error: "Greška pri dohvatanju business partner servisa" });
     }
   });
 
   app.get("/api/admin/business-partner-stats", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
+      console.log("📊 BP Stats Request - User:", req.user?.id, req.user?.role);
+      
       // Get all business partner services
       const services = await db.query.services.findMany({
         where: (services, { isNotNull }) => isNotNull(services.businessPartnerId),
@@ -9097,6 +9104,8 @@ Admin panel - automatska porudžbina
           }
         }
       });
+
+      console.log("📈 Stats calculation for", services.length, "BP services");
 
       const now = new Date();
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -9121,8 +9130,8 @@ Admin panel - automatska porudžbina
       const avgResponseTime = completedServices.length > 0 
         ? Math.round(completedServices.reduce((sum, s) => {
             const createdAt = new Date(s.createdAt);
-            const updatedAt = new Date(s.updatedAt);
-            return sum + (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+            const completedAt = new Date(s.completedDate || s.createdAt); // Use completedDate if available
+            return sum + (completedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
           }, 0) / completedServices.length)
         : 0;
       
@@ -9138,8 +9147,8 @@ Admin panel - automatska porudžbina
         const avgResponseTime = completedPartnerServices.length > 0
           ? Math.round(completedPartnerServices.reduce((sum, s) => {
               const createdAt = new Date(s.createdAt);
-              const updatedAt = new Date(s.updatedAt);
-              return sum + (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+              const completedAt = new Date(s.completedDate || s.createdAt);
+              return sum + (completedAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
             }, 0) / completedPartnerServices.length)
           : 0;
         
@@ -9199,6 +9208,59 @@ Admin panel - automatska porudžbina
     } catch (error) {
       console.error("Error updating service priority:", error);
       res.status(500).json({ error: "Greška pri ažuriranju prioriteta" });
+    }
+  });
+
+  // Business Partner Service Actions
+  app.put("/api/admin/business-partner-services/:id/assign-technician", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { technicianId } = req.body;
+      
+      await db.update(schema.services)
+        .set({ 
+          technicianId: parseInt(technicianId),
+          status: 'assigned'
+        })
+        .where(eq(schema.services.id, parseInt(id)));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error assigning technician to BP service:", error);
+      res.status(500).json({ error: "Greška pri dodeljivanju servisera" });
+    }
+  });
+
+  app.put("/api/admin/business-partner-services/:id/update-status", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      await db.update(schema.services)
+        .set({ 
+          status,
+          completedDate: status === 'completed' ? new Date().toISOString() : undefined
+        })
+        .where(eq(schema.services.id, parseInt(id)));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating BP service status:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju statusa" });
+    }
+  });
+
+  app.delete("/api/admin/business-partner-services/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      await db.delete(schema.services)
+        .where(eq(schema.services.id, parseInt(id)));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting BP service:", error);
+      res.status(500).json({ error: "Greška pri brisanju servisa" });
     }
   });
 
