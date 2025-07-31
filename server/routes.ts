@@ -3188,13 +3188,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Unapređena ruta za slanje test email-a sa detaljnijim izveštajem
-  app.post("/api/send-test-email", async (req, res) => {
+  // JWT-kompatibilan test endpoint za slanje email-a
+  app.post("/api/admin-jwt/test-email", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za slanje test email-a" });
-      }
+      console.log('[EMAIL TEST] JWT test email endpoint pozvan');
+      console.log('[EMAIL TEST] SMTP_PASSWORD status:', process.env.SMTP_PASSWORD ? 'Postavljena ✅' : 'Nedostaje ❌');
 
       const { recipient } = testEmailSchema.parse(req.body);
       
@@ -5951,6 +5949,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log(`🔧 ADMIN SPARE PARTS ORDER DEBUG: endpoint called by user ${req.user?.username}`);
+      console.log(`🔧 Request body serviceId: ${req.body.serviceId}`);
       const {
         serviceId,
         applianceSerialNumber,
@@ -6168,22 +6168,32 @@ Admin panel - automatska porudžbina
       console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
 
       // Automatski SMS za rezervne delove - obavesti klijenta
+      console.log(`🔧 SMS DEBUG: serviceId = ${serviceId}`);
       if (serviceId) {
         try {
           const service = await storage.getService(serviceId);
+          console.log(`🔧 SMS DEBUG: service found = ${!!service}, clientId = ${service?.clientId}`);
           if (service?.clientId) {
             const client = await storage.getClient(service.clientId);
+            console.log(`🔧 SMS DEBUG: client found = ${!!client}, phone = ${client?.phone}`);
             if (client?.phone) {
               const appliance = await storage.getAppliance(service.applianceId);
               const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
               
-              const settings = await storage.getSystemSettings();
+              const settingsArray = await storage.getSystemSettings();
+              const settings = settingsArray.reduce((acc, setting) => {
+                acc[setting.key] = setting.value;
+                return acc;
+              }, {} as Record<string, string>);
+              
               const smsConfig = {
                 apiKey: settings.sms_mobile_api_key || '',
                 baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
                 senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
                 enabled: settings.sms_mobile_enabled === 'true'
               };
+
+
 
               if (smsConfig.enabled && smsConfig.apiKey) {
                 const { SMSCommunicationService } = await import('./sms-communication-service.js');

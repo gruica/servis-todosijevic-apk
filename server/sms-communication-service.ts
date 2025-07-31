@@ -394,14 +394,15 @@ export class SMSCommunicationService {
     partName: string;
     estimatedDate?: string;
   }): Promise<SMSResult> {
-    return this.sendTemplatedSMS('spare_part_ordered',
+    return this.sendTemplatedSMS('client_spare_part_ordered',
       { phone: serviceData.clientPhone, name: serviceData.clientName, role: 'client' },
       {
         clientName: serviceData.clientName,
         serviceId: serviceData.serviceId,
-        deviceType: serviceData.deviceType,
         partName: serviceData.partName,
-        estimatedDate: serviceData.estimatedDate
+        estimatedDate: serviceData.estimatedDate || '5-7 radnih dana',
+        manufacturerName: serviceData.deviceType,
+        urgency: 'normal'
       }
     );
   }

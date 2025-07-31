@@ -54,15 +54,23 @@ export class EmailService {
   ];
 
   private constructor() {
-    this.from = process.env.EMAIL_FROM || 'info@frigosistemtodosijevic.com';
+    this.from = process.env.EMAIL_FROM || 'admin@frigosistemtodosijevic.com';
     
     // Učitavanje konfiguracije i kreiranje stabilnog transportera
     // Učitavamo SMTP postavke iz okruženja - ispravne vrednosti
     const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
-    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465; 
-    const secure = process.env.EMAIL_SECURE === 'true' || true;
-    const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
-    const pass = process.env.EMAIL_PASSWORD || '';
+    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587; 
+    const secure = process.env.EMAIL_SECURE === 'true' || false; // Port 587 koristi STARTTLS
+    const user = process.env.EMAIL_USER || 'admin@frigosistemtodosijevic.com';
+    const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '';
+    
+    // Proveri da li je SMTP_PASSWORD postavljena
+    if (!process.env.SMTP_PASSWORD) {
+      console.error('[EMAIL] ❌ KRITIČNA GREŠKA: SMTP_PASSWORD environment varijabla nije postavljena!');
+      console.error('[EMAIL] 💡 Email funkcionalnosti neće raditi bez SMTP lozinke');
+    } else {
+      console.log('[EMAIL] ✅ SMTP_PASSWORD environment varijabla je postavljena');
+    }
     
     // Dodatna provera formata host-a da eliminišemo čestu grešku
     const correctedHost = host.includes('@') ? host.replace('@', '.') : host;
@@ -136,8 +144,8 @@ export class EmailService {
       const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
       const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465;
       const secure = process.env.EMAIL_SECURE === 'true' || true;
-      const user = process.env.EMAIL_USER || '';
-      const pass = process.env.EMAIL_PASSWORD || '';
+      const user = process.env.EMAIL_USER || 'admin@frigosistemtodosijevic.com';
+      const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '';
       
       // Kreiraj pojednostavljenu konfiguraciju
       this.configCache = {
