@@ -204,6 +204,8 @@ function ServiceCard({ service }: { service: Service }) {
   };
 
   const handleCompleteService = (serviceId: number) => {
+    console.log("🎯 GLAVNI DEBUG: handleCompleteService pozvan sa serviceId:", serviceId);
+    console.log("🎯 DEBUG: Trenutno samo menja status na completed - TREBA DODATI COMPLETION FORM!");
     completeServiceMutation.mutate(serviceId);
   };
 
