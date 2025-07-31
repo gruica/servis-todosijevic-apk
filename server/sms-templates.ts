@@ -49,8 +49,51 @@ export class SMSTemplates {
       .trim();
 
     if (cleanMessage.length > 160) {
-      console.log(`⚠️ SMS ${templateName}: ${cleanMessage.length} karaktera -> skraćen na 160`);
-      return cleanMessage.substring(0, 160);
+      console.log(`⚠️ SMS ${templateName}: ${cleanMessage.length} karaktera -> potrebno skraćivanje`);
+      
+      // INTELIGENTNO SKRAĆIVANJE UMESTO OBIČNOG ODSECANJA
+      let shortenedMessage = cleanMessage;
+      
+      // 1. Skrati duga imena zadržavajući prezime
+      shortenedMessage = shortenedMessage.replace(/(\w+)\s+(\w{2,})\s+(\w+)/g, (match, ime, srednje, prezime) => {
+        if (match.length > 15) { // Ako je puno ime duže od 15 karaktera
+          return `${ime.charAt(0)}. ${prezime}`; // "Ljubo Sekulić" -> "L. Sekulić"
+        }
+        return match;
+      });
+      
+      // 2. Skrati model i manufacturer informacije
+      shortenedMessage = shortenedMessage.replace(/Model:\s+([^\s,]+)[^\s,]*/g, 'Model: $1');
+      shortenedMessage = shortenedMessage.replace(/\s+\([^)]{10,}\)/g, ''); // Ukloni dugačke zagrade
+      
+      // 3. Skrati reči čestih fraza, ali pametno
+      shortenedMessage = shortenedMessage
+        .replace(/Tehničar:/g, 'Teh:')
+        .replace(/Klijent:/g, 'Kl:')
+        .replace(/Servis/g, 'Srv')
+        .replace(/promenjeno:/g, '->')
+        .replace(/uspešno završen/g, 'završen')
+        .replace(/Tel: 067051141/g, 'T:067051141')
+        .replace(/Hvala na saradnji!/g, 'Hvala!')
+        .replace(/kontaktirati/g, 'kontakt.')
+        .replace(/Pristice za/g, 'za')
+        .replace(/dana(?=\s)/g, 'd') // Samo ako prati space
+        .replace(/testiranje/g, 'test')
+        .replace(/kalibracija/g, 'kalibr')
+        .replace(/kompletno/g, 'kompl')
+        .replace(/potpuno/g, 'potp')
+        .replace(/izvršeno/g, 'izvrš')
+        .replace(/detaljnim/g, 'detalj')
+        .replace(/sistema/g, 'sist')
+        .replace(/Zamenjen/g, 'Zamen');
+      
+      // 4. Ako i dalje predugačko, odseci na 157 + "..."
+      if (shortenedMessage.length > 160) {
+        shortenedMessage = shortenedMessage.substring(0, 157) + '...';
+      }
+      
+      console.log(`🔧 SMS ${templateName}: ${cleanMessage.length} -> ${shortenedMessage.length} karaktera`);
+      return shortenedMessage;
     }
     
     console.log(`✅ SMS ${templateName}: ${cleanMessage.length} karaktera (JEDNODELNA PORUKA)`);
@@ -122,6 +165,13 @@ export class SMSTemplates {
   static clientServiceStatusChanged(data: SMSTemplateData): string {
     const message = `Stanje servisa #${data.serviceId} promenjeno: ${data.newStatus}. Tehničar: ${data.technicianName}. Tel: 067051141`;
     return this.validateSMSLength(message, 'client_service_status_changed');
+  }
+
+  static clientStatusUpdate(data: SMSTemplateData): string {
+    // Kratka poruka za status update-e - optimizovano za imena kao "Ljubo Sekulić"
+    const notes = data.technicianNotes ? ` - ${data.technicianNotes}` : '';
+    const message = `Srv #${data.serviceId}: ${data.statusDescription}. Teh: ${data.technicianName}${notes}. T:067051141`;
+    return this.validateSMSLength(message, 'client_status_update');
   }
 
   // POSLOVNI PARTNERI SMS OBAVEŠTENJA (KRATKI FORMAT)
@@ -206,6 +256,7 @@ export class SMSTemplates {
       case 'client_spare_part_ordered': return this.clientSparePartOrdered(data);
       case 'client_spare_part_arrived': return this.clientSparePartArrived(data);
       case 'service_status_changed': return this.clientServiceStatusChanged(data);
+      case 'client_status_update': return this.clientStatusUpdate(data);
       
       // Business partner templates
       case 'business_partner_assigned': return this.businessPartnerAssigned(data);
