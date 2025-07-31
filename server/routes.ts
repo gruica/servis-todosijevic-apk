@@ -9644,10 +9644,20 @@ Admin panel - automatska porudžbina
       console.log("🎯 SERVICE COMPLETION: Created completion report with ID:", completionReport.id);
 
       // 2. Update service status to completed
-      const updatedService = await storage.updateServiceStatus(serviceId, "completed", {
+      const currentService = await storage.getService(serviceId);
+      if (!currentService) {
+        throw new Error('Servis nije pronađen');
+      }
+      
+      const updatedService = await storage.updateService(serviceId, {
+        ...currentService,
+        status: "completed",
         technicianNotes: completionData.technicianNotes,
-        cost: completionData.isWarrantyService ? 0 : (completionData.cost ? parseFloat(completionData.cost) : null),
-        completedDate: new Date()
+        cost: completionData.isWarrantyService ? '0' : (completionData.cost || null),
+        completedDate: new Date().toISOString(),
+        usedParts: completionData.usedParts || null,
+        machineNotes: completionData.machineNotes || null,
+        isCompletelyFixed: true
       });
       
       console.log("🎯 SERVICE COMPLETION: Updated service status to completed");
