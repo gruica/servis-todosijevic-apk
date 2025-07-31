@@ -68,7 +68,7 @@ import DataExportPage from "@/pages/admin/data-export";
 import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
 import SMSBulkPage from "@/pages/admin/sms-bulk";
 import ComplusBillingPage from "@/pages/admin/complus-billing";
-import BusinessPartnersAdminPage from "@/pages/admin/business-partners";
+import BusinessPartnersAdminPageFixed from "@/pages/admin/business-partners-fixed";
 import ComplusDashboard from "@/pages/complus";
 import ComplusAuthPage from "@/pages/complus-auth";
 
@@ -98,7 +98,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts" component={AdminSpareParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/available-parts" component={AdminAvailableParts} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/business-partners" component={BusinessPartnersAdminPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/business-partners" component={BusinessPartnersAdminPageFixed} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts-catalog" component={AdminSparePartsCatalogPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/web-scraping" component={AdminWebScrapingPage} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
