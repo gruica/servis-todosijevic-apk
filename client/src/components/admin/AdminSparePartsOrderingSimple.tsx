@@ -14,6 +14,16 @@ import { apiRequest } from '@/lib/queryClient';
 interface AdminSparePartsOrderingSimpleProps {
   serviceId?: number | null;
   onSuccess?: () => void;
+  prefilledData?: {
+    partName?: string;
+    partNumber?: string;
+    quantity?: string;
+    description?: string;
+    urgency?: string;
+    warrantyStatus?: string;
+    deviceModel?: string;
+    applianceCategory?: string;
+  };
 }
 
 interface FormData {
@@ -27,20 +37,20 @@ interface FormData {
   urgency: 'normal' | 'high' | 'urgent';
 }
 
-export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: AdminSparePartsOrderingSimpleProps) {
+export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, prefilledData }: AdminSparePartsOrderingSimpleProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [serviceNumber, setServiceNumber] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [formData, setFormData] = useState<FormData>({
-    deviceModel: '',
-    productCode: '',
-    applianceCategory: '',
-    partName: '',
-    quantity: 1,
-    description: '',
-    warrantyStatus: 'u garanciji',
-    urgency: 'normal'
+    deviceModel: prefilledData?.deviceModel || '',
+    productCode: prefilledData?.partNumber || '',
+    applianceCategory: prefilledData?.applianceCategory || '',
+    partName: prefilledData?.partName || '',
+    quantity: prefilledData?.quantity ? parseInt(prefilledData.quantity) : 1,
+    description: prefilledData?.description || '',
+    warrantyStatus: (prefilledData?.warrantyStatus as 'u garanciji' | 'van garancije') || 'u garanciji',
+    urgency: (prefilledData?.urgency as 'normal' | 'high' | 'urgent') || 'normal'
   });
 
   const { toast } = useToast();

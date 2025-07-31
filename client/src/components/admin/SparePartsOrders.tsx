@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { formatDate } from '@/lib/utils';
+import DirectSparePartsOrderForm from './DirectSparePartsOrderForm';
 import { 
   Package, 
   Wrench, 
@@ -30,7 +31,8 @@ import {
   CheckCircle,
   Building,
   Settings,
-  Trash2
+  Trash2,
+  ShoppingCart
 } from 'lucide-react';
 
 interface SparePartOrder {
@@ -87,6 +89,7 @@ export default function SparePartsOrders() {
   const [selectedOrder, setSelectedOrder] = useState<SparePartOrder | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDirectOrderOpen, setIsDirectOrderOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [editFormData, setEditFormData] = useState({
     status: '',
@@ -279,6 +282,12 @@ export default function SparePartsOrders() {
       console.log('Mutation started for order ID:', order.id);
       deleteOrderMutation.mutate(order.id);
     }
+  };
+
+  // Handle direct order - open AdminSparePartsOrderingSimple dialog
+  const handleDirectOrder = (order: SparePartOrder) => {
+    setSelectedOrder(order);
+    setIsDirectOrderOpen(true);
   };
 
   // Handle mark as received
@@ -522,15 +531,26 @@ export default function SparePartsOrders() {
                           Detalji
                         </Button>
                         {order.status === 'pending' && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleMarkReceived(order)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Stigao
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDirectOrder(order)}
+                              className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                            >
+                              <ShoppingCart className="h-4 w-4 mr-1" />
+                              Poruči direktno
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleMarkReceived(order)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Stigao
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="outline"
@@ -868,6 +888,93 @@ export default function SparePartsOrders() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Direct Ordering Dialog */}
+      <Dialog open={isDirectOrderOpen} onOpenChange={setIsDirectOrderOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Poruči direktno - Zahtev #{selectedOrder?.id}</DialogTitle>
+            <DialogDescription>
+              Poručite rezervni deo direktno na osnovu zahteva servisera. Svi podaci će biti automatski popunjeni.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-4">
+              {/* Request Info Card */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Informacije o zahtevu</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Deo:</span> {selectedOrder.partName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Količina:</span> {selectedOrder.quantity}
+                  </div>
+                  {selectedOrder.partNumber && (
+                    <div>
+                      <span className="font-medium">Kataloški br:</span> {selectedOrder.partNumber}
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium">Urgentnost:</span> {selectedOrder.urgency}
+                  </div>
+                  {selectedOrder.service && (
+                    <>
+                      <div>
+                        <span className="font-medium">Klijent:</span> {selectedOrder.service.client?.fullName}
+                      </div>
+                      <div>
+                        <span className="font-medium">Telefon:</span> {selectedOrder.service.client?.phone}
+                      </div>
+                      {selectedOrder.service.appliance && (
+                        <>
+                          <div>
+                            <span className="font-medium">Uređaj:</span> {selectedOrder.service.appliance.category?.name}
+                          </div>
+                          <div>
+                            <span className="font-medium">Proizvođač:</span> {selectedOrder.service.appliance.manufacturer?.name}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              {/* Direct Ordering Form */}
+              <DirectSparePartsOrderForm 
+                serviceId={selectedOrder.serviceId}
+                prefilledData={{
+                  partName: selectedOrder.partName,
+                  partNumber: selectedOrder.partNumber || '',
+                  quantity: selectedOrder.quantity.toString(),
+                  description: selectedOrder.description || '',
+                  urgency: selectedOrder.urgency,
+                  warrantyStatus: selectedOrder.warrantyStatus,
+                  deviceModel: selectedOrder.service?.appliance?.model || '',
+                  applianceCategory: selectedOrder.service?.appliance?.category?.name || ''
+                }}
+                onSuccess={() => {
+                  setIsDirectOrderOpen(false);
+                  toast({
+                    title: "Uspešno poručeno",
+                    description: "Rezervni deo je uspešno poručen direktno.",
+                  });
+                  // Optionally refresh the orders list
+                  queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+                }}
+              />
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDirectOrderOpen(false)}>
+              Zatvori
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
