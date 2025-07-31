@@ -9662,8 +9662,50 @@ Admin panel - automatska porudžbina
       
       console.log("🎯 SERVICE COMPLETION: Updated service status to completed");
 
-      // 3. Trigger notifications (SMS/Email) - reuse existing notification logic
-      // This will automatically trigger SMS and email notifications through the existing status update system
+      // 3. Trigger SMS notifications for service completion
+      try {
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        const smsConfig = {
+          apiKey: settingsMap.sms_mobile_api_key || '',
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        };
+
+        if (smsConfig.enabled && smsConfig.apiKey) {
+          console.log("🎯 SERVICE COMPLETION: Aktiviram SMS obaveštenja");
+          
+          const { SMSCommunicationService } = await import('./sms-communication-service.js');
+          const smsService = new SMSCommunicationService(smsConfig);
+          
+          // SMS klijentu o završetku servisa
+          const client = await storage.getClient(updatedService.clientId);
+          if (client && client.phone) {
+            const appliance = await storage.getAppliance(updatedService.applianceId);
+            const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+            const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+            const technician = await storage.getTechnician(updatedService.technicianId);
+            
+            const smsResult = await smsService.notifyServiceCompleted({
+              clientPhone: client.phone,
+              clientName: client.fullName,
+              serviceId: serviceId.toString(),
+              deviceType: category?.name || 'Uređaj',
+              manufacturerName: manufacturer?.name || '',
+              technicianName: technician?.fullName || 'Servis',
+              cost: completionData.cost || '0'
+            });
+            
+            console.log(`🎯 SERVICE COMPLETION: SMS poslat klijentu ${client.fullName} (${client.phone})`);
+          }
+        } else {
+          console.log("🎯 SERVICE COMPLETION: SMS nije konfigurisan");
+        }
+        
+      } catch (smsError) {
+        console.error("🎯 SERVICE COMPLETION: Greška pri slanju SMS-a:", smsError);
+      }
       
       res.json({
         success: true,
