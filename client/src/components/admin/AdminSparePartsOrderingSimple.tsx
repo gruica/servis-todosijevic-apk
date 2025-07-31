@@ -300,6 +300,49 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Brand Selection - Always visible */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <Label className="text-sm font-medium text-blue-900 mb-3 block">
+              Brend aparata *
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Card 
+                className={`cursor-pointer transition-all ${
+                  selectedBrand === 'beko' 
+                    ? 'ring-2 ring-blue-500 bg-blue-100' 
+                    : 'hover:shadow-md hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedBrand('beko')}
+              >
+                <CardHeader className="p-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Package className="h-4 w-4 text-blue-600" />
+                    Beko
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+
+              <Card 
+                className={`cursor-pointer transition-all ${
+                  selectedBrand === 'complus' 
+                    ? 'ring-2 ring-green-500 bg-green-100' 
+                    : 'hover:shadow-md hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedBrand('complus')}
+              >
+                <CardHeader className="p-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Package className="h-4 w-4 text-green-600" />
+                    Electrolux/Elica/Candy/Hoover/Turbo Air
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              Email će biti poslat na: {selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : selectedBrand === 'complus' ? 'servis@complus.me' : 'odaberite brend'}
+            </p>
+          </div>
+
           {/* Service ID and Serial Number */}
           <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
