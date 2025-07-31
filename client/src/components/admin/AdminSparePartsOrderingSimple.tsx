@@ -241,61 +241,15 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
     );
   }
 
-  if (!selectedBrand) {
-    return (
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Odaberite brend aparata</DialogTitle>
-            <DialogDescription>
-              Izaberite proizvođača aparata za koji naručujete rezervni deo.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedBrand('beko')}
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  Beko rezervni deo
-                </CardTitle>
-                <CardDescription>
-                  Email će biti poslat na: servis@eurotehnikamn.me
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedBrand('complus')}
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-600" />
-                  Electrolux/Elica/Candy/Hoover/Turbo Air
-                </CardTitle>
-                <CardDescription>
-                  Email će biti poslat na: servis@complus.me
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // Always show the main form with brand selection inside
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Poruči {selectedBrand === 'beko' ? 'Beko' : 'Electrolux/Elica/Candy/Hoover/Turbo Air'} rezervni deo
-          </DialogTitle>
+          <DialogTitle>Poruči rezervni deo</DialogTitle>
           <DialogDescription>
-            Popunite podatke o rezervnom delu koji trebate.
+            Popunite podatke o rezervnom delu koji trebate. Prvo odaberite brend aparata.
           </DialogDescription>
         </DialogHeader>
         
