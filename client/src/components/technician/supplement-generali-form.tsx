@@ -168,7 +168,7 @@ export function SupplementGeneraliForm({
         'samsung': 'Samsung',
         'lg': 'LG'
       };
-      additionalInfo.push(`Brend: ${brandNames[scannedData.manufacturerCode] || scannedData.manufacturerCode}`);
+      additionalInfo.push(`Brend: ${brandNames[scannedData.manufacturerCode as keyof typeof brandNames] || scannedData.manufacturerCode}`);
     }
     if (scannedData.year) {
       additionalInfo.push(`Godina: ${scannedData.year}`);
