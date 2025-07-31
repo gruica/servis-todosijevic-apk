@@ -161,6 +161,8 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       urgency,
       emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
     };
+    
+    console.log('🔧 FRONTEND: Šalje orderData:', JSON.stringify(orderData, null, 2));
 
     orderSparePartMutation.mutate(orderData);
   };
