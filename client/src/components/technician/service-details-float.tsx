@@ -175,8 +175,7 @@ export function ServiceDetailsFloat({
   };
 
   const openClientLocation = (address: string, city: string | null) => {
-    const fullAddress = city ? `${address}, ${city}` : address;
-    openMapWithAddress(fullAddress);
+    openMapWithAddress(address, city);
   };
 
   if (!service) return null;
@@ -500,7 +499,7 @@ export function ServiceDetailsFloat({
                         </Button>
                       ) : (
                         <Button 
-                          onClick={() => setShowCompletionForm(true)}
+                          onClick={handleCompleteService}
                           disabled={isUpdating}
                           className="w-full bg-green-600 hover:bg-green-700"
                         >

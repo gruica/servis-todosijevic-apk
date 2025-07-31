@@ -76,15 +76,28 @@ export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompl
         usedSpareParts: JSON.stringify(data.usedSpareParts)
       };
       
-      return apiRequest("/api/service-completion-reports", {
+      // Kreiraj completion report
+      const reportResponse = await apiRequest("/api/service-completion-reports", {
         method: "POST",
         body: JSON.stringify(reportData)
       });
+
+      // Automatski završi servis sa statusom "completed"
+      await apiRequest(`/api/services/${service.id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({
+          status: "completed",
+          technicianNotes: data.workDescription,
+          cost: data.totalCost || "0"
+        })
+      });
+
+      return reportResponse;
     },
     onSuccess: () => {
       toast({
-        title: "Uspešno kreiran izveštaj",
-        description: "Izveštaj o završetku servisa je uspešno sačuvan."
+        title: "Servis uspešno završen",
+        description: "Detaljni izveštaj je kreiran i servis je označen kao završen."
       });
       queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
       onClose();
@@ -93,7 +106,7 @@ export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompl
     onError: (error: any) => {
       toast({
         title: "Greška",
-        description: error.message || "Došlo je do greške pri kreiranju izveštaja.",
+        description: error.message || "Došlo je do greške pri završetku servisa.",
         variant: "destructive"
       });
     }
