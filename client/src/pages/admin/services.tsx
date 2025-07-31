@@ -230,9 +230,12 @@ export default function AdminServices() {
 
   const returnServiceMutation = useMutation({
     mutationFn: async (data: { serviceId: number; reason: string; notes: string }) => {
-      await apiRequest("POST", `/api/admin/services/${data.serviceId}/return-from-technician`, {
-        reason: data.reason,
-        notes: data.notes
+      await apiRequest(`/api/admin/services/${data.serviceId}/return-from-technician`, {
+        method: "POST",
+        body: JSON.stringify({
+          reason: data.reason,
+          notes: data.notes
+        })
       });
     },
     onSuccess: () => {
@@ -257,8 +260,11 @@ export default function AdminServices() {
   // Assign technician mutation
   const assignTechnicianMutation = useMutation({
     mutationFn: async (data: { serviceId: number; technicianId: number }) => {
-      const response = await apiRequest("PUT", `/api/admin/services/${data.serviceId}/assign-technician`, {
-        technicianId: data.technicianId,
+      const response = await apiRequest(`/api/admin/services/${data.serviceId}/assign-technician`, {
+        method: "PUT",
+        body: JSON.stringify({
+          technicianId: data.technicianId,
+        })
       });
       return response.json();
     },
@@ -649,7 +655,7 @@ export default function AdminServices() {
                   <SelectContent>
                     <SelectItem value="all">Svi gradovi</SelectItem>
                     {Array.from(new Set(services.map(s => s.client?.city).filter(Boolean))).sort().map((city) => (
-                      <SelectItem key={city} value={city}>
+                      <SelectItem key={city} value={city || ""}>
                         {city}
                       </SelectItem>
                     ))}
