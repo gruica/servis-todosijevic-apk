@@ -4425,7 +4425,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Service completion reports methods
-  async createServiceCompletionReport(data: schema.InsertServiceCompletionReport): Promise<schema.ServiceCompletionReport> {
+  async createServiceCompletionReport(data: InsertServiceCompletionReport): Promise<ServiceCompletionReport> {
     try {
       const reportData = {
         ...data,
@@ -4434,7 +4434,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       };
       
-      const [result] = await db.insert(schema.serviceCompletionReports)
+      const [result] = await db.insert(serviceCompletionReports)
         .values(reportData)
         .returning();
       return result;
@@ -4444,11 +4444,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getServiceCompletionReport(serviceId: number): Promise<schema.ServiceCompletionReport | null> {
+  async getServiceCompletionReport(serviceId: number): Promise<ServiceCompletionReport | null> {
     try {
       const [result] = await db.select()
-        .from(schema.serviceCompletionReports)
-        .where(eq(schema.serviceCompletionReports.serviceId, serviceId))
+        .from(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.serviceId, serviceId))
         .limit(1);
       return result || null;
     } catch (error) {
@@ -4457,11 +4457,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getServiceCompletionReportById(id: number): Promise<schema.ServiceCompletionReport | null> {
+  async getServiceCompletionReportById(id: number): Promise<ServiceCompletionReport | null> {
     try {
       const [result] = await db.select()
-        .from(schema.serviceCompletionReports)
-        .where(eq(schema.serviceCompletionReports.id, id))
+        .from(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.id, id))
         .limit(1);
       return result || null;
     } catch (error) {
@@ -4470,11 +4470,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateServiceCompletionReport(id: number, data: Partial<schema.ServiceCompletionReport>): Promise<schema.ServiceCompletionReport | null> {
+  async updateServiceCompletionReport(id: number, data: Partial<ServiceCompletionReport>): Promise<ServiceCompletionReport | null> {
     try {
-      const [result] = await db.update(schema.serviceCompletionReports)
+      const [result] = await db.update(serviceCompletionReports)
         .set({ ...data, updatedAt: new Date() })
-        .where(eq(schema.serviceCompletionReports.id, id))
+        .where(eq(serviceCompletionReports.id, id))
         .returning();
       return result || null;
     } catch (error) {
@@ -4483,23 +4483,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCompletionReportsByTechnician(technicianId: number): Promise<schema.ServiceCompletionReport[]> {
+  async getCompletionReportsByTechnician(technicianId: number): Promise<ServiceCompletionReport[]> {
     try {
       return await db.select()
-        .from(schema.serviceCompletionReports)
-        .where(eq(schema.serviceCompletionReports.technicianId, technicianId))
-        .orderBy(desc(schema.serviceCompletionReports.createdAt));
+        .from(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.technicianId, technicianId))
+        .orderBy(desc(serviceCompletionReports.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju izveštaja za servisera:', error);
       return [];
     }
   }
 
-  async getAllServiceCompletionReports(): Promise<schema.ServiceCompletionReport[]> {
+  async getAllServiceCompletionReports(): Promise<ServiceCompletionReport[]> {
     try {
       return await db.select()
-        .from(schema.serviceCompletionReports)
-        .orderBy(desc(schema.serviceCompletionReports.createdAt));
+        .from(serviceCompletionReports)
+        .orderBy(desc(serviceCompletionReports.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju svih izveštaja o završetku servisa:', error);
       return [];
