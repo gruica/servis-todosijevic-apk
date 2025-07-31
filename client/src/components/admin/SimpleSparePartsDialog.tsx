@@ -47,7 +47,10 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
 
   const orderSparePartMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const response = await apiRequest('POST', '/api/admin/spare-parts/order', orderData);
+      const response = await apiRequest('/api/admin/spare-parts/order', {
+        method: 'POST',
+        body: JSON.stringify(orderData)
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -87,7 +90,23 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Trim whitespace from all string fields
+    const trimmedDeviceModel = deviceModel.trim();
+    const trimmedProductCode = productCode.trim();
+    const trimmedApplianceCategory = applianceCategory.trim();
+    const trimmedPartName = partName.trim();
+    
+    // Debug logging
+    console.log('🔧 ADMIN FORM VALIDATION DEBUG:', {
+      selectedBrand,
+      deviceModel: `"${deviceModel}" -> "${trimmedDeviceModel}"`,
+      productCode: `"${productCode}" -> "${trimmedProductCode}"`,
+      applianceCategory: `"${applianceCategory}" -> "${trimmedApplianceCategory}"`,
+      partName: `"${partName}" -> "${trimmedPartName}"`
+    });
+    
     if (!selectedBrand) {
+      console.log('❌ VALIDATION FAILED: selectedBrand je prazan');
       toast({
         title: "Greška",
         description: "Molimo odaberite brend aparata.",
@@ -96,24 +115,33 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       return;
     }
 
-    if (!deviceModel || !productCode || !applianceCategory || !partName) {
+    if (!trimmedDeviceModel || !trimmedProductCode || !trimmedApplianceCategory || !trimmedPartName) {
+      const emptyFields = [];
+      if (!trimmedDeviceModel) emptyFields.push('Model aparata');
+      if (!trimmedProductCode) emptyFields.push('Produkt kod');
+      if (!trimmedApplianceCategory) emptyFields.push('Tip aparata');
+      if (!trimmedPartName) emptyFields.push('Naziv dela');
+      
+      console.log('❌ VALIDATION FAILED: Prazna polja:', emptyFields);
       toast({
         title: "Greška",
-        description: "Molimo popunite sva obavezna polja.",
+        description: `Molimo popunite sva obavezna polja: ${emptyFields.join(', ')}`,
         variant: "destructive",
       });
       return;
     }
+    
+    console.log('✅ VALIDATION PASSED: Svi podaci su OK, šaljem porudžbinu...');
 
     const orderData = {
       serviceId: serviceId || null,
       brand: selectedBrand,
-      deviceModel,
-      productCode,
-      applianceCategory,
-      partName,
+      deviceModel: trimmedDeviceModel,
+      productCode: trimmedProductCode,
+      applianceCategory: trimmedApplianceCategory,
+      partName: trimmedPartName,
       quantity,
-      description,
+      description: description.trim(),
       warrantyStatus,
       urgency,
       emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
