@@ -485,6 +485,10 @@ export const servicesRelations = relations(services, ({ one, many }) => ({
     fields: [services.technicianId],
     references: [technicians.id],
   }),
+  businessPartner: one(users, {
+    fields: [services.businessPartnerId],
+    references: [users.id],
+  }),
   removedParts: many(removedParts),
 }));
 
