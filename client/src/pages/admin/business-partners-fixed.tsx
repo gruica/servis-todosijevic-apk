@@ -98,13 +98,19 @@ export default function BusinessPartnerManagementFixed() {
   // Fetch business partner services with error handling
   const { data: services = [], isLoading: isLoadingServices } = useQuery({
     queryKey: ["/api/admin/business-partner-services"],
-    queryFn: () => apiRequest("/api/admin/business-partner-services")
+    queryFn: async () => {
+      const response = await apiRequest("/api/admin/business-partner-services");
+      return await response.json();
+    }
   });
 
   // Fetch business partner stats
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
     queryKey: ["/api/admin/business-partner-stats"],
-    queryFn: () => apiRequest("/api/admin/business-partner-stats")
+    queryFn: async () => {
+      const response = await apiRequest("/api/admin/business-partner-stats");
+      return await response.json();
+    }
   });
 
   console.log("📊 Business Partner Stats Raw Data:", statsData);
@@ -122,6 +128,7 @@ export default function BusinessPartnerManagementFixed() {
   };
 
   console.log("📊 Business Partner Stats Processed:", stats);
+  console.log("📋 Business Partner Services:", services?.length || 0, "total services");
 
   // Translations
   const statusTranslations: Record<string, string> = {
