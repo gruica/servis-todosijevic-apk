@@ -66,15 +66,16 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
   }, [serviceNumber]);
 
   const { data: serviceData } = useQuery({
-    queryKey: ['service-simple', debouncedServiceNumber],
+    queryKey: ['service-simple', debouncedServiceNumber || serviceId],
     queryFn: async () => {
-      if (!debouncedServiceNumber) return null;
-      const id = parseInt(debouncedServiceNumber);
+      const targetId = debouncedServiceNumber || serviceId;
+      if (!targetId) return null;
+      const id = parseInt(targetId.toString());
       if (isNaN(id) || id <= 0) return null;
       const response = await apiRequest('GET', `/api/admin/services/${id}`);
       return response.json();
     },
-    enabled: !!debouncedServiceNumber && !isNaN(parseInt(debouncedServiceNumber)) && parseInt(debouncedServiceNumber) > 0
+    enabled: !!(debouncedServiceNumber || serviceId) && !isNaN(parseInt((debouncedServiceNumber || serviceId || '').toString())) && parseInt((debouncedServiceNumber || serviceId || '').toString()) > 0
   });
 
   // Auto-populate form data when service data is loaded
@@ -82,10 +83,13 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
     if (serviceData) {
       setSerialNumber(serviceData.serialNumber || '');
       
-      // Auto-detect brand based on manufacturer
+      // Auto-detect brand based on manufacturer - IMPROVED LOGIC
       if (serviceData.manufacturerName) {
         const manufacturer = serviceData.manufacturerName.toLowerCase();
+        console.log('🔧 Auto-detecting brand for manufacturer:', serviceData.manufacturerName);
+        
         if (manufacturer.includes('beko')) {
+          console.log('✅ Auto-detected: Beko');
           setSelectedBrand('beko');
         } else if (
           manufacturer.includes('electrolux') || 
@@ -94,8 +98,13 @@ export default function AdminSparePartsOrderingSimple({ serviceId, onSuccess, pr
           manufacturer.includes('hoover') || 
           manufacturer.includes('turbo air')
         ) {
+          console.log('✅ Auto-detected: ComPlus group');
           setSelectedBrand('complus');
+        } else {
+          console.log('⚠️ Could not auto-detect brand for:', manufacturer, '- User must select');
         }
+      } else {
+        console.log('⚠️ No manufacturer data available - User must select brand');
       }
       
       // Generate comprehensive description with all service details
