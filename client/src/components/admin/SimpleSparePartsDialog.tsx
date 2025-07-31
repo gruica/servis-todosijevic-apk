@@ -103,6 +103,8 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔧 ADMIN FORM SUBMISSION STARTED - handleSubmit called');
+    
     // Trim whitespace from all string fields
     const trimmedDeviceModel = deviceModel.trim();
     const trimmedProductCode = productCode.trim();
