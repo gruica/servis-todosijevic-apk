@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FloatingSheet } from "@/components/ui/floating-sheet";
@@ -48,6 +48,11 @@ export function ServiceDetailsFloat({
   const [customerRefusesRepair, setCustomerRefusesRepair] = useState(false);
   const [customerRefusalReason, setCustomerRefusalReason] = useState("");
   const [showCompletionForm, setShowCompletionForm] = useState(false);
+
+  // Debug tracking za showCompletionForm state
+  useEffect(() => {
+    console.log("🎯 DEBUG: showCompletionForm state promenjen:", showCompletionForm);
+  }, [showCompletionForm]);
 
   const handleSendSMS = async (smsType: string) => {
     setSendingSMS(true);
@@ -101,8 +106,10 @@ export function ServiceDetailsFloat({
   };
 
   const handleCompleteService = () => {
+    console.log("🎯 DEBUG: handleCompleteService pozvan, trenutno showCompletionForm:", showCompletionForm);
     // Otvori completion form dialog umesto direktno zatvaranja servisa
     setShowCompletionForm(true);
+    console.log("🎯 DEBUG: setShowCompletionForm(true) pozvan");
   };
 
   const handleCustomerRefusesRepair = async () => {
@@ -560,7 +567,10 @@ export function ServiceDetailsFloat({
       <ServiceCompletionForm
         service={service}
         isOpen={showCompletionForm}
-        onClose={() => setShowCompletionForm(false)}
+        onClose={() => {
+          console.log("🎯 DEBUG: ServiceCompletionForm onClose pozvan");
+          setShowCompletionForm(false);
+        }}
       />
     </FloatingSheet>
   );
