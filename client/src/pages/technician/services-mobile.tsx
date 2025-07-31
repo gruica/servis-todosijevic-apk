@@ -185,6 +185,7 @@ function ServiceCard({ service }: { service: Service }) {
   const [showUnavailableDialog, setShowUnavailableDialog] = useState(false);
   const [showSparePartsDialog, setShowSparePartsDialog] = useState(false);
   const [showGeneraliDialog, setShowGeneraliDialog] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
   const [unavailableReason, setUnavailableReason] = useState('');
   const [sparePartsData, setSparePartsData] = useState({
@@ -192,6 +193,19 @@ function ServiceCard({ service }: { service: Service }) {
     catalogNumber: '',
     urgency: 'normal' as 'normal' | 'high' | 'urgent',
     description: ''
+  });
+  
+  // Service completion form data
+  const [completionData, setCompletionData] = useState({
+    technicianNotes: '',
+    workPerformed: '',
+    usedParts: '',
+    machineNotes: '',
+    cost: '',
+    warrantyInfo: '',
+    clientSignature: false,
+    workQuality: 5,
+    clientSatisfaction: 5
   });
 
   // Handler functions
@@ -204,9 +218,8 @@ function ServiceCard({ service }: { service: Service }) {
   };
 
   const handleCompleteService = (serviceId: number) => {
-    console.log("🎯 GLAVNI DEBUG: handleCompleteService pozvan sa serviceId:", serviceId);
-    console.log("🎯 DEBUG: Trenutno samo menja status na completed - TREBA DODATI COMPLETION FORM!");
-    completeServiceMutation.mutate(serviceId);
+    console.log("🎯 COMPLETION DEBUG: Otvaram Service Completion Dialog za serviceId:", serviceId);
+    setShowCompletionDialog(true);
   };
 
   const handlePartsReceived = (serviceId: number) => {
@@ -268,6 +281,51 @@ function ServiceCard({ service }: { service: Service }) {
         });
       });
     }
+  };
+
+  const submitServiceCompletion = () => {
+    if (!completionData.technicianNotes.trim() || !completionData.workPerformed.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite napomenu servisera i opis izvršenog rada",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log("🎯 COMPLETION DEBUG: Šaljem completion data:", completionData);
+    
+    // Call the service completion API with all the data
+    apiRequest(`/api/services/${service.id}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(completionData)
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+      toast({
+        title: "Servis završen",
+        description: "Servis je uspešno završen sa kompletnom dokumentacijom",
+      });
+      setShowCompletionDialog(false);
+      // Resetuj completion data
+      setCompletionData({
+        technicianNotes: '',
+        workPerformed: '',
+        usedParts: '',
+        machineNotes: '',
+        cost: '',
+        warrantyInfo: '',
+        clientSignature: false,
+        workQuality: 5,
+        clientSatisfaction: 5
+      });
+    }).catch((error) => {
+      console.error("Completion Error:", error);
+      toast({
+        title: "Greška",
+        description: "Greška pri završavanju servisa",
+        variant: "destructive"
+      });
+    });
   };
   
   const handleCallClient = () => {
@@ -639,6 +697,159 @@ function ServiceCard({ service }: { service: Service }) {
                 className="flex-1 bg-orange-600 hover:bg-orange-700"
               >
                 Naruči deo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Completion Dialog */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">Završavanje servisa #{service.id}</DialogTitle>
+            <DialogDescription>
+              Unesite detaljne informacije o izvršenom radu pre završavanja servisa
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="technician-notes">Napomena servisera *</Label>
+              <Textarea
+                id="technician-notes"
+                value={completionData.technicianNotes}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, technicianNotes: e.target.value }))}
+                placeholder="Opišite šta je urađeno, koje probleme ste identifikovali..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="work-performed">Izvršeni rad *</Label>
+              <Textarea
+                id="work-performed"
+                value={completionData.workPerformed}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, workPerformed: e.target.value }))}
+                placeholder="Detaljno opišite koji rad je izvršen..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="used-parts">Korišćeni delovi</Label>
+              <Textarea
+                id="used-parts"
+                value={completionData.usedParts}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, usedParts: e.target.value }))}
+                placeholder="Lista korišćenih rezervnih delova..."
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="machine-notes">Napomene o aparatu</Label>
+              <Textarea
+                id="machine-notes"
+                value={completionData.machineNotes}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, machineNotes: e.target.value }))}
+                placeholder="Stanje aparata, preporuke za održavanje..."
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cost">Cena servisa (RSD)</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  value={completionData.cost}
+                  onChange={(e) => setCompletionData(prev => ({ ...prev, cost: e.target.value }))}
+                  placeholder="0"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="warranty">Garancija (meseci)</Label>
+                <Input
+                  id="warranty"
+                  value={completionData.warrantyInfo}
+                  onChange={(e) => setCompletionData(prev => ({ ...prev, warrantyInfo: e.target.value }))}
+                  placeholder="6"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Kvalitet rada (1-5)</Label>
+                <Select 
+                  value={completionData.workQuality.toString()} 
+                  onValueChange={(value) => setCompletionData(prev => ({ ...prev, workQuality: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Loš</SelectItem>
+                    <SelectItem value="2">2 - Slab</SelectItem>
+                    <SelectItem value="3">3 - Dobar</SelectItem>
+                    <SelectItem value="4">4 - Vrlo dobar</SelectItem>
+                    <SelectItem value="5">5 - Odličan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Zadovoljstvo klijenta (1-5)</Label>
+                <Select 
+                  value={completionData.clientSatisfaction.toString()} 
+                  onValueChange={(value) => setCompletionData(prev => ({ ...prev, clientSatisfaction: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Nezadovoljan</SelectItem>
+                    <SelectItem value="2">2 - Malo zadovoljan</SelectItem>
+                    <SelectItem value="3">3 - Zadovoljan</SelectItem>
+                    <SelectItem value="4">4 - Vrlo zadovoljan</SelectItem>
+                    <SelectItem value="5">5 - Izuzetno zadovoljan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="client-signature"
+                checked={completionData.clientSignature}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, clientSignature: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="client-signature">Klijent je potvrdio izvršen rad</Label>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCompletionDialog(false)}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitServiceCompletion}
+                disabled={!completionData.technicianNotes.trim() || !completionData.workPerformed.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Završi servis
               </Button>
             </div>
           </div>

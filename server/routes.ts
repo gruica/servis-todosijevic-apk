@@ -9610,5 +9610,63 @@ Admin panel - automatska porudžbina
     }
   });
 
+  // Complete service with full documentation (technician mobile interface)
+  app.post('/api/services/:id/complete', jwtAuth, requireRole(['technician', 'admin']), async (req, res) => {
+    try {
+      console.log("🎯 SERVICE COMPLETION: Starting completion for service", req.params.id);
+      
+      const serviceId = parseInt(req.params.id);
+      const completionData = req.body;
+      
+      console.log("🎯 SERVICE COMPLETION: Received completion data:", completionData);
+
+      // 1. Create detailed service completion report
+      const reportData = {
+        serviceId: serviceId,
+        technicianNotes: completionData.technicianNotes,
+        workPerformed: completionData.workPerformed,
+        usedParts: completionData.usedParts || null,
+        machineNotes: completionData.machineNotes || null,
+        cost: completionData.cost ? parseFloat(completionData.cost) : null,
+        warrantyInfo: completionData.warrantyInfo || null,
+        workQuality: completionData.workQuality || 5,
+        clientSatisfaction: completionData.clientSatisfaction || 5,
+        clientSignature: completionData.clientSignature || false,
+        completedAt: new Date()
+      };
+
+      console.log("🎯 SERVICE COMPLETION: Creating completion report with data:", reportData);
+      
+      const completionReport = await storage.createServiceCompletionReport(reportData);
+      console.log("🎯 SERVICE COMPLETION: Created completion report with ID:", completionReport.id);
+
+      // 2. Update service status to completed
+      const updatedService = await storage.updateServiceStatus(serviceId, "completed", {
+        technicianNotes: completionData.technicianNotes,
+        cost: completionData.cost ? parseFloat(completionData.cost) : null,
+        completedDate: new Date()
+      });
+      
+      console.log("🎯 SERVICE COMPLETION: Updated service status to completed");
+
+      // 3. Trigger notifications (SMS/Email) - reuse existing notification logic
+      // This will automatically trigger SMS and email notifications through the existing status update system
+      
+      res.json({
+        success: true,
+        message: 'Servis je uspešno završen sa kompletnom dokumentacijom',
+        service: updatedService,
+        completionReport: completionReport
+      });
+
+    } catch (error: any) {
+      console.error('🎯 SERVICE COMPLETION ERROR:', error);
+      res.status(500).json({ 
+        error: 'Greška pri završavanju servisa',
+        details: error.message 
+      });
+    }
+  });
+
   return httpServer;
 }
