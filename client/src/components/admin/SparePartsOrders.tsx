@@ -61,19 +61,19 @@ interface SparePartOrder {
     description: string;
     createdAt: string;
     scheduledDate?: string;
-    client: {
+    client?: {
       fullName: string;
       phone: string;
       email?: string;
       address?: string;
       city?: string;
-    };
-    appliance: {
+    } | null;
+    appliance?: {
       model?: string;
       serialNumber?: string;
-      category: { name: string };
-      manufacturer: { name: string };
-    };
+      category?: { name: string };
+      manufacturer?: { name: string };
+    } | null;
   };
   technician?: {
     name: string;
@@ -109,7 +109,10 @@ export default function SparePartsOrders() {
   // Update order mutation
   const updateOrderMutation = useMutation({
     mutationFn: async (data: { id: number; updates: Partial<SparePartOrder> }) => {
-      const response = await apiRequest('PUT', `/api/admin/spare-parts/${data.id}`, data.updates);
+      const response = await apiRequest(`/api/admin/spare-parts/${data.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data.updates)
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -133,7 +136,9 @@ export default function SparePartsOrders() {
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
       console.log('DELETE API call starting for orderId:', orderId);
-      const response = await apiRequest('DELETE', `/api/admin/spare-parts/${orderId}`);
+      const response = await apiRequest(`/api/admin/spare-parts/${orderId}`, {
+        method: 'DELETE'
+      });
       console.log('DELETE API response status:', response.status);
       const result = await response.json();
       console.log('DELETE API response data:', result);
@@ -179,7 +184,10 @@ export default function SparePartsOrders() {
         receivedDate: new Date().toISOString()
       };
 
-      const response = await apiRequest('POST', '/api/admin/available-parts', availablePartData);
+      const response = await apiRequest('/api/admin/available-parts', {
+        method: 'POST',
+        body: JSON.stringify(availablePartData)
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -287,11 +295,11 @@ export default function SparePartsOrders() {
 
     const updates: Partial<SparePartOrder> = {
       status: editFormData.status as any,
-      estimatedCost: editFormData.estimatedCost || null,
-      actualCost: editFormData.actualCost || null,
-      expectedDelivery: editFormData.expectedDelivery ? new Date(editFormData.expectedDelivery).toISOString() : null,
-      receivedDate: editFormData.receivedDate ? new Date(editFormData.receivedDate).toISOString() : null,
-      adminNotes: editFormData.adminNotes || null
+      estimatedCost: editFormData.estimatedCost || undefined,
+      actualCost: editFormData.actualCost || undefined,
+      expectedDelivery: editFormData.expectedDelivery ? new Date(editFormData.expectedDelivery).toISOString() : undefined,
+      receivedDate: editFormData.receivedDate ? new Date(editFormData.receivedDate).toISOString() : undefined,
+      adminNotes: editFormData.adminNotes || undefined
     };
 
     updateOrderMutation.mutate({ id: selectedOrder.id, updates });
@@ -420,12 +428,12 @@ export default function SparePartsOrders() {
                                 </p>
                               </div>
                               <div className="space-y-1 ml-6">
-                                <p>Ime: <span className="font-medium">{order.service.client.fullName}</span></p>
+                                <p>Ime: <span className="font-medium">{order.service.client?.fullName || 'N/A'}</span></p>
                                 <div className="flex items-center gap-1">
                                   <Phone className="h-3 w-3 text-muted-foreground" />
-                                  <span className="font-medium text-blue-600">{order.service.client.phone}</span>
+                                  <span className="font-medium text-blue-600">{order.service.client?.phone || 'N/A'}</span>
                                 </div>
-                                {order.service.client.email && (
+                                {order.service.client?.email && (
                                   <div className="flex items-center gap-1">
                                     <Mail className="h-3 w-3 text-muted-foreground" />
                                     <span className="text-sm">{order.service.client.email}</span>
@@ -433,18 +441,18 @@ export default function SparePartsOrders() {
                                 )}
                                 <div className="flex items-center gap-1">
                                   <MapPin className="h-3 w-3 text-muted-foreground" />
-                                  <span>{order.service.client.city || 'N/A'}</span>
+                                  <span>{order.service.client?.city || 'N/A'}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  {order.service.client.address}
+                                  {order.service.client?.address || ''}
                                 </p>
                                 <div className="mt-2 p-2 bg-gray-50 rounded-md">
                                   <p className="text-xs font-medium text-muted-foreground">Uređaj:</p>
                                   <p className="text-sm">
-                                    {order.service.appliance.manufacturer.name} {order.service.appliance.model}
+                                    {order.service.appliance?.manufacturer?.name} {order.service.appliance?.model}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    {order.service.appliance.category.name}
+                                    {order.service.appliance?.category?.name}
                                   </p>
                                 </div>
                               </div>
