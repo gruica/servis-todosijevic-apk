@@ -9290,11 +9290,22 @@ Admin panel - automatska porudžbina
   // Get all business partner messages
   app.get("/api/admin/business-partner-messages", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const messages = await businessPartnerMessageService.getAllMessages();
+      const messages = await BusinessPartnerMessageService.getAllBusinessPartnerMessages();
       res.json(messages);
     } catch (error) {
       console.error("Error fetching business partner messages:", error);
       res.status(500).json({ error: "Greška pri dohvatanju poruka" });
+    }
+  });
+
+  // Get business partner message statistics
+  app.get("/api/admin/business-partner-messages/stats", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const stats = await BusinessPartnerMessageService.getBusinessPartnerMessageStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching business partner message stats:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistika poruka" });
     }
   });
 

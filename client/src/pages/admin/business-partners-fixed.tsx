@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import BusinessPartnerMessages from "@/components/admin/business-partner-messages";
 import { 
   Users, 
   Building2, 
@@ -30,7 +31,8 @@ import {
   Package,
   Calendar,
   Trash2,
-  Edit
+  Edit,
+  MessageSquare
 } from "lucide-react";
 
 // Types with comprehensive null safety
@@ -358,6 +360,7 @@ export default function BusinessPartnerManagementFixed() {
               Obaveštenja
             </TabsTrigger>
             <TabsTrigger value="messages">
+              <MessageSquare className="h-4 w-4 mr-2" />
               Messages
             </TabsTrigger>
             <TabsTrigger value="analytics">
@@ -632,15 +635,8 @@ export default function BusinessPartnerManagementFixed() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="messages">
-            <Card>
-              <CardHeader>
-                <CardTitle>Messages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Messaging funkcionalnost će biti implementirana uskoro.</p>
-              </CardContent>
-            </Card>
+          <TabsContent value="messages" className="space-y-6">
+            <BusinessPartnerMessages />
           </TabsContent>
 
           <TabsContent value="analytics">
