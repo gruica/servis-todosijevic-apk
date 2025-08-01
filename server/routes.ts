@@ -10025,5 +10025,72 @@ Admin panel - automatska porudžbina
     }
   });
 
+// ===== SEO OPTIMIZATION ENDPOINTS =====
+
+// Serve robots.txt for SEO crawlers
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.frigosistemtodosijevic.me/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+
+# Allow main pages
+Allow: /
+Allow: /services
+Allow: /contact
+Allow: /about`);
+});
+
+// Serve sitemap.xml for search engines
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml');
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/services</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/contact</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/about</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>`;
+  res.send(sitemap);
+});
+
+// Performance endpoint for monitoring
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    api: 'ready',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
   return httpServer;
 }

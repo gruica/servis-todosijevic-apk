@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.frigosistemtodosijevic.me/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+
+# Allow main pages
+Allow: /
+Allow: /services
+Allow: /contact
+Allow: /about
