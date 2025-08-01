@@ -1,0 +1,43 @@
+/* CSS overlay za Material Icons -> Lucide replacement */
+/* Ovaj fajl skriva Material Icons tekst i omogućava Lucide ikonama da se prikažu */
+
+.material-icons {
+  /* Sakrij text node sadržaj */
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  /* Zadrži layout properties */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* Kada je Material Icons span parent, prikaži Lucide ikonu */
+.material-icons + .lucide-icon-overlay {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: none !important;
+}
+
+/* Alternativni pristup - wrapper metod */
+.icon-wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.icon-wrapper .material-icons {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.icon-wrapper .lucide-replacement {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
