@@ -63,14 +63,15 @@ export class EmailService {
     // Port 465 koristi SSL/TLS, port 587 koristi STARTTLS
     const secure = port === 465 ? true : (process.env.EMAIL_SECURE === 'true' || false);
     const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
-    const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '';
+    const pass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || '';
     
-    // Proveri da li je SMTP_PASSWORD postavljena
-    if (!process.env.SMTP_PASSWORD) {
-      console.error('[EMAIL] ❌ KRITIČNA GREŠKA: SMTP_PASSWORD environment varijabla nije postavljena!');
+    // Proveri da li je EMAIL_PASSWORD ili SMTP_PASSWORD postavljena
+    if (!process.env.EMAIL_PASSWORD && !process.env.SMTP_PASSWORD) {
+      console.error('[EMAIL] ❌ KRITIČNA GREŠKA: Ni EMAIL_PASSWORD ni SMTP_PASSWORD environment varijabla nije postavljena!');
       console.error('[EMAIL] 💡 Email funkcionalnosti neće raditi bez SMTP lozinke');
     } else {
-      console.log('[EMAIL] ✅ SMTP_PASSWORD environment varijabla je postavljena');
+      const activePassSource = process.env.EMAIL_PASSWORD ? 'EMAIL_PASSWORD' : 'SMTP_PASSWORD';
+      console.log(`[EMAIL] ✅ ${activePassSource} environment varijabla je postavljena`);
     }
     
     // Dodatna provera formata host-a da eliminišemo čestu grešku
@@ -146,7 +147,7 @@ export class EmailService {
       const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465;
       const secure = process.env.EMAIL_SECURE === 'true' || true;
       const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
-      const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '';
+      const pass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || '';
       
       // Kreiraj pojednostavljenu konfiguraciju
       this.configCache = {
@@ -912,6 +913,35 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
   }
 
   /**
+   * Ažurira kredencijale za SMTP konekciju
+   * @param user Novo korisničko ime
+   * @param pass Nova lozinka
+   */
+  public updateCredentials(user: string, pass: string): void {
+    console.log('[EMAIL] Ažuriram SMTP kredencijale...');
+    
+    // Ažuriram cache
+    if (this.configCache) {
+      this.configCache.auth = { user, pass };
+      console.log(`[EMAIL] ✅ Kredencijali ažurirani: ${user}`);
+      
+      // Kreiram novi transporter sa novim kredencijalima
+      try {
+        this.transporter = nodemailer.createTransport({
+          ...this.configCache,
+          pool: true,
+        } as NodemailerTransportOptions);
+        
+        console.log('[EMAIL] ✅ Novi transporter kreiran sa ažuriranim kredencijalima');
+      } catch (error) {
+        console.error('[EMAIL] ❌ Greška pri kreiranju novog transportera:', error);
+      }
+    } else {
+      console.error('[EMAIL] ❌ Nema postojećih SMTP konfiguracija za ažuriranje');
+    }
+  }
+
+  /**
    * Test funkcija za slanje email-a sa pokušavanjem različitih SMTP konfiguracija
    * @param to Email adresa
    * @param subject Naslov email-a
@@ -922,7 +952,7 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
     console.log(`[EMAIL TEST] Pokušavanje slanja test email-a na: ${to}`);
     
     const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
-    const pass = process.env.SMTP_PASSWORD || '';
+    const pass = process.env.EMAIL_PASSWORD || process.env.SMTP_PASSWORD || '';
     const host = 'mail.frigosistemtodosijevic.com';
 
     // Različite SMTP konfiguracije za testiranje
