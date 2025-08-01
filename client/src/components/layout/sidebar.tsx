@@ -39,7 +39,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/admin/services", label: "Servisi", icon: "build" },
     { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: "package", highlight: true },
     { path: "/technician-services", label: "Servisi po serviserima", icon: "groups" },
-    { path: "/admin/business-partners", label: "Business Partneri", icon: "business", highlight: true, badge: pendingBusinessPartnerCount },
+    { path: "/admin/business-partners", label: "Poslovni partneri", icon: "business", highlight: true, badge: pendingBusinessPartnerCount },
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
     { path: "/admin/available-parts", label: "Dostupni delovi", icon: "warehouse", highlight: true },
     { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: "category", highlight: true },

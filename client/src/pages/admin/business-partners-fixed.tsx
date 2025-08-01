@@ -31,7 +31,6 @@ import {
   Package,
   Calendar,
   Trash2,
-  Edit,
   MessageSquare
 } from "lucide-react";
 
@@ -204,7 +203,7 @@ export default function BusinessPartnerManagementFixed() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/business-partner-services"] });
-      toast({ title: "Uspešno", description: "Business partner servis je obrisan." });
+      toast({ title: "Uspešno", description: "Servis poslovnog partnera je obrisan." });
     },
     onError: () => {
       toast({ 
@@ -244,7 +243,7 @@ export default function BusinessPartnerManagementFixed() {
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Učitavanje business partner servisa...</p>
+            <p className="mt-4 text-gray-600">Učitavanje servisa poslovnih partnera...</p>
           </div>
         </div>
       </AdminLayout>
@@ -262,7 +261,7 @@ export default function BusinessPartnerManagementFixed() {
                 <Building2 className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Business Partner Management</h1>
+                <h1 className="text-3xl font-bold text-white">Upravljanje poslovnim partnerima</h1>
                 <p className="text-purple-100 mt-1">Upravljanje zahtevima poslovnih partnera</p>
               </div>
             </div>
@@ -614,7 +613,7 @@ export default function BusinessPartnerManagementFixed() {
                     {filteredServices.length === 0 && (
                       <div className="text-center py-12">
                         <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Nema business partner zahteva</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Nema zahteva poslovnih partnera</h3>
                         <p className="text-gray-600">Trenutno nema zahteva koji odgovaraju vašim filterima.</p>
                       </div>
                     )}
@@ -642,10 +641,10 @@ export default function BusinessPartnerManagementFixed() {
           <TabsContent value="analytics">
             <Card>
               <CardHeader>
-                <CardTitle>Analytics</CardTitle>
+                <CardTitle>Analitika</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Analytics funkcionalnost će biti implementirana uskoro.</p>
+                <p>Funkcionalnost analitike će biti implementirana uskoro.</p>
               </CardContent>
             </Card>
           </TabsContent>
