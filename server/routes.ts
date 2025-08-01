@@ -10376,5 +10376,78 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // ComPlus dnevni izveštaj - test endpoint
+  app.post("/api/test-complus-daily-report", async (req, res) => {
+    try {
+      console.log('[COMPLUS DAILY] Pozvan test endpoint za dnevni ComPlus izveštaj');
+      
+      const { ComplusDailyReportService } = await import('./complus-daily-report.js');
+      const reportService = new ComplusDailyReportService();
+      
+      // Test email adresa iz request body ili default
+      const testEmail = req.body.email || 'gruica@frigosistemtodosijevic.com';
+      const reportDate = req.body.date ? new Date(req.body.date) : new Date();
+      
+      console.log(`[COMPLUS DAILY] Generiram test izveštaj za datum: ${reportDate.toLocaleDateString('sr-ME')}`);
+      console.log(`[COMPLUS DAILY] Test email adresa: ${testEmail}`);
+      
+      const success = await reportService.sendDailyReport(reportDate, testEmail);
+      
+      if (success) {
+        console.log('[COMPLUS DAILY] ✅ Test dnevni izveštaj uspešno poslat');
+        res.json({
+          success: true,
+          message: `ComPlus dnevni izveštaj uspešno poslat na ${testEmail}`,
+          details: `Izveštaj za datum: ${reportDate.toLocaleDateString('sr-ME')}`,
+          date: reportDate.toISOString()
+        });
+      } else {
+        console.log('[COMPLUS DAILY] ❌ Test dnevni izveštaj nije poslat');
+        res.status(500).json({
+          error: 'Neuspešno slanje ComPlus dnevnog izveštaja'
+        });
+      }
+    } catch (error) {
+      console.error('[COMPLUS DAILY] Greška:', error);
+      res.status(500).json({
+        error: 'Greška pri slanju ComPlus dnevnog izveštaja',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Test endpoint za ComPlus cron servis
+  app.post("/api/test-complus-cron", async (req, res) => {
+    try {
+      console.log('[COMPLUS CRON TEST] Pokretanje test ComPlus cron servisa...');
+      
+      const { complusCronService } = await import('./complus-cron-service.js');
+      
+      // Test da li je cron servis aktivan
+      const isActive = complusCronService.isActive();
+      console.log(`[COMPLUS CRON TEST] Cron servis status: ${isActive ? 'aktivan' : 'neaktivan'}`);
+      
+      // Testiraj slanje dnevnog izveštaja
+      const testEmail = req.body.email || 'gruica@frigosistemtodosijevic.com';
+      await complusCronService.testDailyReport(testEmail);
+      
+      console.log('[COMPLUS CRON TEST] ✅ Test ComPlus cron servisa uspešan');
+      res.status(200).json({
+        success: true,
+        message: `ComPlus cron test uspešno izvršen na ${testEmail}`,
+        cronStatus: isActive ? 'aktivan' : 'neaktivan',
+        testEmail,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('[COMPLUS CRON TEST] Greška:', error);
+      res.status(500).json({
+        error: 'Greška pri testiranju ComPlus cron servisa',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'  
+      });
+    }
+  });
+
   return httpServer;
 }

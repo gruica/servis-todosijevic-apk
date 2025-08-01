@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
+import { complusCronService } from "./complus-cron-service";
 
 import { storage } from "./storage";
 // Mobile SMS Service has been completely removed
@@ -126,6 +127,15 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error("Greška pri pokretanju servisa za održavanje:", error);
       // Aplikacija i dalje može da radi bez servisa za održavanje
+    }
+
+    // Pokreni ComPlus automatske izveštaje
+    try {
+      complusCronService.start();
+      log("ComPlus automatski izveštaji pokrenuti");
+    } catch (error) {
+      console.error("Greška pri pokretanju ComPlus cron servisa:", error);
+      // Aplikacija i dalje može da radi bez ComPlus cron servisa
     }
   });
 })();
