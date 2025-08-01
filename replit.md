@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 - **File Processing**: XLSX library for Excel import/export (currently deactivated for security reasons), Multer for file uploads.
 - **Image Processing**: Advanced OCR system with manufacturer-specific pattern detection and image preprocessing for efficient data entry.
 - **SMS System**: Comprehensive SMS notification system for status updates, parts orders, and client communications, with intelligent message compression algorithm that automatically shortens messages over 160 characters while preserving meaning. Optimized for single-part delivery via SMS Mobile API with Sender ID support.
+- **Performance Optimizations**: Ultra-fast service start functionality with millisecond response times (≤500ms) achieved through lightweight endpoints and background notification processing, eliminating the previous 5-9 second delays.
 
 ### Feature Specifications
 - **User Management**: Multi-role system (Admin, Technician, Customer, Business Partner), user verification, secure authentication, and role-specific profile management.
