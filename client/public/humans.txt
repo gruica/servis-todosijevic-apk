@@ -1,0 +1,16 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+Vlasnik: Frigo Sistem Todosijević
+Kontakt: info@frigosistemtodosijevic.me
+Telefon: +381-67-051-141
+Lokacija: Novi Sad, Srbija
+
+# TEHNOLOGIJA
+
+Frontend: React.js, TypeScript, Tailwind CSS
+Backend: Node.js, Express.js, PostgreSQL
+Hostovanje: Replit
+Poslednje ažurirano: 2025/08/01

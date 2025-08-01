@@ -1,0 +1,6 @@
+Contact: info@frigosistemtodosijevic.me
+Expires: 2026-08-01T23:59:59.000Z
+Preferred-Languages: sr, en
+Canonical: https://www.frigosistemtodosijevic.me/.well-known/security.txt
+Acknowledgments: https://www.frigosistemtodosijevic.me/about
+Policy: https://www.frigosistemtodosijevic.me/privacy
