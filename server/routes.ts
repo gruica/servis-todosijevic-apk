@@ -10320,12 +10320,50 @@ app.get('/api/seo/content', (req, res) => {
   app.post("/api/test-complus-email", async (req, res) => {
     try {
       console.log('[COMPLUS TEST] Pozvan test endpoint za ComPlus email');
+      console.log('[COMPLUS TEST] Testiram različite SMTP konfiguracije direktno...');
       
-      // Test slanja ComPlus email-a na gruica@frigosistemtodosijevic.com
-      const testEmailSent = await emailService.sendTestEmail(
-        'gruica@frigosistemtodosijevic.com',
-        'COMPLUS SERVIS ZAVRŠEN - Test Email #186', 
-        `Poštovani ComPlus timu,
+      const nodemailer = require('nodemailer');
+      const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
+      const pass = process.env.SMTP_PASSWORD || '';
+      const to = 'gruica@frigosistemtodosijevic.com';
+      
+      // Različite SMTP konfiguracije za testiranje
+      const smtpConfigs = [
+        { name: 'SSL 465', host: 'mail.frigosistemtodosijevic.com', port: 465, secure: true },
+        { name: 'TLS 587', host: 'mail.frigosistemtodosijevic.com', port: 587, secure: false },
+        { name: 'Port 25', host: 'mail.frigosistemtodosijevic.com', port: 25, secure: false },
+        { name: 'STARTTLS 587', host: 'mail.frigosistemtodosijevic.com', port: 587, secure: false, requireTLS: true }
+      ];
+
+      let testEmailSent = false;
+      let workingConfig = null;
+
+      for (const config of smtpConfigs) {
+        console.log(`[COMPLUS TEST] Pokušavam konfiguraciju: ${config.name} (${config.host}:${config.port})`);
+        
+        try {
+          const transporter = nodemailer.createTransport({
+            host: config.host,
+            port: config.port,
+            secure: config.secure,
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false },
+            requireTLS: config.requireTLS || false,
+            connectionTimeout: 15000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
+          });
+
+          // Pokušaj verifikaciju
+          await transporter.verify();
+          console.log(`[COMPLUS TEST] ✅ Konfiguracija ${config.name} RADI!`);
+          
+          // Pokušaj poslati email
+          await transporter.sendMail({
+            from: user,
+            to,
+            subject: 'COMPLUS SERVIS ZAVRŠEN - Test Email #186',
+            text: `Poštovani ComPlus timu,
 
 Ovo je test email koji potvrđuje funkcionalnost ComPlus notifikacije.
 
@@ -10344,8 +10382,19 @@ NAPOMENA: Ovo je test email poslat na gruica@frigosistemtodosijevic.com umesto s
 U produkciji, ovaj email bi bio automatski poslat na servis@complus.me kada se završavaju ComPlus servisi.
 
 Servis Todosijević - Automatski Email Sistem
-ComPlus Integracija Test`
-      );
+ComPlus Integracija Test - Uspešno testiran sa ${config.name}`
+          });
+          
+          console.log(`[COMPLUS TEST] ✅ Email uspešno poslat pomoću konfiguracije: ${config.name}`);
+          testEmailSent = true;
+          workingConfig = config;
+          break;
+          
+        } catch (error) {
+          console.log(`[COMPLUS TEST] ❌ Konfiguracija ${config.name} neuspešna: ${error.message}`);
+          continue;
+        }
+      }
       
       if (testEmailSent) {
         console.log('[COMPLUS TEST] ✅ ComPlus email uspešno poslat');

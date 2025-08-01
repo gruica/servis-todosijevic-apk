@@ -912,34 +912,82 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
   }
 
   /**
-   * Test funkcija za slanje email-a
+   * Test funkcija za slanje email-a sa pokušavanjem različitih SMTP konfiguracija
    * @param to Email adresa
    * @param subject Naslov email-a
    * @param message Poruka
    * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
    */
   public async sendTestEmail(to: string, subject: string, message: string): Promise<boolean> {
-    console.log(`[EMAIL TEST] Slanje test email-a na: ${to}`);
+    console.log(`[EMAIL TEST] Pokušavanje slanja test email-a na: ${to}`);
     
-    if (!this.configCache) {
-      console.error(`[EMAIL TEST] Nema konfigurisanog SMTP servera za slanje test email-a`);
-      return false;
+    const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
+    const pass = process.env.SMTP_PASSWORD || '';
+    const host = 'mail.frigosistemtodosijevic.com';
+
+    // Različite SMTP konfiguracije za testiranje
+    const smtpConfigs = [
+      { name: 'SSL 465', host, port: 465, secure: true },
+      { name: 'TLS 587', host, port: 587, secure: false },
+      { name: 'Port 25', host, port: 25, secure: false },
+      { name: 'STARTTLS 587', host, port: 587, secure: false, requireTLS: true },
+      { name: 'Gmail Backup', host: 'smtp.gmail.com', port: 587, secure: false }
+    ];
+
+    for (const config of smtpConfigs) {
+      console.log(`[EMAIL TEST] Pokušavam konfiguraciju: ${config.name} (${config.host}:${config.port})`);
+      
+      try {
+        const transporter = nodemailer.createTransport({
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false },
+          requireTLS: config.requireTLS || false,
+          connectionTimeout: 10000,
+          greetingTimeout: 5000,
+          socketTimeout: 10000
+        });
+
+        // Pokušaj verifikaciju
+        await transporter.verify();
+        console.log(`[EMAIL TEST] ✅ Konfiguracija ${config.name} RADI!`);
+        
+        // Pokušaj poslati email
+        await transporter.sendMail({
+          from: user,
+          to,
+          subject,
+          text: message,
+          html: message.replace(/\n/g, '<br>')
+        });
+        
+        console.log(`[EMAIL TEST] ✅ Email uspešno poslat pomoću konfiguracije: ${config.name}`);
+        
+        // Zapamti radnu konfiguraciju za buduće korišćenje
+        this.configCache = {
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: { user, pass },
+          tls: { rejectUnauthorized: false }
+        };
+        
+        // Zameni glavni transporter
+        this.transporter = transporter;
+        console.log(`[EMAIL TEST] 🔄 Glavni transporter ažuriran sa radnom konfigracijom: ${config.name}`);
+        
+        return true;
+        
+      } catch (error: any) {
+        console.log(`[EMAIL TEST] ❌ Konfiguracija ${config.name} neuspešna: ${error.message}`);
+        continue;
+      }
     }
 
-    try {
-      const result = await this.sendEmail({
-        to,
-        subject,
-        text: message,
-        html: message.replace(/\n/g, '<br>')
-      }, 1);
-      
-      console.log(`[EMAIL TEST] Rezultat slanja test email-a: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
-      return result;
-    } catch (error) {
-      console.error(`[EMAIL TEST] Greška pri slanju test email-a:`, error);
-      return false;
-    }
+    console.error(`[EMAIL TEST] ❌ Sve SMTP konfiguracije su neuspešne`);
+    return false;
   }
 
   /**
