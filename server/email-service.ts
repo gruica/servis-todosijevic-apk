@@ -912,6 +912,37 @@ Molimo vas da pregledate novi zahtev u administratorskom panelu.
   }
 
   /**
+   * Test funkcija za slanje email-a
+   * @param to Email adresa
+   * @param subject Naslov email-a
+   * @param message Poruka
+   * @returns Promise<boolean> True ako je email uspešno poslat, false u suprotnom
+   */
+  public async sendTestEmail(to: string, subject: string, message: string): Promise<boolean> {
+    console.log(`[EMAIL TEST] Slanje test email-a na: ${to}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL TEST] Nema konfigurisanog SMTP servera za slanje test email-a`);
+      return false;
+    }
+
+    try {
+      const result = await this.sendEmail({
+        to,
+        subject,
+        text: message,
+        html: message.replace(/\n/g, '<br>')
+      }, 1);
+      
+      console.log(`[EMAIL TEST] Rezultat slanja test email-a: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL TEST] Greška pri slanju test email-a:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Šalje profesionalni email klijentu kada odbije popravku uređaja
    * @param client Podaci o klijentu
    * @param serviceId ID servisa

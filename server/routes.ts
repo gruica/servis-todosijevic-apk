@@ -10316,5 +10316,59 @@ app.get('/api/seo/content', (req, res) => {
     }
   });
 
+  // Test endpoint za ComPlus email funkcionalnost
+  app.post("/api/test-complus-email", async (req, res) => {
+    try {
+      console.log('[COMPLUS TEST] Pozvan test endpoint za ComPlus email');
+      
+      // Test slanja ComPlus email-a na gruica@frigosistemtodosijevic.com
+      const testEmailSent = await emailService.sendTestEmail(
+        'gruica@frigosistemtodosijevic.com',
+        'COMPLUS SERVIS ZAVRŠEN - Test Email #186', 
+        `Poštovani ComPlus timu,
+
+Ovo je test email koji potvrđuje funkcionalnost ComPlus notifikacije.
+
+Detalji servisa:
+- Servis ID: #186
+- Klijent: Rajko Radovic  
+- Serviser: Test Serviser
+- Tip uređaja: Mašina za sušenje veša
+- Brend: Candy
+- Datum završetka: ${new Date().toLocaleDateString('sr-ME')}
+
+Izvršeni rad:
+Test ComPlus email funkcionalnosti - uspešno poslano
+
+NAPOMENA: Ovo je test email poslat na gruica@frigosistemtodosijevic.com umesto servis@complus.me
+U produkciji, ovaj email bi bio automatski poslat na servis@complus.me kada se završavaju ComPlus servisi.
+
+Servis Todosijević - Automatski Email Sistem
+ComPlus Integracija Test`
+      );
+      
+      if (testEmailSent) {
+        console.log('[COMPLUS TEST] ✅ ComPlus email uspešno poslat');
+        res.json({ 
+          success: true, 
+          message: 'ComPlus test email uspešno poslat na gruica@frigosistemtodosijevic.com',
+          details: 'Email sistem je spreman za ComPlus notifikacije'
+        });
+      } else {
+        console.log('[COMPLUS TEST] ❌ ComPlus email nije poslat');
+        res.status(500).json({ 
+          error: 'Neuspešno slanje ComPlus test email-a' 
+        });
+      }
+      
+    } catch (error) {
+      console.error('[COMPLUS TEST] Greška pri slanju ComPlus test email-a:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju ComPlus test email-a',
+        details: error instanceof Error ? error.message : 'Nepoznata greška' 
+      });
+    }
+  });
+
   return httpServer;
 }

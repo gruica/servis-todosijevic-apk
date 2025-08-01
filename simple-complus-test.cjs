@@ -1,69 +1,58 @@
-// Jednostavan test ComPlus funkcionalnosti kroz direktno prilagođavanje baze
-const { Client } = require('pg');
+// Jednostavan test ComPlus email funkcionalnosti nakon dodavanja sendTestEmail
+const axios = require('axios');
 
-async function testComplusEmailDirect() {
-  console.log('🧪 Direktni test ComPlus email funkcionalnosti...');
+async function simpleComplusTest() {
+  console.log('🧪 JEDNOSTAVAN COMPLUS TEST');
+  console.log('===========================');
   
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL
-  });
+  const baseUrl = 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
   
   try {
-    await client.connect();
-    console.log('📊 Povezan sa bazom podataka');
+    console.log('📧 Pozivam test endpoint...');
     
-    // 1. Proveravamo da li servis 186 pripada Candy brendu (ComPlus)
-    const result = await client.query(`
-      SELECT s.id, s.status, c.full_name as client_name, m.name as manufacturer, ac.name as category
-      FROM services s 
-      JOIN clients c ON s.client_id = c.id 
-      JOIN appliances a ON s.appliance_id = a.id 
-      JOIN manufacturers m ON a.manufacturer_id = m.id
-      JOIN appliance_categories ac ON a.category_id = ac.id
-      WHERE s.id = 186
-    `);
+    const response = await axios.post(`${baseUrl}/api/test-complus-email`, {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      timeout: 15000
+    });
     
-    if (result.rows.length === 0) {
-      console.log('❌ Servis 186 nije pronađen');
-      return;
-    }
+    console.log('');
+    console.log('📨 ODGOVOR SERVERA:');
+    console.log('Status:', response.status);
+    console.log('Headers:', response.headers['content-type']);
+    console.log('Data:', JSON.stringify(response.data, null, 2));
     
-    const service = result.rows[0];
-    console.log('📋 Servis detalji:', service);
-    
-    // Proveravamo da li je ComPlus brend (Candy, Electrolux, Elica itd.)
-    const complusBrands = ['candy', 'electrolux', 'elica', 'hoover', 'turbo air'];
-    const isComplusBrand = complusBrands.includes(service.manufacturer.toLowerCase());
-    
-    console.log(`🏷️ Brend: ${service.manufacturer}`);
-    console.log(`✅ ComPlus brend: ${isComplusBrand ? 'DA' : 'NE'}`);
-    
-    if (isComplusBrand) {
-      console.log('📧 Ovaj servis bi trebalo da aktivira ComPlus email kada se završi!');
-      
-      // Simuliramo završetak servisa
-      console.log('🔄 Simuliramo završetak servisa...');
-      
-      await client.query(`
-        UPDATE services 
-        SET status = 'completed', 
-            completed_date = CURRENT_TIMESTAMP,
-            technician_notes = 'ComPlus email test - direktno iz baze'
-        WHERE id = 186
-      `);
-      
-      console.log('✅ Servis označen kao završen u bazi');
-      console.log('📧 Za automatsko slanje email-a koristite web aplikaciju PUT /api/services/186');
-      
+    if (response.data && response.data.success) {
+      console.log('');
+      console.log('✅ SUCCESS! ComPlus test email je uspešno poslat!');
+      console.log('📬 Email poslat na: gruica@frigosistemtodosijevic.com');
+      console.log('🏭 ComPlus email sistem je operativan');
     } else {
-      console.log('⚠️ Ovo nije ComPlus brend, neće se poslati email');
+      console.log('');
+      console.log('❌ Test nije uspešan:', response.data);
     }
     
   } catch (error) {
-    console.error('❌ Greška:', error.message);
-  } finally {
-    await client.end();
+    console.log('');
+    console.log('❌ GREŠKA:');
+    
+    if (error.response) {
+      console.log('Status:', error.response.status);
+      console.log('Headers:', error.response.headers['content-type']);
+      
+      // Proveri da li je vraćen HTML umesto JSON
+      if (error.response.headers['content-type']?.includes('text/html')) {
+        console.log('⚠️ Server je vratio HTML umesto JSON - možda je Vite proxy u problemu');
+        console.log('HTML sadržaj (prvi red):', error.response.data.substring(0, 100));
+      } else {
+        console.log('Data:', error.response.data);
+      }
+    } else {
+      console.error('Request error:', error.message);
+    }
   }
 }
 
-testComplusEmailDirect();
+simpleComplusTest();
