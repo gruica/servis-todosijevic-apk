@@ -46,6 +46,8 @@ export function initializeIconOverlaySystem() {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           processElement(node as Element);
+          // Takođe procesuj tekstualne ikone
+          setTimeout(processTextualIcons, 100);
         }
       });
     });
@@ -60,6 +62,9 @@ export function initializeIconOverlaySystem() {
   // Procesuiraj postojeće elemente
   processExistingElements();
   
+  // Periodično procesuj tekstualne ikone (za dinamički sadržaj)
+  setInterval(processTextualIcons, 2000);
+  
   console.log('🎯 Icon Overlay System aktiviran - Material Icons → Lucide React');
 }
 
@@ -67,6 +72,48 @@ export function initializeIconOverlaySystem() {
 function processExistingElements() {
   const materialIcons = document.querySelectorAll('.material-icons');
   materialIcons.forEach(processElement);
+  
+  // Takođe procesuiraj sve elemente koji sadrže tekstualne ikone
+  processTextualIcons();
+}
+
+// Procesuiraj tekstualne ikone u sidebar-u
+function processTextualIcons() {
+  // Pronađi sidebar elemente sa tekstualnim ikonama
+  const sidebarItems = document.querySelectorAll('a[href], button');
+  
+  sidebarItems.forEach(item => {
+    const textContent = item.textContent?.trim();
+    if (textContent && iconMapping[textContent as keyof typeof iconMapping]) {
+      // Proveri da li već nije obrađen
+      if (item.hasAttribute('data-icon-processed')) return;
+      
+      item.setAttribute('data-icon-processed', 'true');
+      
+      // Kreiraj wrapper za ikonu
+      const iconWrapper = document.createElement('div');
+      iconWrapper.style.display = 'inline-flex';
+      iconWrapper.style.alignItems = 'center';
+      iconWrapper.style.marginRight = '8px';
+      iconWrapper.style.width = '20px';
+      iconWrapper.style.height = '20px';
+      
+      // Dodaj na početak elementa
+      item.insertBefore(iconWrapper, item.firstChild);
+      
+      // Renderuj Lucide ikonu
+      const root = createRoot(iconWrapper);
+      const iconProps = {
+        iconName: iconMapping[textContent as keyof typeof iconMapping],
+        size: 20,
+        className: 'text-current'
+      };
+      
+      root.render(createElement(IconMapper, iconProps));
+      
+      console.log(`🔄 Dodata ikona za "${textContent}"`);
+    }
+  });
 }
 
 // Procesuiraj pojedinačni element
