@@ -172,9 +172,9 @@
     <link rel="dns-prefetch" href="//www.frigosistemtodosijevic.me" />
     <link rel="dns-prefetch" href="//admin.me" />
     
-    <!-- Critical Resource Preloading for LCP Optimization -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols_Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" /></noscript>
+    <!-- Material Icons - Direct Load for Better Compatibility -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" />
     
     <!-- Resource Hints for Performance -->
     <link rel="prefetch" href="/api/health" />
@@ -191,6 +191,22 @@
     }
     .material-symbols-outlined {
       font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .material-icons {
+      font-family: 'Material Icons';
       font-weight: normal;
       font-style: normal;
       font-size: 24px;

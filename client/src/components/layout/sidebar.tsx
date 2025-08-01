@@ -133,7 +133,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                     )}
                   >
                     {item.icon && (
-                      <span className="material-symbols-outlined mr-3">{item.icon}</span>
+                      <span className="material-icons mr-3" style={{fontSize: '20px'}}>{item.icon}</span>
                     )}
                     <span>{item.label}</span>
                     {(item.path === "/admin/services" || item.path === "/admin/user-verification" || item.path === "/admin/sms" || item.path === "/admin/cleanup") && (
