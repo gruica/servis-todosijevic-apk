@@ -8,7 +8,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Building
+  Building,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -53,6 +54,12 @@ export default function BusinessLayout({ children }: BusinessLayoutProps) {
       href: "/business/services",
       icon: ClipboardList,
       current: location === "/business/services",
+    },
+    {
+      name: "Kontakt Admin",
+      href: "/business/messages",
+      icon: MessageCircle,
+      current: location === "/business/messages",
     },
     {
       name: "Moj profil",

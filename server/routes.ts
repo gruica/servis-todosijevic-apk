@@ -10182,5 +10182,62 @@ app.get('/api/seo/content', (req, res) => {
   }
 });
 
+  // NOVI BUSINESS PARTNER MESSAGING ENDPOINT - DODATO NA KRAJ, NE DIRA POSTOJEĆE
+  // Business Partner može da pošalje poruku admin-u
+  app.post("/api/business/messages", jwtAuth, requireRole(['business_partner']), async (req, res) => {
+    try {
+      const { subject, content, messageType, priority, relatedServiceId, relatedClientName, senderPhone } = req.body;
+      
+      if (!subject || !content) {
+        return res.status(400).json({ error: "Naslov i sadržaj poruke su obavezni" });
+      }
+
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: "Neautorizovan pristup" });
+      }
+      
+      const message = await BusinessPartnerMessageService.createBusinessPartnerMessage({
+        subject,
+        content,
+        messageType: messageType || "inquiry",
+        priority: priority || "normal",
+        senderName: user.fullName,
+        senderEmail: user.email,
+        senderCompany: user.company || "Nepoznata kompanija",
+        senderPhone,
+        relatedServiceId: relatedServiceId ? parseInt(relatedServiceId) : undefined,
+        relatedClientName,
+      });
+
+      res.json({ success: true, message: "Poruka je uspešno poslata admin-u", messageId: message.id });
+    } catch (error: any) {
+      console.error("Greška pri slanju BP poruke:", error);
+      res.status(500).json({ error: "Greška pri slanju poruke" });
+    }
+  });
+
+  // Business Partner može da vidi svoje poruke
+  app.get("/api/business/messages", jwtAuth, requireRole(['business_partner']), async (req, res) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ error: "Neautorizovan pristup" });
+      }
+      
+      const messages = await db
+        .select()
+        .from(schema.businessPartnerMessages)
+        .where(eq(schema.businessPartnerMessages.senderEmail, user.email))
+        .orderBy(desc(schema.businessPartnerMessages.createdAt))
+        .limit(50);
+
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Greška pri dobijanju BP poruka:", error);
+      res.status(500).json({ error: "Greška pri dobijanju poruka" });
+    }
+  });
+
   return httpServer;
 }
