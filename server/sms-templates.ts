@@ -146,6 +146,11 @@ export class SMSTemplates {
     return this.validateSMSLength(message, 'client_service_completed');
   }
 
+  static clientServiceStarted(data: SMSTemplateData): string {
+    const message = `Poštovani ${data.clientName}, tehničar ${data.technicianName} je započeo rad na servisu #${data.serviceId} (${data.deviceType}). Tel: 067051141`;
+    return this.validateSMSLength(message, 'client_service_started');
+  }
+
   static clientNotAvailable(data: SMSTemplateData): string {
     const message = `Tehničar ${data.technicianName} pokušava kontakt za servis #${data.serviceId}. Pozovite 067051141 za novi termin.`;
     return this.validateSMSLength(message, 'client_not_available');
@@ -256,6 +261,8 @@ export class SMSTemplates {
       
       // Client templates
       case 'client_service_completed': return this.clientServiceCompleted(data);
+      case 'service_completed': return this.clientServiceCompleted(data);
+      case 'service_started': return this.clientServiceStarted(data);
       case 'client_not_available': return this.clientNotAvailable(data);
       case 'klijent_nije_dostupan': return this.clientNotAvailable(data);
       case 'client_spare_part_ordered': return this.clientSparePartOrdered(data);

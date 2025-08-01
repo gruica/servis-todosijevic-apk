@@ -68,6 +68,7 @@ interface Service {
     phone?: string;
     address?: string;
     city?: string;
+    email?: string;
   };
   appliance?: {
     category?: { name: string };
@@ -82,18 +83,38 @@ function ServiceCard({ service }: { service: Service }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Professional service action mutations
+  // OPTIMIZED: Lightning-fast service start mutation
   const startWorkMutation = useMutation({
-    mutationFn: (serviceId: number) => 
-      apiRequest(`/api/services/${serviceId}/status`, {
+    mutationFn: (serviceId: number) => {
+      const startTime = Date.now();
+      console.log(`🚀 [FRONTEND] Pokretanje ultra-brzog servisa #${serviceId}`);
+      
+      return apiRequest(`/api/services/${serviceId}/quick-start`, {
         method: 'PUT',
-        body: JSON.stringify({ status: 'in_progress' })
-      }),
-    onSuccess: () => {
+        body: JSON.stringify({ 
+          technicianNotes: `Servis započet ${new Date().toLocaleString('sr-RS')}`
+        })
+      }).then(response => {
+        const endTime = Date.now();
+        const frontendDuration = endTime - startTime;
+        console.log(`✅ [FRONTEND] Servis #${serviceId} započet za ${frontendDuration}ms`);
+        return response;
+      });
+    },
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
-        title: "Rad započet",
-        description: "Status servisa promenjen na 'U toku'",
+        title: "Rad započet ⚡",
+        description: data._performance ? 
+          `Status promenjen za ${data._performance.duration} (optimizovano)` : 
+          "Status servisa promenjen na 'U toku'",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: "Greška pri pokretanju servisa",
+        variant: "destructive"
       });
     }
   });

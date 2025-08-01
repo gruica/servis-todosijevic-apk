@@ -1954,6 +1954,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // OPTIMIZED: Quick start service endpoint (ultra-fast, no emails/SMS)
+  app.put("/api/services/:id/quick-start", jwtAuth, async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { technicianNotes } = req.body;
+      
+      console.log(`[QUICK-START] 🚀 Brzo pokretanje servisa #${serviceId} - početak`);
+      
+      // Minimal validation
+      if (!serviceId || isNaN(serviceId)) {
+        return res.status(400).json({ error: "Nevažeći ID servisa" });
+      }
+      
+      // Get service (optimized query)
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Security check for technicians
+      if (req.user?.role === "technician") {
+        const technicianId = req.user.technicianId;
+        if (!technicianId || service.technicianId !== technicianId) {
+          return res.status(403).json({ error: "Nemate dozvolu" });
+        }
+      }
+      
+      // ULTRA-FAST UPDATE - samo status i osnovne informacije
+      const updatedService = await storage.updateService(serviceId, {
+        ...service,
+        status: 'in_progress',
+        startedAt: new Date().toISOString(),
+        technicianNotes: technicianNotes || service.technicianNotes
+      });
+      
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`[QUICK-START] ✅ Servis #${serviceId} započet za ${duration}ms`);
+      
+      // 🚀 POZADINSKA OBRADA - Ne blokira response
+      setImmediate(async () => {
+        try {
+          console.log(`[BACKGROUND] Pokretanje pozadinske obrade za servis #${serviceId}`);
+          
+          // Pozovi standardni endpoint u pozadini za email/SMS obaveštenja
+          await backgroundProcessServiceStart(serviceId, updatedService, req.user);
+          
+          console.log(`[BACKGROUND] ✅ Pozadinska obrada završena za servis #${serviceId}`);
+        } catch (bgError) {
+          console.error(`[BACKGROUND] ❌ Greška u pozadinskoj obradi za servis #${serviceId}:`, bgError);
+        }
+      });
+      
+      res.json({
+        ...updatedService,
+        _performance: {
+          duration: `${duration}ms`,
+          optimized: true,
+          backgroundProcessing: true
+        }
+      });
+      
+    } catch (error) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      console.error(`[QUICK-START] ❌ Greška nakon ${duration}ms:`, error);
+      res.status(500).json({ error: "Greška pri pokretanju servisa" });
+    }
+  });
+
+  // POZADINSKA FUNKCIJA za email/SMS obaveštenja
+  async function backgroundProcessServiceStart(serviceId: number, service: any, user: any) {
+    try {
+      console.log(`[BACKGROUND] Obrađujem obaveštenja za servis #${serviceId}`);
+      
+      // Standardna logika iz postojećeg endpointa, ali asinhrono
+      if (!service.clientId) {
+        console.log(`[BACKGROUND] Servis #${serviceId} nema klijenta, preskačem obaveštenja`);
+        return;
+      }
+      
+      const client = await storage.getClient(service.clientId);
+      if (!client) {
+        console.log(`[BACKGROUND] Klijent za servis #${serviceId} nije pronađen`);
+        return;
+      }
+      
+      // Importuj email servis
+      const { EmailService } = await import('./email-service.js');
+      const emailService = new EmailService();
+      
+      // STANDARDNO EMAIL OBAVEŠTENJE
+      if (client.email) {
+        try {
+          const emailSent = await emailService.sendServiceStatusUpdate(
+            client,
+            serviceId,
+            "U toku",
+            `Servis je započet ${new Date().toLocaleString('sr-RS')}`,
+            user?.fullName || "Tehnička podrška",
+            service.warrantyStatus
+          );
+          
+          if (emailSent) {
+            console.log(`[BACKGROUND] ✅ Email obaveštenje poslato klijentu ${client.fullName}`);
+          }
+        } catch (emailError) {
+          console.error(`[BACKGROUND] ❌ Greška pri slanju emaila:`, emailError);
+        }
+      }
+      
+      // SMS OBAVEŠTENJA - samo za in_progress status
+      try {
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        const smsConfig = {
+          apiKey: settingsMap.sms_mobile_api_key || '',
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        };
+
+        if (smsConfig.enabled && smsConfig.apiKey && client.phone) {
+          const { SMSCommunicationService } = await import('./sms-communication-service.js');
+          const smsService = new SMSCommunicationService(smsConfig);
+          
+          // Dohvati informacije o uređaju
+          const appliance = await storage.getAppliance(service.applianceId);
+          const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+          
+          const smsResult = await smsService.notifyServiceStarted({
+            clientPhone: client.phone,
+            clientName: client.fullName,
+            serviceId: serviceId.toString(),
+            deviceType: category?.name || 'Uređaj',
+            technicianName: user?.fullName || 'Serviser'
+          });
+          
+          if (smsResult.success) {
+            console.log(`[BACKGROUND] 📱 SMS obaveštenje poslato klijentu ${client.fullName}`);
+          } else {
+            console.log(`[BACKGROUND] ❌ SMS obaveštenje neuspešno: ${smsResult.error}`);
+          }
+        }
+      } catch (smsError) {
+        console.error(`[BACKGROUND] ❌ Greška pri SMS obradi:`, smsError);
+      }
+      
+    } catch (error) {
+      console.error(`[BACKGROUND] ❌ Globalna greška pri pozadinskoj obradi:`, error);
+    }
+  }
+
   // Update service status (for technicians)
   app.put("/api/services/:id/status", jwtAuth, async (req, res) => {
     try {

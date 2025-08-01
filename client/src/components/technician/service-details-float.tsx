@@ -102,17 +102,48 @@ export function ServiceDetailsFloat({
       return;
     }
 
+    const startTime = Date.now();
     setIsUpdating(true);
+    
     try {
+      console.log(`🚀 [SERVICE-DETAILS] Ultra-brzo pokretanje servisa #${service.id}`);
+      
+      // OPTIMIZED: Direktni poziv brzog endpointa
+      const response = await fetch(`/api/services/${service.id}/quick-start`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          technicianNotes: technicianNotes.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Greška pri pokretanju servisa');
+      }
+
+      const result = await response.json();
+      const endTime = Date.now();
+      const frontendDuration = endTime - startTime;
+      
+      console.log(`✅ [SERVICE-DETAILS] Servis #${service.id} započet za ${frontendDuration}ms`);
+      console.log(`📊 [PERFORMANCE] Backend: ${result._performance?.duration}, Frontend: ${frontendDuration}ms`);
+      
+      // Refresh service data through callback
       await onStatusUpdate(service.id, "in_progress", {
         technicianNotes: technicianNotes.trim(),
         usedParts: usedParts.trim() || null,
         machineNotes: machineNotes.trim() || null,
-        cost: cost ? parseFloat(cost) : null
+        cost: cost ? parseFloat(cost) : null,
+        _optimized: true
       });
+      
       onClose();
     } catch (error) {
       console.error("Greška pri početku servisa:", error);
+      alert("Greška pri pokretanju servisa");
     } finally {
       setIsUpdating(false);
     }
