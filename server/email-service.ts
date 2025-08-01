@@ -59,8 +59,9 @@ export class EmailService {
     // Učitavanje konfiguracije i kreiranje stabilnog transportera
     // Učitavamo SMTP postavke iz okruženja - ispravne vrednosti
     const host = process.env.EMAIL_HOST || 'mail.frigosistemtodosijevic.com';
-    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587; 
-    const secure = process.env.EMAIL_SECURE === 'true' || false; // Port 587 koristi STARTTLS
+    const port = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 465; 
+    // Port 465 koristi SSL/TLS, port 587 koristi STARTTLS
+    const secure = port === 465 ? true : (process.env.EMAIL_SECURE === 'true' || false);
     const user = process.env.EMAIL_USER || 'admin@frigosistemtodosijevic.com';
     const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD || '';
     
