@@ -1257,6 +1257,258 @@ www.frigosistemtodosijevic.com
     }
   }
   
+  /**
+   * Šalje email na servis@complus.me kada serviser završi servis za ComPlus brendove
+   */
+  public async sendComplusServiceCompletion(
+    serviceId: number,
+    clientName: string,
+    technicianName: string,
+    deviceType: string,
+    workPerformed: string,
+    manufacturer: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje ComPlus notifikacije o završetku servisa #${serviceId}`);
+    
+    const currentDate = new Date().toLocaleDateString('sr-Latn-ME');
+    const currentTime = new Date().toLocaleTimeString('sr-Latn-ME');
+    
+    const subject = `Završen servis za ${manufacturer} uređaj - Servis #${serviceId}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #0056b3;">Obaveštenje o završetku servisa</h2>
+        </div>
+        
+        <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <h3 style="color: #155724; margin-top: 0;">Servis uspešno završen</h3>
+          <p style="margin-bottom: 0; color: #155724;">Serviser je uspešno završio rad na ${manufacturer} uređaju.</p>
+        </div>
+        
+        <h3 style="color: #0056b3;">Detalji servisa</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Broj servisa:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">#${serviceId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Klijent:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${clientName}</td>
+          </tr>
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Serviser:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${technicianName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Proizvođač:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${manufacturer}</td>
+          </tr>
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Tip uređaja:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${deviceType}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Datum završetka:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${currentDate} ${currentTime}</td>
+          </tr>
+        </table>
+        
+        <h3 style="color: #0056b3;">Izvršeni rad</h3>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+          <p style="margin: 0; line-height: 1.6;">${workPerformed}</p>
+        </div>
+        
+        <div style="border-top: 1px solid #ddd; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #777; text-align: center;">
+          <p>Frigo Sistem Todosijević<br>
+          Automatsko obaveštenje iz sistema upravljanja servisima<br>
+          ${currentDate} ${currentTime}</p>
+        </div>
+      </div>
+    `;
+    
+    const text = `
+Završen servis za ${manufacturer} uređaj - Servis #${serviceId}
+
+DETALJI SERVISA:
+- Broj servisa: #${serviceId}
+- Klijent: ${clientName}
+- Serviser: ${technicianName}
+- Proizvođač: ${manufacturer}
+- Tip uređaja: ${deviceType}
+- Datum završetka: ${currentDate} ${currentTime}
+
+IZVRŠENI RAD:
+${workPerformed}
+
+----
+Frigo Sistem Todosijević
+Automatsko obaveštenje iz sistema upravljanja servisima
+${currentDate} ${currentTime}
+    `;
+    
+    try {
+      const result = await this.sendEmail({
+        to: 'servis@complus.me',
+        subject,
+        html,
+        text
+      });
+      
+      if (result) {
+        console.log(`[EMAIL] ✅ ComPlus servis completion obaveštenje uspešno poslato`);
+      } else {
+        console.log(`[EMAIL] ❌ Neuspešno slanje ComPlus servis completion obaveštenja`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju ComPlus servis completion obaveštenja:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje email na servis@complus.me kada serviser poruči rezervni deo za ComPlus brendove
+   */
+  public async sendComplusSparePartOrder(
+    serviceId: number,
+    clientName: string,
+    technicianName: string,
+    deviceType: string,
+    manufacturer: string,
+    partName: string,
+    productCode: string,
+    urgency: string,
+    description?: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje ComPlus notifikacije o porudžbini rezervnog dela za servis #${serviceId}`);
+    
+    const currentDate = new Date().toLocaleDateString('sr-Latn-ME');
+    const currentTime = new Date().toLocaleTimeString('sr-Latn-ME');
+    
+    const urgencyText = urgency === 'high' ? 'HITNO' : urgency === 'normal' ? 'Normalno' : 'Nizak prioritet';
+    const subject = `${urgency === 'high' ? '[HITNO] ' : ''}Porudžbina rezervnog dela - ${manufacturer} - Servis #${serviceId}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="color: #0056b3;">Porudžbina rezervnog dela</h2>
+        </div>
+        
+        ${urgency === 'high' ? `
+        <div style="background-color: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545;">
+          <h3 style="color: #721c24; margin-top: 0;">⚠️ HITNA PORUDŽBINA</h3>
+          <p style="margin-bottom: 0; color: #721c24;">Ova porudžbina je označena kao hitna i zahteva prioritetnu obradu.</p>
+        </div>
+        ` : ''}
+        
+        <h3 style="color: #0056b3;">Informacije o servisu</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Broj servisa:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">#${serviceId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Klijent:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${clientName}</td>
+          </tr>
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Serviser:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${technicianName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Proizvođač:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${manufacturer}</td>
+          </tr>
+          <tr style="background-color: #f8f9fa;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Tip uređaja:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${deviceType}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Datum porudžbine:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${currentDate} ${currentTime}</td>
+          </tr>
+        </table>
+        
+        <h3 style="color: #0056b3;">Detalji rezervnog dela</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #fff3cd;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Naziv dela:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${partName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Šifra dela:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${productCode}</td>
+          </tr>
+          <tr style="background-color: #fff3cd;">
+            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Prioritet:</td>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>${urgencyText}</strong></td>
+          </tr>
+        </table>
+        
+        ${description ? `
+        <h3 style="color: #0056b3;">Dodatne napomene</h3>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+          <p style="margin: 0; line-height: 1.6;">${description}</p>
+        </div>
+        ` : ''}
+        
+        <div style="border-top: 1px solid #ddd; margin-top: 30px; padding-top: 20px; font-size: 12px; color: #777; text-align: center;">
+          <p>Frigo Sistem Todosijević<br>
+          Automatsko obaveštenje iz sistema upravljanja servisima<br>
+          ${currentDate} ${currentTime}</p>
+        </div>
+      </div>
+    `;
+    
+    const text = `
+${urgency === 'high' ? '[HITNO] ' : ''}Porudžbina rezervnog dela - ${manufacturer} - Servis #${serviceId}
+
+${urgency === 'high' ? '⚠️ HITNA PORUDŽBINA - zahteva prioritetnu obradu\n' : ''}
+
+INFORMACIJE O SERVISU:
+- Broj servisa: #${serviceId}
+- Klijent: ${clientName}
+- Serviser: ${technicianName}
+- Proizvođač: ${manufacturer}
+- Tip uređaja: ${deviceType}
+- Datum porudžbine: ${currentDate} ${currentTime}
+
+DETALJI REZERVNOG DELA:
+- Naziv dela: ${partName}
+- Šifra dela: ${productCode}
+- Prioritet: ${urgencyText}
+
+${description ? `DODATNE NAPOMENE:\n${description}\n` : ''}
+
+----
+Frigo Sistem Todosijević
+Automatsko obaveštenje iz sistema upravljanja servisima
+${currentDate} ${currentTime}
+    `;
+    
+    try {
+      const result = await this.sendEmail({
+        to: 'servis@complus.me',
+        subject,
+        html,
+        text
+      });
+      
+      if (result) {
+        console.log(`[EMAIL] ✅ ComPlus spare part order obaveštenje uspešno poslato`);
+      } else {
+        console.log(`[EMAIL] ❌ Neuspešno slanje ComPlus spare part order obaveštenja`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju ComPlus spare part order obaveštenja:`, error);
+      return false;
+    }
+  }
+  
   public async sendNewServiceAssignment(
     technicianEmail: string,
     technicianName: string,

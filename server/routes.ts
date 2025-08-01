@@ -1799,6 +1799,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                   }
                   
+                  // COMPLUS EMAIL NOTIFIKACIJE - Završetak servisa
+                  if (updatedService.status === "completed") {
+                    try {
+                      const appliance = updatedService.applianceId ? await storage.getAppliance(updatedService.applianceId) : null;
+                      if (appliance) {
+                        const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                        
+                        // Proveravanje da li je ComPlus brend
+                        if (manufacturer && ['COMPLUS', 'COM PLUS', 'COM_PLUS'].includes(manufacturer.name.toUpperCase())) {
+                          console.log(`[COMPLUS EMAIL] Završen ComPlus servis #${id}, šaljem obaveštenje na servis@complus.me`);
+                          
+                          const category = await storage.getApplianceCategory(appliance.categoryId);
+                          const deviceType = category ? category.name : 'Nepoznat uređaj';
+                          const workPerformed = updatedService.technicianNotes || updatedService.description || 'Nema detaljne napomene o izvršenom radu';
+                          
+                          const complusEmailSent = await emailService.sendComplusServiceCompletion(
+                            id,
+                            client.fullName,
+                            technicianName,
+                            deviceType,
+                            workPerformed,
+                            manufacturer.name
+                          );
+                          
+                          if (complusEmailSent) {
+                            console.log(`[COMPLUS EMAIL] ✅ Uspešno poslato ComPlus obaveštenje za servis #${id}`);
+                          } else {
+                            console.log(`[COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus obaveštenja za servis #${id}`);
+                          }
+                        }
+                      }
+                    } catch (complusError) {
+                      console.error(`[COMPLUS EMAIL] Greška pri proveri/slanju ComPlus obaveštenja:`, complusError);
+                    }
+                  }
+                  
                   // EMAIL OBAVEŠTENJA ZA ADMINISTRATORE ONEMOGUĆENA
                   // Korisnik je zatražio da se iskljuće sva email obaveštenja za administratore
                   console.log("[EMAIL] Admin obaveštenja onemogućena po zahtevu korisnika");
@@ -2286,21 +2322,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
                 emailInfo.emailSent = true;
                 
-                // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
-                if (validStatus === "completed" && 
-                    updatedService.warrantyStatus === "in_warranty") {
+                // GARANCISKI SERVISI - Dodatna obaveštenja za različite brendove
+                if (validStatus === "completed") {
                   
-                  // Proveravamo da li je Beko brend
+                  // Proveravamo brend aparata za garancisku obaveštenja
                   try {
                     const appliance = service.applianceId ? await storage.getAppliance(service.applianceId) : null;
                     if (appliance) {
                       const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+                      const category = await storage.getApplianceCategory(appliance.categoryId);
+                      const applianceName = category ? category.name : 'Nepoznat uređaj';
+                      const manufacturerName = manufacturer?.name?.toLowerCase();
                       
-                      if (manufacturer && manufacturer.name.toLowerCase() === 'beko') {
+                      // BEKO obaveštenja (zadržavamo postojeće)
+                      if (manufacturer && manufacturerName === 'beko' && updatedService.warrantyStatus === "in_warranty") {
                         console.log(`[BEKO EMAIL] Završen Beko garanciski servis #${serviceId}, šaljem dodatno obaveštenje`);
-                        
-                        const category = await storage.getApplianceCategory(appliance.categoryId);
-                        const applianceName = category ? category.name : 'Nepoznat uređaj';
                         
                         const bekoEmailSent = await emailService.sendBekoWarrantyCompletionNotification(
                           client,
@@ -2317,9 +2353,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           console.log(`[BEKO EMAIL] ❌ Neuspešno slanje Beko obaveštenja za servis #${serviceId}`);
                         }
                       }
+                      
+                      // COMPLUS obaveštenja za sve ComPlus brendove
+                      const complusBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
+                      if (manufacturer && complusBrands.includes(manufacturerName)) {
+                        console.log(`[COMPLUS EMAIL] Završen ${manufacturer.name} servis #${serviceId}, šaljem ComPlus obaveštenje`);
+                        
+                        const complusServiceCompletionSent = await emailService.sendComplusServiceCompletion(
+                          serviceId,
+                          client.fullName,
+                          technicianName,
+                          applianceName,
+                          manufacturer.name,
+                          clientEmailContent || service.description || ''
+                        );
+                        
+                        if (complusServiceCompletionSent) {
+                          console.log(`[COMPLUS EMAIL] ✅ Uspešno poslato ComPlus obaveštenje o završetku servisa #${serviceId}`);
+                        } else {
+                          console.log(`[COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus obaveštenja o završetku servisa #${serviceId}`);
+                        }
+                      }
                     }
-                  } catch (bekoError) {
-                    console.error(`[BEKO EMAIL] Greška pri proveri/slanju Beko obaveštenja:`, bekoError);
+                  } catch (brandEmailError) {
+                    console.error(`[BRAND EMAILS] Greška pri proveri/slanju brand obaveštenja:`, brandEmailError);
                   }
                 } // Označava da je email uspešno poslat
                 
@@ -5768,22 +5825,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Dobijamo dodatne podatke za kompletne informacije
                 const category = await storage.getApplianceCategory(appliance.categoryId);
                 
-                const complusEmailResult = await emailService.sendEnhancedComplusWarrantySparePartNotification(
+                // NOVI COMPLUS EMAIL ZA REZERVNE DELOVE
+                const complusSparePartEmailResult = await emailService.sendComplusSparePartOrder(
                   validatedData.serviceId,
+                  clientName,
+                  technicianName,
+                  category?.name || 'Nepoznat uređaj',
+                  manufacturer?.name || manufacturerName,
                   validatedData.partName,
                   validatedData.partNumber || 'N/A',
-                  validatedData.urgency || 'medium',
-                  validatedData.description || '',
-                  manufacturer?.name || manufacturerName,
-                  service,        // Kompletni podaci o servisu
-                  client,         // Kompletni podaci o klijentu  
-                  appliance,      // Kompletni podaci o aparatu
-                  category,       // Podaci o kategoriji aparata
-                  manufacturer,   // Podaci o proizvođaču
-                  technician      // Podaci o tehničaru
+                  validatedData.urgency || 'normal',
+                  validatedData.description
                 );
                 
-                console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                console.log(`[COMPLUS EMAIL] Rezultat slanja ComPlus spare part order obaveštenja: ${complusSparePartEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                
+                // STARI ENHANCED EMAIL (zadržavamo ako već postoji)
+                try {
+                  const complusEmailResult = await emailService.sendEnhancedComplusWarrantySparePartNotification(
+                    validatedData.serviceId,
+                    validatedData.partName,
+                    validatedData.partNumber || 'N/A',
+                    validatedData.urgency || 'medium',
+                    validatedData.description || '',
+                    manufacturer?.name || manufacturerName,
+                    service,        // Kompletni podaci o servisu
+                    client,         // Kompletni podaci o klijentu  
+                    appliance,      // Kompletni podaci o aparatu
+                    category,       // Podaci o kategoriji aparata
+                    manufacturer,   // Podaci o proizvođaču
+                    technician      // Podaci o tehničaru
+                  );
+                  
+                  console.log(`[SPARE PARTS] Rezultat slanja proširenog emaila Complus servis firmi: ${complusEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+                } catch (enhancedEmailError) {
+                  console.log(`[SPARE PARTS] Enhanced email metoda ne postoji, koristim samo novu ComPlus metodu`);
+                }
               } else if (manufacturerName === 'beko') {
                 console.log(`[SPARE PARTS] Uređaj je Beko - šaljem notifikaciju na mp4@eurotehnikamn.me (Beko je obustavila elektronske servise)...`);
                 
