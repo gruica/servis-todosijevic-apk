@@ -66,6 +66,8 @@ export function ServiceDetailsFloat({
         customerRefusesRepair,
         showInProgressButtons: service.status === "in_progress",
         showCompleteButton: service.status === "in_progress" && !customerRefusesRepair,
+        showReturnButton: service.status === "in_progress" && !customerRefusesRepair,
+        fullServiceObject: service
       });
     }
   }, [service, customerRefusesRepair]);
