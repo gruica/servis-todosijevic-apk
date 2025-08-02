@@ -325,7 +325,8 @@ export default function TechnicianServicesList() {
                       <TableHead>Telefon</TableHead>
                       <TableHead>Grad</TableHead>
                       <TableHead>Uređaj</TableHead>
-                      <TableHead>Datum</TableHead>
+                      <TableHead>Datum kreiranja</TableHead>
+                      <TableHead>Datum završetka</TableHead>
                       <TableHead>Serviser</TableHead>
                       <TableHead>Opis</TableHead>
                       <TableHead className="text-right">Akcije</TableHead>
@@ -334,7 +335,7 @@ export default function TechnicianServicesList() {
                   <TableBody>
                     {!filteredServices || filteredServices.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={11} className="text-center py-6 text-muted-foreground">
                           Nema pronađenih servisa
                         </TableCell>
                       </TableRow>
@@ -364,6 +365,17 @@ export default function TechnicianServicesList() {
                             {service.appliance?.category?.name || "N/A"} - {service.appliance?.manufacturer?.name || ""}
                           </TableCell>
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
+                          <TableCell>
+                            {service.completedDate ? (
+                              <span className="text-green-600 font-medium">
+                                {formatDate(service.completedDate)}
+                              </span>
+                            ) : service.status === "completed" ? (
+                              <span className="text-orange-600">Završen (bez datuma)</span>
+                            ) : (
+                              <span className="text-gray-500">U toku</span>
+                            )}
+                          </TableCell>
                           <TableCell>{getTechnicianName(service.technicianId)}</TableCell>
                           <TableCell className="max-w-xs truncate">
                             {service.description}
@@ -410,6 +422,22 @@ export default function TechnicianServicesList() {
                 <div>
                   <h3 className="font-semibold text-sm text-gray-600 mb-2">Datum kreiranja</h3>
                   <p className="text-sm">{formatDate(selectedService.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Datum završetka */}
+              <div>
+                <h3 className="font-semibold text-sm text-gray-600 mb-2">Datum završetka</h3>
+                <div className="bg-gray-50 p-3 rounded">
+                  {selectedService.completedDate ? (
+                    <p className="text-sm font-medium text-green-600">
+                      {formatDate(selectedService.completedDate)}
+                    </p>
+                  ) : selectedService.status === "completed" ? (
+                    <p className="text-sm text-orange-600">Završen, ali datum nije evidentiran</p>
+                  ) : (
+                    <p className="text-sm text-gray-500">Servis još uvek nije završen</p>
+                  )}
                 </div>
               </div>
 
