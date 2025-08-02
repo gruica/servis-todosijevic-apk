@@ -56,6 +56,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     { path: "/admin/data-export", label: "Izvoz podataka", icon: "download", highlight: true },
     { path: "/admin/cleanup", label: "Čišćenje baze", icon: "cleaning_services", highlight: true },
     { path: "/admin/complus-billing", label: "Complus fakturisanje", icon: "euro", highlight: true },
+    { path: "/admin/servis-komerc", label: "Servis Komerc", icon: "local_shipping", highlight: true },
     { path: "/profile", label: "Moj profil", icon: "account_circle" },
   ];
   
