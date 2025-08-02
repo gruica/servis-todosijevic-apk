@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, Download, Euro, CheckCircle, User, Phone, MapPin, Wrench, Package, Clock, Printer } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, FileText, Download, Euro, CheckCircle, User, Phone, MapPin, Wrench, Package, Clock, Printer, Zap, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface BillingService {
@@ -20,9 +22,12 @@ interface BillingService {
   serialNumber: string;
   technicianName: string;
   completedDate: string;
+  originalCompletedDate?: string;
   cost: number;
   description: string;
   warrantyStatus: string;
+  isAutoDetected?: boolean;
+  detectionMethod?: string;
 }
 
 interface BrandBreakdown {
@@ -40,6 +45,11 @@ interface MonthlyReport {
   servicesByBrand: Record<string, BillingService[]>;
   totalServices: number;
   totalCost: number;
+  autoDetectedCount?: number;
+  detectionSummary?: {
+    withCompletedDate: number;
+    withUpdatedDateFallback: number;
+  };
   brandBreakdown: BrandBreakdown[];
 }
 
@@ -47,6 +57,7 @@ export default function ComplusBillingReport() {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState<string>(String(currentDate.getMonth() + 1).padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  const [enhancedMode, setEnhancedMode] = useState<boolean>(true); // Defaultno koristi enhanced mode
 
   const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
   const months = [
@@ -66,7 +77,7 @@ export default function ComplusBillingReport() {
 
   // Fetch warranty services for all Complus brands in selected period
   const { data: billingData, isLoading } = useQuery({
-    queryKey: ['/api/admin/billing/complus', selectedMonth, selectedYear],
+    queryKey: [enhancedMode ? '/api/admin/billing/complus/enhanced' : '/api/admin/billing/complus', selectedMonth, selectedYear, enhancedMode],
     enabled: !!selectedMonth && !!selectedYear,
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -78,7 +89,8 @@ export default function ComplusBillingReport() {
       const token = localStorage.getItem('auth_token');
       if (!token) throw new Error('Nema autentifikacije');
       
-      const response = await fetch(`/api/admin/billing/complus?${params}`, {
+      const endpoint = enhancedMode ? '/api/admin/billing/complus/enhanced' : '/api/admin/billing/complus';
+      const response = await fetch(`${endpoint}?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -266,6 +278,37 @@ export default function ComplusBillingReport() {
           </p>
         </CardHeader>
         <CardContent>
+          {/* Enhanced Mode Toggle */}
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-blue-600" />
+                <div>
+                  <h3 className="font-medium text-blue-900">Enhanced Mode - Automatsko hvatanje servisa</h3>
+                  <p className="text-sm text-blue-700">
+                    Hvata sve završene servise uključujući i one bez completedDate (kao Gruica Todosijević)
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={enhancedMode}
+                onCheckedChange={setEnhancedMode}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
+          </div>
+
+          {/* Enhanced Mode Alert */}
+          {enhancedMode && billingData?.autoDetectedCount > 0 && (
+            <Alert className="mb-4 border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Auto-detektovano {billingData.autoDetectedCount} servisa</strong> koji nemaju completedDate 
+                (korišten updatedAt kao fallback). Ovo rešava problem sa servisima od "Gruica Todosijević".
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 
             <div>
@@ -387,7 +430,7 @@ export default function ComplusBillingReport() {
                 </h3>
                 
                 {billingData.services.map(service => (
-                  <Card key={service.id} className="border-l-4 border-l-blue-500">
+                  <Card key={service.id} className={`border-l-4 ${service.isAutoDetected ? 'border-l-orange-500 bg-orange-50' : 'border-l-blue-500'}`}>
                     <CardContent className="p-6">
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
@@ -404,10 +447,19 @@ export default function ComplusBillingReport() {
                               >
                                 {service.cost?.toFixed(2) || '0.00'} €
                               </Badge>
+                              {service.isAutoDetected && (
+                                <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-300">
+                                  <Zap className="h-3 w-3 mr-1" />
+                                  Auto-detektovan
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <Clock className="h-4 w-4" />
                               Završeno: {format(new Date(service.completedDate), 'dd.MM.yyyy')}
+                              {service.isAutoDetected && (
+                                <span className="text-xs text-orange-600">(updatedAt)</span>
+                              )}
                             </div>
                           </div>
                         </div>

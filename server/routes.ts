@@ -10789,5 +10789,173 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // ENHANCED COMPLUS BILLING - Automatsko hvatanje svih završenih servisa
+  
+  // Enhanced endpoint koji automatski hvata SVE završene servise za ComPlus brendove
+  app.get("/api/admin/billing/complus/enhanced", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
+
+      const { month, year } = req.query;
+      
+      if (!month || !year) {
+        return res.status(400).json({ 
+          error: "Parametri month i year su obavezni" 
+        });
+      }
+
+      // Definišemo SVE Complus brendove koji se fakturišu zajedno
+      const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
+
+      // Kreiraj date range za mesec
+      const startDate = new Date(parseInt(year as string), parseInt(month as string) - 1, 1);
+      const endDate = new Date(parseInt(year as string), parseInt(month as string), 0, 23, 59, 59);
+
+      console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
+      console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
+
+      // ENHANCED LOGIKA: Hvata sve završene servise bez ograničenja na warrantyStatus
+      const services = await db
+        .select({
+          serviceId: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          completedDate: schema.services.completedDate,
+          updatedAt: schema.services.updatedAt,
+          createdAt: schema.services.createdAt,
+          cost: schema.services.cost,
+          clientName: schema.clients.fullName,
+          clientPhone: schema.clients.phone,
+          clientAddress: schema.clients.address,
+          clientCity: schema.clients.city,
+          applianceCategory: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          applianceModel: schema.appliances.model,
+          serialNumber: schema.appliances.serialNumber,
+          technicianName: schema.technicians.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .where(
+          and(
+            eq(schema.services.status, 'completed'),
+            or(
+              eq(schema.manufacturers.name, 'Electrolux'),
+              eq(schema.manufacturers.name, 'Elica'),
+              eq(schema.manufacturers.name, 'Candy'),
+              eq(schema.manufacturers.name, 'Hoover'),
+              eq(schema.manufacturers.name, 'Turbo Air')
+            ),
+            or(
+              // Prioritetno: servisi sa completedDate u periodu
+              and(
+                isNotNull(schema.services.completedDate),
+                gte(schema.services.completedDate, startDate.toISOString()),
+                lte(schema.services.completedDate, endDate.toISOString())
+              ),
+              // Backup: servisi bez completedDate ali sa updatedAt u periodu (za Gruica Todosijević slučajeve)
+              and(
+                isNull(schema.services.completedDate),
+                gte(schema.services.updatedAt, startDate.toISOString()),
+                lte(schema.services.updatedAt, endDate.toISOString())
+              )
+            )
+          )
+        )
+        .orderBy(
+          // Sortiraj po datumu: completedDate ako postoji, inače updatedAt - najnoviji prvi
+          desc(sql`COALESCE(${schema.services.completedDate}, ${schema.services.updatedAt})`)
+        );
+
+      // Formatiraj rezultate sa enhanced informacijama
+      const billingServices = services.map(service => {
+        // Koristi completedDate ako postoji, inače updatedAt kao fallback
+        const effectiveCompletedDate = service.completedDate || service.updatedAt;
+        
+        return {
+          id: service.serviceId,
+          serviceNumber: service.serviceId.toString(),
+          clientName: service.clientName || 'Nepoznat klijent',
+          clientPhone: service.clientPhone || '',
+          clientAddress: service.clientAddress || '',
+          clientCity: service.clientCity || '',
+          applianceCategory: service.applianceCategory || '',
+          manufacturerName: service.manufacturerName || '',
+          applianceModel: service.applianceModel || '',
+          serialNumber: service.serialNumber || '',
+          technicianName: service.technicianName || 'Nepoznat serviser',
+          completedDate: effectiveCompletedDate,
+          originalCompletedDate: service.completedDate,
+          cost: service.cost || 0,
+          description: service.description || '',
+          warrantyStatus: service.warrantyStatus || 'Nedefinirano',
+          isAutoDetected: !service.completedDate, // Flag za servise koji su auto-detektovani
+          detectionMethod: service.completedDate ? 'completed_date' : 'updated_at_fallback'
+        };
+      });
+
+      // Grupiši servise po brendu za statistiku
+      const servicesByBrand = billingServices.reduce((groups, service) => {
+        const brand = service.manufacturerName;
+        if (!groups[brand]) {
+          groups[brand] = [];
+        }
+        groups[brand].push(service);
+        return groups;
+      }, {} as Record<string, typeof billingServices>);
+
+      // Statistike
+      const totalServices = billingServices.length;
+      const totalCost = billingServices.reduce((sum, service) => sum + (service.cost || 0), 0);
+      const autoDetectedCount = billingServices.filter(s => s.isAutoDetected).length;
+
+      const monthNames = [
+        'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
+        'Jul', 'Avgust', 'Septembar', 'Oktobar', 'Novembar', 'Decembar'
+      ];
+
+      const response = {
+        month: monthNames[parseInt(month as string) - 1],
+        year: parseInt(year as string),
+        brandGroup: 'Complus (Enhanced - svi brendovi)',
+        complusBrands,
+        services: billingServices,
+        servicesByBrand,
+        totalServices,
+        totalCost,
+        autoDetectedCount,
+        detectionSummary: {
+          withCompletedDate: totalServices - autoDetectedCount,
+          withUpdatedDateFallback: autoDetectedCount
+        },
+        brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
+          brand,
+          count: servicesByBrand[brand].length,
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0),
+          autoDetected: servicesByBrand[brand].filter(s => s.isAutoDetected).length
+        }))
+      };
+
+      console.log(`[ENHANCED COMPLUS BILLING] Pronađeno ukupno ${totalServices} servisa (${autoDetectedCount} auto-detektovano)`);
+      console.log(`[ENHANCED COMPLUS BILLING] Ukupna vrednost: ${totalCost.toFixed(2)}€`);
+      console.log(`[ENHANCED COMPLUS BILLING] Enhanced raspored po brendovima:`, response.brandBreakdown);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Greška pri enhanced Complus billing dohvatanju:", error);
+      res.status(500).json({ error: "Greška pri enhanced dohvatanju podataka za fakturisanje" });
+    }
+  });
+
   return httpServer;
 }
