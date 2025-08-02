@@ -4,6 +4,9 @@ import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
 import { complusCronService } from "./complus-cron-service";
+import { ServisKomercCronService } from "./servis-komerc-cron-service";
+
+const servisKomercCronService = new ServisKomercCronService();
 
 import { storage } from "./storage";
 // Mobile SMS Service has been completely removed
@@ -136,6 +139,15 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error("Greška pri pokretanju ComPlus cron servisa:", error);
       // Aplikacija i dalje može da radi bez ComPlus cron servisa
+    }
+
+    // Pokreni Servis Komerc automatske izveštaje
+    try {
+      servisKomercCronService.start();
+      log("Servis Komerc automatski izveštaji pokrenuti");
+    } catch (error) {
+      console.error("Greška pri pokretanju Servis Komerc cron servisa:", error);
+      // Aplikacija i dalje može da radi bez Servis Komerc cron servisa
     }
   });
 })();

@@ -24,6 +24,8 @@ import { BusinessPartnerNotificationService } from "./business-partner-notificat
 import { BusinessPartnerMessageService } from "./business-partner-messages";
 import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
 import { setupWebScrapingRoutes } from './web-scraping-routes';
+import { ServisKomercCronService } from './servis-komerc-cron-service.js';
+import { ServisKomercNotificationService } from './servis-komerc-notification-service.js';
 // SMS mobile functionality has been completely removed
 
 // Mapiranje status kodova u opisne nazive statusa
@@ -10701,6 +10703,87 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       console.error('[BP COMM] Greška pri generisanju statistika:', error);
       res.status(500).json({
         error: 'Greška pri generisanju business partner statistika',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Servis Komerc endpoints
+  const servisKomercCronService = new ServisKomercCronService();
+  const servisKomercNotificationService = new ServisKomercNotificationService(smsService);
+
+  // Test endpoint za Servis Komerc dnevni izvještaj
+  app.get("/api/admin/servis-komerc/test-daily-report", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[SERVIS KOMERC API] Test dnevnog izvještaja pokrenut');
+      const reportData = await servisKomercCronService.testDailyReport();
+      
+      res.json({
+        success: true,
+        message: 'Servis Komerc test dnevnog izvještaja uspešno završen',
+        data: reportData
+      });
+      
+    } catch (error) {
+      console.error('[SERVIS KOMERC API] Greška u testu dnevnog izvještaja:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Greška pri testiranju Servis Komerc dnevnog izvještaja',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Ručno pokretanje Servis Komerc dnevnog izvještaja
+  app.post("/api/admin/servis-komerc/manual-daily-report", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { date, emailAddress } = req.body;
+      const reportDate = date ? new Date(date) : new Date();
+      
+      console.log('[SERVIS KOMERC API] Ručno pokretanje dnevnog izvještaja');
+      const success = await servisKomercCronService.manualDailyReport(reportDate, emailAddress);
+      
+      if (success) {
+        res.json({
+          success: true,
+          message: 'Servis Komerc dnevni izvještaj uspešno poslat',
+          date: reportDate.toLocaleDateString('sr-ME'),
+          emailAddress: emailAddress || 'servis.komerc@example.com'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Greška pri slanju Servis Komerc dnevnog izvještaja'
+        });
+      }
+      
+    } catch (error) {
+      console.error('[SERVIS KOMERC API] Greška pri ručnom pokretanju izvještaja:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Greška pri ručnom pokretanju Servis Komerc izvještaja',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Test endpoint za Servis Komerc notifikacije
+  app.get("/api/admin/servis-komerc/test-notifications", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[SERVIS KOMERC API] Test notifikacija pokrenut');
+      const testHtml = await servisKomercNotificationService.testNotifications();
+      
+      res.json({
+        success: true,
+        message: 'Servis Komerc test notifikacija uspešno završen',
+        htmlPreview: testHtml.substring(0, 500) + '...'
+      });
+      
+    } catch (error) {
+      console.error('[SERVIS KOMERC API] Greška u testu notifikacija:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Greška pri testiranju Servis Komerc notifikacija',
         details: error instanceof Error ? error.message : 'Nepoznata greška'
       });
     }

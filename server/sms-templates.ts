@@ -290,9 +290,23 @@ export class SMSTemplates {
       case 'admin_parts_allocated': return this.adminPartsAllocated(data);
       case 'business_partner_parts_allocated': return this.businessPartnerPartsAllocated(data);
       
+      // Servis Komerc templates (Beko services)
+      case 'servis_zavrsen_beko': return this.servisKomercCompleted(data);
+      case 'servis_komerc_dnevni': return this.servisKomercDaily(data);
+      
       default:
         console.error(`⚠️ Nepoznat SMS template tip: ${type}`);
         return `Obaveštenje o servisu #${data.serviceId}. Tel: 067051141`;
     }
+  }
+
+  // Servis Komerc - Završen Beko servis
+  private servisKomercCompleted(data: SMSTemplateData): string {
+    return `Pozdrav ${data.clientName}! Vaš ${data.deviceType} servis #${data.serviceId} je završen. Serviser: ${data.technicianName}. Trošak: ${data.cost}€. Hvala! - FS Todosijević`;
+  }
+
+  // Servis Komerc - Dnevni izveštaj
+  private servisKomercDaily(data: SMSTemplateData): string {
+    return `Servis Komerc dnevni izveštaj: ${data.totalServices || 0} Beko servisa, ${data.totalClients || 0} klijenata, ${data.totalParts || 0} delova. - FS Todosijević`;
   }
 }
