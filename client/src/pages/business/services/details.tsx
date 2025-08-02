@@ -179,11 +179,13 @@ export default function ServiceDetails() {
     queryKey: ["/api/business/services/details", serviceId],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/business/services/${serviceId}?partnerId=${user?.id}`);
+        const response = await fetch(`/api/business/services/${serviceId}`);
         if (!response.ok) {
           throw new Error('Greška pri dohvatanju detalja servisa');
         }
-        return await response.json();
+        const data = await response.json();
+        console.log("🔍 Business Partner Service Details Response:", data);
+        return data;
       } catch (error) {
         console.error("Greška pri dohvatanju detalja servisa:", error);
         throw error;
