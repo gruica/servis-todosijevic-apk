@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Eye, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Wrench, CheckCircle, XCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Eye, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Wrench, CheckCircle, XCircle, Package } from "lucide-react";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale/sr";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,9 @@ export default function TechnicianServicesList() {
   const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
+  const [returnNotes, setReturnNotes] = useState("");
+  const [isReturning, setIsReturning] = useState(false);
   
   // Koristi notification context
   const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
@@ -194,6 +198,45 @@ export default function TechnicianServicesList() {
   const handleViewDetails = (service: any) => {
     setSelectedService(service);
     setIsDetailsOpen(true);
+  };
+
+  const handleReturnDevice = async () => {
+    if (!selectedService || !returnNotes.trim()) {
+      alert("Molim vas unesite napomenu o vraćanju aparata");
+      return;
+    }
+
+    setIsReturning(true);
+    
+    try {
+      const response = await fetch(`/api/services/${selectedService.id}/return-device`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          returnNotes: returnNotes.trim()
+        })
+      });
+
+      if (response.ok) {
+        alert('Aparat je uspešno vraćen klijentu');
+        setShowReturnConfirmation(false);
+        setReturnNotes("");
+        setIsDetailsOpen(false);
+        // Refresh services
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`Greška: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error returning device:', error);
+      alert('Greška pri vraćanju aparata');
+    } finally {
+      setIsReturning(false);
+    }
   };
 
   return (
@@ -501,8 +544,76 @@ export default function TechnicianServicesList() {
                   <p className="text-sm font-semibold text-green-600">{selectedService.cost} €</p>
                 </div>
               )}
+
+              {/* Akcije za servise u toku */}
+              {selectedService.status === "in_progress" && (
+                <div className="bg-blue-50 p-4 rounded-lg border-t-2 border-blue-200">
+                  <h3 className="font-semibold text-sm text-gray-600 mb-3">Akcije</h3>
+                  <Button
+                    onClick={() => setShowReturnConfirmation(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={isReturning}
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    Vrati aparat
+                  </Button>
+                </div>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog za potvrdu vraćanja aparata */}
+      <Dialog open={showReturnConfirmation} onOpenChange={setShowReturnConfirmation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vrati aparat klijentu</DialogTitle>
+            <DialogDescription>
+              Molim vas unesite napomenu o vraćanju aparata klijentu.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Napomena o vraćanju aparata: <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Unesite napomenu o stanju aparata, razlogu vraćanja ili druge važne informacije..."
+                className="min-h-[100px] resize-none"
+                required
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowReturnConfirmation(false);
+                  setReturnNotes("");
+                }}
+                disabled={isReturning}
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={handleReturnDevice}
+                disabled={isReturning || !returnNotes.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {isReturning ? (
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                ) : (
+                  <Package className="h-4 w-4 mr-2" />
+                )}
+                {isReturning ? "Vraćam..." : "Vrati aparat"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
