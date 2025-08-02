@@ -48,8 +48,9 @@ export function ServiceDetailsFloat({
   const [customerRefusesRepair, setCustomerRefusesRepair] = useState(false);
   const [customerRefusalReason, setCustomerRefusalReason] = useState("");
   const [showCompletionForm, setShowCompletionForm] = useState(false);
-  const [deliveryNotes, setDeliveryNotes] = useState("");
-  const [isDelivering, setIsDelivering] = useState(false);
+  const [returnNotes, setReturnNotes] = useState("");
+  const [isReturning, setIsReturning] = useState(false);
+  const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
 
   // Debug tracking za showCompletionForm state
   useEffect(() => {
