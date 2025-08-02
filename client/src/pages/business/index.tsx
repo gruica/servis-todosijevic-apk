@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import BusinessLayout from "@/components/layout/business-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+import EnhancedServiceDialog from "@/components/business/enhanced-service-dialog";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Wrench, Clock, CheckCircle, AlertCircle, Eye, Phone, Mail, Calendar, Package, Settings, MapPin, User, Receipt, Activity, Building2, TrendingUp, BarChart3, FileText, Users, Award } from "lucide-react";
@@ -84,12 +86,38 @@ function translateStatus(status: string) {
 export default function BusinessDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [isEnhancedDialogOpen, setIsEnhancedDialogOpen] = useState(false);
   
   // Dohvatanje servisnih zahteva za poslovnog partnera
   const { data: services, isLoading } = useQuery<ServiceItem[]>({
     queryKey: ["/api/business/services"],
     enabled: !!user?.id,
   });
+
+  // Dohvatanje proširenih podataka za selektovan servis
+  const { data: enhancedService, isLoading: enhancedLoading } = useQuery({
+    queryKey: ["/api/business/services/details", selectedService?.id],
+    queryFn: async () => {
+      if (!selectedService?.id) return null;
+      const response = await fetch(`/api/business/services/${selectedService.id}`);
+      if (!response.ok) throw new Error('Greška pri dohvatanju detalja servisa');
+      return response.json();
+    },
+    enabled: !!selectedService?.id && isEnhancedDialogOpen,
+  });
+
+  // Funkcija za otvaranje proširenog dijaloga
+  const handleOpenEnhancedDialog = (service: ServiceItem) => {
+    setSelectedService(service);
+    setIsEnhancedDialogOpen(true);
+  };
+
+  // Funkcija za zatvaranje proširenog dijaloga
+  const handleCloseEnhancedDialog = () => {
+    setIsEnhancedDialogOpen(false);
+    setSelectedService(null);
+  };
   
   // Brojanje servisa po statusima
   const statusCounts = services?.reduce((acc, service) => {
@@ -405,92 +433,15 @@ export default function BusinessDashboard() {
                               {new Date(service.createdAt).toLocaleDateString('sr-RS')}
                             </div>
                             
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="border-blue-200 text-blue-700 hover:bg-blue-50">
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Detalji
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-4xl max-h-[90vh]">
-                                <DialogHeader>
-                                  <DialogTitle className="flex items-center gap-2 text-xl">
-                                    <Wrench className="h-6 w-6 text-blue-600" />
-                                    Servisni zahtev #{service.id}
-                                  </DialogTitle>
-                                  <DialogDescription>
-                                    Detaljne informacije o radu na servisu i stanju zahteva
-                                  </DialogDescription>
-                                </DialogHeader>
-                                
-                                <ScrollArea className="h-[70vh] pr-4">
-                                  <div className="space-y-6">
-                                    {/* Service Status & Timeline */}
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="flex items-center gap-2 text-lg">
-                                          <Activity className="h-5 w-5" />
-                                          Tok obrade zahteva
-                                        </CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="space-y-4">
-                                          {service.workTimeline.map((item, index) => (
-                                            <div key={index} className="flex items-center gap-4">
-                                              <div className={`w-4 h-4 rounded-full ${
-                                                item.status === 'completed' ? 'bg-green-500' :
-                                                item.status === 'in_progress' ? 'bg-blue-500' :
-                                                item.status === 'assigned' ? 'bg-yellow-500' : 'bg-gray-300'
-                                              }`} />
-                                              <div className="flex-1">
-                                                <div className="font-medium text-gray-900">{item.event}</div>
-                                                <div className="text-sm text-gray-500">
-                                                  {new Date(item.date).toLocaleDateString('sr-RS')}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-
-                                    {/* Technician Info */}
-                                    {service.technician && (
-                                      <Card>
-                                        <CardHeader>
-                                          <CardTitle className="flex items-center gap-2 text-lg">
-                                            <User className="h-5 w-5" />
-                                            Dodeljeni serviser
-                                          </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                          <div className="space-y-3">
-                                            <div>
-                                              <span className="font-medium">Ime:</span> {service.technician.fullName}
-                                            </div>
-                                            {service.technician.phone && (
-                                              <div>
-                                                <span className="font-medium">Telefon:</span> {service.technician.phone}
-                                              </div>
-                                            )}
-                                            {service.technician.email && (
-                                              <div>
-                                                <span className="font-medium">Email:</span> {service.technician.email}
-                                              </div>
-                                            )}
-                                            {service.technician.specialization && (
-                                              <div>
-                                                <span className="font-medium">Specijalizacija:</span> {service.technician.specialization}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </CardContent>
-                                      </Card>
-                                    )}
-                                  </div>
-                                </ScrollArea>
-                              </DialogContent>
-                            </Dialog>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleOpenEnhancedDialog(service)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Detalji
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -530,6 +481,20 @@ export default function BusinessDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Enhanced Service Dialog */}
+      <EnhancedServiceDialog 
+        service={enhancedService || selectedService}
+        isOpen={isEnhancedDialogOpen}
+        onClose={handleCloseEnhancedDialog}
+        onEdit={() => {
+          if (selectedService) {
+            setIsEnhancedDialogOpen(false);
+            navigate(`/business/services/edit/${selectedService.id}`);
+          }
+        }}
+        showActions={true}
+      />
     </BusinessLayout>
   );
 }
