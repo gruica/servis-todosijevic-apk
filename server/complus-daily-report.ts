@@ -1,7 +1,7 @@
 import { db } from './db.js';
-import { services, appliances, clients, users, sparePartOrders } from '../shared/schema.js';
+import { services, appliances, clients, users, sparePartOrders, manufacturers, applianceCategories, technicians } from '../shared/schema.js';
 import { EmailService } from './email-service.js';
-import { and, gte, lte, eq, isNotNull, or, like } from 'drizzle-orm';
+import { and, gte, lte, eq, isNotNull, isNull, or, like } from 'drizzle-orm';
 
 interface DailyReportData {
   completedServices: any[];
@@ -38,29 +38,195 @@ export class ComplusDailyReportService {
     endOfDay.setHours(23, 59, 59, 999);
 
     try {
-      // Temporary: Return empty data to test email functionality first
-      console.log('[COMPLUS REPORT] Test mode - returning empty data to validate email system');
+      console.log('[COMPLUS REPORT] Prikupljam stvarne podatke iz baze podataka...');
       
-      const completedServices: any[] = [];
+      // 1. Završeni servisi za ComPlus/Beko uređaje za određeni datum
+      const completedServices = await db
+        .select({
+          serviceId: services.id,
+          clientName: clients.fullName,
+          clientPhone: clients.phone,
+          clientAddress: clients.address,
+          technicianName: technicians.fullName,
+          applianceType: applianceCategories.name,
+          applianceBrand: manufacturers.name,
+          applianceModel: appliances.model,
+          description: services.description,
+          workPerformed: services.technicianNotes,
+          completedAt: services.completedDate,
+          status: services.status,
+          cost: services.cost
+        })
+        .from(services)
+        .innerJoin(appliances, eq(services.applianceId, appliances.id))
+        .innerJoin(clients, eq(appliances.clientId, clients.id))
+        .innerJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .innerJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(technicians, eq(services.technicianId, technicians.id))
+        .where(
+          and(
+            eq(services.status, 'completed'),
+            isNotNull(services.completedDate),
+            // Filtriraj samo ComPlus/Beko brendove
+            or(
+              like(manufacturers.name, '%Beko%'),
+              like(manufacturers.name, '%ComPlus%'),
+              like(manufacturers.name, '%beko%'),
+              like(manufacturers.name, '%complus%'),
+              like(manufacturers.name, '%BEKO%'),
+              like(manufacturers.name, '%COMPLUS%')
+            ),
+            // Filtriraj po datumu završetka servisa
+            gte(services.completedDate, startOfDay.toISOString()),
+            lte(services.completedDate, endOfDay.toISOString())
+          )
+        );
 
-      const visitedClients: any[] = [];
+      // 2. Jedinstveni klijenti posećeni za ComPlus/Beko uređaje
+      const visitedClientsSet = new Set();
+      const visitedClients = completedServices.filter(service => {
+        const clientKey = `${service.clientName}-${service.clientPhone}`;
+        if (!visitedClientsSet.has(clientKey)) {
+          visitedClientsSet.add(clientKey);
+          return true;
+        }
+        return false;
+      });
+
+      // 3. Potrošeni rezervni delovi iz usedParts JSON polja u završenim servisima
+      const servicesWithUsedParts = await db
+        .select({
+          serviceId: services.id,
+          usedPartsJson: services.usedParts,
+          completedAt: services.completedDate,
+          clientName: clients.fullName,
+          applianceBrand: manufacturers.name
+        })
+        .from(services)
+        .innerJoin(appliances, eq(services.applianceId, appliances.id))
+        .innerJoin(clients, eq(appliances.clientId, clients.id))
+        .innerJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .where(
+          and(
+            eq(services.status, 'completed'),
+            isNotNull(services.completedDate),
+            isNotNull(services.usedParts),
+            // Filtriraj samo ComPlus/Beko brendove  
+            or(
+              like(manufacturers.name, '%Beko%'),
+              like(manufacturers.name, '%ComPlus%'),
+              like(manufacturers.name, '%beko%'),
+              like(manufacturers.name, '%complus%'),
+              like(manufacturers.name, '%BEKO%'),
+              like(manufacturers.name, '%COMPLUS%')
+            ),
+            // Filtriraj po datumu
+            gte(services.completedDate, startOfDay.toISOString()),
+            lte(services.completedDate, endOfDay.toISOString())
+          )
+        );
+
+      // Parsiraj JSON polja da dobijem listu korišćenih delova
       const usedParts: any[] = [];
-      const orderedParts: any[] = [];
+      servicesWithUsedParts.forEach(service => {
+        try {
+          if (service.usedPartsJson) {
+            const parts = JSON.parse(service.usedPartsJson);
+            if (Array.isArray(parts)) {
+              parts.forEach((part: any) => {
+                usedParts.push({
+                  ...part,
+                  serviceId: service.serviceId,
+                  usedAt: service.completedAt,
+                  clientName: service.clientName,
+                  applianceBrand: service.applianceBrand
+                });
+              });
+            }
+          }
+        } catch (e) {
+          console.warn(`[COMPLUS REPORT] Invalid JSON u usedParts za servis ${service.serviceId}:`, e);
+        }
+      });
 
-      console.log(`[COMPLUS REPORT] Test mode - returning empty data`);
+      // 4. Poručeni rezervni delovi koji još nisu stigli
+      const orderedParts = await db
+        .select({
+          partId: sparePartOrders.id,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          quantity: sparePartOrders.quantity,
+          estimatedCost: sparePartOrders.estimatedCost,
+          actualCost: sparePartOrders.actualCost,
+          serviceId: sparePartOrders.serviceId,
+          status: sparePartOrders.status,
+          orderedAt: sparePartOrders.orderDate,
+          expectedDelivery: sparePartOrders.expectedDelivery,
+          clientName: clients.fullName,
+          applianceBrand: manufacturers.name
+        })
+        .from(sparePartOrders)
+        .leftJoin(services, eq(sparePartOrders.serviceId, services.id))
+        .leftJoin(appliances, eq(services.applianceId, appliances.id))
+        .leftJoin(clients, eq(appliances.clientId, clients.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .where(
+          and(
+            // Delovi koji su poručeni ali još nisu stigli
+            or(
+              eq(sparePartOrders.status, 'ordered'),
+              eq(sparePartOrders.status, 'pending')
+            ),
+            isNotNull(sparePartOrders.orderDate),
+            // Filtriraj ComPlus/Beko brendove ili admin narudžbe
+            or(
+              // Delovi vezani za ComPlus/Beko servise
+              and(
+                isNotNull(sparePartOrders.serviceId),
+                or(
+                  like(manufacturers.name, '%Beko%'),
+                  like(manufacturers.name, '%ComPlus%'),
+                  like(manufacturers.name, '%beko%'),
+                  like(manufacturers.name, '%complus%'),
+                  like(manufacturers.name, '%BEKO%'),
+                  like(manufacturers.name, '%COMPLUS%')
+                )
+              ),
+              // Admin narudžbe bez vezivanja za servis (pretpostavljamo da su ComPlus)
+              and(
+                isNull(sparePartOrders.serviceId),
+                or(
+                  like(sparePartOrders.partName, '%ComPlus%'),
+                  like(sparePartOrders.partName, '%Beko%')
+                )
+              )
+            )
+          )
+        );
+
+      console.log(`[COMPLUS REPORT] Pronađeni stvarni podaci:`);
+      console.log(`- ${completedServices.length} završenih servisa`);
+      console.log(`- ${visitedClients.length} posećenih klijenata`);
+      console.log(`- ${usedParts.length} potrošenih delova`);
+      console.log(`- ${orderedParts.length} poručenih delova`);
 
       return {
         completedServices,
         visitedClients,
         usedParts,
         orderedParts,
-        totalCompletedServices: 0,
-        totalUsedParts: 0,
-        totalOrderedParts: 0
+        totalCompletedServices: completedServices.length,
+        totalUsedParts: usedParts.length,
+        totalOrderedParts: orderedParts.length
       };
 
     } catch (error) {
       console.error('[COMPLUS REPORT] Greška pri prikupljanju podataka:', error);
+      console.error('[COMPLUS REPORT] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        type: error.constructor.name
+      });
       throw error;
     }
   }
