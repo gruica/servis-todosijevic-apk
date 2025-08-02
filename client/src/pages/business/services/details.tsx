@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, Clock, Wrench, Calendar, Phone, Mail, MapPin, Building, MessageSquare, ClipboardCheck } from "lucide-react";
+import { Loader2, ArrowLeft, Clock, Wrench, Calendar, Phone, Mail, MapPin, Building, MessageSquare, ClipboardCheck, Package, Settings, Truck, XCircle } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -34,6 +34,41 @@ interface ServiceDetails {
   categoryId?: number;
   manufacturerId?: number;
   businessPartnerId?: number;
+  // Dodati nova polja za kompletne informacije
+  isCompletelyFixed?: boolean;
+  warrantyStatus?: string;
+  usedParts?: string;
+  machineNotes?: string;
+  devicePickedUp?: boolean;
+  pickupDate?: string;
+  pickupNotes?: string;
+  customerRefusalReason?: string;
+  // Arrays for detailed information
+  spareParts?: Array<{
+    partName: string;
+    quantity?: number;
+    productCode?: string;
+    urgency?: string;
+    warrantyStatus?: string;
+    status: string;
+    orderDate?: string;
+    estimatedDeliveryDate?: string;
+    actualDeliveryDate?: string;
+  }>;
+  removedParts?: Array<{
+    partName: string;
+    removalReason: string;
+    currentLocation?: string;
+    removalDate: string;
+    returnDate?: string;
+    status: string;
+    repairCost?: string;
+  }>;
+  workTimeline?: Array<{
+    date: string;
+    event: string;
+    status: string;
+  }>;
   client?: {
     id: number;
     fullName: string;
@@ -314,6 +349,131 @@ export default function ServiceDetails() {
                     </div>
                   </>
                 )}
+
+                {/* Izvršeni radovi - detaljan pregled */}
+                {service.status === 'completed' && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="text-lg font-medium mb-4 flex items-center">
+                        <Wrench className="h-5 w-5 text-green-600 mr-2" />
+                        Izvršeni radovi i intervencije
+                      </h3>
+                      
+                      {/* Osnovne informacije o završetku */}
+                      <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+                        <div className="flex items-start">
+                          <div className="bg-green-100 rounded-full p-2 mr-3">
+                            <ClipboardCheck className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-green-800 mb-2">Status završetka</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-green-700 font-medium">Datum završetka:</span>
+                                <p className="text-green-800">{formatDate(service.completedDate)}</p>
+                              </div>
+                              {service.isCompletelyFixed !== undefined && (
+                                <div>
+                                  <span className="text-green-700 font-medium">Uređaj potpuno ispravan:</span>
+                                  <p className="text-green-800">
+                                    {service.isCompletelyFixed ? "Da, potpuno ispravljeno" : "Delimično/privremeno rešenje"}
+                                  </p>
+                                </div>
+                              )}
+                              {service.warrantyStatus && (
+                                <div>
+                                  <span className="text-green-700 font-medium">Status garancije:</span>
+                                  <p className="text-green-800">{service.warrantyStatus}</p>
+                                </div>
+                              )}
+                              {service.cost && (
+                                <div>
+                                  <span className="text-green-700 font-medium">Ukupan trošak:</span>
+                                  <p className="text-green-800 font-semibold">{service.cost}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Izvršeni radovi - tehnički detalji */}
+                      {(service.usedParts || service.machineNotes) && (
+                        <div className="space-y-4">
+                          {service.usedParts && (
+                            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                              <h5 className="font-medium text-blue-800 mb-2 flex items-center">
+                                <Package className="h-4 w-4 mr-2" />
+                                Korišćeni delovi i materijali
+                              </h5>
+                              <div className="bg-white p-3 rounded border">
+                                <p className="text-gray-700 whitespace-pre-line">{service.usedParts}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {service.machineNotes && (
+                            <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+                              <h5 className="font-medium text-orange-800 mb-2 flex items-center">
+                                <Settings className="h-4 w-4 mr-2" />
+                                Tehnički detalji intervencije
+                              </h5>
+                              <div className="bg-white p-3 rounded border">
+                                <p className="text-gray-700 whitespace-pre-line">{service.machineNotes}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Dodatne informacije za specifične statuse */}
+                {service.devicePickedUp && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="text-lg font-medium mb-3 flex items-center">
+                        <Truck className="h-5 w-5 text-blue-600 mr-2" />
+                        Preuzimanje uređaja
+                      </h3>
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {service.pickupDate && (
+                            <div>
+                              <span className="text-blue-700 font-medium">Datum preuzimanja:</span>
+                              <p className="text-blue-800">{formatDate(service.pickupDate)}</p>
+                            </div>
+                          )}
+                          {service.pickupNotes && (
+                            <div className="md:col-span-2">
+                              <span className="text-blue-700 font-medium">Napomene o preuzimanju:</span>
+                              <p className="text-blue-800 mt-1">{service.pickupNotes}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Informacije o odbačaju popravke */}
+                {service.customerRefusalReason && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="text-lg font-medium mb-3 flex items-center">
+                        <XCircle className="h-5 w-5 text-red-600 mr-2" />
+                        Odbačaj popravke
+                      </h3>
+                      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                        <p className="text-red-800"><span className="font-medium">Razlog odbačaja:</span> {service.customerRefusalReason}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -345,6 +505,181 @@ export default function ServiceDetails() {
                           {change.createdBy && (
                             <p className="text-xs text-gray-500 mt-1">Promenu izvršio: {change.createdBy}</p>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Rezervni delovi - detaljni pregled */}
+            {service.spareParts && service.spareParts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Rezervni delovi
+                  </CardTitle>
+                  <CardDescription>Delovi naručeni za ovaj servis</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {service.spareParts.map((part, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-gray-900">{part.partName}</h4>
+                          <Badge 
+                            variant={
+                              part.status === 'received' ? 'default' : 
+                              part.status === 'ordered' ? 'secondary' : 
+                              part.status === 'cancelled' ? 'destructive' : 'outline'
+                            }
+                          >
+                            {part.status === 'received' ? 'Stigao' : 
+                             part.status === 'ordered' ? 'Naručen' : 
+                             part.status === 'cancelled' ? 'Otkazan' : part.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Količina:</span> {part.quantity || 1}
+                          </div>
+                          {part.productCode && (
+                            <div>
+                              <span className="font-medium">Šifra:</span> {part.productCode}
+                            </div>
+                          )}
+                          {part.urgency && (
+                            <div>
+                              <span className="font-medium">Hitnost:</span> {part.urgency}
+                            </div>
+                          )}
+                          {part.orderDate && (
+                            <div>
+                              <span className="font-medium">Naručeno:</span> {formatDate(part.orderDate)}
+                            </div>
+                          )}
+                          {part.estimatedDeliveryDate && (
+                            <div>
+                              <span className="font-medium">Očekivano:</span> {formatDate(part.estimatedDeliveryDate)}
+                            </div>
+                          )}
+                          {part.actualDeliveryDate && (
+                            <div>
+                              <span className="font-medium">Isporučeno:</span> {formatDate(part.actualDeliveryDate)}
+                            </div>
+                          )}
+                        </div>
+                        {part.warrantyStatus && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-medium text-gray-700">Garancija:</span> 
+                            <span className="ml-1 text-gray-600">{part.warrantyStatus}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Uklonjeni delovi sa uređaja */}
+            {service.removedParts && service.removedParts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="mr-2 h-5 w-5" />
+                    Uklonjeni delovi sa uređaja
+                  </CardTitle>
+                  <CardDescription>Delovi uklonjeni tokom servisa za popravku ili zamenu</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {service.removedParts.map((part, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-red-50 border-red-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-gray-900">{part.partName}</h4>
+                          <Badge 
+                            variant={
+                              part.status === 'returned' ? 'default' : 
+                              part.status === 'repaired' ? 'secondary' : 
+                              part.status === 'replaced' ? 'outline' : 'destructive'
+                            }
+                          >
+                            {part.status === 'returned' ? 'Vraćen' : 
+                             part.status === 'repaired' ? 'Popravljen' : 
+                             part.status === 'replaced' ? 'Zamenjen' : 
+                             part.status === 'in_repair' ? 'U popravci' : 'Uklonjen'}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <div>
+                            <span className="font-medium">Razlog uklanjanja:</span> {part.removalReason}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <span className="font-medium">Datum uklanjanja:</span> {formatDate(part.removalDate)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Trenutna lokacija:</span> 
+                              <span className="ml-1">
+                                {part.currentLocation === 'workshop' ? 'U radionici' : 
+                                 part.currentLocation === 'external_repair' ? 'Spoljašnja popravka' : 
+                                 part.currentLocation === 'returned' ? 'Vraćen' : part.currentLocation}
+                              </span>
+                            </div>
+                            {part.returnDate && (
+                              <div>
+                                <span className="font-medium">Datum vraćanja:</span> {formatDate(part.returnDate)}
+                              </div>
+                            )}
+                            {part.repairCost && (
+                              <div>  
+                                <span className="font-medium">Troškovi popravke:</span> {part.repairCost}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Vremenska linija rada */}
+            {service.workTimeline && service.workTimeline.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="mr-2 h-5 w-5" />
+                    Vremenska linija servisa
+                  </CardTitle>
+                  <CardDescription>Hronološki pregled svih aktivnosti na servisu</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative space-y-0">
+                    {/* Linija vremena */}
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                    
+                    {service.workTimeline.map((event, index) => (
+                      <div key={index} className="flex items-start relative py-4">
+                        <div className="absolute left-4 top-6 w-5 h-5 rounded-full bg-primary -ml-2.5 border-4 border-background"></div>
+                        <div className="ml-10">
+                          <div className="flex flex-col sm:flex-row sm:items-center text-sm">
+                            <Badge variant="outline" className="mb-1 sm:mb-0">
+                              {event.status === 'pending' ? 'Na čekanju' :
+                               event.status === 'assigned' ? 'Dodeljeno' :
+                               event.status === 'scheduled' ? 'Zakazano' :
+                               event.status === 'in_progress' ? 'U toku' :
+                               event.status === 'completed' ? 'Završeno' : event.status}
+                            </Badge>
+                            <span className="sm:ml-2 text-gray-500">
+                              {formatDate(event.date)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-gray-700 font-medium">{event.event}</p>
                         </div>
                       </div>
                     ))}
