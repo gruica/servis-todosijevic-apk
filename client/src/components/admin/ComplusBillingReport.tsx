@@ -304,7 +304,7 @@ export default function ComplusBillingReport() {
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
                 <strong>Auto-detektovano {billingData.autoDetectedCount} servisa</strong> koji nemaju completedDate 
-                (korišten updatedAt kao fallback). Ovo rešava problem sa servisima od "Gruica Todosijević".
+                (korišten createdAt kao fallback). Ovo rešava problem sa servisima od "Gruica Todosijević".
               </AlertDescription>
             </Alert>
           )}
@@ -458,7 +458,7 @@ export default function ComplusBillingReport() {
                               <Clock className="h-4 w-4" />
                               Završeno: {format(new Date(service.completedDate), 'dd.MM.yyyy')}
                               {service.isAutoDetected && (
-                                <span className="text-xs text-orange-600">(updatedAt)</span>
+                                <span className="text-xs text-orange-600">(createdAt)</span>
                               )}
                             </div>
                           </div>

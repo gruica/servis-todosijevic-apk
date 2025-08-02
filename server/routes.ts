@@ -10816,7 +10816,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
 
-      // ENHANCED LOGIKA: Hvata sve završene servise bez ograničenja na warrantyStatus
+      // ENHANCED LOGIKA: Hvata garancijske servise + auto-detektuje servise bez completedDate
       const services = await db
         .select({
           serviceId: schema.services.id,
@@ -10827,7 +10827,6 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
           status: schema.services.status,
           warrantyStatus: schema.services.warrantyStatus,
           completedDate: schema.services.completedDate,
-          updatedAt: schema.services.updatedAt,
           createdAt: schema.services.createdAt,
           cost: schema.services.cost,
           clientName: schema.clients.fullName,
@@ -10857,30 +10856,31 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
               eq(schema.manufacturers.name, 'Turbo Air')
             ),
             or(
-              // Prioritetno: servisi sa completedDate u periodu
+              // Regularni servisi sa completedDate u periodu (garancijski i vangarancijski)
               and(
                 isNotNull(schema.services.completedDate),
                 gte(schema.services.completedDate, startDate.toISOString()),
                 lte(schema.services.completedDate, endDate.toISOString())
               ),
-              // Backup: servisi bez completedDate ali sa updatedAt u periodu (za Gruica Todosijević slučajeve)
+              // Auto-detektuj: završeni servisi bez completedDate u periodu - možda su od Gruica Todosijević
               and(
                 isNull(schema.services.completedDate),
-                gte(schema.services.updatedAt, startDate.toISOString()),
-                lte(schema.services.updatedAt, endDate.toISOString())
+                gte(schema.services.createdAt, startDate.toISOString().split('T')[0]),
+                lte(schema.services.createdAt, endDate.toISOString().split('T')[0])
               )
             )
           )
         )
         .orderBy(
-          // Sortiraj po datumu: completedDate ako postoji, inače updatedAt - najnoviji prvi
-          desc(sql`COALESCE(${schema.services.completedDate}, ${schema.services.updatedAt})`)
+          // Sortiraj po datumu završetka ili kreiranja - najnoviji prvi
+          desc(schema.services.completedDate),
+          desc(schema.services.createdAt)
         );
 
       // Formatiraj rezultate sa enhanced informacijama
       const billingServices = services.map(service => {
-        // Koristi completedDate ako postoji, inače updatedAt kao fallback
-        const effectiveCompletedDate = service.completedDate || service.updatedAt;
+        // ISPRAVKA: Koristi completedDate ako postoji, inače createdAt kao fallback
+        const effectiveCompletedDate = service.completedDate || service.createdAt;
         
         return {
           id: service.serviceId,
@@ -10900,7 +10900,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
           description: service.description || '',
           warrantyStatus: service.warrantyStatus || 'Nedefinirano',
           isAutoDetected: !service.completedDate, // Flag za servise koji su auto-detektovani
-          detectionMethod: service.completedDate ? 'completed_date' : 'updated_at_fallback'
+          detectionMethod: service.completedDate ? 'completed_date' : 'created_at_fallback'
         };
       });
 
