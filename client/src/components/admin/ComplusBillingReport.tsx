@@ -212,7 +212,7 @@ export default function ComplusBillingReport() {
           
           <div class="summary">
             <div><strong>Ukupno servisa:</strong> ${billingData.totalServices}</div>
-            <div><strong>Ukupna vrednost:</strong> ${billingData.totalCost.toFixed(2)} €</div>
+            <div><strong>Ukupna vrednost:</strong> ${Number(billingData.totalCost || 0).toFixed(2)} €</div>
             <div><strong>Brendovi:</strong> ${billingData.brandBreakdown.map(b => `${b.brand} (${b.count})`).join(', ')}</div>
           </div>
           
@@ -247,7 +247,7 @@ export default function ComplusBillingReport() {
                   <td class="serial">${service.serialNumber}</td>
                   <td>${service.technicianName}</td>
                   <td>${format(new Date(service.completedDate), 'dd.MM.yy')}</td>
-                  <td class="cost">${service.cost?.toFixed(2) || '0.00'}€</td>
+                  <td class="cost">${Number(service.cost || 0).toFixed(2)}€</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -374,7 +374,7 @@ export default function ComplusBillingReport() {
                       <div className="text-center">
                         <p className="text-sm font-medium text-gray-600">{brand.brand}</p>
                         <p className="text-xl font-bold">{brand.count}</p>
-                        <p className="text-xs text-gray-500">{brand.cost.toFixed(2)} €</p>
+                        <p className="text-xs text-gray-500">{Number(brand.cost || 0).toFixed(2)} €</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -400,7 +400,7 @@ export default function ComplusBillingReport() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Ukupna vrednost</p>
-                        <p className="text-2xl font-bold">{billingData.totalCost.toFixed(2)} €</p>
+                        <p className="text-2xl font-bold">{Number(billingData.totalCost || 0).toFixed(2)} €</p>
                       </div>
                       <Euro className="h-8 w-8 text-blue-500" />
                     </div>
@@ -442,10 +442,10 @@ export default function ComplusBillingReport() {
                                 Servis #{service.serviceNumber}
                               </Badge>
                               <Badge 
-                                variant={service.cost > 0 ? "default" : "secondary"}
+                                variant={Number(service.cost || 0) > 0 ? "default" : "secondary"}
                                 className="text-base px-3 py-1"
                               >
-                                {service.cost?.toFixed(2) || '0.00'} €
+                                {Number(service.cost || 0).toFixed(2)} €
                               </Badge>
                               {service.isAutoDetected && (
                                 <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800 border-orange-300">
@@ -540,7 +540,7 @@ export default function ComplusBillingReport() {
                               <div className="text-sm">
                                 <span className="text-gray-600">Troškovi:</span>
                                 <span className="font-bold text-green-600 ml-1">
-                                  {service.cost?.toFixed(2) || '0.00'} €
+                                  {Number(service.cost || 0).toFixed(2)} €
                                 </span>
                               </div>
                             </div>
