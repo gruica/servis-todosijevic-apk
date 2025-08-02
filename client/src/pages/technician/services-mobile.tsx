@@ -201,14 +201,40 @@ function ServiceCard({ service }: { service: Service }) {
     }
   });
 
+  const returnDeviceMutation = useMutation({
+    mutationFn: ({ serviceId, returnNotes }: { serviceId: number; returnNotes: string }) => 
+      apiRequest(`/api/services/${serviceId}/return-device`, {
+        method: 'POST',
+        body: JSON.stringify({ returnNotes })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+      toast({
+        title: "Aparat vraćen",
+        description: "Aparat je uspešno vraćen klijentu",
+      });
+      setShowReturnDeviceDialog(false);
+      setReturnNotes('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: "Greška pri vraćanju aparata",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Dialog state management
   const [showRefusalDialog, setShowRefusalDialog] = useState(false);
   const [showUnavailableDialog, setShowUnavailableDialog] = useState(false);
   const [showSparePartsDialog, setShowSparePartsDialog] = useState(false);
   const [showGeneraliDialog, setShowGeneraliDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [showReturnDeviceDialog, setShowReturnDeviceDialog] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
   const [unavailableReason, setUnavailableReason] = useState('');
+  const [returnNotes, setReturnNotes] = useState('');
   const [sparePartsData, setSparePartsData] = useState({
     partName: '',
     catalogNumber: '',
@@ -258,6 +284,10 @@ function ServiceCard({ service }: { service: Service }) {
 
   const handleGeneraliSupplement = () => {
     setShowGeneraliDialog(true);
+  };
+
+  const handleReturnDevice = () => {
+    setShowReturnDeviceDialog(true);
   };
 
   const submitCustomerRefusal = () => {
@@ -349,6 +379,19 @@ function ServiceCard({ service }: { service: Service }) {
         variant: "destructive"
       });
     });
+  };
+
+  const submitReturnDevice = () => {
+    if (!returnNotes.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite napomenu o vraćanju aparata",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    returnDeviceMutation.mutate({ serviceId: service.id, returnNotes });
   };
   
   const handleCallClient = () => {
@@ -544,6 +587,24 @@ function ServiceCard({ service }: { service: Service }) {
               >
                 <Package className="h-4 w-4 mr-2" />
                 Delovi stigli - nastavi rad
+              </Button>
+            </div>
+          )}
+
+          {/* Return Device for Completed Services */}
+          {service.status === 'completed' && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Servis završen</span>
+              </div>
+              <Button 
+                onClick={handleReturnDevice}
+                variant="outline"
+                className="w-full h-10 border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Vrati aparat klijentu
               </Button>
             </div>
           )}
@@ -895,6 +956,48 @@ function ServiceCard({ service }: { service: Service }) {
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Završi servis
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Device Dialog */}
+      <Dialog open={showReturnDeviceDialog} onOpenChange={setShowReturnDeviceDialog}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-blue-700">Vraćanje aparata klijentu</DialogTitle>
+            <DialogDescription>
+              Servis #{service.id} - Potvrda vraćanja aparata
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="return-notes">Napomene o vraćanju *</Label>
+              <Textarea
+                id="return-notes"
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Stanje aparata, instrukcije za klijenta, predate komponente..."
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowReturnDeviceDialog(false)}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitReturnDevice}
+                disabled={!returnNotes.trim() || returnDeviceMutation.isPending}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                {returnDeviceMutation.isPending ? 'Obrađuje...' : 'Vrati aparat'}
               </Button>
             </div>
           </div>
