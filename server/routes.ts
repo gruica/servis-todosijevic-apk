@@ -10960,5 +10960,147 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // Endpoint za "Isporuči aparat" - označava da je uređaj isporučen klijentu
+  app.post("/api/services/:id/deliver", jwtAuthMiddleware, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { deliveryNotes } = req.body;
+      
+      if (!serviceId || serviceId <= 0) {
+        return res.status(400).json({ 
+          error: "Nevažeći ID servisa" 
+        });
+      }
+      
+      // Dobij postojeći servis
+      const existingService = await storage.getService(serviceId);
+      if (!existingService) {
+        return res.status(404).json({ 
+          error: "Servis nije pronađen" 
+        });
+      }
+      
+      // Proverava dozvole: admin može sve, serviser može samo svoje servise
+      if (req.user?.role === "technician") {
+        const technicianId = req.user.technicianId;
+        if (!technicianId || existingService.technicianId !== technicianId) {
+          return res.status(403).json({ 
+            error: "Nemate dozvolu da isporučite ovaj aparat" 
+          });
+        }
+      }
+      
+      // Proveri da li je servis već završen ili isporučen
+      if (existingService.status === "delivered") {
+        return res.status(400).json({ 
+          error: "Aparat je već isporučen" 
+        });
+      }
+      
+      // Kreiraj update objekat
+      const currentDate = new Date().toISOString().split('T')[0];
+      const updateData = {
+        ...existingService,
+        status: "delivered" as const,
+        devicePickedUp: true,
+        pickupDate: currentDate,
+        pickupNotes: deliveryNotes || `Aparat isporučen klijentu dana ${currentDate}`,
+        completedDate: existingService.completedDate || currentDate
+      };
+      
+      // Ažuriraj servis
+      const updatedService = await storage.updateService(serviceId, updateData);
+      
+      if (!updatedService) {
+        return res.status(500).json({ 
+          error: "Greška pri isporuci aparata" 
+        });
+      }
+      
+      console.log(`[ISPORUKA APARATA] Servis #${serviceId} označen kao isporučen`);
+      
+      // Slanje obaveštenja
+      try {
+        // Dobij podatke za obaveštenja
+        const client = await storage.getClient(existingService.clientId);
+        const appliance = await storage.getAppliance(existingService.applianceId);
+        const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
+        const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+        const technician = existingService.technicianId ? await storage.getTechnician(existingService.technicianId) : null;
+        
+        const deviceInfo = `${manufacturer?.name || 'Nepoznat proizvođač'} ${appliance?.model || 'Nepoznat model'}`;
+        const serialNumber = appliance?.serialNumber || 'Nepoznat serijski broj';
+        const technicianName = technician?.fullName || 'Nepoznat serviser';
+        
+        // Email klijentu o isporuci aparata
+        if (client?.email) {
+          try {
+            const clientEmailResult = await emailService.sendDeviceDeliveryNotification(
+              client.email,
+              client.fullName,
+              serviceId,
+              deviceInfo,
+              serialNumber,
+              existingService.usedParts || '[]',
+              technicianName,
+              deliveryNotes || ''
+            );
+            console.log(`[ISPORUKA EMAIL] Email o isporuci poslat klijentu: ${clientEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+          } catch (emailError) {
+            console.error(`[ISPORUKA EMAIL] Greška pri slanju emaila klijentu:`, emailError);
+          }
+        }
+        
+        // SMS klijentu o isporuci
+        if (client?.phone) {
+          try {
+            // Dodaj SMS logiku ovde kad bude dostupna
+            console.log(`[ISPORUKA SMS] SMS o isporuci bi trebalo poslati na ${client.phone}`);
+          } catch (smsError) {
+            console.error(`[ISPORUKA SMS] Greška pri slanju SMS-a:`, smsError);
+          }
+        }
+        
+        // Email poslovnom partneru ako postoji
+        if (existingService.businessPartnerId) {
+          try {
+            const businessPartner = await storage.getUser(existingService.businessPartnerId);
+            if (businessPartner?.email) {
+              const partnerEmailResult = await emailService.sendPartnerDeviceDeliveryNotification(
+                businessPartner.email,
+                businessPartner.fullName || businessPartner.username,
+                serviceId,
+                client?.fullName || 'Nepoznat klijent',
+                deviceInfo,
+                serialNumber,
+                technicianName,
+                deliveryNotes || ''
+              );
+              console.log(`[ISPORUKA EMAIL] Email o isporuci poslat partneru: ${partnerEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+            }
+          } catch (partnerEmailError) {
+            console.error(`[ISPORUKA EMAIL] Greška pri slanju emaila partneru:`, partnerEmailError);
+          }
+        }
+        
+      } catch (notificationError) {
+        console.error(`[ISPORUKA] Greška pri slanju obaveštenja:`, notificationError);
+        // Ne prekidamo proces ako obaveštenja ne mogu da se pošalju
+      }
+      
+      res.json({
+        success: true,
+        message: "Aparat je uspešno isporučen",
+        service: updatedService
+      });
+      
+    } catch (error) {
+      console.error("Greška pri isporuci aparata:", error);
+      res.status(500).json({ 
+        error: "Greška pri isporuci aparata" 
+      });
+    }
+  });
+
   return httpServer;
 }

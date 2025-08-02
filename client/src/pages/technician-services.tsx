@@ -27,6 +27,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     in_progress: { label: "U toku", variant: "default" },
     waiting_parts: { label: "Čeka delove", variant: "destructive" },
     completed: { label: "Završen", variant: "outline" },
+    delivered: { label: "Isporučen", variant: "secondary" },
     cancelled: { label: "Otkazan", variant: "destructive" },
   };
 

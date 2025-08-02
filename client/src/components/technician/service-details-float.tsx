@@ -48,6 +48,8 @@ export function ServiceDetailsFloat({
   const [customerRefusesRepair, setCustomerRefusesRepair] = useState(false);
   const [customerRefusalReason, setCustomerRefusalReason] = useState("");
   const [showCompletionForm, setShowCompletionForm] = useState(false);
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [isDelivering, setIsDelivering] = useState(false);
 
   // Debug tracking za showCompletionForm state
   useEffect(() => {
@@ -182,6 +184,51 @@ export function ServiceDetailsFloat({
       console.error("Greška pri završetku servisa:", error);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleDeliverDevice = async () => {
+    if (!deliveryNotes.trim()) {
+      alert("Molimo unesite napomenu o isporuci aparata");
+      return;
+    }
+
+    setIsDelivering(true);
+    try {
+      console.log(`🚚 [ISPORUKA] Isporučujem aparat za servis #${service.id}`);
+      
+      const response = await fetch(`/api/services/${service.id}/deliver`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          deliveryNotes: deliveryNotes.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Greška pri isporuci aparata');
+      }
+
+      const result = await response.json();
+      console.log(`🚚 [ISPORUKA] Aparat uspešno isporučen:`, result);
+      
+      // Pozovi callback za ažuriranje statusa
+      await onStatusUpdate(service.id, "delivered", {
+        deliveryNotes: deliveryNotes.trim()
+      });
+      
+      alert("Aparat je uspešno isporučen klijentu!");
+      onClose();
+      
+    } catch (error) {
+      console.error('🚚 [ISPORUKA] Greška:', error);
+      alert(`Greška pri isporuci aparata: ${error.message}`);
+    } finally {
+      setIsDelivering(false);
     }
   };
 
@@ -563,6 +610,36 @@ export function ServiceDetailsFloat({
                           Završi servis
                         </Button>
                       )}
+                    </div>
+                  )}
+
+                  {/* Isporuči aparat - za completed servise koji nisu delivered */}
+                  {service.status === "completed" && service.status !== "delivered" && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium flex items-center text-blue-700">
+                          Napomena o isporuci aparata: <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <Textarea
+                          value={deliveryNotes}
+                          onChange={(e) => setDeliveryNotes(e.target.value)}
+                          placeholder="Unesite napomenu o isporuci aparata klijentu..."
+                          className="min-h-[60px] text-sm resize-none border-blue-200 focus:border-blue-400"
+                          required
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleDeliverDevice}
+                        disabled={isDelivering || !deliveryNotes.trim()}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        {isDelivering ? (
+                          <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                        ) : (
+                          <Package className="h-4 w-4 mr-2" />
+                        )}
+                        Isporuči aparat
+                      </Button>
                     </div>
                   )}
                 </div>

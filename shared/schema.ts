@@ -199,6 +199,7 @@ export const serviceStatusEnum = z.enum([
   "waiting_parts", // čeka delove
   "device_parts_removed", // delovi uklonjeni sa uređaja
   "completed", // završeno
+  "delivered", // isporučen aparat klijentu
   "cancelled", // otkazano
   "client_not_home", // klijent nije kući
   "client_not_answering", // klijent se ne javlja
