@@ -586,6 +586,12 @@ export function ServiceDetailsFloat({
                   
                   {service.status === "in_progress" && (
                     <div className="space-y-2">
+                      {console.log("🎯 RENDEROVANJE DEBUG:", {
+                        serviceStatus: service.status,
+                        isInProgress: service.status === "in_progress",
+                        customerRefusesRepair: customerRefusesRepair,
+                        willShowReturnButton: service.status === "in_progress" && !customerRefusesRepair
+                      })}
                       {customerRefusesRepair ? (
                         <Button 
                           onClick={handleCustomerRefusesRepair}
@@ -616,7 +622,12 @@ export function ServiceDetailsFloat({
                           </Button>
                           
                           <Button 
-                            onClick={() => setShowReturnConfirmation(true)}
+                            onClick={() => {
+                              console.log("🎯 VRATI APARAT DEBUG: Dugme je kliknuto!");
+                              console.log("🎯 VRATI APARAT DEBUG: service.status =", service.status);
+                              console.log("🎯 VRATI APARAT DEBUG: customerRefusesRepair =", customerRefusesRepair);
+                              setShowReturnConfirmation(true);
+                            }}
                             disabled={isUpdating}
                             className="w-full bg-blue-600 hover:bg-blue-700"
                           >
