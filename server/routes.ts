@@ -10947,7 +10947,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       };
 
       console.log(`[ENHANCED COMPLUS BILLING] Pronađeno ukupno ${totalServices} servisa (${autoDetectedCount} auto-detektovano)`);
-      console.log(`[ENHANCED COMPLUS BILLING] Ukupna vrednost: ${totalCost.toFixed(2)}€`);
+      console.log(`[ENHANCED COMPLUS BILLING] Ukupna vrednost: ${(totalCost || 0).toFixed(2)}€`);
       console.log(`[ENHANCED COMPLUS BILLING] Enhanced raspored po brendovima:`, response.brandBreakdown);
 
       res.json(response);
