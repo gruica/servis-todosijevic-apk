@@ -226,7 +226,7 @@ export function ServiceDetailsFloat({
       
     } catch (error) {
       console.error('🚚 [ISPORUKA] Greška:', error);
-      alert(`Greška pri isporuci aparata: ${error.message}`);
+      alert(`Greška pri isporuci aparata: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
     } finally {
       setIsDelivering(false);
     }
@@ -614,7 +614,7 @@ export function ServiceDetailsFloat({
                   )}
 
                   {/* Isporuči aparat - za completed servise koji nisu delivered */}
-                  {service.status === "completed" && service.status !== "delivered" && (
+                  {service.status === "completed" && (
                     <div className="space-y-3 pt-4 border-t">
                       <div className="space-y-2">
                         <label className="text-sm font-medium flex items-center text-blue-700">
