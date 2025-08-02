@@ -10449,5 +10449,208 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // ==========================================
+  // NAPREDNI IZVEŠTAJI - NOVI ENDPOINT-I
+  // ==========================================
+
+  // Mesečni ComPlus izveštaj
+  app.post("/api/complus-monthly-report", async (req, res) => {
+    try {
+      console.log('[ADVANCED REPORTS] Pozvan endpoint za mesečni ComPlus izveštaj');
+      
+      const { AdvancedReportsService } = await import('./advanced-reports.js');
+      
+      const month = parseInt(req.body.month) || new Date().getMonth() + 1;
+      const year = parseInt(req.body.year) || new Date().getFullYear();
+      const email = req.body.email || 'gruica@frigosistemtodosijevic.com';
+      
+      console.log(`[ADVANCED REPORTS] Generiram mesečni izveštaj za ${month}/${year}`);
+      
+      const reportData = await AdvancedReportsService.generateMonthlyReport(month, year);
+      
+      if (req.body.sendEmail !== false) {
+        const emailSent = await AdvancedReportsService.sendMonthlyReportEmail(reportData, email);
+        
+        res.json({
+          success: true,
+          message: `Mesečni ComPlus izveštaj ${emailSent ? 'uspešno poslat' : 'generisan'}`,
+          data: reportData,
+          emailSent,
+          email: emailSent ? email : null
+        });
+      } else {
+        res.json({
+          success: true,
+          message: 'Mesečni ComPlus izveštaj generisan',
+          data: reportData
+        });
+      }
+      
+    } catch (error) {
+      console.error('[ADVANCED REPORTS] Greška pri mesečnom izveštaju:', error);
+      res.status(500).json({
+        error: 'Greška pri generisanju mesečnog ComPlus izveštaja',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Analytics dashboard podatci
+  app.get("/api/complus-analytics", async (req, res) => {
+    try {
+      console.log('[ADVANCED REPORTS] Pozvan endpoint za ComPlus analytics');
+      
+      const { AdvancedReportsService } = await import('./advanced-reports.js');
+      
+      const daysBack = parseInt(req.query.days as string) || 30;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      
+      console.log(`[ADVANCED REPORTS] Generiram analytics za poslednih ${daysBack} dana`);
+      
+      const analyticsData = await AdvancedReportsService.generateAnalyticsData(startDate, endDate);
+      
+      res.json({
+        success: true,
+        message: 'ComPlus analytics podaci uspešno generirani',
+        data: analyticsData,
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          days: daysBack
+        }
+      });
+      
+    } catch (error) {
+      console.error('[ADVANCED REPORTS] Greška pri analytics podacima:', error);
+      res.status(500).json({
+        error: 'Greška pri generisanju ComPlus analytics podataka',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // ==========================================
+  // BUSINESS PARTNER KOMUNIKACIJA - NOVI ENDPOINT-I
+  // ==========================================
+
+  // Slanje obaveštenja business partneru
+  app.post("/api/business-partner-notification", async (req, res) => {
+    try {
+      console.log('[BP COMM] Pozvan endpoint za business partner obaveštenje');
+      
+      const { BusinessPartnerCommunicationService } = await import('./business-partner-communication.js');
+      
+      const { serviceId, partnerId, status, additionalInfo } = req.body;
+      
+      if (!serviceId || !partnerId || !status) {
+        return res.status(400).json({
+          error: 'Nedostaju obavezni parametri: serviceId, partnerId, status'
+        });
+      }
+      
+      console.log(`[BP COMM] Slanje obaveštenja partneru ${partnerId} za servis ${serviceId}, status: ${status}`);
+      
+      const success = await BusinessPartnerCommunicationService.sendServiceStatusNotification(
+        parseInt(serviceId),
+        parseInt(partnerId),
+        status,
+        additionalInfo
+      );
+      
+      res.json({
+        success,
+        message: success 
+          ? 'Obaveštenje business partneru uspešno poslato'
+          : 'Neuspešno slanje obaveštenja business partneru',
+        serviceId,
+        partnerId,
+        status
+      });
+      
+    } catch (error) {
+      console.error('[BP COMM] Greška pri slanju obaveštenja:', error);
+      res.status(500).json({
+        error: 'Greška pri slanju obaveštenja business partneru',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Dnevni izveštaj za business partnera
+  app.post("/api/business-partner-daily-report", async (req, res) => {
+    try {
+      console.log('[BP COMM] Pozvan endpoint za business partner dnevni izveštaj');
+      
+      const { BusinessPartnerCommunicationService } = await import('./business-partner-communication.js');
+      
+      const partnerId = parseInt(req.body.partnerId);
+      const date = req.body.date ? new Date(req.body.date) : new Date();
+      
+      if (!partnerId) {
+        return res.status(400).json({
+          error: 'Nedostaje obavezan parametar: partnerId'
+        });
+      }
+      
+      console.log(`[BP COMM] Generiram dnevni izveštaj za partnera ${partnerId}, datum: ${date.toDateString()}`);
+      
+      const success = await BusinessPartnerCommunicationService.sendDailyPartnerReport(partnerId, date);
+      
+      res.json({
+        success,
+        message: success 
+          ? 'Dnevni izveštaj business partneru uspešno poslat'
+          : 'Neuspešno slanje dnevnog izveštaja business partneru',
+        partnerId,
+        date: date.toISOString()
+      });
+      
+    } catch (error) {
+      console.error('[BP COMM] Greška pri slanju dnevnog izveštaja:', error);
+      res.status(500).json({
+        error: 'Greška pri slanju dnevnog izveštaja business partneru',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // Statistike business partner komunikacije
+  app.get("/api/business-partner-stats", async (req, res) => {
+    try {
+      console.log('[BP COMM] Pozvan endpoint za business partner statistike');
+      
+      const { BusinessPartnerCommunicationService } = await import('./business-partner-communication.js');
+      
+      const daysBack = parseInt(req.query.days as string) || 30;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      
+      console.log(`[BP COMM] Generiram statistike za poslednih ${daysBack} dana`);
+      
+      const stats = await BusinessPartnerCommunicationService.getCommunicationStats(startDate, endDate);
+      
+      res.json({
+        success: true,
+        message: 'Business partner statistike uspešno generirane',
+        data: stats,
+        period: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          days: daysBack
+        }
+      });
+      
+    } catch (error) {
+      console.error('[BP COMM] Greška pri generisanju statistika:', error);
+      res.status(500).json({
+        error: 'Greška pri generisanju business partner statistika',
+        details: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
   return httpServer;
 }
