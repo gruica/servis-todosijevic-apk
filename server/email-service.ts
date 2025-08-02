@@ -2579,6 +2579,248 @@ ${currentDate} ${currentTime}
       return false;
     }
   }
+  /**
+   * Šalje obaveštenje klijentu o vraćanju uređaja
+   */
+  public async sendDeviceReturnNotification(
+    clientEmail: string,
+    clientName: string,
+    serviceId: string,
+    applianceModel: string,
+    serialNumber: string,
+    technicianName: string,
+    returnNotes: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje obaveštenja o vraćanju aparata klijentu za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje obaveštenja o vraćanju aparata`);
+      return false;
+    }
+
+    const subject = `Vraćanje aparata - Servis #${serviceId}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #0d47a1; margin: 0;">📦 VRAĆANJE APARATA</h2>
+          <p style="margin: 5px 0 0 0; color: #0d47a1; font-weight: bold;">
+            Servis #${serviceId} - Aparat je vraćen
+          </p>
+        </div>
+        
+        <p>Poštovani/a ${clientName},</p>
+        
+        <p>Obaveštavamo vas da je vaš aparat vraćen iz servisa:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007bff;">
+          <h3 style="color: #495057; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Uređaj:</strong> ${applianceModel}</p>
+          ${serialNumber ? `<p><strong>Serijski broj:</strong> ${serialNumber}</p>` : ''}
+          <p><strong>Status:</strong> <span style="color: #007bff;">Aparat vraćen</span></p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum vraćanja:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #856404; margin-top: 0;">Napomena o vraćanju</h3>
+          <p style="margin: 0; color: #856404; font-style: italic;">
+            "${returnNotes}"
+          </p>
+        </div>
+
+        <p>Za dodatne informacije ili pitanja vezana za vaš aparat, molimo vas da nas kontaktirate.</p>
+        
+        <p>Hvala vam na poverenju!</p>
+        
+        <p>S poštovanjem,<br>
+        <strong>Tim Frigo Sistem Todosijević</strong></p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com<br>
+          Adresa: Lastva grbaljska bb, 85317 Kotor, Crna Gora<br>
+          www.frigosistemtodosijevic.com
+        </p>
+      </div>
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: clientEmail,
+        subject,
+        html
+      });
+      
+      console.log(`[EMAIL] Rezultat slanja obaveštenja o vraćanju aparata: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju obaveštenja o vraćanju aparata:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje obaveštenje Beko partneru o vraćanju uređaja
+   */
+  public async sendDeviceReturnNotificationToBeko(
+    clientName: string,
+    serviceId: string,
+    applianceModel: string,
+    serialNumber: string,
+    technicianName: string,
+    returnNotes: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje Beko obaveštenja o vraćanju aparata za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje Beko obaveštenja o vraćanju aparata`);
+      return false;
+    }
+
+    const bekoEmail = 'mp4@eurotehnikamn.me';
+    const subject = `BEKO - Vraćanje aparata #${serviceId} - ${applianceModel}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #0d47a1; margin: 0;">📦 BEKO - VRAĆANJE APARATA</h2>
+          <p style="margin: 5px 0 0 0; color: #0d47a1; font-weight: bold;">
+            Servis #${serviceId} - Aparat vraćen klijentu
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        
+        <p>Obaveštavamo vas da je Beko aparat vraćen klijentu:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007bff;">
+          <h3 style="color: #495057; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Brend:</strong> BEKO</p>
+          <p><strong>Uređaj:</strong> ${applianceModel}</p>
+          ${serialNumber ? `<p><strong>Serijski broj:</strong> ${serialNumber}</p>` : ''}
+          <p><strong>Klijent:</strong> ${clientName}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum vraćanja:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #856404; margin-top: 0;">Napomena o vraćanju</h3>
+          <p style="margin: 0; color: #856404; font-style: italic;">
+            "${returnNotes}"
+          </p>
+        </div>
+
+        <p>Aparat je vraćen klijentu sa napomenom navedenom iznad.</p>
+        
+        <p>S poštovanjem,<br>
+        <strong>Frigo Sistem Todosijević</strong></p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com
+        </p>
+      </div>
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: bekoEmail,
+        subject,
+        html
+      });
+      
+      console.log(`[EMAIL] Rezultat slanja Beko obaveštenja o vraćanju aparata: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju Beko obaveštenja o vraćanju aparata:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Šalje obaveštenje ComPlus partneru o vraćanju uređaja
+   */
+  public async sendDeviceReturnNotificationToComPlus(
+    clientName: string,
+    serviceId: string,
+    applianceModel: string,
+    serialNumber: string,
+    technicianName: string,
+    returnNotes: string
+  ): Promise<boolean> {
+    console.log(`[EMAIL] Slanje ComPlus obaveštenja o vraćanju aparata za servis #${serviceId}`);
+    
+    if (!this.configCache) {
+      console.error(`[EMAIL] Nema konfigurisanog SMTP servera za slanje ComPlus obaveštenja o vraćanju aparata`);
+      return false;
+    }
+
+    const complusEmail = 'servis@complus.me';
+    const subject = `COMPLUS - Vraćanje aparata #${serviceId} - ${applianceModel}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h2 style="color: #0d47a1; margin: 0;">📦 COMPLUS - VRAĆANJE APARATA</h2>
+          <p style="margin: 5px 0 0 0; color: #0d47a1; font-weight: bold;">
+            Servis #${serviceId} - Aparat vraćen klijentu
+          </p>
+        </div>
+        
+        <p>Poštovani,</p>
+        
+        <p>Obaveštavamo vas da je ComPlus aparat vraćen klijentu:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007bff;">
+          <h3 style="color: #495057; margin-top: 0;">Detalji servisa</h3>
+          <p><strong>Broj servisa:</strong> #${serviceId}</p>
+          <p><strong>Brend:</strong> COMPLUS</p>
+          <p><strong>Uređaj:</strong> ${applianceModel}</p>
+          ${serialNumber ? `<p><strong>Serijski broj:</strong> ${serialNumber}</p>` : ''}
+          <p><strong>Klijent:</strong> ${clientName}</p>
+          <p><strong>Serviser:</strong> ${technicianName}</p>
+          <p><strong>Datum vraćanja:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
+        </div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="color: #856404; margin-top: 0;">Napomena o vraćanju</h3>
+          <p style="margin: 0; color: #856404; font-style: italic;">
+            "${returnNotes}"
+          </p>
+        </div>
+
+        <p>Aparat je vraćen klijentu sa napomenom navedenom iznad.</p>
+        
+        <p>S poštovanjem,<br>
+        <strong>Frigo Sistem Todosijević</strong></p>
+        
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666;">
+          Frigo Sistem Todosijević<br>
+          Kontakt telefon: 033 402 402<br>
+          Email: info@frigosistemtodosijevic.com
+        </p>
+      </div>
+    `;
+
+    try {
+      const result = await this.sendEmail({
+        to: complusEmail,
+        subject,
+        html
+      });
+      
+      console.log(`[EMAIL] Rezultat slanja ComPlus obaveštenja o vraćanju aparata: ${result ? 'Uspešno ✅' : 'Neuspešno ❌'}`);
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju ComPlus obaveštenja o vraćanju aparata:`, error);
+      return false;
+    }
+  }
 }
 
 export const emailService = EmailService.getInstance();

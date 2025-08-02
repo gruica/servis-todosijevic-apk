@@ -11102,5 +11102,148 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // Endpoint za "Vrati aparat" - označava vraćanje uređaja sa email obaveštenjima
+  app.post("/api/services/:id/return-device", jwtAuthMiddleware, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { returnNotes } = req.body;
+      
+      if (!serviceId || serviceId <= 0) {
+        return res.status(400).json({ 
+          error: "Nevažeći ID servisa" 
+        });
+      }
+      
+      if (!returnNotes || !returnNotes.trim()) {
+        return res.status(400).json({ 
+          error: "Napomena o vraćanju aparata je obavezna" 
+        });
+      }
+      
+      // Dobij postojeći servis
+      const existingService = await storage.getService(serviceId);
+      if (!existingService) {
+        return res.status(404).json({ 
+          error: "Servis nije pronađen" 
+        });
+      }
+      
+      // Proverava dozvole: admin može sve, serviser može samo svoje servise
+      if (req.user?.role === "technician") {
+        const technicianId = req.user.technicianId;
+        if (!technicianId || existingService.technicianId !== technicianId) {
+          return res.status(403).json({ 
+            error: "Nemate dozvolu da vratite ovaj aparat" 
+          });
+        }
+      }
+      
+      // Kreiraj update objekat
+      const currentDate = new Date().toISOString().split('T')[0];
+      const updateData = {
+        ...existingService,
+        status: "device_returned" as const,
+        devicePickedUp: false,
+        pickupDate: currentDate,
+        pickupNotes: returnNotes.trim()
+      };
+      
+      // Ažuriraj servis u bazi
+      const updatedService = await storage.updateService(serviceId, updateData);
+      if (!updatedService) {
+        return res.status(500).json({ 
+          error: "Greška pri ažuriranju servisa" 
+        });
+      }
+      
+      console.log(`[VRAĆANJE] Servis #${serviceId} - aparat vraćen sa napomenom: ${returnNotes.trim()}`);
+      
+      // Pošalji email obaveštenja
+      try {
+        // Dobij informacije o klijentu, aparatu i serviseru
+        const client = existingService.clientId ? await storage.getClient(existingService.clientId) : null;
+        const appliance = existingService.applianceId ? await storage.getAppliance(existingService.applianceId) : null;
+        const technician = existingService.technicianId ? await storage.getTechnician(existingService.technicianId) : null;
+        const technicianName = technician?.fullName || 'Serviser';
+        
+        if (client && appliance) {
+          // Email klijentu
+          try {
+            const { EmailNotificationService } = await import('./email-notification-service.js');
+            const emailService = new EmailNotificationService();
+            
+            const clientEmailResult = await emailService.sendDeviceReturnNotification(
+              client.email,
+              client.fullName,
+              existingService.id.toString(),
+              appliance.model || 'Uređaj',
+              appliance.serialNumber || '',
+              technicianName,
+              returnNotes.trim()
+            );
+            console.log(`[VRAĆANJE EMAIL] Email o vraćanju poslat klijentu: ${clientEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+          } catch (clientEmailError) {
+            console.error(`[VRAĆANJE EMAIL] Greška pri slanju emaila klijentu:`, clientEmailError);
+          }
+          
+          // Email poslovnom partneru (Beko ili ComPlus)
+          try {
+            // Determiniši brand i pošalji email partneru
+            const manufacturer = appliance.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
+            const brandName = manufacturer?.name?.toLowerCase() || '';
+            
+            if (brandName.includes('beko') || brandName.includes('grundig') || brandName.includes('blomberg')) {
+              // Beko partner
+              const { EmailNotificationService } = await import('./email-notification-service.js');
+              const emailService = new EmailNotificationService();
+              
+              const partnerEmailResult = await emailService.sendDeviceReturnNotificationToBeko(
+                client.fullName,
+                existingService.id.toString(),
+                appliance.model || 'Uređaj',
+                appliance.serialNumber || '',
+                technicianName,
+                returnNotes.trim()
+              );
+              console.log(`[VRAĆANJE EMAIL] Email o vraćanju poslat Beko partneru: ${partnerEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+            } else {
+              // ComPlus partner
+              const { EmailNotificationService } = await import('./email-notification-service.js');
+              const emailService = new EmailNotificationService();
+              
+              const partnerEmailResult = await emailService.sendDeviceReturnNotificationToComPlus(
+                client.fullName,
+                existingService.id.toString(),
+                appliance.model || 'Uređaj',
+                appliance.serialNumber || '',
+                technicianName,
+                returnNotes.trim()
+              );
+              console.log(`[VRAĆANJE EMAIL] Email o vraćanju poslat ComPlus partneru: ${partnerEmailResult ? 'Uspešno' : 'Neuspešno'}`);
+            }
+          } catch (partnerEmailError) {
+            console.error(`[VRAĆANJE EMAIL] Greška pri slanju emaila partneru:`, partnerEmailError);
+          }
+        }
+        
+      } catch (notificationError) {
+        console.error(`[VRAĆANJE] Greška pri slanju obaveštenja:`, notificationError);
+        // Ne prekidamo proces ako obaveštenja ne mogu da se pošalju
+      }
+      
+      res.json({
+        success: true,
+        message: "Aparat je uspešno vraćen, email obaveštenja su poslata",
+        service: updatedService
+      });
+      
+    } catch (error) {
+      console.error("Greška pri vraćanju aparata:", error);
+      res.status(500).json({ 
+        error: "Greška pri vraćanju aparata" 
+      });
+    }
+  });
+
   return httpServer;
 }

@@ -188,48 +188,49 @@ export function ServiceDetailsFloat({
     }
   };
 
-  const handleDeliverDevice = async () => {
-    if (!deliveryNotes.trim()) {
-      alert("Molimo unesite napomenu o isporuci aparata");
+  const handleReturnDevice = async () => {
+    if (!returnNotes.trim()) {
+      alert("Molim unesite napomenu o vraćanju aparata.");
       return;
     }
 
-    setIsDelivering(true);
+    setIsReturning(true);
     try {
-      console.log(`🚚 [ISPORUKA] Isporučujem aparat za servis #${service.id}`);
+      console.log(`📦 [VRAĆANJE] Vraćam aparat za servis #${service.id}`);
       
-      const response = await fetch(`/api/services/${service.id}/deliver`, {
+      const response = await fetch(`/api/services/${service.id}/return-device`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          deliveryNotes: deliveryNotes.trim()
+          returnNotes: returnNotes.trim()
         })
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Greška pri isporuci aparata');
+        throw new Error(error.error || 'Greška pri vraćanju aparata');
       }
 
       const result = await response.json();
-      console.log(`🚚 [ISPORUKA] Aparat uspešno isporučen:`, result);
+      console.log(`📦 [VRAĆANJE] Aparat uspešno vraćen:`, result);
       
       // Pozovi callback za ažuriranje statusa
-      await onStatusUpdate(service.id, "delivered", {
-        deliveryNotes: deliveryNotes.trim()
+      await onStatusUpdate(service.id, "device_returned", {
+        returnNotes: returnNotes.trim()
       });
       
-      alert("Aparat je uspešno isporučen klijentu!");
+      alert("Aparat je uspešno vraćen! Email obaveštenja su poslata klijentu i poslovnom partneru.");
+      setShowReturnConfirmation(false);
       onClose();
       
     } catch (error) {
-      console.error('🚚 [ISPORUKA] Greška:', error);
-      alert(`Greška pri isporuci aparata: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
+      console.error('📦 [VRAĆANJE] Greška:', error);
+      alert(`Greška pri vraćanju aparata: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
     } finally {
-      setIsDelivering(false);
+      setIsReturning(false);
     }
   };
 
@@ -583,7 +584,6 @@ export function ServiceDetailsFloat({
                   
                   {service.status === "in_progress" && (
                     <div className="space-y-2">
-                      {console.log("🎯 [DEBUG] Service status is in_progress, prikazuje se dugme za završetak")}
                       {customerRefusesRepair ? (
                         <Button 
                           onClick={handleCustomerRefusesRepair}
@@ -598,50 +598,75 @@ export function ServiceDetailsFloat({
                           Završi - kupac odbija popravku
                         </Button>
                       ) : (
-                        <Button 
-                          onClick={() => {
-                            console.log("🎯 DIREKTNO DEBUG: Dugme 'Završi servis' kliknuto!");
-                            console.log("🎯 DEBUG: service status:", service.status);
-                            console.log("🎯 DEBUG: isUpdating:", isUpdating);
-                            handleCompleteService();
-                          }}
-                          disabled={isUpdating}
-                          className="w-full bg-green-600 hover:bg-green-700"
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Završi servis
-                        </Button>
+                        <div className="space-y-2">
+                          <Button 
+                            onClick={() => {
+                              console.log("🎯 DIREKTNO DEBUG: Dugme 'Završi servis' kliknuto!");
+                              console.log("🎯 DEBUG: service status:", service.status);
+                              console.log("🎯 DEBUG: isUpdating:", isUpdating);
+                              handleCompleteService();
+                            }}
+                            disabled={isUpdating}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Završi servis
+                          </Button>
+                          
+                          <Button 
+                            onClick={() => setShowReturnConfirmation(true)}
+                            disabled={isUpdating}
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Vrati aparat
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
 
-                  {/* Isporuči aparat - za completed servise koji nisu delivered */}
-                  {service.status === "completed" && (
-                    <div className="space-y-3 pt-4 border-t">
+                  {/* Dialog za potvrdu vraćanja aparata */}
+                  {showReturnConfirmation && (
+                    <div className="space-y-3 pt-4 border-t bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-blue-900">Potvrda vraćanja aparata</h3>
                       <div className="space-y-2">
                         <label className="text-sm font-medium flex items-center text-blue-700">
-                          Napomena o isporuci aparata: <span className="text-red-500 ml-1">*</span>
+                          Napomena o vraćanju aparata: <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Textarea
-                          value={deliveryNotes}
-                          onChange={(e) => setDeliveryNotes(e.target.value)}
-                          placeholder="Unesite napomenu o isporuci aparata klijentu..."
-                          className="min-h-[60px] text-sm resize-none border-blue-200 focus:border-blue-400"
+                          value={returnNotes}
+                          onChange={(e) => setReturnNotes(e.target.value)}
+                          placeholder="Unesite napomenu o vraćanju aparata (razlog, stanje, itd.)..."
+                          className="min-h-[80px] text-sm resize-none border-blue-200 focus:border-blue-400"
                           required
                         />
                       </div>
-                      <Button 
-                        onClick={handleDeliverDevice}
-                        disabled={isDelivering || !deliveryNotes.trim()}
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                      >
-                        {isDelivering ? (
-                          <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
-                        ) : (
-                          <Package className="h-4 w-4 mr-2" />
-                        )}
-                        Isporuči aparat
-                      </Button>
+                      <div className="text-sm text-blue-700 bg-blue-100 p-3 rounded">
+                        <strong>Napomena:</strong> Slanjem će biti poslata email obaveštenja klijentu i poslovnom partneru koji je kreirao servis (Beko ili ComPlus).
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleReturnDevice}
+                          disabled={isReturning || !returnNotes.trim()}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        >
+                          {isReturning ? (
+                            <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                          ) : (
+                            <Package className="h-4 w-4 mr-2" />
+                          )}
+                          Potvrdi vraćanje
+                        </Button>
+                        <Button 
+                          onClick={() => setShowReturnConfirmation(false)}
+                          disabled={isReturning}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Otkaži
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
