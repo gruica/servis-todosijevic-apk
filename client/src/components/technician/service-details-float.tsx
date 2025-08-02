@@ -586,12 +586,15 @@ export function ServiceDetailsFloat({
                   
                   {service.status === "in_progress" && (
                     <div className="space-y-2">
-                      {console.log("🎯 RENDEROVANJE DEBUG:", {
-                        serviceStatus: service.status,
-                        isInProgress: service.status === "in_progress",
-                        customerRefusesRepair: customerRefusesRepair,
-                        willShowReturnButton: service.status === "in_progress" && !customerRefusesRepair
-                      })}
+                      {(() => {
+                        console.log("🎯 RENDEROVANJE DEBUG:", {
+                          serviceStatus: service.status,
+                          isInProgress: service.status === "in_progress",
+                          customerRefusesRepair: customerRefusesRepair,
+                          willShowReturnButton: service.status === "in_progress" && !customerRefusesRepair
+                        });
+                        return null;
+                      })()}
                       {customerRefusesRepair ? (
                         <Button 
                           onClick={handleCustomerRefusesRepair}
