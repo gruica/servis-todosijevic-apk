@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Clock, Wrench, FileText, Star, Plus, Minus } from "lucide-react";
+import { CheckCircle, Clock, Wrench, FileText, Star, Plus, Minus, Package } from "lucide-react";
 
 // Schema za service completion report
 const serviceCompletionSchema = z.object({
@@ -45,8 +45,11 @@ interface ServiceCompletionFormProps {
   onClose: () => void;
 }
 
-export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompletionFormProps) {
+function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompletionFormProps) {
   const [spareParts, setSpareParts] = useState<any[]>([]);
+  const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
+  const [returnNotes, setReturnNotes] = useState("");
+  const [isReturning, setIsReturning] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -143,9 +146,63 @@ export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompl
     createReportMutation.mutate(finalData);
   };
 
+  const handleReturnDevice = async () => {
+    if (!returnNotes.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molim vas unesite napomenu o vraćanju aparata",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsReturning(true);
+    
+    try {
+      const response = await fetch(`/api/services/${service.id}/return-device`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          returnNotes: returnNotes.trim()
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Uspešno",
+          description: "Aparat je uspešno vraćen klijentu"
+        });
+        setShowReturnConfirmation(false);
+        setReturnNotes("");
+        queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
+        onClose();
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Greška",
+          description: error.error || "Greška pri vraćanju aparata",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error returning device:', error);
+      toast({
+        title: "Greška",
+        description: "Greška pri vraćanju aparata",
+        variant: "destructive"
+      });
+    } finally {
+      setIsReturning(false);
+    }
+  };
+
   if (!service) return null;
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -462,6 +519,15 @@ export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompl
                   Otkaži
                 </Button>
                 <Button 
+                  type="button"
+                  onClick={() => setShowReturnConfirmation(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isReturning}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Vrati aparat
+                </Button>
+                <Button 
                   type="submit" 
                   disabled={createReportMutation.isPending}
                   className="bg-green-600 hover:bg-green-700"
@@ -475,5 +541,63 @@ export function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompl
         </div>
       </DialogContent>
     </Dialog>
+    
+    {/* Dialog za potvrdu vraćanja aparata */}
+    {showReturnConfirmation && (
+      <Dialog open={showReturnConfirmation} onOpenChange={setShowReturnConfirmation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vrati aparat klijentu</DialogTitle>
+            <DialogDescription>
+              Molim vas unesite napomenu o vraćanju aparata klijentu.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Napomena o vraćanju aparata: <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Unesite napomenu o stanju aparata, razlogu vraćanja ili druge važne informacije..."
+                className="min-h-[100px] resize-none"
+                required
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowReturnConfirmation(false);
+                  setReturnNotes("");
+                }}
+                disabled={isReturning}
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={handleReturnDevice}
+                disabled={isReturning || !returnNotes.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {isReturning ? (
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full" />
+                ) : (
+                  <Package className="h-4 w-4 mr-2" />
+                )}
+                {isReturning ? "Vraćam..." : "Vrati aparat"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
+
+export default ServiceCompletionForm;
