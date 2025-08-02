@@ -582,6 +582,7 @@ export function ServiceDetailsFloat({
                   
                   {service.status === "in_progress" && (
                     <div className="space-y-2">
+                      {console.log("🎯 [DEBUG] Service status is in_progress, prikazuje se dugme za završetak")}
                       {customerRefusesRepair ? (
                         <Button 
                           onClick={handleCustomerRefusesRepair}
