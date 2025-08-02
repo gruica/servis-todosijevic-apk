@@ -458,7 +458,7 @@ export default function ComplusBillingReport() {
                               <Clock className="h-4 w-4" />
                               Završeno: {format(new Date(service.completedDate), 'dd.MM.yyyy')}
                               {service.isAutoDetected && (
-                                <span className="text-xs text-orange-600">(createdAt)</span>
+                                <span className="text-xs text-orange-600">(datum kreiranja)</span>
                               )}
                             </div>
                           </div>

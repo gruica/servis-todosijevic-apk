@@ -10881,8 +10881,9 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
 
       // Formatiraj rezultate sa enhanced informacijama
       const billingServices = services.map(service => {
-        // ISPRAVKA: Koristi completedDate ako postoji, inače createdAt kao fallback
-        const effectiveCompletedDate = service.completedDate || service.createdAt;
+        // ISPRAVKA: Uvek koristi completedDate za prikazivanje, samo označavaj one bez completedDate kao auto-detektovane
+        const hasCompletedDate = service.completedDate && service.completedDate.trim() !== '';
+        const displayDate = hasCompletedDate ? service.completedDate : service.createdAt;
         
         return {
           id: service.serviceId,
@@ -10896,13 +10897,13 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
           applianceModel: service.applianceModel || '',
           serialNumber: service.serialNumber || '',
           technicianName: service.technicianName || 'Nepoznat serviser',
-          completedDate: effectiveCompletedDate,
+          completedDate: displayDate,
           originalCompletedDate: service.completedDate,
           cost: service.cost || 0,
           description: service.description || '',
           warrantyStatus: service.warrantyStatus || 'Nedefinirano',
-          isAutoDetected: !service.completedDate, // Flag za servise koji su auto-detektovani
-          detectionMethod: service.completedDate ? 'completed_date' : 'created_at_fallback'
+          isAutoDetected: !hasCompletedDate, // Flag samo za servise koji stvarno nemaju completedDate
+          detectionMethod: hasCompletedDate ? 'completed_date' : 'created_at_fallback'
         };
       });
 
@@ -10918,7 +10919,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
 
       // Statistike
       const totalServices = billingServices.length;
-      const totalCost = billingServices.reduce((sum, service) => sum + (service.cost || 0), 0);
+      const totalCost = billingServices.reduce((sum, service) => sum + Number(service.cost || 0), 0);
       const autoDetectedCount = billingServices.filter(s => s.isAutoDetected).length;
 
       const monthNames = [
@@ -10943,13 +10944,13 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
         brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
           brand,
           count: servicesByBrand[brand].length,
-          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0),
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0),
           autoDetected: servicesByBrand[brand].filter(s => s.isAutoDetected).length
         }))
       };
 
       console.log(`[ENHANCED COMPLUS BILLING] Pronađeno ukupno ${totalServices} servisa (${autoDetectedCount} auto-detektovano)`);
-      console.log(`[ENHANCED COMPLUS BILLING] Ukupna vrednost: ${(totalCost || 0).toFixed(2)}€`);
+      console.log(`[ENHANCED COMPLUS BILLING] Ukupna vrednost: ${Number(totalCost || 0).toFixed(2)}€`);
       console.log(`[ENHANCED COMPLUS BILLING] Enhanced raspored po brendovima:`, response.brandBreakdown);
 
       res.json(response);
