@@ -4632,12 +4632,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Definišemo SVE Complus brendove koji se fakturišu zajedno
       const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
 
-      // Kreiraj date range za mesec
-      const startDate = new Date(parseInt(year as string), parseInt(month as string) - 1, 1);
-      const endDate = new Date(parseInt(year as string), parseInt(month as string), 0, 23, 59, 59);
+      // Kreiraj date range za mesec - za TEXT polja u bazi
+      const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-31`;
 
       console.log(`[COMPLUS BILLING] Dohvatam SVE Complus garancijske servise za ${month}/${year}`);
       console.log(`[COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
+      console.log(`[COMPLUS BILLING] Date range: ${startDateStr} do ${endDateStr}`);
 
       // Dohvati završene garancijske servise za SVE Complus brendove u periodu
       const services = await db
@@ -4678,8 +4679,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               eq(schema.manufacturers.name, 'Hoover'),
               eq(schema.manufacturers.name, 'Turbo Air')
             ),
-            gte(schema.services.completedDate, startDate.toISOString()),
-            lte(schema.services.completedDate, endDate.toISOString())
+            isNotNull(schema.services.completedDate),
+            gte(schema.services.completedDate, startDateStr),
+            lte(schema.services.completedDate, endDateStr)
           )
         )
         .orderBy(desc(schema.services.completedDate));
@@ -10809,14 +10811,15 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       // Definišemo SVE Complus brendove koji se fakturišu zajedno
       const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
 
-      // Kreiraj date range za mesec
-      const startDate = new Date(parseInt(year as string), parseInt(month as string) - 1, 1);
-      const endDate = new Date(parseInt(year as string), parseInt(month as string), 0, 23, 59, 59);
+      // Kreiraj date range za mesec - za TEXT polja u bazi
+      const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-31`;
 
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
+      console.log(`[ENHANCED COMPLUS BILLING] Date range: ${startDateStr} do ${endDateStr}`);
 
-      // ENHANCED LOGIKA: Hvata garancijske servise + auto-detektuje servise bez completedDate
+      // ENHANCED LOGIKA: Hvata sve završene servise za ComPlus brendove
       const services = await db
         .select({
           serviceId: schema.services.id,
@@ -10856,23 +10859,22 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
               eq(schema.manufacturers.name, 'Turbo Air')
             ),
             or(
-              // Regularni servisi sa completedDate u periodu (garancijski i vangarancijski)
+              // Prioritetno: servisi sa completedDate u periodu
               and(
                 isNotNull(schema.services.completedDate),
-                gte(schema.services.completedDate, startDate.toISOString()),
-                lte(schema.services.completedDate, endDate.toISOString())
+                gte(schema.services.completedDate, startDateStr),
+                lte(schema.services.completedDate, endDateStr)
               ),
-              // Auto-detektuj: završeni servisi bez completedDate u periodu - možda su od Gruica Todosijević
+              // Backup: servisi bez completedDate sa createdAt u periodu (Gruica Todosijević slučajevi)
               and(
                 isNull(schema.services.completedDate),
-                gte(schema.services.createdAt, startDate.toISOString().split('T')[0]),
-                lte(schema.services.createdAt, endDate.toISOString().split('T')[0])
+                gte(schema.services.createdAt, startDateStr),
+                lte(schema.services.createdAt, endDateStr)
               )
             )
           )
         )
         .orderBy(
-          // Sortiraj po datumu završetka ili kreiranja - najnoviji prvi
           desc(schema.services.completedDate),
           desc(schema.services.createdAt)
         );
