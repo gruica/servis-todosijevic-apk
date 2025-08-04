@@ -11246,5 +11246,112 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // Add missing /api/send-test-email endpoint that admin panel expects
+  app.post("/api/send-test-email", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('[EMAIL TEST] /api/send-test-email endpoint pozvan');
+      
+      const { recipient, subject, message } = req.body;
+      
+      if (!recipient) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Recipient email je obavezan" 
+        });
+      }
+      
+      // Pripremi detaljan izveštaj
+      const diagnosticInfo: any = {
+        smtpConfig: null,
+        connectionTest: false,
+        emailSent: false,
+        timestamp: new Date().toISOString(),
+        errorInfo: null
+      };
+      
+      // Dohvati trenutnu SMTP konfiguraciju (bez lozinke)
+      const config = emailService.getSmtpConfig();
+      if (config) {
+        diagnosticInfo.smtpConfig = {
+          host: config.host,
+          port: config.port,
+          secure: config.secure,
+          auth: config.auth ? { user: config.auth.user } : null
+        };
+      } else {
+        diagnosticInfo.errorInfo = "SMTP konfiguracija nije postavljena";
+        return res.status(500).json({ 
+          success: false, 
+          error: "SMTP konfiguracija nije postavljena", 
+          diagnosticInfo 
+        });
+      }
+      
+      // Verifikuj konekciju
+      console.log(`[TEST EMAIL] Testiranje email-a na: ${recipient}`);
+      
+      const isConnected = await emailService.verifyConnection();
+      diagnosticInfo.connectionTest = isConnected;
+      
+      if (!isConnected) {
+        diagnosticInfo.errorInfo = "Nije moguće konektovati se na SMTP server";
+        return res.status(500).json({ 
+          success: false, 
+          error: "Nije moguće konektovati se na SMTP server", 
+          diagnosticInfo 
+        });
+      }
+      
+      // Pošalji test email
+      const emailResult = await emailService.sendEmail({
+        to: recipient,
+        subject: subject || "Test email - Frigoservis Todosijević",
+        html: message ? `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #0066cc;">Test email iz admin panela</h2>
+            <div style="padding: 15px; border-left: 4px solid #0066cc; background: #f9f9f9;">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+            <p><small>Poslano: ${new Date().toLocaleString('sr-Latn-ME')}</small></p>
+          </div>
+        ` : `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #0066cc;">Test email iz Frigoservis aplikacije</h2>
+            <p>Email sistem radi ispravno.</p>
+            <p><small>Poslano: ${new Date().toLocaleString('sr-Latn-ME')}</small></p>
+          </div>
+        `
+      });
+      
+      diagnosticInfo.emailSent = emailResult;
+      
+      if (emailResult) {
+        console.log(`[TEST EMAIL] ✓ Test email uspešno poslat na: ${recipient}`);
+        return res.status(200).json({ 
+          success: true, 
+          message: "Test email je uspešno poslat", 
+          diagnosticInfo 
+        });
+      } else {
+        diagnosticInfo.errorInfo = "Greška pri slanju test email-a";
+        console.error(`[TEST EMAIL] ✗ Greška pri slanju na: ${recipient}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: "Greška pri slanju test email-a", 
+          diagnosticInfo 
+        });
+      }
+    } catch (error) {
+      console.error("[TEST EMAIL] Greška:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      
+      return res.status(500).json({ 
+        success: false,
+        error: "Greška pri slanju test email-a", 
+        message: errorMessage
+      });
+    }
+  });
+
   return httpServer;
 }
