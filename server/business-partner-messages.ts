@@ -11,6 +11,7 @@ export class BusinessPartnerMessageService {
     content: string;
     messageType: "inquiry" | "complaint" | "request" | "update" | "urgent";
     priority?: "low" | "normal" | "high" | "urgent";
+    businessPartnerId: number;
     senderName: string;
     senderEmail: string;
     senderCompany: string;
@@ -23,6 +24,7 @@ export class BusinessPartnerMessageService {
       const message = await db
         .insert(schema.businessPartnerMessages)
         .values({
+          businessPartnerId: data.businessPartnerId,
           subject: data.subject,
           content: data.content,
           messageType: data.messageType,

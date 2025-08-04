@@ -793,6 +793,7 @@ export const messagePriorityEnum = pgEnum("message_priority", ["low", "normal", 
 
 export const businessPartnerMessages = pgTable("business_partner_messages", {
   id: serial("id").primaryKey(),
+  businessPartnerId: integer("business_partner_id").notNull(),
   subject: text("subject").notNull(),
   content: text("content").notNull(),
   messageType: messageTypeEnum("message_type").notNull(),

@@ -48,13 +48,18 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
   const token = extractTokenFromRequest(req);
   
   if (!token) {
+    console.log('🔒 JWT Auth: Token nije pronađen u zahtevv');
     return res.status(401).json({ error: 'Potrebna je prijava' });
   }
   
+  console.log('🔒 JWT Auth: Verifikujem token:', token.substring(0, 50) + '...');
   const payload = verifyToken(token);
   if (!payload) {
+    console.log('🔒 JWT Auth: Token verifikacija neuspešna');
     return res.status(401).json({ error: 'Nevažeći token' });
   }
+  
+  console.log('🔒 JWT Auth: Token uspešno verifikovan:', payload);
   
   // Get full user data from database to include technicianId
   const user = await storage.getUser(payload.userId);
@@ -68,7 +73,9 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
     username: payload.username,
     role: payload.role,
     technicianId: user.technicianId,
-    fullName: user.fullName
+    fullName: user.fullName,
+    email: user.email,
+    companyName: user.companyName
   };
   
   next();
