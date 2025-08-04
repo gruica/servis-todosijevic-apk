@@ -3421,10 +3421,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Email settings routes
-  app.post("/api/email-settings", async (req, res) => {
+  app.post("/api/email-settings", jwtAuthMiddleware, async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za upravljanje email postavkama" });
       }
 
@@ -3584,10 +3584,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get current email settings
-  app.get("/api/email-settings", async (req, res) => {
+  app.get("/api/email-settings", jwtAuthMiddleware, async (req, res) => {
     try {
+      console.log('[EMAIL SETTINGS] GET endpoint pozvan, req.user:', req.user);
       // Proveri da li je korisnik admin
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (req.user?.role !== "admin") {
+        console.log('[EMAIL SETTINGS] Nemate dozvolu, role:', req.user?.role);
         return res.status(403).json({ error: "Nemate dozvolu za pregled email postavki" });
       }
       
