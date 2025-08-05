@@ -40,7 +40,7 @@ export class ComplusDailyReportService {
     try {
       console.log('[COMPLUS REPORT] Prikupljam stvarne podatke iz baze podataka...');
       
-      // 1. Završeni servisi za ComPlus/Beko uređaje za određeni datum
+      // 1. Završeni servisi za ComPlus uređaje za određeni datum
       const completedServices = await db
         .select({
           serviceId: services.id,
@@ -67,13 +67,25 @@ export class ComplusDailyReportService {
           and(
             eq(services.status, 'completed'),
             isNotNull(services.completedDate),
-            // Filtriraj samo ComPlus/Beko brendove
+            // Filtriraj samo ComPlus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)
             or(
-              like(manufacturers.name, '%Beko%'),
+              like(manufacturers.name, '%Electrolux%'),
+              like(manufacturers.name, '%electrolux%'),
+              like(manufacturers.name, '%ELECTROLUX%'),
+              like(manufacturers.name, '%Elica%'),
+              like(manufacturers.name, '%elica%'),
+              like(manufacturers.name, '%ELICA%'),
+              like(manufacturers.name, '%Candy%'),
+              like(manufacturers.name, '%candy%'),
+              like(manufacturers.name, '%CANDY%'),
+              like(manufacturers.name, '%Hoover%'),
+              like(manufacturers.name, '%hoover%'),
+              like(manufacturers.name, '%HOOVER%'),
+              like(manufacturers.name, '%Turbo Air%'),
+              like(manufacturers.name, '%turbo air%'),
+              like(manufacturers.name, '%TURBO AIR%'),
               like(manufacturers.name, '%ComPlus%'),
-              like(manufacturers.name, '%beko%'),
               like(manufacturers.name, '%complus%'),
-              like(manufacturers.name, '%BEKO%'),
               like(manufacturers.name, '%COMPLUS%')
             ),
             // Filtriraj po datumu završetka servisa
@@ -82,7 +94,7 @@ export class ComplusDailyReportService {
           )
         );
 
-      // 2. Jedinstveni klijenti posećeni za ComPlus/Beko uređaje
+      // 2. Jedinstveni klijenti posećeni za ComPlus uređaje
       const visitedClientsSet = new Set();
       const visitedClients = completedServices.filter(service => {
         const clientKey = `${service.clientName}-${service.clientPhone}`;
@@ -111,13 +123,25 @@ export class ComplusDailyReportService {
             eq(services.status, 'completed'),
             isNotNull(services.completedDate),
             isNotNull(services.usedParts),
-            // Filtriraj samo ComPlus/Beko brendove  
+            // Filtriraj samo ComPlus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)
             or(
-              like(manufacturers.name, '%Beko%'),
+              like(manufacturers.name, '%Electrolux%'),
+              like(manufacturers.name, '%electrolux%'),
+              like(manufacturers.name, '%ELECTROLUX%'),
+              like(manufacturers.name, '%Elica%'),
+              like(manufacturers.name, '%elica%'),
+              like(manufacturers.name, '%ELICA%'),
+              like(manufacturers.name, '%Candy%'),
+              like(manufacturers.name, '%candy%'),
+              like(manufacturers.name, '%CANDY%'),
+              like(manufacturers.name, '%Hoover%'),
+              like(manufacturers.name, '%hoover%'),
+              like(manufacturers.name, '%HOOVER%'),
+              like(manufacturers.name, '%Turbo Air%'),
+              like(manufacturers.name, '%turbo air%'),
+              like(manufacturers.name, '%TURBO AIR%'),
               like(manufacturers.name, '%ComPlus%'),
-              like(manufacturers.name, '%beko%'),
               like(manufacturers.name, '%complus%'),
-              like(manufacturers.name, '%BEKO%'),
               like(manufacturers.name, '%COMPLUS%')
             ),
             // Filtriraj po datumu
@@ -178,26 +202,42 @@ export class ComplusDailyReportService {
               eq(sparePartOrders.status, 'pending')
             ),
             isNotNull(sparePartOrders.orderDate),
-            // Filtriraj ComPlus/Beko brendove ili admin narudžbe
+            // Filtriraj samo ComPlus brendove ili admin narudžbe
             or(
-              // Delovi vezani za ComPlus/Beko servise
+              // Delovi vezani za ComPlus servise
               and(
                 isNotNull(sparePartOrders.serviceId),
                 or(
-                  like(manufacturers.name, '%Beko%'),
+                  like(manufacturers.name, '%Electrolux%'),
+                  like(manufacturers.name, '%electrolux%'),
+                  like(manufacturers.name, '%ELECTROLUX%'),
+                  like(manufacturers.name, '%Elica%'),
+                  like(manufacturers.name, '%elica%'),
+                  like(manufacturers.name, '%ELICA%'),
+                  like(manufacturers.name, '%Candy%'),
+                  like(manufacturers.name, '%candy%'),
+                  like(manufacturers.name, '%CANDY%'),
+                  like(manufacturers.name, '%Hoover%'),
+                  like(manufacturers.name, '%hoover%'),
+                  like(manufacturers.name, '%HOOVER%'),
+                  like(manufacturers.name, '%Turbo Air%'),
+                  like(manufacturers.name, '%turbo air%'),
+                  like(manufacturers.name, '%TURBO AIR%'),
                   like(manufacturers.name, '%ComPlus%'),
-                  like(manufacturers.name, '%beko%'),
                   like(manufacturers.name, '%complus%'),
-                  like(manufacturers.name, '%BEKO%'),
                   like(manufacturers.name, '%COMPLUS%')
                 )
               ),
-              // Admin narudžbe bez vezivanja za servis (pretpostavljamo da su ComPlus)
+              // Admin narudžbe bez vezivanja za servis (samo ComPlus)
               and(
                 isNull(sparePartOrders.serviceId),
                 or(
                   like(sparePartOrders.partName, '%ComPlus%'),
-                  like(sparePartOrders.partName, '%Beko%')
+                  like(sparePartOrders.partName, '%Electrolux%'),
+                  like(sparePartOrders.partName, '%Elica%'),
+                  like(sparePartOrders.partName, '%Candy%'),
+                  like(sparePartOrders.partName, '%Hoover%'),
+                  like(sparePartOrders.partName, '%Turbo Air%')
                 )
               )
             )
