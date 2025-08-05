@@ -1,105 +1,97 @@
-// Finalni test ComPlus email funkcionalnosti sa ispravnim EMAIL_PASSWORD kredencijalima
-const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
+const fetch = require('node-fetch');
 
-async function testComplPlusEmail() {
-  console.log('🎯 FINALNI COMPLUS EMAIL TEST');
-  console.log('=============================');
-  
-  const user = process.env.EMAIL_USER || 'info@frigosistemtodosijevic.com';
-  const pass = process.env.EMAIL_PASSWORD || '';
-  
-  console.log(`📧 Email: ${user}`);
-  console.log(`🔐 Password: ${pass ? '[POSTAVLJENA - ' + pass.length + ' karaktera]' : '[NIJE POSTAVLJENA]'}`);
-  console.log('');
-
+async function testBusinessPartnerLogic() {
   try {
-    // Kreiraj transporter sa radnim konfiguracijama koje su testirane
-    const transporter = nodemailer.createTransport({
-      host: 'mail.frigosistemtodosijevic.com',
-      port: 465,
-      secure: true,
-      auth: { user, pass },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000
+    console.log('🧪 === FINALNI TEST BUSINESS PARTNER LOGIC ===\n');
+
+    // 1. Test sa business partner tokenom
+    const businessPartnerToken = jwt.sign(
+      { userId: 19, username: 'robert.ivezic@tehnoplus.me', role: 'business_partner' },
+      'AdamEva230723@',
+      { expiresIn: '1h' }
+    );
+
+    console.log('1️⃣ Test sa BUSINESS PARTNER pristupom...');
+    const bpResponse = await fetch('http://localhost:5000/api/business/clients', {
+      headers: {
+        'Authorization': `Bearer ${businessPartnerToken}`,
+        'Content-Type': 'application/json'
+      }
     });
 
-    console.log('🔍 Verifikujem SMTP konekciju...');
-    await transporter.verify();
-    console.log('✅ SMTP konekcija je uspešna!');
+    console.log('✅ BP Status:', bpResponse.status);
     
-    console.log('📤 Šaljem ComPlus test email...');
-    
-    // Šalje test email koji simulira ComPlus notifikaciju
-    await transporter.sendMail({
-      from: user,
-      to: 'gruica@frigosistemtodosijevic.com', // Test adresa umesto servis@complus.me
-      subject: 'COMPLUS SERVIS ZAVRŠEN - Test Email #187',
-      text: `Poštovani ComPlus timu,
+    if (bpResponse.ok) {
+      const bpClients = await bpResponse.json();
+      console.log('✅ BP Klijenti: ', bpClients.length, 'klijenata');
+      if (bpClients.length > 0) {
+        console.log('✅ Primer BP klijenta:', {
+          id: bpClients[0].id,
+          fullName: bpClients[0].fullName,
+          phone: bpClients[0].phone
+        });
+      } else {
+        console.log('ℹ️  Business partner nema svoje klijente (pravilno filtriranje)');
+      }
+    } else {
+      console.log('❌ BP Error:', await bpResponse.text());
+    }
 
-Ovo je test email koji potvrđuje funkcionalnost ComPlus notifikacije.
+    // 2. Test sa admin tokenom za poređenje
+    const adminToken = jwt.sign(
+      { userId: 10, username: 'jelena@frigosistemtodosijevic.me', role: 'admin' },
+      'AdamEva230723@',
+      { expiresIn: '1h' }
+    );
 
-Detalji servisa:
-- Servis ID: #187
-- Klijent: Marko Marković  
-- Serviser: Test Tehnčar
-- Tip uređaja: Frižider
-- Brend: Beko
-- Datum završetka: ${new Date().toLocaleDateString('sr-ME')}
-
-Izvršeni rad:
-Test ComPlus email funkcionalnosti sa novim EMAIL_PASSWORD kredencijalima - USPEŠNO!
-
-NAPOMENA: U produkciji, ovaj email bi bio automatski poslat na servis@complus.me kada se završavaju ComPlus servisi.
-
-Servis Todosijević - Automatski Email Sistem
-ComPlus Integracija Test - Potpuno funkcionalan!`,
-      html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #28a745; color: white; padding: 15px; border-radius: 5px; text-align: center;">
-          <h2 style="margin: 0;">✅ COMPLUS SERVIS ZAVRŠEN</h2>
-          <p style="margin: 5px 0 0 0;">Automatsko obaveštenje - Test funkcionalnosti</p>
-        </div>
-        
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 15px 0;">
-          <h3 style="color: #28a745;">Detalji servisa</h3>
-          <p><strong>Servis ID:</strong> #187</p>
-          <p><strong>Klijent:</strong> Marko Marković</p>
-          <p><strong>Serviser:</strong> Test Tehničar</p>
-          <p><strong>Tip uređaja:</strong> Frižider</p>
-          <p><strong>Brend:</strong> Beko</p>
-          <p><strong>Datum završetka:</strong> ${new Date().toLocaleDateString('sr-ME')}</p>
-        </div>
-
-        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px;">
-          <p style="margin: 0; color: #155724;">
-            <strong>✅ EMAIL SISTEM FUNKCIONALAN:</strong> ComPlus email notifikacije rade ispravno sa novim EMAIL_PASSWORD kredencijalima!
-          </p>
-        </div>
-
-        <p style="margin-top: 20px;">
-          <strong>Napomena:</strong> U produkciji, ovaj email bi bio automatski poslat na <strong>servis@complus.me</strong> kada se završavaju ComPlus servisi.
-        </p>
-        
-        <hr style="border: 1px solid #ddd; margin: 20px 0;">
-        <p style="font-size: 12px; color: #666; text-align: center;">
-          Frigo Sistem Todosijević - Automatski Email Sistem<br>
-          ComPlus Integracija Test - ${new Date().toLocaleString()}
-        </p>
-      </div>`
+    console.log('\n2️⃣ Test sa ADMIN pristupom za poređenje...');
+    const adminResponse = await fetch('http://localhost:5000/api/business/clients', {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
     });
+
+    console.log('✅ Admin Status:', adminResponse.status);
     
-    console.log('🎉 ComPlus test email USPEŠNO poslat!');
-    console.log('✅ Email sistem je SPREMAN za ComPlus notifikacije!');
-    console.log('💡 U produkciji će email ići na servis@complus.me automatski');
+    if (adminResponse.ok) {
+      const adminClients = await adminResponse.json();
+      console.log('✅ Admin Klijenti:', adminClients.length, 'klijenata');
+    } else {
+      console.log('❌ Admin Error:', await adminResponse.text());
+    }
+
+    // 3. Test servisa za business partnera
+    console.log('\n3️⃣ Test SERVISA za business partnera...');
+    const servicesResponse = await fetch('http://localhost:5000/api/business/services', {
+      headers: {
+        'Authorization': `Bearer ${businessPartnerToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('✅ Services Status:', servicesResponse.status);
     
-    return true;
+    if (servicesResponse.ok) {
+      const services = await servicesResponse.json();
+      console.log('✅ BP Servisi:', services.length, 'servisa');
+      if (services.length > 0) {
+        console.log('✅ Primer BP servisa:', {
+          id: services[0].id,
+          description: services[0].description.substring(0, 50) + '...',
+          status: services[0].status
+        });
+      }
+    } else {
+      console.log('❌ Services Error:', await servicesResponse.text());
+    }
+
+    console.log('\n🏁 === TEST ZAVRŠEN ===');
     
   } catch (error) {
-    console.log('❌ Greška pri slanju ComPlus test email-a:', error.message);
-    return false;
+    console.error('❌ Greška pri testiranju:', error.message);
   }
 }
 
-testComplPlusEmail();
+testBusinessPartnerLogic();

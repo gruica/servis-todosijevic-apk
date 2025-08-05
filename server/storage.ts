@@ -126,6 +126,7 @@ export interface IStorage {
   
   // Business Partner methods
   getServicesByPartner(partnerId: number): Promise<Service[]>;
+  getClientsByPartner(partnerId: number): Promise<Client[]>;
   getServiceWithDetails(serviceId: number): Promise<any>;
   getServiceStatusHistory(serviceId: number): Promise<any[]>;
   
@@ -896,6 +897,18 @@ export class MemStorage implements IStorage {
   async getServicesByPartner(partnerId: number): Promise<Service[]> {
     return Array.from(this.services.values()).filter(
       (service) => service.businessPartnerId === partnerId
+    );
+  }
+
+  // Dobijanje klijenata poslovnog partnera (samo oni klijenti koji su povezani sa servisima tog partnera)
+  async getClientsByPartner(partnerId: number): Promise<Client[]> {
+    // Dobijamo servise tog partnera
+    const partnerServices = await this.getServicesByPartner(partnerId);
+    const clientIds = [...new Set(partnerServices.map(service => service.clientId))];
+    
+    // Vraćamo klijente povezane sa tim servisima
+    return Array.from(this.clients.values()).filter(
+      (client) => clientIds.includes(client.id)
     );
   }
   
@@ -2376,6 +2389,35 @@ export class DatabaseStorage implements IStorage {
       return servicesWithDetails;
     } catch (error) {
       console.error("Greška pri dobavljanju servisa za poslovnog partnera:", error);
+      return [];
+    }
+  }
+
+  // Dobijanje klijenata poslovnog partnera (samo oni klijenti koji su povezani sa servisima tog partnera)
+  async getClientsByPartner(partnerId: number): Promise<Client[]> {
+    try {
+      // Dobijam ID-jeve klijenata iz servisa ovog partnera
+      const partnerServices = await db
+        .select({ clientId: services.clientId })
+        .from(services)
+        .where(eq(services.businessPartnerId, partnerId));
+      
+      const clientIds = [...new Set(partnerServices.map(s => s.clientId).filter(id => id !== null))];
+      
+      if (clientIds.length === 0) {
+        return [];
+      }
+      
+      // Vraćam klijente povezane sa tim servisima
+      const partnersClients = await db
+        .select()
+        .from(clients)
+        .where(inArray(clients.id, clientIds))
+        .orderBy(clients.fullName);
+      
+      return partnersClients;
+    } catch (error) {
+      console.error('Greška pri dohvatanju klijenata za poslovnog partnera:', error);
       return [];
     }
   }

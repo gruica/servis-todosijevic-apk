@@ -440,15 +440,23 @@ export function registerBusinessPartnerRoutes(app: Express) {
     }
   });
 
-  // Endpoint za dobijanje svih klijenata poslovnog partnera
+  // Endpoint za dobijanje klijenata poslovnog partnera (samo oni koji su povezani sa servisima tog partnera)
   app.get("/api/business/clients", businessPartnerAuth, async (req, res) => {
     try {
-      // Za sada vraćamo sve klijente - PAŽNJA: možda treba filtrirati po business partner-u u budućnosti
-      // Ovo može biti bezbednosni problem jer poslovni partneri mogu videti sve klijente
-      const clients = await storage.getAllClients();
+      const partnerId = req.user!.id;
+      const userRole = req.user!.role;
       
-      // Dodajemo log za evidenciju pristupa
-      console.log(`Poslovni partner ${req.user!.id} (${req.user!.companyName}) je pristupio listi klijenata`);
+      let clients;
+      
+      // Admin može videti sve klijente, business partneri samo svoje
+      if (userRole === 'admin') {
+        clients = await storage.getAllClients();
+        console.log(`Admin ${partnerId} (${req.user!.companyName || 'Admin'}) je pristupio listi svih klijenata`);
+      } else {
+        // Business partneri vide samo klijente povezane sa njihovim servisima
+        clients = await storage.getClientsByPartner(partnerId);
+        console.log(`Poslovni partner ${partnerId} (${req.user!.companyName}) je pristupio listi svojih klijenata (${clients.length} klijenata)`);
+      }
       
       res.json(clients);
     } catch (error) {
@@ -469,6 +477,8 @@ export function registerBusinessPartnerRoutes(app: Express) {
       console.log("Korisnik:", req.user);
       
       const clientId = parseInt(req.params.id);
+      const partnerId = req.user!.id;
+      const userRole = req.user!.role;
       const validatedData = insertClientSchema.parse(req.body);
       
       // Proveravamo da li klijent postoji
@@ -478,6 +488,19 @@ export function registerBusinessPartnerRoutes(app: Express) {
           error: "Klijent nije pronađen",
           message: "Klijent sa datim ID-om ne postoji u sistemu"
         });
+      }
+      
+      // Business partneri mogu editovati samo svoje klijente, admin može sve
+      if (userRole !== 'admin') {
+        const partnerClients = await storage.getClientsByPartner(partnerId);
+        const canEditClient = partnerClients.some(client => client.id === clientId);
+        
+        if (!canEditClient) {
+          return res.status(403).json({
+            error: "Nemate dozvolu",
+            message: "Možete editovati samo klijente povezane sa vašim servisima"
+          });
+        }
       }
       
       const updatedClient = await storage.updateClient(clientId, validatedData);

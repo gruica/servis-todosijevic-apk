@@ -1,58 +1,41 @@
-// Jednostavan test ComPlus email funkcionalnosti nakon dodavanja sendTestEmail
-const axios = require('axios');
+const jwt = require('jsonwebtoken');
+const fetch = require('node-fetch');
 
-async function simpleComplusTest() {
-  console.log('🧪 JEDNOSTAVAN COMPLUS TEST');
-  console.log('===========================');
-  
-  const baseUrl = 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
-  
+async function testWithNewToken() {
   try {
-    console.log('📧 Pozivam test endpoint...');
-    
-    const response = await axios.post(`${baseUrl}/api/test-complus-email`, {}, {
+    console.log('🧪 === TEST SA NOVIM TOKENOM ===\n');
+
+    // Novi business partner token
+    const businessPartnerToken = jwt.sign(
+      { userId: 19, username: 'robert.ivezic@tehnoplus.me', role: 'business_partner' },
+      'AdamEva230723@',
+      { expiresIn: '30m' }
+    );
+
+    console.log('1️⃣ Testiranje sa Business Partner tokenom...');
+    const response = await fetch('http://localhost:5000/api/business/clients', {
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      timeout: 15000
+        'Authorization': `Bearer ${businessPartnerToken}`,
+        'Content-Type': 'application/json'
+      }
     });
-    
-    console.log('');
-    console.log('📨 ODGOVOR SERVERA:');
+
     console.log('Status:', response.status);
-    console.log('Headers:', response.headers['content-type']);
-    console.log('Data:', JSON.stringify(response.data, null, 2));
     
-    if (response.data && response.data.success) {
-      console.log('');
-      console.log('✅ SUCCESS! ComPlus test email je uspešno poslat!');
-      console.log('📬 Email poslat na: gruica@frigosistemtodosijevic.com');
-      console.log('🏭 ComPlus email sistem je operativan');
+    if (response.ok) {
+      const clients = await response.json();
+      console.log('Uspeh! Broj klijenata:', clients.length);
+      if (clients.length > 0) {
+        console.log('Prvi klijent:', clients[0]);
+      }
     } else {
-      console.log('');
-      console.log('❌ Test nije uspešan:', response.data);
+      const error = await response.text();
+      console.log('Greška:', error);
     }
     
   } catch (error) {
-    console.log('');
-    console.log('❌ GREŠKA:');
-    
-    if (error.response) {
-      console.log('Status:', error.response.status);
-      console.log('Headers:', error.response.headers['content-type']);
-      
-      // Proveri da li je vraćen HTML umesto JSON
-      if (error.response.headers['content-type']?.includes('text/html')) {
-        console.log('⚠️ Server je vratio HTML umesto JSON - možda je Vite proxy u problemu');
-        console.log('HTML sadržaj (prvi red):', error.response.data.substring(0, 100));
-      } else {
-        console.log('Data:', error.response.data);
-      }
-    } else {
-      console.error('Request error:', error.message);
-    }
+    console.error('Greška:', error.message);
   }
 }
 
-simpleComplusTest();
+testWithNewToken();
