@@ -114,6 +114,16 @@ export default function BusinessPartnerManagementFixed() {
     }
   });
 
+  // Fetch message stats for badge notification
+  const { data: messageStats } = useQuery({
+    queryKey: ["/api/admin/business-partner-messages/stats"],
+    queryFn: async () => {
+      const response = await apiRequest("/api/admin/business-partner-messages/stats");
+      return await response.json();
+    },
+    refetchInterval: 30000 // Refetch every 30 seconds
+  });
+
   console.log("📊 Business Partner Stats Raw Data:", statsData);
 
   const stats: BusinessPartnerStats = statsData || {
@@ -348,8 +358,17 @@ export default function BusinessPartnerManagementFixed() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="messages" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="messages" className="flex items-center gap-2 relative">
+              <MessageSquare className="h-4 w-4" />
+              📬 Poruke Partnera
+              {messageStats?.unreadMessages > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                  {messageStats.unreadMessages}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
               Pregled zahteva
@@ -357,10 +376,6 @@ export default function BusinessPartnerManagementFixed() {
             <TabsTrigger value="notifications">
               <AlertTriangle className="h-4 w-4 mr-2" />
               Obaveštenja
-            </TabsTrigger>
-            <TabsTrigger value="messages">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Messages
             </TabsTrigger>
             <TabsTrigger value="analytics">
               Analytics

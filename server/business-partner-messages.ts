@@ -2,6 +2,7 @@ import { db } from "./db";
 import { eq, and, desc, sql, inArray, isNull } from "drizzle-orm";
 import * as schema from "../shared/schema";
 import { EmailService } from "./email-service";
+import { SMSCommunicationService } from "./sms-communication-service";
 
 export class BusinessPartnerMessageService {
   
@@ -42,6 +43,10 @@ export class BusinessPartnerMessageService {
         .returning();
 
       console.log(`✅ Business Partner poruka kreirana: ${data.subject}`);
+      
+      // Pošaljemo SMS obaveštenje adminu o novoj BP poruci
+      await BusinessPartnerMessageService.sendAdminSMSNotification(message[0], data);
+      
       return message[0];
     } catch (error) {
       console.error("❌ Greška pri kreiranju BP poruke:", error);
@@ -251,6 +256,7 @@ export class BusinessPartnerMessageService {
   // Helper metode za kreiranje specifičnih tipova poruka
 
   static async createServiceInquiry(
+    businessPartnerId: number,
     senderName: string,
     senderEmail: string,
     senderCompany: string,
@@ -264,6 +270,7 @@ export class BusinessPartnerMessageService {
       content: inquiryText,
       messageType: "inquiry",
       priority,
+      businessPartnerId,
       senderName,
       senderEmail,
       senderCompany,
@@ -273,6 +280,7 @@ export class BusinessPartnerMessageService {
   }
 
   static async createComplaint(
+    businessPartnerId: number,
     senderName: string,
     senderEmail: string,
     senderCompany: string,
@@ -285,6 +293,7 @@ export class BusinessPartnerMessageService {
       content: complaintText,
       messageType: "complaint",
       priority: "high",
+      businessPartnerId,
       senderName,
       senderEmail,
       senderCompany,
@@ -293,6 +302,7 @@ export class BusinessPartnerMessageService {
   }
 
   static async createUrgentRequest(
+    businessPartnerId: number,
     senderName: string,
     senderEmail: string,
     senderCompany: string,
@@ -305,6 +315,7 @@ export class BusinessPartnerMessageService {
       content: requestText,
       messageType: "urgent",
       priority: "urgent",
+      businessPartnerId,
       senderName,
       senderEmail,
       senderCompany,
@@ -313,6 +324,7 @@ export class BusinessPartnerMessageService {
   }
 
   static async createStatusUpdate(
+    businessPartnerId: number,
     senderName: string,
     senderEmail: string,
     senderCompany: string,
@@ -324,10 +336,43 @@ export class BusinessPartnerMessageService {
       content: updateText,
       messageType: "update",
       priority: "normal",
+      businessPartnerId,
       senderName,
       senderEmail,
       senderCompany,
       relatedServiceId: serviceId,
     });
+  }
+
+  // SMS obaveštenje adminu o novoj BP poruci
+  static async sendAdminSMSNotification(message: any, originalData: any) {
+    try {
+      const adminPhone = "067077096"; // Admin broj telefona
+      
+      // Kreiranje poruke prilagođene za SMS (max 160 karaktera)
+      let smsContent = "";
+      const priorityText = originalData.priority === "urgent" ? "🚨 HITNO" : "";
+      const typeText = originalData.messageType === "complaint" ? "ŽALBA" : 
+                      originalData.messageType === "urgent" ? "HITNO" : 
+                      originalData.messageType === "inquiry" ? "UPIT" : "ZAHTEV";
+      
+      // Kratka verzija za SMS
+      smsContent = `${priorityText} ${typeText} - ${originalData.senderCompany}: ${originalData.subject.substring(0, 60)}... Od: ${originalData.senderName}`;
+      
+      // Skratimo ako je predugačko
+      if (smsContent.length > 155) {
+        smsContent = smsContent.substring(0, 152) + "...";
+      }
+
+      // Pošaljemo SMS
+      await SMSCommunicationService.sendBulkSMS([adminPhone], smsContent);
+      
+      console.log(`📱 SMS obaveštenje poslato adminu za BP poruku: ${message.id}`);
+      console.log(`📱 Admin SMS sadržaj: ${smsContent}`);
+      
+    } catch (error) {
+      console.error("❌ Greška pri slanju SMS obaveštenja adminu:", error);
+      // Ne prekidamo proces ako SMS ne može da bude poslat
+    }
   }
 }
