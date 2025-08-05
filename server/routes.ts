@@ -11572,5 +11572,283 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // ===== SUPPLIER MANAGEMENT ENDPOINTS =====
+  
+  // Dobijanje svih dobavljača
+  app.get("/api/admin/suppliers", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const suppliers = await storage.getAllSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      console.error('Greška pri dohvatanju dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju dobavljača' });
+    }
+  });
+  
+  // Dobijanje aktivnih dobavljača
+  app.get("/api/admin/suppliers/active", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const suppliers = await storage.getActiveSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      console.error('Greška pri dohvatanju aktivnih dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju aktivnih dobavljača' });
+    }
+  });
+
+  // Dobijanje pojedinačnog dobavljača
+  app.get("/api/admin/suppliers/:id", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const supplier = await storage.getSupplier(id);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: 'Dobavljač nije pronađen' });
+      }
+      
+      res.json(supplier);
+    } catch (error) {
+      console.error('Greška pri dohvatanju dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju dobavljača' });
+    }
+  });
+
+  // Kreiranje novog dobavljača  
+  app.post("/api/admin/suppliers", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
+      }
+      
+      const validatedData = require('../shared/schema.js').insertSupplierSchema.parse(req.body);
+      const supplier = await storage.createSupplier(validatedData);
+      
+      console.log(`[SUPPLIER] Kreiran novi dobavljač: ${supplier.name}`);
+      res.status(201).json(supplier);
+    } catch (error) {
+      console.error('Greška pri kreiranju dobavljača:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Neispravni podaci', details: error.message });
+      }
+      res.status(500).json({ error: 'Greška pri kreiranju dobavljača' });
+    }
+  });
+
+  // Ažuriranje dobavljača
+  app.put("/api/admin/suppliers/:id", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const supplier = await storage.updateSupplier(id, updates);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: 'Dobavljač nije pronađen' });
+      }
+      
+      console.log(`[SUPPLIER] Ažuriran dobavljač: ${supplier.name}`);
+      res.json(supplier);
+    } catch (error) {
+      console.error('Greška pri ažuriranju dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju dobavljača' });
+    }
+  });
+
+  // Brisanje dobavljača
+  app.delete("/api/admin/suppliers/:id", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSupplier(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Dobavljač nije pronađen' });
+      }
+      
+      console.log(`[SUPPLIER] Obrisan dobavljač ID: ${id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Greška pri brisanju dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri brisanju dobavljača' });
+    }
+  });
+
+  // ===== SUPPLIER ORDERS ENDPOINTS =====
+
+  // Dobijanje svih porudžbina dobavljača
+  app.get("/api/admin/supplier-orders", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const orders = await storage.getAllSupplierOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error('Greška pri dohvatanju porudžbina dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju porudžbina dobavljača' });
+    }
+  });
+
+  // Dobijanje aktivnih porudžbina dobavljača
+  app.get("/api/admin/supplier-orders/active", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const orders = await storage.getActiveSupplierOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error('Greška pri dohvatanju aktivnih porudžbina:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju aktivnih porudžbina' });
+    }
+  });
+
+  // Ažuriranje porudžbine dobavljača
+  app.put("/api/admin/supplier-orders/:id", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
+      }
+      
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const order = await storage.updateSupplierOrder(id, updates);
+      
+      if (!order) {
+        return res.status(404).json({ error: 'Porudžbina nije pronađena' });
+      }
+      
+      console.log(`[SUPPLIER ORDER] Ažurirana porudžbina ID: ${id}`);
+      res.json(order);
+    } catch (error) {
+      console.error('Greška pri ažuriranju porudžbine dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju porudžbine dobavljača' });
+    }
+  });
+
+  // Statistike dobavljača
+  app.get("/api/admin/suppliers/stats", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
+      }
+      
+      const supplierIntegrationService = new (await import('./supplier-integration-service.js')).SupplierIntegrationService({
+        storage,
+        emailService
+      });
+      
+      const stats = await supplierIntegrationService.getSupplierStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Greška pri dohvatanju statistika dobavljača:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju statistika dobavljača' });
+    }
+  });
+
+  // Automatsko slanje porudžbine dobavljaču
+  app.post("/api/admin/spare-parts/:id/auto-order", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
+      }
+      
+      const sparePartOrderId = parseInt(req.params.id);
+      
+      // Dobij podatke o porudžbini
+      const sparePartOrder = await storage.getSparePartOrder(sparePartOrderId);
+      if (!sparePartOrder) {
+        return res.status(404).json({ error: 'Porudžbina rezervnog dela nije pronađena' });
+      }
+
+      // Dobij podatke o servisu i uređaju
+      const service = await storage.getService(sparePartOrder.serviceId);
+      if (!service || !service.applianceId) {
+        return res.status(400).json({ error: 'Servis ili uređaj nisu pronađeni' });
+      }
+
+      const appliance = await storage.getAppliance(service.applianceId);
+      if (!appliance) {
+        return res.status(400).json({ error: 'Uređaj nije pronađen' });
+      }
+
+      // Dobij podatke o klijentu i tehničaru
+      const client = service.clientId ? await storage.getClient(service.clientId) : null;
+      const technician = sparePartOrder.technicianId ? await storage.getTechnician(sparePartOrder.technicianId) : null;
+
+      // Pripremi zahtev za automatsku porudžbinu
+      const orderRequest = {
+        serviceId: service.id,
+        partName: sparePartOrder.partName,
+        partNumber: sparePartOrder.partNumber,
+        quantity: sparePartOrder.quantity,
+        urgency: sparePartOrder.urgency === 'urgent' ? 'urgent' : 'normal',
+        manufacturerId: appliance.manufacturerId,
+        description: sparePartOrder.description,
+        clientName: client?.fullName,
+        technicianName: technician?.fullName
+      };
+
+      // Inicijalizuj supplier integration service
+      const supplierIntegrationService = new (await import('./supplier-integration-service.js')).SupplierIntegrationService({
+        storage,
+        emailService
+      });
+
+      // Pošalji automatsku porudžbinu
+      const result = await supplierIntegrationService.sendOrderToSupplier(sparePartOrderId, orderRequest);
+
+      if (result.success) {
+        // Ažuriraj status osnovne porudžbine
+        await storage.updateSparePartOrder(sparePartOrderId, {
+          status: 'sent',
+          supplierName: result.supplierId ? `Dobavljač ID: ${result.supplierId}` : 'Automatski dobavljač'
+        });
+
+        console.log(`[AUTO ORDER] Uspešno poslata automatska porudžbina za rezervni deo #${sparePartOrderId}`);
+        res.json({
+          success: true,
+          ...result
+        });
+      } else {
+        console.log(`[AUTO ORDER] Neuspešna automatska porudžbina za rezervni deo #${sparePartOrderId}: ${result.message}`);
+        res.status(400).json({
+          success: false,
+          ...result
+        });
+      }
+
+    } catch (error) {
+      console.error('Greška pri automatskoj porudžbini:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Greška pri automatskoj porudžbini',
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
   return httpServer;
 }
