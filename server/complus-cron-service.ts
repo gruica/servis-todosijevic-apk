@@ -104,15 +104,21 @@ export class ComplusCronService {
   /**
    * Testira slanje profesionalnog izveštaja sa grafikonima (za debugging)
    */
-  async testProfessionalReport(email?: string): Promise<void> {
+  async testProfessionalReport(email?: string, targetDate?: string): Promise<void> {
     const testEmail = email || 'robert.ivezic@tehnoplus.me';
+    const reportDate = targetDate ? new Date(targetDate) : new Date();
+    
     console.log(`[COMPLUS CRON] 🧪 Testiranje profesionalnog izveštaja na: ${testEmail}`);
+    if (targetDate) {
+      console.log(`[COMPLUS CRON] 📅 Za datum: ${targetDate}`);
+    }
     
     try {
-      await this.dailyReportService.sendProfessionalDailyReport(new Date(), testEmail);
-      console.log(`[COMPLUS CRON] ✅ Test profesionalnog izveštaja uspešno poslat`);
+      await this.dailyReportService.sendProfessionalDailyReport(reportDate, testEmail);
+      console.log(`[COMPLUS CRON] ✅ Test profesionalnog izveštaja uspešno poslat za ${targetDate || 'danas'}`);
     } catch (error) {
       console.error(`[COMPLUS CRON] ❌ Greška pri test slanju profesionalnog izveštaja:`, error);
+      throw error;
     }
   }
 }

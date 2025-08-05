@@ -11358,21 +11358,25 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
   // TEST ENDPOINT: Profesionalni ComPlus dnevni izveštaj sa grafikonima
   app.post("/api/test-professional-complus-report", jwtAuthMiddleware, async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, targetDate } = req.body;
       const testEmail = email || 'robert.ivezic@tehnoplus.me';
       
       console.log(`[TEST PROFESSIONAL REPORT] Testiranje profesionalnog ComPlus izveštaja na: ${testEmail}`);
+      if (targetDate) {
+        console.log(`[TEST PROFESSIONAL REPORT] Ciljani datum: ${targetDate}`);
+      }
       
       // Import ComPlus cron service
       const { complusCronService } = await import('./complus-cron-service.js');
       
-      // Pozovi test funkciju
-      await complusCronService.testProfessionalReport(testEmail);
+      // Pozovi test funkciju sa optional targetDate
+      await complusCronService.testProfessionalReport(testEmail, targetDate);
       
       res.json({
         success: true,
-        message: `Profesionalni ComPlus izveštaj uspešno poslat na ${testEmail}`,
+        message: `Profesionalni ComPlus izveštaj uspešno poslat na ${testEmail}${targetDate ? ` za datum ${targetDate}` : ''}`,
         recipient: testEmail,
+        targetDate: targetDate || 'danas',
         timestamp: new Date().toISOString()
       });
       
@@ -11383,6 +11387,71 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       return res.status(500).json({ 
         success: false,
         error: "Greška pri slanju profesionalnog test izveštaja", 
+        message: errorMessage
+      });
+    }
+  });
+
+  // BULK ENDPOINT: Slanje ComPlus izvještaja za multiple datume
+  app.post("/api/send-complus-reports-bulk", jwtAuthMiddleware, async (req, res) => {
+    try {
+      const { dates, recipients } = req.body;
+      const targetRecipients = recipients || ['robert.ivezic@tehnoplus.me', 'servis@complus.me'];
+      
+      if (!dates || !Array.isArray(dates)) {
+        return res.status(400).json({
+          success: false,
+          error: "Potrebno je poslati array datuma"
+        });
+      }
+      
+      console.log(`[BULK PROFESSIONAL REPORTS] Slanjem ${dates.length} izvještaja...`);
+      
+      // Import ComPlus cron service
+      const { complusCronService } = await import('./complus-cron-service.js');
+      
+      const results = [];
+      
+      for (const date of dates) {
+        try {
+          console.log(`[BULK REPORTS] Slanjem za datum: ${date}`);
+          
+          for (const recipient of targetRecipients) {
+            await complusCronService.testProfessionalReport(recipient, date);
+            results.push({
+              date,
+              recipient,
+              status: 'success'
+            });
+          }
+          
+          // Kratka pauza između datuma
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (dateError) {
+          console.error(`[BULK REPORTS] Greška za datum ${date}:`, dateError);
+          results.push({
+            date,
+            status: 'error',
+            error: dateError.message
+          });
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Poslato ${results.filter(r => r.status === 'success').length} od ${dates.length * targetRecipients.length} izvještaja`,
+        results,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error("[BULK PROFESSIONAL REPORTS] Greška:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      
+      return res.status(500).json({ 
+        success: false,
+        error: "Greška pri bulk slanju izvještaja", 
         message: errorMessage
       });
     }
