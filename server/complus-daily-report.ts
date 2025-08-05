@@ -512,4 +512,321 @@ export class ComplusDailyReportService {
       return false;
     }
   }
+
+  /**
+   * Generiše profesionalni HTML izveštaj sa grafikonima za poslovne partnere
+   */
+  generateProfessionalReportHTML(data: DailyReportData, reportDate: Date): string {
+    const dateStr = reportDate.toLocaleDateString('sr-ME', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    // Pripremimo podatke za grafikone
+    const chartData = this.prepareChartData(data);
+
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>ComPlus Poslovni Izvještaj - ${dateStr}</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f8fafc; }
+            .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; padding: 40px; border-radius: 15px; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(30, 64, 175, 0.3); }
+            .header h1 { margin: 0; font-size: 36px; font-weight: 300; }
+            .header p { margin: 15px 0 0 0; font-size: 20px; opacity: 0.9; }
+            .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
+            .stat-card { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: transform 0.2s ease; }
+            .stat-card:hover { transform: translateY(-2px); }
+            .stat-number { font-size: 48px; font-weight: bold; margin-bottom: 10px; }
+            .stat-label { color: #64748b; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+            .section { background: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+            .section h2 { color: #1e40af; margin-top: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; }
+            .chart-container { position: relative; height: 400px; margin: 20px 0; }
+            .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+            @media (max-width: 768px) { .two-column { grid-template-columns: 1fr; } }
+            .service-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            .service-table th, .service-table td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+            .service-table th { background: #f1f5f9; font-weight: 600; color: #374151; }
+            .service-table tr:hover { background: #f8fafc; }
+            .footer { text-align: center; margin-top: 50px; padding: 30px; background: #1e293b; color: white; border-radius: 12px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1>📊 ComPlus Poslovni Izvještaj</h1>
+                <p>${dateStr}</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #059669;">${data.totalCompletedServices}</div>
+                    <div class="stat-label">Završenih Servisa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #0891b2;">${data.visitedClients.length}</div>
+                    <div class="stat-label">Posećenih Klijenata</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #7c3aed;">${data.totalUsedParts}</div>
+                    <div class="stat-label">Potrošenih Delova</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #dc2626;">${data.totalOrderedParts}</div>
+                    <div class="stat-label">Poručenih Delova</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="two-column">
+                <div class="section">
+                    <h2>📈 Aktivnost po Kategorijama</h2>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="section">
+                    <h2>🔧 Servisi po Tehničarima</h2>
+                    <div class="chart-container">
+                        <canvas id="technicianChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Details -->
+            ${this.generateProfessionalServicesSection(data.completedServices)}
+
+            <!-- Parts Usage -->
+            <div class="section">
+                <h2>🔩 Analiza Potrošenih Delova</h2>
+                <div class="chart-container">
+                    <canvas id="partsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p style="margin: 0; font-size: 16px;">
+                    🏢 <strong>Frigo Sistem Todosijević</strong><br>
+                    ComPlus Poslovni Partner | Automatski Generisan Izvještaj<br>
+                    ${new Date().toLocaleString('sr-ME')}
+                </p>
+            </div>
+        </div>
+
+        <script>
+            // Chart.js konfiguracija sa responsive design
+            Chart.defaults.responsive = true;
+            Chart.defaults.maintainAspectRatio = false;
+
+            // Kategorije Chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ${JSON.stringify(chartData.categories.labels)},
+                    datasets: [{
+                        data: ${JSON.stringify(chartData.categories.data)},
+                        backgroundColor: ['#059669', '#0891b2', '#7c3aed', '#dc2626', '#f59e0b', '#8b5cf6'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Raspodela po Kategorijama Uređaja' }
+                    }
+                }
+            });
+
+            // Tehničari Chart
+            const technicianCtx = document.getElementById('technicianChart').getContext('2d');
+            new Chart(technicianCtx, {
+                type: 'bar',
+                data: {
+                    labels: ${JSON.stringify(chartData.technicians.labels)},
+                    datasets: [{
+                        label: 'Broj Servisa',
+                        data: ${JSON.stringify(chartData.technicians.data)},
+                        backgroundColor: 'rgba(30, 64, 175, 0.6)',
+                        borderColor: 'rgba(30, 64, 175, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Produktivnost Tehničara' }
+                    }
+                }
+            });
+
+            // Delovi Chart
+            const partsCtx = document.getElementById('partsChart').getContext('2d');
+            new Chart(partsCtx, {
+                type: 'horizontalBar',
+                data: {
+                    labels: ${JSON.stringify(chartData.parts.labels)},
+                    datasets: [{
+                        label: 'Količina',
+                        data: ${JSON.stringify(chartData.parts.data)},
+                        backgroundColor: 'rgba(124, 58, 237, 0.6)',
+                        borderColor: 'rgba(124, 58, 237, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Najkorišćeniji Rezervni Delovi' }
+                    }
+                }
+            });
+        </script>
+    </body>
+    </html>`;
+  }
+
+  /**
+   * Priprema podatke za grafikone
+   */
+  private prepareChartData(data: DailyReportData) {
+    // Kategorije uređaja
+    const categoryMap = new Map();
+    data.completedServices.forEach(service => {
+      const category = service.applianceType || 'Ostalo';
+      categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+    });
+
+    // Tehničari
+    const technicianMap = new Map();
+    data.completedServices.forEach(service => {
+      const technician = service.technicianName || 'Nepoznat';
+      technicianMap.set(technician, (technicianMap.get(technician) || 0) + 1);
+    });
+
+    // Delovi
+    const partsMap = new Map();
+    data.usedParts.forEach(part => {
+      const partName = part.partName || 'Nepoznat deo';
+      partsMap.set(partName, (partsMap.get(partName) || 0) + (part.quantity || 1));
+    });
+
+    return {
+      categories: {
+        labels: Array.from(categoryMap.keys()),
+        data: Array.from(categoryMap.values())
+      },
+      technicians: {
+        labels: Array.from(technicianMap.keys()),
+        data: Array.from(technicianMap.values())
+      },
+      parts: {
+        labels: Array.from(partsMap.keys()).slice(0, 10), // Top 10
+        data: Array.from(partsMap.values()).slice(0, 10)
+      }
+    };
+  }
+
+  /**
+   * Generiše profesionalnu sekciju za servise
+   */
+  private generateProfessionalServicesSection(services: any[]): string {
+    if (services.length === 0) {
+      return `
+        <div class="section">
+            <h2>🔧 Detaljni Pregled Servisa</h2>
+            <p style="color: #6b7280; font-style: italic; text-align: center; padding: 40px;">
+                Nema završenih servisa za ovaj dan.
+            </p>
+        </div>`;
+    }
+
+    const servicesHtml = services.map((service, index) => `
+        <tr>
+            <td><strong>#${service.serviceId}</strong></td>
+            <td>${service.clientName}</td>
+            <td>${service.clientPhone || 'N/A'}</td>
+            <td>${service.technicianName || 'N/A'}</td>
+            <td>${service.applianceType} ${service.applianceBrand}</td>
+            <td>${service.applianceModel || 'N/A'}</td>
+            <td>${service.workPerformed || 'N/A'}</td>
+            <td><strong>${service.cost ? service.cost + ' RSD' : 'N/A'}</strong></td>
+            <td>${new Date(service.completedAt).toLocaleTimeString('sr-ME', { hour: '2-digit', minute: '2-digit' })}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div class="section">
+            <h2>🔧 Detaljni Pregled Servisa (${services.length})</h2>
+            <div style="overflow-x: auto;">
+                <table class="service-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Klijent</th>
+                            <th>Telefon</th>
+                            <th>Tehničar</th>
+                            <th>Uređaj</th>
+                            <th>Model</th>
+                            <th>Izvršen Rad</th>
+                            <th>Troškovi</th>
+                            <th>Vreme</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${servicesHtml}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+  }
+
+  /**
+   * Šalje profesionalni dnevni izveštaj sa grafikonima za poslovne partnere
+   */
+  async sendProfessionalDailyReport(date: Date = new Date(), recipientEmail: string): Promise<boolean> {
+    try {
+      console.log(`[COMPLUS REPORT] Generiram profesionalni dnevni izveštaj za ${date.toLocaleDateString('sr-ME')} → ${recipientEmail}`);
+
+      const data = await this.collectDailyData(date);
+      const htmlContent = this.generateProfessionalReportHTML(data, date);
+      
+      const subject = `📊 ComPlus Poslovni Izvještaj - ${date.toLocaleDateString('sr-ME')} (${data.totalCompletedServices} servisa)`;
+      
+      const emailSent = await this.emailService.sendEmail({
+        to: recipientEmail,
+        subject,
+        html: htmlContent
+      });
+
+      if (emailSent) {
+        console.log(`[COMPLUS REPORT] ✅ Profesionalni dnevni izveštaj uspešno poslat na ${recipientEmail}`);
+        console.log(`[COMPLUS REPORT] Sadržaj: ${data.totalCompletedServices} servisa, ${data.visitedClients.length} klijenata sa grafikonima`);
+        return true;
+      } else {
+        console.error(`[COMPLUS REPORT] ❌ Neuspešno slanje profesionalnog izveštaja na ${recipientEmail}`);
+        return false;
+      }
+
+    } catch (error) {
+      console.error(`[COMPLUS REPORT] Greška pri slanju profesionalnog dnevnog izveštaja na ${recipientEmail}:`, error);
+      return false;
+    }
+  }
 }

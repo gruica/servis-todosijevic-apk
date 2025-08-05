@@ -538,14 +538,43 @@ const EmailSettingsPage = () => {
               {showDiagnostics ? "Sakrij dijagnostiku" : "Prikaži dijagnostiku"}
             </Button>
             
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/email-test")}
-              type="button"
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Testiranje email sistema
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/email-test")}
+                type="button"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Testiranje email sistema
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    const response = await apiRequestWithAuth('POST', '/api/test-professional-complus-report', {
+                      email: 'robert.ivezic@tehnoplus.me'
+                    });
+                    const result = await response.json();
+                    
+                    toast({
+                      title: "Profesionalni ComPlus Izveštaj",
+                      description: result.message || "Test izveštaj uspešno poslat!",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Greška",
+                      description: "Neuspešno slanje test izveštaja",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                type="button"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                📊 Test ComPlus Izveštaj
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </div>

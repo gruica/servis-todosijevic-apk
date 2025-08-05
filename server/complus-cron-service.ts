@@ -34,8 +34,23 @@ export class ComplusCronService {
       cron.schedule('0 22 * * *', async () => {
         console.log('[COMPLUS CRON] 🕙 Pokretanje automatskog dnevnog ComPlus izveštaja...');
         try {
-          await this.dailyReportService.sendDailyReport(new Date(), 'gruica@frigosistemtodosijevic.com');
-          console.log('[COMPLUS CRON] ✅ Automatski dnevni ComPlus izveštaj uspešno poslat');
+          // Lista poslovnih partnera i njihovih email adresa
+          const businessPartnerEmails = [
+            'gruica@frigosistemtodosijevic.com',
+            'robert.ivezic@tehnoplus.me', 
+            'servis@complus.me'
+          ];
+          
+          // Šalje izveštaj svim poslovnim partnerima
+          for (const email of businessPartnerEmails) {
+            try {
+              await this.dailyReportService.sendProfessionalDailyReport(new Date(), email);
+              console.log(`[COMPLUS CRON] ✅ Profesionalni izveštaj uspešno poslat na: ${email}`);
+            } catch (error) {
+              console.error(`[COMPLUS CRON] ❌ Greška pri slanju na ${email}:`, error);
+            }
+          }
+          console.log('[COMPLUS CRON] ✅ Automatski dnevni ComPlus izveštaj završen');
         } catch (error) {
           console.error('[COMPLUS CRON] ❌ Greška pri slanju automatskog dnevnog izveštaja:', error);
         }
@@ -46,7 +61,7 @@ export class ComplusCronService {
       this.isRunning = true;
       console.log('[COMPLUS CRON] ✅ ComPlus cron job-ovi pokrenuti');
       console.log('[COMPLUS CRON] 📅 Dnevni izveštaj: svaki dan u 22:00 (Belgrade vreme)');
-      console.log('[COMPLUS CRON] 📧 Email adresa: gruica@frigosistemtodosijevic.com');
+      console.log('[COMPLUS CRON] 📧 Email adrese: gruica@frigosistemtodosijevic.com, robert.ivezic@tehnoplus.me, servis@complus.me');
 
     } catch (error) {
       console.error('[COMPLUS CRON] ❌ Greška pri pokretanju cron job-ova:', error);
@@ -80,10 +95,24 @@ export class ComplusCronService {
     
     try {
       await this.dailyReportService.sendDailyReport(new Date(), testEmail);
-      console.log('[COMPLUS CRON] ✅ Test dnevnog izveštaja uspešan');
+      console.log(`[COMPLUS CRON] ✅ Test izveštaj uspešno poslat`);
     } catch (error) {
-      console.error('[COMPLUS CRON] ❌ Test dnevnog izveštaja neuspešan:', error);
-      throw error;
+      console.error(`[COMPLUS CRON] ❌ Greška pri test slanju:`, error);
+    }
+  }
+
+  /**
+   * Testira slanje profesionalnog izveštaja sa grafikonima (za debugging)
+   */
+  async testProfessionalReport(email?: string): Promise<void> {
+    const testEmail = email || 'robert.ivezic@tehnoplus.me';
+    console.log(`[COMPLUS CRON] 🧪 Testiranje profesionalnog izveštaja na: ${testEmail}`);
+    
+    try {
+      await this.dailyReportService.sendProfessionalDailyReport(new Date(), testEmail);
+      console.log(`[COMPLUS CRON] ✅ Test profesionalnog izveštaja uspešno poslat`);
+    } catch (error) {
+      console.error(`[COMPLUS CRON] ❌ Greška pri test slanju profesionalnog izveštaja:`, error);
     }
   }
 }

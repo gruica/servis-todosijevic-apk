@@ -11355,5 +11355,38 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // TEST ENDPOINT: Profesionalni ComPlus dnevni izveštaj sa grafikonima
+  app.post("/api/test-professional-complus-report", jwtAuthMiddleware, async (req, res) => {
+    try {
+      const { email } = req.body;
+      const testEmail = email || 'robert.ivezic@tehnoplus.me';
+      
+      console.log(`[TEST PROFESSIONAL REPORT] Testiranje profesionalnog ComPlus izveštaja na: ${testEmail}`);
+      
+      // Import ComPlus cron service
+      const { complusCronService } = await import('./complus-cron-service.js');
+      
+      // Pozovi test funkciju
+      await complusCronService.testProfessionalReport(testEmail);
+      
+      res.json({
+        success: true,
+        message: `Profesionalni ComPlus izveštaj uspešno poslat na ${testEmail}`,
+        recipient: testEmail,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error("[TEST PROFESSIONAL REPORT] Greška:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      
+      return res.status(500).json({ 
+        success: false,
+        error: "Greška pri slanju profesionalnog test izveštaja", 
+        message: errorMessage
+      });
+    }
+  });
+
   return httpServer;
 }
