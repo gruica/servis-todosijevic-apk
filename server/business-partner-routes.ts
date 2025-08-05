@@ -459,4 +459,49 @@ export function registerBusinessPartnerRoutes(app: Express) {
       });
     }
   });
+
+  // Endpoint za ažuriranje klijenta od strane poslovnog partnera
+  app.put("/api/business/clients/:id", businessPartnerAuth, async (req, res) => {
+    try {
+      console.log("=== AŽURIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      console.log("Klijent ID:", req.params.id);
+      console.log("Korisnik:", req.user);
+      
+      const clientId = parseInt(req.params.id);
+      const validatedData = insertClientSchema.parse(req.body);
+      
+      // Proveravamo da li klijent postoji
+      const existingClient = await storage.getClient(clientId);
+      if (!existingClient) {
+        return res.status(404).json({
+          error: "Klijent nije pronađen",
+          message: "Klijent sa datim ID-om ne postoji u sistemu"
+        });
+      }
+      
+      const updatedClient = await storage.updateClient(clientId, validatedData);
+      
+      console.log("Uspešno ažuriran klijent:", updatedClient);
+      
+      res.json({
+        ...updatedClient,
+        success: true,
+        message: "Podaci klijenta su uspešno ažurirani"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Nevažeći podaci klijenta", 
+          details: error.format(),
+          message: "Molimo proverite unete podatke i pokušajte ponovo"
+        });
+      }
+      console.error("Greška pri ažuriranju klijenta:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do greške pri ažuriranju klijenta. Pokušajte ponovo kasnije."
+      });
+    }
+  });
 }
