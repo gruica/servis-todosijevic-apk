@@ -12,8 +12,8 @@ import { NotificationService } from "./notification-service";
 import { jwtAuth, requireRole } from "./jwt-auth";
 
 export function registerBusinessPartnerRoutes(app: Express) {
-  // JWT middleware za business partner autentifikaciju
-  const businessPartnerAuth = [jwtAuth, requireRole(['business_partner', 'business'])];
+  // JWT middleware za business partner autentifikaciju (admin ima puni pristup)
+  const businessPartnerAuth = [jwtAuth, requireRole(['business_partner', 'business', 'admin'])];
 
   // Dobijanje servisa za poslovnog partnera
   app.get("/api/business/services", businessPartnerAuth, async (req, res) => {

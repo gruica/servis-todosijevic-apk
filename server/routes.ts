@@ -419,8 +419,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Registruj rute za poslovne partnere
-  // Business partner routes are now integrated directly in this file - deactivated duplicate registration
-  // registerBusinessPartnerRoutes(app);
+  // Business partner routes registration
+  registerBusinessPartnerRoutes(app);
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
