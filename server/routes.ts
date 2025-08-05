@@ -11457,5 +11457,116 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // Admin spare parts direct ordering endpoint
+  app.post("/api/admin/spare-parts-order", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log("[SPARE PARTS ORDER] Pristigao zahtev za rezervni deo:", req.body);
+      
+      const {
+        serviceId,
+        applianceSerialNumber,
+        brand,
+        deviceModel,
+        productCode,
+        applianceCategory,
+        partName,
+        quantity,
+        description,
+        warrantyStatus,
+        urgency,
+        emailTarget
+      } = req.body;
+
+      // Validacija osnovnih podataka
+      if (!brand || !partName || !quantity) {
+        return res.status(400).json({
+          error: "Nedostaju obavezni podaci",
+          message: "Brend, naziv dela i količina su obavezni."
+        });
+      }
+
+      // Email sadržaj na srpskom jeziku
+      const emailSubject = `Porudžbina rezervnog dela - ${brand} - ${partName}`;
+      const emailContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Porudžbina rezervnog dela</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+            Porudžbina rezervnog dela
+        </h2>
+        
+        <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #374151;">Podaci o aparatu:</h3>
+            <p><strong>Brend:</strong> ${brand}</p>
+            ${deviceModel ? `<p><strong>Model:</strong> ${deviceModel}</p>` : ''}
+            ${productCode ? `<p><strong>Kod proizvoda:</strong> ${productCode}</p>` : ''}
+            ${applianceCategory ? `<p><strong>Kategorija:</strong> ${applianceCategory}</p>` : ''}
+            ${applianceSerialNumber ? `<p><strong>Serijski broj:</strong> ${applianceSerialNumber}</p>` : ''}
+            ${serviceId ? `<p><strong>Broj servisa:</strong> ${serviceId}</p>` : ''}
+        </div>
+
+        <div style="background-color: #f0f9ff; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #0ea5e9;">Potreban rezervni deo:</h3>
+            <p><strong>Naziv dela:</strong> ${partName}</p>
+            <p><strong>Količina:</strong> ${quantity}</p>
+            <p><strong>Garanijski status:</strong> ${warrantyStatus}</p>
+            <p><strong>Hitnost:</strong> ${urgency === 'urgent' ? 'Hitno' : urgency === 'high' ? 'Visoko' : 'Normalno'}</p>
+            ${description ? `<p><strong>Dodatni opis:</strong> ${description}</p>` : ''}
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 14px;">
+                Porudžbina poslata: ${new Date().toLocaleString('sr-RS')}<br>
+                Kontakt: Frigo Sistem Todosijević<br>
+                Email: gruica@frigosistemtodosijevic.com<br>
+                Telefon: +381 21 555 333
+            </p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+      // Slanje email-a
+      const emailService = require('./email-service');
+      const emailResult = await emailService.sendEmail({
+        to: emailTarget,
+        subject: emailSubject,
+        html: emailContent,
+        from: 'gruica@frigosistemtodosijevic.com'
+      });
+
+      if (!emailResult.success) {
+        console.error("[SPARE PARTS ORDER] Greška pri slanju email-a:", emailResult.error);
+        return res.status(500).json({
+          error: "Greška pri slanju email-a",
+          message: "Porudžbina nije mogla biti poslata. Molimo pokušajte ponovo."
+        });
+      }
+
+      console.log(`[SPARE PARTS ORDER] Email uspešno poslat na ${emailTarget}`);
+      
+      res.json({
+        success: true,
+        message: "Porudžbina rezervnog dela je uspešno poslata",
+        emailSent: true,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error("[SPARE PARTS ORDER] Greška:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      
+      return res.status(500).json({
+        error: "Greška pri procesiranju porudžbine",
+        message: errorMessage
+      });
+    }
+  });
+
   return httpServer;
 }
