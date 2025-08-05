@@ -6467,13 +6467,19 @@ Admin panel - automatska porudžbina
           );
           console.log(`[SPARE PARTS ORDER] Beko notifikacija poslata na mp4@eurotehnikamn.me`);
         } else {
-          // Za ostale brendove, koristi standardni email
-          await emailService.sendEmail(
-            targetEmail,
-            emailSubject,
-            emailContent
-          );
-          console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+          // Za ostale brendove (ComPlus), koristi standardni email sa ispravnim argumentima
+          const emailResult = await emailService.sendEmail({
+            to: targetEmail,
+            subject: emailSubject,
+            text: emailContent,
+            from: 'gruica@frigosistemtodosijevic.com'
+          });
+          
+          if (emailResult.success) {
+            console.log(`[SPARE PARTS ORDER] Email poslat na ${targetEmail} za ${brand} rezervni deo`);
+          } else {
+            console.error(`[SPARE PARTS ORDER] Email greška: ${emailResult.error}`);
+          }
         }
       } catch (emailError) {
         console.error('[SPARE PARTS ORDER] Greška pri slanju email-a:', emailError);
