@@ -11532,8 +11532,8 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
 </html>`;
 
       // Slanje email-a
-      const emailService = require('./email-service');
-      const emailResult = await emailService.sendEmail({
+      const { sendEmail } = await import('./email-service.js');
+      const emailResult = await sendEmail({
         to: emailTarget,
         subject: emailSubject,
         html: emailContent,
