@@ -1369,4 +1369,71 @@ export const systemSettingsRelations = relations(systemSettings, ({ one }) => ({
   }),
 }));
 
+// Parts Catalog tabela - master katalog svih dostupnih rezervnih delova
+export const partsCatalog = pgTable("parts_catalog", {
+  id: serial("id").primaryKey(),
+  partNumber: text("part_number").notNull().unique(), // Originalni broj dela
+  partName: text("part_name").notNull(), // Naziv dela
+  description: text("description"), // Detaljan opis
+  category: text("category").notNull(), // washing-machine, tumble-dryer, oven, fridge-freezer, microwave, dishwasher, cooker-hood
+  manufacturerId: integer("manufacturer_id").notNull().references(() => manufacturers.id),
+  compatibleModels: text("compatible_models"), // JSON array sa kompatibilnim modelima
+  priceEur: decimal("price_eur", { precision: 10, scale: 2 }), // Cena u EUR
+  priceGbp: decimal("price_gbp", { precision: 10, scale: 2 }), // Cena u GBP
+  supplierName: text("supplier_name"), // Naziv dobavljača
+  supplierUrl: text("supplier_url"), // URL dobavljača
+  imageUrls: text("image_urls"), // JSON array sa linkovima slika
+  availability: text("availability", { enum: ["available", "out_of_stock", "discontinued", "on_order"] }).default("available").notNull(),
+  stockLevel: integer("stock_level").default(0).notNull(), // Trenutno stanje zaliha
+  minStockLevel: integer("min_stock_level").default(0).notNull(), // Minimalno stanje zaliha
+  dimensions: text("dimensions"), // Dimenzije dela
+  weight: text("weight"), // Težina dela
+  technicalSpecs: text("technical_specs"), // Tehnične specifikacije
+  installationNotes: text("installation_notes"), // Napomene za instalaciju
+  warrantyPeriod: text("warranty_period"), // Period garancije
+  isOemPart: boolean("is_oem_part").default(true).notNull(), // Da li je originalni deo
+  alternativePartNumbers: text("alternative_part_numbers"), // JSON array sa alternativnim brojevima
+  sourceType: text("source_type", { enum: ["manual", "import", "api", "scraping"] }).default("manual").notNull(),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPartsCatalogSchema = createInsertSchema(partsCatalog).pick({
+  partNumber: true,
+  partName: true,
+  description: true,
+  category: true,
+  manufacturerId: true,
+  compatibleModels: true,
+  priceEur: true,
+  priceGbp: true,
+  supplierName: true,
+  supplierUrl: true,
+  imageUrls: true,
+  availability: true,
+  stockLevel: true,
+  minStockLevel: true,
+  dimensions: true,
+  weight: true,
+  technicalSpecs: true,
+  installationNotes: true,
+  warrantyPeriod: true,
+  isOemPart: true,
+  alternativePartNumbers: true,
+  sourceType: true,
+  isActive: true,
+});
+
+export type InsertPartsCatalog = z.infer<typeof insertPartsCatalogSchema>;
+export type PartsCatalog = typeof partsCatalog.$inferSelect;
+
+// Relacije za parts catalog
+export const partsCatalogRelations = relations(partsCatalog, ({ one }) => ({
+  manufacturer: one(manufacturers, {
+    fields: [partsCatalog.manufacturerId],
+    references: [manufacturers.id],
+  }),
+}));
+
 

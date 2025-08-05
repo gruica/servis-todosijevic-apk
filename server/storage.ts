@@ -23,6 +23,7 @@ import {
   ServiceCompletionReport, InsertServiceCompletionReport,
   Supplier, InsertSupplier,
   SupplierOrder, InsertSupplierOrder,
+  PartsCatalog, InsertPartsCatalog,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
@@ -30,7 +31,7 @@ import {
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
   sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
   webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports,
-  suppliers, supplierOrders
+  suppliers, supplierOrders, partsCatalog
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -38,7 +39,7 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
 import { pool, db } from "./db";
-import { eq, and, desc, gte, lte, ne, isNull, like, count, sum, or, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne, isNull, like, ilike, count, sum, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 const MemoryStore = createMemoryStore(session);
@@ -267,6 +268,23 @@ export interface IStorage {
   createSupplierOrder(order: InsertSupplierOrder): Promise<SupplierOrder>;
   updateSupplierOrder(id: number, order: Partial<SupplierOrder>): Promise<SupplierOrder | undefined>;
   deleteSupplierOrder(id: number): Promise<boolean>;
+
+  // Parts Catalog methods
+  getAllPartsFromCatalog(): Promise<PartsCatalog[]>;
+  getPartFromCatalog(id: number): Promise<PartsCatalog | undefined>;
+  searchPartsInCatalog(searchTerm: string, category?: string, manufacturerId?: number): Promise<PartsCatalog[]>;
+  getPartsCatalogByCategory(category: string): Promise<PartsCatalog[]>;
+  getPartsCatalogByManufacturer(manufacturerId: number): Promise<PartsCatalog[]>;
+  createPartInCatalog(part: InsertPartsCatalog): Promise<PartsCatalog>;
+  updatePartInCatalog(id: number, part: Partial<PartsCatalog>): Promise<PartsCatalog | undefined>;
+  deletePartFromCatalog(id: number): Promise<boolean>;
+  getPartsCatalogStats(): Promise<{
+    totalParts: number;
+    availableParts: number;
+    outOfStockParts: number;
+    categoriesCount: Record<string, number>;
+  }>;
+  bulkInsertPartsToCatalog(parts: InsertPartsCatalog[]): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -4759,6 +4777,349 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine dobavljača:', error);
       return false;
+    }
+  }
+
+  // ===== PARTS CATALOG METHODS =====
+
+  async getAllPartsFromCatalog(): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.isActive, true))
+        .orderBy(desc(partsCatalog.lastUpdated));
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga delova:', error);
+      return [];
+    }
+  }
+
+  async getPartFromCatalog(id: number): Promise<PartsCatalog | undefined> {
+    try {
+      const [part] = await db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.id, id))
+        .limit(1);
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dela iz kataloga:', error);
+      return undefined;
+    }
+  }
+
+  async getPartFromCatalogByPartNumber(partNumber: string): Promise<PartsCatalog | undefined> {
+    try {
+      const [part] = await db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.partNumber, partNumber))
+        .limit(1);
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dela po broju:', error);
+      return undefined;
+    }
+  }
+
+  async searchPartsInCatalog(query: string, category?: string, manufacturerId?: number): Promise<PartsCatalog[]> {
+    try {
+      let searchQuery = db.select()
+        .from(partsCatalog)
+        .where(
+          and(
+            eq(partsCatalog.isActive, true),
+            or(
+              ilike(partsCatalog.partName, `%${query}%`),
+              ilike(partsCatalog.partNumber, `%${query}%`),
+              ilike(partsCatalog.description, `%${query}%`)
+            )
+          )
+        );
+
+      if (category) {
+        searchQuery = searchQuery.where(eq(partsCatalog.category, category));
+      }
+
+      if (manufacturerId) {
+        searchQuery = searchQuery.where(eq(partsCatalog.manufacturerId, manufacturerId));
+      }
+
+      return await searchQuery.orderBy(desc(partsCatalog.lastUpdated));
+    } catch (error) {
+      console.error('Greška pri pretraživanju kataloga:', error);
+      return [];
+    }
+  }
+
+  async createPartInCatalog(part: InsertPartsCatalog): Promise<PartsCatalog> {
+    try {
+      const [newPart] = await db.insert(partsCatalog).values(part).returning();
+      return newPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju dela u katalogu:', error);
+      throw error;
+    }
+  }
+
+  async updatePartInCatalog(id: number, part: Partial<PartsCatalog>): Promise<PartsCatalog | undefined> {
+    try {
+      const [updatedPart] = await db.update(partsCatalog)
+        .set({ ...part, lastUpdated: new Date() })
+        .where(eq(partsCatalog.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju dela u katalogu:', error);
+      return undefined;
+    }
+  }
+
+  async deletePartFromCatalog(id: number): Promise<boolean> {
+    try {
+      await db.update(partsCatalog)
+        .set({ isActive: false, lastUpdated: new Date() })
+        .where(eq(partsCatalog.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju dela iz kataloga:', error);
+      return false;
+    }
+  }
+
+  async getPartsCatalogByCategory(category: string): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(and(
+          eq(partsCatalog.category, category),
+          eq(partsCatalog.isActive, true)
+        ))
+        .orderBy(partsCatalog.partName);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async getPartsCatalogByManufacturer(manufacturerId: number): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(and(
+          eq(partsCatalog.manufacturerId, manufacturerId),
+          eq(partsCatalog.isActive, true)
+        ))
+        .orderBy(partsCatalog.partName);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po proizvođaču:', error);
+      return [];
+    }
+  }
+
+  async bulkInsertPartsToCatalog(parts: InsertPartsCatalog[]): Promise<number> {
+    try {
+      const insertedParts = await db.insert(partsCatalog).values(parts).returning();
+      return insertedParts.length;
+    } catch (error) {
+      console.error('Greška pri bulk insert delova:', error);
+      throw error;
+    }
+  }
+
+  async getPartsCatalogStats(): Promise<{
+    totalParts: number;
+    availableParts: number;
+    outOfStockParts: number;
+    categoriesCount: Record<string, number>;
+  }> {
+    try {
+      const allParts = await db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.isActive, true));
+
+      const totalParts = allParts.length;
+      const availableParts = allParts.filter(p => p.availability === 'available').length;
+      const outOfStockParts = allParts.filter(p => p.availability === 'out_of_stock').length;
+
+      // Brojanje po kategorijama
+      const categoriesCount = allParts.reduce((acc, part) => {
+        acc[part.category] = (acc[part.category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        totalParts,
+        availableParts,
+        outOfStockParts,
+        categoriesCount
+      };
+    } catch (error) {
+      console.error('Greška pri dobijanju statistika kataloga:', error);
+      return {
+        totalParts: 0,
+        availableParts: 0,
+        outOfStockParts: 0,
+        categoriesCount: {}
+      };
+    }
+  }
+
+  // Parts Catalog methods implementation
+  async getAllPartsFromCatalog(): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.isActive, true))
+        .orderBy(desc(partsCatalog.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga delova:', error);
+      return [];
+    }
+  }
+
+  async getPartFromCatalog(id: number): Promise<PartsCatalog | undefined> {
+    try {
+      const [part] = await db.select()
+        .from(partsCatalog)
+        .where(and(eq(partsCatalog.id, id), eq(partsCatalog.isActive, true)))
+        .limit(1);
+      return part;
+    } catch (error) {
+      console.error('Greška pri dohvatanju dela iz kataloga:', error);
+      return undefined;
+    }
+  }
+
+  async searchPartsInCatalog(searchTerm: string, category?: string, manufacturerId?: number): Promise<PartsCatalog[]> {
+    try {
+      let query = db.select()
+        .from(partsCatalog)
+        .where(eq(partsCatalog.isActive, true));
+
+      // Dodaj uslov za pretragu
+      if (searchTerm) {
+        query = query.where(
+          or(
+            ilike(partsCatalog.partName, `%${searchTerm}%`),
+            ilike(partsCatalog.partNumber, `%${searchTerm}%`),
+            ilike(partsCatalog.description, `%${searchTerm}%`)
+          )
+        );
+      }
+
+      // Dodaj filter po kategoriji
+      if (category) {
+        query = query.where(eq(partsCatalog.category, category));
+      }
+
+      // Dodaj filter po proizvođaču
+      if (manufacturerId) {
+        query = query.where(eq(partsCatalog.manufacturerId, manufacturerId));
+      }
+
+      return await query.orderBy(desc(partsCatalog.createdAt));
+    } catch (error) {
+      console.error('Greška pri pretraživanju kataloga delova:', error);
+      return [];
+    }
+  }
+
+  async getPartsCatalogByCategory(category: string): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(and(
+          eq(partsCatalog.category, category),
+          eq(partsCatalog.isActive, true)
+        ))
+        .orderBy(partsCatalog.partName);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async getPartsCatalogByManufacturer(manufacturerId: number): Promise<PartsCatalog[]> {
+    try {
+      return await db.select()
+        .from(partsCatalog)
+        .where(and(
+          eq(partsCatalog.manufacturerId, manufacturerId),
+          eq(partsCatalog.isActive, true)
+        ))
+        .orderBy(partsCatalog.partName);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po proizvođaču:', error);
+      return [];
+    }
+  }
+
+  async createPartInCatalog(part: InsertPartsCatalog): Promise<PartsCatalog> {
+    try {
+      const [newPart] = await db.insert(partsCatalog)
+        .values({
+          ...part,
+          createdAt: new Date(),
+          lastUpdated: new Date(),
+          isActive: true
+        })
+        .returning();
+      return newPart;
+    } catch (error) {
+      console.error('Greška pri kreiranju dela u katalogu:', error);
+      throw error;
+    }
+  }
+
+  async updatePartInCatalog(id: number, part: Partial<PartsCatalog>): Promise<PartsCatalog | undefined> {
+    try {
+      const [updatedPart] = await db.update(partsCatalog)
+        .set({
+          ...part,
+          lastUpdated: new Date()
+        })
+        .where(eq(partsCatalog.id, id))
+        .returning();
+      return updatedPart;
+    } catch (error) {
+      console.error('Greška pri ažuriranju dela u katalogu:', error);
+      return undefined;
+    }
+  }
+
+  async deletePartFromCatalog(id: number): Promise<boolean> {
+    try {
+      // Soft delete - označava kao neaktivan
+      const [deletedPart] = await db.update(partsCatalog)
+        .set({
+          isActive: false,
+          lastUpdated: new Date()
+        })
+        .where(eq(partsCatalog.id, id))
+        .returning();
+      return !!deletedPart;
+    } catch (error) {
+      console.error('Greška pri brisanju dela iz kataloga:', error);
+      return false;
+    }
+  }
+
+  async bulkInsertPartsToCatalog(parts: InsertPartsCatalog[]): Promise<number> {
+    try {
+      const insertData = parts.map(part => ({
+        ...part,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+        isActive: true
+      }));
+
+      const result = await db.insert(partsCatalog)
+        .values(insertData)
+        .returning({ id: partsCatalog.id });
+      
+      return result.length;
+    } catch (error) {
+      console.error('Greška pri bulk import-u delova:', error);
+      throw error;
     }
   }
 }

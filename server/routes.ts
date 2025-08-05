@@ -11850,5 +11850,153 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
+  // =====================================
+  // PARTS CATALOG API ENDPOINTS  
+  // ===================================== 
+
+  // Get all parts from catalog
+  app.get("/api/admin/parts-catalog", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const { search, category, manufacturerId } = req.query;
+      
+      let parts;
+      if (search) {
+        parts = await storage.searchPartsInCatalog(
+          search as string,
+          category as string,
+          manufacturerId ? parseInt(manufacturerId as string) : undefined
+        );
+      } else {
+        parts = await storage.getAllPartsFromCatalog();
+      }
+      
+      res.json(parts);
+    } catch (error) {
+      console.error('Greška pri dohvatanju kataloga delova:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju kataloga delova' });
+    }
+  });
+
+  // Get single part from catalog
+  app.get("/api/admin/parts-catalog/:id", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      const part = await storage.getPartFromCatalog(partId);
+      
+      if (!part) {
+        return res.status(404).json({ error: 'Deo nije pronađen u katalogu' });
+      }
+      
+      res.json(part);
+    } catch (error) {
+      console.error('Greška pri dohvatanju dela iz kataloga:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju dela iz kataloga' });
+    }
+  });
+
+  // Create new part in catalog
+  app.post("/api/admin/parts-catalog", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const partData = req.body;
+      const newPart = await storage.createPartInCatalog(partData);
+      res.status(201).json(newPart);
+    } catch (error) {
+      console.error('Greška pri kreiranju dela u katalogu:', error);
+      res.status(500).json({ error: 'Greška pri kreiranju dela u katalogu' });
+    }
+  });
+
+  // Update part in catalog
+  app.put("/api/admin/parts-catalog/:id", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const updatedPart = await storage.updatePartInCatalog(partId, updateData);
+      
+      if (!updatedPart) {
+        return res.status(404).json({ error: 'Deo nije pronađen u katalogu' });
+      }
+      
+      res.json(updatedPart);
+    } catch (error) {
+      console.error('Greška pri ažuriranju dela u katalogu:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju dela u katalogu' });
+    }
+  });
+
+  // Delete part from catalog (soft delete)
+  app.delete("/api/admin/parts-catalog/:id", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      const success = await storage.deletePartFromCatalog(partId);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Deo nije pronađen u katalogu' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Greška pri brisanju dela iz kataloga:', error);
+      res.status(500).json({ error: 'Greška pri brisanju dela iz kataloga' });
+    }
+  });
+
+  // Get parts catalog statistics
+  app.get("/api/admin/parts-catalog/stats", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const stats = await storage.getPartsCatalogStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Greška pri dobijanju statistika kataloga:', error);
+      res.status(500).json({ error: 'Greška pri dobijanju statistika kataloga' });
+    }
+  });
+
+  // Get parts by category
+  app.get("/api/admin/parts-catalog/category/:category", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const category = req.params.category;
+      const parts = await storage.getPartsCatalogByCategory(category);
+      res.json(parts);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po kategoriji:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju delova po kategoriji' });
+    }
+  });
+
+  // Get parts by manufacturer
+  app.get("/api/admin/parts-catalog/manufacturer/:manufacturerId", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const manufacturerId = parseInt(req.params.manufacturerId);
+      const parts = await storage.getPartsCatalogByManufacturer(manufacturerId);
+      res.json(parts);
+    } catch (error) {
+      console.error('Greška pri dohvatanju delova po proizvođaču:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju delova po proizvođaču' });
+    }
+  });
+
+  // Bulk import parts to catalog
+  app.post("/api/admin/parts-catalog/bulk-import", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const { parts } = req.body;
+      
+      if (!Array.isArray(parts) || parts.length === 0) {
+        return res.status(400).json({ error: 'Lista delova je obavezna' });
+      }
+      
+      const importedCount = await storage.bulkInsertPartsToCatalog(parts);
+      res.json({ 
+        success: true, 
+        importedCount,
+        message: `Uspešno import-ovano ${importedCount} delova` 
+      });
+    } catch (error) {
+      console.error('Greška pri bulk import-u delova:', error);
+      res.status(500).json({ error: 'Greška pri bulk import-u delova' });
+    }
+  });
+
   return httpServer;
 }
