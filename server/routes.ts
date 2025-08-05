@@ -11541,12 +11541,11 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       const emailResult = await emailService.sendEmail({
         to: emailTarget,
         subject: emailSubject,
-        html: emailContent,
-        from: 'gruica@frigosistemtodosijevic.com'
+        html: emailContent
       });
 
-      if (!emailResult.success) {
-        console.error("[SPARE PARTS ORDER] Greška pri slanju email-a:", emailResult.error);
+      if (!emailResult) {
+        console.error("[SPARE PARTS ORDER] Greška pri slanju email-a");
         return res.status(500).json({
           error: "Greška pri slanju email-a",
           message: "Porudžbina nije mogla biti poslata. Molimo pokušajte ponovo."
