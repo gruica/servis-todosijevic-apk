@@ -24,7 +24,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequestWithAuth } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -95,7 +95,7 @@ const EmailSettingsPage = () => {
     queryKey: ['/api/email-settings'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/email-settings');
+        const response = await apiRequestWithAuth('GET', '/api/email-settings');
         const data = await response.json();
         
         if (data.configured) {
@@ -124,7 +124,7 @@ const EmailSettingsPage = () => {
   // Mutation for saving email settings
   const saveSettingsMutation = useMutation({
     mutationFn: async (data: EmailSettingsForm) => {
-      const response = await apiRequest("POST", "/api/email-settings", data);
+      const response = await apiRequestWithAuth("POST", "/api/email-settings", data);
       return await response.json();
     },
     onSuccess: () => {
@@ -157,7 +157,7 @@ const EmailSettingsPage = () => {
   // Mutation for sending test email
   const sendTestEmailMutation = useMutation({
     mutationFn: async (data: TestEmailForm) => {
-      const response = await apiRequest("POST", "/api/send-test-email", data);
+      const response = await apiRequestWithAuth("POST", "/api/send-test-email", data);
       const result = await response.json();
       
       // Čuvamo dijagnostičke podatke za prikaz

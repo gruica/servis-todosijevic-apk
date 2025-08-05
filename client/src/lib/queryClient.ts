@@ -19,10 +19,10 @@ export function getAuthHeaders(): Record<string, string> {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: any,
   options: {
+    method?: string;
+    body?: string;
     headers?: Record<string, string>;
   } = {}
 ): Promise<Response> {
@@ -38,9 +38,36 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  // Add content type if data is provided
-  if (data) {
+  // Add content type if body is provided
+  if (options.body) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  const res = await fetch(url, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
+// Nova funkcija za email endpoints sa JWT autentifikacijom
+export async function apiRequestWithAuth(
+  method: string,
+  url: string,
+  data?: any
+): Promise<Response> {
+  const token = localStorage.getItem('auth_token');
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const res = await fetch(url, {
