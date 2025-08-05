@@ -7,11 +7,14 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 Preferred communication style: Simple, everyday language.
 
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
+- NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU
 - NIKAD ne diraj postojeće kodove koji rade
 - Kada dodaješ nove funkcije, proverava da li su u sukobu sa postojećim kodovima
 - Ako jesu u sukobu, napravi da se novi kodovi ne instaliraju dok ne budeš siguran u njihovu potpunu implementaciju i funkcionalnost
 - Uvek dodavaj nove endpoint-e na kraj server datoteke, ne menjaj redosled postojećih ruta
 - Prilagodi nove kodove postojećim strukturama, a ne obrnuto
+- ZABRANJEN je bilo kakav refaktoring postojećih funkcija - samo dodavanje novih
+- Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## System Architecture
 
