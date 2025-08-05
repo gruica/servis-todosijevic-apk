@@ -19,10 +19,10 @@ export function getAuthHeaders(): Record<string, string> {
 }
 
 export async function apiRequest(
+  method: string,
   url: string,
+  data?: any,
   options: {
-    method?: string;
-    body?: string;
     headers?: Record<string, string>;
   } = {}
 ): Promise<Response> {
@@ -38,15 +38,15 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
   
-  // Add content type if body is provided
-  if (options.body) {
+  // Add content type if data is provided
+  if (data) {
     headers['Content-Type'] = 'application/json';
   }
 
   const res = await fetch(url, {
-    method: options.method || 'GET',
+    method,
     headers,
-    body: options.body,
+    body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
