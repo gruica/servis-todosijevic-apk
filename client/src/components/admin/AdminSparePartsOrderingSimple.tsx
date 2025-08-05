@@ -32,17 +32,15 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [serviceNumber, setServiceNumber] = useState('');
-  const [serialNumber, setSerialNumber] = useState('');
-  const [formData, setFormData] = useState<FormData>({
-    deviceModel: '',
-    productCode: '',
-    applianceCategory: '',
-    partName: '',
-    quantity: 1,
-    description: '',
-    warrantyStatus: 'van garancije',
-    urgency: 'normal'
-  });
+  const [serialNumber, setSerialNumber] = useState('');  
+  const [deviceModel, setDeviceModel] = useState('');
+  const [productCode, setProductCode] = useState('');
+  const [applianceCategory, setApplianceCategory] = useState('');
+  const [partName, setPartName] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [description, setDescription] = useState('');
+  const [warrantyStatus, setWarrantyStatus] = useState('van garancije');
+  const [urgency, setUrgency] = useState('normal');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,7 +62,9 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       const response = await apiRequest(`/api/admin/services/${id}`);
       return response.json();
     },
-    enabled: !!(debouncedServiceNumber || serviceId) && !isNaN(parseInt((debouncedServiceNumber || serviceId || '').toString())) && parseInt((debouncedServiceNumber || serviceId || '').toString()) > 0
+    enabled: !!(debouncedServiceNumber || serviceId) && !isNaN(parseInt((debouncedServiceNumber || serviceId || '').toString())) && parseInt((debouncedServiceNumber || serviceId || '').toString()) > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
   });
 
   const mutation = useMutation({
@@ -84,16 +84,14 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       queryClient.invalidateQueries({ queryKey: ['spare-parts'] });
       setIsDialogOpen(false);
       setSelectedBrand(null);
-      setFormData({
-        deviceModel: '',
-        productCode: '',
-        applianceCategory: '',
-        partName: '',
-        quantity: 1,
-        description: '',
-        warrantyStatus: 'van garancije',
-        urgency: 'normal'
-      });
+      setDeviceModel('');
+      setProductCode('');
+      setApplianceCategory('');
+      setPartName('');
+      setQuantity(1);
+      setDescription('');
+      setWarrantyStatus('van garancije');
+      setUrgency('normal');
       if (onSuccess) onSuccess();
     },
     onError: (error: any) => {
@@ -123,23 +121,21 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       serviceId: finalServiceId || null,
       applianceSerialNumber: serialNumber || null,
       brand: selectedBrand,
-      deviceModel: formData.deviceModel,
-      productCode: formData.productCode,
-      applianceCategory: formData.applianceCategory,
-      partName: formData.partName,
-      quantity: formData.quantity,
-      description: formData.description,
-      warrantyStatus: formData.warrantyStatus,
-      urgency: formData.urgency,
+      deviceModel,
+      productCode,
+      applianceCategory,
+      partName,
+      quantity,
+      description,
+      warrantyStatus,
+      urgency,
       emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
     };
 
     mutation.mutate(orderData);
-  }, [selectedBrand, formData, serviceNumber, serialNumber, serviceId, mutation, toast, onSuccess]);
+  }, [selectedBrand, deviceModel, productCode, applianceCategory, partName, quantity, description, warrantyStatus, urgency, serviceNumber, serialNumber, serviceId, mutation, toast, onSuccess]);
 
-  const updateFormField = useCallback((field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+
 
   // Brand Selection Component
   const BrandSelection = () => (
@@ -233,8 +229,8 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
           <Label htmlFor="deviceModel">Model uređaja *</Label>
           <Input
             id="deviceModel"
-            value={formData.deviceModel}
-            onChange={(e) => updateFormField('deviceModel', e.target.value)}
+            value={deviceModel}
+            onChange={(e) => setDeviceModel(e.target.value)}
             placeholder="npr. WMB 61001 M+"
             required
           />
@@ -243,8 +239,8 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
           <Label htmlFor="productCode">Šifra proizvoda *</Label>
           <Input
             id="productCode"
-            value={formData.productCode}
-            onChange={(e) => updateFormField('productCode', e.target.value)}
+            value={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
             placeholder="npr. 7135543000"
             required
           />
@@ -254,7 +250,7 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="applianceCategory">Kategorija aparata *</Label>
-          <Select value={formData.applianceCategory} onValueChange={(value) => updateFormField('applianceCategory', value)}>
+          <Select value={applianceCategory} onValueChange={(value) => setApplianceCategory(value)}>
             <SelectTrigger>
               <SelectValue placeholder="Odaberite kategoriju" />
             </SelectTrigger>
@@ -273,8 +269,8 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
           <Label htmlFor="partName">Naziv dela *</Label>
           <Input
             id="partName"
-            value={formData.partName}
-            onChange={(e) => updateFormField('partName', e.target.value)}
+            value={partName}
+            onChange={(e) => setPartName(e.target.value)}
             placeholder="npr. Pumpa za vodu"
             required
           />
@@ -288,13 +284,13 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
             id="quantity"
             type="number"
             min="1"
-            value={formData.quantity}
-            onChange={(e) => updateFormField('quantity', parseInt(e.target.value) || 1)}
+            value={quantity}
+            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
           />
         </div>
         <div>
           <Label htmlFor="warrantyStatus">Status garancije</Label>
-          <Select value={formData.warrantyStatus} onValueChange={(value) => updateFormField('warrantyStatus', value)}>
+          <Select value={warrantyStatus} onValueChange={(value) => setWarrantyStatus(value)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -306,7 +302,7 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
         </div>
         <div>
           <Label htmlFor="urgency">Hitnost</Label>
-          <Select value={formData.urgency} onValueChange={(value) => updateFormField('urgency', value)}>
+          <Select value={urgency} onValueChange={(value) => setUrgency(value)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -323,8 +319,8 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
         <Label htmlFor="description">Dodatni opis</Label>
         <Textarea
           id="description"
-          value={formData.description}
-          onChange={(e) => updateFormField('description', e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Dodatne informacije o potrebnom delu..."
           rows={3}
         />
