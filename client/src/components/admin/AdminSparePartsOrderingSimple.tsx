@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ interface Props {
   onSuccess?: () => void;
 }
 
-export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
+const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<'beko' | 'complus' | null>(null);
   const [serviceNumber, setServiceNumber] = useState('');
@@ -52,55 +52,78 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
     }
   }, [serviceId]);
 
+  // Stabilize query key and query function
+  const serviceQueryKey = useMemo(() => {
+    const targetId = debouncedServiceNumber || serviceId;
+    return targetId ? ['service-simple', targetId] : null;
+  }, [debouncedServiceNumber, serviceId]);
+
+  const serviceQueryEnabled = useMemo(() => {
+    const targetId = debouncedServiceNumber || serviceId;
+    if (!targetId) return false;
+    const id = parseInt(targetId.toString());
+    return !isNaN(id) && id > 0;
+  }, [debouncedServiceNumber, serviceId]);
+
+  const serviceQueryFn = useCallback(async () => {
+    const targetId = debouncedServiceNumber || serviceId;
+    if (!targetId) return null;
+    const id = parseInt(targetId.toString());
+    if (isNaN(id) || id <= 0) return null;
+    const response = await apiRequest(`/api/admin/services/${id}`);
+    return response.json();
+  }, [debouncedServiceNumber, serviceId]);
+
   const { data: serviceData } = useQuery({
-    queryKey: ['service-simple', debouncedServiceNumber || serviceId],
-    queryFn: async () => {
-      const targetId = debouncedServiceNumber || serviceId;
-      if (!targetId) return null;
-      const id = parseInt(targetId.toString());
-      if (isNaN(id) || id <= 0) return null;
-      const response = await apiRequest(`/api/admin/services/${id}`);
-      return response.json();
-    },
-    enabled: !!(debouncedServiceNumber || serviceId) && !isNaN(parseInt((debouncedServiceNumber || serviceId || '').toString())) && parseInt((debouncedServiceNumber || serviceId || '').toString()) > 0,
+    queryKey: serviceQueryKey,
+    queryFn: serviceQueryFn,
+    enabled: serviceQueryEnabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
+  // Memoize mutation function to prevent re-creation
+  const mutationFn = useCallback(async (orderData: any) => {
+    const response = await apiRequest('/api/admin/spare-parts-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    });
+    return response.json();
+  }, []);
+
+  const handleMutationSuccess = useCallback(() => {
+    toast({
+      title: "Uspešno poslato",
+      description: "Porudžbina rezervnog dela je uspešno poslata.",
+    });
+    queryClient.invalidateQueries({ queryKey: ['spare-parts'] });
+    setIsDialogOpen(false);
+    setSelectedBrand(null);
+    setDeviceModel('');
+    setProductCode('');
+    setApplianceCategory('');
+    setPartName('');
+    setQuantity(1);
+    setDescription('');
+    setWarrantyStatus('van garancije');
+    setUrgency('normal');
+    if (onSuccess) onSuccess();
+  }, [toast, queryClient, onSuccess]);
+
+  const handleMutationError = useCallback((error: any) => {
+    toast({
+      title: "Greška",
+      description: error.message || "Došlo je do greške prilikom slanja porudžbine.",
+      variant: "destructive",
+    });
+  }, [toast]);
+
   const mutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      const response = await apiRequest('/api/admin/spare-parts-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Uspešno poslato",
-        description: "Porudžbina rezervnog dela je uspešno poslata.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['spare-parts'] });
-      setIsDialogOpen(false);
-      setSelectedBrand(null);
-      setDeviceModel('');
-      setProductCode('');
-      setApplianceCategory('');
-      setPartName('');
-      setQuantity(1);
-      setDescription('');
-      setWarrantyStatus('van garancije');
-      setUrgency('normal');
-      if (onSuccess) onSuccess();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Greška",
-        description: error.message || "Došlo je do greške prilikom slanja porudžbine.",
-        variant: "destructive",
-      });
-    }
+    mutationFn,
+    onSuccess: handleMutationSuccess,
+    onError: handleMutationError
   });
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
@@ -393,4 +416,7 @@ export function AdminSparePartsOrderingSimple({ serviceId, onSuccess }: Props) {
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+export const AdminSparePartsOrderingSimple = React.memo(AdminSparePartsOrderingSimpleComponent);

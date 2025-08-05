@@ -7075,23 +7075,8 @@ Admin panel - automatska porudžbina
       const partId = parseInt(req.params.id);
       const { serviceId, technicianId, quantity } = req.body;
       
-      console.log("🔧 PART ALLOCATION DEBUG:", { 
-        partId, 
-        requestBody: req.body, 
-        serviceId, 
-        technicianId, 
-        quantity 
-      });
-
       // Validate input
       if (!serviceId || !technicianId || !quantity || quantity <= 0) {
-        console.log("❌ VALIDATION FAILED:", {
-          serviceId: !!serviceId,
-          technicianId: !!technicianId,
-          quantity: !!quantity,
-          quantityValue: quantity,
-          quantityCheck: quantity <= 0
-        });
         return res.status(400).json({ 
           error: "Servis ID, serviser ID i količina su obavezni i količina mora biti pozitivna" 
         });

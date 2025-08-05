@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,21 +55,24 @@ interface Technician {
   active: boolean;
 }
 
-export function AvailablePartsManagement() {
+const AvailablePartsManagementComponent = () => {
   const [selectedPart, setSelectedPart] = useState<AvailablePart | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isAllocateDialogOpen, setIsAllocateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const form = useForm<AssignToTechnicianForm>({
+  // Memoize form configuration to prevent re-creation
+  const formConfig = useMemo(() => ({
     resolver: zodResolver(assignToTechnicianSchema),
     defaultValues: {
       technicianId: "",
       quantity: 1,
       assignmentNotes: "",
     },
-  });
+  }), []);
+
+  const form = useForm<AssignToTechnicianForm>(formConfig);
 
   // Dohvati dostupne delove sa real-time refresh
   const { data: availableParts, isLoading: partsLoading, refetch: refetchParts, error: partsError } = useQuery({
@@ -430,6 +433,8 @@ export function AvailablePartsManagement() {
       )}
     </div>
   );
-}
+};
 
+// Memoize the component to prevent unnecessary re-renders
+export const AvailablePartsManagement = React.memo(AvailablePartsManagementComponent);
 export default AvailablePartsManagement;
