@@ -55,7 +55,7 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
   // Stabilize query key and query function
   const serviceQueryKey = useMemo(() => {
     const targetId = debouncedServiceNumber || serviceId;
-    return targetId ? ['service-simple', targetId] : null;
+    return targetId ? ['service-simple', targetId] : ['service-simple', 'none'];
   }, [debouncedServiceNumber, serviceId]);
 
   const serviceQueryEnabled = useMemo(() => {
@@ -160,8 +160,17 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
 
 
 
-  // Brand Selection Component
-  const BrandSelection = () => (
+  // Memoize handlers to prevent re-creation
+  const handleBekoSelect = useCallback(() => {
+    setSelectedBrand('beko');
+  }, []);
+
+  const handleComplusSelect = useCallback(() => {
+    setSelectedBrand('complus');
+  }, []);
+
+  // Brand Selection Component - memoized
+  const BrandSelection = useMemo(() => (
     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
       <Label className="text-sm font-medium text-blue-900 mb-3 block">
         Brend aparata *
@@ -173,7 +182,7 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
               ? 'ring-2 ring-blue-500 bg-blue-100' 
               : 'hover:shadow-md hover:bg-gray-50'
           }`}
-          onClick={() => setSelectedBrand('beko')}
+          onClick={handleBekoSelect}
         >
           <CardHeader className="p-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -189,7 +198,7 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
               ? 'ring-2 ring-green-500 bg-green-100' 
               : 'hover:shadow-md hover:bg-gray-50'
           }`}
-          onClick={() => setSelectedBrand('complus')}
+          onClick={handleComplusSelect}
         >
           <CardHeader className="p-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -203,10 +212,10 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
         Email će biti poslat na: {selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : selectedBrand === 'complus' ? 'servis@complus.me' : 'odaberite brend'}
       </p>
     </div>
-  );
+  ), [selectedBrand, handleBekoSelect, handleComplusSelect]);
 
-  // Form Fields Component
-  const FormFields = () => (
+  // Form Fields Component - memoized
+  const FormFields = useMemo(() => (
     <>
       {!serviceId && (
         <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
@@ -349,14 +358,14 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
         />
       </div>
     </>
-  );
+  ), [serviceId, serviceNumber, setServiceNumber, serialNumber, setSerialNumber, serviceData, deviceModel, setDeviceModel, productCode, setProductCode, applianceCategory, setApplianceCategory, partName, setPartName, quantity, setQuantity, warrantyStatus, setWarrantyStatus, urgency, setUrgency, description, setDescription]);
 
   // If serviceId is provided, render just the form (for embedding in services.tsx)
   if (serviceId) {
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
-        <BrandSelection />
-        <FormFields />
+        {BrandSelection}
+        {FormFields}
         <div className="flex justify-end space-x-3 pt-4">
           <Button 
             type="submit" 
@@ -394,8 +403,8 @@ const AdminSparePartsOrderingSimpleComponent = ({ serviceId, onSuccess }: Props)
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <BrandSelection />
-          <FormFields />
+          {BrandSelection}
+          {FormFields}
           <div className="flex justify-end space-x-3 pt-4">
             <Button 
               type="button" 
