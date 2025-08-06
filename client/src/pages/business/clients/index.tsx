@@ -100,23 +100,53 @@ export default function BusinessClientsPage() {
   const updateClientMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: EditClientFormValues }) => {
       console.log("🔄 Business Partner - pokušavam ažuriranje klijenta:", { id, data });
+      console.log("🔄 Podaci koji se šalju:", JSON.stringify(data, null, 2));
       
-      const response = await apiRequest("PUT", `/api/business/clients/${id}`, data);
-      
-      console.log("📡 API Response status:", response.status);
-      console.log("📡 API Response headers:", response.headers);
-      
-      if (!response.ok) {
-        console.error("❌ Response status:", response.status);
-        console.error("❌ Response statusText:", response.statusText);
-        const errorData = await response.json().catch(() => null);
-        console.error("❌ Error data from API:", errorData);
-        throw new Error(errorData?.message || `Greška ${response.status}: ${response.statusText}`);
+      try {
+        const response = await apiRequest("PUT", `/api/business/clients/${id}`, data);
+        
+        console.log("📡 API Response status:", response.status);
+        console.log("📡 API Response statusText:", response.statusText);
+        console.log("📡 API Response ok:", response.ok);
+        
+        if (!response.ok) {
+          console.error("❌ Response status:", response.status);
+          console.error("❌ Response statusText:", response.statusText);
+          
+          // Pokušavam da dohvatim error response kao text prvo
+          const responseText = await response.text();
+          console.error("❌ Raw response text:", responseText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+            console.error("❌ Parsed error data:", errorData);
+          } catch (parseError) {
+            console.error("❌ JSON parse error:", parseError);
+            console.error("❌ Response is not valid JSON:", responseText);
+            throw new Error(`Server vrateo invalid response: ${responseText}`);
+          }
+          
+          throw new Error(errorData?.message || `Greška ${response.status}: ${response.statusText}`);
+        }
+        
+        const responseText = await response.text();
+        console.log("✅ Raw success response:", responseText);
+        
+        let result;
+        try {
+          result = JSON.parse(responseText);
+          console.log("✅ Parsed success response:", result);
+        } catch (parseError) {
+          console.error("❌ Success response JSON parse error:", parseError);
+          throw new Error(`Server vrateo invalid JSON: ${responseText}`);
+        }
+        
+        return result;
+      } catch (error) {
+        console.error("❌ Mutation error:", error);
+        throw error;
       }
-      
-      const result = await response.json();
-      console.log("✅ Uspešno ažuriran klijent:", result);
-      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/business/clients"] });
@@ -475,27 +505,8 @@ export default function BusinessClientsPage() {
                     Otkaži
                   </Button>
                   <Button
-                    type="button"
+                    type="submit"
                     disabled={updateClientMutation.isPending}
-                    onClick={async () => {
-                      console.log("🔥 Submit button clicked!");
-                      console.log("📊 Form errors:", editForm.formState.errors);
-                      console.log("📊 Form is valid:", editForm.formState.isValid);
-                      console.log("📊 Form dirty fields:", editForm.formState.dirtyFields);
-                      console.log("📊 Form values:", editForm.getValues());
-                      
-                      // Pozivam direktno validation i submit
-                      const isValid = await editForm.trigger();
-                      console.log("✅ Validation result:", isValid);
-                      
-                      if (isValid && editingClient) {
-                        const values = editForm.getValues();
-                        console.log("🚀 Pozivam updateClientMutation.mutate sa:", { id: editingClient.id, data: values });
-                        updateClientMutation.mutate({ id: editingClient.id, data: values });
-                      } else {
-                        console.error("❌ Form validation failed or no editing client");
-                      }
-                    }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
                   </Button>
