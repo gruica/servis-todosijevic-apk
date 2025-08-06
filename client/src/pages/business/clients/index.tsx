@@ -169,13 +169,14 @@ export default function BusinessClientsPage() {
     },
   });
 
-  // Filter clients based on search
-  const filteredClients = (clients as Client[]).filter((client: Client) =>
+  // Filter clients based on search  
+  const filteredClients = Array.isArray(clients) ? clients.filter((client: Client) =>
     client.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.includes(searchTerm) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.city.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
   );
 
   const handleEdit = (client: Client) => {
@@ -523,17 +524,23 @@ export default function BusinessClientsPage() {
                       console.log("🔴 Form values:", editForm.getValues());
                       console.log("🔴 editingClient:", editingClient);
                       
-                      // Force trigger form submission manually ako se automatski ne pokreće
+                      // Force direct submission bypassing form validation
                       e.preventDefault();
-                      const isValid = await editForm.trigger();
-                      console.log("🔴 Manual trigger result:", isValid);
-                      if (isValid) {
-                        const values = editForm.getValues();
-                        console.log("🔴 Manual submit with values:", values);
-                        onEditSubmit(values);
-                      } else {
-                        console.log("🔴 Form is not valid:", editForm.formState.errors);
+                      console.log("🔴 DIREKTAN POZIV MUTATION-a!");
+                      
+                      if (!editingClient) {
+                        console.error("🔴 Nema editingClient-a!");
+                        return;
                       }
+                      
+                      const formValues = editForm.getValues();
+                      console.log("🔴 Form values:", formValues);
+                      
+                      // Direct mutation call
+                      updateClientMutation.mutate({ 
+                        id: editingClient.id, 
+                        data: formValues 
+                      });
                     }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
