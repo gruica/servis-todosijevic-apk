@@ -367,7 +367,11 @@ export default function BusinessClientsPage() {
             </DialogHeader>
             
             <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <form onSubmit={(e) => {
+                console.log("🎯 Native form onSubmit triggered");
+                console.log("📝 Event:", e);
+                editForm.handleSubmit(onEditSubmit)(e);
+              }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={editForm.control}
