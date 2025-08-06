@@ -167,7 +167,7 @@ export default function BusinessClientsPage() {
   });
 
   // Filter clients based on search
-  const filteredClients = clients.filter((client: Client) =>
+  const filteredClients = (clients as Client[]).filter((client: Client) =>
     client.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.includes(searchTerm) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,15 +197,16 @@ export default function BusinessClientsPage() {
   };
 
   const onEditSubmit = (values: EditClientFormValues) => {
-    console.log("🟢 Form submit pokrenut - Business Partner edit client");
+    console.log("🟢🟢🟢 onEditSubmit FUNCTION CALLED! 🟢🟢🟢");
     console.log("📝 Form values:", values);
     console.log("👤 Editing client:", editingClient);
+    console.log("🔧 Mutation isPending:", updateClientMutation.isPending);
     
     if (editingClient) {
-      console.log("🚀 Pozivam updateClientMutation.mutate");
+      console.log("🚀🚀🚀 POZIVAM updateClientMutation.mutate 🚀🚀🚀");
       updateClientMutation.mutate({ id: editingClient.id, data: values });
     } else {
-      console.error("❌ Nema editingClient objekta!");
+      console.error("❌❌❌ NEMA editingClient objekta! ❌❌❌");
     }
   };
 
@@ -512,11 +513,24 @@ export default function BusinessClientsPage() {
                   <Button
                     type="submit"
                     disabled={updateClientMutation.isPending}
-                    onClick={(e) => {
-                      console.log("🟢 SUBMIT BUTTON CLICKED!");
-                      console.log("🟢 Form errors:", editForm.formState.errors);
-                      console.log("🟢 Form is valid:", editForm.formState.isValid);
-                      console.log("🟢 Form values:", editForm.getValues());
+                    onClick={async (e) => {
+                      console.log("🔴🔴🔴 SUBMIT BUTTON CLICKED! 🔴🔴🔴");
+                      console.log("🔴 Form errors:", editForm.formState.errors);
+                      console.log("🔴 Form is valid:", editForm.formState.isValid);
+                      console.log("🔴 Form values:", editForm.getValues());
+                      console.log("🔴 editingClient:", editingClient);
+                      
+                      // Force trigger form submission manually ako se automatski ne pokreće
+                      e.preventDefault();
+                      const isValid = await editForm.trigger();
+                      console.log("🔴 Manual trigger result:", isValid);
+                      if (isValid) {
+                        const values = editForm.getValues();
+                        console.log("🔴 Manual submit with values:", values);
+                        onEditSubmit(values);
+                      } else {
+                        console.log("🔴 Form is not valid:", editForm.formState.errors);
+                      }
                     }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
