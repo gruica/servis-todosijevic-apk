@@ -107,9 +107,11 @@ export default function BusinessClientsPage() {
       console.log("📡 API Response headers:", response.headers);
       
       if (!response.ok) {
+        console.error("❌ Response status:", response.status);
+        console.error("❌ Response statusText:", response.statusText);
         const errorData = await response.json().catch(() => null);
-        console.error("❌ Greška pri ažuriranju klijenta:", errorData);
-        throw new Error(errorData?.message || "Greška pri ažuriranju klijenta");
+        console.error("❌ Error data from API:", errorData);
+        throw new Error(errorData?.message || `Greška ${response.status}: ${response.statusText}`);
       }
       
       const result = await response.json();
