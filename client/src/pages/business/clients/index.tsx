@@ -162,8 +162,15 @@ export default function BusinessClientsPage() {
   };
 
   const onEditSubmit = (values: EditClientFormValues) => {
+    console.log("🟢 Form submit pokrenut - Business Partner edit client");
+    console.log("📝 Form values:", values);
+    console.log("👤 Editing client:", editingClient);
+    
     if (editingClient) {
+      console.log("🚀 Pozivam updateClientMutation.mutate");
       updateClientMutation.mutate({ id: editingClient.id, data: values });
+    } else {
+      console.error("❌ Nema editingClient objekta!");
     }
   };
 
@@ -464,6 +471,12 @@ export default function BusinessClientsPage() {
                   <Button
                     type="submit"
                     disabled={updateClientMutation.isPending}
+                    onClick={() => {
+                      console.log("🔥 Submit button clicked!");
+                      console.log("📊 Form errors:", editForm.formState.errors);
+                      console.log("📊 Form is valid:", editForm.formState.isValid);
+                      console.log("📊 Form dirty fields:", editForm.formState.dirtyFields);
+                    }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
                   </Button>
