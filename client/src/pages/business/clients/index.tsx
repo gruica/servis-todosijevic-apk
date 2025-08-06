@@ -402,13 +402,13 @@ export default function BusinessClientsPage() {
             </DialogHeader>
             
             <Form {...editForm}>
-              <form onSubmit={(e) => {
+              <form onSubmit={editForm.handleSubmit((values) => {
                 console.log("🎯 FORM SUBMIT EVENT TRIGGERED!");
-                console.log("📊 Event object:", e);
                 console.log("📋 Form valid:", editForm.formState.isValid);
                 console.log("📋 Form errors:", editForm.formState.errors);
-                return editForm.handleSubmit(onEditSubmit)(e);
-              }} className="space-y-4">
+                console.log("📝 Form values from handleSubmit:", values);
+                onEditSubmit(values);
+              })} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={editForm.control}
