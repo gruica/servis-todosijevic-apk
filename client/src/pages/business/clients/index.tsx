@@ -103,7 +103,10 @@ export default function BusinessClientsPage() {
       console.log("🔄 Podaci koji se šalju:", JSON.stringify(data, null, 2));
       
       try {
-        const response = await apiRequestWithAuth("PUT", `/api/business/clients/${id}`, data);
+        const response = await apiRequest(`/api/business/clients/${id}`, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
         
         console.log("📡 API Response status:", response.status);
         console.log("📡 API Response statusText:", response.statusText);
