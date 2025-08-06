@@ -57,7 +57,7 @@ import BusinessMessages from "@/pages/business/messages";
 import NewBusinessServiceRequest from "@/pages/business/services/new";
 import EditBusinessService from "@/pages/business/services/edit.tsx";
 import NewBusinessClient from "@/pages/business/clients/new";
-import BusinessClients from "@/pages/business/clients";
+import BusinessClients from "@/pages/business/clients/index-simple";
 import BusinessComplus from "@/pages/business/complus";
 
 // Import the new HomePage
