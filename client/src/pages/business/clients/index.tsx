@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, apiRequestWithAuth } from "@/lib/queryClient";
 import BusinessLayout from "@/components/layout/business-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,7 +103,7 @@ export default function BusinessClientsPage() {
       console.log("🔄 Podaci koji se šalju:", JSON.stringify(data, null, 2));
       
       try {
-        const response = await apiRequest("PUT", `/api/business/clients/${id}`, data);
+        const response = await apiRequestWithAuth("PUT", `/api/business/clients/${id}`, data);
         
         console.log("📡 API Response status:", response.status);
         console.log("📡 API Response statusText:", response.statusText);
