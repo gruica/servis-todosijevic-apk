@@ -400,9 +400,11 @@ export default function BusinessClientsPage() {
             
             <Form {...editForm}>
               <form onSubmit={(e) => {
-                console.log("🎯 Native form onSubmit triggered");
-                console.log("📝 Event:", e);
-                editForm.handleSubmit(onEditSubmit)(e);
+                console.log("🎯 FORM SUBMIT EVENT TRIGGERED!");
+                console.log("📊 Event object:", e);
+                console.log("📋 Form valid:", editForm.formState.isValid);
+                console.log("📋 Form errors:", editForm.formState.errors);
+                return editForm.handleSubmit(onEditSubmit)(e);
               }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
