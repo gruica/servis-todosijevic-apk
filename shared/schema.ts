@@ -91,9 +91,10 @@ export const insertClientSchema = createInsertSchema(clients).pick({
   fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime je predugačko"),
   email: z.string().email("Unesite validnu email adresu").or(z.literal("")).optional(),
   phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
-    .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-"),
+    .regex(/^[+]?[\d\s()/-]{6,25}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()/-"),
   address: z.string().min(3, "Adresa mora imati najmanje 3 karaktera").or(z.literal("")).optional(),
   city: z.string().min(2, "Grad mora imati najmanje 2 karaktera").or(z.literal("")).optional(),
+  notes: z.string().optional(),
 });
 
 export type InsertClient = z.infer<typeof insertClientSchema>;
