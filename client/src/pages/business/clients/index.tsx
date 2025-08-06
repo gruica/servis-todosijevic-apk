@@ -473,13 +473,26 @@ export default function BusinessClientsPage() {
                     Otkaži
                   </Button>
                   <Button
-                    type="submit"
+                    type="button"
                     disabled={updateClientMutation.isPending}
-                    onClick={() => {
+                    onClick={async () => {
                       console.log("🔥 Submit button clicked!");
                       console.log("📊 Form errors:", editForm.formState.errors);
                       console.log("📊 Form is valid:", editForm.formState.isValid);
                       console.log("📊 Form dirty fields:", editForm.formState.dirtyFields);
+                      console.log("📊 Form values:", editForm.getValues());
+                      
+                      // Pozivam direktno validation i submit
+                      const isValid = await editForm.trigger();
+                      console.log("✅ Validation result:", isValid);
+                      
+                      if (isValid && editingClient) {
+                        const values = editForm.getValues();
+                        console.log("🚀 Pozivam updateClientMutation.mutate sa:", { id: editingClient.id, data: values });
+                        updateClientMutation.mutate({ id: editingClient.id, data: values });
+                      } else {
+                        console.error("❌ Form validation failed or no editing client");
+                      }
                     }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
