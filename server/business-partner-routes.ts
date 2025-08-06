@@ -479,7 +479,14 @@ export function registerBusinessPartnerRoutes(app: Express) {
       const clientId = parseInt(req.params.id);
       const partnerId = req.user!.id;
       const userRole = req.user!.role;
-      const validatedData = insertClientSchema.parse(req.body);
+      
+      // Kreiram schema za update klijenta koji može da prima notes polje
+      const updateClientSchema = insertClientSchema.extend({
+        notes: z.string().optional()
+      });
+      
+      console.log("📝 Podaci iz frontend-a:", req.body);
+      const validatedData = updateClientSchema.parse(req.body);
       
       // Proveravamo da li klijent postoji
       const existingClient = await storage.getClient(clientId);
