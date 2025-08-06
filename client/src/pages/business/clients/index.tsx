@@ -99,14 +99,22 @@ export default function BusinessClientsPage() {
   // Update mutation
   const updateClientMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: EditClientFormValues }) => {
+      console.log("🔄 Business Partner - pokušavam ažuriranje klijenta:", { id, data });
+      
       const response = await apiRequest("PUT", `/api/business/clients/${id}`, data);
+      
+      console.log("📡 API Response status:", response.status);
+      console.log("📡 API Response headers:", response.headers);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        console.error("❌ Greška pri ažuriranju klijenta:", errorData);
         throw new Error(errorData?.message || "Greška pri ažuriranju klijenta");
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log("✅ Uspešno ažuriran klijent:", result);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/business/clients"] });
