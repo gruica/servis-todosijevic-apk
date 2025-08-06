@@ -176,15 +176,18 @@ export default function BusinessClientsPage() {
   );
 
   const handleEdit = (client: Client) => {
+    console.log("🔧 Opening edit dialog for client:", client);
     setEditingClient(client);
-    editForm.reset({
+    const formData = {
       fullName: client.fullName,
       phone: client.phone,
       email: client.email || "",
       address: client.address,
       city: client.city,
       notes: client.notes || ""
-    });
+    };
+    console.log("🔧 Setting form data:", formData);
+    editForm.reset(formData);
     setIsEditDialogOpen(true);
   };
 
@@ -509,6 +512,12 @@ export default function BusinessClientsPage() {
                   <Button
                     type="submit"
                     disabled={updateClientMutation.isPending}
+                    onClick={(e) => {
+                      console.log("🟢 SUBMIT BUTTON CLICKED!");
+                      console.log("🟢 Form errors:", editForm.formState.errors);
+                      console.log("🟢 Form is valid:", editForm.formState.isValid);
+                      console.log("🟢 Form values:", editForm.getValues());
+                    }}
                   >
                     {updateClientMutation.isPending ? "Čuvam..." : "Sačuvaj izmene"}
                   </Button>
