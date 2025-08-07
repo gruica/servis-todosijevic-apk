@@ -82,13 +82,13 @@ export function SparePartsOrderForm({
       };
       
       console.log("Request body za backend:", requestBody);
-      console.log("JWT token:", localStorage.getItem('jwt_token')?.substring(0, 50) + '...');
+      console.log("JWT token:", localStorage.getItem('auth_token')?.substring(0, 50) + '...');
       
       const response = await fetch('/api/spare-parts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify(requestBody)
       });

@@ -236,7 +236,7 @@ function SparePartsCatalog() {
       return fetch('/api/admin/spare-parts-catalog/import-csv', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: formData
       }).then(res => res.json());
@@ -333,7 +333,7 @@ function SparePartsCatalog() {
     try {
       const response = await fetch('/api/admin/spare-parts-catalog/export-csv', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       });
       

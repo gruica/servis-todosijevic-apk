@@ -59,7 +59,7 @@ export default function AllocatePartDialog({ open, onOpenChange, part }: Allocat
       // Fetch active services
       const servicesResponse = await fetch('/api/admin/services', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       });
       
@@ -74,7 +74,7 @@ export default function AllocatePartDialog({ open, onOpenChange, part }: Allocat
       // Fetch technicians
       const techniciansResponse = await fetch('/api/technicians', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       });
       
