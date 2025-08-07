@@ -49,7 +49,7 @@ Preferred communication style: Simple, everyday language.
 - **Service Management**: Full service lifecycle tracking (pending, assigned, scheduled, in_progress, completed, cancelled, customer_refused_repair), technician assignment, client-appliance linkage, and automated status updates. Includes specific handling for customer refusal with mandatory reason and email notifications.
 - **Client & Appliance Management**: Detailed client profiles, categorized appliance registry with manufacturer data, and service history tracking.
 - **Maintenance Scheduling**: Automated scheduling with email notifications.
-- **Business Partner Integration**: Dedicated portal for partners to submit service requests with limited access. Enhanced with comprehensive service completion details including work performed, spare parts used/removed, technician contact information, service timeline, warranty status, and device pickup information. **Client editing functionality fully operational** with simplified component architecture (August 2025).
+- **Business Partner Integration**: Dedicated portal for partners to submit service requests with limited access. Enhanced with comprehensive service completion details including work performed, spare parts used/removed, technician contact information, service timeline, warranty status, and device pickup information. **Client editing functionality fully operational** with simplified component architecture (August 2025). **Tehnolux Podgorica** added as official Midea appliances representative with full system access (August 2025).
 - **Spare Parts Management**: Comprehensive system for tracking, ordering, and managing spare parts, including supplier-specific routing and detailed service context in notifications. Brand selection (Beko/Complus) is required for all spare parts orders with automatic email routing to appropriate suppliers. **FULLY FUNCTIONAL** - Admin panel spare parts ordering stabilized with React.memo optimization, backend endpoint `/api/admin/spare-parts-order` operational with ES module email integration.
 - **Notifications**: In-app and SMS notifications for all key events, with role-specific templates and comprehensive tracking. Email notifications for clients and business partners, with specific Beko warranty handling.
 - **Data Export**: CSV export functionality for various database tables.
@@ -65,4 +65,8 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Passport.js, scrypt.
 - **File Uploads**: Multer.
 - **Data Export/Import**: XLSX (currently deactivated).
+
+## Business Partners
+- **Tehnoplus d.o.o.** (Podgorica) - Contact: Robert Ivezić (robert.ivezic@tehnoplus.me, 068039039)
+- **Tehnolux Podgorica d.o.o.** (Podgorica) - Midea representative - Contact: Jasmin (info@tehnolux.me, +38269040401) - Added August 2025
 ```
