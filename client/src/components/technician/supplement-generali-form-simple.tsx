@@ -107,11 +107,9 @@ export function SupplementGeneraliFormSimple({
   });
 
   const onSubmit = async (data: SupplementGeneraliService) => {
-    console.log("🔄 Počinje slanje Generali dopune:", data);
     setIsSubmitting(true);
     try {
       await supplementMutation.mutateAsync(data);
-      console.log("✅ Uspešno dopunjen Generali servis");
     } catch (error) {
       console.error("❌ Greška pri slanju dopune:", error);
     } finally {
@@ -121,16 +119,13 @@ export function SupplementGeneraliFormSimple({
 
   // Handle OCR scan results with advanced processing
   const handleScanResult = (scannedData: ScannedData) => {
-    console.log('📱 Napredni OCR rezultat dobijen:', scannedData);
     
     // Auto-populate form fields with scanned data
     if (scannedData.model && scannedData.model.length >= 2) {
       form.setValue("model", scannedData.model);
-      console.log('✅ Model automatski popunjen:', scannedData.model);
     }
     if (scannedData.serialNumber && scannedData.serialNumber.length >= 4) {
       form.setValue("serialNumber", scannedData.serialNumber);
-      console.log('✅ Serijski broj automatski popunjen:', scannedData.serialNumber);
     }
     
     // Add additional information to notes if available

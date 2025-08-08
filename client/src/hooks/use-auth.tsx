@@ -61,17 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnMount: true,
   });
   
-  // Debug auth stanje
-  console.log("🔐 Auth Debug:", { 
-    user: user ? `${user.username} (${user.role})` : null, 
-    isLoading, 
-    error: error?.message,
-    hasUser: !!user 
-  });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      console.log("JWT Login attempt for:", credentials.username);
       
       const res = await fetch("/api/jwt-login", {
         method: "POST",
@@ -87,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: { user: SelectUser; token: string }) => {
-      console.log("JWT Login successful for:", response.user.username);
       localStorage.setItem('auth_token', response.token);
       queryClient.setQueryData(["/api/jwt-user"], response.user);
       refetch();
@@ -97,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
-      console.error("Login mutation error:", error);
       // Proveri da li je greška o neverifikovanom nalogu
       const errorMessage = error.message || "";
       const isVerificationError = errorMessage.includes("nije verifikovan") || 
@@ -116,9 +106,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Registration failed" }));
+        throw new Error(errorData.error || "Registration failed");
+      }
       const data = await res.json();
-      console.log("Odgovor nakon registracije:", data);
       return data;
     },
     onSuccess: (data: any) => {
@@ -139,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
-      console.error("Greška pri registraciji:", error);
       toast({
         title: "Greška pri registraciji",
         description: error.message || "Korisničko ime već postoji",
@@ -166,7 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const clearAuthUser = () => {
-    console.log("JWT: Čišćenje korisničkih podataka");
     localStorage.removeItem('auth_token');
     localStorage.removeItem("lastAuthRedirect");
     queryClient.setQueryData(["/api/jwt-user"], null);

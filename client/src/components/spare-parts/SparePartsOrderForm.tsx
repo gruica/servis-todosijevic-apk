@@ -51,13 +51,6 @@ export function SparePartsOrderForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  console.log("🔧 SparePartsOrderForm RENDERING:", {
-    isOpen,
-    serviceId,
-    clientName,
-    applianceModel,
-    applianceCategory
-  });
   
   const [formData, setFormData] = useState({
     partName: '',
@@ -70,8 +63,6 @@ export function SparePartsOrderForm({
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      console.log("🔧 SparePartsOrderForm - mutationFn pozvan");
-      console.log("Original orderData:", orderData);
       
       // Map 'notes' to 'description' for backend compatibility
       const { notes, ...restData } = orderData;
@@ -81,8 +72,6 @@ export function SparePartsOrderForm({
         serviceId
       };
       
-      console.log("Request body za backend:", requestBody);
-      console.log("JWT token:", localStorage.getItem('auth_token')?.substring(0, 50) + '...');
       
       const response = await fetch('/api/spare-parts', {
         method: 'POST',
@@ -93,17 +82,13 @@ export function SparePartsOrderForm({
         body: JSON.stringify(requestBody)
       });
       
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers);
       
       if (!response.ok) {
         const errorData = await response.text();
-        console.error("❌ Error response:", errorData);
         throw new Error(`HTTP ${response.status}: ${errorData}`);
       }
       
       const result = await response.json();
-      console.log("✅ Success response:", result);
       return result;
     },
     onSuccess: () => {
@@ -122,7 +107,6 @@ export function SparePartsOrderForm({
         notes: ''
       });
       
-      setIsOpen(false);
       onClose?.(); // Pozovi spoljašnji callback
       
       // Invalidate related queries
@@ -144,10 +128,8 @@ export function SparePartsOrderForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("🔧 handleSubmit pozvan, formData:", formData);
     
     if (!formData.partName.trim()) {
-      console.log("❌ Validation failed: partName missing");
       toast({
         title: 'Greška',
         description: 'Molimo unesite naziv rezervnog dela',
@@ -157,7 +139,6 @@ export function SparePartsOrderForm({
     }
 
     if (!formData.warrantyStatus) {
-      console.log("❌ Validation failed: warrantyStatus missing");
       toast({
         title: 'Greška',
         description: 'Molimo izaberite warranty status (u garanciji ili van garancije)',
@@ -167,7 +148,6 @@ export function SparePartsOrderForm({
     }
 
     if (!serviceId) {
-      console.log("❌ Validation failed: missing serviceId");
       toast({
         title: 'Greška',
         description: 'Nedostaje ID servisa',
@@ -176,7 +156,6 @@ export function SparePartsOrderForm({
       return;
     }
 
-    console.log("✅ Validation passed, submitting...");
     createOrderMutation.mutate({
       ...formData,
       serviceId,
@@ -185,12 +164,10 @@ export function SparePartsOrderForm({
   };
 
   const handleInputChange = (field: string, value: string | number) => {
-    console.log(`🔧 handleInputChange: ${field} = ${value}`);
     const newFormData = {
       ...formData,
       [field]: value
     };
-    console.log("🔧 New formData:", newFormData);
     setFormData(newFormData);
   };
 
@@ -199,22 +176,9 @@ export function SparePartsOrderForm({
   // Debug: Loguj trenutno stanje forme i razlog zašto se dugme ne aktivira
   const isButtonDisabled = createOrderMutation.isPending || !formData.partName.trim() || !formData.warrantyStatus;
   
-  console.log("🔧 SparePartsOrderForm DEBUG:", {
-    isOpen,
-    serviceId,
-    formData,
-    isButtonDisabled,
-    partNameValid: !!formData.partName.trim(),
-    warrantyStatusValid: !!formData.warrantyStatus,
-    isPending: createOrderMutation.isPending
-  });
-
-  // ALWAY RENDER FOR TESTING!
-  console.log("🔧 SparePartsOrderForm FORCING RENDER! isOpen =", isOpen);
 
   return (
     <Dialog open={true} onOpenChange={(open) => {
-      console.log("🔧 Dialog onOpenChange called with:", open);
       if (!open) {
         onClose?.();
         onCancel?.();
@@ -241,7 +205,6 @@ export function SparePartsOrderForm({
                     placeholder="Npr. Kompresor, Termostat, Filter..."
                     value={formData.partName}
                     onChange={(e) => {
-                      console.log("🔧 Part name input changed to:", e.target.value);
                       handleInputChange('partName', e.target.value);
                     }}
                     required
