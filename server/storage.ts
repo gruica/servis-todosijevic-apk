@@ -24,6 +24,10 @@ import {
   Supplier, InsertSupplier,
   SupplierOrder, InsertSupplierOrder,
   PartsCatalog, InsertPartsCatalog,
+  // AI Prediktivno održavanje
+  MaintenancePatterns, InsertMaintenancePatterns,
+  PredictiveInsights, InsertPredictiveInsights,
+  AiAnalysisResults, InsertAiAnalysisResults,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
   appliances, services, maintenanceSchedules, maintenanceAlerts,
@@ -31,7 +35,9 @@ import {
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
   sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
   webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports,
-  suppliers, supplierOrders, partsCatalog
+  suppliers, supplierOrders, partsCatalog,
+  // AI Prediktivno održavanje tabele
+  maintenancePatterns, predictiveInsights, aiAnalysisResults
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -285,6 +291,34 @@ export interface IStorage {
     categoriesCount: Record<string, number>;
   }>;
   bulkInsertPartsToCatalog(parts: InsertPartsCatalog[]): Promise<number>;
+
+  // AI Prediktivno održavanje metode
+  getAllMaintenancePatterns(): Promise<MaintenancePatterns[]>;
+  getMaintenancePattern(id: number): Promise<MaintenancePatterns | undefined>;
+  getMaintenancePatternsByCategory(categoryId: number): Promise<MaintenancePatterns[]>;
+  getMaintenancePatternsByManufacturer(manufacturerId: number): Promise<MaintenancePatterns[]>;
+  createMaintenancePattern(pattern: InsertMaintenancePatterns): Promise<MaintenancePatterns>;
+  updateMaintenancePattern(id: number, pattern: Partial<MaintenancePatterns>): Promise<MaintenancePatterns | undefined>;
+  deleteMaintenancePattern(id: number): Promise<boolean>;
+  
+  getAllPredictiveInsights(): Promise<PredictiveInsights[]>;
+  getPredictiveInsight(id: number): Promise<PredictiveInsights | undefined>;
+  getPredictiveInsightsByAppliance(applianceId: number): Promise<PredictiveInsights[]>;
+  getPredictiveInsightsByClient(clientId: number): Promise<PredictiveInsights[]>;
+  getActivePredictiveInsights(): Promise<PredictiveInsights[]>;
+  getCriticalRiskInsights(): Promise<PredictiveInsights[]>;
+  createPredictiveInsight(insight: InsertPredictiveInsights): Promise<PredictiveInsights>;
+  updatePredictiveInsight(id: number, insight: Partial<PredictiveInsights>): Promise<PredictiveInsights | undefined>;
+  deletePredictiveInsight(id: number): Promise<boolean>;
+  
+  getAllAiAnalysisResults(): Promise<AiAnalysisResults[]>;
+  getAiAnalysisResult(id: number): Promise<AiAnalysisResults | undefined>;
+  getAiAnalysisResultsByAppliance(applianceId: number): Promise<AiAnalysisResults[]>;
+  getAiAnalysisResultsByType(analysisType: string): Promise<AiAnalysisResults[]>;
+  getSuccessfulAiAnalysisResults(): Promise<AiAnalysisResults[]>;
+  createAiAnalysisResult(result: InsertAiAnalysisResults): Promise<AiAnalysisResults>;
+  updateAiAnalysisResult(id: number, result: Partial<AiAnalysisResults>): Promise<AiAnalysisResults | undefined>;
+  deleteAiAnalysisResult(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

@@ -74,6 +74,7 @@ import SMSBulkPage from "@/pages/admin/sms-bulk";
 import ComplusBillingPage from "@/pages/admin/complus-billing";
 import BusinessPartnersAdminPageFixed from "@/pages/admin/business-partners-fixed";
 import ServisKomerc from "@/pages/admin/servis-komerc";
+import AIPredictiveMaintenancePage from "@/pages/admin/ai-predictive-maintenance";
 import ComplusDashboard from "@/pages/complus";
 import ComplusAuthPage from "@/pages/complus-auth";
 
@@ -132,6 +133,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/servis-komerc" component={ServisKomerc} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/ai-predictive-maintenance" component={AIPredictiveMaintenancePage} allowedRoles={["admin"]} />
       
       {/* Com Plus nezavisan administrativni panel */}
       <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin"]} />

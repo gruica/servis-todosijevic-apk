@@ -26,6 +26,7 @@ import { createSMSMobileAPIRoutes } from './sms-mobile-api-routes';
 import { setupWebScrapingRoutes } from './web-scraping-routes';
 import { ServisKomercCronService } from './servis-komerc-cron-service.js';
 import { ServisKomercNotificationService } from './servis-komerc-notification-service.js';
+import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 // SMS mobile functionality has been completely removed
 
 // Mapiranje status kodova u opisne nazive statusa
@@ -11995,6 +11996,311 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     } catch (error) {
       console.error('Greška pri bulk import-u delova:', error);
       res.status(500).json({ error: 'Greška pri bulk import-u delova' });
+    }
+  });
+
+  // ===============================
+  // AI PREDIKTIVNO ODRŽAVANJE RUTE
+  // ===============================
+
+  // Get all predictive insights
+  app.get("/api/admin/ai-predictive/insights", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      console.log('[AI PREDICTIVE] Dohvatanje svih prediktivnih uvida');
+      
+      // Za sada vraćamo mock podatke dok ne implementiramo bazu potpuno
+      const mockInsights = [
+        {
+          id: 1,
+          applianceId: 1,
+          clientId: 1,
+          applianceName: "Bosch frižider WAE123",
+          clientName: "Marko Petric",
+          riskLevel: "high",
+          riskScore: 78,
+          predictedMaintenanceDate: "2025-02-15",
+          predictedFailures: ["Kompjutor hlađenja", "Termostat"],
+          recommendedActions: ["Hitno zakazati pregled", "Proveriti sistem hlađenja"],
+          estimatedCost: 8500,
+          confidenceLevel: 85,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        },
+        {
+          id: 2,
+          applianceId: 2,
+          clientId: 2,
+          applianceName: "Samsung veš mašina WF123",
+          clientName: "Ana Jovančić",
+          riskLevel: "medium",
+          riskScore: 45,
+          predictedMaintenanceDate: "2025-03-01",
+          predictedFailures: ["Pumpa za vodu"],
+          recommendedActions: ["Zakazati rutinski pregled"],
+          estimatedCost: 4000,
+          confidenceLevel: 72,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        },
+        {
+          id: 3,
+          applianceId: 3,
+          clientId: 3,
+          applianceName: "Gorenje šporet EC123",
+          clientName: "Stefan Nikolić",
+          riskLevel: "critical",
+          riskScore: 92,
+          predictedMaintenanceDate: "2025-01-25",
+          predictedFailures: ["Grejač rerne", "Kontrolna elektronika"],
+          recommendedActions: ["HITNO: Zakazati servis u narednih 7 dana", "Pripremiti rezervne delove"],
+          estimatedCost: 12000,
+          confidenceLevel: 94,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        }
+      ];
+      
+      res.json(mockInsights);
+    } catch (error) {
+      console.error('Greška pri dohvatanju prediktivnih uvida:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju prediktivnih uvida' });
+    }
+  });
+
+  // Get maintenance patterns
+  app.get("/api/admin/ai-predictive/patterns", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      console.log('[AI PREDICTIVE] Dohvatanje obrazaca održavanja');
+      
+      const mockPatterns = [
+        {
+          id: 1,
+          applianceCategoryId: 1,
+          manufacturerId: 1,
+          categoryName: "Frižider",
+          manufacturerName: "Bosch",
+          averageServiceInterval: 180,
+          commonFailurePoints: ["Kompjutor hlađenja", "Termostat", "Kondenzator"],
+          confidenceScore: "87",
+          lastAnalysis: new Date().toISOString()
+        },
+        {
+          id: 2,
+          applianceCategoryId: 2,
+          manufacturerId: 2,
+          categoryName: "Veš mašina",
+          manufacturerName: "Samsung",
+          averageServiceInterval: 270,
+          commonFailurePoints: ["Pumpa za vodu", "Ležajevi bubnja", "Grejač"],
+          confidenceScore: "76",
+          lastAnalysis: new Date().toISOString()
+        },
+        {
+          id: 3,
+          applianceCategoryId: 3,
+          manufacturerId: 3,
+          categoryName: "Šporet",
+          manufacturerName: "Gorenje",
+          averageServiceInterval: 365,
+          commonFailurePoints: ["Grejač rerne", "Kontrolna elektronika", "Ventilator"],
+          confidenceScore: "82",
+          lastAnalysis: new Date().toISOString()
+        }
+      ];
+      
+      res.json(mockPatterns);
+    } catch (error) {
+      console.error('Greška pri dohvatanju obrazaca održavanja:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju obrazaca održavanja' });
+    }
+  });
+
+  // Get AI analysis results
+  app.get("/api/admin/ai-predictive/analysis-results", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      console.log('[AI PREDICTIVE] Dohvatanje rezultata AI analize');
+      
+      const mockResults = [
+        {
+          id: 1,
+          analysisType: "predictive_maintenance",
+          applianceId: 1,
+          clientId: 1,
+          insights: [
+            "AI analiza predviđa potrebu za održavanje na osnovu istorijskih podataka",
+            "Confidence level: 85%",
+            "Preporučuje se proaktivno održavanje"
+          ],
+          recommendations: [
+            "Zakazati preventivni pregled u narednih 30 dana",
+            "Proveriti sistem hlađenja",
+            "Pripremiti rezervne delove"
+          ],
+          accuracy: "85",
+          processingTime: 1200,
+          isSuccessful: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          analysisType: "failure_analysis",
+          applianceId: 2,
+          clientId: 2,
+          insights: [
+            "Detektovan mogući kvar tipa: pump_failure",
+            "Verovatnoća: 70%",
+            "Vremenski okvir: 3-6 meseci"
+          ],
+          recommendations: [
+            "Hitno zakazati tehnički pregled",
+            "Pripremiti rezervne delove",
+            "Razmotriti preventivnu zamenu"
+          ],
+          accuracy: "70",
+          processingTime: 950,
+          isSuccessful: true,
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+      
+      res.json(mockResults);
+    } catch (error) {
+      console.error('Greška pri dohvatanju rezultata AI analize:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju rezultata AI analize' });
+    }
+  });
+
+  // Get dashboard statistics
+  app.get("/api/admin/ai-predictive/stats", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      console.log('[AI PREDICTIVE] Dohvatanje dashboard statistika');
+      
+      const mockStats = {
+        criticalRisks: 3,
+        activeInsights: 15,
+        averageAccuracy: 82,
+        potentialSavings: 45000
+      };
+      
+      res.json(mockStats);
+    } catch (error) {
+      console.error('Greška pri dohvatanju statistika:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju statistika' });
+    }
+  });
+
+  // Run AI analysis
+  app.post("/api/admin/ai-predictive/run-analysis", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const { type, applianceId } = req.body;
+      console.log(`[AI PREDICTIVE] Pokretanje ${type} analize${applianceId ? ` za uređaj ${applianceId}` : ''}`);
+      
+      // Simulacija AI analize
+      const analysisResult = await aiPredictiveMaintenanceService.processAIAnalysis(
+        type || 'predictive_maintenance',
+        applianceId || 1,
+        1, // clientId
+        { 
+          serviceHistory: [],
+          analysisParameters: {
+            timeFrame: '12_months',
+            includeSeasonalFactors: true,
+            riskThreshold: 0.5
+          }
+        }
+      );
+      
+      res.json({
+        success: true,
+        analysisId: analysisResult.id,
+        message: 'AI analiza je uspešno pokrenuta',
+        estimatedCompletionTime: '2-5 minuta'
+      });
+    } catch (error) {
+      console.error('Greška pri pokretanju AI analize:', error);
+      res.status(500).json({ error: 'Greška pri pokretanju AI analize' });
+    }
+  });
+
+  // Generate predictive insights for specific appliance
+  app.post("/api/admin/ai-predictive/generate-insights/:applianceId", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const applianceId = parseInt(req.params.applianceId);
+      const { clientId, forceRefresh } = req.body;
+      
+      console.log(`[AI PREDICTIVE] Generisanje uvida za uređaj ${applianceId}`);
+      
+      // Dohvatanje istorije servisa za uređaj
+      const services = await storage.getServicesByAppliance(applianceId);
+      const serviceHistory = services.map(service => ({
+        serviceId: service.id,
+        applianceId: service.applianceId,
+        clientId: service.clientId,
+        serviceDate: new Date(service.createdAt),
+        issueType: service.description,
+        resolutionTime: 1, // days - potrebno je kalkulacija na osnovu datuma
+        cost: parseFloat(service.cost || '0'),
+        partsUsed: service.usedParts ? JSON.parse(service.usedParts) : [],
+        seasonalFactor: 'leto' as const, // treba implementirati kalkulaciju
+        applianceAge: 24 // treba kalkulacija na osnovu purchase date
+      }));
+      
+      const predictiveResult = await aiPredictiveMaintenanceService.generatePredictiveInsights(
+        applianceId,
+        clientId || 1,
+        serviceHistory
+      );
+      
+      res.json({
+        success: true,
+        insights: predictiveResult,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Greška pri generisanju uvida:', error);
+      res.status(500).json({ error: 'Greška pri generisanju prediktivnih uvida' });
+    }
+  });
+
+  // Analyze maintenance patterns for category
+  app.post("/api/admin/ai-predictive/analyze-patterns/:categoryId", jwtAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.categoryId);
+      const { manufacturerId } = req.body;
+      
+      console.log(`[AI PREDICTIVE] Analiza obrazaca održavanja za kategoriju ${categoryId}`);
+      
+      // Dohvatanje svih servisa za kategoriju
+      const allServices = await storage.getAllServices();
+      // Ovde treba dodati filtriranje po kategoriji kroz appliance tabelu
+      
+      const serviceHistory = allServices.map(service => ({
+        serviceId: service.id,
+        applianceId: service.applianceId,
+        clientId: service.clientId,
+        serviceDate: new Date(service.createdAt),
+        issueType: service.description,
+        resolutionTime: 1,
+        cost: parseFloat(service.cost || '0'),
+        partsUsed: service.usedParts ? JSON.parse(service.usedParts) : [],
+        seasonalFactor: 'leto' as const,
+        applianceAge: 24
+      }));
+      
+      const patterns = await aiPredictiveMaintenanceService.analyzeMaintenancePatterns(
+        categoryId,
+        manufacturerId,
+        serviceHistory
+      );
+      
+      res.json({
+        success: true,
+        patterns,
+        analyzedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Greška pri analizi obrazaca:', error);
+      res.status(500).json({ error: 'Greška pri analizi obrazaca održavanja' });
     }
   });
 

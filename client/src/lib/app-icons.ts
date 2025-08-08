@@ -38,6 +38,7 @@ import partsCatalogIcon from "@assets/generated_images/Parts_catalog_icon_68b7bf
 import webScrapingIcon from "@assets/generated_images/Web_scraping_icon_273603b7.png";
 import userManagementIcon from "@assets/generated_images/User_management_icon_ad4e61f4.png";
 import bulkSMSIcon from "@assets/generated_images/Bulk_SMS_icon_193f0432.png";
+import aiPredictiveIcon from "@assets/generated_images/AI_prediktivna_analitika_ikona_7634794c.png";
 
 // App Icons organizovane po kategorijama
 export const AppIcons = {
@@ -98,6 +99,7 @@ export const AppIcons = {
     webScraping: webScrapingIcon,
     userManagement: userManagementIcon,
     bulkSMS: bulkSMSIcon,
+    aiPredictive: aiPredictiveIcon,
   },
 };
 
@@ -169,4 +171,5 @@ export {
   webScrapingIcon,
   userManagementIcon,
   bulkSMSIcon,
+  aiPredictiveIcon,
 };
