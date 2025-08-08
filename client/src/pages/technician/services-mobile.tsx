@@ -41,18 +41,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
 
-// Service status map
+// Status ikone
+import serviceTodoIcon from "@assets/generated_images/Servis_u_toku_ikona_7f9b93dc.png";
+import serviceCompletedIcon from "@assets/generated_images/Završen_servis_ikona_82f0a1f3.png";
+import servicePendingIcon from "@assets/generated_images/Čekanje_servis_ikona_6517986d.png";
+import servicePartsIcon from "@assets/generated_images/Delovi_potrebni_ikona_168b4888.png";
+
+// Service status map sa ikonama
 const statusConfig = {
-  pending: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Na čekanju" },
-  assigned: { color: "bg-blue-500", textColor: "text-blue-700", bgColor: "bg-blue-50", label: "Dodeljen" },
-  in_progress: { color: "bg-orange-500", textColor: "text-orange-700", bgColor: "bg-orange-50", label: "U toku" },
-  scheduled: { color: "bg-purple-500", textColor: "text-purple-700", bgColor: "bg-purple-50", label: "Zakazan" },
-  completed: { color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "Završen" },
-  cancelled: { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", label: "Otkazan" },
-  waiting_parts: { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", label: "Čeka delove" },
-  client_not_home: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent nije kod kuće" },
-  client_not_answering: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent se ne javlja" },
-  customer_refused_repair: { color: "bg-gray-500", textColor: "text-gray-700", bgColor: "bg-gray-50", label: "Odbio servis" }
+  pending: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Na čekanju", icon: servicePendingIcon },
+  assigned: { color: "bg-blue-500", textColor: "text-blue-700", bgColor: "bg-blue-50", label: "Dodeljen", icon: servicePendingIcon },
+  in_progress: { color: "bg-orange-500", textColor: "text-orange-700", bgColor: "bg-orange-50", label: "U toku", icon: serviceTodoIcon },
+  scheduled: { color: "bg-purple-500", textColor: "text-purple-700", bgColor: "bg-purple-50", label: "Zakazan", icon: servicePendingIcon },
+  completed: { color: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", label: "Završen", icon: serviceCompletedIcon },
+  cancelled: { color: "bg-red-500", textColor: "text-red-700", bgColor: "bg-red-50", label: "Otkazan", icon: XCircle },
+  waiting_parts: { color: "bg-amber-500", textColor: "text-amber-700", bgColor: "bg-amber-50", label: "Čeka delove", icon: servicePartsIcon },
+  client_not_home: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent nije kod kuće", icon: servicePendingIcon },
+  client_not_answering: { color: "bg-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50", label: "Klijent se ne javlja", icon: servicePendingIcon },
+  customer_refused_repair: { color: "bg-gray-500", textColor: "text-gray-700", bgColor: "bg-gray-50", label: "Odbio servis", icon: UserX }
 };
 
 interface Service {
@@ -415,7 +421,14 @@ function ServiceCard({ service }: { service: Service }) {
             <div className={`w-3 h-3 rounded-full ${statusInfo.color}`} />
             <span className="font-semibold text-lg">Servis #{service.id}</span>
           </div>
-          <Badge className={`${statusInfo.bgColor} ${statusInfo.textColor} border-0 px-3 py-1`}>
+          <Badge className={`${statusInfo.bgColor} ${statusInfo.textColor} border-0 px-3 py-1 flex items-center gap-2`}>
+            {statusInfo.icon && (
+              typeof statusInfo.icon === 'string' ? (
+                <img src={statusInfo.icon} alt="" className="w-4 h-4" />
+              ) : (
+                <statusInfo.icon className="w-4 h-4" />
+              )
+            )}
             {statusInfo.label}
           </Badge>
         </div>
