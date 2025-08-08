@@ -10,6 +10,7 @@ import EnhancedServiceDialog from "@/components/business/enhanced-service-dialog
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Wrench, Clock, CheckCircle, AlertCircle, Eye, Phone, Mail, Calendar, Package, Settings, MapPin, User, Receipt, Activity, Building2, TrendingUp, BarChart3, FileText, Users, Award } from "lucide-react";
+import { AppIcons, getApplianceIcon, getBrandIcon, getStatusIcon } from "@/lib/app-icons";
 import { useLocation } from "wouter";
 
 // Enhanced service interface with detailed information
@@ -159,7 +160,7 @@ export default function BusinessDashboard() {
               <div className="flex items-center gap-4">
                 {/* Corporate Logo */}
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Building2 className="w-8 h-8 text-white" />
+                  <img src={AppIcons.business.partner} alt="" className="w-8 h-8" />
                 </div>
                 
                 <div>
@@ -292,7 +293,7 @@ export default function BusinessDashboard() {
           <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Activity className="h-5 w-5 text-white" />
+                <img src={AppIcons.business.tracking} alt="" className="h-5 w-5" />
               </div>
               <div>
                 <CardTitle className="text-xl font-bold text-gray-900">Upravljanje zahtevima</CardTitle>

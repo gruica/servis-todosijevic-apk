@@ -27,6 +27,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
+import { AppIcons, getApplianceIcon, getBrandIcon } from "@/lib/app-icons";
 
 // Com Plus brendovi
 const COM_PLUS_BRANDS = ["Electrolux", "Elica", "Candy", "Hoover", "Turbo Air"];
@@ -586,7 +587,7 @@ export default function ComplusDashboard() {
                   <p className="text-xs text-blue-600 mt-1">Com Plus brendovi</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-white" />
+                  <img src={AppIcons.admin.dashboard} alt="" className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>
@@ -601,7 +602,7 @@ export default function ComplusDashboard() {
                   <p className="text-xs text-amber-600 mt-1">U toku i dodeljeni</p>
                 </div>
                 <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-white" />
+                  <img src={AppIcons.status.inProgress} alt="" className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>
@@ -616,7 +617,7 @@ export default function ComplusDashboard() {
                   <p className="text-xs text-green-600 mt-1">Tekući mesec</p>
                 </div>
                 <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                  <img src={AppIcons.status.completed} alt="" className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>
@@ -631,7 +632,7 @@ export default function ComplusDashboard() {
                   <p className="text-xs text-purple-600 mt-1">U garanciji</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
-                  <Settings className="w-6 h-6 text-white" />
+                  <img src={AppIcons.admin.serviceManagement} alt="" className="w-6 h-6" />
                 </div>
               </div>
             </CardContent>
@@ -1234,13 +1235,20 @@ export default function ComplusDashboard() {
                 {appliances.slice(0, 9).map((appliance: any) => (
                   <div key={appliance.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-sm">{appliance.categoryName}</h3>
-                        <p className="text-sm text-blue-600 font-medium">{appliance.manufacturerName}</p>
-                        <p className="text-sm text-gray-600">{appliance.model}</p>
-                        {appliance.serialNumber && (
-                          <p className="text-xs text-gray-500 mt-1">S/N: {appliance.serialNumber}</p>
-                        )}
+                      <div className="flex items-start gap-3 flex-1">
+                        <img 
+                          src={getApplianceIcon(appliance.categoryName)} 
+                          alt="" 
+                          className="w-8 h-8 mt-1" 
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium text-sm">{appliance.categoryName}</h3>
+                          <p className="text-sm text-blue-600 font-medium">{appliance.manufacturerName}</p>
+                          <p className="text-sm text-gray-600">{appliance.model}</p>
+                          {appliance.serialNumber && (
+                            <p className="text-xs text-gray-500 mt-1">S/N: {appliance.serialNumber}</p>
+                          )}
+                        </div>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         {appliance.manufacturerName}

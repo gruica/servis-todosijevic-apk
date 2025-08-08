@@ -27,6 +27,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil, Plus, Search, Eye, Filter } from "lucide-react";
+import { AppIcons, getApplianceIcon, getBrandIcon, getStatusIcon } from "@/lib/app-icons";
 
 // PAŽNJA: Stranica je privremeno pojednostavljena zbog problema sa belim ekranom
 

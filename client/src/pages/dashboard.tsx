@@ -31,6 +31,7 @@ import {
   TrendingUp,
   Home
 } from "lucide-react";
+import { AppIcons, getApplianceIcon, getBrandIcon, getStatusIcon } from "@/lib/app-icons";
 
 // Get icon for service status
 function getStatusBadge(status: string) {
@@ -224,7 +225,7 @@ export default function Dashboard() {
                           <p className="text-3xl font-bold text-white">{stats?.activeCount || 0}</p>
                         </div>
                         <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                          <Activity className="w-6 h-6 text-white" />
+                          <img src={AppIcons.admin.dashboard} alt="" className="w-6 h-6" />
                         </div>
                       </div>
                     </CardContent>
@@ -254,7 +255,7 @@ export default function Dashboard() {
                           <p className="text-3xl font-bold text-white">{stats?.completedCount || 0}</p>
                         </div>
                         <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                          <CheckCircle className="w-6 h-6 text-white" />
+                          <img src={AppIcons.status.completed} alt="" className="w-6 h-6" />
                         </div>
                       </div>
                     </CardContent>
@@ -269,7 +270,7 @@ export default function Dashboard() {
                           <p className="text-3xl font-bold text-white">{stats?.clientCount || 0}</p>
                         </div>
                         <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                          <Users className="w-6 h-6 text-white" />
+                          <img src={AppIcons.customer.profile} alt="" className="w-6 h-6" />
                         </div>
                       </div>
                     </CardContent>

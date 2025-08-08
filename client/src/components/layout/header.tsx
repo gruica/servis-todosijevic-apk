@@ -7,6 +7,7 @@ import { AdminProfileWidget } from "@/components/admin/profile-widget";
 import { useAuth } from "@/hooks/use-auth";
 // REMOVED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { LogOut } from "lucide-react";
+import { AppIcons } from "@/lib/app-icons";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -29,7 +30,10 @@ export function Header({ toggleSidebar }: HeaderProps) {
           >
             <span className="material-icons">menu</span>
           </Button>
-          <h1 className="text-xl font-medium text-primary ml-2 md:hidden">Frigo Sistem Todosijević</h1>
+          <div className="flex items-center ml-2 md:hidden">
+            <img src={AppIcons.admin.dashboard} alt="" className="w-6 h-6 mr-2" />
+            <h1 className="text-xl font-medium text-primary">Frigo Sistem Todosijević</h1>
+          </div>
         </div>
         
         <div className="flex-1 max-w-3xl mx-4">

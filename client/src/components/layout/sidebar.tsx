@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { AppIcons } from "@/lib/app-icons";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -31,29 +32,29 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
     select: (data: any) => data?.count || 0,
   });
 
-  // Define menu items based on user role
-  // Verzija 2 - Samo najbitnije opcije
+  // Define menu items based on user role with professional graphics
+  // Verzija 3 - Profesionalne grafike integrisane
   const adminMenuItems = [
-    { path: "/", label: "Kontrolna tabla", icon: "dashboard", highlight: true },
-    { path: "/clients", label: "Klijenti", icon: "person" },
-    { path: "/admin/services", label: "Servisi", icon: "build" },
-    { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: "package", highlight: true },
-    { path: "/technician-services", label: "Servisi po serviserima", icon: "groups" },
-    { path: "/admin/business-partners", label: "Poslovni partneri", icon: "business", highlight: true, badge: pendingBusinessPartnerCount },
-    { path: "/admin/spare-parts", label: "Rezervni delovi", icon: "inventory", highlight: true },
-    { path: "/admin/available-parts", label: "Dostupni delovi", icon: "warehouse", highlight: true },
-    { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: "category", highlight: true },
-    { path: "/admin/web-scraping", label: "Web Scraping", icon: "travel_explore", highlight: true },
-    { path: "/appliances", label: "Bela tehnika", icon: "home_repair_service" },
-    { path: "/users", label: "Upravljaj korisnicima", icon: "admin_panel_settings" },
-    { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: "verified_user" },
-    { path: "/admin/sms-mobile-api-config", label: "SMS Mobile API", icon: "smartphone", highlight: true },
-    { path: "/admin/sms-bulk", label: "Masovno SMS", icon: "message", highlight: true },
+    { path: "/", label: "Kontrolna tabla", icon: AppIcons.admin.dashboard, highlight: true, isProfessionalIcon: true },
+    { path: "/clients", label: "Klijenti", icon: AppIcons.customer.profile, isProfessionalIcon: true },
+    { path: "/admin/services", label: "Servisi", icon: AppIcons.admin.serviceManagement, isProfessionalIcon: true },
+    { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: AppIcons.appliances.refrigerator, highlight: true, isProfessionalIcon: true },
+    { path: "/technician-services", label: "Servisi po serviserima", icon: AppIcons.technician.mobile, isProfessionalIcon: true },
+    { path: "/admin/business-partners", label: "Poslovni partneri", icon: AppIcons.business.partner, highlight: true, badge: pendingBusinessPartnerCount, isProfessionalIcon: true },
+    { path: "/admin/spare-parts", label: "Rezervni delovi", icon: AppIcons.status.waitingParts, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/available-parts", label: "Dostupni delovi", icon: AppIcons.system.warehouse, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: AppIcons.system.partsCatalog, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/web-scraping", label: "Web Scraping", icon: AppIcons.system.webScraping, highlight: true, isProfessionalIcon: true },
+    { path: "/appliances", label: "Bela tehnika", icon: AppIcons.appliances.washingMachine, isProfessionalIcon: true },
+    { path: "/users", label: "Upravljaj korisnicima", icon: AppIcons.system.userManagement, isProfessionalIcon: true },
+    { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: AppIcons.system.userManagement, isProfessionalIcon: true },
+    { path: "/admin/sms-mobile-api-config", label: "SMS Mobile API", icon: AppIcons.business.communication, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/sms-bulk", label: "Masovno SMS", icon: AppIcons.system.bulkSMS, highlight: true, isProfessionalIcon: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail_outline" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel uvoz/izvoz", icon: "import_export" },
-    { path: "/admin/data-export", label: "Izvoz podataka", icon: "download", highlight: true },
+    { path: "/admin/data-export", label: "Izvoz podataka", icon: AppIcons.admin.analytics, highlight: true, isProfessionalIcon: true },
     { path: "/admin/cleanup", label: "Čišćenje baze", icon: "cleaning_services", highlight: true },
     { path: "/admin/complus-billing", label: "Complus fakturisanje", icon: "euro", highlight: true },
     { path: "/admin/servis-komerc", label: "Servis Komerc", icon: "local_shipping", highlight: true },
@@ -61,8 +62,8 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   ];
   
   const technicianMenuItems = [
-    { path: "/tech", label: "Moji servisi", icon: "build" },
-    { path: "/tech/profile", label: "Moj profil", icon: "person" },
+    { path: "/tech", label: "Moji servisi", icon: AppIcons.technician.serviceWork, isProfessionalIcon: true },
+    { path: "/tech/profile", label: "Moj profil", icon: AppIcons.technician.mobile, isProfessionalIcon: true },
   ];
   
   // Use the appropriate menu based on user role
@@ -134,7 +135,11 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
                     )}
                   >
                     {item.icon && (
-                      <span className="material-icons mr-3" style={{fontSize: '20px'}}>{item.icon}</span>
+                      (item as any).isProfessionalIcon ? (
+                        <img src={item.icon} alt="" className="w-5 h-5 mr-3" />
+                      ) : (
+                        <span className="material-icons mr-3" style={{fontSize: '20px'}}>{item.icon}</span>
+                      )
                     )}
                     <span>{item.label}</span>
                     {(item.path === "/admin/services" || item.path === "/admin/user-verification" || item.path === "/admin/sms" || item.path === "/admin/cleanup") && (
