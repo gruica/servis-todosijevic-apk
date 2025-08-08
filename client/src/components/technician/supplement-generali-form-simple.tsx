@@ -449,7 +449,7 @@ export function SupplementGeneraliFormSimple({
         <EnhancedOCRCamera
           isOpen={isCameraOpen}
           onClose={() => setIsCameraOpen(false)}
-          onScanComplete={handleScanResult}
+          onDataScanned={handleScanResult}
           manufacturerName={manufacturerName || 'generic'}
           title="Skeniraj nalepnicu aparata"
           description="Pozicioniraj kameru na nalepnicu aparata da automatski detektujem serijski broj i model"

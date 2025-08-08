@@ -12,9 +12,9 @@ type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<{ user: SelectUser; token: string }, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<any, Error, InsertUser>;
   clearAuthUser: () => void; // Nova funkcija za čišćenje korisničkih podataka
   isAdmin: boolean; // Provera da li je korisnik administrator
   isTechnician: boolean; // Provera da li je korisnik serviser
