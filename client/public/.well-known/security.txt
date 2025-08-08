@@ -1,6 +1,25 @@
 Contact: info@frigosistemtodosijevic.me
-Expires: 2026-08-01T23:59:59.000Z
+Contact: +381-67-051-141
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://www.frigosistemtodosijevic.me/pgp-key.txt
+Acknowledgments: https://www.frigosistemtodosijevic.me/security-acknowledgments
 Preferred-Languages: sr, en
 Canonical: https://www.frigosistemtodosijevic.me/.well-known/security.txt
-Acknowledgments: https://www.frigosistemtodosijevic.me/about
-Policy: https://www.frigosistemtodosijevic.me/privacy
+Policy: https://www.frigosistemtodosijevic.me/security-policy
+Hiring: https://www.frigosistemtodosijevic.me/careers
+
+# Security Policy za Frigo Sistem Todosijević
+# 
+# Molimo prijavite sve sigurnosne probleme odgovorno.
+# Ne izvršavajte testove na produkcijskim sistemima.
+# 
+# Scope:
+# - *.frigosistemtodosijevic.me
+# - admin.me (samo autorizovani korisnici)
+# 
+# Isključeno iz scope-a:
+# - DDoS testovi
+# - Socijalni inženjering
+# - Fizički napadi
+# 
+# Očekivano vreme odgovora: 48 sati

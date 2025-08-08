@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Glavne slike za SEO -->
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/logo-frigo-sistem.webp</image:loc>
+      <image:caption>Frigo Sistem Todosijević - Logo profesionalnog servisa bele tehnike</image:caption>
+      <image:title>Frigo Sistem Todosijević Logo</image:title>
+      <image:license>https://www.frigosistemtodosijevic.me/license</image:license>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/frigo-sistem-office.webp</image:loc>
+      <image:caption>Kancelarija Frigo Sistem Todosijević u Novom Sadu</image:caption>
+      <image:title>Frigo Sistem Kancelarija</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/team-photo.webp</image:loc>
+      <image:caption>Tim stručnjaka za servis bele tehnike</image:caption>
+      <image:title>Frigo Sistem Tim</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Slike za servise -->
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/servis-frizidera</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/servis-frizidera-beko.webp</image:loc>
+      <image:caption>Servis Beko frižidera - profesionalna popravka</image:caption>
+      <image:title>Beko Frižider Servis</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/dijagnostika-frizidera.webp</image:loc>
+      <image:caption>Dijagnostika kvara na frižideru pomoću profesionalnih alata</image:caption>
+      <image:title>Dijagnostika Frižidera</image:title>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/servis-ves-masina</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/servis-ves-masina-candy.webp</image:loc>
+      <image:caption>Servis Candy veš mašina - brza i kvalitetna popravka</image:caption>
+      <image:title>Candy Veš Mašina Servis</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/popravka-bubnja-ves-masina.webp</image:loc>
+      <image:caption>Popravka bubnja veš mašine sa originalnim delovima</image:caption>
+      <image:title>Popravka Bubnja Veš Mašine</image:title>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/servis-sudopera</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/servis-sudopera-hoover.webp</image:loc>
+      <image:caption>Servis Hoover mašina za pranje sudova</image:caption>
+      <image:title>Hoover Sudopera Servis</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Slike rezervnih delova -->
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/rezervni-delovi</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/rezervni-delovi-originalni.webp</image:loc>
+      <image:caption>Originalni rezervni delovi za belu tehniku</image:caption>
+      <image:title>Originalni Rezervni Delovi</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/magacin-rezervnih-delova.webp</image:loc>
+      <image:caption>Magacin rezervnih delova sa velikim brojem artikala</image:caption>
+      <image:title>Magacin Rezervnih Delova</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Slike za brendove -->
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/beko-servis</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/beko-logo-servis.webp</image:loc>
+      <image:caption>Ovlašćeni servis za Beko belu tehniku</image:caption>
+      <image:title>Beko Ovlašćeni Servis</image:title>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/candy-servis</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/candy-logo-servis.webp</image:loc>
+      <image:caption>Ovlašćeni servis za Candy belu tehniku</image:caption>
+      <image:title>Candy Ovlašćeni Servis</image:title>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/midea-servis</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/midea-logo-servis.webp</image:loc>
+      <image:caption>Ovlašćeni servis za Midea belu tehniku</image:caption>
+      <image:title>Midea Ovlašćeni Servis</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Slike certifikata i garancija -->
+  <url>
+    <loc>https://www.frigosistemtodosijevic.me/garancija</loc>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/sertifikat-kvaliteta.webp</image:loc>
+      <image:caption>Sertifikat kvaliteta za servis bele tehnike</image:caption>
+      <image:title>Sertifikat Kvaliteta</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.frigosistemtodosijevic.me/garancijski-list.webp</image:loc>
+      <image:caption>Garancijski list sa 12 meseci garancije</image:caption>
+      <image:title>Garancijski List</image:title>
+    </image:image>
+  </url>
+  
+</urlset>

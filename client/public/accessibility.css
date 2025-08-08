@@ -1,0 +1,463 @@
+/* Accessibility CSS - Frigo Sistem Todosijević 2025 */
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only.focus:not-sr-only,
+.sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0.5rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: #000;
+  color: #fff;
+  font-size: 16px;
+  z-index: 10000;
+}
+
+/* Skip links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  z-index: 10000;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Focus indicators */
+*:focus {
+  outline: 3px solid #4682B4;
+  outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+a:focus {
+  outline: 3px solid #4682B4;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --text-color: #000;
+    --bg-color: #fff;
+    --accent-color: #000080;
+  }
+  
+  body {
+    color: var(--text-color);
+    background: var(--bg-color);
+  }
+  
+  .btn {
+    border: 2px solid var(--text-color);
+    background: var(--bg-color);
+    color: var(--text-color);
+  }
+  
+  .btn:hover {
+    background: var(--text-color);
+    color: var(--bg-color);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .pulse,
+  .bounce,
+  .spin {
+    animation: none !important;
+  }
+}
+
+/* Large text/zoom support */
+@media (min-resolution: 1.5dppx) {
+  body {
+    font-size: 18px;
+    line-height: 1.6;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --accent: #5a92c4;
+  }
+  
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+  
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid #444;
+  }
+  
+  input,
+  select,
+  textarea {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid #555;
+  }
+  
+  .btn {
+    background: var(--accent);
+    color: var(--text-primary);
+  }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+  button,
+  input[type="button"],
+  input[type="submit"],
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+  }
+  
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Larger touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Print styles */
+@media print {
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+  
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .page-break {
+    page-break-before: always;
+  }
+  
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+}
+
+/* ARIA live regions */
+.live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.live-region[aria-live="polite"] {
+  /* Announced after current speech */
+}
+
+.live-region[aria-live="assertive"] {
+  /* Announced immediately */
+}
+
+/* Form error states */
+.error {
+  border: 2px solid #e53e3e;
+  background-color: #fed7d7;
+}
+
+.error:focus {
+  outline: 3px solid #e53e3e;
+  outline-offset: 2px;
+}
+
+.error-message {
+  color: #e53e3e;
+  font-size: 14px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.error-message::before {
+  content: "⚠️";
+  margin-right: 4px;
+}
+
+/* Success states */
+.success {
+  border: 2px solid #38a169;
+  background-color: #c6f6d5;
+}
+
+.success-message {
+  color: #38a169;
+  font-size: 14px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.success-message::before {
+  content: "✅";
+  margin-right: 4px;
+}
+
+/* Loading states */
+.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid #4682B4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Language direction support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .modal {
+  left: auto;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+/* Enhanced keyboard navigation */
+.keyboard-user *:focus {
+  outline: 3px solid #4682B4;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px #4682B4;
+}
+
+.mouse-user *:focus {
+  outline: none;
+}
+
+/* Notification areas */
+.notification-area {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  max-width: 400px;
+}
+
+.notification {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification.error {
+  border-left: 4px solid #e53e3e;
+}
+
+.notification.success {
+  border-left: 4px solid #38a169;
+}
+
+.notification.info {
+  border-left: 4px solid #4682B4;
+}
+
+/* Mobile accessibility */
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  .btn,
+  input,
+  select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  
+  /* Prevent zoom on form focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  
+  /* Better spacing for touch */
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  /* Accessible modals on mobile */
+  .modal {
+    width: 95vw;
+    height: 95vh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+}
+
+/* Status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-indicator.online::before {
+  content: "🟢";
+}
+
+.status-indicator.offline::before {
+  content: "🔴";
+}
+
+.status-indicator.pending::before {
+  content: "🟡";
+}
+
+/* Accessible tooltips */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 140px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1001;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -70px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.tooltip:hover .tooltip-text,
+.tooltip:focus .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}

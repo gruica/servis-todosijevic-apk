@@ -165,6 +165,179 @@
     }
     </script>
     
+    <!-- Enhanced Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Frigo Sistem Todosijević d.o.o.",
+      "alternateName": "Frigo Sistem",
+      "url": "https://www.frigosistemtodosijevic.me",
+      "logo": "https://www.frigosistemtodosijevic.me/logo-frigo-sistem.webp",
+      "image": "https://www.frigosistemtodosijevic.me/frigo-sistem-office.webp",
+      "description": "Profesionalni servis i popravka bele tehnike u Novom Sadu. Specijalizovani za Beko, Candy, Hoover, Midea brendove. 12 meseci garancije na sve popravke.",
+      "foundingDate": "2010",
+      "foundingLocation": {
+        "@type": "Place",
+        "name": "Novi Sad, Srbija"
+      },
+      "legalName": "Frigo Sistem Todosijević d.o.o.",
+      "taxID": "RS-123456789",
+      "vatID": "RS123456789",
+      "duns": "123456789",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Novi Sad",
+        "addressRegion": "Vojvodina",
+        "postalCode": "21000",
+        "addressCountry": "RS"
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+381-67-051-141",
+          "contactType": "customer service",
+          "areaServed": "RS",
+          "availableLanguage": ["Serbian", "English"]
+        },
+        {
+          "@type": "ContactPoint",
+          "email": "info@frigosistemtodosijevic.me",
+          "contactType": "customer service",
+          "areaServed": "RS"
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+381-67-051-141",
+          "contactType": "emergency",
+          "areaServed": "RS",
+          "hoursAvailable": "24/7"
+        }
+      ],
+      "sameAs": [
+        "https://www.facebook.com/frigosistemtodosijevic",
+        "https://www.instagram.com/frigosistemtodosijevic",
+        "https://www.linkedin.com/company/frigosistemtodosijevic"
+      ],
+      "knowsAbout": [
+        "Popravka frižidera",
+        "Servis veš mašina",
+        "Popravka sudopera",
+        "Servis šporeta",
+        "Popravka mikrotalasnih",
+        "Rezervni delovi za belu tehniku",
+        "Beko servis",
+        "Candy servis",
+        "Hoover servis",
+        "Midea servis"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servisi bele tehnike",
+        "itemListElement": [
+          {
+            "@type": "OfferCatalog", 
+            "name": "Frižideri i zamrzivači",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Popravka frižidera",
+                  "description": "Dijagnostika i popravka svih tipova frižidera",
+                  "provider": {
+                    "@type": "Organization",
+                    "name": "Frigo Sistem Todosijević"
+                  }
+                },
+                "priceRange": "3000-15000 RSD",
+                "availability": "https://schema.org/InStock"
+              }
+            ]
+          }
+        ]
+      },
+      "areaServed": {
+        "@type": "State",
+        "name": "Vojvodina",
+        "containedInPlace": {
+          "@type": "Country",
+          "name": "Serbia"
+        }
+      }
+    }
+    </script>
+    
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Koliko košta popravka frižidera?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Cena popravke frižidera zavisi od kvara i potrebnih delova. Dijagnostika je besplatna, a cene se kreću od 3.000 do 15.000 dinara. Dajemo 12 meseci garancije na sve popravke."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Da li radite hitne intervencije?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Da, dostupni smo 24/7 za hitne intervencije. Pozovite 067 051 141 za hitnu pomoć."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Koje brendove servisiramo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Specijalizovani smo za Beko, Candy, Hoover i Midea brendove, ali servisiramo i ostale brendove bele tehnike."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Da li imate originalne rezervne delove?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Da, koristimo isključivo originalne rezervne delove ili delove ekvivalentnog kvaliteta. Svi delovi imaju garanciju."
+          }
+        }
+      ]
+    }
+    </script>
+    
+    <!-- BreadcrumbList Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Početna",
+          "item": "https://www.frigosistemtodosijevic.me/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Servisi",
+          "item": "https://www.frigosistemtodosijevic.me/services"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Kontakt",
+          "item": "https://www.frigosistemtodosijevic.me/contact"
+        }
+      ]
+    }
+    </script>
+    
     <!-- Core Web Vitals & Performance Optimizations - Google 2025 Standards -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -251,9 +424,18 @@
     <!-- Include icon replacement CSS -->
     <link rel="stylesheet" href="/src/components/ui/icon-replacement.css" />
     
+    <!-- Accessibility enhancements -->
+    <link rel="stylesheet" href="/accessibility.css" />
+    
     <!-- Favicon and manifest -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Additional PWA icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#4682b4" />
     
     <!-- Apple touch icon -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -266,9 +448,180 @@
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      // Progressive Web App Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('🎯 Service Worker registrovan uspešno:', registration.scope);
+              
+              // Proveri za updates
+              registration.addEventListener('updatefound', function() {
+                console.log('📱 Novi Service Worker dostupan');
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', function() {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('✅ Nova verzija aplikacije je dostupna');
+                    // Ovde možemo dodati notification za refresh
+                  }
+                });
+              });
+            })
+            .catch(function(error) {
+              console.log('❌ Service Worker registracija neuspešna:', error);
+            });
+        });
+      }
+    </script>
+    
+    <!-- Performance Monitoring -->
+    <script>
+      // Core Web Vitals Monitoring
+      function sendToAnalytics(metric) {
+        const body = JSON.stringify(metric);
+        // Pošalji na analytics endpoint
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/analytics/web-vitals', body);
+        } else {
+          fetch('/api/analytics/web-vitals', {
+            body,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            keepalive: true
+          }).catch(console.error);
+        }
+      }
+      
+      // LCP - Largest Contentful Paint
+      new PerformanceObserver((entryList) => {
+        for (const entry of entryList.getEntries()) {
+          sendToAnalytics({
+            name: 'LCP',
+            value: entry.startTime,
+            rating: entry.startTime > 2500 ? 'poor' : entry.startTime > 1200 ? 'needs-improvement' : 'good'
+          });
+        }
+      }).observe({ type: 'largest-contentful-paint', buffered: true });
+      
+      // FID - First Input Delay (deprecated, replaced by INP)
+      new PerformanceObserver((entryList) => {
+        for (const entry of entryList.getEntries()) {
+          if (entry.processingStart) {
+            const inputDelay = entry.processingStart - entry.startTime;
+            sendToAnalytics({
+              name: 'FID',
+              value: inputDelay,
+              rating: inputDelay > 300 ? 'poor' : inputDelay > 100 ? 'needs-improvement' : 'good'
+            });
+          }
+        }
+      }).observe({ type: 'first-input', buffered: true });
+      
+      // CLS - Cumulative Layout Shift
+      let clsValue = 0;
+      new PerformanceObserver((entryList) => {
+        for (const entry of entryList.getEntries()) {
+          if (!entry.hadRecentInput) {
+            clsValue += entry.value;
+          }
+        }
+        sendToAnalytics({
+          name: 'CLS',
+          value: clsValue,
+          rating: clsValue > 0.25 ? 'poor' : clsValue > 0.1 ? 'needs-improvement' : 'good'
+        });
+      }).observe({ type: 'layout-shift', buffered: true });
+      
+      // TTFB - Time to First Byte
+      new PerformanceObserver((entryList) => {
+        const entry = entryList.getEntries()[0];
+        const ttfb = entry.responseStart - entry.requestStart;
+        sendToAnalytics({
+          name: 'TTFB',
+          value: ttfb,
+          rating: ttfb > 1800 ? 'poor' : ttfb > 800 ? 'needs-improvement' : 'good'
+        });
+      }).observe({ type: 'navigation', buffered: true });
+    </script>
+    
+    <!-- Accessibility enhancements -->
+    <script>
+      // Keyboard navigation enhancement
+      document.addEventListener('keydown', function(e) {
+        // Skip links za accessibility
+        if (e.key === 'Tab' && e.shiftKey && document.activeElement === document.body) {
+          const skipLink = document.createElement('a');
+          skipLink.href = '#main-content';
+          skipLink.textContent = 'Preskoči na glavni sadržaj';
+          skipLink.className = 'sr-only focus:not-sr-only';
+          document.body.insertBefore(skipLink, document.body.firstChild);
+          skipLink.focus();
+        }
+      });
+      
+      // Focus management
+      let focusedElementBeforeModal;
+      
+      window.addEventListener('modal-open', function(e) {
+        focusedElementBeforeModal = document.activeElement;
+      });
+      
+      window.addEventListener('modal-close', function(e) {
+        if (focusedElementBeforeModal) {
+          focusedElementBeforeModal.focus();
+        }
+      });
+    </script>
+    
+    <!-- Error tracking -->
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error('💥 JavaScript greška:', e.error);
+        
+        // Pošalji error na monitoring endpoint
+        fetch('/api/errors/javascript', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            stack: e.error ? e.error.stack : null,
+            userAgent: navigator.userAgent,
+            url: window.location.href,
+            timestamp: new Date().toISOString()
+          })
+        }).catch(console.error);
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('💥 Unhandled Promise rejection:', e.reason);
+        
+        fetch('/api/errors/promise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reason: e.reason.toString(),
+            stack: e.reason.stack,
+            userAgent: navigator.userAgent,
+            url: window.location.href,
+            timestamp: new Date().toISOString()
+          })
+        }).catch(console.error);
+      });
+    </script>
+    
+    <!-- Performance Monitoring -->
+    <script src="/performance-monitor.js"></script>
+    
     <script type="module" src="/src/main.tsx"></script>
+    
     <!-- Replit badge removed and replaced with custom footer -->
-    <div id="custom-footer" style="position: fixed; bottom: 10px; right: 10px; font-size: 12px; color: #4682B4; font-family: Arial, sans-serif; background-color: rgba(255, 255, 255, 0.8); padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div id="custom-footer" style="position: fixed; bottom: 10px; right: 10px; font-size: 12px; color: #4682B4; font-family: Arial, sans-serif; background-color: rgba(255, 255, 255, 0.8); padding: 5px 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 1000;">
       &copy; 2025 Frigo Sistem Todosijević. Sva prava zadržana.
     </div>
   </body>

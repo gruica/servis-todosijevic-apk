@@ -1,0 +1,25 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.frigosistemtodosijevic.app",
+        "paths": [
+          "/business/*",
+          "/tech/*",
+          "/services/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAMID.com.frigosistemtodosijevic.app"
+    ]
+  },
+  "appclips": {
+    "apps": [
+      "TEAMID.com.frigosistemtodosijevic.appclip"
+    ]
+  }
+}
