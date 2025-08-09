@@ -12,11 +12,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, User, Settings, Calendar, FileText, Search, Phone, MapPin, Mail } from "lucide-react";
+import { ArrowLeft, Plus, User, Settings, Calendar, FileText, Search, Phone, MapPin, Mail, UserPlus } from "lucide-react";
+import { insertClientSchema } from "@shared/schema";
 import { useLocation } from "wouter";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 // Form schema
 const createServiceSchema = z.object({
@@ -31,6 +34,17 @@ const createServiceSchema = z.object({
 });
 
 type CreateServiceFormData = z.infer<typeof createServiceSchema>;
+
+// Schema za kreiranje novog klijenta
+const createClientSchema = insertClientSchema.pick({
+  fullName: true,
+  email: true,
+  phone: true,
+  address: true,
+  city: true,
+});
+
+type CreateClientFormData = z.infer<typeof createClientSchema>;
 
 interface Client {
   id: number;
@@ -71,6 +85,7 @@ export default function CreateService() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
   const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
+  const [isNewClientDialogOpen, setIsNewClientDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -94,6 +109,18 @@ export default function CreateService() {
     },
   });
 
+  // Forma za kreiranje novog klijenta
+  const newClientForm = useForm<CreateClientFormData>({
+    resolver: zodResolver(createClientSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+    },
+  });
+
   const watchedClientId = watch("clientId") || "";
 
   // Debug logging
@@ -106,6 +133,55 @@ export default function CreateService() {
   // Fetch clients
   const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+  });
+
+  // Mutacija za kreiranje novog klijenta
+  const createClientMutation = useMutation({
+    mutationFn: async (clientData: CreateClientFormData) => {
+      console.log("Kreiranje novog klijenta:", clientData);
+      const response = await apiRequest("/api/clients", {
+        method: "POST",
+        body: JSON.stringify(clientData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || "Greška pri kreiranju klijenta");
+      }
+
+      const result = await response.json();
+      return result.data; // API vraća { success: true, data: client }
+    },
+    onSuccess: (newClient) => {
+      console.log("Klijent kreiran uspešno:", newClient);
+      toast({
+        title: "Klijent kreiran",
+        description: `Klijent ${newClient.fullName} je uspešno kreiran.`,
+      });
+      
+      // Invalidate clients query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      
+      // Select the newly created client
+      setValue("clientId", newClient.id.toString());
+      setValue("applianceId", ""); // Reset appliance selection
+      setSelectedClientId(newClient.id.toString());
+      
+      // Close dialog and reset form
+      setIsNewClientDialogOpen(false);
+      newClientForm.reset();
+    },
+    onError: (error: any) => {
+      console.error("Greška pri kreiranju klijenta:", error);
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri kreiranju klijenta.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Fetch appliances for selected client
@@ -234,6 +310,10 @@ export default function CreateService() {
     createServiceMutation.mutate(data);
   };
 
+  const onNewClientSubmit = (data: CreateClientFormData) => {
+    createClientMutation.mutate(data);
+  };
+
   const selectedClient = clients.find(c => c.id.toString() === watchedClientId);
   
   // Filtriraj klijente na osnovu pretrage
@@ -284,7 +364,114 @@ export default function CreateService() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="clientId">Klijent *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="clientId">Klijent *</Label>
+                    <Dialog open={isNewClientDialogOpen} onOpenChange={setIsNewClientDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Novi klijent
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                          <DialogTitle>Kreiranje novog klijenta</DialogTitle>
+                        </DialogHeader>
+                        <Form {...newClientForm}>
+                          <form onSubmit={newClientForm.handleSubmit(onNewClientSubmit)} className="space-y-4">
+                            <FormField
+                              control={newClientForm.control}
+                              name="fullName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Ime i prezime *</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Unesite ime i prezime" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={newClientForm.control}
+                              name="phone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Telefon *</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Unesite broj telefona" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={newClientForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="Unesite email adresu" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={newClientForm.control}
+                              name="address"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Adresa</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Unesite adresu" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={newClientForm.control}
+                              name="city"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Grad</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Unesite grad" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <div className="flex justify-end gap-2 pt-4">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  setIsNewClientDialogOpen(false);
+                                  newClientForm.reset();
+                                }}
+                              >
+                                Otkaži
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={createClientMutation.isPending}
+                              >
+                                {createClientMutation.isPending ? "Kreiranje..." : "Kreiraj klijenta"}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   <Popover open={isClientSelectorOpen} onOpenChange={setIsClientSelectorOpen}>
                     <PopoverTrigger asChild>
                       <Button
