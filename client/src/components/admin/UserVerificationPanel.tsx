@@ -30,21 +30,32 @@ const UserVerificationPanel: React.FC = () => {
     setError(null);
     
     try {
-      const response = await apiRequest("GET", "/api/users/unverified");
+      const response = await apiRequest("/api/users/unverified", { method: "GET" });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || "Greška pri dobijanju neverifikovanih korisnika");
-      }
       
       setUnverifiedUsers(data || []);
       console.log("Dobavljeni neverifikovani korisnici:", data);
     } catch (err: any) {
       console.error("Greška pri dobijanju neverifikovanih korisnika:", err);
-      setError(err.message || "Došlo je do greške pri učitavanju neverifikovanih korisnika");
+      
+      // Parse error message from the thrown error
+      let errorMessage = "Došlo je do greške pri učitavanju neverifikovanih korisnika";
+      
+      if (err.message) {
+        // Extract meaningful error message from response
+        if (err.message.includes("401:")) {
+          errorMessage = "Nemate dozvolu za pristup ovim podacima";
+        } else if (err.message.includes("500:")) {
+          errorMessage = "Greška na serveru";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
       toast({
         title: "Greška",
-        description: err.message || "Nije moguće dobaviti neverifikovane korisnike",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -57,12 +68,8 @@ const UserVerificationPanel: React.FC = () => {
     setVerifyingUser(userId);
     
     try {
-      const response = await apiRequest("POST", `/api/users/${userId}/verify`);
+      const response = await apiRequest(`/api/users/${userId}/verify`, { method: "POST" });
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || "Greška pri verifikaciji korisnika");
-      }
       
       console.log("Uspešna verifikacija korisnika, odgovor:", data);
       
@@ -76,9 +83,24 @@ const UserVerificationPanel: React.FC = () => {
       });
     } catch (err: any) {
       console.error("Greška pri verifikaciji korisnika:", err);
+      
+      let errorMessage = "Nije moguće verifikovati korisnika";
+      
+      if (err.message) {
+        if (err.message.includes("401:")) {
+          errorMessage = "Nemate dozvolu za verifikaciju korisnika";
+        } else if (err.message.includes("404:")) {
+          errorMessage = "Korisnik nije pronađen";
+        } else if (err.message.includes("500:")) {
+          errorMessage = "Greška na serveru";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       toast({
         title: "Greška",
-        description: err.message || "Nije moguće verifikovati korisnika",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
