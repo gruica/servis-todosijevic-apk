@@ -47,8 +47,11 @@ export function extractTokenFromRequest(req: Request): string | null {
 export async function jwtAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = extractTokenFromRequest(req);
   
+  console.log('🔒 JWT Auth Debug - Request path:', req.path);
+  console.log('🔒 JWT Auth Debug - Authorization header:', req.headers.authorization ? 'postoji' : 'ne postoji');
+  
   if (!token) {
-    console.log('🔒 JWT Auth: Token nije pronađen u zahtevv');
+    console.log('🔒 JWT Auth: Token nije pronađen u zahtev');
     return res.status(401).json({ error: 'Potrebna je prijava' });
   }
   

@@ -30,23 +30,38 @@ const UserVerificationPanel: React.FC = () => {
     setError(null);
     
     try {
+      // Debug: proverite token u localStorage
+      const token = localStorage.getItem('auth_token');
+      console.log("Auth token u localStorage:", token ? "postoji" : "ne postoji");
+      console.log("Pozivam API endpoint: /api/users/unverified");
+      
       const response = await apiRequest("/api/users/unverified", { method: "GET" });
+      console.log("API Response status:", response.status);
+      console.log("API Response headers:", Object.fromEntries(response.headers.entries()));
+      
       const data = await response.json();
       
       setUnverifiedUsers(data || []);
       console.log("Dobavljeni neverifikovani korisnici:", data);
     } catch (err: any) {
       console.error("Greška pri dobijanju neverifikovanih korisnika:", err);
+      console.error("Error details:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack?.substring(0, 200)
+      });
       
       // Parse error message from the thrown error
       let errorMessage = "Došlo je do greške pri učitavanju neverifikovanih korisnika";
       
       if (err.message) {
         // Extract meaningful error message from response
-        if (err.message.includes("401:")) {
+        if (err.message.includes("401")) {
           errorMessage = "Nemate dozvolu za pristup ovim podacima";
-        } else if (err.message.includes("500:")) {
+        } else if (err.message.includes("500")) {
           errorMessage = "Greška na serveru";
+        } else if (err.message.includes("Unexpected token") && err.message.includes("<!DOCTYPE")) {
+          errorMessage = "Server je vratio HTML umesto podataka - molim vas osveži stranicu";
         } else {
           errorMessage = err.message;
         }
