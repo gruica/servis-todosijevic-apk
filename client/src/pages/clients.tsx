@@ -147,6 +147,7 @@ export default function Clients() {
       setSelectedClient(null);
     },
     onError: (error) => {
+      console.error("🚨 Greška pri čuvanju klijenta:", error);
       toast({
         title: "Greška",
         description: error.message || "Došlo je do greške pri čuvanju podataka",
@@ -189,6 +190,7 @@ export default function Clients() {
   
   // Open dialog for editing client
   const handleEditClient = (client: Client) => {
+    console.log("🔧 Otvaranje dijaloga za editovanje klijenta:", client);
     setSelectedClient(client);
     form.reset({
       fullName: client.fullName,
@@ -197,6 +199,7 @@ export default function Clients() {
       address: client.address || "",
       city: client.city || "",
     });
+    console.log("🔧 Postavljam isDialogOpen na true");
     setIsDialogOpen(true);
   };
 
@@ -529,7 +532,13 @@ export default function Clients() {
       </div>
       
       {/* Add/Edit Client Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        console.log("🔧 Dialog onOpenChange pozvan sa:", open, "selectedClient:", selectedClient);
+        if (!open && selectedClient) {
+          console.log("⚠️ Dialog se zatvara dok je selectedClient postavljen - možda je greška!");
+        }
+        setIsDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
