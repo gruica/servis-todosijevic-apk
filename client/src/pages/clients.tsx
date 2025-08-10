@@ -25,6 +25,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Pencil, Plus, Search, User, AlertCircle, ArrowRight, ExternalLink, Eye, Trash2 } from "lucide-react";
+import { ApplianceManagementComponent } from "@/components/ApplianceManagementComponent";
 
 const clientFormSchema = insertClientSchema.extend({
   fullName: z.string().min(1, "Obavezno polje"),
@@ -57,6 +58,8 @@ export default function Clients() {
   const [showAddAppliancePrompt, setShowAddAppliancePrompt] = useState(false);
   const [newClientId, setNewClientId] = useState<number | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [showApplianceDialog, setShowApplianceDialog] = useState(false);
+  const [selectedClientForAppliances, setSelectedClientForAppliances] = useState<Client | null>(null);
   const { toast } = useToast();
   
 
@@ -510,20 +513,13 @@ export default function Clients() {
                                   size="icon" 
                                   className="h-8 w-8"
                                   onClick={() => {
-                                    console.log("👁️ Otvaranje dijaloga za izmenu klijenta:", client.fullName);
-                                    form.reset({
-                                      fullName: client.fullName || "",
-                                      phone: client.phone || "",
-                                      email: client.email || "",
-                                      address: client.address || "",
-                                      city: client.city || ""
-                                    });
-                                    setSelectedClient(client);
-                                    setIsDialogOpen(true);
+                                    console.log("👁️ Otvaranje dijaloga za upravljanje aparatima klijenta:", client.fullName);
+                                    setSelectedClientForAppliances(client);
+                                    setShowApplianceDialog(true);
                                   }}
-                                  title="Izmeni klijenta"
+                                  title="Upravljanje aparatima"
                                 >
-                                  <Eye className="h-4 w-4 text-gray-600" />
+                                  <Eye className="h-4 w-4 text-blue-600" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -855,6 +851,30 @@ export default function Clients() {
               {deleteMutation.isPending ? "Brisanje..." : "Obriši"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appliances Management Dialog */}
+      <Dialog open={showApplianceDialog} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedClientForAppliances(null);
+        }
+        setShowApplianceDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Upravljanje aparatima - {selectedClientForAppliances?.fullName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedClientForAppliances && (
+            <ApplianceManagementComponent 
+              clientId={selectedClientForAppliances.id} 
+              clientName={selectedClientForAppliances.fullName}
+              onClose={() => setShowApplianceDialog(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
