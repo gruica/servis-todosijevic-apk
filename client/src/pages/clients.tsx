@@ -183,6 +183,7 @@ export default function Clients() {
   
   // Open dialog for adding new client
   const handleAddClient = () => {
+    console.log("🆕 handleAddClient pozvan - dodavanje novog klijenta");
     form.reset();
     setSelectedClient(null);
     setIsDialogOpen(true);
@@ -509,13 +510,17 @@ export default function Clients() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => {
-                                    console.log("🔍 Navigating to client details for ID:", client.id);
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log("👁️ EYE DUGME KLIKNUTO za client ID:", client.id, "fullName:", client.fullName);
+                                    console.log("👁️ Pozivam navigate sa putanjom:", `/clients/${client.id}`);
                                     navigate(`/clients/${client.id}`);
+                                    console.log("👁️ Navigate pozvan uspešno");
                                   }}
-                                  title="Detalji"
+                                  title="Detalji klijenta"
                                 >
-                                  <Eye className="h-4 w-4 text-gray-600" />
+                                  <Eye className="h-4 w-4 text-blue-600" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
