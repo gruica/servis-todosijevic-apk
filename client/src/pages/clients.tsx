@@ -509,7 +509,10 @@ export default function Clients() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => navigate(`/clients/${client.id}`)}
+                                  onClick={() => {
+                                    console.log("🔍 Navigating to client details for ID:", client.id);
+                                    navigate(`/clients/${client.id}`);
+                                  }}
                                   title="Detalji"
                                 >
                                   <Eye className="h-4 w-4 text-gray-600" />
