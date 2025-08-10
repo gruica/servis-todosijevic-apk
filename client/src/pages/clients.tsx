@@ -551,10 +551,23 @@ export default function Clients() {
       
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        console.log("🔧 Dialog onOpenChange pozvan sa:", open, "selectedClient:", selectedClient);
+        console.log("🔧 Dialog onOpenChange pozvan sa:", open, "selectedClient:", selectedClient?.fullName || "null");
+        console.log("🔧 Trenutno stanje - isDialogOpen:", isDialogOpen, "nova vrednost:", open);
+        
         if (!open && selectedClient) {
           console.log("⚠️ Dialog se zatvara dok je selectedClient postavljen - možda je greška!");
+          console.log("⚠️ selectedClient podaci:", {
+            id: selectedClient.id,
+            fullName: selectedClient.fullName,
+            phone: selectedClient.phone
+          });
         }
+        
+        if (!open) {
+          console.log("🔧 Dialog se zatvara - resetujem selectedClient");
+          setSelectedClient(null);
+        }
+        
         setIsDialogOpen(open);
       }}>
         <DialogContent className="sm:max-w-[500px]">
