@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -184,41 +184,44 @@ export default function CreateService() {
     },
   });
 
-  // Fetch appliances for selected client
-  const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery({
-    queryKey: [`/api/clients/${watchedClientId}/appliances`],
-    queryFn: async (): Promise<Appliance[]> => {
-      if (!watchedClientId) return [];
+  // Direct appliances fetch with useEffect
+  const [appliances, setAppliances] = useState<Appliance[]>([]);
+  const [appliancesLoading, setAppliancesLoading] = useState(false);
+  
+  useEffect(() => {
+    const fetchAppliances = async () => {
+      if (!watchedClientId) {
+        setAppliances([]);
+        return;
+      }
       
       console.log("🔍 Fetching appliances for client:", watchedClientId);
+      setAppliancesLoading(true);
       
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
         console.log("🔍 Appliances API response:", response);
         
-        // Proveravamo da li je response niz
         if (Array.isArray(response)) {
           console.log("🔍 Found appliances:", response.length, response);
-          return response as Appliance[];
+          setAppliances(response as Appliance[]);
         } else {
           console.log("🔍 Response is not array:", response);
-          return [];
+          setAppliances([]);
         }
       } catch (error) {
         console.error("🔍 Error fetching appliances:", error);
-        return []; // Vraćamo prazan niz umesto da bacamo grešku
+        setAppliances([]);
+      } finally {
+        setAppliancesLoading(false);
       }
-    },
-    enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
-    retry: 1,
-    staleTime: 0, // Uvek fetch najnovije podatke
-    gcTime: 0, // Ne keširaj podatke
-  });
+    };
+
+    fetchAppliances();
+  }, [watchedClientId]);
 
   // Debug logging
-  if (watchedClientId) {
-    console.log("Client selected:", watchedClientId, "Appliances:", appliances.length || 0);
-  }
+  console.log("🔍 Current state - Client:", watchedClientId, "Appliances:", appliances.length);
 
   // Fetch technicians
   const { data: technicians = [] } = useQuery<Technician[]>({
