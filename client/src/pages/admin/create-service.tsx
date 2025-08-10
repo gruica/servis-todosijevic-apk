@@ -195,20 +195,29 @@ export default function CreateService() {
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
         console.log("🔍 Appliances data received:", response);
-        return response;
+        
+        // Proveravamo da li je response niz
+        if (Array.isArray(response)) {
+          return response;
+        } else {
+          console.warn("🔍 API response is not an array, returning empty array:", response);
+          return [];
+        }
       } catch (error) {
         console.error("🔍 Error fetching appliances:", error);
-        throw error;
+        return []; // Vraćamo prazan niz umesto da bacamo grešku
       }
     },
     enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
     retry: 1,
   });
 
-  // More debug logging
+  // More debug logging  
   console.log("CreateService Appliances Debug:", {
     appliances,
-    appliancesLength: appliances.length,
+    appliancesType: typeof appliances,
+    appliancesIsArray: Array.isArray(appliances),
+    appliancesLength: Array.isArray(appliances) ? appliances.length : 'Not an array',
     appliancesLoading,
     watchedClientId,
     appliancesError,
@@ -571,12 +580,18 @@ export default function CreateService() {
                       <SelectValue placeholder="Izaberite uređaj..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {appliances.map((appliance) => (
-                        <SelectItem key={appliance.id} value={appliance.id.toString()}>
-                          {appliance.category.name} - {appliance.manufacturer.name}
-                          {appliance.model && ` (${appliance.model})`}
+                      {Array.isArray(appliances) && appliances.length > 0 ? (
+                        appliances.map((appliance) => (
+                          <SelectItem key={appliance.id} value={appliance.id.toString()}>
+                            {appliance.category.name} - {appliance.manufacturer.name}
+                            {appliance.model && ` (${appliance.model})`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-appliances" disabled>
+                          {appliancesLoading ? "Učitavanje aparata..." : "Nema registrovanih aparata"}
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                   {errors.applianceId && (
