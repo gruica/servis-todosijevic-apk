@@ -509,15 +509,21 @@ export default function Clients() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    e.nativeEvent.stopImmediatePropagation();
-                                    window.location.hash = `#/clients/${client.id}`;
+                                  onClick={() => {
+                                    console.log("👁️ Otvaranje dijaloga za izmenu klijenta:", client.fullName);
+                                    form.reset({
+                                      fullName: client.fullName || "",
+                                      phone: client.phone || "",
+                                      email: client.email || "",
+                                      address: client.address || "",
+                                      city: client.city || ""
+                                    });
+                                    setSelectedClient(client);
+                                    setIsDialogOpen(true);
                                   }}
-                                  title="Detalji klijenta"
+                                  title="Izmeni klijenta"
                                 >
-                                  <Eye className="h-4 w-4 text-blue-600" />
+                                  <Eye className="h-4 w-4 text-gray-600" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
