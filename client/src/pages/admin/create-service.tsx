@@ -100,23 +100,29 @@ export default function CreateService() {
 
   // Effect to fetch appliances when client changes
   useEffect(() => {
+    console.log("🔧 useEffect triggered, watchedClientId:", watchedClientId);
+    
     if (!watchedClientId || watchedClientId === "") {
+      console.log("🔧 No client selected, clearing appliances");
       setAppliances([]);
       setValue("applianceId", "");
       return;
     }
 
     const fetchAppliances = async () => {
-      console.log("🔧 Fetching appliances for client:", watchedClientId);
+      console.log("🔧 Starting to fetch appliances for client:", watchedClientId);
       setLoadingAppliances(true);
       
       try {
-        const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
-        console.log("🔧 Appliances response:", response);
+        const url = `/api/clients/${watchedClientId}/appliances`;
+        console.log("🔧 Making API request to:", url);
+        
+        const response = await apiRequest(url);
+        console.log("🔧 API response received:", response);
         
         if (Array.isArray(response)) {
           setAppliances(response);
-          console.log("🔧 Set appliances:", response.length, "items");
+          console.log("🔧 Successfully set appliances:", response.length, "items", response);
         } else {
           console.log("🔧 Response is not array, setting empty array");
           setAppliances([]);
@@ -131,6 +137,7 @@ export default function CreateService() {
         });
       } finally {
         setLoadingAppliances(false);
+        console.log("🔧 Finished fetching appliances");
       }
     };
 
