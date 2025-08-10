@@ -55,7 +55,7 @@ const createServiceSchema = z.object({
 
 type CreateServiceFormData = z.infer<typeof createServiceSchema>;
 
-export default function CreateServiceFixed() {
+export default function CreateService() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
