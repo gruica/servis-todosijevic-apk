@@ -8,7 +8,10 @@ export class AuthHelper {
    * Prijavljuje korisnika sa datim kredencijalima
    */
   static async login(username: string, password: string) {
-    const response = await apiRequest("POST", "/api/login", { username, password });
+    const response = await apiRequest("/api/login", { 
+      method: "POST", 
+      body: JSON.stringify({ username, password }) 
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -22,7 +25,7 @@ export class AuthHelper {
    * Odjavljuje trenutno prijavljenog korisnika
    */
   static async logout() {
-    const response = await apiRequest("POST", "/api/logout");
+    const response = await apiRequest("/api/logout", { method: "POST" });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -64,9 +67,9 @@ export class AuthHelper {
    * Mijenja šifru korisnika
    */
   static async changePassword(currentPassword: string, newPassword: string) {
-    const response = await apiRequest("POST", "/api/change-password", { 
-      currentPassword, 
-      newPassword 
+    const response = await apiRequest("/api/change-password", { 
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword })
     });
     
     if (!response.ok) {

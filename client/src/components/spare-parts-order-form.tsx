@@ -75,7 +75,7 @@ export default function SparePartsOrderForm({
 
   const submitOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const res = await apiRequest("POST", "/api/spare-parts", orderData);
+      const res = await apiRequest("/api/spare-parts", { method: "POST", body: JSON.stringify(orderData) });
       return res.json();
     },
     onSuccess: () => {

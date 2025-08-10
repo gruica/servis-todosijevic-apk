@@ -127,7 +127,7 @@ const MaintenanceSchedulesPage = () => {
   // Mutacija za kreiranje plana održavanja
   const createMaintenanceScheduleMutation = useMutation({
     mutationFn: async (data: z.infer<typeof maintenanceScheduleFormSchema>) => {
-      const response = await apiRequest("POST", "/api/maintenance-schedules", data);
+      const response = await apiRequest("/api/maintenance-schedules", { method: "POST", body: JSON.stringify(data) });
       if (!response.ok) {
         throw new Error("Greška pri kreiranju plana održavanja");
       }
@@ -160,7 +160,7 @@ const MaintenanceSchedulesPage = () => {
       id: number;
       data: z.infer<typeof maintenanceScheduleFormSchema>;
     }) => {
-      const response = await apiRequest("PATCH", `/api/maintenance-schedules/${id}`, data);
+      const response = await apiRequest(`/api/maintenance-schedules/${id}`, { method: "PATCH", body: JSON.stringify(data) });
       if (!response.ok) {
         throw new Error("Greška pri ažuriranju plana održavanja");
       }
@@ -188,7 +188,7 @@ const MaintenanceSchedulesPage = () => {
   // Mutacija za brisanje plana održavanja
   const deleteMaintenanceScheduleMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/maintenance-schedules/${id}`);
+      const response = await apiRequest(`/api/maintenance-schedules/${id}`, { method: "DELETE" });
       if (!response.ok) {
         throw new Error("Greška pri brisanju plana održavanja");
       }

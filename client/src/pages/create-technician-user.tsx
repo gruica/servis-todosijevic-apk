@@ -71,10 +71,13 @@ export default function CreateTechnicianUser() {
   // Create technician user mutation
   const createTechnicianUserMutation = useMutation({
     mutationFn: async (data: TechnicianUserValues) => {
-      const res = await apiRequest("POST", "/api/technician-users", {
-        technicianId: parseInt(data.technicianId),
-        username: data.username,
-        password: data.password,
+      const res = await apiRequest("/api/technician-users", {
+        method: "POST",
+        body: JSON.stringify({
+          technicianId: parseInt(data.technicianId),
+          username: data.username,
+          password: data.password,
+        })
       });
       return await res.json();
     },

@@ -48,9 +48,9 @@ export function WaitingForPartsSection() {
 
   const returnServiceMutation = useMutation({
     mutationFn: async ({ serviceId, newStatus, adminNotes }: { serviceId: number; newStatus: string; adminNotes: string }) => {
-      const response = await apiRequest('POST', `/api/admin/services/${serviceId}/return-from-waiting`, {
-        newStatus, 
-        adminNotes 
+      const response = await apiRequest(`/api/admin/services/${serviceId}/return-from-waiting`, {
+        method: 'POST',
+        body: JSON.stringify({ newStatus, adminNotes })
       });
       return response.json();
     },

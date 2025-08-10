@@ -44,7 +44,7 @@ export default function UserProfilePage() {
   // Mutacija za promjenu šifre
   const changePasswordMutation = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      const response = await apiRequest("POST", "/api/change-password", data);
+      const response = await apiRequest("/api/change-password", { method: "POST", body: JSON.stringify(data) });
       return await response.json();
     },
     onSuccess: () => {

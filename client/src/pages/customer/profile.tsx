@@ -60,7 +60,7 @@ export default function CustomerProfile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
       // Slanje ažuriranih podataka na server
-      const response = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
+      const response = await apiRequest(`/api/users/${user?.id}`, { method: "PATCH", body: JSON.stringify(data) });
       return await response.json();
     },
     onSuccess: () => {

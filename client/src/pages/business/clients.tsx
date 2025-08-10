@@ -69,7 +69,7 @@ export default function BusinessClients() {
     mutationFn: async (data: ClientFormValues) => {
       if (!selectedClient) return;
 
-      const res = await apiRequest("PUT", `/api/business/clients/${selectedClient.id}`, data);
+      const res = await apiRequest(`/api/business/clients/${selectedClient.id}`, { method: "PUT", body: JSON.stringify(data) });
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);

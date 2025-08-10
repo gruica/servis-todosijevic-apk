@@ -52,7 +52,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
 
   const createRemovedPartMutation = useMutation({
     mutationFn: (data: RemovedPartFormData) => 
-      apiRequest("POST", "/api/removed-parts", data),
+      apiRequest("/api/removed-parts", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       toast({
         title: "Uspešno evidentirano",
@@ -76,7 +76,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
 
   const updateServiceStatusMutation = useMutation({
     mutationFn: () => 
-      apiRequest("PATCH", `/api/services/${serviceId}/parts-removed`, {}),
+      apiRequest(`/api/services/${serviceId}/parts-removed`, { method: "PATCH", body: JSON.stringify({}) }),
     onSuccess: () => {
       toast({
         title: "Status ažuriran",
@@ -309,7 +309,7 @@ export function RemovedPartsList({ serviceId }: RemovedPartsListProps) {
 
   const markAsReturnedMutation = useMutation({
     mutationFn: ({ partId, returnDate, notes }: { partId: number; returnDate: string; notes?: string }) =>
-      apiRequest("PATCH", `/api/removed-parts/${partId}/return`, { returnDate, notes }),
+      apiRequest(`/api/removed-parts/${partId}/return`, { method: "PATCH", body: JSON.stringify({ returnDate, notes }) }),
     onSuccess: () => {
       toast({
         title: "Deo označen kao vraćen",

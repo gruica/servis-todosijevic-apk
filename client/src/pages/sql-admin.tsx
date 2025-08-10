@@ -70,7 +70,7 @@ export default function SQLAdminPage() {
     setError(null);
     
     try {
-      const response = await apiRequest("POST", "/api/admin/execute-sql", { query });
+      const response = await apiRequest("/api/admin/execute-sql", { method: "POST", body: JSON.stringify({ query }) });
       const data = await response.json();
       
       setResult(data);

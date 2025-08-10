@@ -72,7 +72,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
     queryKey: ['/api/admin/services', serviceId],
     queryFn: async () => {
       if (!serviceId) return null;
-      const response = await apiRequest('GET', `/api/admin/services/${serviceId}`);
+      const response = await apiRequest(`/api/admin/services/${serviceId}`, { method: 'GET' });
       return response.json();
     },
     enabled: !!serviceId
@@ -85,7 +85,7 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
       if (!debouncedServiceId || debouncedServiceId === '') return null;
       const serviceId = parseInt(debouncedServiceId);
       if (isNaN(serviceId) || serviceId <= 0) return null;
-      const response = await apiRequest('GET', `/api/admin/services/${serviceId}`);
+      const response = await apiRequest(`/api/admin/services/${serviceId}`, { method: 'GET' });
       return response.json();
     },
     enabled: queryEnabled
@@ -96,7 +96,10 @@ function AdminSparePartsOrderingComponent({ serviceId, onSuccess }: AdminSparePa
 
   const orderSparePartMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const response = await apiRequest('POST', '/api/admin/spare-parts/order', orderData);
+      const response = await apiRequest('/api/admin/spare-parts/order', { 
+        method: 'POST', 
+        body: JSON.stringify(orderData) 
+      });
       return response.json();
     },
     onSuccess: () => {

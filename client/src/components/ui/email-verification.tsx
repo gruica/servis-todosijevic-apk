@@ -26,7 +26,10 @@ export function EmailVerification({ email, onVerificationSuccess, onCancel }: Em
     setSuccess(null);
 
     try {
-      const response = await apiRequest('POST', '/api/email/send-verification', { email });
+      const response = await apiRequest('/api/email/send-verification', { 
+        method: 'POST', 
+        body: JSON.stringify({ email }) 
+      });
       const result = await response.json();
       
       if (result.success) {
@@ -53,9 +56,9 @@ export function EmailVerification({ email, onVerificationSuccess, onCancel }: Em
     setSuccess(null);
 
     try {
-      const response = await apiRequest('POST', '/api/email/verify-code', { 
-        email, 
-        code: verificationCode.trim() 
+      const response = await apiRequest('/api/email/verify-code', { 
+        method: 'POST',
+        body: JSON.stringify({ email, code: verificationCode.trim() })
       });
       const result = await response.json();
       

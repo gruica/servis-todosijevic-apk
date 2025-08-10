@@ -156,7 +156,7 @@ export default function PartsCatalogPage() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<PartFormData> }) => {
-      return apiRequest(`/api/admin/parts-catalog/${id}`, "PUT", data);
+      return apiRequest(`/api/admin/parts-catalog/${id}`, { method: "PUT", body: JSON.stringify(data) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/parts-catalog"] });

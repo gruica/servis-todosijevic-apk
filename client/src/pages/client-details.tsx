@@ -167,11 +167,11 @@ export default function ClientDetails() {
     mutationFn: async (data: ApplianceFormValues) => {
       if (selectedAppliance) {
         // Izmena uređaja
-        const res = await apiRequest("PUT", `/api/appliances/${selectedAppliance.id}`, data);
+        const res = await apiRequest(`/api/appliances/${selectedAppliance.id}`, { method: "PUT", body: JSON.stringify(data) });
         return await res.json();
       } else {
         // Dodavanje novog uređaja
-        const res = await apiRequest("POST", "/api/appliances", data);
+        const res = await apiRequest("/api/appliances", { method: "POST", body: JSON.stringify(data) });
         return await res.json();
       }
     },

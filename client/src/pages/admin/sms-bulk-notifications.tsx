@@ -128,10 +128,13 @@ export default function SMSBulkNotifications() {
     setResults([]);
 
     try {
-      const response = await apiRequest('POST', '/api/admin/sms-bulk', {
-        recipients: selectedRecipients.map(r => ({ phone: r.phone, name: r.name })),
-        message: message.trim(),
-        type: selectedTemplate
+      const response = await apiRequest('/api/admin/sms-bulk', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipients: selectedRecipients.map(r => ({ phone: r.phone, name: r.name })),
+          message: message.trim(),
+          type: selectedTemplate
+        })
       });
 
       const result = await response.json();

@@ -106,10 +106,13 @@ const AvailablePartsManagementComponent = () => {
   // Dodeli deo serviseru
   const assignToTechnicianMutation = useMutation({
     mutationFn: async (data: AssignToTechnicianForm & { partId: number }) => {
-      return apiRequest("PUT", `/api/admin/available-parts/${data.partId}/allocate`, {
-        technicianId: parseInt(data.technicianId),
-        quantity: data.quantity,
-        assignmentNotes: data.assignmentNotes,
+      return apiRequest(`/api/admin/available-parts/${data.partId}/allocate`, {
+        method: "PUT",
+        body: JSON.stringify({
+          technicianId: parseInt(data.technicianId),
+          quantity: data.quantity,
+          assignmentNotes: data.assignmentNotes,
+        })
       });
     },
     onSuccess: () => {
@@ -134,7 +137,7 @@ const AvailablePartsManagementComponent = () => {
   // Obrisi deo sa stanja
   const deletePartMutation = useMutation({
     mutationFn: async (partId: number) => {
-      return apiRequest("DELETE", `/api/admin/available-parts/${partId}`);
+      return apiRequest(`/api/admin/available-parts/${partId}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/available-parts"] });

@@ -94,7 +94,7 @@ export default function CustomerServiceRequest() {
         description: data.description,
       };
       
-      const serviceResponse = await apiRequest("POST", "/api/customer/services", serviceData);
+      const serviceResponse = await apiRequest("/api/customer/services", { method: "POST", body: JSON.stringify(serviceData) });
       return await serviceResponse.json();
     },
     onSuccess: () => {

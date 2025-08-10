@@ -69,7 +69,7 @@ export function SparePartsManagement() {
   // Update order mutation
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiRequest('PUT', `/api/admin/spare-parts/${id}`, data);
+      const response = await apiRequest(`/api/admin/spare-parts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
       return response.json();
     },
     onSuccess: () => {
@@ -94,7 +94,7 @@ export function SparePartsManagement() {
   // Delete order mutation
   const deleteOrderMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/admin/spare-parts/${id}`);
+      const response = await apiRequest(`/api/admin/spare-parts/${id}`, { method: 'DELETE' });
       return response.json();
     },
     onSuccess: () => {

@@ -65,7 +65,7 @@ export default function TechnicianNotifications() {
   const queryClient = useQueryClient();
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });

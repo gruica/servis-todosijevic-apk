@@ -224,11 +224,11 @@ export default function Services() {
       console.log("Podaci za slanje:", data);
       if (selectedService) {
         // Update service
-        const res = await apiRequest("PUT", `/api/services/${selectedService.id}`, data);
+        const res = await apiRequest(`/api/services/${selectedService.id}`, { method: "PUT", body: JSON.stringify(data) });
         return await res.json();
       } else {
         // Create new service
-        const res = await apiRequest("POST", "/api/services", data);
+        const res = await apiRequest("/api/services", { method: "POST", body: JSON.stringify(data) });
         return await res.json();
       }
     },

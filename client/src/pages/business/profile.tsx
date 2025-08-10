@@ -79,9 +79,12 @@ export default function BusinessProfile() {
   // Mutacija za promenu lozinke
   const changePasswordMutation = useMutation({
     mutationFn: async (data: PasswordFormValues) => {
-      const response = await apiRequest("POST", "/api/user/change-password", {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
+      const response = await apiRequest("/api/user/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        })
       });
       
       if (!response.ok) {
@@ -114,7 +117,7 @@ export default function BusinessProfile() {
   // Mutacija za ažuriranje profila
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
-      const response = await apiRequest("PATCH", "/api/user/profile", data);
+      const response = await apiRequest("/api/user/profile", { method: "PATCH", body: JSON.stringify(data) });
       
       if (!response.ok) {
         const errorData = await response.json();

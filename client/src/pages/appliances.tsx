@@ -91,11 +91,11 @@ export default function Appliances() {
     mutationFn: async (data: ApplianceFormValues) => {
       if (selectedAppliance) {
         // Update appliance
-        const res = await apiRequest("PUT", `/api/appliances/${selectedAppliance.id}`, data);
+        const res = await apiRequest(`/api/appliances/${selectedAppliance.id}`, { method: "PUT", body: JSON.stringify(data) });
         return await res.json();
       } else {
         // Create new appliance
-        const res = await apiRequest("POST", "/api/appliances", data);
+        const res = await apiRequest("/api/appliances", { method: "POST", body: JSON.stringify(data) });
         return await res.json();
       }
     },
@@ -123,7 +123,7 @@ export default function Appliances() {
   // Delete appliance mutation
   const deleteApplianceMutation = useMutation({
     mutationFn: async (applianceId: number) => {
-      const res = await apiRequest("DELETE", `/api/appliances/${applianceId}`);
+      const res = await apiRequest(`/api/appliances/${applianceId}`, { method: "DELETE" });
       return await res.json();
     },
     onSuccess: () => {

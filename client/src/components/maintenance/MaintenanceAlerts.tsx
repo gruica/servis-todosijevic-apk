@@ -38,7 +38,7 @@ export function MaintenanceAlerts() {
   // Mutacija za označavanje obaveštenja kao pročitanog
   const markAsReadMutation = useMutation({
     mutationFn: async (alertId: number) => {
-      const res = await apiRequest("POST", `/api/maintenance-alerts/${alertId}/mark-read`);
+      const res = await apiRequest(`/api/maintenance-alerts/${alertId}/mark-read`, { method: "POST" });
       if (!res.ok) throw new Error("Greška pri označavanju obaveštenja");
       return await res.json();
     },

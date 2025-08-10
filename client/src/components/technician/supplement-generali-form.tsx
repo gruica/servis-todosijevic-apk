@@ -92,7 +92,7 @@ export function SupplementGeneraliForm({
   const supplementMutation = useMutation({
     mutationFn: async (data: SupplementGeneraliService) => {
       const { serviceId: _, ...supplementData } = data;
-      const response = await apiRequest("PATCH", `/api/services/${serviceId}/supplement-generali`, supplementData);
+      const response = await apiRequest(`/api/services/${serviceId}/supplement-generali`, { method: "PATCH", body: JSON.stringify(supplementData) });
       return response.json();
     },
     onSuccess: () => {

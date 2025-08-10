@@ -478,11 +478,11 @@ export default function EnhancedServices() {
       console.log("Podaci za slanje:", data);
       if (selectedService) {
         // Update service
-        const res = await apiRequest("PUT", `/api/services/${selectedService.id}`, data);
+        const res = await apiRequest(`/api/services/${selectedService.id}`, { method: "PUT", body: JSON.stringify(data) });
         return await res.json();
       } else {
         // Create new service
-        const res = await apiRequest("POST", "/api/services", data);
+        const res = await apiRequest("/api/services", { method: "POST", body: JSON.stringify(data) });
         return await res.json();
       }
     },
@@ -533,7 +533,7 @@ export default function EnhancedServices() {
   // Assign technician mutation
   const assignTechnicianMutation = useMutation({
     mutationFn: async ({ serviceId, technicianId }: { serviceId: number, technicianId: number }) => {
-      const res = await apiRequest("PUT", `/api/services/${serviceId}/assign-technician`, { technicianId });
+      const res = await apiRequest(`/api/services/${serviceId}/assign-technician`, { method: "PUT", body: JSON.stringify({ technicianId }) });
       return await res.json();
     },
     onSuccess: (data) => {
@@ -560,7 +560,7 @@ export default function EnhancedServices() {
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ serviceId, status }: { serviceId: number, status: string }) => {
-      const res = await apiRequest("PUT", `/api/services/${serviceId}/update-status`, { status });
+      const res = await apiRequest(`/api/services/${serviceId}/update-status`, { method: "PUT", body: JSON.stringify({ status }) });
       return await res.json();
     },
     onSuccess: (data) => {
