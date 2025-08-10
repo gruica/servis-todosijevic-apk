@@ -42,7 +42,7 @@ export function TestWarrantyEmail() {
         });
       }
     } catch (error) {
-      const errorMessage = `Greška pri slanju test emaila: ${error.message}`;
+      const errorMessage = `Greška pri slanju test emaila: ${(error as Error).message}`;
       setResult({ success: false, message: errorMessage });
       toast({
         title: "Greška",

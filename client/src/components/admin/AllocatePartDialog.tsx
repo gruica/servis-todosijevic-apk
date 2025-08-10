@@ -123,10 +123,11 @@ export default function AllocatePartDialog({ open, onOpenChange, part }: Allocat
         })
       });
 
-      if (response.success) {
+      const result = await response.json();
+      if (result.success) {
         toast({
           title: "Uspeh",
-          description: `Deo je uspešno dodeljen serviseru. Preostala količina: ${response.remainingQuantity}`,
+          description: `Deo je uspešno dodeljen serviseru. Preostala količina: ${result.remainingQuantity}`,
           variant: "default"
         });
 

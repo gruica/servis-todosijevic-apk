@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const technicianId = parseInt(req.params.id);
       
       // Proveri da li korisnik može pristupiti podacima (admin ili vlastiti podaci)
-      if (req.user.role !== 'admin' && req.user.technicianId !== technicianId) {
+      if ((req.user as any).role !== 'admin' && (req.user as any).technicianId !== technicianId) {
         return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
       }
 
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pending_services: services.filter(s => ['pending', 'assigned', 'in_progress', 'scheduled', 'waiting_parts'].includes(s.status)).length,
         this_month_completed: services.filter(s => {
           if (s.status !== 'completed') return false;
-          const completedDate = new Date(s.updatedAt);
+          const completedDate = new Date((s as any).updatedAt || s.createdAt);
           const now = new Date();
           return completedDate.getMonth() === now.getMonth() && completedDate.getFullYear() === now.getFullYear();
         }).length,
@@ -8530,7 +8530,7 @@ Admin panel - automatska porudžbina
         description: formData.description,
         status: "pending",
         warrantyStatus: "u garanciji", // Default for Com Plus
-        createdBy: req.user.id,
+        createdBy: (req.user as any).id,
         businessPartnerId: req.user.id,
         isComplusService: true, // Mark as Com Plus service
         assignedToTedora: true // Route directly to Teodora
