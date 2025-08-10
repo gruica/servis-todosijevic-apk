@@ -1,0 +1,619 @@
+_app-2981e4d7aa5be5d9.js:13 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-2981e4d7aa5be5d9.js:13 [LaunchDarkly] LaunchDarkly client initialized
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq2%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq4%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq3%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq2%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq4%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq3%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq2%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq4%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fclients&id=%3Arq3%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+(anonymous) @ framework-fc3d6289511ec16b.js:1
+uD @ framework-fc3d6289511ec16b.js:1
+uI @ framework-fc3d6289511ec16b.js:1
+uM @ framework-fc3d6289511ec16b.js:1
+uS @ framework-fc3d6289511ec16b.js:1
+C @ framework-fc3d6289511ec16b.js:1
+z @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+(anonymous) @ framework-fc3d6289511ec16b.js:1
+uD @ framework-fc3d6289511ec16b.js:1
+uI @ framework-fc3d6289511ec16b.js:1
+uM @ framework-fc3d6289511ec16b.js:1
+uS @ framework-fc3d6289511ec16b.js:1
+C @ framework-fc3d6289511ec16b.js:1
+z @ framework-fc3d6289511ec16b.js:1
+framework-fc3d6289511ec16b.js:1 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+_ @ framework-fc3d6289511ec16b.js:1
+(anonymous) @ framework-fc3d6289511ec16b.js:1
+uD @ framework-fc3d6289511ec16b.js:1
+uI @ framework-fc3d6289511ec16b.js:1
+uM @ framework-fc3d6289511ec16b.js:1
+uS @ framework-fc3d6289511ec16b.js:1
+C @ framework-fc3d6289511ec16b.js:1
+z @ framework-fc3d6289511ec16b.js:1
+workspace_iframe.html:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'ambient-light-sensor'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'battery'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-not-rendered'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'execution-while-out-of-viewport'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'layout-animations'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'legacy-image-formats'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'navigation-override'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'oversized-images'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'publickey-credentials'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'speaker-selection'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unoptimized-images'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+Unrecognized feature: 'unsized-media'.
+framework-fc3d6289511ec16b.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-fc3d6289511ec16b.js:1
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowfullscreen'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+Allow attribute will take precedence over 'allowpaymentrequest'.
+sw.js:312 🎯 Service Worker: Frigo Sistem v2025.1.0 ready
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+icon-overlay-system.ts:49 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+icon-overlay-system.ts:115 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "account_circle" → Lucide React ikona
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+icon-overlay-system.ts:49 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+performance:1  Failed to load resource: net::ERR_CONTENT_LENGTH_MISMATCH
+performance:1  Failed to load resource: net::ERR_CONTENT_LENGTH_MISMATCH
+performance:1  Failed to load resource: net::ERR_CONTENT_LENGTH_MISMATCH
+icon-overlay-system.ts:49 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+icon-overlay-system.ts:115 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "account_circle" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "account_circle" → Lucide React ikona
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+icon-overlay-system.ts:115 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "account_circle" → Lucide React ikona
+client-details.tsx:79 Greška pri dobavljanju detalja klijenta: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+queryFn @ client-details.tsx:79
+await in queryFn
+fetchFn @ @tanstack_react-query.js:812
+run @ @tanstack_react-query.js:477
+start @ @tanstack_react-query.js:518
+fetch @ @tanstack_react-query.js:893
+#executeFetch @ @tanstack_react-query.js:1963
+onSubscribe @ @tanstack_react-query.js:1840
+subscribe @ @tanstack_react-query.js:19
+(anonymous) @ @tanstack_react-query.js:2962
+subscribeToStore @ chunk-FD5SMSK5.js:12032
+commitHookEffectListMount @ chunk-FD5SMSK5.js:16963
+commitPassiveMountOnFiber @ chunk-FD5SMSK5.js:18206
+commitPassiveMountEffects_complete @ chunk-FD5SMSK5.js:18179
+commitPassiveMountEffects_begin @ chunk-FD5SMSK5.js:18169
+commitPassiveMountEffects @ chunk-FD5SMSK5.js:18159
+flushPassiveEffectsImpl @ chunk-FD5SMSK5.js:19543
+flushPassiveEffects @ chunk-FD5SMSK5.js:19500
+commitRootImpl @ chunk-FD5SMSK5.js:19469
+commitRoot @ chunk-FD5SMSK5.js:19330
+performSyncWorkOnRoot @ chunk-FD5SMSK5.js:18948
+flushSyncCallbacks @ chunk-FD5SMSK5.js:9166
+(anonymous) @ chunk-FD5SMSK5.js:18677
+client-details.tsx:79 Greška pri dobavljanju detalja klijenta: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+queryFn @ client-details.tsx:79
+await in queryFn
+fetchFn @ @tanstack_react-query.js:812
+run @ @tanstack_react-query.js:477
+(anonymous) @ @tanstack_react-query.js:501
+Promise.then
+(anonymous) @ @tanstack_react-query.js:497
+Promise.catch
+run @ @tanstack_react-query.js:481
+start @ @tanstack_react-query.js:518
+fetch @ @tanstack_react-query.js:893
+#executeFetch @ @tanstack_react-query.js:1963
+onSubscribe @ @tanstack_react-query.js:1840
+subscribe @ @tanstack_react-query.js:19
+(anonymous) @ @tanstack_react-query.js:2962
+subscribeToStore @ chunk-FD5SMSK5.js:12032
+commitHookEffectListMount @ chunk-FD5SMSK5.js:16963
+commitPassiveMountOnFiber @ chunk-FD5SMSK5.js:18206
+commitPassiveMountEffects_complete @ chunk-FD5SMSK5.js:18179
+commitPassiveMountEffects_begin @ chunk-FD5SMSK5.js:18169
+commitPassiveMountEffects @ chunk-FD5SMSK5.js:18159
+flushPassiveEffectsImpl @ chunk-FD5SMSK5.js:19543
+flushPassiveEffects @ chunk-FD5SMSK5.js:19500
+commitRootImpl @ chunk-FD5SMSK5.js:19469
+commitRoot @ chunk-FD5SMSK5.js:19330
+performSyncWorkOnRoot @ chunk-FD5SMSK5.js:18948
+flushSyncCallbacks @ chunk-FD5SMSK5.js:9166
+(anonymous) @ chunk-FD5SMSK5.js:18677
+icon-overlay-system.ts:115 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:115 🔄 Zamenjen "account_circle" → Lucide React ikona
+attached_assets/Snimak%20ekrana%20(107)_1754824254120.png:1  GET https://replit.com/@gruica/attached_assets/Snimak%20ekrana%20(107)_1754824254120.png 404 (Not Found)
+Image
+_ @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+oq @ framework-fc3d6289511ec16b.js:1
+oQ @ framework-fc3d6289511ec16b.js:1
+clients:430  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user net::ERR_ABORTED 401 (Unauthorized)
+client:865 [vite] server connection lost. Polling for restart...
+client:865 [vite] server connection lost. Polling for restart...
+client:865 [vite] server connection lost. Polling for restart...
+services-mobile.tsx:60  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/@fs/home/runner/workspace/attached_assets/generated_images/Delovi_potrebni_ikona_168b4888.png?import net::ERR_ABORTED 502 (Bad Gateway)
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/src/components/ui/toaster.tsx:26  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/src/components/ui/toast.tsx net::ERR_ABORTED 502 (Bad Gateway)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+icon-overlay-system.ts:68 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+icon-overlay-system.ts:68 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+clients:430  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user net::ERR_ABORTED 401 (Unauthorized)
+clients:430  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user net::ERR_ABORTED 401 (Unauthorized)
+clients:430  GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user net::ERR_ABORTED 401 (Unauthorized)
+clients:626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+icon-overlay-system.ts:68 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+icon-overlay-system.ts:171 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "account_circle" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "account_circle" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "account_circle" → Lucide React ikona
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+stallwart.build.js:1 stallwart: failed ping 4
+stallwart.build.js:1 stallwart: failed ping 5
+stallwart.build.js:1 stallwart: session stalled
+icon-overlay-system.ts:171 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "account_circle" → Lucide React ikona
+client-details.tsx:111 Greška pri dobavljanju detalja klijenta: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+queryFn @ client-details.tsx:111
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=a914900f:812
+run @ @tanstack_react-query.js?v=a914900f:477
+start @ @tanstack_react-query.js?v=a914900f:518
+fetch @ @tanstack_react-query.js?v=a914900f:893
+#executeFetch @ @tanstack_react-query.js?v=a914900f:1963
+onSubscribe @ @tanstack_react-query.js?v=a914900f:1840
+subscribe @ @tanstack_react-query.js?v=a914900f:19
+(anonymous) @ @tanstack_react-query.js?v=a914900f:2962
+subscribeToStore @ chunk-FD5SMSK5.js?v=a914900f:12032
+commitHookEffectListMount @ chunk-FD5SMSK5.js?v=a914900f:16963
+commitPassiveMountOnFiber @ chunk-FD5SMSK5.js?v=a914900f:18206
+commitPassiveMountEffects_complete @ chunk-FD5SMSK5.js?v=a914900f:18179
+commitPassiveMountEffects_begin @ chunk-FD5SMSK5.js?v=a914900f:18169
+commitPassiveMountEffects @ chunk-FD5SMSK5.js?v=a914900f:18159
+flushPassiveEffectsImpl @ chunk-FD5SMSK5.js?v=a914900f:19543
+flushPassiveEffects @ chunk-FD5SMSK5.js?v=a914900f:19500
+commitRootImpl @ chunk-FD5SMSK5.js?v=a914900f:19469
+commitRoot @ chunk-FD5SMSK5.js?v=a914900f:19330
+performSyncWorkOnRoot @ chunk-FD5SMSK5.js?v=a914900f:18948
+flushSyncCallbacks @ chunk-FD5SMSK5.js?v=a914900f:9166
+(anonymous) @ chunk-FD5SMSK5.js?v=a914900f:18677
+client-details.tsx:111 Greška pri dobavljanju detalja klijenta: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+queryFn @ client-details.tsx:111
+await in queryFn
+fetchFn @ @tanstack_react-query.js?v=a914900f:812
+run @ @tanstack_react-query.js?v=a914900f:477
+(anonymous) @ @tanstack_react-query.js?v=a914900f:501
+Promise.then
+(anonymous) @ @tanstack_react-query.js?v=a914900f:497
+Promise.catch
+run @ @tanstack_react-query.js?v=a914900f:481
+start @ @tanstack_react-query.js?v=a914900f:518
+fetch @ @tanstack_react-query.js?v=a914900f:893
+#executeFetch @ @tanstack_react-query.js?v=a914900f:1963
+onSubscribe @ @tanstack_react-query.js?v=a914900f:1840
+subscribe @ @tanstack_react-query.js?v=a914900f:19
+(anonymous) @ @tanstack_react-query.js?v=a914900f:2962
+subscribeToStore @ chunk-FD5SMSK5.js?v=a914900f:12032
+commitHookEffectListMount @ chunk-FD5SMSK5.js?v=a914900f:16963
+commitPassiveMountOnFiber @ chunk-FD5SMSK5.js?v=a914900f:18206
+commitPassiveMountEffects_complete @ chunk-FD5SMSK5.js?v=a914900f:18179
+commitPassiveMountEffects_begin @ chunk-FD5SMSK5.js?v=a914900f:18169
+commitPassiveMountEffects @ chunk-FD5SMSK5.js?v=a914900f:18159
+flushPassiveEffectsImpl @ chunk-FD5SMSK5.js?v=a914900f:19543
+flushPassiveEffects @ chunk-FD5SMSK5.js?v=a914900f:19500
+commitRootImpl @ chunk-FD5SMSK5.js?v=a914900f:19469
+commitRoot @ chunk-FD5SMSK5.js?v=a914900f:19330
+performSyncWorkOnRoot @ chunk-FD5SMSK5.js?v=a914900f:18948
+flushSyncCallbacks @ chunk-FD5SMSK5.js?v=a914900f:9166
+(anonymous) @ chunk-FD5SMSK5.js?v=a914900f:18677
+icon-overlay-system.ts:171 🔄 Zamenjen "mail" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "mail_outline" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "storage" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "import_export" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "euro" → Lucide React ikona
+icon-overlay-system.ts:171 🔄 Zamenjen "account_circle" → Lucide React ikona

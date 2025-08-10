@@ -190,17 +190,32 @@ export default function Clients() {
   
   // Open dialog for editing client
   const handleEditClient = (client: Client) => {
-    console.log("🔧 Otvaranje dijaloga za editovanje klijenta:", client);
+    console.log("🔧 handleEditClient pozvan sa klijentom:", {
+      id: client.id,
+      fullName: client.fullName,
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+      city: client.city
+    });
+    
     setSelectedClient(client);
-    form.reset({
+    
+    const formData = {
       fullName: client.fullName,
       email: client.email || "",
       phone: client.phone,
       address: client.address || "",
       city: client.city || "",
-    });
-    console.log("🔧 Postavljam isDialogOpen na true");
+    };
+    
+    console.log("🔧 Form data za reset:", formData);
+    form.reset(formData);
+    
+    console.log("🔧 Postavljam isDialogOpen na true, trenutna vrednost:", isDialogOpen);
     setIsDialogOpen(true);
+    
+    console.log("🔧 selectedClient postavljen na:", client.id, client.fullName);
   };
 
   // Handle delete client
@@ -503,7 +518,10 @@ export default function Clients() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => handleEditClient(client)}
+                                  onClick={() => {
+                                    console.log("🔧 KLIK na Edit dugme za klijenta:", client.fullName, "ID:", client.id);
+                                    handleEditClient(client);
+                                  }}
                                   title="Izmeni"
                                 >
                                   <Pencil className="h-4 w-4 text-primary" />
