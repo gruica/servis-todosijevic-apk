@@ -555,39 +555,36 @@ export default function CreateService() {
                   <Select
                     value={watch("applianceId") || ""}
                     onValueChange={(value) => setValue("applianceId", value)}
-                    disabled={!watchedClientId}
+                    disabled={!watchedClientId || appliancesLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Izaberite uređaj..." />
+                      <SelectValue 
+                        placeholder={
+                          !watchedClientId 
+                            ? "Prvo odaberite klijenta..." 
+                            : appliancesLoading 
+                            ? "Učitavanje aparata..." 
+                            : "Izaberite uređaj..."
+                        } 
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {(() => {
-                        console.log("Rendering appliances dropdown:", {
-                          appliances,
-                          isArray: Array.isArray(appliances),
-                          length: appliances?.length,
-                          loading: appliancesLoading,
-                          clientId: watchedClientId
-                        });
-                        
-                        if (Array.isArray(appliances) && appliances.length > 0) {
-                          return appliances.map((appliance) => {
-                            console.log("Rendering appliance:", appliance);
-                            return (
-                              <SelectItem key={appliance.id} value={appliance.id.toString()}>
-                                {appliance.category.name} - {appliance.manufacturer.name}
-                                {appliance.model && ` (${appliance.model})`}
-                              </SelectItem>
-                            );
-                          });
-                        } else {
-                          return (
-                            <SelectItem value="no-appliances" disabled>
-                              {appliancesLoading ? "Učitavanje aparata..." : "Nema registrovanih aparata"}
-                            </SelectItem>
-                          );
-                        }
-                      })()}
+                      {appliancesLoading ? (
+                        <SelectItem value="loading" disabled>
+                          Učitavanje aparata...
+                        </SelectItem>
+                      ) : Array.isArray(appliances) && appliances.length > 0 ? (
+                        appliances.map((appliance) => (
+                          <SelectItem key={appliance.id} value={appliance.id.toString()}>
+                            {appliance.category?.name || "Nepoznata kategorija"} - {appliance.manufacturer?.name || "Nepoznat proizvođač"}
+                            {appliance.model && ` (${appliance.model})`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-appliances" disabled>
+                          {watchedClientId ? "Nema registrovanih aparata" : "Odaberite klijenta"}
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   {errors.applianceId && (
