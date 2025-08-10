@@ -9,9 +9,6 @@ Preferred communication style: Simple, everyday language.
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
 - NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU
 - NIKAD ne diraj postojeće kodove koji rade
-- FUNKCIONALNI KOD KOJI JE OPERATIVAN I ISPRAVAN SE NE SME MENJATI NI POD KOJIM OKOLNOSTIMA
-- Postojeća logika koda, funkcionisanje i redosled izvršavanja moraju ostati nepromenjeni
-- Ovo pravilo je ključno za očuvanje stabilnosti sistema i izbegavanje nepotrebnih troškova
 - Kada dodaješ nove funkcije, proverava da li su u sukobu sa postojećim kodovima
 - Ako jesu u sukobu, napravi da se novi kodovi ne instaliraju dok ne budeš siguran u njihovu potpunu implementaciju i funkcionalnost
 - Uvek dodavaj nove endpoint-e na kraj server datoteke, ne menjaj redosled postojećih ruta
@@ -46,7 +43,6 @@ Preferred communication style: Simple, everyday language.
 - **ComPlus Email Integration**: Fully operational automatic email notification system for ComPlus brand services. SMTP authentication resolved with EMAIL_PASSWORD credentials using SSL 465 configuration. System automatically sends service completion notifications to servis@complus.me with professional HTML formatting, service details, and parts information. Includes updateCredentials() method for dynamic SMTP credential management and comprehensive error handling.
 - **Servis Komerc System**: Complete parallel system to ComPlus for Beko brand services. Includes automated daily email reports at 22:00, SMS notifications, service completion tracking, and spare parts management. Fully integrated with backend routes and email notification system. Features servis-komerc-daily-report.ts, servis-komerc-cron-service.ts, and servis-komerc-notification-service.ts for comprehensive Beko service management.
 - **Device Return Functionality**: Fully implemented "Vrati aparat klijentu" (Return Device to Client) feature in technician mobile interface (services-mobile.tsx). Allows technicians to mark completed services as device-returned with confirmation dialog, state management, API integration, and proper Serbian language support. Includes green action button with Home icon, professional dialog interface, and seamless workflow integration.
-- **Client Appliance Management**: Fully functional eye button ("oko") in clients interface opens comprehensive appliance management dialog. Enables adding new appliances, editing existing appliances, and deleting appliances for each client. Features complete form validation, category/manufacturer selection, serial number tracking, purchase date recording, and notes functionality. Integrated with existing `/api/clients/:clientId/appliances` endpoint and ApplianceManagementComponent.tsx (August 2025).
 
 ### Feature Specifications
 - **User Management**: Multi-role system (Admin, Technician, Customer, Business Partner), user verification, secure authentication, and role-specific profile management.

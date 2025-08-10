@@ -1,51 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, User, Settings, Calendar, AlertTriangle } from "lucide-react";
-
-// Types
-interface Client {
-  id: number;
-  fullName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-}
-
-interface Appliance {
-  id: number;
-  clientId: number;
-  model: string;
-  serialNumber: string;
-  category: { id: number; name: string; icon: string };
-  manufacturer: { id: number; name: string };
-}
-
-interface Technician {
-  id: number;
-  fullName: string;
-  email: string;
-  phone: string;
-}
+import { ArrowLeft, Plus, User, Settings, Calendar, FileText, Search, Phone, MapPin, Mail } from "lucide-react";
+import { useLocation } from "wouter";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Form schema
 const createServiceSchema = z.object({
   clientId: z.string().min(1, "Klijent je obavezan"),
   applianceId: z.string().min(1, "Uređaj je obavezan"),
-  description: z.string().min(10, "Opis mora imati najmanje 10 karaktera"),
+  description: z.string().min(1, "Opis problema je obavezan"),
   status: z.string().default("pending"),
   technicianId: z.string().optional(),
   scheduledDate: z.string().optional(),
@@ -55,18 +32,54 @@ const createServiceSchema = z.object({
 
 type CreateServiceFormData = z.infer<typeof createServiceSchema>;
 
+interface Client {
+  id: number;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  address: string | null;
+  city: string | null;
+}
+
+interface Appliance {
+  id: number;
+  clientId: number;
+  model: string | null;
+  serialNumber: string | null;
+  category: {
+    id: number;
+    name: string;
+    icon: string;
+  };
+  manufacturer: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Technician {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  active: boolean;
+}
+
 export default function CreateService() {
   const [, setLocation] = useLocation();
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [isClientSelectorOpen, setIsClientSelectorOpen] = useState(false);
   const { toast } = useToast();
-  
-  // Form setup
+
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
-    reset,
     formState: { errors },
+    setValue,
+    watch,
+    reset,
   } = useForm<CreateServiceFormData>({
     resolver: zodResolver(createServiceSchema),
     defaultValues: {
@@ -74,23 +87,65 @@ export default function CreateService() {
       applianceId: "",
       description: "",
       status: "pending",
+      priority: "medium",
       technicianId: "",
       scheduledDate: "",
-      priority: "medium",
       notes: "",
     },
   });
 
-  // Watch client selection
-  const watchedClientId = watch("clientId");
+  const watchedClientId = watch("clientId") || "";
 
-  // State for appliances
-  const [appliances, setAppliances] = useState<Appliance[]>([]);
-  const [loadingAppliances, setLoadingAppliances] = useState(false);
+  // Debug logging
+  console.log("CreateService Debug:", {
+    watchedClientId,
+    clientIdType: typeof watchedClientId,
+    watchedClientIdEmpty: !watchedClientId,
+  });
 
   // Fetch clients
-  const { data: clients = [] } = useQuery<Client[]>({
+  const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+  });
+
+  // Fetch appliances for selected client
+  const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
+    queryKey: ["/api/appliances", watchedClientId],
+    queryFn: async () => {
+      if (!watchedClientId) return [];
+      
+      console.log("🔍 Fetching appliances for client ID:", watchedClientId);
+      
+      try {
+        const response = await apiRequest("GET", `/api/clients/${watchedClientId}/appliances`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("🔍 Appliances API error:", response.status, errorText);
+          throw new Error(`Failed to fetch appliances: ${response.status} ${errorText}`);
+        }
+        
+        const appliancesData = await response.json();
+        console.log("🔍 Appliances data received:", appliancesData);
+        return appliancesData;
+      } catch (error) {
+        console.error("🔍 Error fetching appliances:", error);
+        throw error;
+      }
+    },
+    enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
+    retry: 1,
+  });
+
+  // More debug logging
+  console.log("CreateService Appliances Debug:", {
+    appliances,
+    appliancesLength: appliances.length,
+    appliancesLoading,
+    watchedClientId,
+    appliancesError,
+    hasAppliancesError: !!appliancesError,
+    appliancesErrorMessage: appliancesError?.message,
   });
 
   // Fetch technicians
@@ -98,55 +153,16 @@ export default function CreateService() {
     queryKey: ["/api/technicians"],
   });
 
-  // Effect to fetch appliances when client changes
-  useEffect(() => {
-    console.log("🔧 useEffect triggered, watchedClientId:", watchedClientId);
-    
-    if (!watchedClientId || watchedClientId === "") {
-      console.log("🔧 No client selected, clearing appliances");
-      setAppliances([]);
-      setValue("applianceId", "");
-      return;
-    }
-
-    const fetchAppliances = async () => {
-      console.log("🔧 Starting to fetch appliances for client:", watchedClientId);
-      setLoadingAppliances(true);
-      
-      try {
-        const url = `/api/clients/${watchedClientId}/appliances`;
-        console.log("🔧 Making API request to:", url);
-        
-        const response = await apiRequest(url);
-        console.log("🔧 API response received:", response);
-        
-        if (Array.isArray(response)) {
-          setAppliances(response);
-          console.log("🔧 Successfully set appliances:", response.length, "items", response);
-        } else {
-          console.log("🔧 Response is not array, setting empty array");
-          setAppliances([]);
-        }
-      } catch (error) {
-        console.error("🔧 Error fetching appliances:", error);
-        setAppliances([]);
-        toast({
-          title: "Greška",
-          description: "Greška pri učitavanju aparata",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingAppliances(false);
-        console.log("🔧 Finished fetching appliances");
-      }
-    };
-
-    fetchAppliances();
-  }, [watchedClientId, setValue, toast]);
-
   // Create service mutation
   const createServiceMutation = useMutation({
     mutationFn: async (data: CreateServiceFormData) => {
+      console.log("🔍 Mutation starting with data:", data);
+      
+      // Validate required fields
+      if (!data.clientId || !data.applianceId) {
+        throw new Error("Klijent i uređaj su obavezni");
+      }
+
       const serviceData = {
         clientId: parseInt(data.clientId),
         applianceId: parseInt(data.applianceId),
@@ -158,156 +174,328 @@ export default function CreateService() {
         notes: data.notes || null,
       };
 
-      return await apiRequest("/api/services", {
-        method: "POST",
-        body: JSON.stringify(serviceData),
-      });
+      console.log("🔍 Sending service data to API:", serviceData);
+
+      try {
+        const response = await apiRequest("POST", "/api/services", serviceData);
+        console.log("🔍 API Response status:", response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("🔍 API Error response:", errorData);
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log("🔍 API Success response:", result);
+        return result;
+      } catch (error) {
+        console.error("🔍 API Request failed:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("🔍 Mutation success:", data);
       toast({
-        title: "Uspeh",
-        description: "Servis je uspešno kreiran",
+        title: "Servis kreiran",
+        description: "Novi servis je uspešno kreiran.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       setLocation("/admin/services");
     },
     onError: (error: any) => {
+      console.error("🔍 Mutation error:", error);
       toast({
         title: "Greška",
-        description: error.message || "Greška pri kreiranju servisa",
+        description: error.message || "Greška pri kreiranju servisa.",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: CreateServiceFormData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Mutation state:", { 
+      isPending: createServiceMutation.isPending, 
+      isError: createServiceMutation.isError,
+      error: createServiceMutation.error
+    });
+    
+    // Dodatna validacija
+    if (!data.clientId || !data.applianceId) {
+      toast({
+        title: "Greška",
+        description: "Klijent i uređaj moraju biti odabrani",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     createServiceMutation.mutate(data);
   };
 
   const selectedClient = clients.find(c => c.id.toString() === watchedClientId);
+  
+  // Filtriraj klijente na osnovu pretrage
+  const filteredClients = useMemo(() => {
+    if (!clientSearchQuery.trim()) return clients;
+    
+    const query = clientSearchQuery.toLowerCase().trim();
+    return clients.filter(client => 
+      client.fullName.toLowerCase().includes(query) ||
+      client.phone.toLowerCase().includes(query) ||
+      (client.email && client.email.toLowerCase().includes(query)) ||
+      (client.address && client.address.toLowerCase().includes(query)) ||
+      (client.city && client.city.toLowerCase().includes(query))
+    );
+  }, [clients, clientSearchQuery]);
 
   return (
     <AdminLayout>
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Plus className="h-6 w-6 text-primary" />
+      <div className="w-full h-full overflow-y-auto">
+        <div className="container mx-auto py-6 px-4 max-w-4xl">
+          {/* Header */}
+          <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={() => setLocation("/admin/services")}
+              className="mr-3"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Nazad
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Kreiranje novog servisa</h1>
+              <p className="text-muted-foreground mt-1">
+                Dodajte novi servis u sistem
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Kreiraj novi servis</h1>
-            <p className="text-gray-600">Dodaj novi servisni zahtev za klijenta</p>
-          </div>
-        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Client Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                Klijent i uređaj
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="clientId">Klijent *</Label>
-                <Select
-                  value={watchedClientId || ""}
-                  onValueChange={(value) => setValue("clientId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Odaberite klijenta..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id.toString()}>
-                        {client.fullName} - {client.phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.clientId && (
-                  <p className="text-sm text-red-500 mt-1">{errors.clientId.message}</p>
-                )}
-              </div>
-
-              {selectedClient && (
-                <div className="p-3 bg-muted rounded-md">
-                  <p className="text-sm font-medium">{selectedClient.fullName}</p>
-                  <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
-                  {selectedClient.address && (
-                    <p className="text-sm text-muted-foreground">
-                      {selectedClient.address}, {selectedClient.city}
-                    </p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-20">
+          <div className="grid grid-cols-1 gap-6">
+            {/* Client Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Klijent i uređaj
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="clientId">Klijent *</Label>
+                  <Popover open={isClientSelectorOpen} onOpenChange={setIsClientSelectorOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={isClientSelectorOpen}
+                        className="w-full justify-between h-10"
+                      >
+                        {selectedClient ? (
+                          <div className="flex items-center gap-2 truncate">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate">{selectedClient.fullName}</span>
+                            <span className="text-muted-foreground">({selectedClient.phone})</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Search className="h-4 w-4" />
+                            <span>Pretražite i izaberite klijenta...</span>
+                          </div>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Pretražite po imenu, telefonu, adresi..." 
+                          value={clientSearchQuery}
+                          onValueChange={setClientSearchQuery}
+                        />
+                        <CommandEmpty>Nema pronađenih klijenata.</CommandEmpty>
+                        <CommandGroup>
+                          <ScrollArea className="h-[200px]">
+                            {filteredClients.map((client) => (
+                              <CommandItem
+                                key={client.id}
+                                value={`${client.fullName} ${client.phone} ${client.email || ''} ${client.address || ''} ${client.city || ''}`}
+                                onSelect={() => {
+                                  console.log("🔍 Client selected:", client.id, client.fullName);
+                                  const clientIdString = client.id.toString();
+                                  
+                                  setValue("clientId", clientIdString);
+                                  setValue("applianceId", ""); // Reset appliance when client changes
+                                  setSelectedClientId(clientIdString); // Update local state too
+                                  setIsClientSelectorOpen(false);
+                                  setClientSearchQuery(""); // Reset search
+                                  
+                                  console.log("🔍 After setting values:", {
+                                    clientIdString,
+                                    formClientId: watch("clientId"),
+                                    selectedClientIdState: clientIdString
+                                  });
+                                }}
+                                className="flex flex-col items-start gap-1 p-3"
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium truncate">{client.fullName}</span>
+                                      <div className="flex items-center gap-1 text-muted-foreground">
+                                        <Phone className="h-3 w-3" />
+                                        <span className="text-sm">{client.phone}</span>
+                                      </div>
+                                    </div>
+                                    {client.email && (
+                                      <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                                        <Mail className="h-3 w-3" />
+                                        <span className="text-xs truncate">{client.email}</span>
+                                      </div>
+                                    )}
+                                    {client.address && (
+                                      <div className="flex items-center gap-1 text-muted-foreground mt-1">
+                                        <MapPin className="h-3 w-3" />
+                                        <span className="text-xs truncate">{client.address}, {client.city}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </ScrollArea>
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {errors.clientId && (
+                    <p className="text-sm text-red-500 mt-1">{errors.clientId.message}</p>
                   )}
                 </div>
-              )}
 
-              <div>
-                <Label htmlFor="applianceId">Uređaj *</Label>
-                <Select
-                  value={watch("applianceId") || ""}
-                  onValueChange={(value) => setValue("applianceId", value)}
-                  disabled={!watchedClientId || loadingAppliances}
-                >
-                  <SelectTrigger>
-                    <SelectValue 
-                      placeholder={
-                        !watchedClientId 
-                          ? "Prvo odaberite klijenta..." 
-                          : loadingAppliances 
-                          ? "Učitavanje aparata..." 
-                          : appliances.length === 0
-                          ? "Nema registrovanih aparata"
-                          : "Odaberite uređaj..."
-                      } 
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingAppliances ? (
-                      <SelectItem value="loading" disabled>
-                        Učitavanje aparata...
-                      </SelectItem>
-                    ) : appliances.length > 0 ? (
-                      appliances.map((appliance) => (
+                {selectedClient && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm font-medium">{selectedClient.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{selectedClient.phone}</p>
+                    {selectedClient.address && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedClient.address}, {selectedClient.city}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="applianceId">Uređaj *</Label>
+                  <Select
+                    value={watch("applianceId") || ""}
+                    onValueChange={(value) => setValue("applianceId", value)}
+                    disabled={!watchedClientId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Izaberite uređaj..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {appliances.map((appliance) => (
                         <SelectItem key={appliance.id} value={appliance.id.toString()}>
-                          {appliance.category?.name || "Nepoznata kategorija"} - {appliance.manufacturer?.name || "Nepoznat proizvođač"}
+                          {appliance.category.name} - {appliance.manufacturer.name}
                           {appliance.model && ` (${appliance.model})`}
                         </SelectItem>
-                      ))
-                    ) : watchedClientId ? (
-                      <SelectItem value="no-appliances" disabled>
-                        Nema registrovanih aparata
-                      </SelectItem>
-                    ) : (
-                      <SelectItem value="no-client" disabled>
-                        Odaberite klijenta
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {errors.applianceId && (
-                  <p className="text-sm text-red-500 mt-1">{errors.applianceId.message}</p>
-                )}
-              </div>
-
-              {/* Debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                  <p>Debug: Client ID = {watchedClientId || "none"}</p>
-                  <p>Debug: Appliances count = {appliances.length}</p>
-                  <p>Debug: Loading = {loadingAppliances.toString()}</p>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.applianceId && (
+                    <p className="text-sm text-red-500 mt-1">{errors.applianceId.message}</p>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Service Details */}
+            {/* Service Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Detalji servisa
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={watch("status") || "pending"}
+                    onValueChange={(value) => setValue("status", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Na čekanju</SelectItem>
+                      <SelectItem value="assigned">Dodeljeno</SelectItem>
+                      <SelectItem value="scheduled">Zakazano</SelectItem>
+                      <SelectItem value="in_progress">U toku</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="priority">Prioritet</Label>
+                  <Select
+                    value={watch("priority") || "medium"}
+                    onValueChange={(value) => setValue("priority", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Nizak</SelectItem>
+                      <SelectItem value="medium">Srednji</SelectItem>
+                      <SelectItem value="high">Visok</SelectItem>
+                      <SelectItem value="urgent">Hitno</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="technicianId">Serviser</Label>
+                  <Select
+                    value={watch("technicianId") || ""}
+                    onValueChange={(value) => setValue("technicianId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Izaberite servisera..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Bez servisera</SelectItem>
+                      {technicians.filter(t => t.active).map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id.toString()}>
+                          {tech.fullName} - {tech.specialization}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="scheduledDate">Zakazano za</Label>
+                  <Input
+                    id="scheduledDate"
+                    type="datetime-local"
+                    {...register("scheduledDate")}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Description */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2" />
-                Detalji servisa
+                <FileText className="h-5 w-5 mr-2" />
+                Opis problema
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -316,8 +504,8 @@ export default function CreateService() {
                 <Textarea
                   id="description"
                   {...register("description")}
-                  placeholder="Opišite problem sa uređajem..."
-                  rows={3}
+                  placeholder="Detaljno opišite problem sa uređajem..."
+                  rows={4}
                 />
                 {errors.description && (
                   <p className="text-sm text-red-500 mt-1">{errors.description.message}</p>
@@ -325,91 +513,19 @@ export default function CreateService() {
               </div>
 
               <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={watch("status") || "pending"}
-                  onValueChange={(value) => setValue("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Na čekanju</SelectItem>
-                    <SelectItem value="assigned">Dodeljeno</SelectItem>
-                    <SelectItem value="scheduled">Zakazano</SelectItem>
-                    <SelectItem value="in_progress">U toku</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="priority">Prioritet</Label>
-                <Select
-                  value={watch("priority") || "medium"}
-                  onValueChange={(value) => setValue("priority", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Nizak</SelectItem>
-                    <SelectItem value="medium">Srednji</SelectItem>
-                    <SelectItem value="high">Visok</SelectItem>
-                    <SelectItem value="urgent">Hitno</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="technicianId">Tehničar</Label>
-                <Select
-                  value={watch("technicianId") || ""}
-                  onValueChange={(value) => setValue("technicianId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Odaberite tehničara (opciono)..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Bez dodeljenog tehničara</SelectItem>
-                    {technicians.map((technician) => (
-                      <SelectItem key={technician.id} value={technician.id.toString()}>
-                        {technician.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="scheduledDate">Zakazani datum</Label>
-                <Input
-                  id="scheduledDate"
-                  type="datetime-local"
-                  {...register("scheduledDate")}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Napomene</Label>
+                <Label htmlFor="notes">Dodatne napomene</Label>
                 <Textarea
                   id="notes"
                   {...register("notes")}
-                  placeholder="Dodatne napomene..."
-                  rows={2}
+                  placeholder="Dodatne napomene ili specifične zahteve..."
+                  rows={3}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Submit */}
-          <div className="flex gap-3">
-            <Button
-              type="submit"
-              disabled={createServiceMutation.isPending}
-              className="flex-1"
-            >
-              {createServiceMutation.isPending ? "Kreiranje..." : "Kreiraj servis"}
-            </Button>
+          {/* Actions - Sticky button at the bottom */}
+          <div className="sticky bottom-0 bg-white p-4 border-t border-gray-200 flex justify-end space-x-4 mt-6">
             <Button
               type="button"
               variant="outline"
@@ -417,8 +533,16 @@ export default function CreateService() {
             >
               Otkaži
             </Button>
+            <Button
+              type="submit"
+              disabled={createServiceMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {createServiceMutation.isPending ? "Kreiranje..." : "Kreiraj servis"}
+            </Button>
           </div>
         </form>
+        </div>
       </div>
     </AdminLayout>
   );

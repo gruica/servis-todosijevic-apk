@@ -25,7 +25,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Pencil, Plus, Search, User, AlertCircle, ArrowRight, ExternalLink, Eye, Trash2 } from "lucide-react";
-import { ApplianceManagementComponent } from "@/components/ApplianceManagementComponent";
 
 const clientFormSchema = insertClientSchema.extend({
   fullName: z.string().min(1, "Obavezno polje"),
@@ -58,8 +57,6 @@ export default function Clients() {
   const [showAddAppliancePrompt, setShowAddAppliancePrompt] = useState(false);
   const [newClientId, setNewClientId] = useState<number | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const [showApplianceDialog, setShowApplianceDialog] = useState(false);
-  const [selectedClientForAppliances, setSelectedClientForAppliances] = useState<Client | null>(null);
   const { toast } = useToast();
   
 
@@ -150,7 +147,6 @@ export default function Clients() {
       setSelectedClient(null);
     },
     onError: (error) => {
-      console.error("🚨 Greška pri čuvanju klijenta:", error);
       toast({
         title: "Greška",
         description: error.message || "Došlo je do greške pri čuvanju podataka",
@@ -193,32 +189,15 @@ export default function Clients() {
   
   // Open dialog for editing client
   const handleEditClient = (client: Client) => {
-    console.log("🔧 handleEditClient pozvan sa klijentom:", {
-      id: client.id,
-      fullName: client.fullName,
-      email: client.email,
-      phone: client.phone,
-      address: client.address,
-      city: client.city
-    });
-    
     setSelectedClient(client);
-    
-    const formData = {
+    form.reset({
       fullName: client.fullName,
       email: client.email || "",
       phone: client.phone,
       address: client.address || "",
       city: client.city || "",
-    };
-    
-    console.log("🔧 Form data za reset:", formData);
-    form.reset(formData);
-    
-    console.log("🔧 Postavljam isDialogOpen na true, trenutna vrednost:", isDialogOpen);
+    });
     setIsDialogOpen(true);
-    
-    console.log("🔧 selectedClient postavljen na:", client.id, client.fullName);
   };
 
   // Handle delete client
@@ -512,23 +491,16 @@ export default function Clients() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => {
-                                    console.log("👁️ Otvaranje dijaloga za upravljanje aparatima klijenta:", client.fullName);
-                                    setSelectedClientForAppliances(client);
-                                    setShowApplianceDialog(true);
-                                  }}
-                                  title="Upravljanje aparatima"
+                                  onClick={() => navigate(`/clients/${client.id}`)}
+                                  title="Detalji"
                                 >
-                                  <Eye className="h-4 w-4 text-blue-600" />
+                                  <Eye className="h-4 w-4 text-gray-600" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8"
-                                  onClick={() => {
-                                    console.log("🔧 KLIK na Edit dugme za klijenta:", client.fullName, "ID:", client.id);
-                                    handleEditClient(client);
-                                  }}
+                                  onClick={() => handleEditClient(client)}
                                   title="Izmeni"
                                 >
                                   <Pencil className="h-4 w-4 text-primary" />
@@ -557,12 +529,7 @@ export default function Clients() {
       </div>
       
       {/* Add/Edit Client Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedClient(null);
-        }
-        setIsDialogOpen(open);
-      }}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -851,30 +818,6 @@ export default function Clients() {
               {deleteMutation.isPending ? "Brisanje..." : "Obriši"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Appliances Management Dialog */}
-      <Dialog open={showApplianceDialog} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedClientForAppliances(null);
-        }
-        setShowApplianceDialog(open);
-      }}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Upravljanje aparatima - {selectedClientForAppliances?.fullName}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedClientForAppliances && (
-            <ApplianceManagementComponent 
-              clientId={selectedClientForAppliances.id} 
-              clientName={selectedClientForAppliances.fullName}
-              onClose={() => setShowApplianceDialog(false)}
-            />
-          )}
         </DialogContent>
       </Dialog>
     </div>

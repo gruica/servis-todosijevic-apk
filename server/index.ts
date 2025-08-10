@@ -22,23 +22,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
-  // Automatski detektujemo trenutni Replit domain
-  let allowedOrigin = req.headers.origin;
-  if (!allowedOrigin && req.headers.referer) {
-    const refererUrl = new URL(req.headers.referer);
-    allowedOrigin = refererUrl.origin;
-  }
-  if (!allowedOrigin) {
-    allowedOrigin = 'https://5000-manic-donkey-9yxqy86.replit.app';
-  }
-  
-  // Omogući sve Replit domene
-  if (allowedOrigin.includes('replit.dev') || allowedOrigin.includes('replit.app')) {
-    res.header('Access-Control-Allow-Origin', allowedOrigin);
-  } else {
-    res.header('Access-Control-Allow-Origin', 'https://5000-manic-donkey-9yxqy86.replit.app');
-  }
-  
+  // Specificno dozvoljavamo origin za Replit
+  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://5000-manic-donkey-9yxqy86.replit.app';
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
