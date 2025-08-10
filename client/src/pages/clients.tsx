@@ -515,8 +515,11 @@ export default function Clients() {
                                     e.stopPropagation();
                                     console.log("👁️ EYE DUGME KLIKNUTO za client ID:", client.id, "fullName:", client.fullName);
                                     console.log("👁️ Pozivam navigate sa putanjom:", `/clients/${client.id}`);
-                                    navigate(`/clients/${client.id}`);
+                                    
+                                    // Immediately navigate and return false to prevent other handlers
+                                    setTimeout(() => navigate(`/clients/${client.id}`), 0);
                                     console.log("👁️ Navigate pozvan uspešno");
+                                    return false;
                                   }}
                                   title="Detalji klijenta"
                                 >
@@ -560,16 +563,6 @@ export default function Clients() {
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
         console.log("🔧 Dialog onOpenChange pozvan sa:", open, "selectedClient:", selectedClient?.fullName || "null");
-        console.log("🔧 Trenutno stanje - isDialogOpen:", isDialogOpen, "nova vrednost:", open);
-        
-        if (!open && selectedClient) {
-          console.log("⚠️ Dialog se zatvara dok je selectedClient postavljen - možda je greška!");
-          console.log("⚠️ selectedClient podaci:", {
-            id: selectedClient.id,
-            fullName: selectedClient.fullName,
-            phone: selectedClient.phone
-          });
-        }
         
         if (!open) {
           console.log("🔧 Dialog se zatvara - resetujem selectedClient");
