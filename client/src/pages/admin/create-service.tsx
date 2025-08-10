@@ -561,18 +561,33 @@ export default function CreateService() {
                       <SelectValue placeholder="Izaberite uređaj..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.isArray(appliances) && appliances.length > 0 ? (
-                        appliances.map((appliance) => (
-                          <SelectItem key={appliance.id} value={appliance.id.toString()}>
-                            {appliance.category.name} - {appliance.manufacturer.name}
-                            {appliance.model && ` (${appliance.model})`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-appliances" disabled>
-                          {appliancesLoading ? "Učitavanje aparata..." : "Nema registrovanih aparata"}
-                        </SelectItem>
-                      )}
+                      {(() => {
+                        console.log("Rendering appliances dropdown:", {
+                          appliances,
+                          isArray: Array.isArray(appliances),
+                          length: appliances?.length,
+                          loading: appliancesLoading,
+                          clientId: watchedClientId
+                        });
+                        
+                        if (Array.isArray(appliances) && appliances.length > 0) {
+                          return appliances.map((appliance) => {
+                            console.log("Rendering appliance:", appliance);
+                            return (
+                              <SelectItem key={appliance.id} value={appliance.id.toString()}>
+                                {appliance.category.name} - {appliance.manufacturer.name}
+                                {appliance.model && ` (${appliance.model})`}
+                              </SelectItem>
+                            );
+                          });
+                        } else {
+                          return (
+                            <SelectItem value="no-appliances" disabled>
+                              {appliancesLoading ? "Učitavanje aparata..." : "Nema registrovanih aparata"}
+                            </SelectItem>
+                          );
+                        }
+                      })()}
                     </SelectContent>
                   </Select>
                   {errors.applianceId && (
