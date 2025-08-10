@@ -193,17 +193,9 @@ export default function CreateService() {
       console.log("🔍 Fetching appliances for client ID:", watchedClientId);
       
       try {
-        const response = await apiRequest("GET", `/api/clients/${watchedClientId}/appliances`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("🔍 Appliances API error:", response.status, errorText);
-          throw new Error(`Failed to fetch appliances: ${response.status} ${errorText}`);
-        }
-        
-        const appliancesData = await response.json();
-        console.log("🔍 Appliances data received:", appliancesData);
-        return appliancesData;
+        const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
+        console.log("🔍 Appliances data received:", response);
+        return response;
       } catch (error) {
         console.error("🔍 Error fetching appliances:", error);
         throw error;
@@ -253,16 +245,10 @@ export default function CreateService() {
       console.log("🔍 Sending service data to API:", serviceData);
 
       try {
-        const response = await apiRequest("POST", "/api/services", serviceData);
-        console.log("🔍 API Response status:", response.status);
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("🔍 API Error response:", errorData);
-          throw new Error(errorData.message || `HTTP ${response.status}`);
-        }
-        
-        const result = await response.json();
+        const result = await apiRequest("/api/services", {
+          method: "POST",
+          body: JSON.stringify(serviceData),
+        });
         console.log("🔍 API Success response:", result);
         return result;
       } catch (error) {
