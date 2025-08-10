@@ -186,18 +186,24 @@ export default function CreateService() {
 
   // Fetch appliances for selected client
   const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
-    queryKey: ["/api/appliances", watchedClientId],
+    queryKey: ["/api/clients", watchedClientId, "appliances"],
     queryFn: async () => {
-      if (!watchedClientId) return [];
+      if (!watchedClientId) {
+        console.log("🔍 No client ID, returning empty array");
+        return [];
+      }
       
-      console.log("🔍 Fetching appliances for client ID:", watchedClientId);
+      console.log("🔍 Fetching appliances for client ID:", watchedClientId, "Type:", typeof watchedClientId);
       
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
-        console.log("🔍 Appliances data received:", response);
+        console.log("🔍 Raw API response:", response);
+        console.log("🔍 Response type:", typeof response);
+        console.log("🔍 Is array:", Array.isArray(response));
         
         // Proveravamo da li je response niz
         if (Array.isArray(response)) {
+          console.log("🔍 Returning appliances array with length:", response.length);
           return response;
         } else {
           console.warn("🔍 API response is not an array, returning empty array:", response);
@@ -208,18 +214,21 @@ export default function CreateService() {
         return []; // Vraćamo prazan niz umesto da bacamo grešku
       }
     },
-    enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
+    enabled: !!watchedClientId && watchedClientId !== "" && !isNaN(parseInt(watchedClientId)),
     retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // More debug logging  
-  console.log("CreateService Appliances Debug:", {
+  // More debug logging - se izvršava na svakom render-u
+  console.log("🔍 CreateService Render Debug:", {
+    watchedClientId,
+    watchedClientIdType: typeof watchedClientId,
+    watchedClientIdEmpty: !watchedClientId,
     appliances,
     appliancesType: typeof appliances,
     appliancesIsArray: Array.isArray(appliances),
     appliancesLength: Array.isArray(appliances) ? appliances.length : 'Not an array',
     appliancesLoading,
-    watchedClientId,
     appliancesError,
     hasAppliancesError: !!appliancesError,
     appliancesErrorMessage: appliancesError?.message,
