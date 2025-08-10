@@ -186,26 +186,33 @@ export default function CreateService() {
 
   // Fetch appliances for selected client
   const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
-    queryKey: ["/api/appliances", watchedClientId],
+    queryKey: [`/api/clients/${watchedClientId}/appliances`],
     queryFn: async () => {
       if (!watchedClientId) return [];
       
+      console.log("🔍 Fetching appliances for client:", watchedClientId);
+      
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
+        console.log("🔍 Appliances API response:", response);
         
         // Proveravamo da li je response niz
         if (Array.isArray(response)) {
+          console.log("🔍 Found appliances:", response.length, response);
           return response;
         } else {
+          console.log("🔍 Response is not array:", response);
           return [];
         }
       } catch (error) {
-        console.error("Error fetching appliances:", error);
+        console.error("🔍 Error fetching appliances:", error);
         return []; // Vraćamo prazan niz umesto da bacamo grešku
       }
     },
     enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
     retry: 1,
+    staleTime: 0, // Uvek fetch najnovije podatke
+    cacheTime: 0, // Ne keširaj podatke
   });
 
   // Debug logging
