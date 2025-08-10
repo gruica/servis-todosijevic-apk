@@ -183,7 +183,6 @@ export default function Clients() {
   
   // Open dialog for adding new client
   const handleAddClient = () => {
-    console.log("🆕 handleAddClient pozvan - dodavanje novog klijenta");
     form.reset();
     setSelectedClient(null);
     setIsDialogOpen(true);
@@ -514,11 +513,7 @@ export default function Clients() {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     e.nativeEvent.stopImmediatePropagation();
-                                    console.log("👁️ EYE DUGME KLIKNUTO za client ID:", client.id, "fullName:", client.fullName);
-                                    
-                                    // Immediately navigate and block any other handlers
                                     window.location.hash = `#/clients/${client.id}`;
-                                    console.log("👁️ Direktno promenjeno location.hash");
                                   }}
                                   title="Detalji klijenta"
                                 >
@@ -561,13 +556,9 @@ export default function Clients() {
       
       {/* Add/Edit Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
-        console.log("🔧 Dialog onOpenChange pozvan sa:", open, "selectedClient:", selectedClient?.fullName || "null");
-        
         if (!open) {
-          console.log("🔧 Dialog se zatvara - resetujem selectedClient");
           setSelectedClient(null);
         }
-        
         setIsDialogOpen(open);
       }}>
         <DialogContent className="sm:max-w-[500px]">
