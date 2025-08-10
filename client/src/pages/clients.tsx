@@ -513,13 +513,12 @@ export default function Clients() {
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
                                     console.log("👁️ EYE DUGME KLIKNUTO za client ID:", client.id, "fullName:", client.fullName);
-                                    console.log("👁️ Pozivam navigate sa putanjom:", `/clients/${client.id}`);
                                     
-                                    // Immediately navigate and return false to prevent other handlers
-                                    setTimeout(() => navigate(`/clients/${client.id}`), 0);
-                                    console.log("👁️ Navigate pozvan uspešno");
-                                    return false;
+                                    // Immediately navigate and block any other handlers
+                                    window.location.hash = `#/clients/${client.id}`;
+                                    console.log("👁️ Direktno promenjeno location.hash");
                                   }}
                                   title="Detalji klijenta"
                                 >
