@@ -185,9 +185,9 @@ export default function CreateService() {
   });
 
   // Fetch appliances for selected client
-  const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
+  const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery({
     queryKey: [`/api/clients/${watchedClientId}/appliances`],
-    queryFn: async () => {
+    queryFn: async (): Promise<Appliance[]> => {
       if (!watchedClientId) return [];
       
       console.log("🔍 Fetching appliances for client:", watchedClientId);
@@ -199,7 +199,7 @@ export default function CreateService() {
         // Proveravamo da li je response niz
         if (Array.isArray(response)) {
           console.log("🔍 Found appliances:", response.length, response);
-          return response;
+          return response as Appliance[];
         } else {
           console.log("🔍 Response is not array:", response);
           return [];
@@ -212,12 +212,12 @@ export default function CreateService() {
     enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
     retry: 1,
     staleTime: 0, // Uvek fetch najnovije podatke
-    cacheTime: 0, // Ne keširaj podatke
+    gcTime: 0, // Ne keširaj podatke
   });
 
   // Debug logging
   if (watchedClientId) {
-    console.log("Client selected:", watchedClientId, "Appliances:", appliances?.length || 0);
+    console.log("Client selected:", watchedClientId, "Appliances:", appliances.length || 0);
   }
 
   // Fetch technicians
