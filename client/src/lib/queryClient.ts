@@ -124,20 +124,9 @@ export const getQueryFn: <T>(options: {
 
     await throwIfResNotOk(res);
     try {
-      const text = await res.text();
-      console.log("🔧 Raw response text:", text.substring(0, 200) + (text.length > 200 ? '...' : ''));
-      
-      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-        console.error("🚨 Server vraća HTML umesto JSON!");
-        throw new Error("Server je vratio HTML stranicu umesto JSON odgovora. Proverite API endpoint.");
-      }
-      
-      return JSON.parse(text);
+      return await res.json();
     } catch (error) {
       console.error("JSON parsing greška:", error);
-      if (error.message.includes('HTML')) {
-        throw error;
-      }
       throw new Error("Odgovor servera nije u validnom JSON formatu");
     }
   };
