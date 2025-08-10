@@ -2,8 +2,24 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorMessage = res.statusText;
+    try {
+      // Pokušaj da dobijemo JSON odgovor za greške
+      const clonedRes = res.clone();
+      const errorData = await clonedRes.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      // Ako JSON parsing ne uspe, pokušaj sa text
+      try {
+        const clonedRes = res.clone();
+        const text = await clonedRes.text();
+        errorMessage = text || res.statusText;
+      } catch {
+        // Ako ni text ne uspe, koristi statusText
+        errorMessage = res.statusText;
+      }
+    }
+    throw new Error(`${res.status}: ${errorMessage}`);
   }
 }
 
@@ -107,7 +123,12 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    try {
+      return await res.json();
+    } catch (error) {
+      console.error("JSON parsing greška:", error);
+      throw new Error("Odgovor servera nije u validnom JSON formatu");
+    }
   };
 
 export const queryClient = new QueryClient({
