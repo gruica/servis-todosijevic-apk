@@ -117,7 +117,7 @@ export default function CreateService() {
       console.log("🔍 Fetching appliances for client ID:", watchedClientId);
       
       try {
-        const response = await apiRequest("GET", `/api/clients/${watchedClientId}/appliances`);
+        const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`, { method: "GET" });
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -177,7 +177,10 @@ export default function CreateService() {
       console.log("🔍 Sending service data to API:", serviceData);
 
       try {
-        const response = await apiRequest("POST", "/api/services", serviceData);
+        const response = await apiRequest("/api/services", { 
+          method: "POST", 
+          body: JSON.stringify(serviceData) 
+        });
         console.log("🔍 API Response status:", response.status);
         
         if (!response.ok) {
