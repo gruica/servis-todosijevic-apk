@@ -186,53 +186,32 @@ export default function CreateService() {
 
   // Fetch appliances for selected client
   const { data: appliances = [], isLoading: appliancesLoading, error: appliancesError } = useQuery<Appliance[]>({
-    queryKey: ["/api/clients", watchedClientId, "appliances"],
+    queryKey: ["/api/appliances", watchedClientId],
     queryFn: async () => {
-      if (!watchedClientId) {
-        console.log("🔍 No client ID, returning empty array");
-        return [];
-      }
-      
-      console.log("🔍 Fetching appliances for client ID:", watchedClientId, "Type:", typeof watchedClientId);
+      if (!watchedClientId) return [];
       
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`);
-        console.log("🔍 Raw API response:", response);
-        console.log("🔍 Response type:", typeof response);
-        console.log("🔍 Is array:", Array.isArray(response));
         
         // Proveravamo da li je response niz
         if (Array.isArray(response)) {
-          console.log("🔍 Returning appliances array with length:", response.length);
           return response;
         } else {
-          console.warn("🔍 API response is not an array, returning empty array:", response);
           return [];
         }
       } catch (error) {
-        console.error("🔍 Error fetching appliances:", error);
+        console.error("Error fetching appliances:", error);
         return []; // Vraćamo prazan niz umesto da bacamo grešku
       }
     },
-    enabled: !!watchedClientId && watchedClientId !== "" && !isNaN(parseInt(watchedClientId)),
+    enabled: !!watchedClientId && !isNaN(parseInt(watchedClientId)),
     retry: 1,
-    refetchOnWindowFocus: false,
   });
 
-  // More debug logging - se izvršava na svakom render-u
-  console.log("🔍 CreateService Render Debug:", {
-    watchedClientId,
-    watchedClientIdType: typeof watchedClientId,
-    watchedClientIdEmpty: !watchedClientId,
-    appliances,
-    appliancesType: typeof appliances,
-    appliancesIsArray: Array.isArray(appliances),
-    appliancesLength: Array.isArray(appliances) ? appliances.length : 'Not an array',
-    appliancesLoading,
-    appliancesError,
-    hasAppliancesError: !!appliancesError,
-    appliancesErrorMessage: appliancesError?.message,
-  });
+  // Debug logging
+  if (watchedClientId) {
+    console.log("Client selected:", watchedClientId, "Appliances:", appliances?.length || 0);
+  }
 
   // Fetch technicians
   const { data: technicians = [] } = useQuery<Technician[]>({
@@ -513,20 +492,13 @@ export default function CreateService() {
                                 key={client.id}
                                 value={`${client.fullName} ${client.phone} ${client.email || ''} ${client.address || ''} ${client.city || ''}`}
                                 onSelect={() => {
-                                  console.log("🔍 Client selected:", client.id, client.fullName);
                                   const clientIdString = client.id.toString();
                                   
                                   setValue("clientId", clientIdString);
                                   setValue("applianceId", ""); // Reset appliance when client changes
-                                  setSelectedClientId(clientIdString); // Update local state too
+                                  setSelectedClientId(clientIdString);
                                   setIsClientSelectorOpen(false);
                                   setClientSearchQuery(""); // Reset search
-                                  
-                                  console.log("🔍 After setting values:", {
-                                    clientIdString,
-                                    formClientId: watch("clientId"),
-                                    selectedClientIdState: clientIdString
-                                  });
                                 }}
                                 className="flex flex-col items-start gap-1 p-3"
                               >
