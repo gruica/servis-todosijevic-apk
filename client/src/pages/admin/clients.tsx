@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +58,7 @@ const editClientSchema = z.object({
 
 type EditClientFormValues = z.infer<typeof editClientSchema>;
 
-export default function AdminClientsPage() {
+const AdminClientsPage = memo(function AdminClientsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -555,4 +555,6 @@ export default function AdminClientsPage() {
       </Dialog>
     </div>
   );
-}
+});
+
+export default AdminClientsPage;

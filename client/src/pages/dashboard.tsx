@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -81,11 +81,11 @@ type DashboardStats = {
   applianceStats: { categoryId: number, count: number, name?: string, icon?: string }[];
 };
 
-export default function Dashboard() {
+const Dashboard = memo(function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [, setLocation] = useLocation();
   
-  console.log("Dashboard komponenta se renderuje");
+  // Dashboard komponenta se renderuje - debug log uklonjen za performance
   
   // Koristimo refetch opciju za osvežavanje statistike
   const { 
@@ -119,7 +119,7 @@ export default function Dashboard() {
   
   // Dodajemo useEffect da osvežimo podatke kada se komponenta montira
   useEffect(() => {
-    console.log("Dashboard useEffect se pokreće");
+    // Dashboard useEffect se pokreće - debug log uklonjen za performance
     
     try {
       // Osvežimo statistiku kada se prikaže dashboard
@@ -570,4 +570,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+});
+
+export default Dashboard;

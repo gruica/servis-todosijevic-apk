@@ -1,87 +1,106 @@
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
-import Clients from "@/pages/clients";
-import ClientDetails from "@/pages/client-details";
-import Services from "@/pages/services";
-import SimplifiedServices from "@/pages/simplified-services";
-import BasicServicesPage from "@/pages/basic/services";
-import EnhancedServices from "@/pages/enhanced-services";
-import AdminServices from "@/pages/admin/services";
-import CreateService from "@/pages/admin/create-service";
-import AdminClients from "@/pages/admin/clients";
-import AdminSpareParts from "@/pages/admin/spare-parts";
-import AdminAvailableParts from "@/pages/admin/available-parts";
-import AdminSparePartsCatalogPage from "@/pages/admin/spare-parts-catalog";
-import AdminWebScrapingPage from "@/pages/admin/web-scraping";
-import SuppliersPage from "@/pages/admin/suppliers";
-import PartsCatalogPage from "@/pages/admin/parts-catalog";
-import Appliances from "@/pages/appliances";
-import Users from "@/pages/users";
-import UserProfile from "@/pages/user-profile";
-import TechnicianServicesMobile from "@/pages/technician/services-mobile";
-import TechnicianProfile from "@/pages/technician/profile";
-import TechnicianMyProfile from "@/pages/technician/my-profile";
-import TechnicianNotifications from "@/pages/technician/notifications";
-import TechnicianSettings from "@/pages/technician/settings";
-import TechnicianHelp from "@/pages/technician/help";
-import TechnicianContact from "@/pages/technician/contact";
-import TechnicianServicesList from "@/pages/technician-services";
-import CreateTechnicianUser from "@/pages/create-technician-user";
-import MaintenanceSchedules from "@/pages/maintenance-schedules";
-import EmailSettings from "@/pages/email-settings";
 
-import SQLAdmin from "@/pages/sql-admin";
-import ExcelImportExport from "@/pages/excel-import-export";
-import ExcelImport from "@/pages/admin/excel-import";
-import UserVerification from "@/pages/admin/user-verification";
+// PERFORMANCE BOOST: Lazy load heavy components
+const Clients = lazy(() => import("@/pages/clients"));
+const ClientDetails = lazy(() => import("@/pages/client-details"));
+const Services = lazy(() => import("@/pages/services"));
+const SimplifiedServices = lazy(() => import("@/pages/simplified-services"));
+const BasicServicesPage = lazy(() => import("@/pages/basic/services"));
+const EnhancedServices = lazy(() => import("@/pages/enhanced-services"));
+const AdminServices = lazy(() => import("@/pages/admin/services"));
+const CreateService = lazy(() => import("@/pages/admin/create-service"));
+const AdminClients = lazy(() => import("@/pages/admin/clients"));
+const AdminSpareParts = lazy(() => import("@/pages/admin/spare-parts"));
+const AdminAvailableParts = lazy(() => import("@/pages/admin/available-parts"));
+const AdminSparePartsCatalogPage = lazy(() => import("@/pages/admin/spare-parts-catalog"));
+const AdminWebScrapingPage = lazy(() => import("@/pages/admin/web-scraping"));
+const SuppliersPage = lazy(() => import("@/pages/admin/suppliers"));
+const PartsCatalogPage = lazy(() => import("@/pages/admin/parts-catalog"));
+const Appliances = lazy(() => import("@/pages/appliances"));
+const Users = lazy(() => import("@/pages/users"));
+const UserProfile = lazy(() => import("@/pages/user-profile"));
+const TechnicianServicesMobile = lazy(() => import("@/pages/technician/services-mobile"));
+const TechnicianProfile = lazy(() => import("@/pages/technician/profile"));
+const TechnicianMyProfile = lazy(() => import("@/pages/technician/my-profile"));
+const TechnicianNotifications = lazy(() => import("@/pages/technician/notifications"));
+const TechnicianSettings = lazy(() => import("@/pages/technician/settings"));
+const TechnicianHelp = lazy(() => import("@/pages/technician/help"));
+const TechnicianContact = lazy(() => import("@/pages/technician/contact"));
+const TechnicianServicesList = lazy(() => import("@/pages/technician-services"));
+const CreateTechnicianUser = lazy(() => import("@/pages/create-technician-user"));
+const MaintenanceSchedules = lazy(() => import("@/pages/maintenance-schedules"));
+const EmailSettings = lazy(() => import("@/pages/email-settings"));
+
+const SQLAdmin = lazy(() => import("@/pages/sql-admin"));
+const ExcelImportExport = lazy(() => import("@/pages/excel-import-export"));
+const ExcelImport = lazy(() => import("@/pages/admin/excel-import"));
+const UserVerification = lazy(() => import("@/pages/admin/user-verification"));
 // SMS functionality has been completely removed from the application
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 import { initializeCapacitor, isNativeMobile } from "./capacitor";
 import { NotificationProvider } from "@/contexts/notification-context";
 
-// Import customer pages
-import CustomerServiceRequest from "@/pages/customer";
-import CustomerProfile from "@/pages/customer/profile";
-import CustomerServices from "@/pages/customer/services";
+// PERFORMANCE BOOST: Lazy load customer pages
+const CustomerServiceRequest = lazy(() => import("@/pages/customer"));
+const CustomerProfile = lazy(() => import("@/pages/customer/profile"));
+const CustomerServices = lazy(() => import("@/pages/customer/services"));
 
-// Import business partner pages
-import BusinessDashboard from "@/pages/business";
-import BusinessProfile from "@/pages/business/profile";
-import BusinessServices from "@/pages/business/services";
-import BusinessMessages from "@/pages/business/messages";
-import NewBusinessServiceRequest from "@/pages/business/services/new";
-import EditBusinessService from "@/pages/business/services/edit.tsx";
-import NewBusinessClient from "@/pages/business/clients/new";
-import BusinessClients from "@/pages/business/clients/index-simple";
-import BusinessComplus from "@/pages/business/complus";
+// PERFORMANCE BOOST: Lazy load business partner pages  
+const BusinessDashboard = lazy(() => import("@/pages/business"));
+const BusinessProfile = lazy(() => import("@/pages/business/profile"));
+const BusinessServices = lazy(() => import("@/pages/business/services"));
+const BusinessMessages = lazy(() => import("@/pages/business/messages"));
+const NewBusinessServiceRequest = lazy(() => import("@/pages/business/services/new"));
+const EditBusinessService = lazy(() => import("@/pages/business/services/edit.tsx"));
+const NewBusinessClient = lazy(() => import("@/pages/business/clients/new"));
+const BusinessClients = lazy(() => import("@/pages/business/clients/index-simple"));
+const BusinessComplus = lazy(() => import("@/pages/business/complus"));
 
-// Import the new HomePage
+// PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
-import DiagnosticsPage from "@/pages/diagnostics";
-
-import DiagnosticServicesPage from "@/pages/diagnostic-services";
-import SystemDiagnostics from "@/pages/system-diagnostics";
-import EmailVerificationDemo from "@/pages/email-verification-demo";
-
-import DataExportPage from "@/pages/admin/data-export";
-import SMSMobileAPIConfigPage from "@/pages/admin/sms-mobile-api-config";
-import SMSBulkPage from "@/pages/admin/sms-bulk";
-import ComplusBillingPage from "@/pages/admin/complus-billing";
-import BusinessPartnersAdminPageFixed from "@/pages/admin/business-partners-fixed";
-import ServisKomerc from "@/pages/admin/servis-komerc";
-import AIPredictiveMaintenancePage from "@/pages/admin/ai-predictive-maintenance";
-import ComplusDashboard from "@/pages/complus";
 import ComplusAuthPage from "@/pages/complus-auth";
+const DiagnosticsPage = lazy(() => import("@/pages/diagnostics"));
+const DiagnosticServicesPage = lazy(() => import("@/pages/diagnostic-services"));
+const SystemDiagnostics = lazy(() => import("@/pages/system-diagnostics"));
+const EmailVerificationDemo = lazy(() => import("@/pages/email-verification-demo"));
+const DataExportPage = lazy(() => import("@/pages/admin/data-export"));
+const SMSMobileAPIConfigPage = lazy(() => import("@/pages/admin/sms-mobile-api-config"));
+const SMSBulkPage = lazy(() => import("@/pages/admin/sms-bulk"));
+const ComplusBillingPage = lazy(() => import("@/pages/admin/complus-billing"));
+const BusinessPartnersAdminPageFixed = lazy(() => import("@/pages/admin/business-partners-fixed"));
+const ServisKomerc = lazy(() => import("@/pages/admin/servis-komerc"));
+const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predictive-maintenance"));
+const ComplusDashboard = lazy(() => import("@/pages/complus"));
+
+const LoadingFallback = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-pulse flex space-x-4">
+        <div className="rounded-full bg-gray-300 h-12 w-12"></div>
+        <div className="flex-1 space-y-2 py-1">
+          <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+      <p className="mt-4 text-gray-600">Učitavam...</p>
+    </div>
+  </div>
+);
 
 function Router() {
   return (
-    <Switch>
+    <Suspense fallback={<LoadingFallback />}>
+      <Switch>
       {/* Public home page - novi javni homepage za sve korisnike */}
       <Route path="/" component={HomePage} />
       
@@ -169,8 +188,9 @@ function Router() {
       <RoleProtectedRoute path="/business/clients" component={BusinessClients} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business"]} />
       
-      <Route component={NotFound} />
-    </Switch>
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

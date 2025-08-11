@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -106,7 +106,7 @@ interface Technician {
   specialization: string;
 }
 
-export default function AdminServices() {
+const AdminServices = memo(function AdminServices() {
   const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1374,4 +1374,6 @@ export default function AdminServices() {
       </div>
     </AdminLayout>
   );
-}
+});
+
+export default AdminServices;
