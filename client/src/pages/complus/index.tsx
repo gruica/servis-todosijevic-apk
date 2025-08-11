@@ -123,7 +123,7 @@ export default function ComplusDashboard() {
   }, [services]);
 
   // Query za Com Plus statistike
-  const { data: stats = {} } = useQuery<{
+  const { data: stats = { total: 0, active: 0, completedThisMonth: 0, warranty: 0 } } = useQuery<{
     total: number;
     active: number;
     completedThisMonth: number;
@@ -583,7 +583,7 @@ export default function ComplusDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-700 mb-1">Ukupno servisa</p>
-                  <p className="text-3xl font-bold text-blue-900">{stats?.total || 0}</p>
+                  <p className="text-3xl font-bold text-blue-900">{stats.total}</p>
                   <p className="text-xs text-blue-600 mt-1">Com Plus brendovi</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
@@ -598,7 +598,7 @@ export default function ComplusDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-700 mb-1">Aktivni servisi</p>
-                  <p className="text-3xl font-bold text-amber-900">{stats?.active || 0}</p>
+                  <p className="text-3xl font-bold text-amber-900">{stats.active}</p>
                   <p className="text-xs text-amber-600 mt-1">U toku i dodeljeni</p>
                 </div>
                 <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center">
@@ -613,7 +613,7 @@ export default function ComplusDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-700 mb-1">Završeni ovaj mesec</p>
-                  <p className="text-3xl font-bold text-green-900">{stats?.completedThisMonth || 0}</p>
+                  <p className="text-3xl font-bold text-green-900">{stats.completedThisMonth}</p>
                   <p className="text-xs text-green-600 mt-1">Tekući mesec</p>
                 </div>
                 <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
@@ -628,7 +628,7 @@ export default function ComplusDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-purple-700 mb-1">Garancijski servisi</p>
-                  <p className="text-3xl font-bold text-purple-900">{stats?.warranty || 0}</p>
+                  <p className="text-3xl font-bold text-purple-900">{stats.warranty}</p>
                   <p className="text-xs text-purple-600 mt-1">U garanciji</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
@@ -1053,7 +1053,7 @@ export default function ComplusDashboard() {
                                       </Button>
                                       <Button
                                         variant="destructive"
-                                        onClick={() => handleRemoveTechnician(service.id)}
+                                        onClick={() => handleRemoveTechnician()}
                                         disabled={removeTechnicianMutation.isPending}
                                       >
                                         {removeTechnicianMutation.isPending ? "Povlačim..." : "Povuci servis"}
