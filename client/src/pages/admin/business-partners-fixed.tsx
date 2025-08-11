@@ -124,7 +124,7 @@ export default function BusinessPartnerManagementFixed() {
     refetchInterval: 30000 // Refetch every 30 seconds
   });
 
-  console.log("📊 Business Partner Stats Raw Data:", statsData);
+
 
   const stats: BusinessPartnerStats = statsData || {
     totalRequests: 0,
@@ -138,8 +138,7 @@ export default function BusinessPartnerManagementFixed() {
     topPartners: []
   };
 
-  console.log("📊 Business Partner Stats Processed:", stats);
-  console.log("📋 Business Partner Services:", services?.length || 0, "total services");
+
 
   // Translations
   const statusTranslations: Record<string, string> = {

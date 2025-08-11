@@ -25,15 +25,14 @@ export default function DataExportPage() {
     setExportingTables(prev => new Set(prev).add(tableName));
     
     try {
-      console.log(`Starting export for table: ${tableName}, format: ${format}`);
+
       
       const response = await fetch(`/api/export/data/${tableName}?format=${format}`, {
         method: 'GET',
         credentials: 'include',
       });
 
-      console.log(`Response status: ${response.status}, ok: ${response.ok}`);
-      console.log(`Response headers:`, response.headers);
+
 
       if (!response.ok) {
         // Try to get error message
@@ -49,25 +48,23 @@ export default function DataExportPage() {
 
       // Check if response is actually CSV
       const contentType = response.headers.get('content-type');
-      console.log(`Content-Type: ${contentType}`);
+
       
       if (!contentType?.includes('text/csv')) {
-        console.warn('Response is not CSV, checking if it\'s JSON error...');
         const text = await response.text();
-        console.log('Response text:', text);
         
         try {
           const jsonError = JSON.parse(text);
           throw new Error(jsonError.error || 'Neočekivan format odgovora');
         } catch {
           // Not JSON, proceed with download
-          console.log('Not JSON error, proceeding with download');
+
         }
       }
 
       // Create blob and download
       const blob = await response.blob();
-      console.log(`Blob size: ${blob.size} bytes`);
+
       
       if (blob.size === 0) {
         throw new Error('Preuzeti fajl je prazan');
@@ -92,7 +89,7 @@ export default function DataExportPage() {
         description: `Podaci iz tabele "${tableName}" su uspešno preuzeti (${blob.size} bytes).`,
       });
     } catch (error) {
-      console.error('Export error:', error);
+      // Error handled by toast notification
       toast({
         variant: "destructive",
         title: "Greška pri izvozu",

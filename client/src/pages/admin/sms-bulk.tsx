@@ -82,7 +82,7 @@ export default function BulkSMSPage() {
         throw new Error(response.error || 'Nepoznata greška');
       }
     } catch (error) {
-      console.error('[BULK SMS] Greška:', error);
+      // Error handled by toast notification
       toast({
         title: "Greška pri slanju",
         description: error instanceof Error ? error.message : "Nepoznata greška",

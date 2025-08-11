@@ -207,7 +207,7 @@ export default function TechnicianServicesAdmin() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => console.log("Details", service.id)}
+                                onClick={() => {/* Detalji servisa funkcionalnost */}}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
                                 Detalji

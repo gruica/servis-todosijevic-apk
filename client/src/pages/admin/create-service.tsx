@@ -96,7 +96,7 @@ export default function CreateService() {
 
   const watchedClientId = watch("clientId") || "";
 
-  // Debug logging removed for production
+
 
   // Fetch clients
   const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
@@ -109,7 +109,7 @@ export default function CreateService() {
     queryFn: async () => {
       if (!watchedClientId) return [];
       
-      // Fetching appliances for client
+
       
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`, { method: "GET" });
@@ -139,7 +139,7 @@ export default function CreateService() {
   // Create service mutation
   const createServiceMutation = useMutation({
     mutationFn: async (data: CreateServiceFormData) => {
-      // Service creation starting
+
       
       // Validate required fields
       if (!data.clientId || !data.applianceId) {

@@ -76,7 +76,7 @@ export default function SMSBulkNotifications() {
 
       setRecipients(recipientsList);
     } catch (error) {
-      console.error('Greška pri učitavanju korisnika:', error);
+      // Error handled by toast
       toast({
         title: "Greška",
         description: "Nije moguće učitati listu korisnika",
@@ -156,7 +156,7 @@ export default function SMSBulkNotifications() {
       }
 
     } catch (error) {
-      console.error('Greška pri slanju SMS-a:', error);
+      // Error handled by toast notification
       toast({
         title: "Greška",
         description: "Došlo je do greške pri slanju SMS obaveštenja",

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle, Smartphone, Send } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { AdminErrorBoundary, useErrorHandler } from "@/utils/error-boundary";
+import { useComponentLogger } from "@/utils/production-logger";
 
 interface SMSMobileAPIStatus {
   enabled: boolean;
@@ -18,7 +20,7 @@ interface SMSMobileAPIStatus {
   baseUrl?: string;
 }
 
-export default function SMSMobileAPIConfig() {
+function SMSMobileAPIConfig() {
   const [status, setStatus] = useState<SMSMobileAPIStatus | null>(null);
   const [config, setConfig] = useState({
     apiKey: '',
@@ -36,6 +38,8 @@ export default function SMSMobileAPIConfig() {
   const [testing, setTesting] = useState(false);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
+  const logger = useComponentLogger('SMSMobileAPIConfig');
+  const { handleApiError } = useErrorHandler();
 
   // Load initial status
   useEffect(() => {
@@ -45,17 +49,18 @@ export default function SMSMobileAPIConfig() {
   const loadStatus = async () => {
     try {
       const response = await apiRequest('/api/sms-mobile-api/status');
-      setStatus(response);
+      const data = await response.json();
+      setStatus(data);
       
-      if (response.configured) {
+      if (data.configured) {
         setConfig(prev => ({
           ...prev,
-          baseUrl: response.baseUrl || 'https://api.smsmobileapi.com',
-          enabled: response.enabled
+          baseUrl: data.baseUrl || 'https://api.smsmobileapi.com',
+          enabled: data.enabled
         }));
       }
     } catch (error) {
-      console.error('Error loading SMS Mobile API status:', error);
+      logger.error('Error loading SMS Mobile API status', error);
       toast({
         title: "Greška",
         description: "Nije moguće učitati status SMS Mobile API",
@@ -81,7 +86,7 @@ export default function SMSMobileAPIConfig() {
       // Reload status
       await loadStatus();
     } catch (error) {
-      console.error('Error saving config:', error);
+      logger.error('Error saving SMS config', error);
       toast({
         title: "Greška",
         description: "Greška pri čuvanju konfiguracije",
@@ -98,8 +103,9 @@ export default function SMSMobileAPIConfig() {
       const response = await apiRequest('/api/sms-mobile-api/test', {
         method: 'POST'
       });
+      const data = await response.json();
 
-      if (response.success) {
+      if (data.success) {
         toast({
           title: "Uspešno",
           description: "Konekcija sa SMS Mobile API je uspešna",
@@ -115,7 +121,7 @@ export default function SMSMobileAPIConfig() {
 
       await loadStatus();
     } catch (error) {
-      console.error('Error testing connection:', error);
+      logger.error('Error testing SMS connection', error);
       toast({
         title: "Greška",
         description: "Greška pri testiranju konekcije",
@@ -154,7 +160,7 @@ export default function SMSMobileAPIConfig() {
         });
       }
     } catch (error) {
-      console.error('Error sending test SMS:', error);
+      logger.error('Error sending test SMS', error);
       toast({
         title: "Greška",
         description: "Greška pri slanju test SMS-a",
@@ -355,5 +361,13 @@ export default function SMSMobileAPIConfig() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SMSMobileAPIConfigPage() {
+  return (
+    <AdminErrorBoundary componentName="SMSMobileAPIConfig">
+      <SMSMobileAPIConfig />
+    </AdminErrorBoundary>
   );
 }

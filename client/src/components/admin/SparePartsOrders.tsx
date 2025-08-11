@@ -223,16 +223,9 @@ const SparePartsOrders = memo(function SparePartsOrders() {
         title: "Deo označen kao primljen",
         description: "Rezervni deo je prebačen u dostupne delove.",
       });
-      // Optimized: Single batched invalidation
-      queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const firstKey = query.queryKey[0]?.toString();
-          return Boolean(firstKey && (
-            firstKey.includes('/api/admin/spare-parts') ||
-            firstKey.includes('/api/admin/available-parts')
-          ));
-        }
-      });
+      // Optimized: Targeted batch invalidation
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/available-parts'], exact: true });
     },
     onError: (error: any) => {
       toast({
@@ -1026,10 +1019,8 @@ const SparePartsOrders = memo(function SparePartsOrders() {
                     title: "Uspešno poručeno",
                     description: "Rezervni deo je uspešno poručen direktno.",
                   });
-                  // Refresh spare parts after direct order
-                  queryClient.invalidateQueries({
-                    queryKey: ['/api/spare-parts-orders']
-                  });
+                  // Optimized: Single targeted invalidation
+                  queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'], exact: true });
                 }}
               />
             </div>
