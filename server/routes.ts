@@ -29,6 +29,44 @@ import { ServisKomercNotificationService } from './servis-komerc-notification-se
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 // SMS mobile functionality has been completely removed
 
+// ENTERPRISE MONITORING & HEALTH CHECK
+async function setupEnterpriseHealthEndpoint(app: Express) {
+  app.get("/api/health", async (req, res) => {
+    try {
+      const startTime = Date.now();
+      const { checkDatabaseHealth } = await import('./db.js');
+      const dbHealth = await checkDatabaseHealth();
+      
+      const systemHealth = {
+        status: dbHealth.healthy ? 'healthy' : 'unhealthy',
+        timestamp: new Date().toISOString(),
+        database: {
+          healthy: dbHealth.healthy,
+          responseTime: `${dbHealth.responseTime}ms`,
+          activeConnections: dbHealth.activeConnections
+        },
+        performance: {
+          healthCheckTime: `${Date.now() - startTime}ms`,
+          uptime: `${Math.floor(process.uptime())}s`,
+          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+        },
+        version: {
+          node: process.version,
+          app: 'FrigoSistem_v2025.1.0_Enterprise'
+        }
+      };
+      
+      res.status(dbHealth.healthy ? 200 : 503).json(systemHealth);
+    } catch (error) {
+      res.status(503).json({
+        status: 'unhealthy',
+        error: 'Health check failed',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+}
+
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
   'pending': 'Na čekanju',
