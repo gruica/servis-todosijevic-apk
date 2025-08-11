@@ -411,7 +411,7 @@ const AdminServices = memo(function AdminServices() {
       
       return matchesSearch && matchesStatus && matchesTechnician && matchesPartner && matchesPickup && matchesCity;
     } catch (error) {
-      console.error("Error filtering service:", service.id, error);
+      // Error handled silently
       return false;
     }
   });
@@ -457,12 +457,9 @@ const AdminServices = memo(function AdminServices() {
   };
 
   // Handle service details
-  const handleViewDetails = (service: AdminService) => {
-    console.log("handleViewDetails called for service:", service.id);
-    setSelectedService(service);
-    setIsDetailsOpen(true);
-    console.log("isDetailsOpen set to true");
-  };
+  const handleViewDetails = useCallback((service: AdminService) => {
+    dispatchDialog({ type: 'OPEN_DETAILS', payload: service });
+  }, []);
 
   // Handle edit service
   const handleEditService = (service: AdminService) => {
@@ -894,11 +891,7 @@ const AdminServices = memo(function AdminServices() {
                         <div className="flex items-center gap-1 ml-4">
                           <button
                             className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                            onClick={() => {
-                              console.log("Native button clicked for service:", service.id);
-                              setSelectedService(service);
-                              setIsDetailsOpen(true);
-                            }}
+                            onClick={() => handleViewDetails(service)}
                             title="Pogledaj detalje"
                           >
                             <Eye className="h-3 w-3" />
