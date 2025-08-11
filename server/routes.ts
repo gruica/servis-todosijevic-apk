@@ -2456,7 +2456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       
                       // COMPLUS obaveštenja za sve ComPlus brendove
                       const complusBrands = ['electrolux', 'elica', 'candy', 'hoover', 'turbo air'];
-                      if (manufacturer && complusBrands.includes(manufacturerName)) {
+                      if (manufacturer && manufacturerName && complusBrands.includes(manufacturerName)) {
                         console.log(`[COMPLUS EMAIL] Završen ${manufacturer.name} servis #${serviceId}, šaljem ComPlus obaveštenje`);
                         
                         const complusServiceCompletionSent = await emailService.sendComplusServiceCompletion(
@@ -2712,8 +2712,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             newStatus: validStatus,
             statusDescription: STATUS_DESCRIPTIONS[validStatus] || validStatus,
             technicianNotes: technicianNotes,
-            businessPartnerPhone: businessPartner?.phone,
-            businessPartnerName: businessPartner?.fullName
+            businessPartnerPhone: businessPartner?.phone || undefined,
+            businessPartnerName: businessPartner?.fullName || undefined
           });
           
           // Log rezultate
@@ -3188,10 +3188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       console.log(`Vraćam ${servicesWithDetails.length} servisa sa detaljima za servisera ${technicianId}`);
-      res.json(servicesWithDetails);
+      return res.json(servicesWithDetails);
     } catch (error) {
       console.error("Error getting technician services:", error);
-      res.status(500).json({ error: "Greška pri dobijanju servisa" });
+      return res.status(500).json({ error: "Greška pri dobijanju servisa" });
     }
   };
 
@@ -3209,7 +3209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Korisnik nije serviser" });
       }
       
-      const technicianId = Number(fullUser.technicianId);
+      const technicianId = parseInt(fullUser.technicianId.toString());
       console.log(`JWT: Fetching services for technician ID ${technicianId}`);
       
       // Get all services assigned to this technician - using direct Drizzle query for fresh data
@@ -4270,7 +4270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications", jwtAuth, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
-      const notifications = await NotificationService.getUserNotifications(req.user.id, limit);
+      const notifications = await NotificationService.getUserNotifications(req.user!.id, limit);
       res.json(notifications);
     } catch (error) {
       console.error("Greška pri dobijanju notifikacija:", error);
@@ -4281,7 +4281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dobijanje broja nepročitanih notifikacija
   app.get("/api/notifications/unread-count", jwtAuth, async (req, res) => {
     try {
-      const count = await NotificationService.getUnreadCount(req.user.id);
+      const count = await NotificationService.getUnreadCount(req.user!.id);
       res.json({ count });
     } catch (error) {
       console.error("Greška pri dobijanju broja nepročitanih notifikacija:", error);
@@ -4293,7 +4293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/notifications/:id/mark-read", jwtAuth, async (req, res) => {
     try {
       const notificationId = parseInt(req.params.id);
-      await NotificationService.markAsRead(notificationId, req.user.id);
+      await NotificationService.markAsRead(notificationId, req.user!.id);
       res.json({ success: true });
     } catch (error) {
       console.error("Greška pri označavanju notifikacije kao pročitane:", error);
@@ -4304,7 +4304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Označavanje svih notifikacija kao pročitane
   app.post("/api/notifications/mark-all-read", jwtAuth, async (req, res) => {
     try {
-      await NotificationService.markAllAsRead(req.user.id);
+      await NotificationService.markAllAsRead(req.user!.id);
       res.json({ success: true });
     } catch (error) {
       console.error("Greška pri označavanju svih notifikacija kao pročitane:", error);
@@ -4377,7 +4377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceId: appliance.id,
         description,
         status: "pending" as const,
-        warrantyStatus: "out_of_warranty",
+        warrantyStatus: "van garancije",
         createdAt: new Date().toISOString().split('T')[0]
       });
 
@@ -4388,7 +4388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(newService);
     } catch (error) {
       console.error("Greška pri kreiranju servisa:", error);
-      res.status(500).json({ error: "Greška pri kreiranju servisa", message: error.message });
+      res.status(500).json({ error: "Greška pri kreiranju servisa", message: error instanceof Error ? error.message : 'Nepoznata greška' });
     }
   });
 
@@ -4405,7 +4405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(services);
     } catch (error) {
       console.error("Greška pri dohvatanju servisa:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju servisa", message: error.message });
+      res.status(500).json({ error: "Greška pri dohvatanju servisa", message: error instanceof Error ? error.message : 'Nepoznata greška' });
     }
   });
 
@@ -4422,7 +4422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliances);
     } catch (error) {
       console.error("Greška pri dohvatanju uređaja:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju uređaja", message: error.message });
+      res.status(500).json({ error: "Greška pri dohvatanju uređaja", message: error instanceof Error ? error.message : 'Nepoznata greška' });
     }
   });
 
@@ -4509,7 +4509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 clientName: client?.fullName || 'Nepoznat klijent',
                 deviceType: category?.name || 'Uređaj',
                 technicianName: technician.fullName,
-                assignedBy: req.user?.fullName || req.user?.username || 'Admin'
+                assignedBy: (req.user as any)?.fullName || (req.user as any)?.username || 'Admin'
               });
               
               console.log(`📱 SMS o dodeli servisa poslat poslovnom partneru ${businessPartner.fullName || businessPartner.username}`);
@@ -4541,7 +4541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 clientName: client?.fullName || 'Nepoznat klijent',
                 deviceType: deviceType,
                 technicianName: technician.fullName,
-                assignedBy: req.user?.fullName || req.user?.username || 'Admin'
+                assignedBy: (req.user as any)?.fullName || (req.user as any)?.username || 'Admin'
               });
               console.log(`[SMS ADMIN] ✅ SMS o dodeli servisera poslat administratoru ${admin.fullName} (${admin.phone})`);
             } catch (adminSmsError) {
@@ -4601,7 +4601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Pošalji notifikaciju o promeni statusa
       try {
-        await NotificationService.notifyServiceStatusChanged(serviceId, status, req.user.id);
+        await NotificationService.notifyServiceStatusChanged(serviceId, status, req.user!.id);
       } catch (notificationError) {
         console.error("Greška pri slanju notifikacije o promeni statusa:", notificationError);
       }
@@ -4644,8 +4644,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             newStatus: status,
             statusDescription: STATUS_DESCRIPTIONS[status] || status,
             technicianNotes: undefined,
-            businessPartnerPhone: businessPartner?.phone,
-            businessPartnerName: businessPartner?.fullName
+            businessPartnerPhone: businessPartner?.phone || undefined,
+            businessPartnerName: businessPartner?.fullName || undefined
           });
           
           // Log rezultate
@@ -4783,7 +4783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, {} as Record<string, typeof billingServices>);
 
       const totalServices = billingServices.length;
-      const totalCost = billingServices.reduce((sum, service) => sum + (service.cost || 0), 0);
+      const totalCost = billingServices.reduce((sum, service) => sum + Number(service.cost || 0), 0);
 
       const monthNames = [
         'Januar', 'Februar', 'Mart', 'April', 'Maj', 'Jun',
@@ -4802,7 +4802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
           brand,
           count: servicesByBrand[brand].length,
-          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0)
         }))
       };
 
@@ -4836,12 +4836,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Poruka je obavezna" });
       }
 
-      const settings = await storage.getSystemSettings();
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value || '']));
       const smsConfig = {
-        apiKey: settings.sms_mobile_api_key || '',
-        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-        senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
-        enabled: settings.sms_mobile_enabled === 'true'
+        apiKey: settingsMap['sms_mobile_api_key'] || '',
+        baseUrl: settingsMap['sms_mobile_base_url'] || 'https://api.smsmobileapi.com',
+        senderId: settingsMap['sms_mobile_sender_id'] || 'FRIGO SISTEM',
+        enabled: settingsMap['sms_mobile_enabled'] === 'true'
       };
 
       if (!smsConfig.enabled || !smsConfig.apiKey) {
@@ -4874,7 +4875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             phone: recipient.phone,
             name: recipient.name,
             success: false,
-            error: error.message
+            error: error instanceof Error ? error.message : 'Nepoznata greška'
           });
         }
       }
@@ -5012,21 +5013,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Dohvati servis sa klijentom
       const service = await storage.getService(serviceId);
-      if (!service || !service.client) {
-        return res.status(404).json({ error: "Servis ili klijent nije pronađen" });
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
       }
       
-      if (!service.client.phone) {
+      const client = await storage.getClient(service.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+      
+      if (!client.phone) {
         return res.status(400).json({ error: "Klijent nema broj telefona" });
       }
       
-      console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${service.client.fullName} za servis #${serviceId}`);
+      console.log(`[SMS] Slanje ${type || 'custom'} SMS-a klijentu ${client.fullName} za servis #${serviceId}`);
       
       // SMS functionality removed
       const result = false;
       
       if (result) {
-        console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${service.client.fullName}`);
+        console.log(`[SMS] ✅ SMS uspešno poslat klijentu ${client.fullName}`);
         return res.json({ 
           success: true, 
           message: "SMS obaveštenje uspešno poslato"
@@ -5061,7 +5067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/clients/:id", jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
       console.log(`DELETE /api/admin/clients/${req.params.id} - Admin deleting client`);
-      console.log(`JWT Admin: ${req.user?.username} (ID: ${req.user?.id})`);
+      console.log(`JWT Admin: ${(req.user as any)?.username} (ID: ${(req.user as any)?.id})`);
       console.log(`Request headers:`, req.headers.authorization);
 
       const clientId = parseInt(req.params.id);
@@ -5123,7 +5129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/appliances/:id", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za brisanje uređaja" });
       }
 
@@ -5178,7 +5184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bulk delete operations for admin
   app.post("/api/admin/bulk-delete", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za masovno brisanje" });
       }
 
