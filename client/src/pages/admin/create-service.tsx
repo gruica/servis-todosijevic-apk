@@ -96,12 +96,7 @@ export default function CreateService() {
 
   const watchedClientId = watch("clientId") || "";
 
-  // Debug logging
-  console.log("CreateService Debug:", {
-    watchedClientId,
-    clientIdType: typeof watchedClientId,
-    watchedClientIdEmpty: !watchedClientId,
-  });
+  // Debug logging removed for production
 
   // Fetch clients
   const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
@@ -114,7 +109,7 @@ export default function CreateService() {
     queryFn: async () => {
       if (!watchedClientId) return [];
       
-      console.log("🔍 Fetching appliances for client ID:", watchedClientId);
+      // Fetching appliances for client
       
       try {
         const response = await apiRequest(`/api/clients/${watchedClientId}/appliances`, { method: "GET" });
@@ -126,10 +121,10 @@ export default function CreateService() {
         }
         
         const appliancesData = await response.json();
-        console.log("🔍 Appliances data received:", appliancesData);
+        // Appliances data received successfully
         return appliancesData;
       } catch (error) {
-        console.error("🔍 Error fetching appliances:", error);
+        // Error fetching appliances - will be handled by React Query
         throw error;
       }
     },
@@ -137,16 +132,7 @@ export default function CreateService() {
     retry: 1,
   });
 
-  // More debug logging
-  console.log("CreateService Appliances Debug:", {
-    appliances,
-    appliancesLength: appliances.length,
-    appliancesLoading,
-    watchedClientId,
-    appliancesError,
-    hasAppliancesError: !!appliancesError,
-    appliancesErrorMessage: appliancesError?.message,
-  });
+  // Appliance data managed by React Query
 
   // Fetch technicians
   const { data: technicians = [] } = useQuery<Technician[]>({
@@ -156,7 +142,7 @@ export default function CreateService() {
   // Create service mutation
   const createServiceMutation = useMutation({
     mutationFn: async (data: CreateServiceFormData) => {
-      console.log("🔍 Mutation starting with data:", data);
+      // Service creation starting
       
       // Validate required fields
       if (!data.clientId || !data.applianceId) {

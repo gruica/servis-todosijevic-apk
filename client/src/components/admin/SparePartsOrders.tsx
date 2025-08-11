@@ -658,22 +658,22 @@ export default function SparePartsOrders() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm font-medium">Ime i prezime</Label>
-                          <p className="mt-1">{selectedOrder.service.client.fullName}</p>
+                          <p className="mt-1">{selectedOrder.service.client?.fullName || 'N/A'}</p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium">Telefon</Label>
-                          <p className="mt-1">{selectedOrder.service.client.phone}</p>
+                          <p className="mt-1">{selectedOrder.service.client?.phone || 'N/A'}</p>
                         </div>
-                        {selectedOrder.service.client.email && (
+                        {selectedOrder.service.client?.email && (
                           <div>
                             <Label className="text-sm font-medium">Email</Label>
-                            <p className="mt-1">{selectedOrder.service.client.email}</p>
+                            <p className="mt-1">{selectedOrder.service.client?.email}</p>
                           </div>
                         )}
-                        {selectedOrder.service.client.address && (
+                        {selectedOrder.service.client?.address && (
                           <div>
                             <Label className="text-sm font-medium">Adresa</Label>
-                            <p className="mt-1">{selectedOrder.service.client.address}, {selectedOrder.service.client.city}</p>
+                            <p className="mt-1">{selectedOrder.service.client?.address || 'N/A'}, {selectedOrder.service.client?.city || 'N/A'}</p>
                           </div>
                         )}
                       </div>
@@ -684,22 +684,22 @@ export default function SparePartsOrders() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm font-medium">Proizvođač</Label>
-                          <p className="mt-1">{selectedOrder.service.appliance.manufacturer.name}</p>
+                          <p className="mt-1">{selectedOrder.service.appliance?.manufacturer?.name || 'N/A'}</p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium">Kategorija</Label>
-                          <p className="mt-1">{selectedOrder.service.appliance.category.name}</p>
+                          <p className="mt-1">{selectedOrder.service.appliance?.category?.name || 'N/A'}</p>
                         </div>
-                        {selectedOrder.service.appliance.model && (
+                        {selectedOrder.service.appliance?.model && (
                           <div>
                             <Label className="text-sm font-medium">Model</Label>
-                            <p className="mt-1">{selectedOrder.service.appliance.model}</p>
+                            <p className="mt-1">{selectedOrder.service.appliance?.model}</p>
                           </div>
                         )}
-                        {selectedOrder.service.appliance.serialNumber && (
+                        {selectedOrder.service.appliance?.serialNumber && (
                           <div>
                             <Label className="text-sm font-medium">Serijski broj</Label>
-                            <p className="mt-1">{selectedOrder.service.appliance.serialNumber}</p>
+                            <p className="mt-1">{selectedOrder.service.appliance?.serialNumber}</p>
                           </div>
                         )}
                       </div>

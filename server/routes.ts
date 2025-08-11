@@ -5661,7 +5661,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (service.technicianId) {
           technicianId = service.technicianId;
         } else {
-          technicianId = 1; // Default technician for testing
+          console.warn(`[SPARE PARTS] Admin kreira porudžbinu bez tehnčara - servis ${serviceId}`);
+          return res.status(400).json({ 
+            error: "Servis nema dodeljenog tehničara. Molimo dodelite tehničara pre kreiranja porudžbine rezervnih delova." 
+          });
         }
       }
 
