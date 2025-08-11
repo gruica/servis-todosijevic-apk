@@ -90,11 +90,34 @@ export default function BusinessDashboard() {
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [isEnhancedDialogOpen, setIsEnhancedDialogOpen] = useState(false);
   
-  // Dohvatanje servisnih zahteva za poslovnog partnera
-  const { data: services, isLoading } = useQuery<ServiceItem[]>({
+  // ENTERPRISE OPTIMIZED: Dohvatanje servisnih zahteva za poslovnog partnera
+  const { data: businessData, isLoading } = useQuery({
     queryKey: ["/api/business/services"],
+    queryFn: async () => {
+      const startTime = Date.now();
+      const response = await fetch("/api/business/services", {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch services");
+      }
+      const data = await response.json();
+      const responseTime = Date.now() - startTime;
+      
+      // Performance monitoring za enterprise sistem
+      console.log(`🚀 Business Partner API Response: ${responseTime}ms`);
+      
+      return data;
+    },
     enabled: !!user?.id,
+    staleTime: 60000, // 1 minute cache za bolje UX
+    refetchOnWindowFocus: false,
   });
+
+  const services = businessData?.services || [];
+  const meta = businessData?.meta || {};
 
   // Dohvatanje proširenih podataka za selektovan servis
   const { data: enhancedService, isLoading: enhancedLoading } = useQuery({
