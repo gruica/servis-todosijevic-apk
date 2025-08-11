@@ -47,7 +47,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
 
   const orderSparePartMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      console.log('🔧 FRONTEND: Šaljem porudžbinu sa podacima:', orderData);
+      // Production: Order data preparation complete
       const response = await fetch('/api/admin/spare-parts/order', {
         method: 'POST',
         headers: {
@@ -58,7 +58,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       });
       
       const result = await response.json();
-      console.log('🔧 FRONTEND: Odgovor servera:', result);
+      // Production: Server response processed
       
       if (!response.ok) {
         throw new Error(result.error || 'Greška pri poručivanju');
@@ -103,7 +103,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔧 ADMIN FORM SUBMISSION STARTED - handleSubmit called');
+    // Production: Form submission initiated
     
     // Trim whitespace from all string fields
     const trimmedDeviceModel = deviceModel.trim();
@@ -111,17 +111,10 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
     const trimmedApplianceCategory = applianceCategory.trim();
     const trimmedPartName = partName.trim();
     
-    // Debug logging
-    console.log('🔧 ADMIN FORM VALIDATION DEBUG:', {
-      selectedBrand,
-      deviceModel: `"${deviceModel}" -> "${trimmedDeviceModel}"`,
-      productCode: `"${productCode}" -> "${trimmedProductCode}"`,
-      applianceCategory: `"${applianceCategory}" -> "${trimmedApplianceCategory}"`,
-      partName: `"${partName}" -> "${trimmedPartName}"`
-    });
+    // Production: Form validation in progress
     
     if (!selectedBrand) {
-      console.log('❌ VALIDATION FAILED: selectedBrand je prazan');
+      // Production: Brand validation failed
       toast({
         title: "Greška",
         description: "Molimo odaberite brend aparata.",
@@ -137,7 +130,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       if (!trimmedApplianceCategory) emptyFields.push('Tip aparata');
       if (!trimmedPartName) emptyFields.push('Naziv dela');
       
-      console.log('❌ VALIDATION FAILED: Prazna polja:', emptyFields);
+      // Production: Required fields validation failed
       toast({
         title: "Greška",
         description: `Molimo popunite sva obavezna polja: ${emptyFields.join(', ')}`,
@@ -146,7 +139,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       return;
     }
     
-    console.log('✅ VALIDATION PASSED: Svi podaci su OK, šaljem porudžbinu...');
+    // Production: Validation passed, processing order
 
     const orderData = {
       serviceId: serviceId || null,
@@ -162,7 +155,7 @@ export function SimpleSparePartsDialog({ serviceId, onSuccess }: SimpleSparePart
       emailTarget: selectedBrand === 'beko' ? 'servis@eurotehnikamn.me' : 'servis@complus.me'
     };
     
-    console.log('🔧 FRONTEND: Šalje orderData:', JSON.stringify(orderData, null, 2));
+    // Production: Order data prepared for submission
 
     orderSparePartMutation.mutate(orderData);
   };

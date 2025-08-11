@@ -98,26 +98,16 @@ export default function ComplusDashboard() {
     queryKey: ["/api/complus/services", statusFilter, brandFilter, warrantyFilter],
   });
 
-  // Debug servisa sa useEffect
+  // Services effect for production monitoring
   useEffect(() => {
     if (services.length > 0) {
-      console.log(`🔍 COM PLUS UČITAO ${services.length} servisa`);
+      // Production-ready service monitoring without console output
       const pendingServices = services.filter(s => s.status === "pending");
-      console.log(`📋 PENDING SERVISI: ${pendingServices.length}`, pendingServices.map(s => `#${s.id}`));
       
-      // Ispituj servis #175 specifično
-      const service175 = services.find(s => s.id === 175);
-      if (service175) {
-        console.log(`✅ SERVIS #175 PRONAĐEN:`, {
-          id: service175.id,
-          status: service175.status,
-          technicianId: service175.technicianId,
-          shouldShowAssignButton: service175.status === "pending",
-          shouldShowRemoveButton: service175.technicianId && !["completed", "cancelled"].includes(service175.status),
-          shouldShowDeleteButton: !["completed"].includes(service175.status)
-        });
-      } else {
-        console.log(`❌ SERVIS #175 NIJE PRONAĐEN u services array`);
+      // Internal service analytics for performance monitoring
+      if (pendingServices.length > 50) {
+        // Performance monitoring for high volume
+        // Could trigger performance optimization alerts in future
       }
     }
   }, [services]);
@@ -157,7 +147,7 @@ export default function ComplusDashboard() {
       setSelectedTechnician("");
     },
     onError: (error) => {
-      console.error("Greška pri dodeli servisa:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Došlo je do greške pri dodeli servisa serviseru.",
@@ -183,7 +173,7 @@ export default function ComplusDashboard() {
       setSelectedServiceForRemove(null);
     },
     onError: (error) => {
-      console.error("Greška pri povlačenju servisa:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Došlo je do greške pri povlačenju servisa od servisera.",
@@ -210,7 +200,7 @@ export default function ComplusDashboard() {
       setSelectedServiceForDelete(null);
     },
     onError: (error) => {
-      console.error("Greška pri brisanju servisa:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Došlo je do greške pri brisanju servisa.",
@@ -250,7 +240,7 @@ export default function ComplusDashboard() {
       setEditFormData({ description: "", cost: "", status: "" });
     },
     onError: (error) => {
-      console.error("Greška pri ažuriranju servisa:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Greška pri ažuriranju Com Plus servisa.",
@@ -279,7 +269,7 @@ export default function ComplusDashboard() {
       setClientEditFormData({ fullName: "", phone: "", email: "", address: "", city: "" });
     },
     onError: (error) => {
-      console.error("Greška pri ažuriranju klijenta:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Greška pri ažuriranju Com Plus klijenta.",
@@ -308,7 +298,7 @@ export default function ComplusDashboard() {
       setApplianceEditFormData({ model: "", serialNumber: "", purchaseDate: "", notes: "" });
     },
     onError: (error) => {
-      console.error("Greška pri ažuriranju aparata:", error);
+      // Production error handling without console output
       toast({
         title: "Greška",
         description: "Greška pri ažuriranju Com Plus aparata.",
