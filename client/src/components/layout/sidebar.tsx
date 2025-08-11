@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { AppIcons } from "@/lib/app-icons";
+import { memo } from "react";
 
 interface SidebarProps {
   isMobileOpen: boolean;
   closeMobileMenu: () => void;
 }
 
-export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
 
@@ -171,7 +172,7 @@ export function Sidebar({ isMobileOpen, closeMobileMenu }: SidebarProps) {
       </div>
     </div>
   );
-}
+});
 
 function LogoutButton() {
   const { logoutMutation } = useAuth();

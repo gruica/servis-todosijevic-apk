@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return response.json();
     },
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

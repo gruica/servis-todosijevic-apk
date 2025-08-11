@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, memo } from "react";
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { useLocation } from "wouter";
@@ -10,7 +10,7 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export const AdminLayout = memo(function AdminLayout({ children }: AdminLayoutProps) {
   const [, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
   
@@ -49,4 +49,4 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     </div>
   );
-}
+});

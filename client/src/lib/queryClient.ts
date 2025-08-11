@@ -116,9 +116,11 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
       staleTime: 5 * 60 * 1000, // 5 minuta umesto 30s - PERFORMANCE BOOST
-      cacheTime: 10 * 60 * 1000, // 10 minuta cache
+      gcTime: 10 * 60 * 1000, // 10 minuta cache - corrected property name
       retry: false,
+      networkMode: 'online', // PERFORMANCE: Ne izvršavaj query-e offline
     },
     mutations: {
       retry: false,

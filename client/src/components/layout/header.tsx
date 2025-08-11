@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AdminProfileWidget } from "@/components/admin/profile-widget";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +13,7 @@ interface HeaderProps {
   toggleSidebar: () => void;
 }
 
-export function Header({ toggleSidebar }: HeaderProps) {
+export const Header = memo(function Header({ toggleSidebar }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
   const { logoutMutation } = useAuth();
@@ -67,4 +67,4 @@ export function Header({ toggleSidebar }: HeaderProps) {
       </div>
     </header>
   );
-}
+});
