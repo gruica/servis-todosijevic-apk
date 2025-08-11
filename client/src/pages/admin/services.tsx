@@ -232,6 +232,10 @@ const AdminServices = memo(function AdminServices() {
     returnReason: "",
     returnNotes: ""
   });
+
+  // Destructure state for easier access
+  const { searchQuery, statusFilter, technicianFilter, partnerFilter, pickupFilter, cityFilter } = filterState;
+  const { selectedService, isDetailsOpen, isEditOpen, isDeleteOpen, isReturnOpen, isSparePartsOpen, returnReason, returnNotes } = dialogState;
   
   // Koristi notification context
   const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
@@ -345,9 +349,7 @@ const AdminServices = memo(function AdminServices() {
         description: "Servis je uspešno vraćen od tehnčara u admin bazu.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
-      setIsReturnOpen(false);
-      setReturnReason("");
-      setReturnNotes("");
+      dispatchDialog({ type: 'CLOSE_ALL' });
     },
     onError: (error: any) => {
       toast({
@@ -463,22 +465,17 @@ const AdminServices = memo(function AdminServices() {
 
   // Handle edit service
   const handleEditService = (service: AdminService) => {
-    setSelectedService(service);
-    setIsEditOpen(true);
+    dispatchDialog({ type: 'OPEN_EDIT', payload: service });
   };
 
   // Handle delete service
   const handleDeleteService = (service: AdminService) => {
-    setSelectedService(service);
-    setIsDeleteOpen(true);
+    dispatchDialog({ type: 'OPEN_DELETE', payload: service });
   };
 
   // Handle return service from technician
   const handleReturnService = (service: AdminService) => {
-    setSelectedService(service);
-    setReturnReason("");
-    setReturnNotes("");
-    setIsReturnOpen(true);
+    dispatchDialog({ type: 'OPEN_RETURN', payload: service });
   };
 
   // Handle assign technician
@@ -572,7 +569,7 @@ const AdminServices = memo(function AdminServices() {
             </CardContent>
           </Card>
           
-          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${pickupFilter === "picked_up" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => setPickupFilter(pickupFilter === "picked_up" ? "all" : "picked_up")}>
+          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${pickupFilter === "picked_up" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => dispatchFilter({ type: 'SET_PICKUP_FILTER', payload: pickupFilter === "picked_up" ? "all" : "picked_up" })}>
             <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -638,7 +635,7 @@ const AdminServices = memo(function AdminServices() {
             </CardContent>
           </Card>
           
-          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${partnerFilter === "business" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => setPartnerFilter(partnerFilter === "business" ? "all" : "business")}>
+          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${partnerFilter === "business" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => dispatchFilter({ type: 'SET_PARTNER_FILTER', payload: partnerFilter === "business" ? "all" : "business" })}>
             <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -674,7 +671,7 @@ const AdminServices = memo(function AdminServices() {
                   <Input
                     placeholder="Pretraži servise..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => dispatchFilter({ type: 'SET_SEARCH', payload: e.target.value })}
                     className="pl-10"
                   />
                 </div>
@@ -682,7 +679,7 @@ const AdminServices = memo(function AdminServices() {
               
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_STATUS_FILTER', payload: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -700,7 +697,7 @@ const AdminServices = memo(function AdminServices() {
               
               <div className="space-y-2">
                 <Label>Serviser</Label>
-                <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+                <Select value={technicianFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_TECHNICIAN_FILTER', payload: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -718,7 +715,7 @@ const AdminServices = memo(function AdminServices() {
               
               <div className="space-y-2">
                 <Label>Kreirao</Label>
-                <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                <Select value={partnerFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_PARTNER_FILTER', payload: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -732,7 +729,7 @@ const AdminServices = memo(function AdminServices() {
 
               <div className="space-y-2">
                 <Label>Preuzimanje uređaja</Label>
-                <Select value={pickupFilter} onValueChange={setPickupFilter}>
+                <Select value={pickupFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_PICKUP_FILTER', payload: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -746,7 +743,7 @@ const AdminServices = memo(function AdminServices() {
 
               <div className="space-y-2">
                 <Label>Grad</Label>
-                <Select value={cityFilter} onValueChange={setCityFilter}>
+                <Select value={cityFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_CITY_FILTER', payload: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -930,7 +927,7 @@ const AdminServices = memo(function AdminServices() {
         </Card>
 
         {/* Service Details Dialog */}
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <Dialog open={isDetailsOpen} onOpenChange={(open) => open ? null : dispatchDialog({ type: 'CLOSE_ALL' })}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Detalji servisa #{selectedService?.id}</DialogTitle>
@@ -1152,7 +1149,7 @@ const AdminServices = memo(function AdminServices() {
                         </p>
                       </div>
                       <Button
-                        onClick={() => setIsSparePartsOpen(true)}
+                        onClick={() => dispatchDialog({ type: 'OPEN_SPARE_PARTS', payload: selectedService })}
                         variant="outline"
                         size="sm"
                         className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
@@ -1169,7 +1166,7 @@ const AdminServices = memo(function AdminServices() {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <Dialog open={isDeleteOpen} onOpenChange={(open) => open ? null : dispatchDialog({ type: 'CLOSE_ALL' })}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Potvrda brisanja</DialogTitle>
@@ -1178,7 +1175,7 @@ const AdminServices = memo(function AdminServices() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+              <Button variant="outline" onClick={() => dispatchDialog({ type: 'CLOSE_ALL' })}>
                 Otkaži
               </Button>
               <Button 
@@ -1193,7 +1190,7 @@ const AdminServices = memo(function AdminServices() {
         </Dialog>
 
         {/* Edit Service Dialog */}
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <Dialog open={isEditOpen} onOpenChange={(open) => open ? null : dispatchDialog({ type: 'CLOSE_ALL' })}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Izmeni servis #{selectedService?.id}</DialogTitle>
@@ -1209,7 +1206,7 @@ const AdminServices = memo(function AdminServices() {
                     <Label htmlFor="status">Status</Label>
                     <Select 
                       value={selectedService.status} 
-                      onValueChange={(value) => setSelectedService({...selectedService, status: value})}
+                      onValueChange={(value) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, status: value} })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -1229,7 +1226,7 @@ const AdminServices = memo(function AdminServices() {
                     <Label htmlFor="technician">Serviser</Label>
                     <Select 
                       value={selectedService.technicianId?.toString() || "none"} 
-                      onValueChange={(value) => setSelectedService({...selectedService, technicianId: value === "none" ? null : parseInt(value)})}
+                      onValueChange={(value) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, technicianId: value === "none" ? null : parseInt(value)} })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Izaberi servisera..." />
@@ -1251,7 +1248,7 @@ const AdminServices = memo(function AdminServices() {
                   <Textarea 
                     id="description"
                     value={selectedService.description}
-                    onChange={(e) => setSelectedService({...selectedService, description: e.target.value})}
+                    onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, description: e.target.value} })}
                     placeholder="Opis problema..."
                     rows={3}
                   />
@@ -1262,7 +1259,7 @@ const AdminServices = memo(function AdminServices() {
                   <Textarea 
                     id="technicianNotes"
                     value={selectedService.technicianNotes || ""}
-                    onChange={(e) => setSelectedService({...selectedService, technicianNotes: e.target.value})}
+                    onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, technicianNotes: e.target.value} })}
                     placeholder="Napomene servisera..."
                     rows={3}
                   />
@@ -1275,7 +1272,7 @@ const AdminServices = memo(function AdminServices() {
                       id="cost"
                       type="number"
                       value={selectedService.cost || ""}
-                      onChange={(e) => setSelectedService({...selectedService, cost: e.target.value})}
+                      onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, cost: e.target.value} })}
                       placeholder="0.00"
                     />
                   </div>
@@ -1286,7 +1283,7 @@ const AdminServices = memo(function AdminServices() {
                       id="scheduledDate"
                       type="datetime-local"
                       value={selectedService.scheduledDate?.slice(0, 16) || ""}
-                      onChange={(e) => setSelectedService({...selectedService, scheduledDate: e.target.value})}
+                      onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, scheduledDate: e.target.value} })}
                     />
                   </div>
                 </div>
@@ -1296,7 +1293,7 @@ const AdminServices = memo(function AdminServices() {
                   <Textarea 
                     id="usedParts"
                     value={selectedService.usedParts || ""}
-                    onChange={(e) => setSelectedService({...selectedService, usedParts: e.target.value})}
+                    onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, usedParts: e.target.value} })}
                     placeholder="Lista korišćenih delova..."
                     rows={2}
                   />
@@ -1307,7 +1304,7 @@ const AdminServices = memo(function AdminServices() {
                   <Textarea 
                     id="machineNotes"
                     value={selectedService.machineNotes || ""}
-                    onChange={(e) => setSelectedService({...selectedService, machineNotes: e.target.value})}
+                    onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, machineNotes: e.target.value} })}
                     placeholder="Napomene o uređaju..."
                     rows={2}
                   />
@@ -1318,7 +1315,7 @@ const AdminServices = memo(function AdminServices() {
                     type="checkbox"
                     id="isCompletelyFixed"
                     checked={selectedService.isCompletelyFixed}
-                    onChange={(e) => setSelectedService({...selectedService, isCompletelyFixed: e.target.checked})}
+                    onChange={(e) => dispatchDialog({ type: 'SET_SELECTED_SERVICE', payload: {...selectedService, isCompletelyFixed: e.target.checked} })}
                     className="h-4 w-4"
                   />
                   <Label htmlFor="isCompletelyFixed">Potpuno ispravljen</Label>
@@ -1327,7 +1324,7 @@ const AdminServices = memo(function AdminServices() {
             )}
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              <Button variant="outline" onClick={() => dispatchDialog({ type: 'CLOSE_ALL' })}>
                 Otkaži
               </Button>
               <Button 
@@ -1344,7 +1341,7 @@ const AdminServices = memo(function AdminServices() {
         </Dialog>
 
         {/* Return Service Dialog */}
-        <Dialog open={isReturnOpen} onOpenChange={setIsReturnOpen}>
+        <Dialog open={isReturnOpen} onOpenChange={(open) => open ? null : dispatchDialog({ type: 'CLOSE_ALL' })}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Vrati servis od tehnčara</DialogTitle>
@@ -1357,7 +1354,7 @@ const AdminServices = memo(function AdminServices() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="return-reason">Razlog vraćanja</Label>
-                <Select value={returnReason} onValueChange={setReturnReason}>
+                <Select value={returnReason} onValueChange={(value) => dispatchDialog({ type: 'SET_RETURN_REASON', payload: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Izaberite razlog..." />
                   </SelectTrigger>
@@ -1377,7 +1374,7 @@ const AdminServices = memo(function AdminServices() {
                 <Textarea 
                   id="return-notes"
                   value={returnNotes}
-                  onChange={(e) => setReturnNotes(e.target.value)}
+                  onChange={(e) => dispatchDialog({ type: 'SET_RETURN_NOTES', payload: e.target.value })}
                   placeholder="Unesite dodatne napomene o razlogu vraćanja..."
                   rows={3}
                 />
@@ -1385,7 +1382,7 @@ const AdminServices = memo(function AdminServices() {
             </div>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsReturnOpen(false)}>
+              <Button variant="outline" onClick={() => dispatchDialog({ type: 'CLOSE_ALL' })}>
                 Otkaži
               </Button>
               <Button 
@@ -1404,7 +1401,7 @@ const AdminServices = memo(function AdminServices() {
         </Dialog>
 
         {/* Spare Parts Ordering Dialog */}
-        <Dialog open={isSparePartsOpen} onOpenChange={setIsSparePartsOpen}>
+        <Dialog open={isSparePartsOpen} onOpenChange={(open) => open ? null : dispatchDialog({ type: 'CLOSE_ALL' })}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Poruči rezervne delove - Servis #{selectedService?.id}</DialogTitle>
@@ -1448,7 +1445,7 @@ const AdminServices = memo(function AdminServices() {
                 <AdminSparePartsOrderingSimple 
                   serviceId={selectedService.id}
                   onSuccess={() => {
-                    setIsSparePartsOpen(false);
+                    dispatchDialog({ type: 'CLOSE_ALL' });
                     toast({
                       title: "Uspešno poručeno",
                       description: "Rezervni deo je uspešno poručen.",
@@ -1459,7 +1456,7 @@ const AdminServices = memo(function AdminServices() {
             )}
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsSparePartsOpen(false)}>
+              <Button variant="outline" onClick={() => dispatchDialog({ type: 'CLOSE_ALL' })}>
                 Zatvori
               </Button>
             </DialogFooter>
