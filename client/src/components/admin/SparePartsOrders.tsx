@@ -90,7 +90,7 @@ interface SparePartOrder {
   };
 }
 
-export default function SparePartsOrders() {
+function SparePartsOrders() {
   const [selectedOrder, setSelectedOrder] = useState<SparePartOrder | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -129,6 +129,7 @@ export default function SparePartsOrders() {
         description: "Porudžbina rezervnog dela je uspešno ažurirana.",
       });
       setIsEditOpen(false);
+      // Optimized: Only invalidate main spare parts list
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
@@ -143,26 +144,21 @@ export default function SparePartsOrders() {
   // Delete order mutation
   const deleteOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      console.log('DELETE API call starting for orderId:', orderId);
       const response = await apiRequest(`/api/admin/spare-parts/${orderId}`, {
         method: 'DELETE'
       });
-      console.log('DELETE API response status:', response.status);
       const result = await response.json();
-      console.log('DELETE API response data:', result);
       return result;
     },
-    onSuccess: (data) => {
-      console.log('DELETE mutation success:', data);
+    onSuccess: () => {
       toast({
         title: "Uspešno obrisano",
         description: "Porudžbina rezervnog dela je uspešno obrisana.",
       });
+      // Optimized: Only invalidate essential queries
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
     },
     onError: (error: any) => {
-      console.error('DELETE mutation error:', error);
       toast({
         title: "Greška pri brisanju",
         description: error.message || "Došlo je do greške pri brisanju porudžbine.",
@@ -184,6 +180,7 @@ export default function SparePartsOrders() {
         title: "Isporuka potvrđena",
         description: "Isporuka rezervnog dela je uspešno potvrđena. Deo je automatski uklonjen iz sistema poručivanja.",
       });
+      // Optimized: Only invalidate main spare parts list
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
@@ -227,8 +224,8 @@ export default function SparePartsOrders() {
         title: "Deo označen kao primljen",
         description: "Rezervni deo je prebačen u dostupne delove.",
       });
+      // Optimized: Invalidate only essential queries - spare parts and available parts
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/available-parts'] });
     },
     onError: (error: any) => {
@@ -1023,7 +1020,7 @@ export default function SparePartsOrders() {
                     title: "Uspešno poručeno",
                     description: "Rezervni deo je uspešno poručen direktno.",
                   });
-                  // Optionally refresh the orders list
+                  // Optimized: Only invalidate main spare parts list
                   queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
                 }}
               />
@@ -1040,3 +1037,6 @@ export default function SparePartsOrders() {
     </div>
   );
 }
+
+// Export component directly - React.memo optimization removed due to import constraints
+export default SparePartsOrders;

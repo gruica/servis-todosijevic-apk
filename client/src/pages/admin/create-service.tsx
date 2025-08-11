@@ -116,15 +116,12 @@ export default function CreateService() {
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("🔍 Appliances API error:", response.status, errorText);
           throw new Error(`Failed to fetch appliances: ${response.status} ${errorText}`);
         }
         
         const appliancesData = await response.json();
-        // Appliances data received successfully
         return appliancesData;
       } catch (error) {
-        // Error fetching appliances - will be handled by React Query
         throw error;
       }
     },
@@ -160,31 +157,24 @@ export default function CreateService() {
         notes: data.notes || null,
       };
 
-      console.log("🔍 Sending service data to API:", serviceData);
-
       try {
         const response = await apiRequest("/api/services", { 
           method: "POST", 
           body: JSON.stringify(serviceData) 
         });
-        console.log("🔍 API Response status:", response.status);
         
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("🔍 API Error response:", errorData);
           throw new Error(errorData.message || `HTTP ${response.status}`);
         }
         
         const result = await response.json();
-        console.log("🔍 API Success response:", result);
         return result;
       } catch (error) {
-        console.error("🔍 API Request failed:", error);
         throw error;
       }
     },
-    onSuccess: (data) => {
-      console.log("🔍 Mutation success:", data);
+    onSuccess: () => {
       toast({
         title: "Servis kreiran",
         description: "Novi servis je uspešno kreiran.",
@@ -193,7 +183,6 @@ export default function CreateService() {
       setLocation("/admin/services");
     },
     onError: (error: any) => {
-      console.error("🔍 Mutation error:", error);
       toast({
         title: "Greška",
         description: error.message || "Greška pri kreiranju servisa.",
@@ -203,13 +192,6 @@ export default function CreateService() {
   });
 
   const onSubmit = (data: CreateServiceFormData) => {
-    console.log("Form submitted with data:", data);
-    console.log("Mutation state:", { 
-      isPending: createServiceMutation.isPending, 
-      isError: createServiceMutation.isError,
-      error: createServiceMutation.error
-    });
-    
     // Dodatna validacija
     if (!data.clientId || !data.applianceId) {
       toast({
