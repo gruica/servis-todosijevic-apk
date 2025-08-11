@@ -19,10 +19,10 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### UI/UX Decisions
-- **Framework**: React.js with TypeScript
+- **Framework**: React.js with TypeScript.
 - **Components**: Shadcn/UI (built on Radix UI) for UI consistency and modern aesthetics.
 - **Styling**: Tailwind CSS with custom theme configuration for flexible and responsive design.
-- **Mobile Experience**: Optimized for mobile devices with specific handling for keyboard positioning, touch interactions, and floating dialogs, ensuring optimal user experience even on older devices.
+- **Mobile Experience**: Optimized for mobile devices, ensuring optimal user experience even on older devices.
 - **Design Patterns**: Professional dashboard-style interfaces with gradients, color-coded metrics, and clear typography for both admin and business partner panels.
 - **Accessibility**: Comprehensive accessibility support for dialogs with descriptive elements.
 
@@ -34,44 +34,33 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: PostgreSQL session store for production.
 - **API Design**: RESTful API with role-based access control.
 - **Mobile Packaging**: Capacitor for converting the web app into an Android APK, allowing technicians field access.
-- **Error Handling**: Robust error handling ensuring application stability, including graceful degradation and resilient startup processes.
-- **File Processing**: XLSX library for Excel import/export (currently deactivated for security reasons), Multer for file uploads.
-- **Image Processing**: Advanced OCR system with manufacturer-specific pattern detection and image preprocessing for efficient data entry.
-- **SMS System**: Comprehensive SMS notification system for status updates, parts orders, and client communications, with intelligent message compression algorithm that automatically shortens messages over 160 characters while preserving meaning. Optimized for single-part delivery via SMS Mobile API with Sender ID support.
-- **Performance Optimizations**: Ultra-fast service start functionality with millisecond response times (≤500ms) achieved through lightweight endpoints and background notification processing, eliminating the previous 5-9 second delays.
-- **SEO Optimization**: Advanced 2025 Google Guidelines implementation for both www.frigosistemtodosijevic.me and admin.me domains including: enhanced meta tags with geo-targeting (RS-21, Novi Sad coordinates), LocalBusiness schema with reviews/ratings, Core Web Vitals optimization (LCP <2.5s, INP <200ms, CLS <0.1), domain-specific robots.txt, dynamic sitemap.xml, enhanced Open Graph with business metadata, resource hints for performance, critical CSS inlining, humans.txt and security.txt files. Comprehensive performance monitoring endpoints with real-time metrics.
-- **ComPlus Email Integration**: Fully operational automatic email notification system for ComPlus brand services. SMTP authentication resolved with EMAIL_PASSWORD credentials using SSL 465 configuration. System automatically sends service completion notifications to servis@complus.me with professional HTML formatting, service details, and parts information. Includes updateCredentials() method for dynamic SMTP credential management and comprehensive error handling.
-- **Servis Komerc System**: Complete parallel system to ComPlus for Beko brand services. Includes automated daily email reports at 22:00, SMS notifications, service completion tracking, and spare parts management. Fully integrated with backend routes and email notification system. Features servis-komerc-daily-report.ts, servis-komerc-cron-service.ts, and servis-komerc-notification-service.ts for comprehensive Beko service management.
-- **Device Return Functionality**: Fully implemented "Vrati aparat klijentu" (Return Device to Client) feature in technician mobile interface (services-mobile.tsx). Allows technicians to mark completed services as device-returned with confirmation dialog, state management, API integration, and proper Serbian language support. Includes green action button with Home icon, professional dialog interface, and seamless workflow integration.
-- **Admin Panel Deep Code Analysis (August 11, 2025)**: Comprehensive deep analysis completed examining every admin panel component, page, and related code structure. Identified critical issues: SparePartsOrders.tsx with 6 excessive query invalidations, 30+ console.log statements across admin components, server/routes.ts with 808 console.log instances, missing critical components (sms-settings.tsx), and 5 duplicate spare parts components. Generated detailed admin-panel-analysis-report.md with prioritized fix recommendations categorized into 3 phases over 2-3 weeks. Analysis covered 24 admin pages, 20 admin components, and complete backend routes examination. **ALL CRITICAL FIXES COMPLETED (August 11, 2025)**: All 4 missing critical files created (MobileSMSConfig.tsx, backup.tsx, gsm-modem-settings.tsx, sms-test.tsx) with zero LSP errors, systematic debug console cleanup in create-service.tsx and UserVerificationPanel.tsx, SparePartsOrders optimized from 44 excessive query invalidations to 5 essential ones with React.memo performance enhancement. Administrative panel achieved 100% production readiness with zero TypeScript/LSP errors.
-- **Business Partner System Optimization (August 11, 2025)**: Complete LSP error resolution in business-partner-routes.ts - all 17 type safety errors fixed with explicit Request/Response parameter typing. Warranty status synchronized with Serbian language standard ("u garanciji"). Database validation confirmed 4 active business partners and 29 operational tables. API authentication and role-based access control validated. System now 100% production-ready with zero LSP errors.
-- **Technician Role 100% Achievement (August 11, 2025)**: **BREAKTHROUGH SUCCESS** - Technician system achieved perfect A+ (100/100) enterprise-grade rating. Complete implementation of missing services.tsx page with advanced filtering, search, and status management. All LSP errors resolved with correct import paths, achieving zero TypeScript errors across entire technician codebase. System validated: 4 verified technicians managing 91 services with EXCELLENT database health. Mobile optimization perfected with 13.8ms API response times, ultra-fast service start (≤500ms), and device return functionality. All 6 technician pages functional: services.tsx ✅, services-mobile.tsx ✅, my-profile.tsx ✅, help.tsx ✅, contact.tsx ✅, settings.tsx ✅. Enterprise features: JWT authentication, role-based access, real-time performance monitoring, professional UI/UX with complete accessibility. **FINAL STATUS: PERFECT ENTERPRISE IMPLEMENTATION** - technician role now operates at 100% functionality with enterprise-level security, performance, and code quality standards.
-- **TypeScript Error Resolution 100% Complete (August 11, 2025)**: **BREAKTHROUGH ACHIEVEMENT** - All 305 critical TypeScript/LSP errors completely resolved achieving zero errors across entire codebase. Systematic fixes implemented: server/routes.ts (218 errors→0), client/src/App.tsx (51 errors→0), server/storage.ts (36 errors→0). Major improvements: req.user undefined assertions with JWT middleware null checks, warranty status Serbian language compliance, type safety for all authentication endpoints, SMS/Email notification service integrations, complete error handling standardization. Multiple server restarts confirmed successful with zero TypeScript diagnostics. Application now 100% production-ready with enterprise-grade type safety and zero compilation errors across all critical components.
-- **ComPlus Administrative Panel Code Quality Analysis (August 11, 2025)**: **A+ EXCELLENCE RATING** - Comprehensive deep-dive analysis of 1,556 lines ComPlus administrative code achieving 96/100 quality score. Professional implementation confirmed: 9 dialog components with consistent patterns, 15 optimized React hooks, 11 strategic React Query invalidations, zero critical issues, 100% TypeScript compliance (3 minor type errors fixed in complus-daily-report.ts). Architecture excellence: single-file organization following guidelines, professional shadcn/UI integration, enterprise-grade cron services, comprehensive email reporting system. Production readiness certification: Zero LSP errors, optimal performance patterns, professional UX with Serbian language consistency, robust error handling. ComPlus panel certified for immediate production deployment with enterprise-level code quality standards.
+- **Error Handling**: Robust error handling ensuring application stability.
+- **File Processing**: Multer for file uploads.
+- **Image Processing**: Advanced OCR system with manufacturer-specific pattern detection and image preprocessing.
+- **SMS System**: Comprehensive SMS notification system for status updates, parts orders, and client communications, with intelligent message compression.
+- **Performance Optimizations**: Ultra-fast service start functionality with millisecond response times (≤500ms).
+- **SEO Optimization**: Advanced Google Guidelines implementation including enhanced meta tags, LocalBusiness schema, Core Web Vitals optimization, dynamic sitemap.xml, and performance monitoring endpoints.
+- **ComPlus Email Integration**: Fully operational automatic email notification system for ComPlus brand services with professional HTML formatting and dynamic SMTP credential management.
+- **Servis Komerc System**: Complete parallel system to ComPlus for Beko brand services, including automated daily email reports, SMS notifications, service completion tracking, and spare parts management.
+- **Device Return Functionality**: Fully implemented "Vrati aparat klijentu" (Return Device to Client) feature in technician mobile interface.
 
 ### Feature Specifications
 - **User Management**: Multi-role system (Admin, Technician, Customer, Business Partner), user verification, secure authentication, and role-specific profile management.
-- **Service Management**: Full service lifecycle tracking (pending, assigned, scheduled, in_progress, completed, cancelled, customer_refused_repair), technician assignment, client-appliance linkage, and automated status updates. Includes specific handling for customer refusal with mandatory reason and email notifications.
+- **Service Management**: Full service lifecycle tracking and automated status updates. Includes specific handling for customer refusal.
 - **Client & Appliance Management**: Detailed client profiles, categorized appliance registry with manufacturer data, and service history tracking.
 - **Maintenance Scheduling**: Automated scheduling with email notifications.
-- **Business Partner Integration**: Dedicated portal for partners to submit service requests with limited access. Enhanced with comprehensive service completion details including work performed, spare parts used/removed, technician contact information, service timeline, warranty status, and device pickup information. **Client editing functionality fully operational** with simplified component architecture (August 2025). **Tehnolux Podgorica** added as official Midea appliances representative with full system access (August 2025).
-- **Spare Parts Management**: Comprehensive system for tracking, ordering, and managing spare parts, including supplier-specific routing and detailed service context in notifications. Brand selection (Beko/Complus) is required for all spare parts orders with automatic email routing to appropriate suppliers. **FULLY FUNCTIONAL** - Admin panel spare parts ordering stabilized with React.memo optimization, backend endpoint `/api/admin/spare-parts-order` operational with ES module email integration.
-- **Notifications**: In-app and SMS notifications for all key events, with role-specific templates and comprehensive tracking. Email notifications for clients and business partners, with specific Beko warranty handling.
+- **Business Partner Integration**: Dedicated portal for partners to submit service requests with limited access. Includes comprehensive service completion details and client editing functionality.
+- **Spare Parts Management**: Comprehensive system for tracking, ordering, and managing spare parts, including supplier-specific routing and detailed service context in notifications.
+- **Notifications**: In-app, SMS, and email notifications for all key events, with role-specific templates and comprehensive tracking.
 - **Data Export**: CSV export functionality for various database tables.
 
 ## External Dependencies
-- **Email Service**: Nodemailer for sending emails (service notifications, maintenance alerts).
-- **SMS Service**: Configurable SMS Mobile API for all SMS communications.
+- **Email Service**: Nodemailer.
+- **SMS Service**: Configurable SMS Mobile API.
 - **Database**: PostgreSQL (Neon serverless in production).
 - **UI Libraries**: Shadcn/UI, Radix UI.
 - **Styling**: Tailwind CSS.
-- **Mobile Development**: Capacitor (for Android app).
+- **Mobile Development**: Capacitor.
 - **ORM**: Drizzle ORM.
 - **Authentication**: Passport.js, scrypt.
 - **File Uploads**: Multer.
-- **Data Export/Import**: XLSX (currently deactivated).
-
-## Business Partners
-- **Tehnoplus d.o.o.** (Podgorica) - Contact: Robert Ivezić (robert.ivezic@tehnoplus.me, 068039039)
-- **Tehnolux Podgorica d.o.o.** (Podgorica) - Midea representative - Contact: Jasmin (info@tehnolux.me, +38269040401) - Added August 2025
-```
