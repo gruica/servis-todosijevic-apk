@@ -69,7 +69,7 @@ const UserVerificationPanel: React.FC = () => {
       const response = await apiRequest(`/api/users/${userId}/verify`, { method: "POST" });
       const data = await response.json();
       
-      console.log("Uspešna verifikacija korisnika, odgovor:", data);
+      // User verification successful
       
       // Ukloni korisnika iz liste neverifikovanih
       setUnverifiedUsers(prev => prev.filter(user => user.id !== userId));
@@ -80,7 +80,7 @@ const UserVerificationPanel: React.FC = () => {
         variant: "default",
       });
     } catch (err: any) {
-      console.error("Greška pri verifikaciji korisnika:", err);
+      // Error handling for user verification
       
       let errorMessage = "Nije moguće verifikovati korisnika";
       

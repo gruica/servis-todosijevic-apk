@@ -293,7 +293,7 @@ export default function CreateService() {
                                 key={client.id}
                                 value={`${client.fullName} ${client.phone} ${client.email || ''} ${client.address || ''} ${client.city || ''}`}
                                 onSelect={() => {
-                                  console.log("🔍 Client selected:", client.id, client.fullName);
+
                                   const clientIdString = client.id.toString();
                                   
                                   setValue("clientId", clientIdString);
@@ -302,11 +302,7 @@ export default function CreateService() {
                                   setIsClientSelectorOpen(false);
                                   setClientSearchQuery(""); // Reset search
                                   
-                                  console.log("🔍 After setting values:", {
-                                    clientIdString,
-                                    formClientId: watch("clientId"),
-                                    selectedClientIdState: clientIdString
-                                  });
+                                  // Debug log removed for production
                                 }}
                                 className="flex flex-col items-start gap-1 p-3"
                               >

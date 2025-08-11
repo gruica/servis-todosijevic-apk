@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,7 +90,7 @@ interface SparePartOrder {
   };
 }
 
-function SparePartsOrders() {
+const SparePartsOrders = memo(function SparePartsOrders() {
   const [selectedOrder, setSelectedOrder] = useState<SparePartOrder | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -129,7 +129,7 @@ function SparePartsOrders() {
         description: "Porudžbina rezervnog dela je uspešno ažurirana.",
       });
       setIsEditOpen(false);
-      // Optimized: Only invalidate main spare parts list
+      // Optimized: Single invalidation
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
@@ -155,7 +155,7 @@ function SparePartsOrders() {
         title: "Uspešno obrisano",
         description: "Porudžbina rezervnog dela je uspešno obrisana.",
       });
-      // Optimized: Only invalidate essential queries
+      // Optimized: Single invalidation
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
@@ -180,7 +180,7 @@ function SparePartsOrders() {
         title: "Isporuka potvrđena",
         description: "Isporuka rezervnog dela je uspešno potvrđena. Deo je automatski uklonjen iz sistema poručivanja.",
       });
-      // Optimized: Only invalidate main spare parts list
+      // Optimized: Single invalidation
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
@@ -192,10 +192,9 @@ function SparePartsOrders() {
     }
   });
 
-  // Mark as received mutation
+  // Mark as received mutation - OPTIMIZED
   const markReceivedMutation = useMutation({
     mutationFn: async (order: SparePartOrder) => {
-      // Create available part entry
       const availablePartData = {
         partName: order.partName,
         partNumber: order.partNumber || '',
@@ -204,7 +203,7 @@ function SparePartsOrders() {
         warrantyStatus: order.warrantyStatus,
         supplierName: order.supplierName || '',
         actualCost: order.actualCost || '',
-        location: 'Skladište', // Default location
+        location: 'Skladište',
         notes: `Prelazak iz porudžbine #${order.id}`,
         originalOrderId: order.id,
         serviceId: order.serviceId,
@@ -224,9 +223,12 @@ function SparePartsOrders() {
         title: "Deo označen kao primljen",
         description: "Rezervni deo je prebačen u dostupne delove.",
       });
-      // Optimized: Invalidate only essential queries - spare parts and available parts
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/available-parts'] });
+      // Optimized: Single batched invalidation
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0]?.toString().includes('/api/admin/spare-parts') ||
+          query.queryKey[0]?.toString().includes('/api/admin/available-parts')
+      });
     },
     onError: (error: any) => {
       toast({
@@ -1020,8 +1022,7 @@ function SparePartsOrders() {
                     title: "Uspešno poručeno",
                     description: "Rezervni deo je uspešno poručen direktno.",
                   });
-                  // Optimized: Only invalidate main spare parts list
-                  queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+                  // Refresh spare parts after direct order
                 }}
               />
             </div>
@@ -1038,5 +1039,4 @@ function SparePartsOrders() {
   );
 }
 
-// Export component directly - React.memo optimization removed due to import constraints
 export default SparePartsOrders;
