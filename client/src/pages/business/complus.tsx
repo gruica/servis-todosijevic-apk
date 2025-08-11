@@ -90,8 +90,7 @@ export default function BusinessComplus() {
   // Mutation za kreiranje Com Plus servisa
   const createComplusServiceMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      console.log("=== SLANJE COM PLUS SERVISA OD ROBERTO IVEZIĆA ===");
-      console.log("Form data:", data);
+      // ComPlus service creation initiated
       
       return await apiRequest("/api/complus/services", {
         method: "POST",
@@ -99,7 +98,7 @@ export default function BusinessComplus() {
       });
     },
     onSuccess: (response) => {
-      console.log("Com Plus servis uspešno kreiran:", response);
+      // Service successfully created
       toast({
         title: "Uspešno!",
         description: "Com Plus servis je prosleđen Teodori Todosijević",
@@ -125,7 +124,7 @@ export default function BusinessComplus() {
       navigate("/business");
     },
     onError: (error: any) => {
-      console.error("Greška pri kreiranju Com Plus servisa:", error);
+      // Error handled by toast notification
       toast({
         title: "Greška",
         description: error.message || "Došlo je do greške pri kreiranju Com Plus servisa",

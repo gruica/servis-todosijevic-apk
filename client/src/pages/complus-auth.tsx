@@ -48,7 +48,7 @@ export default function ComplusAuthPage() {
         setError("Greška pri prijavi na Com Plus panel");
       }
     } catch (error) {
-      console.error("Com Plus login error:", error);
+      // Login error handled by toast
       setError("Greška pri povezivanju sa Com Plus panelom");
     } finally {
       setIsLoading(false);
