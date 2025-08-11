@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nevažeći podaci kategorije", details: error.format() });
       }
       console.error("Greška pri kreiranju kategorije:", error);
-      res.status(500).json({ error: "Greška pri kreiranju kategorije", message: error.message });
+      res.status(500).json({ error: "Greška pri kreiranju kategorije", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -746,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nevažeći podaci proizvođača", details: error.format() });
       }
       console.error("Greška pri kreiranju proizvođača:", error);
-      res.status(500).json({ error: "Greška pri kreiranju proizvođača", message: error.message });
+      res.status(500).json({ error: "Greška pri kreiranju proizvođača", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -898,7 +898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nevažeći podaci uređaja", details: error.format() });
       }
       console.error("Greška pri kreiranju uređaja:", error);
-      res.status(500).json({ error: "Greška pri kreiranju uređaja", message: error.message });
+      res.status(500).json({ error: "Greška pri kreiranju uređaja", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -1007,7 +1007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Nevažeći podaci uređaja", details: error.format() });
       }
       console.error("Greška pri ažuriranju uređaja:", error);
-      res.status(500).json({ error: "Greška pri ažuriranju uređaja", message: error.message });
+      res.status(500).json({ error: "Greška pri ažuriranju uređaja", message: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -1150,7 +1150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/business/services", jwtAuth, async (req, res) => {
     try {
       // Koristi user ID iz JWT tokena umesto query parametra
-      if (req.user.role !== 'business_partner') {
+      if (!req.user || req.user.role !== 'business_partner') {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
@@ -1230,7 +1230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceId = parseInt(req.params.id);
       
       // Samo business partneri mogu pristupiti ovim podacima
-      if (req.user.role !== 'business_partner') {
+      if (!req.user || req.user.role !== 'business_partner') {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
@@ -1242,7 +1242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Provera da li servis pripada poslovnom partneru
-      if (service.businessPartnerId !== req.user.id) {
+      if (!req.user || service.businessPartnerId !== req.user.id) {
         return res.status(403).json({ error: "Nemate pristup ovom servisu" });
       }
       
@@ -1995,7 +1995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     serviceId: id.toString(),
                     deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja iz appliance tabele
                     statusDescription: statusDescription,
-                    technicianNotes: updatedService.technicianNotes
+                    technicianNotes: updatedService.technicianNotes || undefined
                   });
                   console.log(`[SMS SISTEM] ✅ SMS poslat korisniku ${client.fullName} (${client.phone})`);
                 } catch (smsError) {
@@ -2019,7 +2019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     clientName: client?.fullName || 'Nepoznat klijent', 
                     deviceType: 'uređaj', // TODO: Dodati pravi tip uređaja
                     statusDescription: statusDescription,
-                    technicianNotes: updatedService.technicianNotes
+                    technicianNotes: updatedService.technicianNotes || undefined
                   });
                   console.log(`[SMS SISTEM] ✅ SMS poslat poslovnom partneru ${businessPartner.fullName} (${businessPartner.phone})`);
                 }
@@ -2399,7 +2399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         const bekoEmailSent = await emailService.sendBekoWarrantyCompletionNotification(
                           client,
                           serviceId,
-                          clientEmailContent,
+                          service.description || '',
                           technicianName,
                           manufacturer.name,
                           applianceName
@@ -2423,7 +2423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           technicianName,
                           applianceName,
                           manufacturer.name,
-                          clientEmailContent || service.description || ''
+                          service.description || updatedService.technicianNotes || ''
                         );
                         
                         if (complusServiceCompletionSent) {
@@ -2870,9 +2870,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // JWT middleware already validated admin role
       
       const userId = parseInt(req.params.id);
-      const adminId = req.user.id;
+      const adminId = req.user?.id;
       
-      console.log(`Administrator ${adminId} (${req.user.username}) verifikuje korisnika ${userId}`);
+      if (!adminId) {
+        return res.status(401).json({ error: "Nepoznat korisnik" });
+      }
+      console.log(`Administrator ${adminId} (${req.user?.username}) verifikuje korisnika ${userId}`);
       
       // Pozivamo metodu za verifikaciju korisnika
       const verifiedUser = await storage.verifyUser(userId, adminId);
@@ -3069,7 +3072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if the user is a technician
-      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+      if (!req.user || req.user.role !== "technician" || !req.user.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
@@ -3428,7 +3431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-settings", jwtAuthMiddleware, async (req, res) => {
     try {
       // Proveri da li je korisnik admin
-      if (req.user?.role !== "admin") {
+      if (!req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za upravljanje email postavkama" });
       }
 
@@ -3809,7 +3812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel export endpoints
   app.get("/api/excel/clients", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -3847,7 +3850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/appliances", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -3866,7 +3869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/services", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -3885,7 +3888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/excel/maintenance", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -3905,7 +3908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel import endpoints
   app.post("/api/excel/import/clients", fileUpload.single('file'), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       

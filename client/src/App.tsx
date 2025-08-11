@@ -13,6 +13,7 @@ import BasicServicesPage from "@/pages/basic/services";
 import EnhancedServices from "@/pages/enhanced-services";
 import AdminServices from "@/pages/admin/services";
 import CreateService from "@/pages/admin/create-service";
+import AdminClients from "@/pages/admin/clients";
 import AdminSpareParts from "@/pages/admin/spare-parts";
 import AdminAvailableParts from "@/pages/admin/available-parts";
 import AdminSparePartsCatalogPage from "@/pages/admin/spare-parts-catalog";
@@ -102,6 +103,7 @@ function Router() {
       {/* Admin verzija servisa - zaštićena */}
       <RoleProtectedRoute path="/admin/services" component={AdminServices} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/clients" component={AdminClients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts" component={AdminSpareParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/available-parts" component={AdminAvailableParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/business-partners" component={BusinessPartnersAdminPageFixed} allowedRoles={["admin"]} />
