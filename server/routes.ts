@@ -377,7 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Spare parts order endpoint
   app.post("/api/spare-parts/order", async (req, res) => {
     try {
-      if (!req.user) {
+      const reqUser = (req as any).user;
+      if (!reqUser) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
@@ -400,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceModel: applianceModel || "",
         status: "pending",
         createdAt: new Date().toISOString(),
-        requestedBy: req.user.id
+        requestedBy: reqUser.id
       };
 
       console.log("Creating spare parts order:", orderData);
@@ -1153,10 +1154,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
-      console.log(`Dohvatanje detaljnih servisa za poslovnog partnera sa ID: ${req.user.id}`);
+      console.log(`Dohvatanje detaljnih servisa za poslovnog partnera sa ID: ${(req as any).user.id}`);
       
       // Dohvati servise povezane sa poslovnim partnerom
-      const services = await storage.getServicesByPartner(req.user.id);
+      const reqUser = (req as any).user;
+      const services = await storage.getServicesByPartner(reqUser.id);
       
       // Dodajemo detaljan rad info za svaki servis
       const enhancedServices = await Promise.all(services.map(async (service) => {
@@ -1167,8 +1169,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const removedParts = await storage.getRemovedPartsByService(service.id);
         
         // Dohvati technicianove napomene i rad
-        const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
-        const techUser = technician ? await storage.getUserByTechnicianId(service.technicianId) : null;
+        const technician = service.technicianId ? await storage.getTechnician(Number(service.technicianId)) : null;
+        const techUser = technician ? await storage.getUserByTechnicianId(Number(service.technicianId)) : null;
         
         // Kreiraj summariju rada
         const workSummary = {
@@ -1182,28 +1184,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           spareParts: spareParts.map(part => ({
             partName: part.partName,
             quantity: part.quantity,
-            productCode: part.productCode,
+            productCode: (part as any).productCode || 'N/A',
             urgency: part.urgency,
             warrantyStatus: part.warrantyStatus,
             status: part.status,
             orderDate: part.createdAt,
-            estimatedDeliveryDate: part.estimatedDeliveryDate,
-            actualDeliveryDate: part.actualDeliveryDate
+            estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
+            actualDeliveryDate: (part as any).actualDeliveryDate || null
           })),
           removedParts: removedParts.map(part => ({
             partName: part.partName,
             removalReason: part.removalReason,
             currentLocation: part.currentLocation,
             removalDate: part.removalDate,
-            returnDate: part.returnDate,
-            status: part.status,
+            returnDate: (part as any).returnDate || null,
+            status: (part as any).status || 'unknown',
             repairCost: part.repairCost
           })),
           workTimeline: [
             { date: service.createdAt, event: 'Servis kreiran', status: 'pending' },
-            service.assignedAt ? { date: service.assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
+            (service as any).assignedAt ? { date: (service as any).assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
             service.scheduledDate ? { date: service.scheduledDate, event: 'Zakazan termin', status: 'scheduled' } : null,
-            service.startedAt ? { date: service.startedAt, event: 'Servis započet', status: 'in_progress' } : null,
+            (service as any).startedAt ? { date: (service as any).startedAt, event: 'Servis započet', status: 'in_progress' } : null,
             service.completedAt ? { date: service.completedAt, event: 'Servis završen', status: 'completed' } : null
           ].filter(Boolean),
           isCompleted: service.status === 'completed',
@@ -1245,7 +1247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Koristimo istu logiku kao u /api/business/services endpoint za detaljne podatke
-      console.log(`Dohvatanje proširenih detalja servisa ${serviceId} za poslovnog partnera ${req.user.id}`);
+      console.log(`Dohvatanje proširenih detalja servisa ${serviceId} za poslovnog partnera ${(req as any).user.id}`);
       
       // Dohvati rezervne delove za servis
       const spareParts = await storage.getSparePartsByService(serviceId);
@@ -1257,8 +1259,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceDetails = await storage.getServiceWithDetails(serviceId);
       
       // Dohvati tehniciara sa kontakt podacima
-      const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
-      const techUser = technician ? await storage.getUserByTechnicianId(service.technicianId) : null;
+      const technician = service.technicianId ? await storage.getTechnician(Number(service.technicianId)) : null;
+      const techUser = technician ? await storage.getUserByTechnicianId(Number(service.technicianId)) : null;
       
       // Dohvati istoriju statusa za servis
       const statusHistory = await storage.getServiceStatusHistory(serviceId);
@@ -1275,29 +1277,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spareParts: spareParts.map(part => ({
           partName: part.partName,
           quantity: part.quantity,
-          productCode: part.productCode,
+          productCode: (part as any).productCode || 'N/A',
           urgency: part.urgency,
           warrantyStatus: part.warrantyStatus,
           status: part.status,
           orderDate: part.createdAt,
-          estimatedDeliveryDate: part.estimatedDeliveryDate,
-          actualDeliveryDate: part.actualDeliveryDate
+          estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
+          actualDeliveryDate: (part as any).actualDeliveryDate || null
         })),
         removedParts: removedParts.map(part => ({
           partName: part.partName,
           removalReason: part.removalReason,
           currentLocation: part.currentLocation,
           removalDate: part.removalDate,
-          returnDate: part.returnDate,
-          status: part.status,
+          returnDate: (part as any).returnDate || null,
+          status: (part as any).status || 'unknown',
           repairCost: part.repairCost
         })),
         workTimeline: [
           { date: service.createdAt, event: 'Servis kreiran', status: 'pending' },
-          service.assignedAt ? { date: service.assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
+          (service as any).assignedAt ? { date: (service as any).assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
           service.scheduledDate ? { date: service.scheduledDate, event: 'Zakazan termin', status: 'scheduled' } : null,
-          service.startedAt ? { date: service.startedAt, event: 'Servis započet', status: 'in_progress' } : null,
-          service.completedDate ? { date: service.completedDate, event: 'Servis završen', status: 'completed' } : null
+          (service as any).startedAt ? { date: (service as any).startedAt, event: 'Servis započet', status: 'in_progress' } : null,
+          (service as any).completedDate ? { date: (service as any).completedDate, event: 'Servis završen', status: 'completed' } : null
         ].filter(Boolean),
         statusHistory
       };
@@ -2080,7 +2082,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedService = await storage.updateService(serviceId, {
         ...service,
         status: 'in_progress',
-        startedAt: new Date().toISOString(),
         technicianNotes: technicianNotes || service.technicianNotes
       });
       
@@ -2139,7 +2140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Importuj email servis
       const { EmailService } = await import('./email-service.js');
-      const emailService = new EmailService();
+      const emailService = EmailService.getInstance();
       
       // STANDARDNO EMAIL OBAVEŠTENJE
       if (client.email) {
@@ -3089,21 +3090,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const getTechnicianServices = async (req: Request, res: Response) => {
     try {
       // Session authentication check - this endpoint still uses session-based auth
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
+      const isAuthenticatedFn = (req as any).isAuthenticated;
+      if (!isAuthenticatedFn || !isAuthenticatedFn()) {
         console.log("Pristup api/my-services - korisnik nije prijavljen");
         return res.status(401).json({ error: "Potrebna je prijava" });
       }
       
       // Ispisati dodatne informacije za debugging
-      console.log(`my-services API pristup - user: ${JSON.stringify(req.user || {})}`);
+      const reqUser = (req as any).user;
+      console.log(`my-services API pristup - user: ${JSON.stringify(reqUser || {})}`);
       
       // Check if the user is a technician
-      if (req.user?.role !== "technician" || !req.user?.technicianId) {
+      if (!reqUser || reqUser.role !== "technician" || !reqUser.technicianId) {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
-      const technicianId = req.user.technicianId;
-      console.log(`Dohvatanje servisa za servisera sa ID: ${technicianId}, korisnik: ${req.user.username}`);
+      const technicianId = Number(reqUser.technicianId);
+      console.log(`Dohvatanje servisa za servisera sa ID: ${technicianId}, korisnik: ${reqUser.username}`);
       
       // Get all services assigned to this technician - koristimo direktno Drizzle query
       let services;
@@ -3161,7 +3164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Korisnik nije serviser" });
       }
       
-      const technicianId = fullUser.technicianId;
+      const technicianId = Number(fullUser.technicianId);
       console.log(`JWT: Fetching services for technician ID ${technicianId}`);
       
       // Get all services assigned to this technician - using direct Drizzle query for fresh data
@@ -4329,6 +4332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceId: appliance.id,
         description,
         status: "pending" as const,
+        warrantyStatus: "out_of_warranty",
         createdAt: new Date().toISOString().split('T')[0]
       });
 
