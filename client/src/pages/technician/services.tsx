@@ -106,7 +106,7 @@ export default function TechnicianServices() {
       const responseTime = Date.now() - startTime;
       
       // Performance monitoring za enterprise system
-      console.log(`🚀 Technician Services API Response: ${responseTime}ms`);
+      // API response optimized
       
       return data;
     },

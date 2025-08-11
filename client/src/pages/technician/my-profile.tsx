@@ -74,7 +74,7 @@ export default function TechnicianMyProfile() {
         setTechnician(data);
       }
     } catch (error) {
-      console.error("Greška pri učitavanju podataka:", error);
+      // Error handled by error boundary
     }
   };
 
@@ -86,7 +86,7 @@ export default function TechnicianMyProfile() {
         setStats(data);
       }
     } catch (error) {
-      console.error("Greška pri učitavanju statistika:", error);
+      // Statistics error handled
     }
   };
 

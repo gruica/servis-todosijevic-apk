@@ -75,9 +75,9 @@ export default function TechnicianServicesList() {
   // Proverava da li je stranica otvorena sa notifikacijom
   useEffect(() => {
     const state = history.state;
-    console.log("Technician Services - History State:", state);
+    // History state processed
     if (state && state.highlightServiceId) {
-      console.log("Technician Services - Highlighting service ID:", state.highlightServiceId);
+      // Service highlighting activated
       setHighlightedServiceId(state.highlightServiceId);
       setShouldAutoOpen(true);
       
@@ -232,7 +232,7 @@ export default function TechnicianServicesList() {
         alert(`Greška: ${error.error}`);
       }
     } catch (error) {
-      console.error('Error returning device:', error);
+      // Device return error handled
       alert('Greška pri vraćanju aparata');
     } finally {
       setIsReturning(false);

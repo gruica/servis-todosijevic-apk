@@ -53,7 +53,7 @@ export default function TechnicianProfilePage() {
             setTechnicianData(data);
           }
         } catch (error) {
-          console.error("Greška pri dohvatanju podataka servisera:", error);
+          // Profile data error handled
         }
       }
     };

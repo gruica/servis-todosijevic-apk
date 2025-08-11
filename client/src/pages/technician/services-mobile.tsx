@@ -93,7 +93,7 @@ function ServiceCard({ service }: { service: Service }) {
   const startWorkMutation = useMutation({
     mutationFn: (serviceId: number) => {
       const startTime = Date.now();
-      console.log(`🚀 [FRONTEND] Pokretanje ultra-brzog servisa #${serviceId}`);
+      // Ultra-fast service start initiated
       
       return apiRequest(`/api/services/${serviceId}/quick-start`, {
         method: 'PUT',
@@ -103,7 +103,7 @@ function ServiceCard({ service }: { service: Service }) {
       }).then(response => {
         const endTime = Date.now();
         const frontendDuration = endTime - startTime;
-        console.log(`✅ [FRONTEND] Servis #${serviceId} započet za ${frontendDuration}ms`);
+        // Service started successfully
         return response;
       });
     },
@@ -272,7 +272,7 @@ function ServiceCard({ service }: { service: Service }) {
   };
 
   const handleCompleteService = (serviceId: number) => {
-    console.log("🎯 COMPLETION DEBUG: Otvaram Service Completion Dialog za serviceId:", serviceId);
+    // Opening service completion dialog
     setShowCompletionDialog(true);
   };
 
@@ -351,7 +351,7 @@ function ServiceCard({ service }: { service: Service }) {
       return;
     }
 
-    console.log("🎯 COMPLETION DEBUG: Šaljem completion data:", completionData);
+    // Sending completion data
     
     // Call the service completion API with all the data
     apiRequest(`/api/services/${service.id}/complete`, {
@@ -378,7 +378,7 @@ function ServiceCard({ service }: { service: Service }) {
         isWarrantyService: false
       });
     }).catch((error) => {
-      console.error("Completion Error:", error);
+      // Completion error handled by toast
       toast({
         title: "Greška",
         description: "Greška pri završavanju servisa",
