@@ -263,9 +263,9 @@ export class ComplusDailyReportService {
     } catch (error) {
       console.error('[COMPLUS REPORT] Greška pri prikupljanju podataka:', error);
       console.error('[COMPLUS REPORT] Error details:', {
-        message: error.message,
-        stack: error.stack,
-        type: error.constructor.name
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        type: error instanceof Error ? error.constructor.name : typeof error
       });
       throw error;
     }
