@@ -106,7 +106,7 @@ export function SupplementGeneraliForm({
       onClose();
     },
     onError: (error: any) => {
-      console.error("🔴 Greška pri dopunjavanju Generali servisa:", error);
+      // Generali service supplement error handled
       let errorMessage = "Greška pri dopunjavanju servisa";
       
       if (error.message) {
@@ -131,13 +131,13 @@ export function SupplementGeneraliForm({
   });
 
   const onSubmit = async (data: SupplementGeneraliService) => {
-    console.log("🔄 Počinje slanje Generali dopune:", data);
+    // Generali supplement submission started
     setIsSubmitting(true);
     try {
       const result = await supplementMutation.mutateAsync(data);
-      console.log("✅ Uspešno dopunjen Generali servis:", result);
+      // Generali service successfully supplemented
     } catch (error) {
-      console.error("❌ Greška pri slanju dopune:", error);
+      // Supplement submission error handled
       // Error se već rešava u onError callback-u
     } finally {
       setIsSubmitting(false);
@@ -145,7 +145,7 @@ export function SupplementGeneraliForm({
   };
 
   const handleScannedData = (scannedData: ScannedData) => {
-    console.log("📷 Napredni skaner - pronađeni podaci:", scannedData);
+    // Advanced scanner data processed
     
     // Automatski popuni polja sa skeniranim podacima
     if (scannedData.model && scannedData.model.length >= 2) {

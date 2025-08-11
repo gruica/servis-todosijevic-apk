@@ -188,7 +188,7 @@ function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompletionFo
         });
       }
     } catch (error) {
-      console.error('Error returning device:', error);
+      // Device return error handled
       toast({
         title: "Greška",
         description: "Greška pri vraćanju aparata",

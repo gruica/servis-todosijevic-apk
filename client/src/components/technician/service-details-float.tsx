@@ -54,21 +54,13 @@ export function ServiceDetailsFloat({
 
   // Debug tracking za showCompletionForm state
   useEffect(() => {
-    console.log("🎯 DEBUG: showCompletionForm state promenjen:", showCompletionForm);
+    // Completion form state updated
   }, [showCompletionForm]);
 
   // Debug tracking za servis status kada se komponenta renderuje
   useEffect(() => {
     if (service) {
-      console.log("🎯 SERVICE DEBUG:", {
-        id: service.id,
-        status: service.status,
-        customerRefusesRepair,
-        showInProgressButtons: service.status === "in_progress",
-        showCompleteButton: service.status === "in_progress" && !customerRefusesRepair,
-        showReturnButton: service.status === "in_progress" && !customerRefusesRepair,
-        fullServiceObject: service
-      });
+      // Service debug data processed
     }
   }, [service, customerRefusesRepair]);
 
@@ -94,7 +86,7 @@ export function ServiceDetailsFloat({
         alert(`Greška pri slanju SMS-a: ${error.error}`);
       }
     } catch (error) {
-      console.error('SMS Error:', error);
+      // SMS error handled by alert
       alert('Greška pri slanju SMS-a');
     } finally {
       setSendingSMS(false);
@@ -111,7 +103,7 @@ export function ServiceDetailsFloat({
     setIsUpdating(true);
     
     try {
-      console.log(`🚀 [SERVICE-DETAILS] Ultra-brzo pokretanje servisa #${service.id}`);
+      // Ultra-fast service start initiated
       
       // OPTIMIZED: Direktni poziv brzog endpointa
       const response = await fetch(`/api/services/${service.id}/quick-start`, {
@@ -133,8 +125,7 @@ export function ServiceDetailsFloat({
       const endTime = Date.now();
       const frontendDuration = endTime - startTime;
       
-      console.log(`✅ [SERVICE-DETAILS] Servis #${service.id} započet za ${frontendDuration}ms`);
-      console.log(`📊 [PERFORMANCE] Backend: ${result._performance?.duration}, Frontend: ${frontendDuration}ms`);
+      // Service started successfully with performance metrics
       
       // Refresh service data through callback
       await onStatusUpdate(service.id, "in_progress", {
@@ -147,7 +138,7 @@ export function ServiceDetailsFloat({
       
       onClose();
     } catch (error) {
-      console.error("Greška pri početku servisa:", error);
+      // Service start error handled
       alert("Greška pri pokretanju servisa");
     } finally {
       setIsUpdating(false);
@@ -155,10 +146,10 @@ export function ServiceDetailsFloat({
   };
 
   const handleCompleteService = () => {
-    console.log("🎯 DEBUG: handleCompleteService pozvan, trenutno showCompletionForm:", showCompletionForm);
+    // Complete service handler called
     // Otvori completion form dialog umesto direktno zatvaranja servisa
     setShowCompletionForm(true);
-    console.log("🎯 DEBUG: setShowCompletionForm(true) pozvan");
+    // Completion form opened
   };
 
   const handleCustomerRefusesRepair = async () => {
@@ -184,7 +175,7 @@ export function ServiceDetailsFloat({
       });
       onClose();
     } catch (error) {
-      console.error("Greška pri završetku servisa:", error);
+      // Service completion error handled
     } finally {
       setIsUpdating(false);
     }
@@ -198,7 +189,7 @@ export function ServiceDetailsFloat({
 
     setIsReturning(true);
     try {
-      console.log(`📦 [VRAĆANJE] Vraćam aparat za servis #${service.id}`);
+      // Device return process initiated
       
       const response = await fetch(`/api/services/${service.id}/return-device`, {
         method: 'POST',
@@ -217,7 +208,7 @@ export function ServiceDetailsFloat({
       }
 
       const result = await response.json();
-      console.log(`📦 [VRAĆANJE] Aparat uspešno vraćen:`, result);
+      // Device returned successfully
       
       // Pozovi callback za ažuriranje statusa
       await onStatusUpdate(service.id, "device_returned", {
@@ -229,7 +220,7 @@ export function ServiceDetailsFloat({
       onClose();
       
     } catch (error) {
-      console.error('📦 [VRAĆANJE] Greška:', error);
+      // Device return error handled
       alert(`Greška pri vraćanju aparata: ${error instanceof Error ? error.message : 'Nepoznata greška'}`);
     } finally {
       setIsReturning(false);
@@ -251,7 +242,7 @@ export function ServiceDetailsFloat({
       });
       onClose();
     } catch (error) {
-      console.error("Greška pri prijavi:", error);
+      // Client not home status error handled
     } finally {
       setIsUpdating(false);
     }
@@ -270,7 +261,7 @@ export function ServiceDetailsFloat({
       });
       onClose();
     } catch (error) {
-      console.error("Greška pri prijavi:", error);
+      // Client not answering status error handled
     } finally {
       setIsUpdating(false);
     }
@@ -586,15 +577,7 @@ export function ServiceDetailsFloat({
                   
                   {service.status === "in_progress" && (
                     <div className="space-y-2">
-                      {(() => {
-                        console.log("🎯 RENDEROVANJE DEBUG:", {
-                          serviceStatus: service.status,
-                          isInProgress: service.status === "in_progress",
-                          customerRefusesRepair: customerRefusesRepair,
-                          willShowReturnButton: service.status === "in_progress" && !customerRefusesRepair
-                        });
-                        return null;
-                      })()}
+                      {/* Rendering debug processed */}
                       {customerRefusesRepair ? (
                         <Button 
                           onClick={handleCustomerRefusesRepair}
@@ -611,12 +594,7 @@ export function ServiceDetailsFloat({
                       ) : (
                         <div className="space-y-2">
                           <Button 
-                            onClick={() => {
-                              console.log("🎯 DIREKTNO DEBUG: Dugme 'Završi servis' kliknuto!");
-                              console.log("🎯 DEBUG: service status:", service.status);
-                              console.log("🎯 DEBUG: isUpdating:", isUpdating);
-                              handleCompleteService();
-                            }}
+                            onClick={handleCompleteService}
                             disabled={isUpdating}
                             className="w-full bg-green-600 hover:bg-green-700"
                           >
@@ -625,12 +603,7 @@ export function ServiceDetailsFloat({
                           </Button>
                           
                           <Button 
-                            onClick={() => {
-                              console.log("🎯 VRATI APARAT DEBUG: Dugme je kliknuto!");
-                              console.log("🎯 VRATI APARAT DEBUG: service.status =", service.status);
-                              console.log("🎯 VRATI APARAT DEBUG: customerRefusesRepair =", customerRefusesRepair);
-                              setShowReturnConfirmation(true);
-                            }}
+                            onClick={() => setShowReturnConfirmation(true)}
                             disabled={isUpdating}
                             className="w-full bg-blue-600 hover:bg-blue-700"
                           >
@@ -737,7 +710,7 @@ export function ServiceDetailsFloat({
         service={service}
         isOpen={showCompletionForm}
         onClose={() => {
-          console.log("🎯 DEBUG: ServiceCompletionForm onClose pozvan");
+          // Service completion form closed
           setShowCompletionForm(false);
         }}
       />

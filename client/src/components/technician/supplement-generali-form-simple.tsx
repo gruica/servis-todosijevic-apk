@@ -85,7 +85,7 @@ export function SupplementGeneraliFormSimple({
       onClose();
     },
     onError: (error: any) => {
-      console.error("❌ Generali dopuna greška:", error);
+      // Generali form error handled by toast
       let errorMessage = "Greška pri dopuni servisa";
       if (error?.message) {
         if (error.message.includes("400:")) {
@@ -111,7 +111,7 @@ export function SupplementGeneraliFormSimple({
     try {
       await supplementMutation.mutateAsync(data);
     } catch (error) {
-      console.error("❌ Greška pri slanju dopune:", error);
+      // Supplement send error handled
     } finally {
       setIsSubmitting(false);
     }
@@ -181,7 +181,7 @@ export function SupplementGeneraliFormSimple({
     try {
       onClose();
     } catch (error) {
-      console.error("Greška pri zatvaranju dijaloga:", error);
+      // Dialog close error handled
     }
   };
 

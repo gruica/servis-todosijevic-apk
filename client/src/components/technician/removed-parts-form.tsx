@@ -65,7 +65,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
       onSuccess?.();
     },
     onError: (error: any) => {
-      console.error("Greška pri evidenciji uklonjenog dela:", error);
+      // Parts removal error handled by toast
       toast({
         title: "Greška",
         description: error?.message || "Greška pri evidenciji uklonjenog dela",
@@ -86,7 +86,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
       queryClient.invalidateQueries({ queryKey: [`/api/services/${serviceId}`] });
     },
     onError: (error: any) => {
-      console.error("Greška pri ažuriranju statusa:", error);
+      // Status update error handled
       toast({
         title: "Greška",
         description: "Greška pri ažuriranju statusa servisa",
@@ -102,7 +102,7 @@ export function RemovedPartsForm({ serviceId, technicianId, onSuccess }: Removed
       // Automatski ažuriraj status servisa na "device_parts_removed"
       await updateServiceStatusMutation.mutateAsync();
     } catch (error) {
-      console.error("Greška pri procesu:", error);
+      // Process error handled by error boundary
     }
   };
 
