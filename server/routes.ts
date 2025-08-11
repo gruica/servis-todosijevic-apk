@@ -2110,7 +2110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Security check for technicians
       if (req.user?.role === "technician") {
-        const technicianId = req.user.technicianId;
+        const technicianId = req.user!.technicianId;
         if (!technicianId || service.technicianId !== technicianId) {
           return res.status(403).json({ error: "Nemate dozvolu" });
         }
@@ -2284,7 +2284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If user is a technician, verify they can modify this service
       if (req.user?.role === "technician") {
-        const technicianId = req.user.technicianId;
+        const technicianId = req.user!.technicianId;
         
         // Check if technicianId matches service's technicianId
         if (!technicianId || service.technicianId !== technicianId) {
@@ -3119,7 +3119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get the technician details
-      const technician = await storage.getTechnician(req.user.technicianId);
+      const technician = await storage.getTechnician(req.user!.technicianId);
       if (!technician) {
         return res.status(404).json({ error: "Serviser nije pronađen" });
       }
@@ -4121,7 +4121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/services/user/:userId", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "customer") {
+    if (!req.isAuthenticated() || !req.user || req.user.role !== "customer") {
       return res.status(403).json({ error: "Nedozvoljeni pristup" });
     }
     
@@ -4129,12 +4129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       
       // Proveriti da li korisnik pristupa sopstvenim servisima
-      if (req.user.id !== userId) {
+      if (req.user!.id !== userId) {
         return res.status(403).json({ error: "Nedozvoljeni pristup tuđim servisima" });
       }
       
       // Dohvatanje klijenta po email-u (username korisnika)
-      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user.username));
+      const clients = await db.select().from(schema.clients).where(eq(schema.clients.email, req.user!.username));
       const client = clients.length > 0 ? clients[0] : null;
       
       if (!client) {
@@ -4334,11 +4334,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Prvo kreiramo ili pronalazimo klijenta na osnovu korisničkih podataka
       const clientData = {
-        fullName: req.user.fullName || "",
-        email: req.user.username || "",
-        phone: req.user.phone || "",
-        address: req.user.address || "",
-        city: req.user.city || "",
+        fullName: req.user!.fullName || "",
+        email: req.user!.username || "",
+        phone: req.user!.phone || "",
+        address: req.user!.address || "",
+        city: req.user!.city || "",
       };
 
       let clientId;
@@ -4401,7 +4401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Dohvatamo sve servise za ovog klijenta
-      const services = await storage.getServicesByClient(req.user.id);
+      const services = await storage.getServicesByClient(req.user!.id);
       res.json(services);
     } catch (error) {
       console.error("Greška pri dohvatanju servisa:", error);
@@ -4418,7 +4418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Dohvatamo sve uređaje za ovog klijenta
-      const appliances = await storage.getAppliancesByClient(req.user.id);
+      const appliances = await storage.getAppliancesByClient(req.user!.id);
       res.json(appliances);
     } catch (error) {
       console.error("Greška pri dohvatanju uređaja:", error);
@@ -4468,7 +4468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Pošalji notifikaciju serviseru o dodeljenom servisu
       try {
-        await NotificationService.notifyServiceAssigned(serviceId, technicianId, req.user.id);
+        await NotificationService.notifyServiceAssigned(serviceId, technicianId, req.user!.id);
       } catch (notificationError) {
         console.error("Greška pri slanju notifikacije serviseru:", notificationError);
       }
@@ -5338,7 +5338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get admin services grouped by technicians
   app.get("/api/admin/services-by-technicians", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5352,7 +5352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/admin/services/:id", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5369,7 +5369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/admin/services/:id", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5390,7 +5390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/admin/services/:id", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       console.log("Access denied - user is not admin");
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
@@ -5418,7 +5418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/admin/services/:id/assign-technician", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5481,7 +5481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Povlačenje servisera od servisa
   app.put("/api/admin/services/:id/remove-technician", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5575,7 +5575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Pošalji notifikaciju tehnčaru o vraćanju servisa
       try {
-        await NotificationService.notifyServiceReturned(serviceId, service.technicianId, req.user.id, reason || 'Bez objašnjenja');
+        await NotificationService.notifyServiceReturned(serviceId, service.technicianId, req.user!.id, reason || 'Bez objašnjenja');
       } catch (notificationError) {
         console.error("Greška pri slanju notifikacije o vraćanju servisa:", notificationError);
       }
@@ -5596,7 +5596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get all spare part orders (admin only)
   app.get("/api/admin/spare-parts", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5611,7 +5611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get pending spare part orders (admin only)
   app.get("/api/admin/spare-parts/pending", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -5725,7 +5725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine technician ID
       let technicianId = null;
       if (req.user.role === "technician") {
-        technicianId = req.user.technicianId;
+        technicianId = req.user!.technicianId;
       } else if (req.user.role === "admin") {
         // For admin, get technician from service
         if (service.technicianId) {
@@ -5934,12 +5934,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get spare part orders by technician ID
   app.get("/api/technician/spare-parts", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "technician") {
+    if (!req.isAuthenticated() || !req.user || req.user.role !== "technician") {
       return res.sendStatus(401);
     }
 
     try {
-      const technicianId = req.user.technicianId;
+      const technicianId = req.user!.technicianId;
       if (!technicianId) {
         return res.status(400).json({ error: "Technician ID not found" });
       }
@@ -5964,7 +5964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const technicianId = req.user.technicianId;
+      const technicianId = req.user!.technicianId;
       console.log("👤 Technician ID:", technicianId);
       
       if (!technicianId) {
@@ -6295,7 +6295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update spare part order (admin only)
   app.put("/api/admin/spare-parts/:id", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -6320,12 +6320,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderId, 
           existingOrder.status, 
           updates.status, 
-          req.user.id
+          req.user!.id
         );
         
         // Posebno obaveštenje za "delivered" status
         if (updates.status === 'delivered') {
-          await NotificationService.notifySparePartReceived(orderId, req.user.id);
+          await NotificationService.notifySparePartReceived(orderId, req.user!.id);
         }
       }
       
@@ -6338,7 +6338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Return service from waiting_parts to active status (admin only)
   app.post("/api/admin/services/:id/return-from-waiting", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -6370,7 +6370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await NotificationService.notifyServiceReturnedFromWaiting(
             serviceId,
             technicianUser.id,
-            req.user.id
+            req.user!.id
           );
         }
       }
@@ -6384,7 +6384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete spare part order (admin only)
   app.delete("/api/admin/spare-parts/:id", jwtAuth, async (req, res) => {
-    if (req.user.role !== "admin") {
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ error: "Admin pristup potreban" });
     }
 
@@ -6629,7 +6629,7 @@ Admin panel - automatska porudžbina
             partName,
             productCode,
             'Nedefinisan klijent', // Admin unos, nema specificiran klijent
-            req.user.fullName || req.user.username || 'Administrator',
+            req.user!.fullName || req.user!.username || 'Administrator',
             urgency,
             description
           );
@@ -10005,7 +10005,7 @@ Admin panel - automatska porudžbina
       const technicianId = parseInt(req.params.technicianId);
       
       // Check if user is the technician or admin
-      if (req.user.role !== 'admin' && req.user.technicianId !== technicianId) {
+      if (!req.user || (req.user.role !== 'admin' && req.user.technicianId !== technicianId)) {
         return res.status(403).json({ error: 'Nemate dozvolu za pristup ovim podacima' });
       }
 
@@ -10032,8 +10032,8 @@ Admin panel - automatska porudžbina
       if (!reportData.technicianId) {
         if (service.technicianId) {
           reportData.technicianId = service.technicianId;
-        } else if (req.user.technicianId) {
-          reportData.technicianId = req.user.technicianId;
+        } else if (req.user!.technicianId) {
+          reportData.technicianId = req.user!.technicianId;
         } else {
           return res.status(400).json({ error: 'Nema dodeljenog servisera za ovaj servis' });
         }
