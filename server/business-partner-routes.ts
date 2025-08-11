@@ -16,7 +16,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   const businessPartnerAuth = [jwtAuth, requireRole(['business_partner', 'business', 'admin'])];
 
   // Dobijanje servisa za poslovnog partnera
-  app.get("/api/business/services", businessPartnerAuth, async (req, res) => {
+  app.get("/api/business/services", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       const partnerId = req.user!.id;
       
@@ -34,7 +34,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Kreiranje novog servisa od strane poslovnog partnera
-  app.post("/api/business/services", businessPartnerAuth, async (req, res) => {
+  app.post("/api/business/services", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       console.log("=== KREIRANJE SERVISA OD STRANE POSLOVNOG PARTNERA ===");
       console.log("Podaci iz frontend forme:", req.body);
@@ -159,7 +159,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
         usedParts: "[]", // Prazna lista za delove
         machineNotes: null,
         isCompletelyFixed: null,
-        warrantyStatus: "in_warranty", // dodano obavezno polje
+        warrantyStatus: "u garanciji", // dodano obavezno polje - srpski standard
         // Dodajemo podatke o poslovnom partneru
         businessPartnerId: partnerId,
         partnerCompanyName
@@ -214,7 +214,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Dobijanje detalja o servisu za poslovnog partnera
-  app.get("/api/business/services/:id", businessPartnerAuth, async (req, res) => {
+  app.get("/api/business/services/:id", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       const serviceId = parseInt(req.params.id);
       const partnerId = req.user!.id;
@@ -270,7 +270,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Ažuriranje servisa za poslovnog partnera
-  app.put("/api/business/services/:id", businessPartnerAuth, async (req, res) => {
+  app.put("/api/business/services/:id", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       const serviceId = parseInt(req.params.id);
       const partnerId = req.user!.id;
@@ -386,7 +386,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Endpoint za dobijanje podataka potrebnih za kreiranje klijenata
-  app.get("/api/business/clients/new", businessPartnerAuth, async (req, res) => {
+  app.get("/api/business/clients/new", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       // Vraćaj podatke potrebne za kreiranje novog klijenta
       const categories = await storage.getAllApplianceCategories();
@@ -408,7 +408,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Endpoint za kreiranje novog klijenta od strane poslovnog partnera
-  app.post("/api/business/clients", businessPartnerAuth, async (req, res) => {
+  app.post("/api/business/clients", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       console.log("=== KREIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
       console.log("Podaci iz frontend forme:", req.body);
@@ -441,7 +441,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Endpoint za dobijanje klijenata poslovnog partnera (samo oni koji su povezani sa servisima tog partnera)
-  app.get("/api/business/clients", businessPartnerAuth, async (req, res) => {
+  app.get("/api/business/clients", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       const partnerId = req.user!.id;
       const userRole = req.user!.role;
@@ -469,7 +469,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
   });
 
   // Endpoint za ažuriranje klijenta od strane poslovnog partnera
-  app.put("/api/business/clients/:id", businessPartnerAuth, async (req, res) => {
+  app.put("/api/business/clients/:id", businessPartnerAuth, async (req: Request, res: Response) => {
     try {
       console.log("=== AŽURIRANJE KLIJENTA OD STRANE POSLOVNOG PARTNERA ===");
       console.log("Podaci iz frontend forme:", req.body);
