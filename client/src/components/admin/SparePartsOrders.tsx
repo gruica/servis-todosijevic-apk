@@ -225,9 +225,13 @@ const SparePartsOrders = memo(function SparePartsOrders() {
       });
       // Optimized: Single batched invalidation
       queryClient.invalidateQueries({ 
-        predicate: (query) => 
-          query.queryKey[0]?.toString().includes('/api/admin/spare-parts') ||
-          query.queryKey[0]?.toString().includes('/api/admin/available-parts')
+        predicate: (query) => {
+          const firstKey = query.queryKey[0]?.toString();
+          return Boolean(firstKey && (
+            firstKey.includes('/api/admin/spare-parts') ||
+            firstKey.includes('/api/admin/available-parts')
+          ));
+        }
       });
     },
     onError: (error: any) => {
@@ -1023,6 +1027,9 @@ const SparePartsOrders = memo(function SparePartsOrders() {
                     description: "Rezervni deo je uspešno poručen direktno.",
                   });
                   // Refresh spare parts after direct order
+                  queryClient.invalidateQueries({
+                    queryKey: ['/api/spare-parts-orders']
+                  });
                 }}
               />
             </div>
@@ -1037,6 +1044,6 @@ const SparePartsOrders = memo(function SparePartsOrders() {
       </Dialog>
     </div>
   );
-}
+});
 
 export default SparePartsOrders;
