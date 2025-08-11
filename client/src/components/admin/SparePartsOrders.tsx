@@ -45,7 +45,7 @@ interface SparePartOrder {
   quantity: number;
   description?: string;
   urgency: 'normal' | 'high' | 'urgent';
-  status: 'pending' | 'approved' | 'ordered' | 'received' | 'cancelled';
+  status: 'pending' | 'approved' | 'ordered' | 'received' | 'delivered' | 'cancelled' | 'removed_from_ordering';
   warrantyStatus: 'u garanciji' | 'van garancije';
   estimatedCost?: string;
   actualCost?: string;
@@ -54,6 +54,11 @@ interface SparePartOrder {
   expectedDelivery?: string;
   receivedDate?: string;
   adminNotes?: string;
+  isDelivered?: boolean;
+  deliveryConfirmedAt?: string;
+  deliveryConfirmedBy?: number;
+  autoRemoveAfterDelivery?: boolean;
+  removedFromOrderingAt?: string;
   createdAt: string;
   updatedAt: string;
   // Related data
@@ -166,6 +171,30 @@ export default function SparePartsOrders() {
     }
   });
 
+  // Confirm delivery mutation (NOVA FUNKCIONALNOST)
+  const confirmDeliveryMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await apiRequest(`/api/admin/spare-parts/${orderId}/confirm-delivery`, {
+        method: 'PATCH'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Isporuka potvrđena",
+        description: "Isporuka rezervnog dela je uspešno potvrđena. Deo je automatski uklonjen iz sistema poručivanja.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška pri potvrdi isporuke",
+        description: error.message || "Došlo je do greške pri potvrdi isporuke.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Mark as received mutation
   const markReceivedMutation = useMutation({
     mutationFn: async (order: SparePartOrder) => {
@@ -224,7 +253,9 @@ export default function SparePartsOrders() {
       approved: { label: "Odobreno", variant: "default" as const, icon: Check },
       ordered: { label: "Poručeno", variant: "default" as const, icon: Package },
       received: { label: "Primljeno", variant: "default" as const, icon: CheckCircle },
-      cancelled: { label: "Otkazano", variant: "destructive" as const, icon: X }
+      delivered: { label: "Isporučeno", variant: "default" as const, icon: CheckCircle },
+      cancelled: { label: "Otkazano", variant: "destructive" as const, icon: X },
+      removed_from_ordering: { label: "Uklonjen", variant: "outline" as const, icon: Trash2 }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -294,6 +325,13 @@ export default function SparePartsOrders() {
   const handleMarkReceived = (order: SparePartOrder) => {
     if (window.confirm(`Da li ste sigurni da je deo ${order.partName} stigao i želite ga prebaciti u dostupne delove?`)) {
       markReceivedMutation.mutate(order);
+    }
+  };
+
+  // Handle confirm delivery (NOVA FUNKCIONALNOST)
+  const handleConfirmDelivery = (order: SparePartOrder) => {
+    if (window.confirm(`Da li ste sigurni da želite da potvrdite isporuku dela "${order.partName}"? Ova akcija će automatski ukloniti deo iz sistema poručivanja.`)) {
+      confirmDeliveryMutation.mutate(order.id);
     }
   };
 
@@ -367,7 +405,9 @@ export default function SparePartsOrders() {
                   <SelectItem value="approved">Odobreno</SelectItem>
                   <SelectItem value="ordered">Poručeno</SelectItem>
                   <SelectItem value="received">Primljeno</SelectItem>
+                  <SelectItem value="delivered">Isporučeno</SelectItem>
                   <SelectItem value="cancelled">Otkazano</SelectItem>
+                  <SelectItem value="removed_from_ordering">Uklonjen</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -551,6 +591,24 @@ export default function SparePartsOrders() {
                               Stigao
                             </Button>
                           </>
+                        )}
+                        
+                        {/* NOVO DUGME: Potvrdi isporuku za status 'received' */}
+                        {order.status === 'received' && !order.isDelivered && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleConfirmDelivery(order)}
+                            disabled={confirmDeliveryMutation.isPending}
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            {confirmDeliveryMutation.isPending ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                            ) : (
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                            )}
+                            Potvrdi isporuku
+                          </Button>
                         )}
                         <Button
                           variant="outline"
@@ -816,7 +874,9 @@ export default function SparePartsOrders() {
                     <SelectItem value="approved">Odobreno</SelectItem>
                     <SelectItem value="ordered">Poručeno</SelectItem>
                     <SelectItem value="received">Primljeno</SelectItem>
+                    <SelectItem value="delivered">Isporučeno</SelectItem>
                     <SelectItem value="cancelled">Otkazano</SelectItem>
+                    <SelectItem value="removed_from_ordering">Uklonjen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

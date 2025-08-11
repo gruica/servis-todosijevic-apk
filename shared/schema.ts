@@ -730,6 +730,11 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   expectedDelivery: timestamp("expected_delivery"),
   receivedDate: timestamp("received_date"),
   adminNotes: text("admin_notes"), // Napomene administratora
+  isDelivered: boolean("is_delivered").default(false).notNull(), // Potvrda isporuke
+  deliveryConfirmedAt: timestamp("delivery_confirmed_at"), // Datum potvrde isporuke
+  deliveryConfirmedBy: integer("delivery_confirmed_by"), // Ko je potvrdio isporuku
+  autoRemoveAfterDelivery: boolean("auto_remove_after_delivery").default(true).notNull(), // Auto uklanjanje nakon isporuke
+  removedFromOrderingAt: timestamp("removed_from_ordering_at"), // Kada je uklonjen iz sistema poručivanja
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -744,9 +749,11 @@ export const sparePartUrgencyEnum = z.enum([
 export const sparePartStatusEnum = z.enum([
   "pending", // čeka odobrenje
   "approved", // odobreno
-  "ordered", // poručeno
+  "ordered", // poručeno (sprečava duplo poručivanje)
   "received", // primljeno
+  "delivered", // isporučeno i potvrđeno
   "cancelled", // otkazano
+  "removed_from_ordering", // uklonjen iz sistema poručivanja
 ]);
 
 export const sparePartWarrantyStatusEnum = z.enum([
@@ -834,6 +841,9 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
   supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
   adminNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+  isDelivered: z.boolean().default(false).optional(),
+  deliveryConfirmedBy: z.number().int().positive().optional(),
+  autoRemoveAfterDelivery: z.boolean().default(true).optional(),
 });
 
 export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;

@@ -5768,6 +5768,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== NOVI ENDPOINT: POTVRDA ISPORUKE REZERVNOG DELA =====
+  app.patch("/api/admin/spare-parts/:orderId/confirm-delivery", async (req, res) => {
+    if (!req.user || req.user.role !== "admin") {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const orderId = parseInt(req.params.orderId);
+      if (!orderId || isNaN(orderId)) {
+        return res.status(400).json({ error: "Nevažeći ID porudžbine" });
+      }
+
+      // Dohvati trenutnu porudžbinu
+      const existingOrder = await storage.getSparePartOrder(orderId);
+      if (!existingOrder) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+
+      // Proveri da li je već potvrđena isporuka
+      if (existingOrder.isDelivered) {
+        return res.status(400).json({ error: "Isporuka je već potvrđena za ovu porudžbinu" });
+      }
+
+      // Ažuriraj status na "delivered" i postavi potvrdu isporuke
+      const updatedOrder = await storage.updateSparePartOrder(orderId, {
+        status: 'delivered',
+        isDelivered: true,
+        deliveryConfirmedAt: new Date(),
+        deliveryConfirmedBy: req.user.id,
+        updatedAt: new Date()
+      });
+
+      // Ako je auto_remove_after_delivery = true, postavi status na "removed_from_ordering"
+      if (updatedOrder && updatedOrder.autoRemoveAfterDelivery) {
+        await storage.updateSparePartOrder(orderId, {
+          status: 'removed_from_ordering',
+          removedFromOrderingAt: new Date()
+        });
+        
+        console.log(`[SPARE PARTS] Porudžbina #${orderId} automatski uklonjena iz sistema poručivanja nakon potvrde isporuke`);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Isporuka rezervnog dela je uspešno potvrđena",
+        data: updatedOrder
+      });
+
+    } catch (error) {
+      console.error("Greška pri potvrdi isporuke rezervnog dela:", error);
+      res.status(500).json({ error: "Neuspešna potvrda isporuke" });
+    }
+  });
+
+  // ===== NOVI ENDPOINT: SPREČAVANJE DUPLOG PORUČIVANJA =====
+  app.get("/api/spare-parts/check-duplicate/:serviceId/:partName", async (req, res) => {
+    if (!req.user || (req.user.role !== "admin" && req.user.role !== "technician")) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const partName = req.params.partName;
+
+      if (!serviceId || !partName) {
+        return res.status(400).json({ error: "Service ID i Part Name su obavezni" });
+      }
+
+      // Proveri da li već postoji aktivna porudžbina za ovaj deo u okviru istog servisa
+      const existingOrders = await storage.getSparePartOrdersByService(serviceId);
+      const duplicateOrder = existingOrders.find(order => 
+        order.partName === partName && 
+        order.status === 'ordered' // Status "poručen" sprečava duplo poručivanje
+      );
+
+      res.status(200).json({
+        isDuplicate: !!duplicateOrder,
+        existingOrder: duplicateOrder || null,
+        message: duplicateOrder 
+          ? `Rezervni deo "${partName}" je već poručen za ovaj servis. Status: ${duplicateOrder.status}`
+          : `Rezervni deo "${partName}" može biti poručen.`
+      });
+
+    } catch (error) {
+      console.error("Greška pri proveri duplog poručivanja:", error);
+      res.status(500).json({ error: "Greška pri proveri" });
+    }
+  });
+
   // Get spare part orders by technician ID
   app.get("/api/technician/spare-parts", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== "technician") {
