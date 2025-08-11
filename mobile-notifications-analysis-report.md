@@ -67,59 +67,84 @@ const setupNotifications = () => {
 
 ---
 
-## 3. POVEZIVANJE SA WEB PREGLEDAČEM
+## 3. KAKO FUNKCIONIŠE ZA WEB APLIKACIJE (ne native apps)
 
-### ✅ POTVRĐENO MOGUĆE
+### 🌐 WEB PUSH NOTIFIKACIJE - OBJAŠNJENJE
 
-**Scenario 1: Korisnik otvoren u browser-u**
+**VAŽNO**: Vaša aplikacija je web aplikacija, ne native mobile app. FCM za web radi drugačije:
+
+#### Scenario 1: Browser OTVOREN na telefonu/računaru
 ```javascript
-// Service Worker registracija
-navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-// Real-time poruke kada je app otvoren
+// Korisnik ima otvoren Chrome/Firefox/Safari
+// Firebase Web SDK šalje notifikacije direktno u browser
 onMessage(messaging, (payload) => {
-  // Prikaži notifikaciju u aplikaciji
-  showInAppNotification(payload);
+  // Notifikacija se prikazuje KAO TOAST u web app-u
+  showToastNotification(payload.notification.title, payload.notification.body);
 });
 ```
 
-**Scenario 2: PWA instaliran na telefon**
+#### Scenario 2: Browser ZATVOREN (ili druga kartica)
 ```javascript
-// Background poruke kroz Service Worker
+// Service Worker prima poruku u pozadini
 // firebase-messaging-sw.js
 self.addEventListener('push', function(event) {
-  self.registration.showNotification(title, options);
+  // Prikazuje se SISTEMSKA notifikacija (kao Windows/Android notification)
+  self.registration.showNotification('Nova poruka', {
+    body: 'Vaš servis je završen',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/badge-72.png',
+    click_action: 'https://yourapp.com/services/123'
+  });
 });
+```
+
+#### Scenario 3: PWA "Instalirana" na telefon 
+```javascript
+// Kada korisnik "Doda na početni ekran" (Add to Home Screen)
+// Radi kao "pravi" app - prima notifikacije i kada je zatvorena
+// Isti Service Worker kao Scenario 2
 ```
 
 ---
 
 ## 4. FUNKCIONALNOST BEZ WEB PREGLEDAČA
 
-### ✅ POTPUNO PODRŽANO
+### ⚠️ OGRANIČENJA ZA WEB APLIKACIJE
 
-**Native Android/iOS aplikacije:**
-- Push poruke stižu i kada app nije otvoren
-- Background processing kroz native sistem
-- Automatsko pokretanje app-a klikom na notifikaciju
+**ZA VAŠU WEB APLIKACIJU:**
+- **Browser MORA biti otvoren** (barem u pozadini) da primi notifikacije
+- **Service Worker** radi i kada browser tab nije aktivan
+- **PWA instalirana** - prima notifikacije kao native app
 
-**Implementacija:**
-```typescript
-// Background listener
-PushNotifications.addListener('pushNotificationReceived', 
-  notification => {
-    // App je u background-u - prikaži native notifikaciju
-    showNativeNotification(notification);
+**Konkretni primeri:**
+```javascript
+// ✅ RADI: Chrome otvoren u pozadini, korisnik koristi druge aplikacije
+// Service Worker prima notifikaciju i prikazuje sistemsku poruku
+
+// ❌ NE RADI: Browser kompletno zatvoren  
+// Nema načina da se pošalje notifikacija
+
+// ✅ RADI: PWA "instalirana" na telefon (Add to Home Screen)
+// Radi kao native app čak i kada browser nije otvoren
+```
+
+**ALTERNATIVA: Kombinovani pristup**
+```javascript
+// 1. Web Push notifikacije (kada je browser otvoren)
+// 2. SMS notifikacije (kao backup kada browser nije otvoren)
+// 3. Email notifikacije (kao dodatna potvrda)
+
+async function sendNotification(userId, message) {
+  const user = await getUser(userId);
+  
+  // Pokušaj web push prvo
+  try {
+    await sendWebPushNotification(user, message);
+  } catch {
+    // Fallback na SMS ako web push ne radi
+    await sendSMSNotification(user.phone, message);
   }
-);
-
-// App otvoren iz notifikacije
-PushNotifications.addListener('pushNotificationActionPerformed',
-  action => {
-    // Navigacija na odgovarajući deo aplikacije
-    navigateToService(action.notification.data.serviceId);
-  }
-);
+}
 ```
 
 ---
