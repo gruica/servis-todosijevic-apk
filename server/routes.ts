@@ -2080,8 +2080,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // ULTRA-FAST UPDATE - samo status i osnovne informacije
       const updatedService = await storage.updateService(serviceId, {
-        ...service,
-        status: 'in_progress',
+        description: service.description,
+        warrantyStatus: service.warrantyStatus as "u garanciji" | "van garancije",
+        applianceId: service.applianceId,
+        status: 'in_progress' as any,
+        createdAt: service.createdAt,
+        clientId: service.clientId,
         technicianNotes: technicianNotes || service.technicianNotes
       });
       
@@ -3094,7 +3098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Session authentication check - this endpoint still uses session-based auth
       const isAuthenticatedFn = (req as any).isAuthenticated;
-      if (!isAuthenticatedFn || !isAuthenticatedFn()) {
+      if (!isAuthenticatedFn || !isAuthenticatedFn.call(req)) {
         console.log("Pristup api/my-services - korisnik nije prijavljen");
         return res.status(401).json({ error: "Potrebna je prijava" });
       }
@@ -3108,7 +3112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Pristup dozvoljen samo serviserima" });
       }
       
-      const technicianId = Number(reqUser.technicianId);
+      const technicianId = parseInt(reqUser.technicianId as string);
       console.log(`Dohvatanje servisa za servisera sa ID: ${technicianId}, korisnik: ${reqUser.username}`);
       
       // Get all services assigned to this technician - koristimo direktno Drizzle query
@@ -4413,8 +4417,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Dodeli servisera
       const updatedService = await storage.updateService(serviceId, { 
-        technicianId,
-        status: 'assigned' as ServiceStatus 
+        description: service.description,
+        warrantyStatus: service.warrantyStatus as "u garanciji" | "van garancije",
+        applianceId: service.applianceId,
+        status: 'assigned' as any,
+        createdAt: service.createdAt,
+        clientId: service.clientId,
+        technicianId
       });
       
       console.log(`Serviser ${technician.fullName} dodeljen servisu #${serviceId}`);
@@ -4443,12 +4452,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
             
             const settingsArray = await storage.getSystemSettings();
-            const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+            const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value || '']));
             const smsConfig = {
-              apiKey: settingsMap.sms_mobile_api_key || '',
-              baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-              senderId: settingsMap.sms_mobile_sender_id || null,
-              enabled: settingsMap.sms_mobile_enabled === 'true'
+              apiKey: settingsMap['sms_mobile_api_key'] || '',
+              baseUrl: settingsMap['sms_mobile_base_url'] || 'https://api.smsmobileapi.com',
+              senderId: settingsMap['sms_mobile_sender_id'] || null,
+              enabled: settingsMap['sms_mobile_enabled'] === 'true'
             };
 
             if (smsConfig.enabled && smsConfig.apiKey) {
@@ -4461,7 +4470,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 serviceId: serviceId.toString(),
                 clientName: client?.fullName || 'Nepoznat klijent',
                 deviceType: category?.name || 'Uređaj',
-                technicianName: technician.fullName
+                technicianName: technician.fullName,
+                assignedBy: req.user?.fullName || req.user?.username || 'Admin'
               });
               
               console.log(`📱 SMS o dodeli servisa poslat poslovnom partneru ${businessPartner.fullName || businessPartner.username}`);
@@ -4492,7 +4502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 serviceId: serviceId.toString(),
                 clientName: client?.fullName || 'Nepoznat klijent',
                 deviceType: deviceType,
-                technicianName: technician.fullName
+                technicianName: technician.fullName,
+                assignedBy: req.user?.fullName || req.user?.username || 'Admin'
               });
               console.log(`[SMS ADMIN] ✅ SMS o dodeli servisera poslat administratoru ${admin.fullName} (${admin.phone})`);
             } catch (adminSmsError) {
@@ -4539,7 +4550,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const oldStatus = service.status;
       
       // Ažuriraj status
-      const updatedService = await storage.updateService(serviceId, { status });
+      const updatedService = await storage.updateService(serviceId, {
+        description: service.description,
+        warrantyStatus: service.warrantyStatus as "u garanciji" | "van garancije",
+        applianceId: service.applianceId,
+        status: status as any,
+        createdAt: service.createdAt,
+        clientId: service.clientId
+      });
       
       console.log(`[UPDATE-STATUS] Status servisa #${serviceId} ažuriran sa ${oldStatus} na ${status}`);
       
@@ -4553,12 +4571,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ===== UNIVERZALNI SMS TRIGGER ZA SVE PROMENE STATUSA =====
       // Aktiviramo SMS obaveštenja i za ovaj endpoint
       try {
-        const settings = await storage.getSystemSettings();
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value || '']));
         const smsConfig = {
-          apiKey: settings.sms_mobile_api_key || '',
-          baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-          senderId: settings.sms_mobile_sender_id || null,
-          enabled: settings.sms_mobile_enabled === 'true'
+          apiKey: settingsMap['sms_mobile_api_key'] || '',
+          baseUrl: settingsMap['sms_mobile_base_url'] || 'https://api.smsmobileapi.com',
+          senderId: settingsMap['sms_mobile_sender_id'] || null,
+          enabled: settingsMap['sms_mobile_enabled'] === 'true'
         };
 
         if (smsConfig.enabled && smsConfig.apiKey && oldStatus !== status) {
@@ -4852,16 +4871,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Ažuriraj status na 'received'
       await storage.updateSparePartOrder(orderId, { 
-        status: 'received',
-        actualDeliveryDate: new Date()
+        status: 'received'
       });
 
-      const settings = await storage.getSystemSettings();
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value || '']));
       const smsConfig = {
-        apiKey: settings.sms_mobile_api_key || '',
-        baseUrl: settings.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-        senderId: settings.sms_mobile_sender_id || 'FRIGO SISTEM',
-        enabled: settings.sms_mobile_enabled === 'true'
+        apiKey: settingsMap['sms_mobile_api_key'] || '',
+        baseUrl: settingsMap['sms_mobile_base_url'] || 'https://api.smsmobileapi.com',
+        senderId: settingsMap['sms_mobile_sender_id'] || 'FRIGO SISTEM',
+        enabled: settingsMap['sms_mobile_enabled'] === 'true'
       };
 
       if (smsConfig.enabled && smsConfig.apiKey) {
@@ -5758,7 +5777,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentService = await storage.getService(serviceId);
       if (currentService) {
         await storage.updateService(serviceId, {
-          status: 'waiting_parts',
+          description: currentService.description,
+          warrantyStatus: currentService.warrantyStatus as "u garanciji" | "van garancije",
+          applianceId: currentService.applianceId,
+          status: 'waiting_parts' as any,
+          createdAt: currentService.createdAt,
+          clientId: currentService.clientId,
           technicianNotes: (currentService.technicianNotes || '') + 
             `\n[${new Date().toLocaleDateString('sr-RS')}] Servis pauziran - čeka rezervni deo: ${partName}`
         });
