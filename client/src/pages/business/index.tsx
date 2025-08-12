@@ -144,7 +144,7 @@ export default function BusinessDashboard() {
   };
   
   // Brojanje servisa po statusima
-  const statusCounts = services?.reduce((acc, service) => {
+  const statusCounts = services?.reduce((acc: Record<string, number>, service: ServiceItem) => {
     acc[service.status] = (acc[service.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>) || {};
@@ -152,14 +152,14 @@ export default function BusinessDashboard() {
   // Ukupan broj servisa
   const totalServices = services?.length || 0;
   // Broj aktivnih servisa (svi osim completed i cancelled)
-  const activeServices = services?.filter(s => !['completed', 'cancelled'].includes(s.status)).length || 0;
+  const activeServices = services?.filter((s: ServiceItem) => !['completed', 'cancelled'].includes(s.status)).length || 0;
   // Broj završenih servisa
   const completedServices = statusCounts['completed'] || 0;
   // Broj servisa na čekanju
   const pendingServices = statusCounts['pending'] || 0;
   
   // Dodatni metrije za korporativni dashboard
-  const thisMonthServices = services?.filter(s => {
+  const thisMonthServices = services?.filter((s: ServiceItem) => {
     const serviceDate = new Date(s.createdAt);
     const now = new Date();
     return serviceDate.getMonth() === now.getMonth() && serviceDate.getFullYear() === now.getFullYear();
@@ -368,7 +368,7 @@ export default function BusinessDashboard() {
                     </h4>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {services?.slice(0, 5).map(service => (
+                    {services?.slice(0, 5).map((service: ServiceItem) => (
                       <div key={service.id} className="p-6 hover:bg-gray-50/50 transition-colors border-l-4 border-l-blue-500">
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
