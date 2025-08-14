@@ -207,6 +207,7 @@ export const serviceStatusEnum = z.enum([
   "client_not_answering", // klijent se ne javlja
   "customer_refuses_repair", // kupac odbija popravku
   "customer_refused_repair", // kupac je odbio popravku (zatvoreno)
+  "repair_failed", // servis neuspešan - aparat nije popravljen
 ]);
 
 export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
@@ -246,6 +247,10 @@ export const services = pgTable("services", {
   pickupNotes: text("pickup_notes"), // Napomene o preuzimanju
   customerRefusesRepair: boolean("customer_refuses_repair").default(false), // Da li kupac odbija popravku
   customerRefusalReason: text("customer_refusal_reason"), // Razlog zašto kupac odbija popravku
+  repairFailed: boolean("repair_failed").default(false), // Da li je servis neuspešan
+  repairFailureReason: text("repair_failure_reason"), // Detaljan razlog neuspešnog servisa
+  replacedPartsBeforeFailure: text("replaced_parts_before_failure"), // Delovi zamenjeni pre neuspešnog servisa
+  repairFailureDate: text("repair_failure_date"), // Datum konstatovanja neuspešnog servisa
 });
 
 // Tabela za praćenje uklonjenih delova sa uređaja
@@ -292,6 +297,10 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   pickupNotes: true,
   customerRefusesRepair: true,
   customerRefusalReason: true,
+  repairFailed: true,
+  repairFailureReason: true,
+  replacedPartsBeforeFailure: true,
+  repairFailureDate: true,
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),

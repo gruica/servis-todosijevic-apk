@@ -2796,6 +2796,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Greška pri kreiranju korisnika servisera" });
     }
   });
+
+  // NEW ENDPOINT: Repair Failed - Aparat nije popravljen nakon servisa
+  app.put("/api/services/:id/repair-failed", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { 
+        status,
+        repairFailureReason, 
+        replacedPartsBeforeFailure, 
+        technicianNotes,
+        repairFailureDate
+      } = req.body;
+      
+      console.log(`[REPAIR FAILED] Servis #${serviceId} označen kao neuspešan od strane ${req.user?.username}`);
+      
+      // Validate input
+      if (!repairFailureReason || repairFailureReason.trim().length < 5) {
+        return res.status(400).json({ 
+          error: "Razlog neuspešnog servisa je obavezan i mora imati najmanje 5 karaktera" 
+        });
+      }
+      
+      // Get the service
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        console.log(`[REPAIR FAILED] Servis #${serviceId} nije pronađen`);
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Security check for technicians
+      if (req.user?.role === "technician") {
+        const technicianId = req.user!.technicianId;
+        if (!technicianId || service.technicianId !== technicianId) {
+          return res.status(403).json({ 
+            error: "Nemate dozvolu da mijenjate ovaj servis" 
+          });
+        }
+      }
+      
+      // Update service with repair failure data
+      const updatedService = await storage.updateService(serviceId, {
+        ...service,
+        status: 'repair_failed' as any,
+        repairFailed: true,
+        repairFailureReason: repairFailureReason.trim(),
+        replacedPartsBeforeFailure: replacedPartsBeforeFailure?.trim() || null,
+        technicianNotes: technicianNotes?.trim() || service.technicianNotes,
+        repairFailureDate: repairFailureDate || new Date().toISOString().split('T')[0]
+      });
+      
+      console.log(`[REPAIR FAILED] Servis #${serviceId} ažuriran. Razlog: ${repairFailureReason.substring(0, 50)}...`);
+      
+      // KOMPLETNO SMS OBAVEŠTAVANJE - Pozadinska obrada
+      setImmediate(async () => {
+        try {
+          console.log(`[REPAIR FAILED SMS] Pokretanje SMS obaveštenja za servis #${serviceId}`);
+          
+          // Dohvati potrebne podatke za SMS
+          const client = await storage.getClient(service.clientId);
+          const appliance = await storage.getAppliance(service.applianceId);
+          const manufacturer = appliance?.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
+          const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+          const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
+          
+          // Kreiranje SMS objekta
+          const smsService = new SMSCommunicationService();
+          
+          // 1. SMS ADMINISTRATORU
+          const adminSMS = `🚨 NEUSPEŠAN SERVIS #${serviceId}
+Klijent: ${client?.fullName || 'N/A'}
+Uređaj: ${manufacturer?.name || ''} ${appliance?.model || 'N/A'}
+Serviser: ${technician?.fullName || 'N/A'}
+Razlog: ${repairFailureReason.substring(0, 80)}${repairFailureReason.length > 80 ? '...' : ''}
+Datum: ${new Date().toLocaleDateString('sr-RS')}`;
+          
+          await smsService.sendToAdministrators(adminSMS);
+          console.log(`[REPAIR FAILED SMS] ✅ SMS poslat administratorima`);
+          
+          // 2. SMS KLIJENTU
+          if (client?.phone) {
+            const clientSMS = `Poštovani ${client.fullName},
+Obaveštavamo Vas da nažalost servis Vašeg ${manufacturer?.name || ''} ${appliance?.model || 'uređaja'} (Servis #${serviceId}) nije mogao biti završen uspešno.
+Razlog: ${repairFailureReason.substring(0, 100)}${repairFailureReason.length > 100 ? '...' : ''}
+Za dodatne informacije pozovite nas.
+Frigo Sistem Todosijević`;
+
+            await smsService.sendSMS({
+              recipients: client.phone,
+              message: clientSMS,
+              sendername: 'FrigoSistem'
+            });
+            console.log(`[REPAIR FAILED SMS] ✅ SMS poslat klijentu: ${client.phone}`);
+          }
+          
+          // 3. SMS POSLOVNOM PARTNERU (ako je kreirao servis)
+          if (businessPartner?.phone && service.businessPartnerId) {
+            const partnerSMS = `Poštovan/a ${businessPartner.fullName},
+Servis #${serviceId} koji ste kreirali za klijenta ${client?.fullName || 'N/A'} nije mogao biti završen uspešno.
+Uređaj: ${manufacturer?.name || ''} ${appliance?.model || 'N/A'}
+Razlog: ${repairFailureReason.substring(0, 90)}${repairFailureReason.length > 90 ? '...' : ''}
+Molimo kontaktirajte nas za dalje korake.
+Frigo Sistem`;
+
+            await smsService.sendSMS({
+              recipients: businessPartner.phone,
+              message: partnerSMS,
+              sendername: 'FrigoSistem'
+            });
+            console.log(`[REPAIR FAILED SMS] ✅ SMS poslat poslovnom partneru: ${businessPartner.phone}`);
+          }
+          
+          console.log(`[REPAIR FAILED SMS] ✅ Sva SMS obaveštenja poslata za servis #${serviceId}`);
+          
+        } catch (smsError) {
+          console.error(`[REPAIR FAILED SMS] ❌ Greška pri slanju SMS-ova za servis #${serviceId}:`, smsError);
+        }
+      });
+      
+      res.json({
+        ...updatedService,
+        message: "Servis označen kao neuspešan. SMS obaveštenja su poslata svim učesnicima."
+      });
+      
+    } catch (error) {
+      console.error("[REPAIR FAILED] Greška:", error);
+      res.status(500).json({ error: "Greška pri označavanju servisa kao neuspešan" });
+    }
+  });
   
   // Technicians routes
   app.get("/api/technicians", async (req, res) => {

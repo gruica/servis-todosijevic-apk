@@ -231,6 +231,42 @@ function ServiceCard({ service }: { service: Service }) {
     }
   });
 
+  // NEW MUTATION: Repair Failed - Aparat nije popravljen nakon servisa
+  const repairFailedMutation = useMutation({
+    mutationFn: ({ serviceId, reason, replacedParts, additionalNotes }: { 
+      serviceId: number; 
+      reason: string; 
+      replacedParts: string; 
+      additionalNotes: string; 
+    }) => 
+      apiRequest(`/api/services/${serviceId}/repair-failed`, {
+        method: 'PUT',
+        body: JSON.stringify({ 
+          status: 'repair_failed',
+          repairFailureReason: reason,
+          replacedPartsBeforeFailure: replacedParts,
+          technicianNotes: additionalNotes,
+          repairFailureDate: new Date().toISOString().split('T')[0]
+        })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
+      toast({
+        title: "Neuspešan servis prijavljen ⚠️",
+        description: "Administrator, klijent i poslovni partner su obavešteni SMS porukom",
+      });
+      setShowRepairFailedDialog(false);
+      setRepairFailureData({ reason: '', replacedParts: '', additionalNotes: '' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: "Greška pri prijavljanju neuspešnog servisa",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Dialog state management
   const [showRefusalDialog, setShowRefusalDialog] = useState(false);
   const [showUnavailableDialog, setShowUnavailableDialog] = useState(false);
@@ -238,9 +274,15 @@ function ServiceCard({ service }: { service: Service }) {
   const [showGeneraliDialog, setShowGeneraliDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [showReturnDeviceDialog, setShowReturnDeviceDialog] = useState(false);
+  const [showRepairFailedDialog, setShowRepairFailedDialog] = useState(false);
   const [refusalReason, setRefusalReason] = useState('');
   const [unavailableReason, setUnavailableReason] = useState('');
   const [returnNotes, setReturnNotes] = useState('');
+  const [repairFailureData, setRepairFailureData] = useState({
+    reason: '',
+    replacedParts: '',
+    additionalNotes: ''
+  });
   const [sparePartsData, setSparePartsData] = useState({
     partName: '',
     catalogNumber: '',
@@ -294,6 +336,10 @@ function ServiceCard({ service }: { service: Service }) {
 
   const handleReturnDevice = () => {
     setShowReturnDeviceDialog(true);
+  };
+
+  const handleRepairFailed = () => {
+    setShowRepairFailedDialog(true);
   };
 
   const submitCustomerRefusal = () => {
@@ -398,6 +444,24 @@ function ServiceCard({ service }: { service: Service }) {
     }
 
     returnDeviceMutation.mutate({ serviceId: service.id, returnNotes });
+  };
+
+  const submitRepairFailed = () => {
+    if (!repairFailureData.reason.trim()) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite razlog neuspešnog servisa",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    repairFailedMutation.mutate({
+      serviceId: service.id,
+      reason: repairFailureData.reason,
+      replacedParts: repairFailureData.replacedParts,
+      additionalNotes: repairFailureData.additionalNotes
+    });
   };
   
   const handleCallClient = () => {
@@ -566,7 +630,7 @@ function ServiceCard({ service }: { service: Service }) {
                 Dopuni Generali podatke
               </Button>
               
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button 
                   onClick={handleCustomerRefusal}
                   variant="outline"
@@ -574,6 +638,14 @@ function ServiceCard({ service }: { service: Service }) {
                 >
                   <UserX className="h-4 w-4 mr-1" />
                   Odbija servis
+                </Button>
+                <Button 
+                  onClick={handleRepairFailed}
+                  variant="outline"
+                  className="h-12 border-gray-400 text-gray-700 hover:bg-gray-50"
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Nije popravljen
                 </Button>
                 <Button 
                   onClick={() => handleCompleteService(service.id)}
@@ -1011,6 +1083,91 @@ function ServiceCard({ service }: { service: Service }) {
               >
                 <Home className="h-4 w-4 mr-2" />
                 {returnDeviceMutation.isPending ? 'Obrađuje...' : 'Vrati aparat'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Repair Failed Dialog - Aparat nije popravljen nakon servisa */}
+      <Dialog open={showRepairFailedDialog} onOpenChange={setShowRepairFailedDialog}>
+        <DialogContent className="max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-red-700 flex items-center gap-2">
+              <XCircle className="h-5 w-5" />
+              Aparat nije popravljen
+            </DialogTitle>
+            <DialogDescription>
+              Servis #{service.id} - Detaljno opišite razlog neuspešnog servisa
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="failure-reason">Razlog neuspešnog servisa *</Label>
+              <Textarea
+                id="failure-reason"
+                value={repairFailureData.reason}
+                onChange={(e) => setRepairFailureData(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Detaljno opišite zašto aparat nije mogao biti popravljen (nedostatak delova, kompleksnost kvara, itd.)"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="replaced-parts">Zamenjeni delovi pre neuspešnog servisa</Label>
+              <Textarea
+                id="replaced-parts"
+                value={repairFailureData.replacedParts}
+                onChange={(e) => setRepairFailureData(prev => ({ ...prev, replacedParts: e.target.value }))}
+                placeholder="Navedite sve delove koji su zamenjeni tokom pokušaja popravke"
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="additional-notes">Dodatne napomene</Label>
+              <Textarea
+                id="additional-notes"
+                value={repairFailureData.additionalNotes}
+                onChange={(e) => setRepairFailureData(prev => ({ ...prev, additionalNotes: e.target.value }))}
+                placeholder="Preporuke za klijenta, mogući uzroci, itd."
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-amber-800 text-sm">
+                <AlertCircle className="h-4 w-4" />
+                <span className="font-medium">SMS obaveštenja će biti poslata:</span>
+              </div>
+              <ul className="text-xs text-amber-700 mt-1 ml-6 space-y-1">
+                <li>• Administratoru sistema</li>
+                <li>• Klijentu o neuspešnom servisu</li>
+                <li>• Poslovnom partneru (ako je kreiran servis)</li>
+              </ul>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRepairFailedDialog(false);
+                  setRepairFailureData({ reason: '', replacedParts: '', additionalNotes: '' });
+                }}
+                className="flex-1"
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={submitRepairFailed}
+                disabled={!repairFailureData.reason.trim() || repairFailedMutation.isPending}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                {repairFailedMutation.isPending ? 'Šalje SMS...' : 'Prijavi neuspešan servis'}
               </Button>
             </div>
           </div>
