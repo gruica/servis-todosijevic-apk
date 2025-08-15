@@ -171,7 +171,8 @@ export default function BusinessServices() {
   // Dohvatanje servisa za poslovnog partnera
   const { data: businessData, isLoading, error } = useQuery({
     queryKey: ["/api/business/services"],
-    enabled: !!user?.id,
+    enabled: !!user && user.role === 'business_partner',
+    refetchOnMount: true,
     staleTime: 30000, // 30 sekundi cache
     gcTime: 300000, // 5 minuta cache
   });
