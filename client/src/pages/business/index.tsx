@@ -99,7 +99,7 @@ export default function BusinessDashboard() {
     queryKey: ["/api/business/services"],
     queryFn: async () => {
       const startTime = Date.now();
-      const response = await fetch("/api/business/services?page=1&limit=10", {
+      const response = await fetch("/api/business/services", {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
@@ -120,10 +120,8 @@ export default function BusinessDashboard() {
     refetchOnWindowFocus: false,
   });
 
-  // Sigurno izvuci servise iz paginirane strukture
-  const services = Array.isArray(businessData?.services) ? businessData.services : 
-                   Array.isArray(businessData) ? businessData : [];
-  const meta = businessData?.meta || businessData?.pagination || {};
+  const services = businessData?.services || [];
+  const meta = businessData?.meta || {};
 
   // Dohvatanje proširenih podataka za selektovan servis
   const { data: enhancedService, isLoading: enhancedLoading } = useQuery({
@@ -149,30 +147,27 @@ export default function BusinessDashboard() {
     setSelectedService(null);
   };
   
-  // Brojanje servisa po statusima - sa provere sigurnosti
-  const statusCounts = Array.isArray(services) && services.length > 0 ? 
-    services.reduce((acc: Record<string, number>, service: ServiceItem) => {
-      acc[service.status] = (acc[service.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) : {};
+  // Brojanje servisa po statusima
+  const statusCounts = services?.reduce((acc: Record<string, number>, service: ServiceItem) => {
+    acc[service.status] = (acc[service.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
   
-  // Ukupan broj servisa - sa provere sigurnosti
-  const totalServices = Array.isArray(services) ? services.length : 0;
+  // Ukupan broj servisa
+  const totalServices = services?.length || 0;
   // Broj aktivnih servisa (svi osim completed i cancelled)
-  const activeServices = Array.isArray(services) ? 
-    services.filter((s: ServiceItem) => !['completed', 'cancelled'].includes(s.status)).length : 0;
+  const activeServices = services?.filter((s: ServiceItem) => !['completed', 'cancelled'].includes(s.status)).length || 0;
   // Broj završenih servisa
   const completedServices = statusCounts['completed'] || 0;
   // Broj servisa na čekanju
   const pendingServices = statusCounts['pending'] || 0;
   
-  // Dodatni metrije za korporativni dashboard - sa provere sigurnosti
-  const thisMonthServices = Array.isArray(services) ? 
-    services.filter((s: ServiceItem) => {
-      const serviceDate = new Date(s.createdAt);
-      const now = new Date();
-      return serviceDate.getMonth() === now.getMonth() && serviceDate.getFullYear() === now.getFullYear();
-    }).length : 0;
+  // Dodatni metrije za korporativni dashboard
+  const thisMonthServices = services?.filter((s: ServiceItem) => {
+    const serviceDate = new Date(s.createdAt);
+    const now = new Date();
+    return serviceDate.getMonth() === now.getMonth() && serviceDate.getFullYear() === now.getFullYear();
+  }).length || 0;
   
   const avgResponseTime = "2.4h"; // Ovo bi trebalo da bude kalkulacija iz realnih podataka
   const satisfactionRate = "98%"; // Ovo bi trebalo da bude kalkulacija iz realnih podataka
@@ -377,7 +372,7 @@ export default function BusinessDashboard() {
                     </h4>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {Array.isArray(services) && services.slice(0, 5).map((service: ServiceItem) => (
+                    {services?.slice(0, 5).map((service: ServiceItem) => (
                       <div key={service.id} className="p-6 hover:bg-gray-50/50 transition-colors border-l-4 border-l-blue-500">
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
@@ -480,7 +475,7 @@ export default function BusinessDashboard() {
                       </div>
                     ))}
                   </div>
-                  {Array.isArray(services) && services.length > 5 && (
+                  {services && services.length > 5 && (
                     <div className="bg-gray-50 px-6 py-4 text-center border-t border-gray-200">
                       <Button 
                         variant="ghost" 

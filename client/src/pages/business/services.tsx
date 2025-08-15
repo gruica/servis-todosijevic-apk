@@ -39,7 +39,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { formatDate } from "@/lib/utils";
 
 interface ServiceItem {
@@ -152,8 +151,6 @@ export default function BusinessServices() {
   const { highlightedServiceId, shouldAutoOpen, setShouldAutoOpen } = useNotification();
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
   
   // Detekcija mobilnog uređaja
   useEffect(() => {
@@ -171,22 +168,16 @@ export default function BusinessServices() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Dohvatanje servisa za poslovnog partnera sa paginacijom
+  // Dohvatanje servisa za poslovnog partnera
   const { data: businessData, isLoading, error } = useQuery({
-    queryKey: ["/api/business/services", currentPage, itemsPerPage],
-    queryFn: async () => {
-      const response = await fetch(`/api/business/services?page=${currentPage}&limit=${itemsPerPage}`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      return response.json();
-    },
+    queryKey: ["/api/business/services"],
     enabled: !!user?.id,
     staleTime: 30000, // 30 sekundi cache
     gcTime: 300000, // 5 minuta cache
   });
 
   // Izvuci services iz API response
-  const services: ServiceItem[] = businessData?.services || [];
-  const pagination = businessData?.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 };
+  const services: ServiceItem[] = businessData || [];
 
 
 
@@ -370,75 +361,8 @@ export default function BusinessServices() {
                   </TableBody>
                 </Table>
               </CardContent>
-              <CardFooter className="border-t p-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-4">
-                  <div className="text-sm text-gray-500">
-                    Prikazano {Math.min((currentPage - 1) * itemsPerPage + 1, pagination.total)}-{Math.min(currentPage * itemsPerPage, pagination.total)} od {pagination.total} servisa
-                  </div>
-                  
-                  {pagination.totalPages > 1 && (
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                            className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                        
-                        {/* Prva stranica */}
-                        {currentPage > 2 && (
-                          <>
-                            <PaginationItem>
-                              <PaginationLink onClick={() => setCurrentPage(1)} className="cursor-pointer">
-                                1
-                              </PaginationLink>
-                            </PaginationItem>
-                            {currentPage > 3 && <PaginationEllipsis />}
-                          </>
-                        )}
-                        
-                        {/* Trenutna i susedne stranice */}
-                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                          const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, currentPage - 2)) + i;
-                          if (pageNum <= pagination.totalPages) {
-                            return (
-                              <PaginationItem key={pageNum}>
-                                <PaginationLink 
-                                  onClick={() => setCurrentPage(pageNum)}
-                                  isActive={pageNum === currentPage}
-                                  className="cursor-pointer"
-                                >
-                                  {pageNum}
-                                </PaginationLink>
-                              </PaginationItem>
-                            );
-                          }
-                          return null;
-                        })}
-                        
-                        {/* Poslednja stranica */}
-                        {currentPage < pagination.totalPages - 1 && (
-                          <>
-                            {currentPage < pagination.totalPages - 2 && <PaginationEllipsis />}
-                            <PaginationItem>
-                              <PaginationLink onClick={() => setCurrentPage(pagination.totalPages)} className="cursor-pointer">
-                                {pagination.totalPages}
-                              </PaginationLink>
-                            </PaginationItem>
-                          </>
-                        )}
-                        
-                        <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => currentPage < pagination.totalPages && setCurrentPage(currentPage + 1)}
-                            className={currentPage >= pagination.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  )}
-                </div>
+              <CardFooter className="border-t p-4 text-sm text-gray-500">
+                Ukupno: {filteredServices.length} servisa
               </CardFooter>
             </Card>
           </div>
@@ -561,36 +485,6 @@ export default function BusinessServices() {
               </CardContent>
             </Card>
           )) : null}
-          
-          {/* Mobilna paginacija */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {/* Jednostavnija paginacija za mobilni prikaz */}
-                  <PaginationItem>
-                    <PaginationLink isActive className="cursor-default">
-                      {currentPage} od {pagination.totalPages}
-                    </PaginationLink>
-                  </PaginationItem>
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => currentPage < pagination.totalPages && setCurrentPage(currentPage + 1)}
-                      className={currentPage >= pagination.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
         </div>
       </div>
       

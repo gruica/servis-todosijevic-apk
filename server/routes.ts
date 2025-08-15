@@ -1192,16 +1192,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
-      // Paginacija parametri
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      console.log(`Dohvatanje detaljnih servisa za poslovnog partnera sa ID: ${(req as any).user.id}`);
       
-      console.log(`Dohvatanje detaljnih servisa za poslovnog partnera sa ID: ${(req as any).user.id} (strana ${page}, limit ${limit})`);
-      
-      // Dohvati servise povezane sa poslovnim partnerom sa paginacijom
+      // Dohvati servise povezane sa poslovnim partnerom
       const reqUser = (req as any).user;
-      const paginatedResult = await storage.getServicesByPartner(reqUser.id, page, limit);
-      const services = paginatedResult.services;
+      const services = await storage.getServicesByPartner(reqUser.id);
       
       // Dodajemo detaljan rad info za svaki servis
       const enhancedServices = await Promise.all(services.map(async (service) => {
@@ -1260,16 +1255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return workSummary;
       }));
       
-      // Vraćamo kompletne paginacione podatke
-      res.json({
-        services: enhancedServices,
-        pagination: {
-          page: paginatedResult.page,
-          limit: paginatedResult.limit,
-          total: paginatedResult.total,
-          totalPages: paginatedResult.totalPages
-        }
-      });
+      res.json(enhancedServices);
     } catch (error) {
       console.error("Greška pri dobijanju detaljnih servisa za poslovnog partnera:", error);
       res.status(500).json({ error: "Greška pri dobijanju servisa" });
