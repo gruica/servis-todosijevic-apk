@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import BusinessLayout from "@/components/layout/business-layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -154,13 +154,10 @@ export default function BusinessServices() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Optimizovano dohvatanje servisa za poslovnog partnera
+  // Dohvatanje servisa za poslovnog partnera
   const { data: services, isLoading, error } = useQuery<ServiceItem[]>({
     queryKey: ["/api/business/services"],
     enabled: !!user?.id,
-    staleTime: 30000, // 30 seconds cache
-    refetchOnWindowFocus: false,
-    retry: 2,
   });
 
 
@@ -177,37 +174,33 @@ export default function BusinessServices() {
     }
   }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
   
-  // Optimizovano filtriranje servisa sa useMemo za performance
-  const filteredServices = useMemo(() => {
-    if (!services) return [];
+  // Filtriranje servisa po statusu i pretrazi
+  const filteredServices = services?.filter(service => {
+    // Filter po statusu
+    if (statusFilter !== "all" && service.status !== statusFilter) {
+      return false;
+    }
     
-    return services.filter(service => {
-      // Filter po statusu
-      if (statusFilter !== "all" && service.status !== statusFilter) {
-        return false;
-      }
+    // Filter po pretrazi
+    if (searchQuery.trim() !== "") {
+      const searchTerms = searchQuery.toLowerCase().trim();
+      const client = service.client?.fullName.toLowerCase() || "";
+      const description = service.description.toLowerCase();
+      const appliance = service.appliance?.model.toLowerCase() || "";
+      const category = service.category?.name.toLowerCase() || "";
+      const manufacturer = service.manufacturer?.name.toLowerCase() || "";
       
-      // Filter po pretrazi
-      if (searchQuery.trim() !== "") {
-        const searchTerms = searchQuery.toLowerCase().trim();
-        const client = service.client?.fullName.toLowerCase() || "";
-        const description = service.description.toLowerCase();
-        const appliance = service.appliance?.model.toLowerCase() || "";
-        const category = service.category?.name.toLowerCase() || "";
-        const manufacturer = service.manufacturer?.name.toLowerCase() || "";
-        
-        return (
-          client.includes(searchTerms) ||
-          description.includes(searchTerms) ||
-          appliance.includes(searchTerms) ||
-          category.includes(searchTerms) ||
-          manufacturer.includes(searchTerms)
-        );
-      }
-      
-      return true;
-    });
-  }, [services, statusFilter, searchQuery]);
+      return (
+        client.includes(searchTerms) ||
+        description.includes(searchTerms) ||
+        appliance.includes(searchTerms) ||
+        category.includes(searchTerms) ||
+        manufacturer.includes(searchTerms)
+      );
+    }
+    
+    return true;
+  });
   
   return (
     <BusinessLayout>
