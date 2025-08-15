@@ -177,7 +177,7 @@ export default function BusinessServices() {
   });
 
   // Izvuci services iz API response
-  const services: ServiceItem[] = businessData?.services || [];
+  const services: ServiceItem[] = businessData || [];
 
 
 
@@ -219,7 +219,7 @@ export default function BusinessServices() {
     }
     
     return true;
-  });
+  }) : [];
   
   return (
     <BusinessLayout>
