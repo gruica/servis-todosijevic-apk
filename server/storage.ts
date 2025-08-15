@@ -135,7 +135,7 @@ export interface IStorage {
   getRecentServices(limit: number): Promise<Service[]>;
   
   // Business Partner methods
-  getServicesByPartner(partnerId: number): Promise<Service[]>;
+  getServicesByPartner(partnerId: number, page?: number, limit?: number): Promise<{ services: any[], total: number, page: number, limit: number, totalPages: number }>;
   getClientsByPartner(partnerId: number): Promise<Client[]>;
   getServiceWithDetails(serviceId: number): Promise<any>;
   getServiceStatusHistory(serviceId: number): Promise<any[]>;
@@ -969,16 +969,29 @@ export class MemStorage implements IStorage {
   }
   
   // Business partner methods
-  async getServicesByPartner(partnerId: number): Promise<Service[]> {
-    return Array.from(this.services.values()).filter(
+  async getServicesByPartner(partnerId: number, page: number = 1, limit: number = 50): Promise<{ services: Service[], total: number, page: number, limit: number, totalPages: number }> {
+    const allServices = Array.from(this.services.values()).filter(
       (service) => service.businessPartnerId === partnerId
     );
+    const total = allServices.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const services = allServices.slice(offset, offset + limit);
+    
+    return {
+      services,
+      total,
+      page,
+      limit,
+      totalPages
+    };
   }
 
   // Dobijanje klijenata poslovnog partnera (samo oni klijenti koji su povezani sa servisima tog partnera)
   async getClientsByPartner(partnerId: number): Promise<Client[]> {
     // Dobijamo servise tog partnera
-    const partnerServices = await this.getServicesByPartner(partnerId);
+    const partnerServicesResult = await this.getServicesByPartner(partnerId);
+    const partnerServices = partnerServicesResult.services;
     const clientIds = [...new Set(partnerServices.map(service => service.clientId))];
     
     // Vraćamo klijente povezane sa tim servisima
@@ -2377,10 +2390,19 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Business Partner methods
-  async getServicesByPartner(partnerId: number): Promise<any[]> {
+  async getServicesByPartner(partnerId: number, page: number = 1, limit: number = 50): Promise<{ services: any[], total: number, page: number, limit: number, totalPages: number }> {
     const startTime = Date.now();
     
     try {
+      // Prvo dobijamo ukupan broj servisa za paginaciju
+      const totalResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(services)
+        .where(eq(services.businessPartnerId, partnerId));
+      
+      const total = totalResult[0]?.count || 0;
+      const totalPages = Math.ceil(total / limit);
+      const offset = (page - 1) * limit;
       // OPTIMIZED: Single JOIN query umesto N+1
       const rawServices = await db
         .select({
@@ -2427,7 +2449,8 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(technicians, eq(services.technicianId, technicians.id))
         .where(eq(services.businessPartnerId, partnerId))
         .orderBy(desc(services.createdAt))
-        .limit(50);
+        .limit(limit)
+        .offset(offset);
 
       // Transformišemo podatke u odgovarajući format
       const servicesWithDetails = rawServices.map(row => ({
@@ -2477,12 +2500,24 @@ export class DatabaseStorage implements IStorage {
       }));
 
       const responseTime = Date.now() - startTime;
-      console.log(`[PERFORMANCE] getServicesByPartner(${partnerId}): ${responseTime}ms for ${servicesWithDetails.length} services`);
+      console.log(`[PERFORMANCE] getServicesByPartner(${partnerId}): ${responseTime}ms for ${servicesWithDetails.length}/${total} services (page ${page}/${totalPages})`);
 
-      return servicesWithDetails;
+      return {
+        services: servicesWithDetails,
+        total,
+        page,
+        limit,
+        totalPages
+      };
     } catch (error) {
       console.error('Greška pri dobijanju servisa za poslovnog partnera:', error);
-      return [];
+      return {
+        services: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0
+      };
     }
   }
 
