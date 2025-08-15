@@ -13,7 +13,10 @@ import {
   XCircle,
   Info,
   Calendar,
-  Tag
+  Tag,
+  AlertTriangle,
+  UserX,
+  PhoneOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -90,7 +93,11 @@ function translateStatus(status: string) {
     in_progress: "U toku",
     waiting_parts: "Čeka delove",
     completed: "Završen",
-    cancelled: "Otkazan"
+    cancelled: "Otkazan",
+    repair_failed: "Neuspešan servis",
+    customer_refused_repair: "Odbio servis",
+    client_not_home: "Klijent nije kod kuće",
+    client_not_answering: "Klijent se ne javlja"
   };
   return statusMap[status] || status;
 }
@@ -104,7 +111,11 @@ function getStatusBadgeVariant(status: string) {
     in_progress: "secondary",
     waiting_parts: "outline",
     completed: "default",
-    cancelled: "destructive"
+    cancelled: "destructive",
+    repair_failed: "destructive",
+    customer_refused_repair: "outline",
+    client_not_home: "outline",
+    client_not_answering: "outline"
   };
   return statusVariantMap[status] || "default";
 }
@@ -119,6 +130,9 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "assigned" || status === "in_progress" || status === "scheduled") Icon = Wrench;
   if (status === "completed") Icon = CheckCircle;
   if (status === "cancelled") Icon = XCircle;
+  if (status === "repair_failed") Icon = AlertTriangle;
+  if (status === "customer_refused_repair") Icon = UserX;
+  if (status === "client_not_home" || status === "client_not_answering") Icon = PhoneOff;
   
   return (
     <Badge variant={variant} className="flex items-center gap-1 font-normal">
@@ -155,10 +169,15 @@ export default function BusinessServices() {
   }, []);
 
   // Dohvatanje servisa za poslovnog partnera
-  const { data: services, isLoading, error } = useQuery<ServiceItem[]>({
+  const { data: businessData, isLoading, error } = useQuery({
     queryKey: ["/api/business/services"],
     enabled: !!user?.id,
+    staleTime: 30000, // 30 sekundi cache
+    gcTime: 300000, // 5 minuta cache
   });
+
+  // Izvuci services iz API response
+  const services: ServiceItem[] = businessData?.services || [];
 
 
 
@@ -175,7 +194,7 @@ export default function BusinessServices() {
   }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
   
   // Filtriranje servisa po statusu i pretrazi
-  const filteredServices = services?.filter(service => {
+  const filteredServices = (services && Array.isArray(services)) ? services.filter((service: ServiceItem) => {
     // Filter po statusu
     if (statusFilter !== "all" && service.status !== statusFilter) {
       return false;
@@ -248,6 +267,8 @@ export default function BusinessServices() {
               <SelectItem value="waiting_parts">Čeka delove</SelectItem>
               <SelectItem value="completed">Završeni</SelectItem>
               <SelectItem value="cancelled">Otkazani</SelectItem>
+              <SelectItem value="repair_failed">Neuspešan servis</SelectItem>
+              <SelectItem value="customer_refused_repair">Odbio servis</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -257,7 +278,7 @@ export default function BusinessServices() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2 text-gray-500">Učitavanje servisa...</span>
           </div>
-        ) : filteredServices && filteredServices.length > 0 ? (
+        ) : (services && services.length > 0 && filteredServices && filteredServices.length > 0) ? (
           <div className="hidden md:block">
             <Card>
               <CardContent className="p-0">
@@ -274,7 +295,7 @@ export default function BusinessServices() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredServices.map((service) => (
+                    {filteredServices.map((service: ServiceItem) => (
                       <TableRow 
                         key={service.id} 
                         className={`cursor-pointer ${
@@ -359,7 +380,7 @@ export default function BusinessServices() {
         
         {/* Responzivni prikaz za mobilne uređaje */}
         <div className="md:hidden space-y-4">
-          {filteredServices && filteredServices.length > 0 ? filteredServices.map((service) => (
+          {(services && services.length > 0 && filteredServices && filteredServices.length > 0) ? filteredServices.map((service: ServiceItem) => (
             <Card 
               key={service.id} 
               className={`overflow-hidden cursor-pointer ${

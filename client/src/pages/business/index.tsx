@@ -79,7 +79,11 @@ function translateStatus(status: string) {
     in_progress: "U toku",
     waiting_parts: "Čeka delove",
     completed: "Završen",
-    cancelled: "Otkazan"
+    cancelled: "Otkazan",
+    repair_failed: "Neuspešan servis",
+    customer_refused_repair: "Odbio servis",
+    client_not_home: "Klijent nije kod kuće",
+    client_not_answering: "Klijent se ne javlja"
   };
   return statusMap[status] || status;
 }

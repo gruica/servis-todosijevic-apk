@@ -2378,95 +2378,115 @@ export class DatabaseStorage implements IStorage {
   
   // Business Partner methods
   async getServicesByPartner(partnerId: number): Promise<any[]> {
+    const startTime = Date.now();
+    
     try {
-      const partnerServices = await db
-        .select()
+      // OPTIMIZED: Single JOIN query umesto N+1
+      const rawServices = await db
+        .select({
+          // Service podaci
+          id: services.id,
+          clientId: services.clientId,
+          applianceId: services.applianceId,
+          technicianId: services.technicianId,
+          description: services.description,
+          status: services.status,
+          createdAt: services.createdAt,
+          scheduledDate: services.scheduledDate,
+          completedDate: services.completedDate,
+          technicianNotes: services.technicianNotes,
+          cost: services.cost,
+          isCompletelyFixed: services.isCompletelyFixed,
+          businessPartnerId: services.businessPartnerId,
+          partnerCompanyName: services.partnerCompanyName,
+          // Client podaci
+          clientFullName: clients.fullName,
+          clientEmail: clients.email,
+          clientPhone: clients.phone,
+          clientAddress: clients.address,
+          clientCity: clients.city,
+          // Appliance podaci
+          applianceModel: appliances.model,
+          applianceSerialNumber: appliances.serialNumber,
+          applianceCategoryId: appliances.categoryId,
+          applianceManufacturerId: appliances.manufacturerId,
+          // Category podaci
+          categoryName: applianceCategories.name,
+          categoryIcon: applianceCategories.icon,
+          // Manufacturer podaci
+          manufacturerName: manufacturers.name,
+          // Technician podaci
+          technicianFullName: technicians.fullName,
+          technicianSpecialization: technicians.specialization
+        })
         .from(services)
+        .leftJoin(clients, eq(services.clientId, clients.id))
+        .leftJoin(appliances, eq(services.applianceId, appliances.id))
+        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+        .leftJoin(technicians, eq(services.technicianId, technicians.id))
         .where(eq(services.businessPartnerId, partnerId))
-        .orderBy(desc(services.createdAt));
+        .orderBy(desc(services.createdAt))
+        .limit(50);
 
-      const servicesWithDetails = [];
+      // Transformišemo podatke u odgovarajući format
+      const servicesWithDetails = rawServices.map(row => ({
+        id: row.id,
+        clientId: row.clientId,
+        applianceId: row.applianceId,
+        technicianId: row.technicianId,
+        description: row.description,
+        status: row.status,
+        createdAt: row.createdAt,
+        scheduledDate: row.scheduledDate,
+        completedDate: row.completedDate,
+        technicianNotes: row.technicianNotes,
+        cost: row.cost,
+        isCompletelyFixed: row.isCompletelyFixed,
+        businessPartnerId: row.businessPartnerId,
+        partnerCompanyName: row.partnerCompanyName,
+        // Nested client object
+        client: row.clientFullName ? {
+          fullName: row.clientFullName,
+          email: row.clientEmail,
+          phone: row.clientPhone,
+          address: row.clientAddress,
+          city: row.clientCity
+        } : null,
+        // Nested appliance object
+        appliance: row.applianceModel ? {
+          model: row.applianceModel,
+          serialNumber: row.applianceSerialNumber,
+          categoryId: row.applianceCategoryId,
+          manufacturerId: row.applianceManufacturerId
+        } : null,
+        // Nested category object
+        category: row.categoryName ? {
+          name: row.categoryName,
+          icon: row.categoryIcon
+        } : null,
+        // Nested manufacturer object
+        manufacturer: row.manufacturerName ? {
+          name: row.manufacturerName
+        } : null,
+        // Nested technician object
+        technician: row.technicianFullName ? {
+          fullName: row.technicianFullName,
+          specialization: row.technicianSpecialization
+        } : null
+      }));
 
-      for (const service of partnerServices) {
-        let clientInfo = null;
-        let applianceInfo = null;
-        let technicianInfo = null;
-
-        // Dobavljanje informacija o klijentu
-        if (service.clientId) {
-          const [client] = await db.select().from(clients).where(eq(clients.id, service.clientId));
-          if (client) {
-            clientInfo = {
-              id: client.id,
-              fullName: client.fullName,
-              phone: client.phone,
-              email: client.email,
-              address: client.address,
-              city: client.city
-            };
-          }
-        }
-
-        // Dobavljanje informacija o uređaju, kategoriji i proizvođaču
-        if (service.applianceId) {
-          const [appliance] = await db.select().from(appliances).where(eq(appliances.id, service.applianceId));
-          if (appliance) {
-            const [category] = appliance.categoryId ? 
-              await db.select().from(applianceCategories).where(eq(applianceCategories.id, appliance.categoryId)) :
-              [null];
-              
-            const [manufacturer] = appliance.manufacturerId ? 
-              await db.select().from(manufacturers).where(eq(manufacturers.id, appliance.manufacturerId)) :
-              [null];
-
-            applianceInfo = {
-              id: appliance.id,
-              model: appliance.model,
-              serialNumber: appliance.serialNumber,
-              categoryId: appliance.categoryId,
-              manufacturerId: appliance.manufacturerId
-            };
-
-            // Dodavanje category i manufacturer informacija
-            if (category) {
-              applianceInfo.category = { id: category.id, name: category.name };
-            }
-            if (manufacturer) {
-              applianceInfo.manufacturer = { id: manufacturer.id, name: manufacturer.name };
-            }
-          }
-        }
-
-        // Dobavljanje informacija o serviseru
-        if (service.technicianId) {
-          const [technician] = await db.select().from(technicians).where(eq(technicians.id, service.technicianId));
-          if (technician) {
-            technicianInfo = {
-              id: technician.id,
-              fullName: technician.fullName,
-              specialization: technician.specialization,
-              phone: technician.phone,
-              email: technician.email
-            };
-          }
-        }
-
-        servicesWithDetails.push({
-          ...service,
-          client: clientInfo,
-          appliance: applianceInfo,
-          category: applianceInfo?.category || null,
-          manufacturer: applianceInfo?.manufacturer || null,
-          technician: technicianInfo
-        });
-      }
+      const responseTime = Date.now() - startTime;
+      console.log(`[PERFORMANCE] getServicesByPartner(${partnerId}): ${responseTime}ms for ${servicesWithDetails.length} services`);
 
       return servicesWithDetails;
     } catch (error) {
-      console.error("Greška pri dobavljanju servisa za poslovnog partnera:", error);
+      console.error('Greška pri dobijanju servisa za poslovnog partnera:', error);
       return [];
     }
   }
+
+  // DEPRECATED: Stara implementacija sa N+1 problemom - uklonjeno za performance
 
   // Dobijanje klijenata poslovnog partnera (samo oni klijenti koji su povezani sa servisima tog partnera)
   async getClientsByPartner(partnerId: number): Promise<Client[]> {
