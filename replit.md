@@ -31,6 +31,12 @@ Preferred communication style: Simple, everyday language.
   - APK distribucija kroz GitHub Releases
   - Kompatibilnost: Android 7.0+ (75% korisnika u Srbiji)
   - Offline capabilities i native mobile optimizacije
+- **GITHUB REPOSITORY SETUP**: Kompletno postavljen GitHub repository za APK distribuciju (17.08.2025)
+  - Repository: https://github.com/gruica/servis-todosijevic-mobile
+  - Automatski upload ključnih konfiguracionih fajlova
+  - Pripremljena GitHub Actions infrastruktura za automatsko APK kreiranje
+  - README dokumentacija sa kompletnim instrukcijama
+  - Setup dokumenti za finalno aktiviranje APK build-a
 
 ## System Architecture
 
