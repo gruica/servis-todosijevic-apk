@@ -8,23 +8,7 @@
 
 ## 📋 TAČNO ŠTA DA URADITE (10 minuta ukupno)
 
-### KORAK 1: Kreiranje GitHub naloga (3 minuta)
-
-**Idite na:** https://github.com
-
-**Popunite formu:**
-- **Username:** `frigosistem-todosijevic` (ili `servis-todosijevic`)
-- **Email:** `gruica@frigosistemtodosijevic.com`
-- **Password:** (vaša jaka lozinka)
-
-**Kliknite:** "Sign up for GitHub"
-
-**Verifikacija:**
-- Proverite email inbox za verifikacioni link
-- Kliknite link u email-u
-- Izaberite "Free" plan
-
-### KORAK 2: Kreiranje Repository (2 minuta)
+### KORAK 1: Kreiranje Repository (2 minuta)
 
 **U GitHub dashboardu kliknite:** "New Repository" (zeleno dugme)
 
@@ -37,7 +21,7 @@
 
 **Kliknite:** "Create repository"
 
-### KORAK 3: Upload Project Files (5 minuta)
+### KORAK 2: Upload Project Files (5 minuta)
 
 **3a. Download sa Replit-a:**
 - U Replit-u idite na Files panel (levo)
