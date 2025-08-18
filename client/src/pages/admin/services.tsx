@@ -260,16 +260,7 @@ const AdminServices = memo(function AdminServices() {
         // Filtriranje samo završenih servisa
         const isCompleted = ["completed", "delivered", "device_returned"].includes(service.status);
         
-        // Debug log za testiranje
-        if (isBekoService) {
-          console.log('Beko servis pronađen:', {
-            id: service.id,
-            manufacturer: service.appliance?.manufacturer?.name,
-            isWarrantyService: (service as any).isWarrantyService,
-            status: service.status,
-            matchesFilter: isBekoService && isWarrantyService && isCompleted
-          });
-        }
+
         
         return isBekoService && isWarrantyService && isCompleted;
       }

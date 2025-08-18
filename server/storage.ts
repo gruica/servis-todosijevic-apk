@@ -1309,9 +1309,9 @@ export class MemStorage implements IStorage {
       userId: tracking.userId,
       requestType: tracking.requestType,
       ipAddress: tracking.ipAddress,
-      userAgent: tracking.userAgent,
-      requestDate: tracking.requestDate,
-      successful: tracking.successful
+      userAgent: tracking.userAgent || null,
+      requestDate: tracking.requestDate || new Date(),
+      successful: tracking.successful || false
     };
     return mockTracking;
   }
@@ -2172,7 +2172,27 @@ export class DatabaseStorage implements IStorage {
         return service;
       });
       
-      return transformedResult as Service[];
+      return transformedResult.map(service => ({
+        ...service,
+        devicePickedUp: service.devicePickedUp || false,
+        pickupDate: service.pickupDate || null,
+        pickupNotes: service.pickupNotes || null,
+        isWarrantyService: service.isWarrantyService || false,
+        clientRating: service.clientRating || null,
+        clientFeedback: service.clientFeedback || null,
+        feedbackDate: service.feedbackDate || null,
+        feedbackNotes: service.feedbackNotes || null,
+        hasApplianceDefect: service.hasApplianceDefect || false,
+        defectDescription: service.defectDescription || null,
+        defectDetectionDate: service.defectDetectionDate || null,
+        warrantyStatus: service.warrantyStatus || 'out_of_warranty',
+        warrantyExpirationDate: service.warrantyExpirationDate || null,
+        partsNeeded: service.partsNeeded || false,
+        estimatedCost: service.estimatedCost || null,
+        repairPossible: service.repairPossible || true,
+        repairFailureReason: service.repairFailureReason || null,
+        repairFailureDate: service.repairFailureDate || null
+      })) as Service[];
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije
@@ -2363,6 +2383,26 @@ export class DatabaseStorage implements IStorage {
       businessPartnerId: row.businessPartnerId,
       partnerCompanyName: row.partnerCompanyName,
       warrantyStatus: row.warrantyStatus,
+      // Додајемо сва недостајућа поља
+      devicePickedUp: false,
+      pickupDate: null,
+      pickupNotes: null,
+      isWarrantyService: false,
+      clientRating: null,
+      clientFeedback: null,
+      feedbackDate: null,
+      feedbackNotes: null,
+      hasApplianceDefect: false,
+      defectDescription: null,
+      defectDetectionDate: null,
+      warrantyExpirationDate: null,
+      partsNeeded: false,
+      estimatedCost: null,
+      repairPossible: true,
+      repairFailureReason: null,
+      repairFailureDate: null,
+      priority: 'medium' as const,
+      notes: null,
       // Nested client object
       client: row.clientFullName ? {
         id: row.clientId,
@@ -2370,7 +2410,8 @@ export class DatabaseStorage implements IStorage {
         phone: row.clientPhone,
         email: row.clientEmail,
         address: row.clientAddress,
-        city: row.clientCity
+        city: row.clientCity,
+        companyName: null
       } : undefined,
       // Nested appliance object with category
       appliance: row.applianceModel || row.categoryName ? {
@@ -2460,11 +2501,13 @@ export class DatabaseStorage implements IStorage {
         partnerCompanyName: row.partnerCompanyName,
         // Nested client object
         client: row.clientFullName ? {
+          id: row.clientId,
           fullName: row.clientFullName,
           email: row.clientEmail,
           phone: row.clientPhone,
           address: row.clientAddress,
-          city: row.clientCity
+          city: row.clientCity,
+          companyName: null
         } : null,
         // Nested appliance object
         appliance: row.applianceModel ? {
@@ -3044,6 +3087,9 @@ export class DatabaseStorage implements IStorage {
           scheduledDate: service.scheduledDate,
           completedDate: service.completedDate,
           isWarrantyService: service.isWarrantyService,
+          devicePickedUp: service.devicePickedUp || false,
+          pickupDate: service.pickupDate,
+          pickupNotes: service.pickupNotes,
           technicianId: service.technicianId,
           clientId: service.clientId,
           applianceId: service.applianceId,
@@ -3064,7 +3110,7 @@ export class DatabaseStorage implements IStorage {
             email: client.email,
             address: client.address,
             city: client.city,
-            companyName: client.companyName,
+            companyName: (client as any).companyName || null,
           } : null,
           appliance: appliance ? {
             id: appliance.id,
@@ -3202,8 +3248,7 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db
         .update(services)
         .set({
-          ...updates,
-          updatedAt: new Date().toISOString(),
+          ...updates
         })
         .where(eq(services.id, id))
         .returning();
@@ -3273,8 +3318,7 @@ export class DatabaseStorage implements IStorage {
         .update(services)
         .set({
           technicianId,
-          status: 'assigned',
-          updatedAt: new Date().toISOString(),
+          status: 'assigned'
         })
         .where(eq(services.id, serviceId))
         .returning();
@@ -3536,7 +3580,7 @@ export class DatabaseStorage implements IStorage {
         supplierName: order.supplierName || null,
         unitCost: receivedData.actualCost || order.estimatedCost || null,
         location: receivedData.location || 'Glavno skladište',
-        warrantyStatus: order.warrantyStatus,
+        warrantyStatus: order.warrantyStatus as "u garanciji" | "van garancije",
         categoryId: null, // Could be extracted from appliance if needed
         manufacturerId: null, // Could be extracted from appliance if needed
         originalOrderId: orderId,
