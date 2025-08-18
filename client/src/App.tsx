@@ -5,6 +5,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 // PERFORMANCE BOOST: Lazy load heavy components
 const Clients = lazy(() => import("@/pages/clients"));
@@ -254,6 +255,7 @@ function App() {
   return (
     <NotificationProvider>
       <Router />
+      <PWAInstallPrompt className="fixed top-4 left-4 right-4 z-50" />
       <Toaster />
     </NotificationProvider>
   );
