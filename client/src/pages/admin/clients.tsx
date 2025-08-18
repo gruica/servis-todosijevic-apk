@@ -519,10 +519,89 @@ const AdminClientsPage = memo(function AdminClientsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium mb-2">Osnovi podaci</h4>
+                  <h4 className="font-medium mb-2">Osnovni podaci</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium">ID:</span>&nbsp;{viewingClient.id}
+                    </div>
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium">Ime:</span>&nbsp;{viewingClient.fullName}
+                    </div>
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="font-medium">Telefon:</span>&nbsp;{viewingClient.phone}
+                    </div>
+                    {viewingClient.email && (
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">Email:</span>&nbsp;{viewingClient.email}
+                      </div>
+                    )}
+                    {viewingClient.address && (
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">Adresa:</span>&nbsp;{viewingClient.address}
+                        {viewingClient.city && `, ${viewingClient.city}`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Akcije</h4>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setViewingClient(null);
+                        window.open(`/clients/${viewingClient.id}`, '_blank');
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Otvori detaljnu stranicu
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setViewingClient(null);
+                        handleEditClient(viewingClient);
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Izmeni podatke
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Brza statistika</h4>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="p-3 bg-muted rounded">
+                    <div className="text-2xl font-bold text-primary">-</div>
+                    <div className="text-xs text-muted-foreground">Uređaja</div>
+                  </div>
+                  <div className="p-3 bg-muted rounded">
+                    <div className="text-2xl font-bold text-green-600">-</div>
+                    <div className="text-xs text-muted-foreground">Servisa</div>
+                  </div>
+                  <div className="p-3 bg-muted rounded">
+                    <div className="text-2xl font-bold text-blue-600">-</div>
+                    <div className="text-xs text-muted-foreground">Zadnji servis</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
                       {viewingClient.fullName}
                     </div>
                     <div className="flex items-center">

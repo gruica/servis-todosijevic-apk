@@ -97,22 +97,21 @@ export default function ClientDetails() {
 
   // Dobavljanje podataka o klijentu sa svim detaljima
   const { data: clientDetails, isLoading: isClientLoading, error } = useQuery<any, Error>({
-    queryKey: ["/api/clients/details", clientId],
+    queryKey: ["/api/clients", clientId, "details"],
     queryFn: async () => {
+      console.log(`🔍 Učitavam detalje klijenta ID: ${clientId}`);
       try {
-        const res = await apiRequest("GET", `/api/clients/${clientId}/details`);
-        if (!res.ok) {
-          throw new Error("Klijent nije pronađen");
-        }
-        const data = await res.json();
-        console.log("Detalji klijenta učitani:", data);
+        const response = await apiRequest(`/api/clients/${clientId}/details`);
+        const data = await response.json();
+        console.log("✅ Detalji klijenta učitani:", data);
         return data;
       } catch (err) {
-        console.error("Greška pri dobavljanju detalja klijenta:", err);
-        throw err;
+        console.error("❌ Greška pri dobavljanju detalja klijenta:", err);
+        throw new Error(`Klijent sa ID ${clientId} nije pronađen`);
       }
     },
     retry: 1,
+    enabled: !isNaN(clientId) && clientId > 0,
   });
   
   // Izdvajamo osnovne podatke klijenta za lakši pristup
