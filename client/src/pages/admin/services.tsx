@@ -902,39 +902,47 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="client" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Ime i prezime</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.fullName}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Telefon</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.phone}</p>
-                    </div>
-                  </div>
-                  
-                  {selectedService.client.email && (
-                    <div>
-                      <Label className="text-sm font-medium">Email</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.email}</p>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Grad</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.city || "Nije specificiran"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Adresa</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.address || "Nije specificirana"}</p>
-                    </div>
-                  </div>
-                  
-                  {selectedService.client.companyName && (
-                    <div>
-                      <Label className="text-sm font-medium">Firma</Label>
-                      <p className="mt-1 text-sm">{selectedService.client.companyName}</p>
+                  {selectedService.client ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Ime i prezime</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.fullName || "Nije specificiran"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Telefon</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.phone || "Nije specificiran"}</p>
+                        </div>
+                      </div>
+                      
+                      {selectedService.client.email && (
+                        <div>
+                          <Label className="text-sm font-medium">Email</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.email}</p>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Grad</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.city || "Nije specificiran"}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Adresa</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.address || "Nije specificirana"}</p>
+                        </div>
+                      </div>
+                      
+                      {selectedService.client.companyName && (
+                        <div>
+                          <Label className="text-sm font-medium">Firma</Label>
+                          <p className="mt-1 text-sm">{selectedService.client.companyName}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Podaci o klijentu nisu dostupni</p>
                     </div>
                   )}
                 </TabsContent>
