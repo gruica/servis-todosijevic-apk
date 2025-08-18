@@ -613,7 +613,14 @@ const AdminServices = memo(function AdminServices() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeFolder} onValueChange={(value) => dispatchFilter({ type: 'SET_ACTIVE_FOLDER', payload: value })}>
+            <Tabs value={activeFolder} onValueChange={(value) => {
+              // Specijalnan handling za Beko Fakturisanje folder
+              if (value === 'beko_billing') {
+                window.location.href = '/admin/beko-billing';
+                return;
+              }
+              dispatchFilter({ type: 'SET_ACTIVE_FOLDER', payload: value });
+            }}>
               <TabsList className="grid w-full grid-cols-5 mb-4">
                 {foldersWithCounts.map((folder) => {
                   const IconComponent = folder.icon;
