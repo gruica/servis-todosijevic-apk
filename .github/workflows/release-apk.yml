@@ -1,0 +1,138 @@
+name: Release Signed APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Pokreće se samo kada se kreira tag kao v1.0.0
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build web application for production
+      run: npm run build
+      env:
+        NODE_ENV: production
+        VITE_API_URL: https://servis-todosijevic.replit.app
+        
+    - name: Setup Android project
+      run: |
+        npx cap add android --no-open || true
+        npx cap sync android
+        
+    - name: Decode and save keystore
+      if: ${{ secrets.KEYSTORE_FILE }}
+      run: |
+        echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > keystore.jks
+        
+    - name: Build signed release APK
+      working-directory: android
+      run: |
+        chmod +x gradlew
+        if [ -f "../keystore.jks" ]; then
+          # Build potpisane release verzije
+          ./gradlew assembleRelease
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+        else
+          # Build debug verzije ako nema keystore
+          ./gradlew assembleDebug  
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+        fi
+        echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        fi
+        
+    - name: Rename APK with version
+      run: |
+        if [ -f "keystore.jks" ]; then
+          cp "android/${{ env.APK_PATH }}" "ServisTodosijevic-v${{ env.VERSION }}-signed.apk"
+          echo "FINAL_APK=ServisTodosijevic-v${{ env.VERSION }}-signed.apk" >> $GITHUB_ENV
+        else
+          cp "android/${{ env.APK_PATH }}" "ServisTodosijevic-v${{ env.VERSION }}-debug.apk"  
+          echo "FINAL_APK=ServisTodosijevic-v${{ env.VERSION }}-debug.apk" >> $GITHUB_ENV
+        fi
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-apk-v${{ env.VERSION }}
+        path: ${{ env.FINAL_APK }}
+        retention-days: 90
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ env.VERSION }}
+        name: Servis Todosijević v${{ env.VERSION }}
+        body: |
+          ## Servis Todosijević Mobilna Aplikacija v${{ env.VERSION }}
+          
+          ### Funkcionalnosti:
+          - 📱 Kompletan sistem za upravljanje servisima
+          - 👥 Multi-role pristup (Admin, Serviser, Klijent, Poslovni partner)
+          - 🔧 Upravljanje aparatima i rezervnim delovima
+          - 📧 Automatska email i SMS obaveštenja
+          - 📊 Napredna analitika i izveštavanje
+          - 🏢 Integrisani ComPlus i Servis Komerc sistemi
+          
+          ### Instalacija:
+          1. Preuzmite APK datoteku ispod
+          2. Omogućite instalaciju iz nepoznatih izvora u Android postavkama
+          3. Instalirajte aplikaciju
+          4. Prijavite se sa vašim korisničkim podacima
+          
+          ### Podržane Android verzije:
+          - Android 7.0 (API level 24) ili noviji
+          
+          ---
+          **Datum build-a:** ${{ github.event.head_commit.timestamp }}
+          **Commit:** ${{ github.sha }}
+        files: ${{ env.FINAL_APK }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Cleanup sensitive files
+      if: always()
+      run: |
+        rm -f keystore.jks
