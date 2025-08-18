@@ -106,14 +106,21 @@ interface Technician {
   specialization: string;
 }
 
+// Service folder system - organizovan po kategorijama
+interface ServiceFolder {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  badgeColor: string;
+  filter: (service: AdminService) => boolean;
+  count?: number;
+}
+
 // Optimized state management with useReducer
 interface FilterState {
   searchQuery: string;
-  statusFilter: string;
-  technicianFilter: string;
-  partnerFilter: string;
-  pickupFilter: string;
-  cityFilter: string;
+  activeFolder: string;
 }
 
 interface DialogState {
@@ -129,11 +136,7 @@ interface DialogState {
 
 type FilterAction = 
   | { type: 'SET_SEARCH'; payload: string }
-  | { type: 'SET_STATUS_FILTER'; payload: string }
-  | { type: 'SET_TECHNICIAN_FILTER'; payload: string }
-  | { type: 'SET_PARTNER_FILTER'; payload: string }
-  | { type: 'SET_PICKUP_FILTER'; payload: string }
-  | { type: 'SET_CITY_FILTER'; payload: string }
+  | { type: 'SET_ACTIVE_FOLDER'; payload: string }
   | { type: 'RESET_FILTERS' };
 
 type DialogAction =
@@ -151,24 +154,12 @@ const filterReducer = (state: FilterState, action: FilterAction): FilterState =>
   switch (action.type) {
     case 'SET_SEARCH':
       return { ...state, searchQuery: action.payload };
-    case 'SET_STATUS_FILTER':
-      return { ...state, statusFilter: action.payload };
-    case 'SET_TECHNICIAN_FILTER':
-      return { ...state, technicianFilter: action.payload };
-    case 'SET_PARTNER_FILTER':
-      return { ...state, partnerFilter: action.payload };
-    case 'SET_PICKUP_FILTER':
-      return { ...state, pickupFilter: action.payload };
-    case 'SET_CITY_FILTER':
-      return { ...state, cityFilter: action.payload };
+    case 'SET_ACTIVE_FOLDER':
+      return { ...state, activeFolder: action.payload };
     case 'RESET_FILTERS':
       return {
         searchQuery: "",
-        statusFilter: "all",
-        technicianFilter: "all",
-        partnerFilter: "all",
-        pickupFilter: "all",
-        cityFilter: "all"
+        activeFolder: "active"
       };
     default:
       return state;
@@ -212,14 +203,10 @@ const dialogReducer = (state: DialogState, action: DialogAction): DialogState =>
 const AdminServices = memo(function AdminServices() {
   const [location, navigate] = useLocation();
   
-  // Optimized state management with useReducer
+  // Optimized state management with useReducer - default to active services
   const [filterState, dispatchFilter] = useReducer(filterReducer, {
     searchQuery: "",
-    statusFilter: "all",
-    technicianFilter: "all",
-    partnerFilter: "all",
-    pickupFilter: "all",
-    cityFilter: "all"
+    activeFolder: "active"  // Default se prikazuju aktivni servisi
   });
   
   const [dialogState, dispatchDialog] = useReducer(dialogReducer, {
@@ -234,19 +221,63 @@ const AdminServices = memo(function AdminServices() {
   });
 
   // Destructure state for easier access
-  const { searchQuery, statusFilter, technicianFilter, partnerFilter, pickupFilter, cityFilter } = filterState;
+  const { searchQuery, activeFolder } = filterState;
   const { selectedService, isDetailsOpen, isEditOpen, isDeleteOpen, isReturnOpen, isSparePartsOpen, returnReason, returnNotes } = dialogState;
   
   // Koristi notification context
   const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
   
+  // Definicija service foldera - organizovani po nameni
+  const serviceFolders: ServiceFolder[] = [
+    {
+      id: "active",
+      title: "Aktivni servisi",
+      description: "Servisi u toku, zakazani i čekaju rezervne delove",
+      icon: Play,
+      badgeColor: "bg-blue-500",
+      filter: (service) => ["pending", "scheduled", "in_progress", "waiting_parts", "device_parts_removed"].includes(service.status)
+    },
+    {
+      id: "business_partners",
+      title: "Poslovni partneri",
+      description: "Servisi inicirani od strane poslovnih partnera",
+      icon: Building,
+      badgeColor: "bg-purple-500",
+      filter: (service) => service.businessPartnerId !== null && service.businessPartnerId !== undefined
+    },
+    {
+      id: "completed",
+      title: "Završeni servisi",
+      description: "Kompletno završeni i dostavljeni servisi",
+      icon: CheckCircle,
+      badgeColor: "bg-green-500",
+      filter: (service) => ["completed", "delivered", "device_returned"].includes(service.status)
+    },
+    {
+      id: "cancelled",
+      title: "Otkazani/Problematični",
+      description: "Otkazani servisi, kupac odbija, neuspešni servisi",
+      icon: XCircle,
+      badgeColor: "bg-red-500",
+      filter: (service) => ["cancelled", "customer_refuses_repair", "customer_refused_repair", "repair_failed", "client_not_home", "client_not_answering"].includes(service.status)
+    },
+    {
+      id: "all",
+      title: "Svi servisi",
+      description: "Kompletan pregled svih servisa u sistemu",
+      icon: FileText,
+      badgeColor: "bg-gray-500",
+      filter: () => true
+    }
+  ];
+
   // Check URL parameters for automatic filtering
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const filterParam = params.get('filter');
+    const folderParam = params.get('folder');
     
-    if (filterParam === 'picked_up') {
-      dispatchFilter({ type: 'SET_PICKUP_FILTER', payload: 'picked_up' });
+    if (folderParam && serviceFolders.find(f => f.id === folderParam)) {
+      dispatchFilter({ type: 'SET_ACTIVE_FOLDER', payload: folderParam });
     }
   }, []);
   
@@ -387,36 +418,34 @@ const AdminServices = memo(function AdminServices() {
     },
   });
 
-  // Filter services with safe property access
+  // Folder-based filtering - organizovani servisi po kategorijama
+  const getCurrentFolder = () => serviceFolders.find(f => f.id === activeFolder) || serviceFolders[0];
+  
   const filteredServices = services.filter((service) => {
     try {
+      // Prvo primeni folder filter (glavna kategorija)
+      const currentFolder = getCurrentFolder();
+      const matchesFolder = currentFolder.filter(service);
+      
+      // Zatim primeni pretragu unutar foldera
       const matchesSearch = searchQuery === "" || 
         service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.client?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.appliance?.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.id?.toString().includes(searchQuery);
       
-      const matchesStatus = statusFilter === "all" || service.status === statusFilter;
-      const matchesTechnician = technicianFilter === "all" || 
-        (technicianFilter === "unassigned" && !service.technicianId) ||
-        service.technicianId?.toString() === technicianFilter;
-      
-      const matchesPartner = partnerFilter === "all" || 
-        (partnerFilter === "business" && service.businessPartnerId) ||
-        (partnerFilter === "direct" && !service.businessPartnerId);
-      
-      const matchesPickup = pickupFilter === "all" || 
-        (pickupFilter === "picked_up" && service.devicePickedUp) ||
-        (pickupFilter === "not_picked_up" && !service.devicePickedUp);
-      
-      const matchesCity = cityFilter === "all" || service.client?.city === cityFilter;
-      
-      return matchesSearch && matchesStatus && matchesTechnician && matchesPartner && matchesPickup && matchesCity;
+      return matchesFolder && matchesSearch;
     } catch (error) {
       // Error handled silently
       return false;
     }
   });
+
+  // Update folder counts
+  const foldersWithCounts = serviceFolders.map(folder => ({
+    ...folder,
+    count: services.filter(service => folder.filter(service)).length
+  }));
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -555,215 +584,74 @@ const AdminServices = memo(function AdminServices() {
           </div>
         </div>
 
-        {/* Kompaktne Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-2 mb-4">
-          <Card>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Ukupno</p>
-                  <p className="text-lg font-bold">{stats.total}</p>
-                </div>
-                <Wrench className="h-5 w-5 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${pickupFilter === "picked_up" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => dispatchFilter({ type: 'SET_PICKUP_FILTER', payload: pickupFilter === "picked_up" ? "all" : "picked_up" })}>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-xs ${pickupFilter === "picked_up" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Preuzeti</p>
-                  <p className={`text-lg font-bold ${pickupFilter === "picked_up" ? "text-blue-800" : ""}`}>{stats.pickedUp}</p>
-                </div>
-                <Package className={`h-5 w-5 ${pickupFilter === "picked_up" ? "text-blue-800" : "text-blue-600"}`} />
-              </div>
-              {pickupFilter === "picked_up" && (
-                <div className="mt-1 text-xs text-blue-700 font-medium">
-                  <Filter className="h-3 w-3 inline mr-1" />
-                  Filtriranje
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Na čekanju</p>
-                  <p className="text-lg font-bold">{stats.pending}</p>
-                </div>
-                <Clock className="h-5 w-5 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">U toku</p>
-                  <p className="text-lg font-bold">{stats.inProgress}</p>
-                </div>
-                <Play className="h-5 w-5 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Završeno</p>
-                  <p className="text-lg font-bold">{stats.completed}</p>
-                </div>
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Nedodeljena</p>
-                  <p className="text-lg font-bold">{stats.unassigned}</p>
-                </div>
-                <AlertCircle className="h-5 w-5 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={`cursor-pointer hover:bg-gray-50 transition-colors ${partnerFilter === "business" ? "bg-blue-50 border-blue-200 border-2" : ""}`} onClick={() => dispatchFilter({ type: 'SET_PARTNER_FILTER', payload: partnerFilter === "business" ? "all" : "business" })}>
-            <CardContent className="p-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-xs ${partnerFilter === "business" ? "text-blue-700 font-medium" : "text-muted-foreground"}`}>Poslovni P.</p>
-                  <p className={`text-lg font-bold ${partnerFilter === "business" ? "text-blue-800" : ""}`}>{stats.businessPartner}</p>
-                </div>
-                <Building className={`h-5 w-5 ${partnerFilter === "business" ? "text-blue-800" : "text-blue-600"}`} />
-              </div>
-              {partnerFilter === "business" && (
-                <div className="mt-1 text-xs text-blue-700 font-medium">
-                  <Filter className="h-3 w-3 inline mr-1" />
-                  Filtriranje
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Kompaktni Filters */}
+        {/* Service Folders - Tab Navigation System */}
         <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Filter className="h-4 w-4" />
-              Filteri
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Folderi servisa
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-              <div className="space-y-2">
-                <Label>Pretraga</Label>
+          <CardContent>
+            <Tabs value={activeFolder} onValueChange={(value) => dispatchFilter({ type: 'SET_ACTIVE_FOLDER', payload: value })}>
+              <TabsList className="grid w-full grid-cols-5 mb-4">
+                {foldersWithCounts.map((folder) => {
+                  const IconComponent = folder.icon;
+                  return (
+                    <TabsTrigger key={folder.id} value={folder.id} className="flex items-center gap-2 text-xs">
+                      <IconComponent className="h-3 w-3" />
+                      <span className="hidden sm:inline">{folder.title}</span>
+                      <Badge variant="secondary" className={`ml-1 ${folder.badgeColor} text-white text-xs`}>
+                        {folder.count}
+                      </Badge>
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              
+              {/* Current Folder Description */}
+              <div className="bg-gray-50 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  {(() => {
+                    const IconComponent = getCurrentFolder().icon;
+                    return <IconComponent className="h-4 w-4 text-primary" />;
+                  })()}
+                  <h3 className="font-medium">{getCurrentFolder().title}</h3>
+                  <Badge variant="outline">{filteredServices.length} servisa</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{getCurrentFolder().description}</p>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Simple Search within Current Folder */}
+        <Card className="mb-4">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Pretraži servise..."
+                    placeholder={`Pretraži unutar foldera "${getCurrentFolder().title}"...`}
                     value={searchQuery}
                     onChange={(e) => dispatchFilter({ type: 'SET_SEARCH', payload: e.target.value })}
                     className="pl-10"
                   />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_STATUS_FILTER', payload: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Svi statusi</SelectItem>
-                    <SelectItem value="pending">Na čekanju</SelectItem>
-                    <SelectItem value="assigned">Dodeljeno</SelectItem>
-                    <SelectItem value="scheduled">Zakazano</SelectItem>
-                    <SelectItem value="in_progress">U toku</SelectItem>
-                    <SelectItem value="completed">Završeno</SelectItem>
-                    <SelectItem value="cancelled">Otkazano</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="text-sm text-muted-foreground">
+                Prikazano {filteredServices.length} servisa
               </div>
-              
-              <div className="space-y-2">
-                <Label>Serviser</Label>
-                <Select value={technicianFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_TECHNICIAN_FILTER', payload: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Svi serviseri</SelectItem>
-                    <SelectItem value="unassigned">Nedodeljena</SelectItem>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id.toString()}>
-                        {tech.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Kreirao</Label>
-                <Select value={partnerFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_PARTNER_FILTER', payload: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Svi servisi</SelectItem>
-                    <SelectItem value="direct">Direktno (admin)</SelectItem>
-                    <SelectItem value="business">Poslovni partneri</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Preuzimanje uređaja</Label>
-                <Select value={pickupFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_PICKUP_FILTER', payload: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Svi uređaji</SelectItem>
-                    <SelectItem value="picked_up">Preuzeti</SelectItem>
-                    <SelectItem value="not_picked_up">Nisu preuzeti</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Grad</Label>
-                <Select value={cityFilter} onValueChange={(value) => dispatchFilter({ type: 'SET_CITY_FILTER', payload: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Svi gradovi</SelectItem>
-                    {Array.from(new Set(services.map(s => s.client?.city).filter(Boolean))).sort().map((city) => (
-                      <SelectItem key={city} value={city || ""}>
-                        {city}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Rezultati</Label>
-                <p className="text-sm text-muted-foreground pt-2">
-                  Prikazano {filteredServices.length} od {services.length} servisa
-                </p>
-              </div>
+              {searchQuery && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => dispatchFilter({ type: 'SET_SEARCH', payload: '' })}
+                >
+                  Obriši pretragu
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
