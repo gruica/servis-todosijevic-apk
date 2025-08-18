@@ -37,7 +37,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
   // Verzija 3 - Profesionalne grafike integrisane
   const adminMenuItems = [
     { path: "/", label: "Kontrolna tabla", icon: AppIcons.admin.dashboard, highlight: true, isProfessionalIcon: true },
-    { path: "/clients", label: "Klijenti", icon: AppIcons.customer.profile, isProfessionalIcon: true },
+    { path: "/admin/clients", label: "Klijenti", icon: AppIcons.customer.profile, isProfessionalIcon: true },
     { path: "/admin/services", label: "Servisi", icon: AppIcons.admin.serviceManagement, isProfessionalIcon: true },
     { path: "/admin/services?filter=picked_up", label: "Preuzeti aparati", icon: AppIcons.appliances.refrigerator, highlight: true, isProfessionalIcon: true },
     { path: "/technician-services", label: "Servisi po serviserima", icon: AppIcons.technician.mobile, isProfessionalIcon: true },
