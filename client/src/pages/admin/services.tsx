@@ -66,6 +66,7 @@ interface AdminService {
   devicePickedUp?: boolean;
   pickupDate?: string | null;
   pickupNotes?: string | null;
+  isWarrantyService?: boolean;
   client: {
     id: number;
     fullName: string;
@@ -244,6 +245,23 @@ const AdminServices = memo(function AdminServices() {
       icon: Building,
       badgeColor: "bg-purple-500",
       filter: (service) => service.businessPartnerId !== null && service.businessPartnerId !== undefined
+    },
+    {
+      id: "beko_billing",
+      title: "Beko Fakturisanje",
+      description: "Beko uređaji servisirani u garantnom roku - za fakturisanje",
+      icon: DollarSign,
+      badgeColor: "bg-red-600",
+      filter: (service) => {
+        // Proveri da li je servis za Beko uređaj
+        const isBekoService = service.appliance?.manufacturer?.name?.toLowerCase().includes('beko');
+        // Proveri da li je garantni servis (ovo polje možda ne postoji još uvek)
+        const isWarrantyService = (service as any).isWarrantyService === true;
+        // Filtriranje samo završenih servisa
+        const isCompleted = ["completed", "delivered", "device_returned"].includes(service.status);
+        
+        return isBekoService && isWarrantyService && isCompleted;
+      }
     },
     {
       id: "completed",

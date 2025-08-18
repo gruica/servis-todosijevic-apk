@@ -251,6 +251,7 @@ export const services = pgTable("services", {
   repairFailureReason: text("repair_failure_reason"), // Detaljan razlog neuspešnog servisa
   replacedPartsBeforeFailure: text("replaced_parts_before_failure"), // Delovi zamenjeni pre neuspešnog servisa
   repairFailureDate: text("repair_failure_date"), // Datum konstatovanja neuspešnog servisa
+  isWarrantyService: boolean("is_warranty_service").default(false), // Da li je garantni servis (za lakše filtriranje)
 });
 
 // Tabela za praćenje uklonjenih delova sa uređaja
@@ -301,6 +302,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   repairFailureReason: true,
   replacedPartsBeforeFailure: true,
   repairFailureDate: true,
+  isWarrantyService: true,
 }).extend({
   clientId: z.number().int().positive("ID klijenta mora biti pozitivan broj"),
   applianceId: z.number().int().positive("ID uređaja mora biti pozitivan broj"),

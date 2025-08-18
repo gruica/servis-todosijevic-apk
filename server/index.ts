@@ -5,8 +5,10 @@ import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
 import { complusCronService } from "./complus-cron-service";
 import { ServisKomercCronService } from "./servis-komerc-cron-service";
+import { BekoCronService } from "./beko-cron-service.js";
 
 const servisKomercCronService = new ServisKomercCronService();
+const bekoCronService = BekoCronService.getInstance();
 
 import { storage } from "./storage";
 // Mobile SMS Service has been completely removed
@@ -148,6 +150,15 @@ app.use((req, res, next) => {
     } catch (error) {
       console.error("Greška pri pokretanju Servis Komerc cron servisa:", error);
       // Aplikacija i dalje može da radi bez Servis Komerc cron servisa
+    }
+
+    // Pokreni Beko automatske izveštaje
+    try {
+      bekoCronService.start();
+      log("Beko automatski izveštaji pokrenuti");
+    } catch (error) {
+      console.error("Greška pri pokretanju Beko cron servisa:", error);
+      // Aplikacija i dalje može da radi bez Beko cron servisa
     }
   });
 })();

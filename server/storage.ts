@@ -3043,6 +3043,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: service.createdAt,
           scheduledDate: service.scheduledDate,
           completedDate: service.completedDate,
+          isWarrantyService: service.isWarrantyService,
           technicianId: service.technicianId,
           clientId: service.clientId,
           applianceId: service.applianceId,
