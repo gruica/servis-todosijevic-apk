@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servis Todosijević - Mobile App</title>
+    <meta name="description" content="Profesionalna mobilna aplikacija za upravljanje servisom belih dobara">
+    
+    <!-- React CDN -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .app-card {
+            max-width: 450px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+        
+        .feature-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .feature-card.primary {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border-color: #3182ce;
+        }
+        
+        .feature-card.success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border-color: #38a169;
+        }
+        
+        .feature-card.warning {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            color: white;
+            border-color: #dd6b20;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .feature-list {
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .build-time {
+            font-size: 12px;
+            font-style: italic;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 480px) {
+            .app-card {
+                padding: 24px;
+                margin: 10px;
+            }
+            
+            .logo {
+                font-size: 48px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        function ServisTodosijevicApp() {
+            const [buildTime, setBuildTime] = useState('');
+            
+            useEffect(() => {
+                setBuildTime(new Date().toLocaleString('sr-RS', {
+                    timeZone: 'Europe/Belgrade',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }));
+            }, []);
+
+            return React.createElement('div', { className: 'container' },
+                React.createElement('div', { className: 'app-card' },
+                    React.createElement('div', { className: 'logo' }, '📱'),
+                    
+                    React.createElement('h1', null, 'Servis Todosijević'),
+                    
+                    React.createElement('p', { className: 'subtitle' }, 
+                        'Mobilna aplikacija za upravljanje servisom belih dobara'
+                    ),
+
+                    React.createElement('div', { className: 'feature-card primary' },
+                        React.createElement('h2', { className: 'feature-title' }, 
+                            '🏢 Profesionalna Platforma'
+                        ),
+                        React.createElement('p', null, 
+                            'Kompletno digitalno upravljanje servisom frižidera, veš mašina, sudijera i ostalih belih dobara.'
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'feature-card success' },
+                        React.createElement('h2', { className: 'feature-title' }, 
+                            '✅ Ključne Funkcije'
+                        ),
+                        React.createElement('ul', { className: 'feature-list' },
+                            React.createElement('li', null, 'Real-time praćenje statusa servisa'),
+                            React.createElement('li', null, 'Upravljanje klijentima i aparatima'),
+                            React.createElement('li', null, 'Mobile-first dizajn'),
+                            React.createElement('li', null, 'Offline mogućnosti'),
+                            React.createElement('li', null, 'Push notifikacije'),
+                            React.createElement('li', null, 'Email i SMS integracija')
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'feature-card warning' },
+                        React.createElement('h2', { className: 'feature-title' }, 
+                            '📱 APK Distribucija'
+                        ),
+                        React.createElement('p', null, 
+                            'Automatsko kreiranje Android APK-a kroz GitHub Actions. ' +
+                            'Kompatibilnost: Android 7.0+ (API 24). ' +
+                            'Standalone React aplikacija sa CDN dependencies.'
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'footer' },
+                        React.createElement('p', null, '© 2025 Frigo Sistem Todosijević'),
+                        React.createElement('p', { className: 'build-time' }, 
+                            'Build vreme: ' + buildTime
+                        )
+                    )
+                )
+            );
+        }
+
+        // Initialize React app
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(React.createElement(ServisTodosijevicApp));
+    </script>
+</body>
+</html>
