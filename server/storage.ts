@@ -413,7 +413,16 @@ export class MemStorage implements IStorage {
       fullName: "Jelena Todosijević", 
       password: hashedPassword,
       technicianId: null,
-      email: "admin@frigosistemtodosijevic.com"
+      email: "admin@frigosistemtodosijevic.com",
+      phone: null,
+      address: null,
+      city: null,
+      companyName: null,
+      companyId: null,
+      isVerified: true,
+      registeredAt: new Date(),
+      verifiedAt: new Date(),
+      verifiedBy: null
     };
     
     this.users.set(id, user);
@@ -505,7 +514,7 @@ export class MemStorage implements IStorage {
     const updatedUser: User = {
       ...user,
       isVerified: true,
-      verifiedAt: now.toISOString(),
+      verifiedAt: now,
       verifiedBy: adminId
     };
     
@@ -543,8 +552,8 @@ export class MemStorage implements IStorage {
       companyName: insertUser.companyName || null,
       companyId: insertUser.companyId || null,
       isVerified: isVerified,
-      registeredAt: now.toISOString(),
-      verifiedAt: isVerified ? now.toISOString() : null,
+      registeredAt: now,
+      verifiedAt: isVerified ? now : null,
       verifiedBy: isVerified && role === "admin" ? id : null // samoodobravanje za administratore
     };
     
