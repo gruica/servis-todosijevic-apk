@@ -17,6 +17,12 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **FOLDER SISTEM ZA SERVISE (18.08.2025)**: Kompletno implementiran organizacijski sistem
+  - Zamenjeno postojeće filtriranje sa folder tab sistemom (5 kategorija)
+  - Aktivni servisi, Poslovni partneri, Završeni, Otkazani/Problematični, Svi servisi
+  - Default prikaz aktivnih servisa sa pretragu unutar foldera
+  - Brojači servisa za svaki folder, ispravljena null reference greška
+  - Sve akcije na servisima (Edit, Delete, View) sada rade bez grešaka
 - **DETALJNO TESTIRANJE APLIKACIJE (18.08.2025)**: Kompletno testiranje funkcionalnosti izvršeno
 - **ADMINISTRATORSKI PANEL VALIDACIJA**: Sveobuhvatno testiranje pouzdane obrade podataka, efikasnog upravljanja zadacima i besprekorno izvršavanje operacija
 - **BUG FIXES**: Port conflict resolved - aplikacija sada uspešno startuje
