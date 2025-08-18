@@ -1,291 +1,145 @@
 <!DOCTYPE html>
-<html lang="sr-RS">
+<html lang="sr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frigo Sistem Todosijević - Offline</title>
-  <meta name="description" content="Aplikacija trenutno nije dostupna. Molimo proverite internetsku konekciju.">
-  <meta name="robots" content="noindex, nofollow">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  
-  <!-- Optimized CSS za offline stranicu -->
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      color: #333;
-    }
-    
-    .offline-container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 40px;
-      max-width: 500px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    .logo {
-      font-size: 28px;
-      color: #4682B4;
-      font-weight: bold;
-      margin-bottom: 10px;
-      letter-spacing: -0.5px;
-    }
-    
-    .subtitle {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
-      font-weight: 300;
-    }
-    
-    .offline-icon {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 20px;
-      background: #f0f0f0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
-      color: #999;
-    }
-    
-    h1 {
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-    
-    .message {
-      color: #666;
-      margin-bottom: 30px;
-      line-height: 1.6;
-      font-size: 16px;
-    }
-    
-    .actions {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      background: #4682B4;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn:hover {
-      background: #5a92c4;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(70, 130, 180, 0.3);
-    }
-    
-    .btn-secondary {
-      background: transparent;
-      color: #4682B4;
-      border: 2px solid #4682B4;
-    }
-    
-    .btn-secondary:hover {
-      background: #4682B4;
-      color: white;
-    }
-    
-    .status-info {
-      margin-top: 30px;
-      padding: 20px;
-      background: rgba(70, 130, 180, 0.1);
-      border-radius: 10px;
-      border-left: 4px solid #4682B4;
-    }
-    
-    .status-title {
-      font-weight: 600;
-      color: #4682B4;
-      margin-bottom: 10px;
-    }
-    
-    .status-list {
-      text-align: left;
-      color: #666;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    
-    .contact-info {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-      font-size: 14px;
-      color: #666;
-    }
-    
-    .contact-link {
-      color: #4682B4;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    
-    .contact-link:hover {
-      text-decoration: underline;
-    }
-    
-    .pulse {
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
-    
-    @media (max-width: 480px) {
-      .offline-container {
-        padding: 30px 20px;
-        margin: 10px;
-      }
-      
-      .logo {
-        font-size: 24px;
-      }
-      
-      h1 {
-        font-size: 20px;
-      }
-      
-      .actions {
-        flex-direction: column;
-      }
-      
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-    
-    /* Accessibility improvements */
-    .btn:focus {
-      outline: 3px solid rgba(70, 130, 180, 0.5);
-      outline-offset: 2px;
-    }
-    
-    @media (prefers-reduced-motion: reduce) {
-      .btn {
-        transition: none;
-      }
-      
-      .pulse {
-        animation: none;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Servis Todosijević</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #3B82F6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        p {
+            font-size: 16px;
+            opacity: 0.8;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        
+        .retry-btn {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .retry-btn:hover {
+            background: #2563EB;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .online {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+        }
+        
+        .offline {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+    </style>
 </head>
 <body>
-  <div class="offline-container">
-    <div class="logo">Frigo Sistem Todosijević</div>
-    <div class="subtitle">Profesionalni servis bele tehnike</div>
-    
-    <div class="offline-icon pulse">📡</div>
-    
-    <h1>Nema internet konekcije</h1>
-    <p class="message">
-      Aplikacija trenutno nije dostupna. Molimo proverite internetsku konekciju i pokušajte ponovo.
-    </p>
-    
-    <div class="actions">
-      <button class="btn" onclick="window.location.reload()" aria-label="Ponovo učitaj stranicu">
-        🔄 Pokušaj ponovo
-      </button>
-      <a href="/" class="btn btn-secondary" aria-label="Idi na početnu stranicu">
-        🏠 Početna
-      </a>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Aplikacija je offline</h1>
+        <p>Trenutno nema internetske konekcije. Molimo proverite konekciju i pokušajte ponovo.</p>
+        
+        <button class="retry-btn" onclick="window.location.reload()">
+            Pokušaj ponovo
+        </button>
+        
+        <div id="status" class="status offline">
+            🔴 Offline režim
+        </div>
     </div>
-    
-    <div class="status-info">
-      <div class="status-title">Kada se vratite online, moći ćete da:</div>
-      <div class="status-list">
-        • Kreirate nove servisne zahteve<br>
-        • Pratite status postojećih servisa<br>
-        • Pristupite tehničkom panelu<br>
-        • Upravljate klijentima i aparatima<br>
-        • Koristite OCR skener za brže unošenje podataka
-      </div>
-    </div>
-    
-    <div class="contact-info">
-      <strong>Hitni kontakt:</strong><br>
-      📞 <a href="tel:+381670512141" class="contact-link">067 051 2141</a><br>
-      ✉️ <a href="mailto:info@frigosistemtodosijevic.me" class="contact-link">info@frigosistemtodosijevic.me</a>
-    </div>
-  </div>
-  
-  <script>
-    // Auto-refresh kada se vrati konekcija
-    window.addEventListener('online', function() {
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    });
-    
-    // Proveri konekciju svaki minut
-    setInterval(() => {
-      if (navigator.onLine) {
-        fetch('/', { method: 'HEAD', cache: 'no-cache' })
-          .then(() => {
-            window.location.reload();
-          })
-          .catch(() => {
-            console.log('Still offline');
-          });
-      }
-    }, 60000);
-    
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        if (e.target.classList.contains('btn')) {
-          e.target.click();
+
+    <script>
+        // Praćenje online/offline statusa
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (navigator.onLine) {
+                status.className = 'status online';
+                status.innerHTML = '🟢 Konekcija uspostavljena';
+                
+                // Auto refresh nakon 2 sekunde kada se konekcija uspostavi
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                status.className = 'status offline'; 
+                status.innerHTML = '🔴 Nema internetske konekcije';
+            }
         }
-      }
-      
-      if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        window.location.reload();
-      }
-    });
-  </script>
+        
+        // Event listeners za online/offline
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        
+        // Inicijalnu provera
+        updateStatus();
+        
+        // Periodična provera konekcije
+        setInterval(() => {
+            if (navigator.onLine) {
+                fetch('/')
+                    .then(() => {
+                        updateStatus();
+                    })
+                    .catch(() => {
+                        // Još uvek nema prave konekcije
+                    });
+            }
+        }, 5000);
+    </script>
 </body>
 </html>
