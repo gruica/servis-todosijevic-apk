@@ -15,7 +15,7 @@ import { promises as fs } from "fs";
 import { eq, and, desc, gte, lte, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { SMSCommunicationService } from "./sms-communication-service.js";
-const { availableParts } = schema;
+const { availableParts, appliances, applianceCategories, manufacturers, services, spareParts, users } = schema;
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
