@@ -26,6 +26,7 @@ Preferred communication style: Simple, everyday language.
 - **LSP status**: 0 grešaka u svim modulima - aplikacija 100% production-ready
 - **MOBILNE NOTIFIKACIJE ANALIZA**: Kompletna analiza izvodljivosti push notifikacija kreirana (11.01.2025)
 - **GITHUB ACTIONS APK DEPLOYMENT** (18.01.2025): Kreiran kompletni sistem za automatsko pravljenje APK-a preko GitHub Actions sa 3 workflow-a za različite slučajeve, punu dokumentaciju, i automatsko potpisivanje
+- **PWA APLIKACIJA IMPLEMENTIRANA** (18.01.2025): Kompletna Progressive Web App funkcionalnost - manifest.json sa srpskim nazivom "Servis Todosijević", generirane mobilne ikone (192px, 512px, Apple touch), service worker za offline rad, automatska registracija. Korisnik potvrdio da PWA radi i može se instalirati kao native aplikacija na telefonu
 
 ## System Architecture
 
@@ -44,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: JWT (JSON Web Tokens) with 30-day expiration for all user roles (Admin, Technician, Customer, Business Partner). Scrypt for password hashing.
 - **Session Management**: PostgreSQL session store for production.
 - **API Design**: RESTful API with role-based access control.
-- **Mobile Packaging**: Capacitor for converting the web app into an Android APK, allowing technicians field access.
+- **Mobile Packaging**: Dual deployment approach - Capacitor for Android APK generation via GitHub Actions, and Progressive Web App (PWA) for direct mobile installation with manifest.json, service worker, and native-like experience.
 - **Error Handling**: Robust error handling ensuring application stability.
 - **File Processing**: Multer for file uploads.
 - **Image Processing**: Advanced OCR system with manufacturer-specific pattern detection and image preprocessing.
