@@ -32,15 +32,25 @@ export function verifyToken(token: string): JWTPayload | null {
 export function extractTokenFromRequest(req: Request): string | null {
   // Check Authorization header first
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7);
+  console.log('🔒 JWT Debug - Raw Authorization header:', authHeader);
+  
+  if (authHeader) {
+    if (authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      console.log('🔒 JWT Debug - Extracted Bearer token:', token.substring(0, 20) + '...');
+      return token;
+    } else {
+      console.log('🔒 JWT Debug - Authorization header exists but no Bearer prefix');
+    }
   }
   
   // Check cookie as fallback
   if (req.cookies && req.cookies.auth_token) {
+    console.log('🔒 JWT Debug - Found token in cookies');
     return req.cookies.auth_token;
   }
   
+  console.log('🔒 JWT Debug - No token found in headers or cookies');
   return null;
 }
 

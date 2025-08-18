@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { generateToken } from "./jwt-auth";
 
 declare global {
   namespace Express {
@@ -326,6 +327,56 @@ export function setupAuth(app: Express) {
         res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
+  });
+
+  // JWT-based login endpoint (za Jelena Todosijević admin panel)
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni" });
+      }
+      
+      console.log(`JWT Login pokušaj za: ${username}`);
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        console.log(`JWT Login: Korisnik ${username} nije pronađen`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      const isPasswordValid = await comparePassword(password, user.password);
+      if (!isPasswordValid) {
+        console.log(`JWT Login: Neispravna lozinka za ${username}`);
+        return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
+      }
+      
+      // Provera verifikacije (osim za admin korisnike)
+      if (user.role !== 'admin' && !user.isVerified) {
+        console.log(`JWT Login: Korisnik ${username} nije verifikovan`);
+        return res.status(403).json({ error: "Vaš nalog nije još verifikovan od strane administratora" });
+      }
+      
+      // Generišemo JWT token
+      const token = generateToken({
+        userId: user.id,
+        username: user.username,
+        role: user.role
+      });
+      
+      console.log(`🎯 JWT Login uspešan za ${user.username} (${user.role})`);
+      
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        token,
+        user: userWithoutPassword
+      });
+      
+    } catch (error) {
+      console.error("JWT Login greška:", error);
+      res.status(500).json({ error: "Greška pri prijavi" });
+    }
   });
 
   app.post("/api/logout", (req, res, next) => {

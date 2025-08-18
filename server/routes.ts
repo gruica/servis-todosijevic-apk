@@ -463,11 +463,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Business partner routes registration
   registerBusinessPartnerRoutes(app);
 
-  // Client routes - dodaj admin autentifikaciju
+  // Client routes - admin autentifikacija (za Jelena Todosijević i ostale admin korisnike)
   app.get("/api/clients", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const clients = await storage.getAllClients();
-      console.log(`🔍 Admin ${req.user?.username} pristupio klijentima - ukupno: ${clients.length}`);
+      console.log(`🔍 Admin ${(req as any).user?.username} pristupio klijentima - ukupno: ${clients.length}`);
       res.json(clients);
     } catch (error) {
       console.error("Greška pri dobijanju klijenata:", error);
