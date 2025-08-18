@@ -37,7 +37,8 @@ import {
   Eye,
   Building,
   Calendar,
-  FileText
+  FileText,
+  BarChart3
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -45,6 +46,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Client } from "@shared/schema";
+import { Link } from "wouter";
 
 // Schema za editovanje klijenta
 const editClientSchema = z.object({
@@ -333,6 +335,16 @@ const AdminClientsPage = memo(function AdminClientsPage() {
                 )}
                 
                 <div className="flex justify-end gap-2 pt-2">
+                  <Link href={`/admin/clients/${client.id}/analysis`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      title="Kompletna analiza klijenta"
+                    >
+                      <BarChart3 className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                  
                   <Button
                     variant="outline"
                     size="sm"

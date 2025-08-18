@@ -16,6 +16,7 @@ const EnhancedServices = lazy(() => import("@/pages/enhanced-services"));
 const AdminServices = lazy(() => import("@/pages/admin/services"));
 const CreateService = lazy(() => import("@/pages/admin/create-service"));
 const AdminClients = lazy(() => import("@/pages/admin/clients"));
+const AdminClientComprehensiveAnalysis = lazy(() => import("@/pages/admin/client-comprehensive-analysis"));
 const AdminSpareParts = lazy(() => import("@/pages/admin/spare-parts"));
 const AdminAvailableParts = lazy(() => import("@/pages/admin/available-parts"));
 const AdminSparePartsCatalogPage = lazy(() => import("@/pages/admin/spare-parts-catalog"));
@@ -125,6 +126,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/services" component={AdminServices} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/clients" component={AdminClients} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/clients/:id/analysis" component={AdminClientComprehensiveAnalysis} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts" component={AdminSpareParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/available-parts" component={AdminAvailableParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/business-partners" component={BusinessPartnersAdminPageFixed} allowedRoles={["admin"]} />
