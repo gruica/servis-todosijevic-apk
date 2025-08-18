@@ -1,149 +1,135 @@
-const CACHE_NAME = 'servis-todosijevic-v2025.1.18';
-const STATIC_CACHE_NAME = 'servis-static-v2025.1.18';
-const DYNAMIC_CACHE_NAME = 'servis-dynamic-v2025.1.18';
+// Service Worker za Frigo Sistem Todosijević - 2025 Performance Optimized
+const CACHE_NAME = 'frigo-sistem-v2025.1.0';
+const STATIC_CACHE = 'frigo-static-v2025.1.0';
+const DYNAMIC_CACHE = 'frigo-dynamic-v2025.1.0';
+const IMAGE_CACHE = 'frigo-images-v2025.1.0';
 
-// Osnovni resursi za cache
-const CORE_FILES = [
+// URLs koje treba cache-ovati odmah
+const STATIC_ASSETS = [
   '/',
   '/manifest.json',
+  '/favicon.ico',
   '/icon-192.png',
   '/icon-512.png',
-  '/apple-touch-icon.png',
-  '/offline.html'
+  '/auth',
+  '/business-auth',
+  '/offline.html' // Kreirane ću offline stranicu
 ];
 
-// API rute koje ne treba cache-ovati
-const NO_CACHE_URLS = [
-  '/api/auth',
-  '/api/logout', 
-  '/api/push-notifications',
-  '/api/analytics'
+// API endpoints za cache strategiju
+const API_PATTERNS = [
+  /\/api\/jwt-user/,
+  /\/api\/health/,
+  /\/api\/categories/,
+  /\/api\/manufacturers/
 ];
 
-console.log('[SW] Service Worker za Servis Todosijević učitan v2025.1.18');
-
-// Install event - cache osnovne resurse
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+// Install event - cache kritičnih resursa
+self.addEventListener('install', event => {
+  console.log('🚀 Service Worker: Installing v2025.1.0');
   
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Caching core files');
-        return cache.addAll(CORE_FILES);
+    Promise.all([
+      caches.open(STATIC_CACHE).then(cache => {
+        console.log('📦 Service Worker: Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      }),
+      // Preload kritičnih API poziva
+      caches.open(DYNAMIC_CACHE).then(cache => {
+        console.log('⚡ Service Worker: Preloading critical APIs');
+        return Promise.allSettled([
+          fetch('/api/health').then(response => {
+            if (response.ok) cache.put('/api/health', response.clone());
+          }),
+          fetch('/api/categories').then(response => {
+            if (response.ok) cache.put('/api/categories', response.clone());
+          }),
+          fetch('/api/manufacturers').then(response => {
+            if (response.ok) cache.put('/api/manufacturers', response.clone());
+          })
+        ]);
       })
-      .then(() => {
-        console.log('[SW] Core files cached successfully');
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('[SW] Cache failed:', error);
-      })
+    ])
+  );
+  
+  // Forsiraj aktivaciju novog SW-a
+  self.skipWaiting();
+});
+
+// Activate event - obriši stare cache-ove
+self.addEventListener('activate', event => {
+  console.log('✅ Service Worker: Activating v2025.1.0');
+  
+  event.waitUntil(
+    Promise.all([
+      // Obriši stare cache-ove
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            if (![STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE].includes(cacheName)) {
+              console.log('🗑️ Service Worker: Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Preuzmi kontrolu nad svim tab-ovima
+      self.clients.claim()
+    ])
   );
 });
 
-// Activate event - cleanup starih cache-ova
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker...');
-  
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      const deletePromises = cacheNames.map((cacheName) => {
-        if (cacheName !== STATIC_CACHE_NAME && 
-            cacheName !== DYNAMIC_CACHE_NAME &&
-            cacheName.startsWith('servis-')) {
-          console.log('[SW] Deleting old cache:', cacheName);
-          return caches.delete(cacheName);
-        }
-      }).filter(Boolean);
-      
-      return Promise.all(deletePromises);
-    })
-    .then(() => {
-      console.log('[SW] Service Worker activated and ready');
-      return self.clients.claim();
-    })
-  );
-});
-
-// Fetch event - cache strategija
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
+// Fetch event - pametna cache strategija
+self.addEventListener('fetch', event => {
+  const { request } = event;
   const url = new URL(request.url);
   
-  // Preskoči non-GET zahteve
-  if (request.method !== 'GET') {
+  // Ignoriši non-GET zahteve i chrome-extension pozive
+  if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
     return;
   }
   
-  // Preskoči no-cache URLs
-  if (NO_CACHE_URLS.some(noCache => url.pathname.startsWith(noCache))) {
-    return;
-  }
-  
-  // Cache strategija
+  // Različite strategije za različite tipove resursa
   if (url.pathname.startsWith('/api/')) {
-    // API zahtevi - Network First strategija
-    event.respondWith(networkFirstStrategy(request));
-  } else if (CORE_FILES.includes(url.pathname) || 
-             url.pathname.includes('.png') || 
-             url.pathname.includes('.jpg') || 
-             url.pathname.includes('.css') ||
-             url.pathname.includes('.js')) {
-    // Statični resursi - Cache First strategija
-    event.respondWith(cacheFirstStrategy(request));
+    event.respondWith(handleAPIRequest(request));
+  } else if (request.destination === 'image') {
+    event.respondWith(handleImageRequest(request));
+  } else if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(handleStaticAsset(request));
   } else {
-    // HTML stranice - Network First sa fallback-om
-    event.respondWith(networkFirstWithFallback(request));
+    event.respondWith(handlePageRequest(request));
   }
 });
 
-// Cache First strategija za statične resurse
-async function cacheFirstStrategy(request) {
+// Strategija za API pozive - Network First sa fallback na cache
+async function handleAPIRequest(request) {
+  const url = new URL(request.url);
+  
   try {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
+    // Pokušaj network zahtev
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE_NAME);
+    
+    // Cache-uj uspešne odgovore za određene endpoint-ove
+    if (networkResponse.ok && shouldCacheAPI(url.pathname)) {
+      const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
   } catch (error) {
-    console.log('[SW] Cache first failed:', error);
-    return new Response('Resource not available offline', { 
-      status: 503,
-      statusText: 'Service Unavailable' 
-    });
-  }
-}
-
-// Network First strategija za API pozive
-async function networkFirstStrategy(request) {
-  try {
-    const networkResponse = await fetch(request);
+    console.log('🌐 Service Worker: Network failed for API, trying cache:', url.pathname);
     
-    if (networkResponse.ok && request.url.includes('/api/')) {
-      const cache = await caches.open(DYNAMIC_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    console.log('[SW] Network first fallback to cache for:', request.url);
+    // Ako network ne radi, pokušaj cache
     const cachedResponse = await caches.match(request);
-    
     if (cachedResponse) {
       return cachedResponse;
     }
     
-    return new Response(JSON.stringify({ 
-      error: 'Nema internetske konekcije',
-      offline: true 
+    // Ako nema cache-a, vrati error response
+    return new Response(JSON.stringify({
+      error: 'Nema internet konekcije',
+      cached: false,
+      timestamp: Date.now()
     }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' }
@@ -151,76 +137,176 @@ async function networkFirstStrategy(request) {
   }
 }
 
-// Network First sa fallback za HTML stranice
-async function networkFirstWithFallback(request) {
+// Strategija za slike - Cache First sa lazy loading
+async function handleImageRequest(request) {
+  const cachedResponse = await caches.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
   try {
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      const cache = await caches.open(IMAGE_CACHE);
       cache.put(request, networkResponse.clone());
     }
     
     return networkResponse;
   } catch (error) {
-    console.log('[SW] Network failed, trying cache for:', request.url);
-    const cachedResponse = await caches.match(request);
+    console.log('🖼️ Service Worker: Image load failed:', request.url);
     
+    // Vrati placeholder sliku
+    return new Response(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" fill="#f0f0f0"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" text-anchor="middle" fill="#999">Slika se učitava...</text></svg>',
+      { headers: { 'Content-Type': 'image/svg+xml' } }
+    );
+  }
+}
+
+// Strategija za statičke resurse - Cache First
+async function handleStaticAsset(request) {
+  const cachedResponse = await caches.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.log('📄 Service Worker: Static asset failed:', request.url);
+    throw error;
+  }
+}
+
+// Strategija za stranice - Network First sa offline fallback
+async function handlePageRequest(request) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    // Cache-uj uspešne stranice
+    if (networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.log('📱 Service Worker: Page load failed, trying cache:', request.url);
+    
+    // Pokušaj cache
+    const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
     
-    // Fallback na offline stranicu
-    return caches.match('/offline.html') || 
-           new Response('Aplikacija je offline', { 
-             status: 503,
-             headers: { 'Content-Type': 'text/html' }
-           });
+    // Ako nema cache-a, vrati offline stranicu
+    const offlineResponse = await caches.match('/offline.html');
+    if (offlineResponse) {
+      return offlineResponse;
+    }
+    
+    // Finalni fallback
+    return new Response(`
+      <!DOCTYPE html>
+      <html lang="sr-RS">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Frigo Sistem - Offline</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
+          .offline-container { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .logo { font-size: 24px; color: #4682B4; font-weight: bold; margin-bottom: 20px; }
+          .message { color: #666; margin-bottom: 20px; }
+          .retry-btn { background: #4682B4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <div class="offline-container">
+          <div class="logo">Frigo Sistem Todosijević</div>
+          <h2>Nema internet konekcije</h2>
+          <p class="message">Molimo proverite internetsku konekciju i pokušajte ponovo.</p>
+          <button class="retry-btn" onclick="window.location.reload()">Pokušaj ponovo</button>
+        </div>
+      </body>
+      </html>
+    `, {
+      headers: { 'Content-Type': 'text/html' },
+      status: 503
+    });
   }
 }
 
-// Background Sync za kasnije slanje podataka
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync triggered:', event.tag);
+// Pomoćne funkcije
+function shouldCacheAPI(pathname) {
+  return API_PATTERNS.some(pattern => pattern.test(pathname));
+}
+
+// Background sync za offline akcije
+self.addEventListener('sync', event => {
+  console.log('🔄 Service Worker: Background sync triggered:', event.tag);
   
-  if (event.tag === 'background-sync-services') {
-    event.waitUntil(syncPendingServices());
+  if (event.tag === 'background-sync') {
+    event.waitUntil(doBackgroundSync());
   }
 });
 
-async function syncPendingServices() {
-  // Implementacija za sinhronizaciju pending servisa
-  console.log('[SW] Syncing pending services...');
+async function doBackgroundSync() {
+  // Implementacija background sync logike
+  console.log('⚡ Service Worker: Performing background sync...');
 }
 
-// Share Target API
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SHARE_TARGET') {
-    console.log('[SW] Share target activated:', event.data);
-    
+// Push notifications
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  
+  const options = {
+    body: event.data.text(),
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: 'frigo-notification',
+    requireInteraction: false,
+    actions: [
+      { action: 'open', title: 'Otvori' },
+      { action: 'close', title: 'Zatvori' }
+    ]
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('Frigo Sistem Todosijević', options)
+  );
+});
+
+// Notification click
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  
+  if (event.action === 'open') {
     event.waitUntil(
-      self.clients.matchAll().then((clients) => {
-        if (clients && clients.length) {
-          clients[0].postMessage({
-            type: 'SHARED_CONTENT',
-            data: event.data
-          });
-          return clients[0].focus();
-        }
-        return self.clients.openWindow('/');
-      })
+      clients.openWindow('/')
     );
   }
 });
 
-// Periodic background sync (ako je podržan)
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'content-sync') {
-    event.waitUntil(syncContent());
+// Poruke između SW i main thread
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: CACHE_NAME });
   }
 });
 
-async function syncContent() {
-  console.log('[SW] Periodic sync triggered');
-  // Ovde možemo dodati logiku za periodičnu sinhronizaciju
-}
+console.log('🎯 Service Worker: Frigo Sistem v2025.1.0 ready');

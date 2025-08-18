@@ -1,121 +1,121 @@
 {
-  "name": "Servis Todosijević",
-  "short_name": "ServisTodo",
-  "description": "Aplikacija za upravljanje servisom belih dobara",
+  "name": "Frigo Sistem Todosijević - Profesionalni Servis Bele Tehnike",
+  "short_name": "Frigo Servis",
+  "description": "Profesionalni servis i popravka bele tehnike u Novom Sadu. Brza dijagnostika, originalni delovi, 12 meseci garancije.",
   "start_url": "/",
-  "id": "/",
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#1E293B",
-  "background_color": "#1E293B",
-  "lang": "sr",
-  "dir": "ltr",
+  "id": "com.frigosistemtodosijevic.app",
   "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#ffffff",
+  "theme_color": "#4682B4",
+  "orientation": "portrait-primary",
   "prefer_related_applications": false,
-  "display_override": ["standalone", "minimal-ui"],
+  "lang": "sr-RS",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities", "tools"],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-home.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Početna stranica - Desktop"
+    },
+    {
+      "src": "/screenshots/mobile-services.webp",
+      "sizes": "390x844",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Servisi - Mobilni prikaz"
+    }
+  ],
   "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192", 
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512.png", 
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png", 
-      "purpose": "maskable"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ],
-  "categories": ["business", "productivity", "utilities"],
-  "edge_side_panel": {
-    "preferred_width": 480
-  },
-  "protocol_handlers": [
+  "shortcuts": [
     {
-      "protocol": "web+servis",
-      "url": "/?handler=%s"
-    }
-  ],
-  "file_handlers": [
+      "name": "Novi Servis",
+      "short_name": "Servis",
+      "description": "Kreiraj novi servisni zahtev",
+      "url": "/business/services/new",
+      "icons": [
+        {
+          "src": "/shortcut-new-service.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
     {
-      "action": "/",
-      "accept": {
-        "image/*": [".jpg", ".jpeg", ".png", ".gif"],
-        "text/*": [".txt", ".csv"]
-      }
+      "name": "Tehnički Panel",
+      "short_name": "Tehničar",
+      "description": "Pristup tehničkom panelu",
+      "url": "/tech",
+      "icons": [
+        {
+          "src": "/shortcut-tech.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Business Portal",
+      "short_name": "Business",
+      "description": "Business partner portal",
+      "url": "/business",
+      "icons": [
+        {
+          "src": "/shortcut-business.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ],
   "share_target": {
-    "action": "/",
-    "method": "POST",
-    "enctype": "multipart/form-data",
+    "action": "/business/services/new",
+    "method": "GET",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "files",
-          "accept": ["image/*", "text/*"]
-        }
-      ]
+      "url": "url"
     }
   },
-  "shortcuts": [
+  "protocol_handlers": [
     {
-      "name": "Dashboard",
-      "short_name": "Home",
-      "description": "Glavna stranica aplikacije",
-      "url": "/",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
+      "protocol": "mailto",
+      "url": "/contact?email=%s"
     },
     {
-      "name": "Novi servis",
-      "short_name": "Novi",
-      "description": "Kreiraj novi servis",
-      "url": "/technician/services/new",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Moji servisi",
-      "short_name": "Servisi",
-      "description": "Prikaži sve servise",
-      "url": "/technician/services",
-      "icons": [
-        {
-          "src": "/icon-192.png", 
-          "sizes": "192x192"
-        }
-      ]
+      "protocol": "tel",
+      "url": "/contact?phone=%s"
     }
-  ]
+  ],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "edge_side_panel": {
+    "preferred_width": 320
+  }
 }

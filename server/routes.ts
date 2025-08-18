@@ -27,7 +27,6 @@ import { setupWebScrapingRoutes } from './web-scraping-routes';
 import { ServisKomercCronService } from './servis-komerc-cron-service.js';
 import { ServisKomercNotificationService } from './servis-komerc-notification-service.js';
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
-import { pushNotificationRoutes } from './push-notification-routes';
 // SMS mobile functionality has been completely removed
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -463,14 +462,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Business partner routes registration
   registerBusinessPartnerRoutes(app);
 
-  // Client routes - admin autentifikacija (za Jelena Todosijević i ostale admin korisnike)
-  app.get("/api/clients", jwtAuth, requireRole(['admin']), async (req, res) => {
+  // Client routes
+  app.get("/api/clients", async (req, res) => {
     try {
       const clients = await storage.getAllClients();
-      console.log(`🔍 Admin ${(req as any).user?.username} pristupio klijentima - ukupno: ${clients.length}`);
       res.json(clients);
     } catch (error) {
-      console.error("Greška pri dobijanju klijenata:", error);
       res.status(500).json({ error: "Greška pri dobijanju klijenata" });
     }
   });
@@ -12601,9 +12598,6 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       res.status(500).json({ error: 'Greška pri analizi obrazaca održavanja' });
     }
   });
-
-  // Push Notification routes
-  app.use('/api/push-notifications', pushNotificationRoutes);
 
   return httpServer;
 }

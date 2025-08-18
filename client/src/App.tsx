@@ -5,7 +5,6 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 // PERFORMANCE BOOST: Lazy load heavy components
 const Clients = lazy(() => import("@/pages/clients"));
@@ -208,7 +207,7 @@ function App() {
     }
   }, [navigate]);
   
-  // Inicijalizacija Capacitor-a i PWA funkcionalnosti
+  // Inicijalizacija Capacitor-a prilikom učitavanja aplikacije
   useEffect(() => {
     // Inicijalizacija samo za nativne mobilne platforme
     if (isNativeMobile) {
@@ -216,17 +215,6 @@ function App() {
       initializeCapacitor().catch(error => {
         console.error("Greška pri inicijalizaciji mobilne aplikacije:", error);
       });
-    } else {
-      // PWA registracija za web verziju
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('PWA Service Worker registrovan uspešno:', registration);
-          })
-          .catch((error) => {
-            console.log('PWA Service Worker registracija nije uspela:', error);
-          });
-      }
     }
   }, []);
 
@@ -255,7 +243,6 @@ function App() {
   return (
     <NotificationProvider>
       <Router />
-      <PWAInstallPrompt className="fixed top-4 left-4 right-4 z-50" />
       <Toaster />
     </NotificationProvider>
   );

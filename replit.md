@@ -25,8 +25,12 @@ Preferred communication style: Simple, everyday language.
 - **Production sistemi kreirani**: performance-monitor.ts, error-boundary.tsx, production-logger.ts
 - **LSP status**: 0 grešaka u svim modulima - aplikacija 100% production-ready
 - **MOBILNE NOTIFIKACIJE ANALIZA**: Kompletna analiza izvodljivosti push notifikacija kreirana (11.01.2025)
-- **GITHUB ACTIONS APK DEPLOYMENT** (18.01.2025): Kreiran kompletni sistem za automatsko pravljenje APK-a preko GitHub Actions sa 3 workflow-a za različite slučajeve, punu dokumentaciju, i automatsko potpisivanje
-- **PWA APLIKACIJA IMPLEMENTIRANA** (18.01.2025): Kompletna Progressive Web App funkcionalnost - manifest.json sa srpskim nazivom "Servis Todosijević", generirane mobilne ikone (192px, 512px, Apple touch), service worker za offline rad, automatska registracija. Korisnik potvrdio da PWA radi i može se instalirati kao native aplikacija na telefonu
+- **MOBILNA APK APLIKACIJA**: GitHub Actions workflow kreiran za automatsko APK kreiranje (17.01.2025)
+  - Capacitor 7.2.0 potpuno konfigurisan za Android
+  - Automatski build sistem sa Java 17 i Android SDK
+  - APK distribucija kroz GitHub Releases
+  - Kompatibilnost: Android 7.0+ (75% korisnika u Srbiji)
+  - Offline capabilities i native mobile optimizacije
 
 ## System Architecture
 
@@ -45,7 +49,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: JWT (JSON Web Tokens) with 30-day expiration for all user roles (Admin, Technician, Customer, Business Partner). Scrypt for password hashing.
 - **Session Management**: PostgreSQL session store for production.
 - **API Design**: RESTful API with role-based access control.
-- **Mobile Packaging**: Dual deployment approach - Capacitor for Android APK generation via GitHub Actions, and Progressive Web App (PWA) for direct mobile installation with manifest.json, service worker, and native-like experience.
+- **Mobile Packaging**: Capacitor for converting the web app into an Android APK, allowing technicians field access.
 - **Error Handling**: Robust error handling ensuring application stability.
 - **File Processing**: Multer for file uploads.
 - **Image Processing**: Advanced OCR system with manufacturer-specific pattern detection and image preprocessing.

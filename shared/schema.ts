@@ -515,6 +515,176 @@ export const removedPartsRelations = relations(removedParts, ({ one }) => ({
   }),
 }));
 
+// Email Management Tables
+export const emailAccounts = pgTable("email_accounts", {
+  id: serial("id").primaryKey(),
+  accountName: text("account_name").notNull(), // Naziv naloga (npr. "Glavni servis email")
+  email: text("email").notNull(), // Email adresa
+  smtpHost: text("smtp_host").notNull(), // SMTP server
+  smtpPort: integer("smtp_port").notNull(), // SMTP port
+  smtpSecure: boolean("smtp_secure").default(true).notNull(), // SSL/TLS
+  smtpUser: text("smtp_user").notNull(), // SMTP korisničko ime
+  smtpPassword: text("smtp_password").notNull(), // SMTP lozinka
+  imapHost: text("imap_host").notNull(), // IMAP server
+  imapPort: integer("imap_port").notNull(), // IMAP port
+  imapSecure: boolean("imap_secure").default(true).notNull(), // SSL/TLS za IMAP
+  imapUser: text("imap_user").notNull(), // IMAP korisničko ime
+  imapPassword: text("imap_password").notNull(), // IMAP lozinka
+  isActive: boolean("is_active").default(true).notNull(), // Da li je nalog aktivan
+  lastSyncedAt: timestamp("last_synced_at"), // Poslednji put sincronizovano
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").notNull(), // Ko je kreirao nalog
+});
+
+export const emailMessages = pgTable("email_messages", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").notNull(), // ID email naloga
+  messageId: text("message_id").notNull(), // Jedinstveni ID poruke
+  subject: text("subject").notNull(), // Naslov poruke
+  fromAddress: text("from_address").notNull(), // Pošaljalac
+  toAddresses: text("to_addresses").notNull(), // Primaoci (JSON array)
+  ccAddresses: text("cc_addresses"), // CC primaoci (JSON array)
+  bccAddresses: text("bcc_addresses"), // BCC primaoci (JSON array)
+  bodyText: text("body_text"), // Tekstualni sadržaj
+  bodyHtml: text("body_html"), // HTML sadržaj
+  attachments: text("attachments"), // Lista priloga (JSON array)
+  direction: text("direction").notNull(), // "incoming" ili "outgoing"
+  status: text("status").default("unread").notNull(), // "unread", "read", "replied", "forwarded", "archived"
+  priority: text("priority").default("normal").notNull(), // "low", "normal", "high"
+  isImportant: boolean("is_important").default(false).notNull(),
+  relatedServiceId: integer("related_service_id"), // Povezan servis (opciono)
+  relatedClientId: integer("related_client_id"), // Povezan klijent (opciono)
+  tags: text("tags"), // Tagovi (JSON array)
+  receivedAt: timestamp("received_at").notNull(), // Kada je poruka primljena/poslata
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"), // Kada je poruka pročitana
+  repliedAt: timestamp("replied_at"), // Kada je odgovoreno
+});
+
+export const emailThreads = pgTable("email_threads", {
+  id: serial("id").primaryKey(),
+  subject: text("subject").notNull(), // Originalni subject
+  participants: text("participants").notNull(), // Lista učesnika (JSON array)
+  lastMessageAt: timestamp("last_message_at").notNull(),
+  messageCount: integer("message_count").default(1).notNull(),
+  isArchived: boolean("is_archived").default(false).notNull(),
+  relatedServiceId: integer("related_service_id"), // Povezan servis
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const emailAttachments = pgTable("email_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull(), // ID email poruke
+  fileName: text("file_name").notNull(), // Naziv fajla
+  mimeType: text("mime_type").notNull(), // Tip fajla
+  fileSize: integer("file_size").notNull(), // Veličina u bajtovima
+  filePath: text("file_path").notNull(), // Put do fajla na serveru
+  downloadUrl: text("download_url"), // URL za preuzimanje
+  isInline: boolean("is_inline").default(false).notNull(), // Da li je inline slika
+  contentId: text("content_id"), // Content-ID za inline slike
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Email schema validacije
+export const insertEmailAccountSchema = createInsertSchema(emailAccounts).pick({
+  accountName: true,
+  email: true,
+  smtpHost: true,
+  smtpPort: true,
+  smtpSecure: true,
+  smtpUser: true,
+  smtpPassword: true,
+  imapHost: true,
+  imapPort: true,
+  imapSecure: true,
+  imapUser: true,
+  imapPassword: true,
+  isActive: true,
+  createdBy: true,
+}).extend({
+  accountName: z.string().min(3, "Naziv naloga mora imati najmanje 3 karaktera").max(100, "Naziv je predugačak"),
+  email: z.string().email("Unesite validnu email adresu"),
+  smtpHost: z.string().min(3, "SMTP host mora imati najmanje 3 karaktera"),
+  smtpPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
+  smtpUser: z.string().min(1, "SMTP korisničko ime je obavezno"),
+  smtpPassword: z.string().min(1, "SMTP lozinka je obavezna"),
+  imapHost: z.string().min(3, "IMAP host mora imati najmanje 3 karaktera"),
+  imapPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
+  imapUser: z.string().min(1, "IMAP korisničko ime je obavezno"),
+  imapPassword: z.string().min(1, "IMAP lozinka je obavezna"),
+  createdBy: z.number().int().positive("ID kreatora mora biti pozitivan broj"),
+});
+
+export const insertEmailMessageSchema = createInsertSchema(emailMessages).pick({
+  accountId: true,
+  messageId: true,
+  subject: true,
+  fromAddress: true,
+  toAddresses: true,
+  ccAddresses: true,
+  bccAddresses: true,
+  bodyText: true,
+  bodyHtml: true,
+  attachments: true,
+  direction: true,
+  status: true,
+  priority: true,
+  isImportant: true,
+  relatedServiceId: true,
+  relatedClientId: true,
+  tags: true,
+  receivedAt: true,
+}).extend({
+  accountId: z.number().int().positive("ID naloga mora biti pozitivan broj"),
+  messageId: z.string().min(1, "ID poruke je obavezan"),
+  subject: z.string().min(1, "Naslov poruke je obavezan").max(255, "Naslov je predugačak"),
+  fromAddress: z.string().email("Pošaljalac mora biti validna email adresa"),
+  toAddresses: z.string().min(1, "Primaoci su obavezni"),
+  direction: z.enum(["incoming", "outgoing"]),
+  status: z.enum(["unread", "read", "replied", "forwarded", "archived"]).default("unread"),
+  priority: z.enum(["low", "normal", "high"]).default("normal"),
+  receivedAt: z.date(),
+});
+
+export type InsertEmailAccount = z.infer<typeof insertEmailAccountSchema>;
+export type EmailAccount = typeof emailAccounts.$inferSelect;
+export type InsertEmailMessage = z.infer<typeof insertEmailMessageSchema>;
+export type EmailMessage = typeof emailMessages.$inferSelect;
+export type EmailThread = typeof emailThreads.$inferSelect;
+export type EmailAttachment = typeof emailAttachments.$inferSelect;
+
+// Email Relations
+export const emailAccountsRelations = relations(emailAccounts, ({ many, one }) => ({
+  messages: many(emailMessages),
+  creator: one(users, {
+    fields: [emailAccounts.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const emailMessagesRelations = relations(emailMessages, ({ one, many }) => ({
+  account: one(emailAccounts, {
+    fields: [emailMessages.accountId],
+    references: [emailAccounts.id],
+  }),
+  relatedService: one(services, {
+    fields: [emailMessages.relatedServiceId],
+    references: [services.id],
+  }),
+  relatedClient: one(clients, {
+    fields: [emailMessages.relatedClientId],
+    references: [clients.id],
+  }),
+  attachments: many(emailAttachments),
+}));
+
+export const emailAttachmentsRelations = relations(emailAttachments, ({ one }) => ({
+  message: one(emailMessages, {
+    fields: [emailAttachments.messageId],
+    references: [emailMessages.id],
+  }),
+}));
+
 // Maintenance Prediction and Alerts
 export const maintenanceFrequencyEnum = z.enum([
   "monthly", // Mesečno
@@ -579,25 +749,6 @@ export const insertMaintenanceAlertSchema = createInsertSchema(maintenanceAlerts
 export type InsertMaintenanceAlert = z.infer<typeof insertMaintenanceAlertSchema>;
 export type MaintenanceAlert = typeof maintenanceAlerts.$inferSelect;
 
-// Push Subscriptions tabela za push notifikacije
-export const pushSubscriptions = pgTable("push_subscriptions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  endpoint: text("endpoint").notNull(),
-  keys: text("keys").notNull(), // JSON string sa p256dh i auth ključevima
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).pick({
-  userId: true,
-  endpoint: true,
-  keys: true
-});
-
-export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
-export type PushSubscription = typeof pushSubscriptions.$inferSelect;
-
 // Relacije za održavanje
 export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
   appliance: one(appliances, {
@@ -611,14 +762,6 @@ export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one })
   schedule: one(maintenanceSchedules, {
     fields: [maintenanceAlerts.scheduleId],
     references: [maintenanceSchedules.id],
-  })
-}));
-
-// Push Subscriptions relacije
-export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
-  user: one(users, {
-    fields: [pushSubscriptions.userId],
-    references: [users.id],
   })
 }));
 
