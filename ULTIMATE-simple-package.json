@@ -1,13 +1,21 @@
 {
-  "name": "servis-todosijevic-standalone",
+  "name": "servis-todosijevic-mobile",
   "version": "1.0.0",
-  "private": true,
+  "description": "Mobilna aplikacija za Frigo Sistem Todosijević",
+  "main": "index.js",
   "scripts": {
-    "build": "echo 'No build needed - using standalone HTML' && exit 0"
+    "android:add": "npx cap add android",
+    "android:build": "npx cap build android",
+    "android:open": "npx cap open android",
+    "sync": "npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/core": "6.0.0",
+    "@capacitor/android": "6.0.0"
   },
   "devDependencies": {
-    "@capacitor/android": "6.0.0",
-    "@capacitor/cli": "6.0.0",
-    "@capacitor/core": "6.0.0"
-  }
+    "@capacitor/cli": "6.0.0"
+  },
+  "author": "Frigo Sistem Todosijević",
+  "license": "Private"
 }
