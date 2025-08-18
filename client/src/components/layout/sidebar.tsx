@@ -56,6 +56,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
     { path: "/excel", label: "Excel uvoz/izvoz", icon: "import_export" },
     { path: "/admin/data-export", label: "Izvoz podataka", icon: AppIcons.admin.analytics, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/comprehensive-analytics", label: "Analiza podataka", icon: AppIcons.admin.analytics, highlight: true, isProfessionalIcon: true },
     { path: "/admin/cleanup", label: "Čišćenje baze", icon: "cleaning_services", highlight: true },
     { path: "/admin/complus-billing", label: "Complus fakturisanje", icon: "euro", highlight: true },
     { path: "/admin/beko-billing", label: "Beko fakturisanje", icon: "euro", highlight: true },
