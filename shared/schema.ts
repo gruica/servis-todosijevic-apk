@@ -579,6 +579,25 @@ export const insertMaintenanceAlertSchema = createInsertSchema(maintenanceAlerts
 export type InsertMaintenanceAlert = z.infer<typeof insertMaintenanceAlertSchema>;
 export type MaintenanceAlert = typeof maintenanceAlerts.$inferSelect;
 
+// Push Subscriptions tabela za push notifikacije
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  keys: text("keys").notNull(), // JSON string sa p256dh i auth ključevima
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).pick({
+  userId: true,
+  endpoint: true,
+  keys: true
+});
+
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
 // Relacije za održavanje
 export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
   appliance: one(appliances, {
@@ -592,6 +611,14 @@ export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one })
   schedule: one(maintenanceSchedules, {
     fields: [maintenanceAlerts.scheduleId],
     references: [maintenanceSchedules.id],
+  })
+}));
+
+// Push Subscriptions relacije
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id],
   })
 }));
 

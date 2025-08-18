@@ -61,6 +61,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/papaparse": "^5.3.16",
     "@types/uuid": "^10.0.0",
+    "@types/web-push": "^3.6.4",
     "axios": "^1.10.0",
     "axios-cookiejar-support": "^6.0.4",
     "cheerio": "^1.1.2",

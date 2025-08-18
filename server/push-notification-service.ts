@@ -8,13 +8,20 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:info@frigosistemtodosijevic.com';
 
+let vapidConfigured = false;
+
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    VAPID_EMAIL,
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-  );
-  console.log('📱 VAPID ključevi konfigurisani za push notifikacije');
+  try {
+    webpush.setVapidDetails(
+      VAPID_EMAIL,
+      VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY
+    );
+    vapidConfigured = true;
+    console.log('📱 VAPID ključevi konfigurisani za push notifikacije');
+  } catch (error) {
+    console.error('❌ VAPID konfiguracija neuspešna:', error.message);
+  }
 } else {
   console.log('⚠️  VAPID ključevi nisu konfigurisani - push notifikacije neće raditi');
 }
@@ -36,7 +43,7 @@ class PushNotificationService {
   /**
    * Sačuvaj push subscription za korisnika
    */
-  async saveSubscription(userId: number, subscription: PushSubscription) {
+  async saveSubscription(userId: number, subscription: any) {
     try {
       // Provjeri da li subscription već postoji
       const existing = await db
@@ -51,7 +58,10 @@ class PushNotificationService {
           .update(pushSubscriptions)
           .set({
             endpoint: subscription.endpoint,
-            keys: JSON.stringify(subscription.keys),
+            keys: JSON.stringify({
+              p256dh: subscription.keys?.p256dh || '',
+              auth: subscription.keys?.auth || ''
+            }),
             updatedAt: new Date()
           })
           .where(eq(pushSubscriptions.userId, userId));
@@ -60,7 +70,10 @@ class PushNotificationService {
         await db.insert(pushSubscriptions).values({
           userId,
           endpoint: subscription.endpoint,
-          keys: JSON.stringify(subscription.keys)
+          keys: JSON.stringify({
+            p256dh: subscription.keys?.p256dh || '',
+            auth: subscription.keys?.auth || ''
+          })
         });
       }
 
