@@ -71,6 +71,16 @@ const AdminClientsPage = memo(function AdminClientsPage() {
     gcTime: 10 * 60 * 1000, // 10 minuta
   });
 
+  // Debug logging za praćenje stanja
+  React.useEffect(() => {
+    console.log("🔍 Admin Clients Debug:", {
+      isLoading,
+      error: error?.message,
+      clientsCount: clients?.length,
+      clients: clients?.slice(0, 3) // Prikaži prva 3 klijenta
+    });
+  }, [isLoading, error, clients]);
+
   // Form za editovanje klijenta
   const form = useForm<EditClientFormValues>({
     resolver: zodResolver(editClientSchema),
