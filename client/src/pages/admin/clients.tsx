@@ -602,53 +602,6 @@ const AdminClientsPage = memo(function AdminClientsPage() {
           )}
         </DialogContent>
       </Dialog>
-                      {viewingClient.fullName}
-                    </div>
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {viewingClient.phone}
-                    </div>
-                    {viewingClient.email && (
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {viewingClient.email}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Lokacija</h4>
-                  <div className="space-y-2 text-sm">
-                    {viewingClient.address && (
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {viewingClient.address}
-                      </div>
-                    )}
-                    {viewingClient.city && (
-                      <div className="flex items-center">
-                        <Building className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {viewingClient.city}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">System Information</h4>
-                <div className="text-sm text-muted-foreground">
-                  <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2" />
-                    ID klijenta: {viewingClient.id}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 });
