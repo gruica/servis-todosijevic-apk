@@ -79,6 +79,13 @@ const AdminClientsPage = memo(function AdminClientsPage() {
       clientsCount: clients?.length,
       clients: clients?.slice(0, 3) // Prikaži prva 3 klijenta
     });
+    
+    if (error) {
+      console.error("❌ Greška u admin panel klijenti:", error);
+      if (error.message?.includes('403') || error.message?.includes('401')) {
+        console.log("🚫 Problem sa dozvolama - potrebna admin rola");
+      }
+    }
   }, [isLoading, error, clients]);
 
   // Form za editovanje klijenta
