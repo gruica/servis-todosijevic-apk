@@ -207,7 +207,7 @@ function App() {
     }
   }, [navigate]);
   
-  // Inicijalizacija Capacitor-a prilikom učitavanja aplikacije
+  // Inicijalizacija Capacitor-a i PWA funkcionalnosti
   useEffect(() => {
     // Inicijalizacija samo za nativne mobilne platforme
     if (isNativeMobile) {
@@ -215,6 +215,17 @@ function App() {
       initializeCapacitor().catch(error => {
         console.error("Greška pri inicijalizaciji mobilne aplikacije:", error);
       });
+    } else {
+      // PWA registracija za web verziju
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('PWA Service Worker registrovan uspešno:', registration);
+          })
+          .catch((error) => {
+            console.log('PWA Service Worker registracija nije uspela:', error);
+          });
+      }
     }
   }, []);
 
