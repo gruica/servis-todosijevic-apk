@@ -17,6 +17,12 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **BEKO BILLING SISTEM (18.08.2025)**: Kompletno implementiran billing sistem identičan ComPlus sistemu
+  - API endpoint-i kreirani: /api/admin/billing/beko i enhanced verzija  
+  - BekoBillingReport komponenta kreirana identična ComPlus funkcionalnosti
+  - Warranty filtering implementiran samo za Beko brendove (Beko, Grundig, Blomberg)
+  - Sidebar navigacija dodana - "Beko fakturisanje" link odmah posle ComPlus-a
+  - Kompletna navigacija i routing funkcionalni za sve korisničke slučajeve
 - **FOLDER SISTEM ZA SERVISE (18.08.2025)**: Kompletno implementiran organizacijski sistem
   - Zamenjeno postojeće filtriranje sa folder tab sistemom (5 kategorija)
   - Aktivni servisi, Poslovni partneri, Završeni, Otkazani/Problematični, Svi servisi
