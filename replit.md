@@ -25,24 +25,6 @@ Preferred communication style: Simple, everyday language.
 - **Production sistemi kreirani**: performance-monitor.ts, error-boundary.tsx, production-logger.ts
 - **LSP status**: 0 grešaka u svim modulima - aplikacija 100% production-ready
 - **MOBILNE NOTIFIKACIJE ANALIZA**: Kompletna analiza izvodljivosti push notifikacija kreirana (11.01.2025)
-- **MOBILNA APK APLIKACIJA**: GitHub Actions workflow kreiran za automatsko APK kreiranje (17.01.2025)
-  - Capacitor 7.2.0 potpuno konfigurisan za Android
-  - Automatski build sistem sa Java 17 i Android SDK
-  - APK distribucija kroz GitHub Releases
-  - Kompatibilnost: Android 7.0+ (75% korisnika u Srbiji)
-  - Offline capabilities i native mobile optimizacije
-- **GITHUB REPOSITORY SETUP**: Kompletno postavljen GitHub repository za APK distribuciju (17.08.2025)
-  - Repository: https://github.com/gruica/servis-todosijevic-mobile
-  - Automatski upload ključnih konfiguracionih fajlova
-  - Pripremljena GitHub Actions infrastruktura za automatsko APK kreiranje
-  - README dokumentacija sa kompletnim instrukcijama
-  - Setup dokumenti za finalno aktiviranje APK build-a
-- **APK BUILD TROUBLESHOOTING**: Kompletna analiza GitHub Actions build failures (18.08.2025)
-  - Problem: 15 neuspešnih build-ova sa kratkim trajanjem (10s-1m14s)
-  - Root cause: GitHub Actions workflow ili permissions problemi
-  - Kreiran standalone HTML pristup sa CDN React dependencies
-  - Finalno stanje: Repository spreman, potrebno manuelno aktiviranje workflow-a
-  - Status: Potrebna GitHub Actions troubleshooting ili alternativni build pristup
 
 ## System Architecture
 
