@@ -560,10 +560,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Validacija podataka uređaja
+        // Validacija podataka uređaja (dodajem dummy clientId za validaciju)
         const applianceValidation = insertApplianceSchema.safeParse({
           ...applianceData,
-          clientId: 0 // Privremeno, biće zamenjen sa pravim ID
+          clientId: 999 // Dummy pozitivna vrednost za validaciju - biće zamenjena pravim ID-om
         });
         
         if (!applianceValidation.success) {

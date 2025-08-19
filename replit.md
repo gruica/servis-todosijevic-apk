@@ -17,6 +17,12 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **REŠEN KRITIČNI PROBLEM - NOVI KLIJENT DIALOG (19.08.2025)**: Kompletno rešen problem sa admin "Novi klijent" funkcijom
+  - Backend POST /api/clients endpoint modifikovan za kreiranje klijenta SA uređajem odjednom
+  - Popravljena validacija - koristi dummy clientId (999) tokom validacije uređaja
+  - Storage metode ispravke: addClient/addAppliance → createClient/createAppliance
+  - Testiran i potvrđen - klijent ID 345 i uređaj ID 197 uspešno kreirani
+  - Admin panel sada funkcioniše potpuno za dodavanje novih klijenata sa uređajima
 - **COMPREHENSIVE CLIENT ANALYSIS SISTEM (19.08.2025)**: Kompletno implementiran sistem za sveobuhvatnu analizu klijenta
   - API endpoint kreiran: /api/admin/clients/:id/comprehensive-analysis sa punom funkcionalnosti
   - Real-time podaci iz baze: uređaji, servisi, rezervni delovi, tehničari i kompletna istorija
