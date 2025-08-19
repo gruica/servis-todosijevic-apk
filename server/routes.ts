@@ -3083,10 +3083,46 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // Mobile Photo Upload endpoint - koristimo postojeći arhitektura 
+  // Endpoint za serviranje fotografija iz Object Storage
+  app.get("/objects/service-photos/:fileName", async (req, res) => {
+    try {
+      const fileName = req.params.fileName;
+      console.log("📷 [SERVE PHOTO] Zahtev za fotografiju:", fileName);
+      
+      const { Client } = await import('@replit/object-storage');
+      const client = new Client();
+      
+      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      const objectPath = `service-photos/${fileName}`;
+      
+      console.log("📷 [SERVE PHOTO] Dohvatanje iz Object Storage:", { bucketName, objectPath });
+      
+      // Download from bucket
+      const data = await client.downloadAsBytes({
+        bucket: bucketName!,
+        path: objectPath
+      });
+      
+      // Set headers
+      res.set({
+        'Content-Type': 'image/webp',
+        'Content-Length': data.length.toString(),
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      console.log("📷 [SERVE PHOTO] ✅ Fotografija uspešno dostavljana");
+      res.send(data);
+      
+    } catch (error) {
+      console.error("❌ [SERVE PHOTO] ERROR:", error);
+      res.status(404).json({ error: "Fotografija nije pronađena" });
+    }
+  });
+
+  // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
-      console.log("📷 [MOBILE PHOTO] Upload started");
+      console.log("📷 [MOBILE PHOTO] Upload started sa Replit Object Storage");
       
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
@@ -3117,27 +3153,31 @@ Frigo Sistem`;
       // Optimize image using existing service
       const { ImageOptimizationService } = await import('./image-optimization-service.js');
       const optimizationService = new ImageOptimizationService();
-      const optimizedBuffer = await optimizationService.optimizeImage(imageBuffer);
+      const optimizedResult = await optimizationService.optimizeImage(imageBuffer);
       
-      // Save to uploads directory
-      const fs = require('fs');
-      const path = require('path');
+      // Upload to Replit Object Storage
+      const { Client } = await import('@replit/object-storage');
+      const client = new Client();
+      
       const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      const objectPath = `service-photos/${fileName}`;
       
-      // Ensure uploads directory exists
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
+      console.log("📷 [MOBILE PHOTO] Uploading to Object Storage:", { bucketName, objectPath });
       
-      fs.writeFileSync(uploadPath, optimizedBuffer);
-      console.log("📷 [MOBILE PHOTO] File saved:", fileName);
+      // Upload to bucket
+      await client.uploadFromBytes({
+        bucket: bucketName!,
+        path: objectPath,
+        data: optimizedResult.buffer
+      });
+      
+      console.log("📷 [MOBILE PHOTO] Successfully uploaded to Object Storage");
       
       // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/uploads/${fileName}`,
+        photoPath: `/objects/service-photos/${fileName}`, // Object Storage path
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
         uploadedBy: userId,
         isBeforeRepair: photoCategory === 'before',
@@ -3151,6 +3191,7 @@ Frigo Sistem`;
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
+        fileSize: optimizedResult.size,
         message: "Fotografija uspešno uploaded"
       });
       
