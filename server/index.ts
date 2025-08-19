@@ -18,9 +18,9 @@ const app = express();
 // Omogući trust proxy za Replit
 app.set('trust proxy', 1);
 
-// PRVO postavi JSON body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// PRVO postavi JSON body parser middleware sa povećanim limitom za Base64 fotografije
+app.use(express.json({ limit: '10mb' })); // Povećano sa default 1mb na 10mb za Base64 fotografije
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
