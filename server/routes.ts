@@ -137,16 +137,19 @@ const photoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    console.log('[PHOTO MULTER] File filter - file info:', {
+    console.log('[PHOTO MULTER] 🔥 File filter pozvan - file info:', {
       originalname: file.originalname,
       mimetype: file.mimetype,
-      fieldname: file.fieldname
+      fieldname: file.fieldname,
+      authorization: req.headers.authorization ? 'postoji' : 'ne postoji'
     });
     
     // Accept image files
     if (file.mimetype.startsWith('image/')) {
+      console.log('[PHOTO MULTER] ✅ Slika prihvaćena');
       cb(null, true);
     } else {
+      console.log('[PHOTO MULTER] ❌ Odbačena - nije slika');
       cb(new Error('Samo slike su dozvoljene'));
     }
   }
