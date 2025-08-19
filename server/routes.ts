@@ -2768,6 +2768,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get services for a technician - ENDPOINT DODAJ ZA SERVISERA  
+  app.get("/api/services/technician/:technicianId", jwtAuth, async (req, res) => {
+    try {
+      const technicianId = parseInt(req.params.technicianId);
+      
+      if (isNaN(technicianId)) {
+        return res.status(400).json({ error: "Nevažeći ID servisera" });
+      }
+
+      // Check if user is authorized to view this technician's services
+      if (req.user?.role === "technician" && req.user.technicianId !== technicianId) {
+        return res.status(403).json({ error: "Nemate dozvolu da vidite servise drugih servisera" });
+      }
+
+      if (req.user?.role !== "admin" && req.user?.role !== "technician") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup servisima" });
+      }
+
+      console.log(`[TEHNIČKI SERVISI] Dohvatanje servisa za servisera ${technicianId}, korisnik: ${req.user?.username} (${req.user?.role})`);
+
+      const services = await storage.getServicesByTechnician(technicianId);
+      
+      console.log(`[TEHNIČKI SERVISI] Pronađeno ${services.length} servisa za servisera ${technicianId}`);
+      
+      res.json(services);
+    } catch (error) {
+      console.error("Greška pri dohvatanju servisa servisera:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju servisa" });
+    }
+  });
+
   // Create technician users
   app.post("/api/technician-users", async (req, res) => {
     try {
