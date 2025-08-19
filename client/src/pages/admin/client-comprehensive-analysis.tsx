@@ -152,9 +152,24 @@ const AdminClientComprehensiveAnalysis = memo(function AdminClientComprehensiveA
   const clientId = params?.id ? parseInt(params.id) : null;
   const [selectedService, setSelectedService] = useState<any>(null);
 
-  // Query za kompletnu analizu klijenta
+  // Query za kompletnu analizu klijenta sa custom fetch funkcijom
   const { data: analysis, isLoading, error } = useQuery<ClientAnalysis>({
     queryKey: [`/api/admin/clients/${clientId}/comprehensive-analysis`],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/clients/${clientId}/comprehensive-analysis`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+      
+      return response.json();
+    },
     enabled: !!clientId,
     staleTime: 2 * 60 * 1000, // 2 minuta
     gcTime: 5 * 60 * 1000, // 5 minuta
