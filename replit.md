@@ -25,7 +25,9 @@ Preferred communication style: Simple, everyday language.
   - **Role-based pristup**: Admin i tehnician mogu da upload-uju fotografije
   - **Test servisi 217 & 232**: Kreirani sa fotografijama - svi endpoint-i testirani i funkcionalni
   - **MobileServicePhotos komponenta**: Pripremljena za React Native/Capacitor integraciju
-  - **Admin panel ServicePhotos popravljen**: TypeScript tipovi popravka + beli ekran problem rešen
+  - **Admin panel ServicePhotos debug sistem**: Dodani console debug logovi za ServicePhotos komponentu
+  - **Identifikovane API funkcionalnosti**: Server API vraća fotografije ispravno, problem je u frontend rendering-u
+  - **Debug test komponenta kreirana**: PhotoDebugTest za detaljnu analizu fotografija loading procesa
 - **ADMIN SERVICES PANEL PROBLEM REŠEN (19.08.2025)**: Kompletno popravljen admin services panel sa prikazom klijenata
   - **Identificiran problem**: Admin aplikacija pozivala nepostojeće `/api/admin/services` endpoint-e
   - **API endpoint-i ispravka**: Svi pozivi promenjeni da koriste postojeći `/api/services` endpoint

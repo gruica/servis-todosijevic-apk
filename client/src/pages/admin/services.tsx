@@ -44,6 +44,7 @@ import {
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 import { ServicePhotos } from "@/components/ServicePhotos";
+import { PhotoDebugTest } from "@/components/PhotoDebugTest";
 
 interface AdminService {
   id: number;
@@ -1148,6 +1149,13 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
+                  {/* Debug test komponenta */}
+                  {selectedService.id === 217 && (
+                    <div className="mb-4">
+                      <PhotoDebugTest serviceId={selectedService.id} />
+                    </div>
+                  )}
+                  
                   <ServicePhotos 
                     serviceId={selectedService.id}
                     readOnly={false}

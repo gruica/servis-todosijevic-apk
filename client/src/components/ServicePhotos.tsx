@@ -43,12 +43,18 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debug logging
+  console.log('🔧 ServicePhotos rendered - serviceId:', serviceId, 'readOnly:', readOnly, 'showUpload:', showUpload);
+
   // Fetch service photos
-  const { data: photos = [], isLoading, refetch } = useQuery<ServicePhoto[]>({
+  const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
     queryFn: () => apiRequest(`/api/service-photos?serviceId=${serviceId}`),
     enabled: !!serviceId
   });
+
+  // Debug logging za API poziv
+  console.log('🔧 ServicePhotos API state - isLoading:', isLoading, 'error:', error, 'photos:', photos, 'photos.length:', Array.isArray(photos) ? photos.length : 'NOT_ARRAY');
 
   // Upload photo mutation
   const uploadMutation = useMutation({
