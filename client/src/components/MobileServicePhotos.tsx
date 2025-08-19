@@ -106,10 +106,13 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
         fileSize: data.file.size
       });
 
+      // Use apiRequest with proper JWT token handling
+      const token = localStorage.getItem('auth_token');
+      console.log('[MOBILE UPLOAD] Token check:', token ? 'Token postoji' : 'Token ne postoji');
       const response = await fetch('/api/service-photos/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: formData,
       });
@@ -119,6 +122,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('[MOBILE UPLOAD] Server response error:', response.status, errorData);
+        console.error('[MOBILE UPLOAD] Token debug:', token ? 'token postoji' : 'token ne postoji');
         throw new Error(errorData.error || 'Upload failed');
       }
 
