@@ -156,19 +156,29 @@ const AdminClientComprehensiveAnalysis = memo(function AdminClientComprehensiveA
   const { data: analysis, isLoading, error } = useQuery<ClientAnalysis>({
     queryKey: [`/api/admin/clients/${clientId}/comprehensive-analysis`],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token exists:', !!token);
+      console.log('🔑 Token length:', token?.length || 0);
+      
       const response = await fetch(`/api/admin/clients/${clientId}/comprehensive-analysis`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         credentials: 'include'
       });
       
+      console.log('📡 API Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('✅ API Success, data received');
+      return data;
     },
     enabled: !!clientId,
     staleTime: 2 * 60 * 1000, // 2 minuta
