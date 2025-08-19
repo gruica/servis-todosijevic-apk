@@ -126,9 +126,9 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
       setUploadProgress(70);
 
       // Log auth token za debugging
-      const token = localStorage.getItem('jwt-token');
-      console.log('[BASE64 UPLOAD] JWT token exists:', !!token);
-      console.log('[BASE64 UPLOAD] JWT token length:', token?.length);
+      const token = localStorage.getItem('auth_token');
+      console.log('[BASE64 UPLOAD] Auth token exists:', !!token);
+      console.log('[BASE64 UPLOAD] Auth token length:', token?.length);
 
       const result = await apiRequest('/api/simple-photo-upload', {
         method: 'POST',
