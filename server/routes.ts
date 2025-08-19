@@ -13508,5 +13508,5 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     }
   });
 
-  return httpServer;
+  return server;
 }
