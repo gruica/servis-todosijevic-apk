@@ -3029,7 +3029,8 @@ Frigo Sistem`;
         photoPath: normalizedPath,
         description: description || '',
         category: category || 'general',
-        uploadedBy: req.user?.id || 1
+        uploadedBy: req.user?.id || 1,
+        isBeforeRepair: req.body.isBeforeRepair || true
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
@@ -3066,7 +3067,8 @@ Frigo Sistem`;
   app.get("/api/service-photos/category/:category", requireRole(["admin", "technician"]), async (req, res) => {
     try {
       const category = req.params.category;
-      const photos = await storage.getServicePhotosByCategory(category);
+      // Pozivamo metodu koja prima samo kategoriju (globalni pregled)
+      const photos = await storage.getServicePhotosByCategory(1, category);
       res.json(photos);
     } catch (error) {
       console.error("[PHOTO CATEGORY] ❌ Greška:", error);
@@ -3094,6 +3096,120 @@ Frigo Sistem`;
     } catch (error) {
       console.error("[UPLOAD TEST] ❌ Greška:", error);
       res.status(500).json({ error: "Upload URL greška", details: error.message });
+    }
+  });
+
+  // Analiza kapaciteta baze podataka za slike
+  app.get("/api/analysis/database-storage-capacity", requireRole(["admin"]), async (req, res) => {
+    try {
+      console.log("[STORAGE ANALYSIS] 🔍 Pokretanje analize kapaciteta baze...");
+      
+      // Trenutne statistike fotografija servisa
+      const totalPhotos = await storage.getTotalServicePhotosCount();
+      const photosByCategory = await storage.getServicePhotosCountByCategory();
+      const avgPhotoSize = 2.5; // MB prosečna veličina fotografije (procena)
+      
+      // PostgreSQL ograničenja i preporuke
+      const maxDbSize = 100 * 1024; // 100 GB u MB
+      const recommendedDbSize = 50 * 1024; // 50 GB preporučeno
+      const currentPhotoStorageMB = totalPhotos * avgPhotoSize;
+      const currentPhotoStoragePercentage = (currentPhotoStorageMB / recommendedDbSize) * 100;
+      
+      // Projektovanje rasta
+      const avgPhotosPerService = 3; // prosečno 3 fotografije po servisu
+      const avgServicesPerMonth = 150; // procena na osnovu trenutne aktivnosti
+      const newPhotosPerMonth = avgServicesPerMonth * avgPhotosPerService;
+      const storageGrowthPerMonth = newPhotosPerMonth * avgPhotoSize;
+      
+      // Procena kada će dostići limite
+      const remainingCapacityMB = recommendedDbSize - currentPhotoStorageMB;
+      const monthsToCapacity = remainingCapacityMB / storageGrowthPerMonth;
+      
+      // Analiza po kategorijama
+      const categoryAnalysis = photosByCategory.map(cat => ({
+        category: cat.category,
+        count: cat.count,
+        estimatedSizeMB: cat.count * avgPhotoSize,
+        percentage: (cat.count / totalPhotos) * 100
+      }));
+      
+      // Preporuke za optimizaciju
+      const recommendations = [];
+      
+      if (currentPhotoStoragePercentage > 80) {
+        recommendations.push({
+          priority: "KRITIČNO",
+          message: "Baza se približava kapacitetu - potrebna je optimizacija",
+          action: "Kompresija starijih slika ili prebacivanje na Cloud Storage"
+        });
+      } else if (currentPhotoStoragePercentage > 60) {
+        recommendations.push({
+          priority: "UPOZORENJE", 
+          message: "Baza koristi preko 60% kapaciteta",
+          action: "Planiranje migracije na objektno skladište"
+        });
+      } else {
+        recommendations.push({
+          priority: "DOBRO",
+          message: "Trenutni kapacitet je u zdravim granicama",
+          action: "Nastaviti sa trenutnim pristupom"
+        });
+      }
+      
+      if (monthsToCapacity < 12) {
+        recommendations.push({
+          priority: "PLANIRANJE",
+          message: `Kapacitet će biti dosegnut za ${Math.round(monthsToCapacity)} meseci`,
+          action: "Implementirati strategiju za upravljanje velikim fajlovima"
+        });
+      }
+      
+      const analysis = {
+        trenutnoStanje: {
+          ukupnoFotografija: totalPhotos,
+          procenjenaVelicinaMB: Math.round(currentPhotoStorageMB),
+          procenjenaVelicinaGB: Math.round(currentPhotoStorageMB / 1024 * 100) / 100,
+          zauzeceBazeProcenat: Math.round(currentPhotoStoragePercentage * 100) / 100
+        },
+        kategorije: categoryAnalysis,
+        kapaciteti: {
+          maksimalniKapacitetGB: maxDbSize / 1024,
+          preporuceniKapacitetGB: recommendedDbSize / 1024,
+          trenutnoKoriscenjeGB: Math.round(currentPhotoStorageMB / 1024 * 100) / 100,
+          dostupniKapacitetGB: Math.round(remainingCapacityMB / 1024 * 100) / 100
+        },
+        projekcijaRasta: {
+          noveFotografijePoMesecu: newPhotosPerMonth,
+          rastPoMesecuMB: Math.round(storageGrowthPerMonth),
+          rastPoGodineMB: Math.round(storageGrowthPerMonth * 12),
+          vremeDoDosezanjaKapaciteta: `${Math.round(monthsToCapacity)} meseci`
+        },
+        performanse: {
+          uticajNaBazu: currentPhotoStoragePercentage < 30 ? "MINIMALAN" : 
+                        currentPhotoStoragePercentage < 60 ? "UMEREN" : "ZNAČAJAN",
+          brzineUpita: "Fotografije su u objektnom skladištu - minimalan uticaj na SQL upite",
+          preporukeOptimizacije: [
+            "Koristi Replit Object Storage umesto baze za čuvanje fajlova",
+            "Implementiraj CDN za brže učitavanje slika",
+            "Kompresuj slike pre upload-a (WebP format)",
+            "Automatsko brisanje starijih fotografija (preko 2 godine)"
+          ]
+        },
+        preporuke: recommendations,
+        tehnickeDetalje: {
+          prosecnaVelicinaFotografije: `${avgPhotoSize} MB`,
+          metodaCuvanja: "Object Storage + metadata u PostgreSQL",
+          kompresija: "Potrebna implementacija",
+          backup: "Uključeno u Object Storage automatski"
+        }
+      };
+      
+      console.log("[STORAGE ANALYSIS] ✅ Analiza završena:", analysis);
+      res.json(analysis);
+      
+    } catch (error) {
+      console.error("[STORAGE ANALYSIS] ❌ Greška:", error);
+      res.status(500).json({ error: "Greška pri analizi kapaciteta baze" });
     }
   });
 

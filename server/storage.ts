@@ -143,6 +143,9 @@ export interface IStorage {
   updateServicePhoto(id: number, photo: Partial<ServicePhoto>): Promise<ServicePhoto | undefined>;
   deleteServicePhoto(id: number): Promise<void>;
   getServicePhotosByCategory(serviceId: number, category: string): Promise<ServicePhoto[]>;
+  // Storage analysis methods
+  getTotalServicePhotosCount(): Promise<number>;
+  getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>>;
   
   // Business Partner methods
   getServicesByPartner(partnerId: number): Promise<Service[]>;
@@ -4257,6 +4260,49 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri označavanju dela kao vraćenog:', error);
       return undefined;
+    }
+  }
+
+  // Storage analysis methods implementation
+  async getTotalServicePhotosCount(): Promise<number> {
+    console.log('📊 DatabaseStorage: izračunavanje ukupnog broja fotografija');
+    
+    try {
+      const result = await db
+        .select({ count: count() })
+        .from(servicePhotos);
+      
+      const totalCount = result[0]?.count || 0;
+      console.log(`📊 Ukupno fotografija u bazi: ${totalCount}`);
+      return totalCount;
+    } catch (error) {
+      console.error('❌ Greška pri računanju ukupnog broja fotografija:', error);
+      return 0;
+    }
+  }
+
+  async getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>> {
+    console.log('📊 DatabaseStorage: izračunavanje broja fotografija po kategorijama');
+    
+    try {
+      const result = await db
+        .select({
+          category: servicePhotos.category,
+          count: count()
+        })
+        .from(servicePhotos)
+        .groupBy(servicePhotos.category);
+      
+      const categoryStats = result.map(row => ({
+        category: row.category,
+        count: row.count
+      }));
+      
+      console.log('📊 Statistike po kategorijama:', categoryStats);
+      return categoryStats;
+    } catch (error) {
+      console.error('❌ Greška pri računanju fotografija po kategorijama:', error);
+      return [];
     }
   }
 

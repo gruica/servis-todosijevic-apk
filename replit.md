@@ -17,6 +17,13 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **ANALIZA KAPACITETA BAZE ZA SLIKE (19.08.2025)**: Kreirana sveobuhvatna analiza storage kapaciteta za Service Photos sistem
+  - API endpoint implementiran: /api/analysis/database-storage-capacity sa detaljnim metrikama
+  - Hibridni pristup: PostgreSQL za metadata (minimalan uticaj), Object Storage za fotografije
+  - Procenjeni rast: 1.1 GB mesečno, 13.5 GB godišnje sa ~450 novih fotografija
+  - Kritične tačke identifikovane: Besplatni plan (1 mesec), Hacker plan (4.5 meseci)
+  - Dokumentacija kreirana: analiza-kapaciteta-baze-podataka-slike.md sa preporukama
+  - Optimizacije preporučene: WebP kompresija (50% uštede), automatsko brisanje starijih fotografija
 - **REŠEN KRITIČNI PROBLEM - NOVI KLIJENT DIALOG (19.08.2025)**: Kompletno rešen problem sa admin "Novi klijent" funkcijom
   - Backend POST /api/clients endpoint modifikovan za kreiranje klijenta SA uređajem odjednom
   - Popravljena validacija - koristi dummy clientId (999) tokom validacije uređaja
