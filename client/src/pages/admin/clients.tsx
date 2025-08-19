@@ -442,13 +442,15 @@ const AdminClientsPage = memo(function AdminClientsPage() {
                     </Button>
                   </Link>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setViewingClient(client)}
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
+                  <Link href={`/admin/clients/${client.id}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      title="Pregled klijenta sa aparatima"
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                  </Link>
                   
                   <Button
                     variant="outline"
