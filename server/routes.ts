@@ -3091,8 +3091,7 @@ Frigo Sistem`;
       
       const fs = await import('fs');
       const path = await import('path');
-      const __dirname = path.dirname(new URL(import.meta.url).pathname);
-      const filePath = path.join(__dirname, '../uploads', fileName);
+      const filePath = path.join(process.cwd(), 'uploads', fileName);
       
       console.log("📷 [SERVE PHOTO] Dohvatanje iz local storage:", filePath);
       
@@ -3160,9 +3159,8 @@ Frigo Sistem`;
       const fs = await import('fs');
       const path = await import('path');
       
-      // Save locally in uploads folder  
-      const __dirname = path.dirname(new URL(import.meta.url).pathname);
-      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      // Save locally in uploads folder using process.cwd()
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       const uploadsDir = path.dirname(uploadPath);
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
@@ -3235,8 +3233,7 @@ Frigo Sistem`;
       // Privremeno čuvaj u uploads folderu
       const fs = await import('fs');
       const path = await import('path');
-      const __dirname = path.dirname(new URL(import.meta.url).pathname);
-      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       
       // Osiguraj da uploads folder postoji
       const uploadsDir = path.dirname(uploadPath);
@@ -3309,8 +3306,7 @@ Frigo Sistem`;
       // Privremeno čuvaj u uploads folderu
       const fs = await import('fs');
       const path = await import('path');
-      const __dirname = path.dirname(new URL(import.meta.url).pathname);
-      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       
       // Osiguraj da uploads folder postoji
       const uploadsDir = path.dirname(uploadPath);
@@ -3389,8 +3385,7 @@ Frigo Sistem`;
       const fileName = req.params.fileName;
       const path = await import('path');
       const fs = await import('fs');
-      const __dirname = path.dirname(new URL(import.meta.url).pathname);
-      const filePath = path.join(__dirname, '../uploads', fileName);
+      const filePath = path.join(process.cwd(), 'uploads', fileName);
       
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: "Fajl nije pronađen" });

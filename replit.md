@@ -17,6 +17,14 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **MOBILE FOTO UPLOAD SISTEM KOMPLETNO IMPLEMENTIRAN (19.08.2025)**: Uspešno kreiran mobile photo upload sistem za tehničare
+  - **Mobile-upload endpoint kreiran**: `/api/service-photos/mobile-upload` sa JWT autentifikacijom
+  - **ES module path resolution rešen**: Zamenjeni require() pozivi sa process.cwd() rešenjem
+  - **ImageOptimizationService integracija**: WebP kompresija i optimizacija za mobile fotografije
+  - **Local storage fallback**: Fotografije se čuvaju u `/uploads` folder kada Object Storage ima problema
+  - **Role-based pristup**: Admin i tehnician mogu da upload-uju fotografije
+  - **Test servis 232**: Kreiran sa 3 fotografije - svi endpoint-i testirani i funkcionalni
+  - **MobileServicePhotos komponenta**: Pripremljena za React Native/Capacitor integraciju
 - **ADMIN SERVICES PANEL PROBLEM REŠEN (19.08.2025)**: Kompletno popravljen admin services panel sa prikazom klijenata
   - **Identificiran problem**: Admin aplikacija pozivala nepostojeće `/api/admin/services` endpoint-e
   - **API endpoint-i ispravka**: Svi pozivi promenjeni da koriste postojeći `/api/services` endpoint
