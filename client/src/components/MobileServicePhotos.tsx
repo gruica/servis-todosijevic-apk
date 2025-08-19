@@ -125,20 +125,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
 
       setUploadProgress(70);
 
-      // First test our test endpoint
-      console.log('[BASE64 UPLOAD] Testing test endpoint first...');
-      try {
-        const testResult = await apiRequest('/api/test-upload', {
-          method: 'POST',
-          body: JSON.stringify({ test: 'data' }),
-          headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('[BASE64 UPLOAD] Test endpoint response:', testResult);
-      } catch (testError) {
-        console.error('[BASE64 UPLOAD] Test endpoint failed:', testError);
-      }
-
-      const result = await apiRequest('/api/service-photos/upload-base64', {
+      const result = await apiRequest('/api/simple-photo-upload', {
         method: 'POST',
         body: JSON.stringify(uploadData),
         headers: {

@@ -3081,11 +3081,83 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // TEST endpoint bez JWT da vidim da li radi
-  app.post("/api/test-upload", async (req, res) => {
-    console.log("[TEST UPLOAD] 🧪 TEST endpoint reached!");
-    console.log("[TEST UPLOAD] Body:", Object.keys(req.body));
-    res.json({ message: "Test endpoint radi!", received: Object.keys(req.body) });
+  // JEDNOSTAVAN photo upload endpoint - zaobilazi sve middleware probleme
+  app.post("/api/simple-photo-upload", async (req, res) => {
+    try {
+      console.log("[SIMPLE UPLOAD] 📷 Simple photo upload started");
+      console.log("[SIMPLE UPLOAD] Headers:", req.headers.authorization ? "Auth present" : "No auth");
+      console.log("[SIMPLE UPLOAD] Body keys:", Object.keys(req.body || {}));
+      
+      // Manual JWT check
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("[SIMPLE UPLOAD] ❌ No auth header");
+        return res.status(401).json({ error: "No auth token" });
+      }
+      
+      const token = authHeader.split(' ')[1];
+      const { verifyToken } = await import('./jwt-auth.js');
+      const payload = verifyToken(token);
+      
+      if (!payload || !["admin", "technician"].includes(payload.role)) {
+        console.log("[SIMPLE UPLOAD] ❌ Invalid token or role");
+        return res.status(401).json({ error: "Invalid auth" });
+      }
+      
+      console.log("[SIMPLE UPLOAD] ✅ Auth success:", payload.username);
+      
+      const { base64Data, serviceId, photoCategory, description, filename } = req.body;
+      
+      if (!base64Data || !serviceId) {
+        console.log("[SIMPLE UPLOAD] ❌ Missing data");
+        return res.status(400).json({ error: "Missing base64Data or serviceId" });
+      }
+      
+      console.log("[SIMPLE UPLOAD] 📊 Processing image...");
+      
+      // Process image
+      const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+      const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
+      
+      // Save to file system (simple approach)
+      const fs = require('fs');
+      const path = require('path');
+      const fileName = `service_${serviceId}_${Date.now()}.jpg`;
+      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      
+      // Ensure uploads directory exists
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      fs.writeFileSync(uploadPath, imageBuffer);
+      console.log("[SIMPLE UPLOAD] 💾 File saved:", fileName);
+      
+      // Save to database
+      const photoData = {
+        serviceId: parseInt(serviceId),
+        photoPath: `/uploads/${fileName}`,
+        description: description || `Mobile photo: ${photoCategory}`,
+        category: photoCategory || 'other',
+        uploadedBy: payload.userId || 1,
+        isBeforeRepair: photoCategory === 'before'
+      };
+
+      const savedPhoto = await storage.createServicePhoto(photoData);
+      console.log("[SIMPLE UPLOAD] ✅ SUCCESS! Photo ID:", savedPhoto.id);
+      
+      res.status(201).json({
+        success: true,
+        photoId: savedPhoto.id,
+        fileName: fileName,
+        message: "Upload successful"
+      });
+      
+    } catch (error) {
+      console.error("[SIMPLE UPLOAD] ❌ ERROR:", error);
+      res.status(500).json({ error: "Upload failed: " + error.message });
+    }
   });
 
   // Base64 Photo Upload endpoint (zaobilazi multer probleme)
