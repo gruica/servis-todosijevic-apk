@@ -100,7 +100,7 @@ export default function ClientDetails() {
     queryKey: ["/api/clients/details", clientId],
     queryFn: async () => {
       try {
-        const res = await apiRequest("GET", `/api/clients/${clientId}/details`);
+        const res = await apiRequest(`/api/clients/${clientId}/details`);
         if (!res.ok) {
           throw new Error("Klijent nije pronađen");
         }
