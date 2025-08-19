@@ -55,6 +55,19 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
 
   // Debug logging za API poziv
   console.log('🔧 ServicePhotos API state - isLoading:', isLoading, 'error:', error, 'photos:', photos, 'photos.length:', Array.isArray(photos) ? photos.length : 'NOT_ARRAY');
+  
+  // Debug specific photo URLs
+  if (Array.isArray(photos) && photos.length > 0) {
+    photos.forEach(photo => {
+      console.log('🖼️ Photo debug:', {
+        id: photo.id,
+        serviceId: photo.serviceId,
+        photoUrl: photo.photoUrl,
+        fullUrl: `${window.location.origin}${photo.photoUrl}`,
+        photoCategory: photo.photoCategory
+      });
+    });
+  }
 
   // Upload photo mutation
   const uploadMutation = useMutation({
@@ -296,7 +309,12 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                               src={photo.photoUrl} 
                               alt={photo.description || 'Service photo'}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                              onLoad={() => {
+                                console.log('🖼️ Image loaded successfully:', photo.photoUrl);
+                              }}
                               onError={(e) => {
+                                console.error('❌ Image failed to load:', photo.photoUrl);
+                                console.error('❌ Full photo object:', photo);
                                 const target = e.target as HTMLImageElement;
                                 target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f3f4f6"/><text x="100" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="sans-serif">Fotografija nedostupna</text></svg>';
                               }}

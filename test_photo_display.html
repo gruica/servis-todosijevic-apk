@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Photo Display</title>
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .test-container { margin: 20px 0; border: 1px solid #ccc; padding: 20px; }
+        img { max-width: 300px; border: 2px solid red; }
+    </style>
+</head>
+<body>
+    <h1>Test Photo Display - Servis 217</h1>
+    
+    <div class="test-container">
+        <h3>Test 1: Relative path</h3>
+        <img src="/uploads/mobile_service_217_1755630276403.webp" alt="Test 1">
+        <p>Path: /uploads/mobile_service_217_1755630276403.webp</p>
+    </div>
+    
+    <div class="test-container">
+        <h3>Test 2: Full URL</h3>
+        <img src="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/uploads/mobile_service_217_1755630276403.webp" alt="Test 2">
+        <p>Full URL test</p>
+    </div>
+    
+    <div class="test-container">
+        <h3>Test 3: JavaScript load test</h3>
+        <img id="jstest" alt="JS Test">
+        <p id="jsstatus">Loading...</p>
+    </div>
+    
+    <script>
+        const img = document.getElementById('jstest');
+        const status = document.getElementById('jsstatus');
+        
+        img.onload = function() {
+            status.textContent = '✅ JavaScript load SUCCESS!';
+            status.style.color = 'green';
+        };
+        
+        img.onerror = function() {
+            status.textContent = '❌ JavaScript load FAILED!';
+            status.style.color = 'red';
+        };
+        
+        img.src = '/uploads/mobile_service_217_1755630276403.webp';
+        
+        console.log('🧪 JS Test - setting img.src to:', img.src);
+    </script>
+</body>
+</html>

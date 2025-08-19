@@ -1156,6 +1156,15 @@ const AdminServices = memo(function AdminServices() {
                     </div>
                   )}
                   
+                  {/* Debug info za fotografije tab */}
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-2">🔧 Debug Info za Servis {selectedService.id}</h4>
+                    <p className="text-sm text-blue-700">ServiceId: {selectedService.id}</p>
+                    <p className="text-sm text-blue-700">Status: {selectedService.status}</p>
+                    <p className="text-sm text-blue-700">Client: {selectedService.client?.fullName || 'N/A'}</p>
+                    <p className="text-sm text-blue-600 mt-2">👀 Proverite console (F12) za detaljne debug logove!</p>
+                  </div>
+                  
                   <ServicePhotos 
                     serviceId={selectedService.id}
                     readOnly={false}
