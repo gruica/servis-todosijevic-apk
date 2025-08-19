@@ -3081,6 +3081,16 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
+  // Log svih POST zahteva
+  app.use((req, res, next) => {
+    if (req.method === 'POST' && req.path.includes('/api/simple-photo-upload')) {
+      console.log(`[MIDDLEWARE LOG] POST ${req.path} - REACHED MIDDLEWARE`);
+      console.log(`[MIDDLEWARE LOG] Content-Type: ${req.headers['content-type']}`);
+      console.log(`[MIDDLEWARE LOG] Authorization: ${req.headers.authorization ? 'EXISTS' : 'MISSING'}`);
+    }
+    next();
+  });
+
   // JEDNOSTAVAN photo upload endpoint - zaobilazi sve middleware probleme
   app.post("/api/simple-photo-upload", async (req, res) => {
     try {
