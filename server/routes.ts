@@ -3082,14 +3082,43 @@ Frigo Sistem`;
   // Service Photos endpoints
 
   // Upload fotografija kroz multipart/form-data 
-  app.post("/api/service-photos/upload", photoUpload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
+  app.post("/api/service-photos/upload", photoUpload.single('photo'), async (req, res) => {
     try {
       console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
       console.log("[PHOTO UPLOAD] Headers:", {
         authorization: req.headers.authorization ? 'postoji' : 'ne postoji',
         contentType: req.headers['content-type']
       });
-      console.log("[PHOTO UPLOAD] User from JWT:", req.user);
+
+      // Manual JWT authentication after multer processing
+      const { extractTokenFromRequest, verifyToken } = await import('./jwt-auth.js');
+      const token = extractTokenFromRequest(req);
+      
+      if (!token) {
+        console.log('[PHOTO UPLOAD] ❌ Token nije pronađen');
+        return res.status(401).json({ error: 'Potrebna je prijava' });
+      }
+      
+      const payload = verifyToken(token);
+      if (!payload) {
+        console.log('[PHOTO UPLOAD] ❌ Token nije valjan');
+        return res.status(401).json({ error: 'Nevažeći token' });
+      }
+      
+      // Check role
+      if (!["admin", "technician"].includes(payload.role)) {
+        console.log('[PHOTO UPLOAD] ❌ Neodgovarajuća uloga:', payload.role);
+        return res.status(403).json({ error: 'Nemate dozvolu' });
+      }
+      
+      console.log("[PHOTO UPLOAD] ✅ JWT autentifikacija uspešna:", payload.username);
+      
+      // Set user in request for later use
+      (req as any).user = {
+        id: payload.userId,
+        username: payload.username,
+        role: payload.role
+      };
       
       if (!req.file) {
         return res.status(400).json({ error: "Fajl nije pronađen" });
