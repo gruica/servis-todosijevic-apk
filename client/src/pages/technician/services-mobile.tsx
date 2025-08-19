@@ -69,6 +69,17 @@ interface Service {
   scheduledDate?: string;
   cost?: string;
   technicianNotes?: string;
+  // Flat polja iz backend JOIN-a
+  clientName?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  clientCity?: string;
+  clientEmail?: string;
+  applianceName?: string;
+  applianceSerialNumber?: string;
+  categoryName?: string;
+  manufacturerName?: string;
+  // Stara nested struktura za backward compatibility
   client?: {
     fullName: string;
     phone?: string;
@@ -465,14 +476,17 @@ function ServiceCard({ service }: { service: Service }) {
   };
   
   const handleCallClient = () => {
-    if (service.client?.phone) {
-      window.open(`tel:${service.client.phone}`);
+    const phone = service.clientPhone || service.client?.phone;
+    if (phone) {
+      window.open(`tel:${phone}`);
     }
   };
   
   const handleOpenLocation = () => {
-    if (service.client?.address) {
-      const query = encodeURIComponent(`${service.client.address}${service.client.city ? `, ${service.client.city}` : ''}`);
+    const address = service.clientAddress || service.client?.address;
+    const city = service.clientCity || service.client?.city;
+    if (address) {
+      const query = encodeURIComponent(`${address}${city ? `, ${city}` : ''}`);
       window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
     }
   };
@@ -503,33 +517,41 @@ function ServiceCard({ service }: { service: Service }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-blue-600" />
-            <span className="font-medium">{service.client?.fullName || 'Nepoznat klijent'}</span>
+            <span className="font-medium">
+              {service.clientName || service.client?.fullName || 'Nepoznat klijent'}
+            </span>
           </div>
           
-          {service.client?.phone && (
+          {(service.clientPhone || service.client?.phone) && (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-gray-600">{service.client.phone}</span>
+              <span className="text-sm text-gray-600">
+                {service.clientPhone || service.client?.phone}
+              </span>
             </div>
           )}
           
-          {service.client?.address && (
+          {(service.clientAddress || service.client?.address) && (
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-red-600" />
               <span className="text-sm text-gray-600">
-                {service.client.address}{service.client.city ? `, ${service.client.city}` : ''}
+                {service.clientAddress || service.client?.address}
+                {(service.clientCity || service.client?.city) ? 
+                  `, ${service.clientCity || service.client?.city}` : ''}
               </span>
             </div>
           )}
         </div>
         
         {/* Appliance Information */}
-        {service.appliance && (
+        {(service.manufacturerName || service.categoryName || service.applianceName || service.appliance) && (
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-purple-600" />
             <span className="text-sm">
-              {service.appliance.manufacturer?.name} {service.appliance.category?.name}
-              {service.appliance.model && ` - ${service.appliance.model}`}
+              {service.manufacturerName || service.appliance?.manufacturer?.name} {' '}
+              {service.categoryName || service.appliance?.category?.name}
+              {(service.applianceName || service.appliance?.model) && 
+                ` - ${service.applianceName || service.appliance?.model}`}
             </span>
           </div>
         )}
@@ -563,7 +585,7 @@ function ServiceCard({ service }: { service: Service }) {
         
         {/* Contact Buttons */}
         <div className="flex gap-2 mt-4">
-          {service.client?.phone && (
+          {(service.clientPhone || service.client?.phone) && (
             <Button 
               onClick={handleCallClient}
               className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
@@ -573,7 +595,7 @@ function ServiceCard({ service }: { service: Service }) {
             </Button>
           )}
           
-          {service.client?.address && (
+          {(service.clientAddress || service.client?.address) && (
             <Button 
               onClick={handleOpenLocation}
               variant="outline"
