@@ -13324,18 +13324,12 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
         applianceModel: appliances.model,
         applianceSerialNumber: appliances.serialNumber,
         categoryName: applianceCategories.name,
-        manufacturerName: manufacturers.name,
-        technicianName: technicians.fullName,
-        technicianPhone: technicians.phone,
-        businessPartnerName: users.fullName,
-        businessPartnerCompany: users.companyName
+        manufacturerName: manufacturers.name
       })
       .from(services)
       .leftJoin(appliances, eq(services.applianceId, appliances.id))
       .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
       .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-      .leftJoin(technicians, eq(services.technicianId, technicians.id))
-      .leftJoin(users, eq(services.businessPartnerId, users.id))
       .where(eq(services.clientId, clientId))
       .orderBy(desc(services.createdAt));
       
