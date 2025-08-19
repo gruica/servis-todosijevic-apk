@@ -3081,6 +3081,71 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
+  // Base64 Photo Upload endpoint (zaobilazi multer probleme)
+  app.post("/api/service-photos/upload-base64", requireRole(["admin", "technician"]), async (req, res) => {
+    try {
+      console.log("[BASE64 PHOTO UPLOAD] 📷 Upload fotografije servisa...");
+      console.log("[BASE64 PHOTO UPLOAD] User from JWT:", req.user);
+      
+      const { base64Data, serviceId, photoCategory, description, filename } = req.body;
+      
+      if (!base64Data || !serviceId) {
+        return res.status(400).json({ error: "base64Data i serviceId su obavezni" });
+      }
+      
+      // Konvertuj base64 u buffer
+      const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+      const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
+      
+      console.log("[BASE64 PHOTO UPLOAD] Slika konvertovana, veličina:", imageBuffer.length);
+      
+      // Optimizuj i kompresuj sliku
+      const { ImageOptimizationService } = await import('./image-optimization-service');
+      const optimizedResult = await ImageOptimizationService.optimizeImage(imageBuffer);
+      
+      // Generiraj filename sa WebP ekstenzijom
+      const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
+      
+      // Privremeno čuvaj u uploads folderu
+      const fs = require('fs');
+      const path = require('path');
+      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      
+      // Osiguraj da uploads folder postoji
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      
+      // Kreaj relativnu rutu za čuvanje u bazi
+      const photoPath = `/uploads/${fileName}`;
+      
+      const photoData = {
+        serviceId: parseInt(serviceId),
+        photoPath: photoPath,
+        description: description || `Fotografija kategorije: ${photoCategory}`,
+        category: photoCategory || 'other',
+        uploadedBy: req.user?.id || 1,
+        isBeforeRepair: photoCategory === 'before'
+      };
+
+      const savedPhoto = await storage.createServicePhoto(photoData);
+      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
+      
+      res.status(201).json({
+        ...savedPhoto,
+        photoUrl: photoPath,
+        fileName: fileName,
+        fileSize: optimizedResult.size
+      });
+    } catch (error) {
+      console.error("[BASE64 PHOTO UPLOAD] ❌ Greška:", error);
+      res.status(500).json({ error: "Greška pri upload-u fotografije" });
+    }
+  });
+
   // Upload fotografija kroz multipart/form-data 
   app.post("/api/service-photos/upload", requireRole(["admin", "technician"]), photoUpload.single('photo'), async (req, res) => {
     try {

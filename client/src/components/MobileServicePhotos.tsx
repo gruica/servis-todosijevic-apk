@@ -86,49 +86,55 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
     enabled: !!serviceId && isOnline
   });
 
-  // Upload photo mutation
+  // Upload photo mutation using Base64 (zaobilazi multer probleme)
   const uploadMutation = useMutation({
     mutationFn: async (data: { file: File; category: string }) => {
       setUploadProgress(10);
       
-      // Create FormData for multipart upload
-      const formData = new FormData();
-      formData.append('photo', data.file);
-      formData.append('serviceId', serviceId.toString());
-      formData.append('photoCategory', data.category);
-      formData.append('description', `Mobilna fotografija: ${PHOTO_CATEGORIES.find(c => c.value === data.category)?.label || data.category}`);
-
-      setUploadProgress(50);
-
-      console.log('[MOBILE UPLOAD] Pokušavam upload fotografije...', {
+      console.log('[BASE64 UPLOAD] Pokušavam upload fotografije...', {
         serviceId,
         category: data.category,
         fileSize: data.file.size
       });
 
-      // Use apiRequest with proper JWT token handling
-      const token = localStorage.getItem('auth_token');
-      console.log('[MOBILE UPLOAD] Token check:', token ? 'Token postoji' : 'Token ne postoji');
-      const response = await fetch('/api/service-photos/upload', {
+      // Convert file to base64
+      const convertToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+      };
+
+      setUploadProgress(30);
+
+      const base64Data = await convertToBase64(data.file);
+      console.log('[BASE64 UPLOAD] Fajl konvertovan u base64, veličina:', base64Data.length);
+
+      setUploadProgress(50);
+
+      // Use apiRequest with proper JWT token handling (JSON request)
+      const uploadData = {
+        base64Data,
+        serviceId: serviceId.toString(),
+        photoCategory: data.category,
+        description: `Mobilna fotografija: ${PHOTO_CATEGORIES.find(c => c.value === data.category)?.label || data.category}`,
+        filename: data.file.name
+      };
+
+      setUploadProgress(70);
+
+      const result = await apiRequest('/api/service-photos/upload-base64', {
         method: 'POST',
+        body: JSON.stringify(uploadData),
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formData,
       });
 
-      setUploadProgress(90);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('[MOBILE UPLOAD] Server response error:', response.status, errorData);
-        console.error('[MOBILE UPLOAD] Token debug:', token ? 'token postoji' : 'token ne postoji');
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
       setUploadProgress(100);
-      const result = await response.json();
-      console.log('[MOBILE UPLOAD] Upload uspešan:', result);
+      console.log('[BASE64 UPLOAD] Upload uspešan:', result);
       return result;
     },
     onSuccess: () => {
