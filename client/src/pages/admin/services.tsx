@@ -306,12 +306,73 @@ const AdminServices = memo(function AdminServices() {
   
   const { toast } = useToast();
 
-  // Optimized React Query with selective invalidation
-  const { data: services = [], isLoading: loadingServices, refetch, error } = useQuery<AdminService[]>({
+  // Transform flat API response to nested AdminService structure
+  const transformApiService = (apiService: any): AdminService => {
+    return {
+      id: apiService.id,
+      status: apiService.status,
+      description: apiService.description,
+      createdAt: apiService.createdAt,
+      updatedAt: apiService.updatedAt || apiService.createdAt,
+      scheduledDate: apiService.scheduledDate,
+      technicianId: apiService.technicianId,
+      clientId: apiService.clientId,
+      applianceId: apiService.applianceId,
+      priority: apiService.priority || 'normal',
+      notes: apiService.notes,
+      technicianNotes: apiService.technicianNotes,
+      usedParts: apiService.usedParts,
+      machineNotes: apiService.machineNotes,
+      cost: apiService.cost,
+      isCompletelyFixed: apiService.isCompletelyFixed,
+      businessPartnerId: apiService.businessPartnerId,
+      partnerCompanyName: apiService.partnerCompanyName,
+      devicePickedUp: apiService.devicePickedUp,
+      pickupDate: apiService.pickupDate,
+      pickupNotes: apiService.pickupNotes,
+      isWarrantyService: apiService.isWarrantyService,
+      client: {
+        id: apiService.clientId,
+        fullName: apiService.clientName || 'Nepoznat klijent',
+        phone: apiService.clientPhone || '',
+        email: apiService.clientEmail || null,
+        address: apiService.clientAddress || null,
+        city: apiService.clientCity || null,
+        companyName: apiService.clientCompanyName || null
+      },
+      appliance: {
+        id: apiService.applianceId,
+        model: apiService.applianceName || null,
+        serialNumber: apiService.applianceSerialNumber || null,
+        category: {
+          id: 0, // API ne vraća category ID
+          name: apiService.categoryName || 'Nepoznat uređaj',
+          icon: 'device'
+        },
+        manufacturer: {
+          id: 0, // API ne vraća manufacturer ID
+          name: apiService.manufacturerName || 'Nepoznat proizvođač'
+        }
+      },
+      technician: apiService.technicianId ? {
+        id: apiService.technicianId,
+        fullName: apiService.technicianName || 'Nepoznat serviser',
+        email: '',
+        phone: '',
+        specialization: ''
+      } : null
+    };
+  };
+
+  // Optimized React Query with selective invalidation and data transformation
+  const { data: rawServices = [], isLoading: loadingServices, refetch, error } = useQuery<any[]>({
     queryKey: ["/api/services"],
     staleTime: 10 * 60 * 1000, // Extended to 10 minutes for better performance
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
+
+  // Transform raw API data to AdminService format
+  const services: AdminService[] = rawServices.map(transformApiService);
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
