@@ -308,7 +308,7 @@ const AdminServices = memo(function AdminServices() {
 
   // Optimized React Query with selective invalidation
   const { data: services = [], isLoading: loadingServices, refetch, error } = useQuery<AdminService[]>({
-    queryKey: ["/api/admin/services"],
+    queryKey: ["/api/services"],
     staleTime: 10 * 60 * 1000, // Extended to 10 minutes for better performance
     gcTime: 15 * 60 * 1000, // 15 minutes
   });
@@ -338,7 +338,7 @@ const AdminServices = memo(function AdminServices() {
   // Update service mutation
   const updateServiceMutation = useMutation({
     mutationFn: async (data: { id: number; updates: Partial<AdminService> }) => {
-      const response = await apiRequest(`/api/admin/services/${data.id}`, { 
+      const response = await apiRequest(`/api/services/${data.id}`, { 
         method: "PUT",
         body: JSON.stringify(data.updates)
       });
@@ -350,7 +350,7 @@ const AdminServices = memo(function AdminServices() {
         description: "Servis je uspešno ažuriran.",
       });
       // Optimized: Single targeted invalidation
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"], exact: true });
       dispatchDialog({ type: 'CLOSE_ALL' });
     },
     onError: (error: any) => {
@@ -365,7 +365,7 @@ const AdminServices = memo(function AdminServices() {
   // Delete service mutation
   const deleteServiceMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/admin/services/${id}`, { method: "DELETE" });
+      await apiRequest(`/api/services/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       toast({
@@ -373,7 +373,7 @@ const AdminServices = memo(function AdminServices() {
         description: "Servis je uspešno obrisan.",
       });
       // Optimized: Single targeted invalidation
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"], exact: true });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"], exact: true });
       dispatchDialog({ type: 'CLOSE_ALL' });
     },
     onError: (error: any) => {
@@ -387,7 +387,7 @@ const AdminServices = memo(function AdminServices() {
 
   const returnServiceMutation = useMutation({
     mutationFn: async (data: { serviceId: number; reason: string; notes: string }) => {
-      await apiRequest(`/api/admin/services/${data.serviceId}/return-from-technician`, {
+      await apiRequest(`/api/services/${data.serviceId}/return-from-technician`, {
         method: "POST",
         body: JSON.stringify({
           reason: data.reason,
@@ -400,7 +400,7 @@ const AdminServices = memo(function AdminServices() {
         title: "Uspešno vraćeno",
         description: "Servis je uspešno vraćen od tehnčara u admin bazu.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       dispatchDialog({ type: 'CLOSE_ALL' });
     },
     onError: (error: any) => {
@@ -415,7 +415,7 @@ const AdminServices = memo(function AdminServices() {
   // Assign technician mutation
   const assignTechnicianMutation = useMutation({
     mutationFn: async (data: { serviceId: number; technicianId: number }) => {
-      const response = await apiRequest(`/api/admin/services/${data.serviceId}/assign-technician`, {
+      const response = await apiRequest(`/api/services/${data.serviceId}/assign-technician`, {
         method: "PUT",
         body: JSON.stringify({
           technicianId: data.technicianId,

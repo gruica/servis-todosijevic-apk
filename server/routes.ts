@@ -3579,6 +3579,79 @@ Frigo Sistem`;
   });
 
   // ====================================
+  // ADMIN SERVICES MANAGEMENT ENDPOINTS
+  // ====================================
+  
+  // Return service from technician to admin
+  app.post('/api/services/:id/return-from-technician', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { reason, notes } = req.body;
+      
+      console.log(`[ADMIN SERVICES] Vraćanje servisa ${serviceId} od servisera u admin bazu`);
+      
+      // Get current service
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Update service status and notes
+      await storage.updateService(serviceId, {
+        status: 'pending',
+        technicianId: null,
+        technicianNotes: notes ? `VRAĆEN OD SERVISERA: ${reason}\nBeleške: ${notes}\n\n${service.technicianNotes || ''}` : service.technicianNotes
+      });
+      
+      console.log(`✅ [ADMIN SERVICES] Servis ${serviceId} uspešno vraćen u admin bazu`);
+      res.json({ success: true, message: "Servis uspešno vraćen od servisera" });
+      
+    } catch (error) {
+      console.error('[ADMIN SERVICES] Greška pri vraćanju servisa:', error);
+      res.status(500).json({ error: "Greška pri vraćanju servisa" });
+    }
+  });
+  
+  // Assign technician to service
+  app.put('/api/services/:id/assign-technician', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { technicianId } = req.body;
+      
+      console.log(`[ADMIN SERVICES] Dodeljavanje servisera ${technicianId} servisu ${serviceId}`);
+      
+      // Validate service exists
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Validate technician exists
+      const technician = await storage.getTechnician(technicianId);
+      if (!technician) {
+        return res.status(404).json({ error: "Serviser nije pronađen" });
+      }
+      
+      // Update service with assigned technician
+      await storage.updateService(serviceId, {
+        technicianId: technicianId,
+        status: 'assigned'
+      });
+      
+      console.log(`✅ [ADMIN SERVICES] Serviser ${technician.fullName} dodeljen servisu ${serviceId}`);
+      res.json({ 
+        success: true, 
+        message: `Serviser ${technician.fullName} uspešno dodeljen servisu`,
+        technician: technician 
+      });
+      
+    } catch (error) {
+      console.error('[ADMIN SERVICES] Greška pri dodeli servisera:', error);
+      res.status(500).json({ error: "Greška pri dodeli servisera" });
+    }
+  });
+
+  // ====================================
   // STORAGE OPTIMIZATION ENDPOINTS
   // ====================================
   
