@@ -159,15 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
 
-  // DODAJEM MIDDLEWARE LOGGING NA VRHU DA HVATA SVE ZAHTEVE
-  app.use((req, res, next) => {
-    if (req.method === 'POST' && req.path.includes('/api/simple-photo-upload')) {
-      console.log(`[MIDDLEWARE LOG] POST ${req.path} - REACHED MIDDLEWARE - TOP LEVEL`);
-      console.log(`[MIDDLEWARE LOG] Content-Type: ${req.headers['content-type']}`);
-      console.log(`[MIDDLEWARE LOG] Authorization: ${req.headers.authorization ? 'EXISTS' : 'MISSING'}`);
-    }
-    next();
-  });
+
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
@@ -3091,59 +3083,47 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // Log svih POST zahteva
-  app.use((req, res, next) => {
-    if (req.method === 'POST' && req.path.includes('/api/simple-photo-upload')) {
-      console.log(`[MIDDLEWARE LOG] POST ${req.path} - REACHED MIDDLEWARE`);
-      console.log(`[MIDDLEWARE LOG] Content-Type: ${req.headers['content-type']}`);
-      console.log(`[MIDDLEWARE LOG] Authorization: ${req.headers.authorization ? 'EXISTS' : 'MISSING'}`);
-    }
-    next();
-  });
-
-  // JEDNOSTAVAN photo upload endpoint - zaobilazi sve middleware probleme
-  app.post("/api/simple-photo-upload", async (req, res) => {
+  // Mobile Photo Upload endpoint - koristimo postojeći arhitektura 
+  app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
-      console.log("[SIMPLE UPLOAD] 📷 Simple photo upload started");
-      console.log("[SIMPLE UPLOAD] Headers:", req.headers.authorization ? "Auth present" : "No auth");
-      console.log("[SIMPLE UPLOAD] Body keys:", Object.keys(req.body || {}));
+      console.log("📷 [MOBILE PHOTO] Upload started");
       
-      // Manual JWT check
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log("[SIMPLE UPLOAD] ❌ No auth header");
-        return res.status(401).json({ error: "No auth token" });
+      const userId = (req.user as any).userId;
+      const userRole = (req.user as any).role;
+      
+      // Validate user role
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
       }
       
-      const token = authHeader.split(' ')[1];
-      const { verifyToken } = await import('./jwt-auth.js');
-      const payload = verifyToken(token);
-      
-      if (!payload || !["admin", "technician"].includes(payload.role)) {
-        console.log("[SIMPLE UPLOAD] ❌ Invalid token or role");
-        return res.status(401).json({ error: "Invalid auth" });
-      }
-      
-      console.log("[SIMPLE UPLOAD] ✅ Auth success:", payload.username);
-      
-      const { base64Data, serviceId, photoCategory, description, filename } = req.body;
+      const { base64Data, serviceId, photoCategory, description } = req.body;
       
       if (!base64Data || !serviceId) {
-        console.log("[SIMPLE UPLOAD] ❌ Missing data");
-        return res.status(400).json({ error: "Missing base64Data or serviceId" });
+        return res.status(400).json({ error: "Nedostaju obavezni podaci (base64Data, serviceId)" });
       }
       
-      console.log("[SIMPLE UPLOAD] 📊 Processing image...");
+      // Validate service exists
+      const service = await storage.getService(parseInt(serviceId));
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
       
-      // Process image
+      console.log("📷 [MOBILE PHOTO] Processing Base64 image...");
+      
+      // Process Base64 image
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      // Save to file system (simple approach)
+      // Optimize image using existing service
+      const { ImageOptimizationService } = await import('./image-optimization-service.js');
+      const optimizationService = new ImageOptimizationService();
+      const optimizedBuffer = await optimizationService.optimizeImage(imageBuffer);
+      
+      // Save to uploads directory
       const fs = require('fs');
       const path = require('path');
-      const fileName = `service_${serviceId}_${Date.now()}.jpg`;
-      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       
       // Ensure uploads directory exists
       const uploadsDir = path.dirname(uploadPath);
@@ -3151,31 +3131,31 @@ Frigo Sistem`;
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      fs.writeFileSync(uploadPath, imageBuffer);
-      console.log("[SIMPLE UPLOAD] 💾 File saved:", fileName);
+      fs.writeFileSync(uploadPath, optimizedBuffer);
+      console.log("📷 [MOBILE PHOTO] File saved:", fileName);
       
-      // Save to database
+      // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
         photoPath: `/uploads/${fileName}`,
-        description: description || `Mobile photo: ${photoCategory}`,
-        category: photoCategory || 'other',
-        uploadedBy: payload.userId || 1,
-        isBeforeRepair: photoCategory === 'before'
+        description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
+        uploadedBy: userId,
+        isBeforeRepair: photoCategory === 'before',
+        category: photoCategory || 'general'
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("[SIMPLE UPLOAD] ✅ SUCCESS! Photo ID:", savedPhoto.id);
+      console.log("✅ [MOBILE PHOTO] SUCCESS! Photo saved to database, ID:", savedPhoto.id);
       
       res.status(201).json({
         success: true,
         photoId: savedPhoto.id,
-        fileName: fileName,
-        message: "Upload successful"
+        photoPath: savedPhoto.photoPath,
+        message: "Fotografija uspešno uploaded"
       });
       
     } catch (error) {
-      console.error("[SIMPLE UPLOAD] ❌ ERROR:", error);
+      console.error("❌ [MOBILE PHOTO] ERROR:", error);
       res.status(500).json({ error: "Upload failed: " + error.message });
     }
   });
