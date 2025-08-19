@@ -44,7 +44,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   const queryClient = useQueryClient();
 
   // Fetch service photos
-  const { data: photos = [], isLoading, refetch } = useQuery({
+  const { data: photos = [], isLoading, refetch } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
     queryFn: () => apiRequest(`/api/service-photos?serviceId=${serviceId}`),
     enabled: !!serviceId
@@ -162,8 +162,9 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     }
   };
 
-  // Group photos by category
-  const photosByCategory = photos.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
+  // Group photos by category - safe guard against undefined photos
+  const photosArray = Array.isArray(photos) ? photos : [];
+  const photosByCategory = photosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
     const category = photo.photoCategory || 'other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(photo);
@@ -251,11 +252,11 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileImage className="h-5 w-5" />
-            Fotografije servisa ({photos.length})
+            Fotografije servisa ({photosArray.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {photos.length === 0 ? (
+          {photosArray.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nema fotografija</p>

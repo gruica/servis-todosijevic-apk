@@ -23,8 +23,9 @@ Preferred communication style: Simple, everyday language.
   - **ImageOptimizationService integracija**: WebP kompresija i optimizacija za mobile fotografije
   - **Local storage fallback**: Fotografije se čuvaju u `/uploads` folder kada Object Storage ima problema
   - **Role-based pristup**: Admin i tehnician mogu da upload-uju fotografije
-  - **Test servis 232**: Kreiran sa 3 fotografije - svi endpoint-i testirani i funkcionalni
+  - **Test servisi 217 & 232**: Kreirani sa fotografijama - svi endpoint-i testirani i funkcionalni
   - **MobileServicePhotos komponenta**: Pripremljena za React Native/Capacitor integraciju
+  - **Admin panel ServicePhotos popravljen**: TypeScript tipovi popravka + beli ekran problem rešen
 - **ADMIN SERVICES PANEL PROBLEM REŠEN (19.08.2025)**: Kompletno popravljen admin services panel sa prikazom klijenata
   - **Identificiran problem**: Admin aplikacija pozivala nepostojeće `/api/admin/services` endpoint-e
   - **API endpoint-i ispravka**: Svi pozivi promenjeni da koriste postojeći `/api/services` endpoint
