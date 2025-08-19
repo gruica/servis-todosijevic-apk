@@ -158,6 +158,16 @@ const photoUpload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
+
+  // DODAJEM MIDDLEWARE LOGGING NA VRHU DA HVATA SVE ZAHTEVE
+  app.use((req, res, next) => {
+    if (req.method === 'POST' && req.path.includes('/api/simple-photo-upload')) {
+      console.log(`[MIDDLEWARE LOG] POST ${req.path} - REACHED MIDDLEWARE - TOP LEVEL`);
+      console.log(`[MIDDLEWARE LOG] Content-Type: ${req.headers['content-type']}`);
+      console.log(`[MIDDLEWARE LOG] Authorization: ${req.headers.authorization ? 'EXISTS' : 'MISSING'}`);
+    }
+    next();
+  });
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
