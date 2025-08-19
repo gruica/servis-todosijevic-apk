@@ -3081,11 +3081,20 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
+  // TEST endpoint bez JWT da vidim da li radi
+  app.post("/api/test-upload", async (req, res) => {
+    console.log("[TEST UPLOAD] 🧪 TEST endpoint reached!");
+    console.log("[TEST UPLOAD] Body:", Object.keys(req.body));
+    res.json({ message: "Test endpoint radi!", received: Object.keys(req.body) });
+  });
+
   // Base64 Photo Upload endpoint (zaobilazi multer probleme)
   app.post("/api/service-photos/upload-base64", requireRole(["admin", "technician"]), async (req, res) => {
     try {
-      console.log("[BASE64 PHOTO UPLOAD] 📷 Upload fotografije servisa...");
+      console.log("[BASE64 PHOTO UPLOAD] 📷 Upload fotografije servisa - ENDPOINT REACHED!");
       console.log("[BASE64 PHOTO UPLOAD] User from JWT:", req.user);
+      console.log("[BASE64 PHOTO UPLOAD] Headers:", req.headers);
+      console.log("[BASE64 PHOTO UPLOAD] Body keys:", Object.keys(req.body));
       
       const { base64Data, serviceId, photoCategory, description, filename } = req.body;
       
