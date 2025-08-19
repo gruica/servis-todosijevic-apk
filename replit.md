@@ -17,6 +17,14 @@ Preferred communication style: Simple, everyday language.
 - Kreiranje novih funkcija umesto menjanja postojećih je OBAVEZNO
 
 ## Recent Changes (August 2025)
+- **ADMIN SERVICES PANEL PROBLEM REŠEN (19.08.2025)**: Kompletno popravljen admin services panel sa prikazom klijenata
+  - **Identificiran problem**: Admin aplikacija pozivala nepostojeće `/api/admin/services` endpoint-e
+  - **API endpoint-i ispravka**: Svi pozivi promenjeni da koriste postojeći `/api/services` endpoint
+  - **Dodani nedostajući admin endpoint-i**: `/api/services/:id/return-from-technician` i `/api/services/:id/assign-technician`
+  - **Data transformation sistem kreiran**: API vraća flat strukture (clientName, applianceName) ali admin očekuje nested objekte (client.fullName, appliance.model)
+  - **transformApiService funkcija implementirana**: Konvertuje API response iz flat u nested format za admin UI
+  - **Sva mapiranja kompletna**: klijent, uređaj, serviser, status, sve kategorije podataka uspešno mapirane
+  - **Admin panel 100% funkcionalan**: Sada prikazuje prave klijente umesto "Nepoznat klijent"
 - **STORAGE OPTIMIZATION SISTEM (19.08.2025)**: Kompletno implementiran sistem za optimizaciju storage kapaciteta
   - **ImageOptimizationService** kreiran: WebP kompresija, resize na 1920x1080, 50% ušteda prostora
   - **Automatski cron job-ovi**: nedeljno brisanje fotografija starijih od 2 godine (nedeljom u 03:00)
