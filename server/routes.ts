@@ -3012,6 +3012,67 @@ Frigo Sistem`;
     }
   });
 
+  // Upload fotografija kroz multipart/form-data 
+  app.post("/api/service-photos/upload", upload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
+    try {
+      console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
+      
+      if (!req.file) {
+        return res.status(400).json({ error: "Fajl nije pronađen" });
+      }
+
+      const { serviceId, photoCategory, description } = req.body;
+      if (!serviceId) {
+        return res.status(400).json({ error: "serviceId je obavezan" });
+      }
+
+      // Optimizuj i kompresuj sliku
+      const { ImageOptimizationService } = await import('./image-optimization-service');
+      const optimizedResult = await ImageOptimizationService.optimizeImage(req.file.buffer);
+      
+      // Generiraj filename sa WebP ekstenzijom
+      const fileName = `service_${serviceId}_${Date.now()}.webp`;
+      
+      // Privremeno čuvaj u uploads folderu
+      const fs = require('fs');
+      const path = require('path');
+      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      
+      // Osiguraj da uploads folder postoji
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      
+      // Kreaj relativnu rutu za čuvanje u bazi
+      const photoPath = `/uploads/${fileName}`;
+      
+      const photoData = {
+        serviceId: parseInt(serviceId),
+        photoPath: photoPath,
+        description: description || `Fotografija kategorije: ${photoCategory}`,
+        category: photoCategory || 'other',
+        uploadedBy: req.user?.id || 1,
+        isBeforeRepair: photoCategory === 'before'
+      };
+
+      const savedPhoto = await storage.createServicePhoto(photoData);
+      console.log("[PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
+      
+      res.status(201).json({
+        ...savedPhoto,
+        photoUrl: photoPath,
+        fileName: fileName,
+        fileSize: optimizedResult.size
+      });
+    } catch (error) {
+      console.error("[PHOTO UPLOAD] ❌ Greška:", error);
+      res.status(500).json({ error: "Greška pri upload-u fotografije" });
+    }
+  });
+
   app.post("/api/service-photos", requireRole(["admin", "technician"]), async (req, res) => {
     try {
       const { serviceId, photoURL, description, category } = req.body;
@@ -3042,11 +3103,54 @@ Frigo Sistem`;
     }
   });
 
-  app.get("/api/service-photos/:serviceId", requireRole(["admin", "technician"]), async (req, res) => {
+  // Serviranje upload-ovanih fotografija
+  app.get("/uploads/:fileName", (req, res) => {
     try {
-      const serviceId = parseInt(req.params.serviceId);
+      const fileName = req.params.fileName;
+      const path = require('path');
+      const fs = require('fs');
+      const filePath = path.join(__dirname, '../uploads', fileName);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Fajl nije pronađen" });
+      }
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', 'image/webp');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour cache
+      
+      // Stream file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("[FILE SERVE] ❌ Greška:", error);
+      res.status(500).json({ error: "Greška pri serviranje fajla" });
+    }
+  });
+
+  app.get("/api/service-photos", requireRole(["admin", "technician"]), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.query.serviceId as string);
+      if (!serviceId) {
+        return res.status(400).json({ error: "serviceId je obavezan" });
+      }
+      
       const photos = await storage.getServicePhotos(serviceId);
-      res.json(photos);
+      
+      // Transformiši fotografije za frontend
+      const transformedPhotos = photos.map(photo => ({
+        id: photo.id,
+        serviceId: photo.serviceId,
+        photoUrl: photo.photoPath, // photoPath se koristi kao URL
+        photoCategory: photo.category,
+        description: photo.description,
+        uploadedBy: photo.uploadedBy,
+        uploadedAt: photo.uploadedAt,
+        fileName: photo.photoPath ? photo.photoPath.split('/').pop() : null,
+        fileSize: null // fileSize nije u trenutnom schema
+      }));
+      
+      res.json(transformedPhotos);
     } catch (error) {
       console.error("[PHOTO GET] ❌ Greška:", error);
       res.status(500).json({ error: "Greška pri dohvatanju fotografija" });
