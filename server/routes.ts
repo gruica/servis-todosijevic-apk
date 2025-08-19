@@ -132,6 +132,26 @@ const catalogUpload = multer({
   }
 });
 
+// Photo upload middleware
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    console.log('[PHOTO MULTER] File filter - file info:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      fieldname: file.fieldname
+    });
+    
+    // Accept image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Samo slike su dozvoljene'));
+    }
+  }
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
@@ -3059,7 +3079,7 @@ Frigo Sistem`;
   // Service Photos endpoints
 
   // Upload fotografija kroz multipart/form-data 
-  app.post("/api/service-photos/upload", upload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
+  app.post("/api/service-photos/upload", photoUpload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
     try {
       console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
       
