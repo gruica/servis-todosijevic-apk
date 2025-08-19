@@ -32,7 +32,9 @@ import {
   HelpCircle,
   UserX,
   Pause,
-  PhoneOff
+  PhoneOff,
+  Camera,
+  Image
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 // TEMPORARILY DISABLED: import { NotificationsDropdown } from "@/components/notifications-dropdown";
@@ -40,6 +42,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SupplementGeneraliFormSimple } from "@/components/technician/supplement-generali-form-simple";
+import { MobileServicePhotos } from "@/components/MobileServicePhotos";
 
 // Status ikone
 import serviceTodoIcon from "@assets/generated_images/Servis_u_toku_ikona_7f9b93dc.png";
@@ -513,6 +516,19 @@ function ServiceCard({ service }: { service: Service }) {
       </CardHeader>
       
       <CardContent className="space-y-4">
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Detalji
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Fotografije
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="space-y-4 mt-4">
         {/* Client Information */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -716,6 +732,16 @@ function ServiceCard({ service }: { service: Service }) {
             </div>
           )}
         </div>
+          </TabsContent>
+          
+          <TabsContent value="photos" className="space-y-4 mt-4">
+            <MobileServicePhotos
+              serviceId={service.id}
+              readOnly={false}
+              showUpload={true}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
       
       {/* Generali Supplement Dialog */}
