@@ -54,7 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to fetch user');
       }
       
-      return response.json();
+      const userData = await response.json();
+      console.log('[useAuth] JWT User data received:', userData);
+      return userData;
     },
     staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
     refetchOnWindowFocus: true,

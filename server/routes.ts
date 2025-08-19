@@ -2799,6 +2799,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // My services endpoint for authenticated technicians - KLJUČNI ENDPOINT ZA GRUJICA PROBLEM
+  app.get("/api/my-services", jwtAuthMiddleware, requireRole("technician"), async (req, res) => {
+    try {
+      const user = (req as any).user;
+      console.log(`[MY-SERVICES] JWT: Fetching services for technician ${user.username} (ID: ${user.id})`);
+      
+      // Get user details to find technician ID
+      const fullUser = await storage.getUser(user.id);
+      if (!fullUser || !fullUser.technicianId) {
+        console.log(`[MY-SERVICES] JWT: User ${user.username} has no technicianId - Full user:`, fullUser);
+        return res.status(400).json({ error: "Korisnik nije serviser" });
+      }
+      
+      const technicianId = parseInt(fullUser.technicianId.toString());
+      console.log(`[MY-SERVICES] JWT: Fetching services for technician ID ${technicianId}`);
+      
+      // Get all services assigned to this technician
+      const services = await storage.getServicesByTechnician(technicianId);
+      console.log(`[MY-SERVICES] JWT: Found ${services.length} services for technician ${technicianId}`);
+      
+      res.json(services);
+    } catch (error) {
+      console.error("[MY-SERVICES] JWT: Greška pri dobijanju servisa servisera:", error);
+      res.status(500).json({ error: "Greška pri dobijanju servisa servisera" });
+    }
+  });
+
   // Create technician users
   app.post("/api/technician-users", async (req, res) => {
     try {

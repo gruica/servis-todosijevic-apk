@@ -89,10 +89,18 @@ export default function TechnicianServices() {
   const [newStatus, setNewStatus] = useState<string>("");
   const [statusNotes, setStatusNotes] = useState("");
 
+  // Debug user objekat
+  console.log('[TEHNIČKI SERVISI] Current user:', user);
+  console.log('[TEHNIČKI SERVISI] User technicianId:', user?.technicianId);
+  console.log('[TEHNIČKI SERVISI] User role:', user?.role);
+
   // ENTERPRISE OPTIMIZED: Fetch technician services with performance monitoring
   const { data: services, isLoading, refetch } = useQuery<Service[]>({
     queryKey: ["/api/services/technician", user?.technicianId],
     queryFn: async () => {
+      console.log('[TEHNIČKI SERVISI] Pozivam API za servisera:', user?.technicianId);
+      console.log('[TEHNIČKI SERVISI] User objekat:', user);
+      
       const startTime = Date.now();
       const response = await fetch(`/api/services/technician/${user?.technicianId}`, {
         headers: {
@@ -100,13 +108,13 @@ export default function TechnicianServices() {
         }
       });
       if (!response.ok) {
+        console.error('[TEHNIČKI SERVISI] API greška:', response.status, response.statusText);
         throw new Error("Failed to fetch services");
       }
       const data = await response.json();
       const responseTime = Date.now() - startTime;
       
-      // Performance monitoring za enterprise system
-      // API response optimized
+      console.log('[TEHNIČKI SERVISI] Dobijeno servisa:', data.length);
       
       return data;
     },
