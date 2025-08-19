@@ -13286,6 +13286,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       }
       
       // Uređaji klijenta sa kategorijama i proizvođačima
+      console.log(`[CLIENT ANALYSIS] Dohvatam uređaje za klijenta ${clientId}`);
       const clientAppliances = await db.select({
         id: appliances.id,
         model: appliances.model,
@@ -13302,7 +13303,10 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
       .where(eq(appliances.clientId, clientId));
       
+      console.log(`[CLIENT ANALYSIS] Pronađeno ${clientAppliances.length} uređaja za klijenta ${clientId}`);
+      
       // Servisi klijenta sa kompletnim detaljima
+      console.log(`[CLIENT ANALYSIS] Dohvatam servise za klijenta ${clientId}`);
       const clientServices = await db.select({
         id: services.id,
         applianceId: services.applianceId,
@@ -13326,6 +13330,8 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       .leftJoin(technicians, eq(services.technicianId, technicians.id))
       .where(eq(services.clientId, clientId))
       .orderBy(desc(services.createdAt));
+      
+      console.log(`[CLIENT ANALYSIS] Pronađeno ${clientServices.length} servisa za klijenta ${clientId}`);
       
       // Statistike za klijenta
       const totalServices = clientServices.length;
@@ -13491,6 +13497,10 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
       };
       
       console.log(`[CLIENT ANALYSIS] ✅ Kompletna analiza klijenta ${clientId} kreirana sa ${totalServices} servisa i ${clientAppliances.length} uređaja`);
+      console.log(`[CLIENT ANALYSIS] 📊 Final response appliances count:`, response.appliances.length);
+      console.log(`[CLIENT ANALYSIS] 📊 Final response services count:`, response.services.length);
+      console.log(`[CLIENT ANALYSIS] 📊 Sample appliance:`, clientAppliances[0] || 'none');
+      console.log(`[CLIENT ANALYSIS] 📊 Sample service:`, clientServices[0] || 'none');
       res.json(response);
     } catch (error) {
       console.error("[CLIENT ANALYSIS] ❌ Greška:", error);
