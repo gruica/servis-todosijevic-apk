@@ -115,6 +115,7 @@
     "react-webcam": "^7.2.0",
     "recharts": "^2.13.0",
     "serialport": "^13.0.0",
+    "sharp": "^0.34.3",
     "stripe": "^18.0.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",

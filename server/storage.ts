@@ -145,6 +145,7 @@ export interface IStorage {
   getServicePhotosByCategory(serviceId: number, category: string): Promise<ServicePhoto[]>;
   // Storage analysis methods
   getTotalServicePhotosCount(): Promise<number>;
+  getServicePhotosCount(): Promise<number>; // Alias za storage optimizaciju
   getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>>;
   
   // Business Partner methods
@@ -4279,6 +4280,11 @@ export class DatabaseStorage implements IStorage {
       console.error('❌ Greška pri računanju ukupnog broja fotografija:', error);
       return 0;
     }
+  }
+
+  // Alias metoda za storage optimizaciju
+  async getServicePhotosCount(): Promise<number> {
+    return await this.getTotalServicePhotosCount();
   }
 
   async getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>> {

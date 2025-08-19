@@ -3213,6 +3213,69 @@ Frigo Sistem`;
     }
   });
 
+  // ====================================
+  // STORAGE OPTIMIZATION ENDPOINTS
+  // ====================================
+  
+  // Manual cleanup endpoint
+  app.post('/api/admin/storage/cleanup-old-photos', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      console.log('[STORAGE CLEANUP] Pokretanje manuelnog brisanja starih fotografija...');
+      
+      const { ImageOptimizationService } = await import('./image-optimization-service');
+      const result = await ImageOptimizationService.cleanupOldPhotos();
+      
+      res.json({
+        success: true,
+        deletedCount: result.deletedCount,
+        spaceSavedMB: Math.round(result.spaceSaved / 1024 / 1024 * 100) / 100,
+        details: result.details
+      });
+      
+    } catch (error) {
+      console.error('[STORAGE CLEANUP] Greška:', error);
+      res.status(500).json({ error: "Greška pri brisanju starih fotografija" });
+    }
+  });
+
+  // Storage optimization statistics
+  app.get('/api/admin/storage/optimization-stats', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const { ImageOptimizationService } = await import('./image-optimization-service');
+      
+      // Procenimo uštede sa WebP kompresijom
+      const avgPhotoSizeMB = 2.5; // Prosečna veličina trenutnih fotografija
+      const totalPhotos = await storage.getServicePhotosCount();
+      const currentStorageMB = totalPhotos * avgPhotoSizeMB;
+      
+      const savings = ImageOptimizationService.estimateStorageSavings(currentStorageMB, 0.5);
+      
+      res.json({
+        trenutnoStanje: {
+          brojFotografija: totalPhotos,
+          trenutniStorageMB: currentStorageMB,
+          procenjenaVelicina: `${currentStorageMB.toFixed(2)} MB`
+        },
+        webpOptimizacija: {
+          originalSize: savings.originalSize,
+          optimizedSize: savings.optimizedSize,
+          savings: savings.savings,
+          savingsPercentage: savings.savingsPercentage
+        },
+        preporuke: [
+          "Implementiraj WebP kompresiju za 50% uštede prostora",
+          "Ograniči rezoluciju na 1920x1080 piksela",
+          "Automatsko brisanje slika starijih od 2 godine",
+          "Koristi progresivno učitavanje slika u aplikaciji"
+        ]
+      });
+      
+    } catch (error) {
+      console.error('[STORAGE OPTIMIZATION] Greška:', error);
+      res.status(500).json({ error: "Greška pri dobijanju statistika optimizacije" });
+    }
+  });
+
   return server;
 }
 

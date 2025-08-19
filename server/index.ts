@@ -160,5 +160,17 @@ app.use((req, res, next) => {
       console.error("Greška pri pokretanju Beko cron servisa:", error);
       // Aplikacija i dalje može da radi bez Beko cron servisa
     }
+
+    // Pokreni Storage Optimization cron job-ove
+    (async () => {
+      try {
+        const { StorageOptimizationCron } = await import('./storage-optimization-cron');
+        StorageOptimizationCron.startAll();
+        log("Storage optimization cron job-ovi pokrenuti");
+      } catch (error) {
+        console.error("Greška pri pokretanju Storage optimization cron servisa:", error);
+        // Aplikacija i dalje može da radi bez Storage optimization cron servisa
+      }
+    })();
   });
 })();
