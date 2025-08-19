@@ -6,6 +6,7 @@ import {
   Appliance, InsertAppliance,
   Service, InsertService,
   ServiceStatus,
+  ServicePhoto, InsertServicePhoto,
   Technician, InsertTechnician,
   MaintenanceSchedule, InsertMaintenanceSchedule,
   MaintenanceAlert, InsertMaintenanceAlert,
@@ -37,7 +38,9 @@ import {
   webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports,
   suppliers, supplierOrders, partsCatalog,
   // AI Prediktivno održavanje tabele
-  maintenancePatterns, predictiveInsights, aiAnalysisResults
+  maintenancePatterns, predictiveInsights, aiAnalysisResults,
+  // Fotografije servisa
+  servicePhotos
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -133,6 +136,13 @@ export interface IStorage {
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: InsertService): Promise<Service | undefined>;
   getRecentServices(limit: number): Promise<Service[]>;
+  
+  // Service Photo methods
+  getServicePhotos(serviceId: number): Promise<ServicePhoto[]>;
+  createServicePhoto(photo: InsertServicePhoto): Promise<ServicePhoto>;
+  updateServicePhoto(id: number, photo: Partial<ServicePhoto>): Promise<ServicePhoto | undefined>;
+  deleteServicePhoto(id: number): Promise<void>;
+  getServicePhotosByCategory(serviceId: number, category: string): Promise<ServicePhoto[]>;
   
   // Business Partner methods
   getServicesByPartner(partnerId: number): Promise<Service[]>;
@@ -4112,6 +4122,117 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju uklonjenog dela:', error);
       return false;
+    }
+  }
+
+  // SERVICE PHOTOS - Novi metodi za rad sa fotografijama
+  async getServicePhotos(serviceId: number): Promise<ServicePhoto[]> {
+    console.log(`📸 DatabaseStorage: dohvatanje fotografija za servis ${serviceId}`);
+    
+    try {
+      const photos = await db
+        .select()
+        .from(servicePhotos)
+        .where(eq(servicePhotos.serviceId, serviceId))
+        .orderBy(desc(servicePhotos.uploadedAt));
+      
+      console.log(`📸 Pronađeno ${photos.length} fotografija za servis ${serviceId}`);
+      return photos;
+    } catch (error) {
+      console.error('❌ Greška pri dohvatanju fotografija servisa:', error);
+      throw new Error('Neuspešno dohvatanje fotografija servisa');
+    }
+  }
+
+  async createServicePhoto(photo: InsertServicePhoto): Promise<ServicePhoto> {
+    console.log(`📸 DatabaseStorage: kreiranje nove fotografije za servis ${photo.serviceId}`);
+    
+    try {
+      const [newPhoto] = await db
+        .insert(servicePhotos)
+        .values(photo)
+        .returning();
+      
+      console.log(`✅ Fotografija uspešno kreirana sa ID ${newPhoto.id}`);
+      return newPhoto;
+    } catch (error) {
+      console.error('❌ Greška pri kreiranju fotografije servisa:', error);
+      throw new Error('Neuspešno kreiranje fotografije servisa');
+    }
+  }
+
+  async updateServicePhoto(id: number, photo: Partial<ServicePhoto>): Promise<ServicePhoto | undefined> {
+    console.log(`📸 DatabaseStorage: ažuriranje fotografije ${id}`);
+    
+    try {
+      const [updatedPhoto] = await db
+        .update(servicePhotos)
+        .set(photo)
+        .where(eq(servicePhotos.id, id))
+        .returning();
+      
+      console.log(`✅ Fotografija ${id} uspešno ažurirana`);
+      return updatedPhoto;
+    } catch (error) {
+      console.error('❌ Greška pri ažuriranju fotografije servisa:', error);
+      throw new Error('Neuspešno ažuriranje fotografije servisa');
+    }
+  }
+
+  async deleteServicePhoto(id: number): Promise<void> {
+    console.log(`📸 DatabaseStorage: brisanje fotografije ${id}`);
+    
+    try {
+      await db
+        .delete(servicePhotos)
+        .where(eq(servicePhotos.id, id));
+      
+      console.log(`✅ Fotografija ${id} uspešno obrisana`);
+    } catch (error) {
+      console.error('❌ Greška pri brisanju fotografije servisa:', error);
+      throw new Error('Neuspešno brisanje fotografije servisa');
+    }
+  }
+
+  async getServicePhotosByCategory(serviceId: number, category: string): Promise<ServicePhoto[]> {
+    console.log(`📸 DatabaseStorage: dohvatanje fotografija za servis ${serviceId}, kategorija ${category}`);
+    
+    try {
+      const photos = await db
+        .select()
+        .from(servicePhotos)
+        .where(
+          and(
+            eq(servicePhotos.serviceId, serviceId),
+            eq(servicePhotos.category, category)
+          )
+        )
+        .orderBy(desc(servicePhotos.uploadedAt));
+      
+      console.log(`📸 Pronađeno ${photos.length} fotografija kategorije "${category}" za servis ${serviceId}`);
+      return photos;
+    } catch (error) {
+      console.error('❌ Greška pri dohvatanju fotografija servisa po kategoriji:', error);
+      throw new Error('Neuspešno dohvatanje fotografija servisa po kategoriji');
+    }
+  }
+
+  // Metoda za dohvatanje svih fotografija određene kategorije (globalno)
+  async getServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
+    console.log(`📸 DatabaseStorage: dohvatanje svih fotografija kategorije "${category}"`);
+    
+    try {
+      const photos = await db
+        .select()
+        .from(servicePhotos)
+        .where(eq(servicePhotos.category, category))
+        .orderBy(desc(servicePhotos.uploadedAt));
+      
+      console.log(`📸 Pronađeno ${photos.length} fotografija kategorije "${category}"`);
+      return photos;
+    } catch (error) {
+      console.error('❌ Greška pri dohvatanju fotografija po kategoriji:', error);
+      throw new Error('Neuspešno dohvatanje fotografija po kategoriji');
     }
   }
 

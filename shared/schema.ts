@@ -395,6 +395,37 @@ export const insertServiceSchema = createInsertSchema(services).pick({
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
 
+// Service Photos
+export const servicePhotos = pgTable("service_photos", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  photoPath: text("photo_path").notNull(), // Object storage path
+  description: text("description"),
+  uploadedBy: integer("uploaded_by").notNull(), // User/Technician ID
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  isBeforeRepair: boolean("is_before_repair").default(true), // true = pre kola servis, false = posle servisa
+  category: text("category").default("general"), // "general", "parts", "damage", "repair_progress"
+});
+
+export const insertServicePhotoSchema = createInsertSchema(servicePhotos).pick({
+  serviceId: true,
+  photoPath: true,
+  description: true,
+  uploadedBy: true,
+  isBeforeRepair: true,
+  category: true,
+}).extend({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  photoPath: z.string().min(1, "Putanja fotografije je obavezna"),
+  description: z.string().max(500, "Opis ne može biti duži od 500 karaktera").optional(),
+  uploadedBy: z.number().int().positive("ID korisnika mora biti pozitivan broj"),
+  isBeforeRepair: z.boolean().default(true),
+  category: z.enum(["general", "parts", "damage", "repair_progress"]).default("general"),
+});
+
+export type InsertServicePhoto = z.infer<typeof insertServicePhotoSchema>;
+export type ServicePhoto = typeof servicePhotos.$inferSelect;
+
 // Schema za dopunjavanje Generali servisa
 export const supplementGeneraliServiceSchema = z.object({
   serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
