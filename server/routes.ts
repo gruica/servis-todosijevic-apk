@@ -3083,25 +3083,25 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // Endpoint za serviranje fotografija iz Object Storage
+  // Endpoint za serviranje fotografija iz local uploads
   app.get("/objects/service-photos/:fileName", async (req, res) => {
     try {
       const fileName = req.params.fileName;
       console.log("📷 [SERVE PHOTO] Zahtev za fotografiju:", fileName);
       
-      const { Client } = await import('@replit/object-storage');
-      const client = new Client();
+      const fs = await import('fs');
+      const path = await import('path');
+      const __dirname = path.dirname(new URL(import.meta.url).pathname);
+      const filePath = path.join(__dirname, '../uploads', fileName);
       
-      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-      const objectPath = `service-photos/${fileName}`;
+      console.log("📷 [SERVE PHOTO] Dohvatanje iz local storage:", filePath);
       
-      console.log("📷 [SERVE PHOTO] Dohvatanje iz Object Storage:", { bucketName, objectPath });
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Fotografija nije pronađena" });
+      }
       
-      // Download from bucket
-      const data = await client.downloadAsBytes({
-        bucket: bucketName!,
-        path: objectPath
-      });
+      // Read file
+      const data = fs.readFileSync(filePath);
       
       // Set headers
       res.set({
@@ -3153,31 +3153,28 @@ Frigo Sistem`;
       // Optimize image using existing service
       const { ImageOptimizationService } = await import('./image-optimization-service.js');
       const optimizationService = new ImageOptimizationService();
-      const optimizedResult = await optimizationService.optimizeImage(imageBuffer);
+      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
       
-      // Upload to Replit Object Storage
-      const { Client } = await import('@replit/object-storage');
-      const client = new Client();
-      
+      // Fallback - save locally i avoid Object Storage issues
       const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
-      const bucketName = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-      const objectPath = `service-photos/${fileName}`;
+      const fs = await import('fs');
+      const path = await import('path');
       
-      console.log("📷 [MOBILE PHOTO] Uploading to Object Storage:", { bucketName, objectPath });
+      // Save locally in uploads folder  
+      const __dirname = path.dirname(new URL(import.meta.url).pathname);
+      const uploadPath = path.join(__dirname, '../uploads', fileName);
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
       
-      // Upload to bucket
-      await client.uploadFromBytes({
-        bucket: bucketName!,
-        path: objectPath,
-        data: optimizedResult.buffer
-      });
-      
-      console.log("📷 [MOBILE PHOTO] Successfully uploaded to Object Storage");
+      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      console.log("📷 [MOBILE PHOTO] File saved locally:", uploadPath);
       
       // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/objects/service-photos/${fileName}`, // Object Storage path
+        photoPath: `/uploads/${fileName}`, // Local path instead of Object Storage
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
         uploadedBy: userId,
         isBeforeRepair: photoCategory === 'before',
@@ -3228,15 +3225,17 @@ Frigo Sistem`;
       console.log("[BASE64 PHOTO UPLOAD] Slika konvertovana, veličina:", imageBuffer.length);
       
       // Optimizuj i kompresuj sliku
-      const { ImageOptimizationService } = await import('./image-optimization-service');
-      const optimizedResult = await ImageOptimizationService.optimizeImage(imageBuffer);
+      const { ImageOptimizationService } = await import('./image-optimization-service.js');
+      const optimizationService = new ImageOptimizationService();
+      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
       
       // Generiraj filename sa WebP ekstenzijom
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
       // Privremeno čuvaj u uploads folderu
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs');
+      const path = await import('path');
+      const __dirname = path.dirname(new URL(import.meta.url).pathname);
       const uploadPath = path.join(__dirname, '../uploads', fileName);
       
       // Osiguraj da uploads folder postoji
@@ -3300,15 +3299,17 @@ Frigo Sistem`;
       }
 
       // Optimizuj i kompresuj sliku
-      const { ImageOptimizationService } = await import('./image-optimization-service');
-      const optimizedResult = await ImageOptimizationService.optimizeImage(req.file.buffer);
+      const { ImageOptimizationService } = await import('./image-optimization-service.js');
+      const optimizationService = new ImageOptimizationService();
+      const optimizedResult = await optimizationService.optimizeImage(req.file.buffer, { format: 'webp' });
       
       // Generiraj filename sa WebP ekstenzijom
       const fileName = `service_${serviceId}_${Date.now()}.webp`;
       
       // Privremeno čuvaj u uploads folderu
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs');
+      const path = await import('path');
+      const __dirname = path.dirname(new URL(import.meta.url).pathname);
       const uploadPath = path.join(__dirname, '../uploads', fileName);
       
       // Osiguraj da uploads folder postoji
@@ -3383,11 +3384,12 @@ Frigo Sistem`;
   });
 
   // Serviranje upload-ovanih fotografija
-  app.get("/uploads/:fileName", (req, res) => {
+  app.get("/uploads/:fileName", async (req, res) => {
     try {
       const fileName = req.params.fileName;
-      const path = require('path');
-      const fs = require('fs');
+      const path = await import('path');
+      const fs = await import('fs');
+      const __dirname = path.dirname(new URL(import.meta.url).pathname);
       const filePath = path.join(__dirname, '../uploads', fileName);
       
       if (!fs.existsSync(filePath)) {

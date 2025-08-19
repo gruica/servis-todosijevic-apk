@@ -18,7 +18,45 @@ export class ImageOptimizationService {
   };
 
   /**
-   * Optimizuje sliku i konvertuje u WebP format
+   * Instance metoda za optimizaciju slike
+   */
+  async optimizeImage(
+    imageBuffer: Buffer,
+    options: ImageOptimizationOptions = {}
+  ): Promise<{ buffer: Buffer; metadata: sharp.Metadata; size: number }> {
+    const opts = { ...ImageOptimizationService.DEFAULT_OPTIONS, ...options };
+    
+    let sharpInstance = sharp(imageBuffer);
+    
+    // Dobijamo metadata originalne slike
+    const metadata = await sharpInstance.metadata();
+    
+    // Resize ako je potrebno
+    if (metadata.width && metadata.height) {
+      if (metadata.width > (opts.maxWidth || 1920) || metadata.height > (opts.maxHeight || 1080)) {
+        sharpInstance = sharpInstance.resize({
+          width: opts.maxWidth || 1920,
+          height: opts.maxHeight || 1080,
+          fit: 'inside',
+          withoutEnlargement: true
+        });
+      }
+    }
+    
+    // Konvertuj u WebP sa kompresijom
+    const optimizedBuffer = await sharpInstance
+      .webp({ quality: opts.quality })
+      .toBuffer();
+    
+    return {
+      buffer: optimizedBuffer,
+      metadata,
+      size: optimizedBuffer.length
+    };
+  }
+
+  /**
+   * Statička metoda za optimizaciju slike
    */
   static async optimizeImage(
     imageBuffer: Buffer,

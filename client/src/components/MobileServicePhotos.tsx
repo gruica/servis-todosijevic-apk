@@ -266,8 +266,8 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
     }
   };
 
-  // Group photos by category
-  const photosByCategory = photos.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
+  // Group photos by category - safe guard against null/undefined photos
+  const photosByCategory = (photos || []).reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
     const category = photo.photoCategory || 'other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(photo);
