@@ -13272,54 +13272,228 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
     return patterns;
   }
 
-  // SIMPLE CLIENT ANALYSIS ENDPOINT
+  // COMPREHENSIVE CLIENT ANALYSIS ENDPOINT - ENHANCED VERSION
   app.get("/api/admin/clients/:id/comprehensive-analysis", jwtAuth, requireRole(['admin']), async (req, res) => {
     console.log(`🔥 [CLIENT ANALYSIS ENDPOINT] POZVAN SA clientId: ${req.params.id}`);
     try {
       const clientId = parseInt(req.params.id);
+      console.log(`[CLIENT ANALYSIS] Kreiranje kompletne analize za klijenta ${clientId}`);
+      
+      // Osnovni podaci o klijentu
       const client = await storage.getClient(clientId);
       if (!client) {
         return res.status(404).json({ error: "Klijent nije pronađen" });
       }
+      
+      // Uređaji klijenta sa kategorijama i proizvođačima
+      const clientAppliances = await db.select({
+        id: appliances.id,
+        model: appliances.model,
+        serialNumber: appliances.serialNumber,
+        purchaseDate: appliances.purchaseDate,
+        notes: appliances.notes,
+        categoryId: appliances.categoryId,
+        manufacturerId: appliances.manufacturerId,
+        categoryName: applianceCategories.name,
+        manufacturerName: manufacturers.name
+      })
+      .from(appliances)
+      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+      .where(eq(appliances.clientId, clientId));
+      
+      // Servisi klijenta sa kompletnim detaljima
+      const clientServices = await db.select({
+        id: services.id,
+        applianceId: services.applianceId,
+        technicianId: services.technicianId,
+        description: services.description,
+        status: services.status,
+        warrantyStatus: services.warrantyStatus,
+        createdAt: services.createdAt,
+        scheduledDate: services.scheduledDate,
+        completedDate: services.completedDate,
+        technicianNotes: services.technicianNotes,
+        cost: services.cost,
+        usedParts: services.usedParts,
+        machineNotes: services.machineNotes,
+        isCompletelyFixed: services.isCompletelyFixed,
+        businessPartnerId: services.businessPartnerId,
+        partnerCompanyName: services.partnerCompanyName,
+        technicianName: technicians.fullName
+      })
+      .from(services)
+      .leftJoin(technicians, eq(services.technicianId, technicians.id))
+      .where(eq(services.clientId, clientId))
+      .orderBy(desc(services.createdAt));
+      
+      // Statistike za klijenta
+      const totalServices = clientServices.length;
+      const completedServices = clientServices.filter(s => s.status === 'completed').length;
+      const activeServices = clientServices.filter(s => !['completed', 'cancelled', 'customer_refused_repair'].includes(s.status)).length;
+      const warrantyServices = clientServices.filter(s => s.warrantyStatus === 'u garanciji').length;
+      const totalCost = clientServices.reduce((sum, service) => sum + parseFloat(service.cost || '0'), 0);
+      
+      // Prosečno vreme servisa
+      const averageServiceTime = completedServices > 0 ? clientServices
+        .filter(s => s.status === 'completed' && s.createdAt && s.completedDate)
+        .reduce((sum, service) => {
+          const created = new Date(service.createdAt);
+          const completed = new Date(service.completedDate!);
+          return sum + (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+        }, 0) / completedServices : 0;
+      
+      // Statistike po kategorijama uređaja
+      const applianceStats = clientAppliances.reduce((stats, appliance) => {
+        const category = appliance.categoryName || 'Nepoznato';
+        if (!stats[category]) {
+          stats[category] = { count: 0, services: 0, cost: 0 };
+        }
+        stats[category].count++;
+        
+        const applianceServices = clientServices.filter(s => s.applianceId === appliance.id);
+        stats[category].services += applianceServices.length;
+        stats[category].cost += applianceServices.reduce((sum, s) => sum + parseFloat(s.cost || '0'), 0);
+        
+        return stats;
+      }, {} as Record<string, { count: number; services: number; cost: number }>);
+      
+      // Statistike po tehničarima
+      const technicianStats = clientServices.reduce((stats, service) => {
+        if (service.technicianName) {
+          if (!stats[service.technicianName]) {
+            stats[service.technicianName] = { services: 0, completed: 0, cost: 0 };
+          }
+          stats[service.technicianName].services++;
+          if (service.status === 'completed') {
+            stats[service.technicianName].completed++;
+          }
+          stats[service.technicianName].cost += parseFloat(service.cost || '0');
+        }
+        return stats;
+      }, {} as Record<string, { services: number; completed: number; cost: number }>);
+      
+      // Mesečne statistike
+      const monthlyServiceHistory = clientServices.reduce((history, service) => {
+        const date = new Date(service.createdAt);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!history[monthKey]) {
+          history[monthKey] = { total: 0, completed: 0, warranty: 0, cost: 0 };
+        }
+        
+        history[monthKey].total++;
+        if (service.status === 'completed') history[monthKey].completed++;
+        if (service.warrantyStatus === 'u garanciji') history[monthKey].warranty++;
+        history[monthKey].cost += parseFloat(service.cost || '0');
+        
+        return history;
+      }, {} as Record<string, { total: number; completed: number; warranty: number; cost: number }>);
+      
+      // Problematični uređaji (više od 2 servisa)
+      const applianceServiceCount = clientServices.reduce((count, service) => {
+        const key = service.applianceId?.toString() || 'unknown';
+        if (!count[key]) {
+          const appliance = clientAppliances.find(a => a.id === service.applianceId);
+          count[key] = {
+            applianceId: service.applianceId,
+            model: appliance?.model || 'N/A',
+            manufacturer: appliance?.manufacturerName || 'N/A',
+            category: appliance?.categoryName || 'N/A',
+            serviceCount: 0,
+            lastService: service.createdAt,
+            totalCost: 0
+          };
+        }
+        count[key].serviceCount++;
+        count[key].totalCost += parseFloat(service.cost || '0');
+        if (service.createdAt > count[key].lastService) {
+          count[key].lastService = service.createdAt;
+        }
+        return count;
+      }, {} as Record<string, any>);
+      
+      const problematicAppliances = Object.values(applianceServiceCount)
+        .filter(app => app.serviceCount > 2)
+        .sort((a, b) => b.serviceCount - a.serviceCount);
       
       const response = {
         reportMetadata: {
           generatedAt: new Date().toISOString(),
           reportId: `CLIENT_ANALYSIS_${clientId}_${Date.now()}`,
           clientId: clientId,
-          reportType: "comprehensive_client_analysis"
+          reportType: 'comprehensive_client_analysis'
         },
         clientInfo: {
           id: client.id,
           fullName: client.fullName,
-          email: client.email || "",
+          email: client.email || '',
           phone: client.phone,
-          address: client.address || "",
-          city: client.city || "",
-          totalAppliances: 0,
-          registrationDate: new Date().toISOString()
+          address: client.address || '',
+          city: client.city || '',
+          totalAppliances: clientAppliances.length,
+          registrationDate: client.createdAt || new Date().toISOString()
         },
         serviceStatistics: {
-          totalServices: 0,
-          completedServices: 0,
-          activeServices: 0,
-          warrantyServices: 0,
-          totalCost: 0,
-          averageServiceTimeInDays: 0,
-          completionRate: 0,
-          warrantyRate: 0
+          totalServices,
+          completedServices,
+          activeServices,
+          warrantyServices,
+          totalCost: Math.round(totalCost * 100) / 100,
+          averageServiceTimeInDays: Math.round(averageServiceTime * 10) / 10,
+          completionRate: totalServices > 0 ? Math.round((completedServices / totalServices) * 100) : 0,
+          warrantyRate: totalServices > 0 ? Math.round((warrantyServices / totalServices) * 100) : 0
         },
-        appliances: [],
-        services: [],
-        analytics: { applianceStats: {}, technicianStats: {}, monthlyServiceHistory: {}, problematicAppliances: [] },
-        spareParts: [],
-        recommendations: { maintenanceAlerts: 'Test', costOptimization: 'Test', technicianPreference: 'Test' }
+        appliances: clientAppliances.map(appliance => ({
+          id: appliance.id,
+          categoryName: appliance.categoryName || 'Nepoznato',
+          manufacturerName: appliance.manufacturerName || 'Nepoznato',
+          model: appliance.model || 'N/A',
+          serialNumber: appliance.serialNumber || 'N/A',
+          purchaseDate: appliance.purchaseDate || null,
+          serviceCount: clientServices.filter(s => s.applianceId === appliance.id).length,
+          lastServiceDate: clientServices
+            .filter(s => s.applianceId === appliance.id)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]?.createdAt || null
+        })),
+        services: clientServices.map(service => ({
+          id: service.id,
+          description: service.description || 'N/A',
+          status: service.status,
+          warrantyStatus: service.warrantyStatus || 'nepoznato',
+          createdAt: service.createdAt,
+          completedDate: service.completedDate || null,
+          cost: service.cost || '0',
+          technicianName: service.technicianName || 'N/A',
+          usedParts: service.usedParts || '',
+          technicianNotes: service.technicianNotes || '',
+          isCompletelyFixed: service.isCompletelyFixed || false,
+          spareParts: [] // TODO: dodati povezivanje sa rezervnim delovima kada bude potrebno
+        })),
+        analytics: {
+          applianceStats,
+          technicianStats,
+          monthlyServiceHistory,
+          problematicAppliances
+        },
+        spareParts: [], // TODO: implementirati rezervne delove
+        recommendations: {
+          maintenanceAlerts: problematicAppliances.length > 0 ? 
+            `Preporučuje se redovno održavanje za ${problematicAppliances.length} uređaj(a) sa čestim kvarovima.` : 
+            'Svi uređaji rade stabilno.',
+          costOptimization: totalCost > 10000 ? 
+            'Razmotriti paket održavanja za smanjenje troškova.' : 
+            'Troškovi održavanja su u normalnim okvirima.',
+          technicianPreference: Object.keys(technicianStats).length > 0 ? 
+            `Najčešći serviser: ${Object.entries(technicianStats).sort((a, b) => b[1].services - a[1].services)[0][0]}` : 
+            'Nema podataka o serviserima.'
+        }
       };
       
-      console.log(`[CLIENT ANALYSIS] Kompletna analiza klijenta ${clientId} kreirana uspešno`);
+      console.log(`[CLIENT ANALYSIS] ✅ Kompletna analiza klijenta ${clientId} kreirana sa ${totalServices} servisa i ${clientAppliances.length} uređaja`);
       res.json(response);
     } catch (error) {
-      console.error("[CLIENT ANALYSIS] Greška:", error);
+      console.error("[CLIENT ANALYSIS] ❌ Greška:", error);
       res.status(500).json({ error: "Greška pri kreiranju analize klijenta" });
     }
   });
