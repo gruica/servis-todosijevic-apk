@@ -3202,12 +3202,18 @@ Frigo Sistem`;
   });
 
   // Base64 Photo Upload endpoint (zaobilazi multer probleme)
-  app.post("/api/service-photos/upload-base64", requireRole(["admin", "technician"]), async (req, res) => {
+  app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
     try {
       console.log("[BASE64 PHOTO UPLOAD] 📷 Upload fotografije servisa - ENDPOINT REACHED!");
       console.log("[BASE64 PHOTO UPLOAD] User from JWT:", req.user);
       console.log("[BASE64 PHOTO UPLOAD] Headers:", req.headers);
       console.log("[BASE64 PHOTO UPLOAD] Body keys:", Object.keys(req.body));
+      
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
+      }
       
       const { base64Data, serviceId, photoCategory, description, filename } = req.body;
       
@@ -3269,7 +3275,7 @@ Frigo Sistem`;
   });
 
   // Upload fotografija kroz multipart/form-data 
-  app.post("/api/service-photos/upload", requireRole(["admin", "technician"]), photoUpload.single('photo'), async (req, res) => {
+  app.post("/api/service-photos/upload", jwtAuth, photoUpload.single('photo'), async (req, res) => {
     try {
       console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
       console.log("[PHOTO UPLOAD] Headers:", {
@@ -3277,6 +3283,12 @@ Frigo Sistem`;
         contentType: req.headers['content-type']
       });
       console.log("[PHOTO UPLOAD] User from JWT:", req.user);
+      
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
+      }
       
       if (!req.file) {
         return res.status(400).json({ error: "Fajl nije pronađen" });
@@ -3334,8 +3346,14 @@ Frigo Sistem`;
     }
   });
 
-  app.post("/api/service-photos", requireRole(["admin", "technician"]), async (req, res) => {
+  app.post("/api/service-photos", jwtAuth, async (req, res) => {
     try {
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
+      }
+      
       const { serviceId, photoURL, description, category } = req.body;
       console.log("[PHOTO SAVE] 📷 Čuvanje fotografije servisa:", { serviceId, category });
       
@@ -3389,8 +3407,14 @@ Frigo Sistem`;
     }
   });
 
-  app.get("/api/service-photos", requireRole(["admin", "technician"]), async (req, res) => {
+  app.get("/api/service-photos", jwtAuth, async (req, res) => {
     try {
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama" });
+      }
+      
       const serviceId = parseInt(req.query.serviceId as string);
       if (!serviceId) {
         return res.status(400).json({ error: "serviceId je obavezan" });
@@ -3418,8 +3442,14 @@ Frigo Sistem`;
     }
   });
 
-  app.delete("/api/service-photos/:id", requireRole(["admin", "technician"]), async (req, res) => {
+  app.delete("/api/service-photos/:id", jwtAuth, async (req, res) => {
     try {
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje fotografija" });
+      }
+      
       const photoId = parseInt(req.params.id);
       await storage.deleteServicePhoto(photoId);
       res.json({ success: true });
@@ -3429,8 +3459,14 @@ Frigo Sistem`;
     }
   });
 
-  app.get("/api/service-photos/category/:category", requireRole(["admin", "technician"]), async (req, res) => {
+  app.get("/api/service-photos/category/:category", jwtAuth, async (req, res) => {
     try {
+      // Proveriu role
+      const userRole = (req.user as any)?.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama" });
+      }
+      
       const category = req.params.category;
       // Pozivamo metodu koja prima samo kategoriju (globalni pregled)
       const photos = await storage.getServicePhotosByCategory(1, category);
