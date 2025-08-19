@@ -100,6 +100,12 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
 
       setUploadProgress(50);
 
+      console.log('[MOBILE UPLOAD] Pokušavam upload fotografije...', {
+        serviceId,
+        category: data.category,
+        fileSize: data.file.size
+      });
+
       const response = await fetch('/api/service-photos/upload', {
         method: 'POST',
         headers: {
@@ -111,11 +117,15 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
       setUploadProgress(90);
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[MOBILE UPLOAD] Server response error:', response.status, errorData);
+        throw new Error(errorData.error || 'Upload failed');
       }
 
       setUploadProgress(100);
-      return response.json();
+      const result = await response.json();
+      console.log('[MOBILE UPLOAD] Upload uspešan:', result);
+      return result;
     },
     onSuccess: () => {
       toast({

@@ -3057,18 +3057,6 @@ Frigo Sistem`;
 
 
   // Service Photos endpoints
-  app.post("/api/service-photos/upload", requireRole(["admin", "technician"]), async (req, res) => {
-    try {
-      console.log("[PHOTO UPLOAD] 📷 Pokušaj upload-a fotografije servisa");
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      console.log("[PHOTO UPLOAD] ✅ Upload URL kreiran:", uploadURL);
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("[PHOTO UPLOAD] ❌ Greška pri kreiranju upload URL-a:", error);
-      res.status(500).json({ error: "Greška pri kreiranju upload URL-a" });
-    }
-  });
 
   // Upload fotografija kroz multipart/form-data 
   app.post("/api/service-photos/upload", upload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
