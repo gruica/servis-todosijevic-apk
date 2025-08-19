@@ -524,90 +524,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
-      // Dodatna validacija podataka o klijentu - Zod provera
-      const validationResult = insertClientSchema.safeParse(req.body);
+      console.log("🔧 [ADMIN CLIENTS] POST endpoint pozvan sa podacima:", req.body);
       
-      // Ako podaci nisu validni, vrati grešku sa detaljima
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Nevažeći podaci klijenta", 
-          details: validationResult.error.format(),
-          message: "Svi podaci o klijentu moraju biti pravilno uneti. Proverite podatke i pokušajte ponovo."
-        });
-      }
+      // Proverimo da li se šalje klijent sa uređajem ili samo klijent
+      const hasAppliance = req.body.categoryId && req.body.manufacturerId && req.body.model;
       
-      // Dodatna poslovna pravila
-      const validatedData = validationResult.data;
-      
-      // Provera duplikata po email adresi ako je uneta
-      if (validatedData.email) {
-        try {
-          const existingClient = await storage.getClientByEmail(validatedData.email);
-          if (existingClient) {
-            return res.status(400).json({
-              error: "Duplikat email adrese",
-              message: `Klijent sa email adresom '${validatedData.email}' već postoji u bazi. Koristite funkciju pretrage da pronađete postojećeg klijenta.`
-            });
-          }
-        } catch (emailCheckError) {
-          console.error("Greška pri proveri duplikata email adrese:", emailCheckError);
-          // Ne vraćamo grešku korisniku ovde, nastavljamo proces
-        }
-      }
-      
-      // Formatiranje telefonskog broja
-      if (validatedData.phone) {
-        // Ako telefon ne počinje sa +, dodajemo prefiks za Crnu Goru
-        if (!validatedData.phone.startsWith('+')) {
-          // Prvo uklanjamo sve što nije broj
-          const numberOnly = validatedData.phone.replace(/\D/g, '');
-          
-          // Ako počinje sa 0, zamenjujemo ga sa 382
-          if (numberOnly.startsWith('0')) {
-            validatedData.phone = '+382' + numberOnly.substring(1);
-          } else {
-            // Inače dodajemo prefiks na ceo broj
-            validatedData.phone = '+382' + numberOnly;
-          }
-        }
-      }
-      
-      // Provera telefona (mora sadržati samo brojeve, +, -, razmake i zagrade)
-      if (!/^[+]?[\d\s()-]{6,20}$/.test(validatedData.phone)) {
-        return res.status(400).json({
-          error: "Nevažeći broj telefona",
-          message: "Broj telefona može sadržati samo brojeve, razmake i znakove +()-"
-        });
-      }
-      
-      // Provera da li email već postoji (ako je unet)
-      if (validatedData.email) {
-        const existingClientWithEmail = await storage.getClientByEmail(validatedData.email);
-        if (existingClientWithEmail) {
-          return res.status(400).json({
-            error: "Email već postoji",
-            message: "Klijent sa ovim email-om već postoji u bazi podataka"
+      if (hasAppliance) {
+        console.log("📱 [ADMIN CLIENTS] Kreiranje klijenta SA uređajem");
+        
+        // Validacija kombinovanih podataka (klijent + uređaj)
+        const clientData = {
+          fullName: req.body.fullName,
+          email: req.body.email,
+          phone: req.body.phone,
+          address: req.body.address,
+          city: req.body.city,
+        };
+        
+        const applianceData = {
+          categoryId: req.body.categoryId,
+          manufacturerId: req.body.manufacturerId,
+          model: req.body.model,
+          serialNumber: req.body.serialNumber,
+          purchaseDate: req.body.purchaseDate,
+          notes: req.body.notes,
+        };
+        
+        // Validacija podataka klijenta
+        const clientValidation = insertClientSchema.safeParse(clientData);
+        if (!clientValidation.success) {
+          return res.status(400).json({ 
+            error: "Nevažeći podaci klijenta", 
+            details: clientValidation.error.format(),
+            message: "Podaci o klijentu nisu validni. Proverite unos."
           });
         }
+        
+        // Validacija podataka uređaja
+        const applianceValidation = insertApplianceSchema.safeParse({
+          ...applianceData,
+          clientId: 0 // Privremeno, biće zamenjen sa pravim ID
+        });
+        
+        if (!applianceValidation.success) {
+          return res.status(400).json({ 
+            error: "Nevažeći podaci uređaja", 
+            details: applianceValidation.error.format(),
+            message: "Podaci o uređaju nisu validni. Proverite unos."
+          });
+        }
+        
+        // Kreiranje klijenta
+        console.log("👤 [ADMIN CLIENTS] Kreiranje klijenta...");
+        const newClient = await storage.createClient(clientValidation.data);
+        console.log("✅ [ADMIN CLIENTS] Klijent kreiran sa ID:", newClient.id);
+        
+        // Kreiranje uređaja sa ID klijenta
+        console.log("📱 [ADMIN CLIENTS] Kreiranje uređaja za klijenta...");
+        const newAppliance = await storage.createAppliance({
+          ...applianceData,
+          clientId: newClient.id,
+        });
+        console.log("✅ [ADMIN CLIENTS] Uređaj kreiran sa ID:", newAppliance.id);
+        
+        res.json({
+          ...newClient,
+          appliance: newAppliance,
+          message: `Klijent ${newClient.fullName} je kreiran sa uređajem ${newAppliance.model}.`
+        });
+        
+      } else {
+        console.log("👤 [ADMIN CLIENTS] Kreiranje SAMO klijenta (bez uređaja)");
+        
+        // Validacija podataka klijenta
+        const validationResult = insertClientSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          return res.status(400).json({ 
+            error: "Nevažeći podaci klijenta", 
+            details: validationResult.error.format(),
+            message: "Svi podaci o klijentu moraju biti pravilno uneti. Proverite podatke i pokušajte ponovo."
+          });
+        }
+        
+        const validatedData = validationResult.data;
+        
+        // Kreiranje klijenta bez uređaja
+        const newClient = await storage.createClient(validatedData);
+        console.log("🎉 [ADMIN CLIENTS] Novi klijent kreiran uspešno:", newClient);
+        
+        res.json(newClient);
       }
-      
-      // Ako su svi uslovi ispunjeni, kreiramo klijenta
-      const client = await storage.createClient(validatedData);
-      
-      // Vrati uspešan odgovor
-      res.status(201).json({
-        success: true,
-        message: "Klijent je uspešno kreiran",
-        data: client
-      });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Nevažeći podaci klijenta", details: error.format() });
-      }
       console.error("Greška pri kreiranju klijenta:", error);
-      res.status(500).json({ error: "Greška pri kreiranju klijenta", message: error instanceof Error ? error.message : String(error) });
+      res.status(500).json({ 
+        error: "Greška pri kreiranju klijenta", 
+        message: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
+
 
   app.put("/api/clients/:id", async (req, res) => {
     try {

@@ -47,6 +47,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { Client } from "@shared/schema";
 import { Link } from "wouter";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Schema za editovanje klijenta
 const editClientSchema = z.object({
@@ -58,19 +59,57 @@ const editClientSchema = z.object({
   city: z.string().min(2, "Grad mora imati najmanje 2 karaktera").or(z.literal("")).optional(),
 });
 
+// Schema za kreiranje novog klijenta sa uređajem
+const newClientSchema = z.object({
+  fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime je predugačko"),
+  email: z.string().email("Unesite validnu email adresu").or(z.literal("")).optional(),
+  phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
+    .regex(/^[+]?[\d\s()/-]{6,25}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()/-"),
+  address: z.string().min(3, "Adresa mora imati najmanje 3 karaktera").or(z.literal("")).optional(),
+  city: z.string().min(2, "Grad mora imati najmanje 2 karaktera").or(z.literal("")).optional(),
+  // Podaci o uređaju
+  categoryId: z.number().int().positive("Kategorija je obavezna"),
+  manufacturerId: z.number().int().positive("Proizvođač je obavezan"),
+  model: z.string().min(1, "Model je obavezan").max(100, "Model je predugačak"),
+  serialNumber: z.string().max(50, "Serijski broj je predugačak").or(z.literal("")).optional(),
+  purchaseDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .or(z.literal(""))
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime()) && date <= new Date();
+    }, "Datum kupovine ne može biti u budućnosti"),
+  notes: z.string().max(500, "Napomene su predugačke").or(z.literal("")).optional(),
+});
+
 type EditClientFormValues = z.infer<typeof editClientSchema>;
+type NewClientFormValues = z.infer<typeof newClientSchema>;
 
 const AdminClientsPage = memo(function AdminClientsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Query za sve klijente
   const { data: clients = [], isLoading, error, refetch } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
     staleTime: 5 * 60 * 1000, // 5 minuta
     gcTime: 10 * 60 * 1000, // 10 minuta
+  });
+
+  // Query za kategorije i proizvođače
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ["/api/categories"],
+    staleTime: 30 * 60 * 1000, // 30 minuta
+  });
+
+  const { data: manufacturers = [] } = useQuery<any[]>({
+    queryKey: ["/api/manufacturers"],
+    staleTime: 30 * 60 * 1000, // 30 minuta
   });
 
   // Form za editovanje klijenta
@@ -82,6 +121,24 @@ const AdminClientsPage = memo(function AdminClientsPage() {
       phone: "",
       address: "",
       city: "",
+    },
+  });
+
+  // Form za kreiranje novog klijenta sa uređajem
+  const addForm = useForm<NewClientFormValues>({
+    resolver: zodResolver(newClientSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      categoryId: 0,
+      manufacturerId: 0,
+      model: "",
+      serialNumber: "",
+      purchaseDate: "",
+      notes: "",
     },
   });
 
@@ -109,6 +166,41 @@ const AdminClientsPage = memo(function AdminClientsPage() {
       });
       setEditingClient(null);
       form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Greška",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutacija za kreiranje novog klijenta sa uređajem
+  const addClientMutation = useMutation({
+    mutationFn: async (data: NewClientFormValues) => {
+      console.log("🔧 Kreiranje klijenta sa podacima:", data);
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Greška pri kreiranju klijenta');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Klijent kreiran",
+        description: `Klijent ${data.fullName} je uspešno kreiran sa uređajem.`,
+      });
+      setShowAddDialog(false);
+      addForm.reset();
     },
     onError: (error: Error) => {
       toast({
@@ -185,6 +277,11 @@ const AdminClientsPage = memo(function AdminClientsPage() {
     });
   };
 
+  // Funkcija za submitovanje add forme
+  const onAddSubmit = (values: NewClientFormValues) => {
+    addClientMutation.mutate(values);
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -255,7 +352,7 @@ const AdminClientsPage = memo(function AdminClientsPage() {
             Upravljanje klijentima sistema ({filteredClients.length} od {clients.length})
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowAddDialog(true)}>
           <UserPlus className="h-4 w-4 mr-2" />
           Novi klijent
         </Button>
@@ -563,6 +660,226 @@ const AdminClientsPage = memo(function AdminClientsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Client Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Dodaj novog klijenta sa uređajem</DialogTitle>
+            <DialogDescription>
+              Unesite podatke o klijentu i prvom uređaju koji će biti registrovan.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...addForm}>
+            <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-6">
+              {/* Podaci o klijentu */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Podaci o klijentu</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={addForm.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ime i prezime *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Marko Petrović" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="+381 60 123 4567" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email (opciono)</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} value={field.value || ""} placeholder="marko@example.com" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grad (opciono)</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="Beograd" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={addForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresa (opciono)</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} placeholder="Kneza Miloša 10" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Podaci o uređaju */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Podaci o uređaju</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={addForm.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kategorija uređaja *</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Izaberite kategoriju" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id.toString()}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="manufacturerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Proizvođač *</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Izaberite proizvođača" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {manufacturers.map((manufacturer) => (
+                              <SelectItem key={manufacturer.id} value={manufacturer.id.toString()}>
+                                {manufacturer.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model *</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="WAW28560EU" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="serialNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Serijski broj (opciono)</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} placeholder="12345678901234" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={addForm.control}
+                    name="purchaseDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Datum kupovine (opciono)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={addForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Napomene o uređaju (opciono)</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} placeholder="Dodatne informacije o uređaju..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddDialog(false)}
+                >
+                  Otkaži
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addClientMutation.isPending}
+                >
+                  {addClientMutation.isPending ? "Kreira..." : "Kreiraj klijenta"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
