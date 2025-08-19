@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
+import { ServicePhotos } from "@/components/ServicePhotos";
 
 interface AdminService {
   id: number;
@@ -853,11 +854,12 @@ const AdminServices = memo(function AdminServices() {
             
             {selectedService && (
               <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="general">Opšte informacije</TabsTrigger>
                   <TabsTrigger value="client">Klijent</TabsTrigger>
                   <TabsTrigger value="technician">Serviser</TabsTrigger>
                   <TabsTrigger value="technical">Tehnički detalji</TabsTrigger>
+                  <TabsTrigger value="photos">Fotografije</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="general" className="space-y-4">
@@ -1082,6 +1084,14 @@ const AdminServices = memo(function AdminServices() {
                       </Button>
                     </div>
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="photos" className="space-y-4">
+                  <ServicePhotos 
+                    serviceId={selectedService.id}
+                    readOnly={false}
+                    showUpload={true}
+                  />
                 </TabsContent>
               </Tabs>
             )}
