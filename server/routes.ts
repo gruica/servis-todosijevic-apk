@@ -3082,6 +3082,11 @@ Frigo Sistem`;
   app.post("/api/service-photos/upload", photoUpload.single('photo'), requireRole(["admin", "technician"]), async (req, res) => {
     try {
       console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
+      console.log("[PHOTO UPLOAD] Headers:", {
+        authorization: req.headers.authorization ? 'postoji' : 'ne postoji',
+        contentType: req.headers['content-type']
+      });
+      console.log("[PHOTO UPLOAD] User from JWT:", req.user);
       
       if (!req.file) {
         return res.status(400).json({ error: "Fajl nije pronađen" });
