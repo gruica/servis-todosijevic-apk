@@ -127,6 +127,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/services" component={AdminServices} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/clients" component={AdminClients} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/clients/:id/analysis" component={AdminClientComprehensiveAnalysis} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/spare-parts" component={AdminSpareParts} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/available-parts" component={AdminAvailableParts} allowedRoles={["admin"]} />
