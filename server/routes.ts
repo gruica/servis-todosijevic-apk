@@ -13275,6 +13275,7 @@ ComPlus Integracija Test - Funkcionalno sa novim EMAIL_PASSWORD kredencijalima`
   // COMPREHENSIVE CLIENT ANALYSIS ENDPOINT
   // Kompletna analiza klijenta sa kompletnom istorijom servisa i dokumenata
   app.get("/api/admin/clients/:id/comprehensive-analysis", jwtAuth, requireRole(['admin']), async (req, res) => {
+    console.log(`🔥 [CLIENT ANALYSIS ENDPOINT] POZVAN SA clientId: ${req.params.id}`);
     try {
       const clientId = parseInt(req.params.id);
       console.log(`[CLIENT ANALYSIS] Kreiram kompletnu analizu klijenta ${clientId}`);
