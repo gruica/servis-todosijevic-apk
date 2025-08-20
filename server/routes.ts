@@ -3270,77 +3270,130 @@ Frigo Sistem`;
     }
   });
 
-  // Upload fotografija kroz multipart/form-data 
-  app.post("/api/service-photos/upload", jwtAuth, photoUpload.single('photo'), async (req, res) => {
+  // POBOLJŠANI Upload fotografija endpoint sa boljim error handling-om
+  app.post("/api/service-photos/upload", async (req, res) => {
+    console.log("📸 [PHOTO UPLOAD] Endpoint reached - no middleware yet");
+    console.log("📸 [PHOTO UPLOAD] Headers:", Object.keys(req.headers));
+    console.log("📸 [PHOTO UPLOAD] Content-Type:", req.headers['content-type']);
+    
+    // Prvo proveri autentifikaciju
     try {
-      console.log("[PHOTO UPLOAD] 📷 Upload fotografije servisa...");
-      console.log("[PHOTO UPLOAD] Headers:", {
-        authorization: req.headers.authorization ? 'postoji' : 'ne postoji',
-        contentType: req.headers['content-type']
+      await new Promise((resolve, reject) => {
+        jwtAuth(req, res, (err: any) => {
+          if (err) reject(err);
+          else resolve(true);
+        });
       });
-      console.log("[PHOTO UPLOAD] User from JWT:", req.user);
-      
-      // Proveriu role
-      const userRole = (req.user as any)?.role;
-      if (!["admin", "technician"].includes(userRole)) {
-        return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
-      }
-      
-      if (!req.file) {
-        return res.status(400).json({ error: "Fajl nije pronađen" });
-      }
-
-      const { serviceId, photoCategory, description } = req.body;
-      if (!serviceId) {
-        return res.status(400).json({ error: "serviceId je obavezan" });
-      }
-
-      // Optimizuj i kompresuj sliku
-      const { ImageOptimizationService } = await import('./image-optimization-service.js');
-      const optimizationService = new ImageOptimizationService();
-      const optimizedResult = await optimizationService.optimizeImage(req.file.buffer, { format: 'webp' });
-      
-      // Generiraj filename sa WebP ekstenzijom
-      const fileName = `service_${serviceId}_${Date.now()}.webp`;
-      
-      // Privremeno čuvaj u uploads folderu
-      const fs = await import('fs');
-      const path = await import('path');
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
-      
-      // Osiguraj da uploads folder postoji
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      
-      fs.writeFileSync(uploadPath, optimizedResult.buffer);
-      
-      // Kreaj relativnu rutu za čuvanje u bazi
-      const photoPath = `/uploads/${fileName}`;
-      
-      const photoData = {
-        serviceId: parseInt(serviceId),
-        photoPath: photoPath,
-        description: description || `Fotografija kategorije: ${photoCategory}`,
-        category: photoCategory || 'other',
-        uploadedBy: req.user?.id || 1,
-        isBeforeRepair: photoCategory === 'before'
-      };
-
-      const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("[PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
-      
-      res.status(201).json({
-        ...savedPhoto,
-        photoUrl: photoPath,
-        fileName: fileName,
-        fileSize: optimizedResult.size
-      });
-    } catch (error) {
-      console.error("[PHOTO UPLOAD] ❌ Greška:", error);
-      res.status(500).json({ error: "Greška pri upload-u fotografije" });
+    } catch (authError) {
+      console.error("📸 [PHOTO UPLOAD] ❌ Authentication failed:", authError);
+      return res.status(401).json({ error: "Neautentifikovani korisnik" });
     }
+
+    console.log("📸 [PHOTO UPLOAD] ✅ Authentication successful, user:", req.user);
+    
+    // Zatim primeni multer middleware
+    photoUpload.single('photo')(req, res, async (multerError) => {
+      if (multerError) {
+        console.error("📸 [PHOTO UPLOAD] ❌ Multer error:", multerError);
+        return res.status(400).json({ error: `Multer greška: ${multerError.message}` });
+      }
+
+      try {
+        console.log("📸 [PHOTO UPLOAD] Multer successful, processing upload...");
+        
+        // Proveri korisničku dozvolu
+        const userRole = (req.user as any)?.role;
+        if (!["admin", "technician"].includes(userRole)) {
+          return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
+        }
+        
+        if (!req.file) {
+          console.error("📸 [PHOTO UPLOAD] ❌ No file received");
+          return res.status(400).json({ error: "Fajl nije pronađen" });
+        }
+
+        const { serviceId, photoCategory, description } = req.body;
+        console.log("📸 [PHOTO UPLOAD] Request data:", { serviceId, photoCategory, description });
+        
+        if (!serviceId) {
+          return res.status(400).json({ error: "serviceId je obavezan" });
+        }
+
+        // Proveri da li servis postoji
+        const service = await storage.getService(parseInt(serviceId));
+        if (!service) {
+          return res.status(404).json({ error: "Servis nije pronađen" });
+        }
+
+        console.log("📸 [PHOTO UPLOAD] Processing image optimization...");
+        
+        // Optimizuj i kompresuj sliku
+        const { ImageOptimizationService } = await import('./image-optimization-service.js');
+        const optimizationService = new ImageOptimizationService();
+        const optimizedResult = await optimizationService.optimizeImage(req.file.buffer, { 
+          format: 'webp',
+          quality: 80,
+          maxWidth: 1920,
+          maxHeight: 1080
+        });
+        
+        // Generiraj filename sa WebP ekstenzijom
+        const fileName = `service_${serviceId}_${Date.now()}.webp`;
+        
+        // Sačuvaj u uploads folderu
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+        
+        // Osiguraj da uploads folder postoji
+        const uploadsDir = path.dirname(uploadPath);
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(uploadPath, optimizedResult.buffer);
+        console.log("📸 [PHOTO UPLOAD] File saved to:", uploadPath);
+        
+        // Kreaj relativnu rutu za čuvanje u bazi
+        const photoPath = `/uploads/${fileName}`;
+        
+        const photoData = {
+          serviceId: parseInt(serviceId),
+          photoPath: photoPath,
+          description: description || `Fotografija kategorije: ${photoCategory || 'other'}`,
+          category: photoCategory || 'other',
+          uploadedBy: (req.user as any)?.id || 1,
+          isBeforeRepair: photoCategory === 'before'
+        };
+
+        const savedPhoto = await storage.createServicePhoto(photoData);
+        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database:", { 
+          id: savedPhoto.id, 
+          fileName, 
+          originalSize: req.file.size,
+          optimizedSize: optimizedResult.size 
+        });
+        
+        res.status(201).json({
+          success: true,
+          photo: {
+            id: savedPhoto.id,
+            serviceId: savedPhoto.serviceId,
+            photoUrl: photoPath,
+            photoCategory: savedPhoto.category,
+            description: savedPhoto.description,
+            fileName: fileName,
+            fileSize: optimizedResult.size,
+            uploadedBy: savedPhoto.uploadedBy,
+            uploadedAt: savedPhoto.createdAt
+          }
+        });
+        
+      } catch (error) {
+        console.error("📸 [PHOTO UPLOAD] ❌ Processing error:", error);
+        res.status(500).json({ error: `Upload greška: ${error.message}` });
+      }
+    });
   });
 
   app.post("/api/service-photos", jwtAuth, async (req, res) => {

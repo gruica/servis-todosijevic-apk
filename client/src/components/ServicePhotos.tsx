@@ -4,8 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Upload, X, Eye, Download, Trash2, Plus } from 'lucide-react';
+import { Camera, Upload, X, Eye, Download, Trash2, Plus, RotateCcw, Edit3 } from 'lucide-react';
 
 // Types
 export interface ServicePhoto {
@@ -44,6 +46,8 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   const [error, setError] = useState<Error | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ServicePhoto | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
 
   const loadPhotos = useCallback(async () => {
@@ -127,42 +131,77 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     });
   }
 
-  // Handle file upload
+  // Poboljšan file upload sa JWT autentifikacijom i progress tracking
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    console.log('📸 [FRONTEND UPLOAD] Starting upload of', files.length, 'files');
     setIsUploading(true);
     
     try {
-      for (const file of Array.from(files)) {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Nije moguće pristupiti - molimo prijavite se ponovo');
+      }
+
+      const uploadedPhotos = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        console.log(`📸 [FRONTEND UPLOAD] Processing file ${i + 1}/${files.length}:`, file.name);
+        
+        // Validacija fajla
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`Fajl "${file.name}" nije slika`);
+        }
+        
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+          throw new Error(`Fajl "${file.name}" je prevelik (maksimalno 10MB)`);
+        }
+
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('serviceId', serviceId.toString());
-        formData.append('category', 'other');
-        formData.append('description', `Fotografija: ${file.name}`);
+        formData.append('photoCategory', 'other');
+        formData.append('description', `Admin upload: ${file.name}`);
 
+        console.log(`📸 [FRONTEND UPLOAD] Uploading ${file.name} with JWT token...`);
+        
         const response = await fetch('/api/service-photos/upload', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: formData,
         });
 
+        console.log(`📸 [FRONTEND UPLOAD] Response status:`, response.status);
+        
         if (!response.ok) {
-          throw new Error(`Upload failed: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error(`📸 [FRONTEND UPLOAD] Error response:`, errorText);
+          throw new Error(`Upload failed for "${file.name}": ${response.status} ${response.statusText}`);
         }
+        
+        const result = await response.json();
+        console.log(`📸 [FRONTEND UPLOAD] Success result:`, result);
+        uploadedPhotos.push(result.photo);
       }
 
       toast({
-        title: "Fotografije dodane",
-        description: "Sve fotografije su uspešno dodane u servis",
+        title: "Fotografije uspešno dodane",
+        description: `Uspešno dodano ${uploadedPhotos.length} fotografija`,
       });
       
-      loadPhotos(); // Reload photos
+      console.log('📸 [FRONTEND UPLOAD] All uploads complete, reloading photos...');
+      loadPhotos(); // Reload photos to show new ones
       
     } catch (error: any) {
+      console.error('📸 [FRONTEND UPLOAD] Upload error:', error);
       toast({
-        title: "Greška",
-        description: error.message || "Greška pri dodavanju fotografija",
+        title: "Greška pri dodavanju fotografija",
+        description: error.message || "Neočekivana greška tokom upload-a",
         variant: "destructive",
       });
     } finally {
@@ -252,6 +291,15 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                   <Plus className="h-4 w-4 mr-2" />
                   {isUploading ? 'Upload...' : 'Dodaj foto'}
                 </label>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadPhotos}
+                disabled={isLoading}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Osvezi
               </Button>
             </div>
           )}
