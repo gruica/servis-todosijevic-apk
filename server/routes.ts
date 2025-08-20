@@ -3413,11 +3413,25 @@ Frigo Sistem`;
       }
       
       const serviceId = parseInt(req.query.serviceId as string);
+      console.log(`📸 API GET /api/service-photos pozvan za serviceId: ${serviceId}, role: ${userRole}`);
+      
       if (!serviceId) {
+        console.log(`📸 ERROR: serviceId nije provided: ${req.query.serviceId}`);
         return res.status(400).json({ error: "serviceId je obavezan" });
       }
       
       const photos = await storage.getServicePhotos(serviceId);
+      console.log(`📸 Storage returned ${photos.length} photos for service ${serviceId}`);
+      
+      if (photos.length > 0) {
+        console.log(`📸 First photo debug:`, {
+          id: photos[0].id,
+          serviceId: photos[0].serviceId,
+          photoPath: photos[0].photoPath,
+          category: photos[0].category,
+          description: photos[0].description
+        });
+      }
       
       // Transformiši fotografije za frontend
       const transformedPhotos = photos.map(photo => ({
@@ -3431,6 +3445,8 @@ Frigo Sistem`;
         fileName: photo.photoPath ? photo.photoPath.split('/').pop() : null,
         fileSize: null // fileSize nije u trenutnom schema
       }));
+      
+      console.log(`📸 Transformed photos for frontend:`, transformedPhotos.map(p => ({ id: p.id, photoUrl: p.photoUrl, photoCategory: p.photoCategory })));
       
       res.json(transformedPhotos);
     } catch (error) {

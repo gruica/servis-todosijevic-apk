@@ -50,10 +50,14 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/service-photos?serviceId=${serviceId}`);
+      console.log('🔗 ServicePhotos API poziv - serviceId:', serviceId);
+      const url = `/api/service-photos?serviceId=${serviceId}`;
+      console.log('🔗 ServicePhotos API URL:', url);
+      const response = await apiRequest(url);
+      console.log('🔗 ServicePhotos API response:', response);
       return response as ServicePhoto[];
     },
-    enabled: !!serviceId
+    enabled: !!serviceId && serviceId > 0
   });
 
   // Debug logging za API poziv
