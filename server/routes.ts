@@ -3516,11 +3516,11 @@ Frigo Sistem`;
             fileName: fileName,
             fileSize: req.file.size,
             uploadedBy: savedPhoto.uploadedBy,
-            uploadedAt: savedPhoto.createdAt
+            uploadedAt: savedPhoto.uploadedAt || new Date()
           }
         });
         
-      } catch (error) {
+      } catch (error: any) {
         console.error("📸 [PHOTO UPLOAD] ❌ Processing error:", error);
         res.status(500).json({ error: `Upload greška: ${error.message}` });
       }
