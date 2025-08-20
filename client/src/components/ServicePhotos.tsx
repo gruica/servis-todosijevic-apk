@@ -49,7 +49,10 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   // Fetch service photos
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
-    queryFn: () => apiRequest(`/api/service-photos?serviceId=${serviceId}`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/service-photos?serviceId=${serviceId}`);
+      return response as ServicePhoto[];
+    },
     enabled: !!serviceId
   });
 
@@ -58,7 +61,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   
   // Debug specific photo URLs
   if (Array.isArray(photos) && photos.length > 0) {
-    photos.forEach(photo => {
+    photos.forEach((photo: ServicePhoto) => {
       console.log('🖼️ Photo debug:', {
         id: photo.id,
         serviceId: photo.serviceId,
@@ -306,7 +309,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
                                onClick={() => setSelectedPhoto(photo)}>
                             <img 
-                              src={photo.photoUrl} 
+                              src={photo.photoUrl.startsWith('http') ? photo.photoUrl : `${window.location.origin}${photo.photoUrl}`}
                               alt={photo.description || 'Service photo'}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                               onLoad={() => {
@@ -315,6 +318,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                               onError={(e) => {
                                 console.error('❌ Image failed to load:', photo.photoUrl);
                                 console.error('❌ Full photo object:', photo);
+                                console.error('❌ Attempted URL:', photo.photoUrl.startsWith('http') ? photo.photoUrl : `${window.location.origin}${photo.photoUrl}`);
                                 const target = e.target as HTMLImageElement;
                                 target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f3f4f6"/><text x="100" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="sans-serif">Fotografija nedostupna</text></svg>';
                               }}
@@ -391,7 +395,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
 
               <div className="w-full bg-gray-50 rounded-lg overflow-hidden">
                 <img 
-                  src={selectedPhoto.photoUrl} 
+                  src={selectedPhoto.photoUrl.startsWith('http') ? selectedPhoto.photoUrl : `${window.location.origin}${selectedPhoto.photoUrl}`}
                   alt={selectedPhoto.description || 'Service photo'}
                   className="w-full h-auto max-h-[60vh] object-contain"
                   onError={(e) => {
