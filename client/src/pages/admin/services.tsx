@@ -426,7 +426,7 @@ const AdminServices = memo(function AdminServices() {
   // Delete service mutation
   const deleteServiceMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/services/${id}`, { method: "DELETE" });
+      await apiRequest(`/api/admin/services/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       toast({

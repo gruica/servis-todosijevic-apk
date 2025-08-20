@@ -3996,6 +3996,37 @@ Frigo Sistem`;
     }
   });
 
+  // Delete service - Admin only
+  app.delete("/api/admin/services/:id", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje servisa" });
+      }
+
+      const serviceId = parseInt(req.params.id);
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Nevažeći ID servisa" });
+      }
+
+      console.log(`[DELETE SERVICE API] Admin ${req.user?.username} briše servis ${serviceId}`);
+      
+      const success = await storage.deleteAdminService(serviceId);
+      
+      if (success) {
+        console.log(`[DELETE SERVICE API] ✅ Servis ${serviceId} uspešno obrisan`);
+        res.json({ success: true, message: "Servis je uspešno obrisan" });
+      } else {
+        console.log(`[DELETE SERVICE API] ❌ Servis ${serviceId} nije pronađen ili nije obrisan`);
+        res.status(404).json({ error: "Servis nije pronađen ili nije mogao biti obrisan" });
+      }
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ error: "Greška pri brisanju servisa" });
+    }
+  });
+
   return server;
 }
 
