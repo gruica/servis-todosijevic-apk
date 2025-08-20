@@ -3072,10 +3072,105 @@ Frigo Sistem`;
     const objectStorageService = new ObjectStorageService();
     try {
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      console.log('📸 Generated upload URL for user:', req.user?.id);
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Save photo metadata after upload
+  app.post("/api/service-photos", jwtAuth, async (req, res) => {
+    try {
+      const { serviceId, photoUrl, photoCategory = 'other', description } = req.body;
+      const userId = req.user?.id;
+
+      console.log('📸 Saving photo metadata:', { serviceId, photoUrl, photoCategory, description, userId });
+
+      if (!serviceId || !photoUrl) {
+        return res.status(400).json({ error: "ServiceId i photoUrl su obavezni" });
+      }
+
+      // Set ACL policy for the uploaded object
+      const { ObjectStorageService } = await import("./objectStorage");
+      const objectStorageService = new ObjectStorageService();
+      
+      try {
+        const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          photoUrl,
+          {
+            owner: userId.toString(),
+            visibility: "public", // Service photos are public for all authenticated users
+          }
+        );
+        console.log('📸 Object ACL policy set for:', normalizedPath);
+      } catch (aclError) {
+        console.error('📸 Failed to set ACL policy:', aclError);
+      }
+
+      // Save to database
+      const photoData = {
+        serviceId: parseInt(serviceId),
+        photoUrl,
+        photoCategory,
+        description: description || `Uploaded via object storage`,
+        uploadedBy: userId,
+        uploadedAt: new Date().toISOString(),
+        fileName: photoUrl.split('/').pop() || 'unknown',
+      };
+
+      const newPhoto = await storage.createServicePhoto(photoData);
+      console.log('📸 Photo metadata saved to database:', newPhoto.id);
+      
+      res.json(newPhoto);
+    } catch (error) {
+      console.error("Error saving photo metadata:", error);
+      res.status(500).json({ error: "Greška pri čuvanju fotografije" });
+    }
+  });
+
+  // Get service photos
+  app.get("/api/service-photos", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = req.query.serviceId;
+      
+      if (!serviceId) {
+        return res.status(400).json({ error: "ServiceId je obavezan" });
+      }
+
+      console.log('📸 Fetching photos for serviceId:', serviceId);
+      const photos = await storage.getServicePhotos(parseInt(serviceId as string));
+      console.log('📸 Found photos:', photos.length);
+      
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching service photos:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju fotografija" });
+    }
+  });
+
+  // Delete service photo
+  app.delete("/api/service-photos/:photoId", jwtAuth, async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.photoId);
+      const userId = req.user?.id;
+
+      if (isNaN(photoId)) {
+        return res.status(400).json({ error: "Nevažeći ID fotografije" });
+      }
+
+      console.log('📸 Deleting photo:', photoId, 'by user:', userId);
+      
+      // Simply delete the photo - no ownership check for now
+
+      await storage.deleteServicePhoto(photoId);
+      console.log('📸 Photo deleted successfully:', photoId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      res.status(500).json({ error: "Greška pri brisanju fotografije" });
     }
   });
 

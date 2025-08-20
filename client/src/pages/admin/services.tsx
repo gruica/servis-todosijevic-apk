@@ -43,9 +43,7 @@ import {
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
-import { ServicePhotos } from "@/components/ServicePhotos";
-
-import { PhotoDebugTest } from "@/components/PhotoDebugTest";
+import { SimpleServicePhotos } from "@/components/SimpleServicePhotos";
 
 interface AdminService {
   id: number;
@@ -1150,27 +1148,7 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
-                  {/* Uvek prikaži debug info */}
-                  <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
-                    <h4 className="font-semibold text-blue-800 mb-2">🔧 Debug Info za Servis {selectedService.id}</h4>
-                    <p className="text-sm text-blue-700">ServiceId: {selectedService.id}</p>
-                    <p className="text-sm text-blue-700">Status: {selectedService.status}</p>
-                    <p className="text-sm text-blue-700">Client: {selectedService.client?.fullName || 'N/A'}</p>
-                    <p className="text-sm text-blue-600 mt-2">👀 Proverite console (F12) za detaljne debug logove!</p>
-                    {(() => {
-                      console.log('🔧 PHOTOS TAB OPENED for serviceId:', selectedService.id);
-                      console.log('🔧 Type:', typeof selectedService.id);
-                      return null;
-                    })()}
-                  </div>
-                  
-                  {/* Debug test komponenta - za sve servise */}
-                  <div className="mb-4">
-                    <PhotoDebugTest serviceId={selectedService.id} />
-                  </div>
-                  
-                  {/* Glavna ServicePhotos komponenta */}
-                  <ServicePhotos 
+                  <SimpleServicePhotos 
                     serviceId={selectedService.id}
                     readOnly={false}
                     showUpload={true}
