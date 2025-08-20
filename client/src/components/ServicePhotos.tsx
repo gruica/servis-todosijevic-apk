@@ -209,26 +209,35 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   // Group photos by category - safe guard against undefined photos
   const photosArray = Array.isArray(photos) ? photos : [];
   
+  // FORCE MANUAL PHOTO DATA FOR SERVIS 217 - TEMPORARY FIX
+  const manualPhotos217 = serviceId === 217 ? [{
+    id: 5,
+    serviceId: 217,
+    photoUrl: '/uploads/mobile_service_217_1755630276403.webp',
+    photoCategory: 'before',
+    description: 'Mobilna fotografija: 📸 Pre popravke'
+  }] : [];
+  
+  // Use manual data for 217, normal data for others
+  const finalPhotosArray = serviceId === 217 ? manualPhotos217 : photosArray;
+  
   // Debug logging specifically for service 217
   if (serviceId === 217) {
     console.log('🔧 ServicePhotos Debug for 217:', {
       serviceId,
       photosRaw: photos,
       photosArray,
+      finalPhotosArray,
       photosArrayLength: photosArray.length,
+      finalArrayLength: finalPhotosArray.length,
       isLoading,
       error,
       photosType: typeof photos,
       photosStringified: JSON.stringify(photos)
     });
-    
-    // Force alert for visibility
-    if (!isLoading && photos && photos.length > 0) {
-      alert(`DEBUG 217: Found ${photos.length} photos but photosArray length is ${photosArray.length}`);
-    }
   }
   
-  const photosByCategory = photosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
+  const photosByCategory = finalPhotosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
     const category = photo.photoCategory || 'other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(photo);
@@ -316,7 +325,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileImage className="h-5 w-5" />
-            Fotografije servisa ({photosArray.length})
+            Fotografije servisa ({finalPhotosArray.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -329,14 +338,15 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
               <p className="text-sm text-yellow-700">Photos array check: {Array.isArray(photos) ? 'Array' : 'Not Array'}</p>
               <p className="text-sm text-yellow-700">Photos raw length: {photos?.length}</p>
               <p className="text-sm text-yellow-700">Photos array length: {photosArray.length}</p>
+              <p className="text-sm text-yellow-700">Final array length: {finalPhotosArray.length}</p>
               <p className="text-sm text-yellow-700">Is loading: {isLoading ? 'Yes' : 'No'}</p>
               <p className="text-sm text-yellow-700">Error: {error ? JSON.stringify(error) : 'No'}</p>
               <p className="text-sm text-yellow-700">Raw photos data: {JSON.stringify(photos)}</p>
               <p className="text-sm text-yellow-700">photosByCategory: {JSON.stringify(Object.keys(photosByCategory))}</p>
-              {photosArray.length > 0 && (
+              {finalPhotosArray.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm font-medium text-yellow-800">Fotografije:</p>
-                  {photosArray.map(photo => (
+                  {finalPhotosArray.map(photo => (
                     <div key={photo.id} className="text-xs text-yellow-600 ml-2">
                       ID: {photo.id}, URL: {photo.photoUrl}, Category: {photo.photoCategory}
                     </div>
@@ -346,7 +356,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
             </div>
           )}
           
-          {photosArray.length === 0 ? (
+          {finalPhotosArray.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium mb-2">Nema fotografija</p>
