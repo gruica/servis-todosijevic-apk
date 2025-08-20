@@ -29,6 +29,8 @@ Preferred communication style: Simple, everyday language.
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
 - NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU
 - NIKAD ne diraj postojeće kodove koji rade
+- **NOVA KRITIČNA INSTRUKCIJA (Avgust 20, 2025): NIKAD ne dodaj, briši ili menjaj BILO KOJI kod bez EKSPLICITNOG odobrenja korisnika**
+- **SVE promene koda moraju biti prvo objašnjene korisniku i dobiti njegovo odobrenje**
 - Kada dodaješ nove funkcije, proverava da li su u sukobu sa postojećim kodovima
 - Ako jesu u sukobu, napravi da se novi kodovi ne instaliraju dok ne budeš siguran u njihovu potpunu implementaciju i funkcionalnost
 - Uvek dodavaj nove endpoint-e na kraj server datoteke, ne menjaj redosled postojećih ruta
