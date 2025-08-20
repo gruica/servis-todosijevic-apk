@@ -271,6 +271,12 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
                         onError={(e) => {
                           console.error('📸 Image load error:', photo.photoUrl);
                           const target = e.target as HTMLImageElement;
+                          // FALLBACK STRATEGIJA: Pokušaj alternativne putanje
+                          const altSrc = photo.photoPath?.replace('/uploads/', '/uploads/') || photo.photoUrl;
+                          if (target.src !== altSrc && altSrc !== photo.photoUrl) {
+                            target.src = altSrc;
+                            return;
+                          }
                           target.src = '/api/placeholder/300x200?text=Slika+nedostaje';
                         }}
                       />

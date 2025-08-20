@@ -50,9 +50,9 @@ setupAuth(app);
 // Session middleware je konfigurisan u setupAuth()
 
 // JEDNOSTAVAN ENDPOINT ZA SERVIRANJE SLIKA DIREKTNO OVDE
-app.get('/uploads/:fileName', (req, res) => {
-  const fs = require('fs');
-  const path = require('path');
+app.get('/uploads/:fileName', async (req, res) => {
+  const fs = await import('fs');
+  const path = await import('path');
   const fileName = req.params.fileName;
   const filePath = path.join(process.cwd(), 'uploads', fileName);
   

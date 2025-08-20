@@ -3242,6 +3242,11 @@ Frigo Sistem`;
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
+      // VALIDACIJA VELIČINE FAJLA
+      if (optimizedResult.buffer.length < 1000) {
+        throw new Error('Optimizovana slika je previše mala - možda je oštećena');
+      }
+      
       fs.writeFileSync(uploadPath, optimizedResult.buffer);
       console.log("📷 [MOBILE PHOTO] File saved locally:", uploadPath);
       

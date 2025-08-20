@@ -4191,8 +4191,15 @@ export class DatabaseStorage implements IStorage {
         .where(eq(servicePhotos.serviceId, serviceId))
         .orderBy(desc(servicePhotos.uploadedAt));
       
+      // MAPIRANJE BACKEND → FRONTEND
+      const mappedPhotos = photos.map(photo => ({
+        ...photo,
+        photoUrl: photo.photoPath, // KLJUČNO MAPIRANJE za frontend
+        photoCategory: photo.category
+      }));
+      
       console.log(`📸 Pronađeno ${photos.length} fotografija za servis ${serviceId}`);
-      return photos;
+      return mappedPhotos;
     } catch (error) {
       console.error('❌ Greška pri dohvatanju fotografija servisa:', error);
       throw new Error('Neuspešno dohvatanje fotografija servisa');
