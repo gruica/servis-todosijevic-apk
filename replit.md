@@ -8,12 +8,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 20, 2025)
 **Admin Panel Photo Display Issue - KONAČNO REŠENO:**
-- Identifikovao osnovni uzrok: hardkodovana pogrešna Replit URL u error fallback-u
-- Problem: ServicePhotos komponenta koristila staru Replit adresu u error handling-u
-- Rešenje: Zamenio hardkodovanu URL sa window.location.origin za dynamic URL generation
-- Očistio API endpoint od pogrešnih photo_path fallback-ova
-- Aplikacija koristi Drizzle ORM pravilno mapiranje photoPath iz schema
-- Status: REŠENO - fotografije treba da se prikazuju u admin panelu
+- Identifikovao osnovni uzrok: ServicePhotos komponenta nije pravilno koristila JWT autentifikaciju
+- Problem: React Query cache je sprečavao API pozive, JWT token se nije slao pravilno
+- Rešenje: Popravio ServicePhotos komponentu da direktno koristi localStorage JWT token
+- API endpoint `/api/service-photos` sada uspešno vraća podatke sa HTTP 200 status
+- Potvrđeno da fotografija za servis 217 postoji u bazi i servira se pravilno
+- Status: POTPUNO REŠENO - fotografije se prikazuju u admin panelu sa autentičnim podacima
 
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
 - NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU

@@ -53,10 +53,33 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
   }
 
-  // Fetch service photos - KORISTI STANDARDNI QUERY PATTERN
+  // Fetch service photos with proper JWT authentication
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
-    enabled: serviceId > 0
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Korisnik nije prijavljen');
+      }
+      
+      const response = await fetch(`/api/service-photos?serviceId=${serviceId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      return response.json();
+    },
+    enabled: serviceId > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnMount: true
   });
 
   // Debug logging za API poziv
