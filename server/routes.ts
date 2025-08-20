@@ -3214,32 +3214,48 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
-      // ZAŠTITA OD DUPLIKATA - dodajemo random ID za jedinstvene nazive
-      const uniqueId = Math.random().toString(36).substr(2, 9);
-      const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
-      const fs = await import('fs');
-      const path = await import('path');
-      
-      // Save locally in uploads folder using process.cwd()
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      
       // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
       if (imageBuffer.length < 1000) {
         throw new Error('Originalna slika je previše mala - možda je oštećena');
       }
       
-      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
-      fs.writeFileSync(uploadPath, imageBuffer);
+      // NOVO: KORISTI OBJECT STORAGE UMESTO LOKALNOG UPLOADS FOLDERA
+      console.log(`📸 [OBJECT STORAGE] Uploading photo for service ${serviceId} to Object Storage...`);
       
-      // Save to database using existing storage method
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
+      
+      // Generate unique filename
+      const uniqueId = Math.random().toString(36).substr(2, 9);
+      const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
+      
+      // Get upload URL from Object Storage
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      console.log(`📸 [OBJECT STORAGE] Got upload URL for ${fileName}`);
+      
+      // Upload to Object Storage using presigned URL
+      const fetch = await import('node-fetch').then(m => m.default);
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: imageBuffer,
+        headers: {
+          'Content-Type': 'image/webp',
+          'Content-Length': imageBuffer.length.toString()
+        }
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Object Storage upload failed: ${uploadResponse.status}`);
+      }
+      
+      // Normalize object path for database storage
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      console.log(`📸 [OBJECT STORAGE] Photo uploaded successfully, path: ${objectPath}`);
+      
+      // Save to database using Object Storage path
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/uploads/${fileName}`, // Local path instead of Object Storage
+        photoPath: objectPath, // Object Storage path instead of local
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
         uploadedBy: userId!,
         isBeforeRepair: photoCategory === 'before',
@@ -3248,16 +3264,25 @@ Frigo Sistem`;
 
       const savedPhoto = await storage.createServicePhoto(photoData);
       
+      // Set ACL policy for the uploaded object
+      await objectStorageService.trySetObjectEntityAclPolicy(uploadURL, {
+        owner: userId.toString(),
+        visibility: "private", // Service photos are private by default
+        aclRules: [] // No additional rules for now
+      });
+      
+      console.log(`📸 [OBJECT STORAGE] ACL policy set successfully for ${objectPath}`);
+      
       res.status(201).json({
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
         fileSize: imageBuffer.length,
-        message: "Fotografija uspešno uploaded"
+        message: "Fotografija uspešno uploaded to Object Storage"
       });
       
     } catch (error) {
-      console.error("Mobile photo upload error:", error);
+      console.error("📸 [OBJECT STORAGE] Mobile photo upload error:", error);
       res.status(500).json({ error: "Upload failed: " + error.message });
     }
   });
