@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useReducer, useCallback } from "react";
+import { useState, useEffect, memo, useReducer, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -308,7 +308,7 @@ const AdminServices = memo(function AdminServices() {
   const { toast } = useToast();
 
   // Transform flat API response to nested AdminService structure
-  const transformApiService = (apiService: any): AdminService => {
+  const transformApiService = useCallback((apiService: any): AdminService => {
     return {
       id: apiService.id,
       status: apiService.status,
@@ -363,17 +363,22 @@ const AdminServices = memo(function AdminServices() {
         specialization: ''
       } : null
     };
-  };
+  }, []);
 
   // Optimized React Query with selective invalidation and data transformation
   const { data: rawServices = [], isLoading: loadingServices, refetch, error } = useQuery<any[]>({
     queryKey: ["/api/services"],
-    staleTime: 10 * 60 * 1000, // Extended to 10 minutes for better performance
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 2 * 60 * 1000, // Reduced to 2 minutes for admin panel
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false, // Prevent excessive re-fetching
+    refetchOnReconnect: false,
   });
 
   // Transform raw API data to AdminService format
-  const services: AdminService[] = rawServices.map(transformApiService);
+  const services: AdminService[] = useMemo(() => 
+    rawServices.map(transformApiService), 
+    [rawServices, transformApiService]
+  );
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
