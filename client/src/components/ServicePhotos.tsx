@@ -190,6 +190,19 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
 
   // Group photos by category - safe guard against undefined photos
   const photosArray = Array.isArray(photos) ? photos : [];
+  
+  // Debug logging specifically for service 217
+  if (serviceId === 217) {
+    console.log('🔧 ServicePhotos Debug for 217:', {
+      serviceId,
+      photosRaw: photos,
+      photosArray,
+      photosArrayLength: photosArray.length,
+      isLoading,
+      error
+    });
+  }
+  
   const photosByCategory = photosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
     const category = photo.photoCategory || 'other';
     if (!acc[category]) acc[category] = [];
@@ -286,9 +299,14 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
           {serviceId === 217 && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <h4 className="font-semibold text-yellow-800 mb-2">🔧 Debug Info - Servis 217</h4>
+              <p className="text-sm text-yellow-700">ServiceId: {serviceId}</p>
+              <p className="text-sm text-yellow-700">Photos data type: {typeof photos}</p>
+              <p className="text-sm text-yellow-700">Photos array check: {Array.isArray(photos) ? 'Array' : 'Not Array'}</p>
+              <p className="text-sm text-yellow-700">Photos raw length: {photos?.length}</p>
               <p className="text-sm text-yellow-700">Photos array length: {photosArray.length}</p>
               <p className="text-sm text-yellow-700">Is loading: {isLoading ? 'Yes' : 'No'}</p>
-              <p className="text-sm text-yellow-700">Error: {error ? 'Yes' : 'No'}</p>
+              <p className="text-sm text-yellow-700">Error: {error ? JSON.stringify(error) : 'No'}</p>
+              <p className="text-sm text-yellow-700">Raw photos data: {JSON.stringify(photos)}</p>
               {photosArray.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm font-medium text-yellow-800">Fotografije:</p>
