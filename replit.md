@@ -19,6 +19,13 @@ Preferred communication style: Simple, everyday language.
 - **POTVRĐENO od korisnika**: Fotografije se sada uspešno prikazuju u admin panelu!
 - Status: **POTPUNO REŠENO** - fotografije za servis 217 se učitavaju i prikazuju sa autentičnim podacima
 
+**Mobilni Photo Upload System - IMPLEMENTIRAN:**
+- **Desktop Upload Poboljšanja**: Poboljšan `/api/service-photos/upload` endpoint sa detaljnim logging-om, JWT autentifikacijom u multipart requests, frontend validacija fajlova i progress tracking
+- **Mobilni Upload za Serviserе**: Kreiran `MobilePhotoUploader` component sa direktnim pristupom kameri telefona (`capture='environment'`), touch-friendly UI, quick kategorije (Pre, Posle, Delovi, Problem), GPS lokacija dodavanja, real-time image preview
+- **Routing & Pristup**: Dodana `/mobile/camera/:serviceId` ruta, `CameraUpload` page za full-screen mobilni experience, role protection (technician + admin)
+- **Backend Optimizacije**: WebP image compression sa Sharp, automatic filename generation, enhanced metadata sa lokacijom i timestamp, fallback na local uploads/ folder
+- Status: **IMPLEMENTIRAN** - spreman za testiranje mobile upload funkcionalnosti
+
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
 - NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU
 - NIKAD ne diraj postojeće kodove koji rade

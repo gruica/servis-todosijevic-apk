@@ -73,6 +73,7 @@ const DiagnosticServicesPage = lazy(() => import("@/pages/diagnostic-services"))
 const SystemDiagnostics = lazy(() => import("@/pages/system-diagnostics"));
 const EmailVerificationDemo = lazy(() => import("@/pages/email-verification-demo"));
 const DataExportPage = lazy(() => import("@/pages/admin/data-export"));
+const CameraUpload = lazy(() => import("@/pages/mobile/CameraUpload"));
 const ComprehensiveAnalytics = lazy(() => import("@/pages/admin/comprehensive-analytics"));
 const SMSMobileAPIConfigPage = lazy(() => import("@/pages/admin/sms-mobile-api-config"));
 const SMSBulkPage = lazy(() => import("@/pages/admin/sms-bulk"));
@@ -180,6 +181,8 @@ function Router() {
       <RoleProtectedRoute path="/tech/settings" component={TechnicianSettings} allowedRoles={["technician"]} />
       <RoleProtectedRoute path="/tech/help" component={TechnicianHelp} allowedRoles={["technician"]} />
       <RoleProtectedRoute path="/tech/contact" component={TechnicianContact} allowedRoles={["technician"]} />
+      {/* Mobile photo upload for technicians */}
+      <RoleProtectedRoute path="/mobile/camera/:serviceId" component={CameraUpload} allowedRoles={["technician", "admin"]} />
       
       {/* Customer routes */}
       <RoleProtectedRoute path="/customer" component={CustomerServiceRequest} allowedRoles={["customer"]} />

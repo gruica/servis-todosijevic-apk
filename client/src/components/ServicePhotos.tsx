@@ -301,6 +301,16 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                 <Camera className="h-4 w-4 mr-2" />
                 Osvezi
               </Button>
+              {/* Mobile Upload Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(`/mobile/camera/${serviceId}`, '_blank')}
+                className="md:hidden"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                📱 Mobilni
+              </Button>
             </div>
           )}
         </CardTitle>
