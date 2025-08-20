@@ -7,6 +7,18 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 20, 2025)
+**"Servisi po serviserima" Data Display Issue - KONAČNO REŠEN (Avgust 20, 2025):**
+- **Osnovni uzrok PRONAĐEN**: Frontend pokušavao pristup nested strukturi (service.client?.fullName) dok backend vraća flattened podatke (service.clientName)
+- **Dijagnoza**: Backend `getAllServices()` metoda vraća JOIN podatke kao flattened strukture, frontend očekivao nested objekte
+- **Rešenje implementirano**:
+  - Ispravljeni frontend kod u `client/src/pages/technician-services.tsx` 
+  - Zamenjen pristup `service.client?.fullName` sa `service.clientName`
+  - Zamenjen pristup `service.appliance?.category?.name` sa `service.categoryName` 
+  - Dodato fallback na `service.technicianName` umesto samo `getTechnicianName()`
+- **Test rezultati**: Endpoint `/api/admin/services-by-technicians` uspešno vraća 167 servisa sa JOIN podacima
+- **Komponenta arhitektura**: Frontend sada koristi flattened backend response strukture
+- Status: **REŠENO** - tabela prikazuje stvarne podatke umesto "N/A"
+
 **Admin Panel Photo Display Issue - KONAČNO REŠEN (Avgust 20, 2025):**
 - **Osnovni uzrok PRONAĐEN**: Photo endpoints koristili JWT authentication umesto session-based auth kao ostatak aplikacije
 - **Dijagnoza**: Aplikacija koristi session-based authentication (cookies), photo API koristio jwtAuth middleware
