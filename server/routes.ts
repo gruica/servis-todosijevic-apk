@@ -3884,6 +3884,80 @@ Frigo Sistem`;
     }
   });
 
+  // ===== USER MANAGEMENT ENDPOINTS =====
+  
+  // Get all users - Admin only
+  app.get("/api/users", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup korisnicima" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju korisnika" });
+    }
+  });
+
+  // Create new user - Admin only  
+  app.post("/api/users", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za kreiranje korisnika" });
+      }
+
+      const userData = req.body;
+      const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Greška pri kreiranju korisnika" });
+    }
+  });
+
+  // Update user - Admin only
+  app.put("/api/users/:id", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje korisnika" });
+      }
+
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      const updatedUser = await storage.updateUser(userId, userData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju korisnika" });
+    }
+  });
+
+  // Delete user - Admin only
+  app.delete("/api/users/:id", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje korisnika" });
+      }
+
+      const userId = parseInt(req.params.id);
+      await storage.deleteUser(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Greška pri brisanju korisnika" });
+    }
+  });
+
   return server;
 }
 
