@@ -3189,6 +3189,7 @@ Frigo Sistem`;
 
   // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
+    console.log("📱 [MOBILE UPLOAD] /mobile-upload endpoint POZVAN!");
     try {
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
@@ -3286,6 +3287,7 @@ Frigo Sistem`;
 
   // Base64 Photo Upload endpoint - PREBAČEN NA OBJECT STORAGE
   app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
+    console.log("🔥 [OBJECT STORAGE] /upload-base64 endpoint POZVAN!");
     try {
       const userId = (req.user as any).userId;
       const userRole = (req.user as any)?.role;
