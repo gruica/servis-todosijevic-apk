@@ -35,6 +35,7 @@ const TechnicianSettings = lazy(() => import("@/pages/technician/settings"));
 const TechnicianHelp = lazy(() => import("@/pages/technician/help"));
 const TechnicianContact = lazy(() => import("@/pages/technician/contact"));
 const TechnicianServicesList = lazy(() => import("@/pages/technician-services"));
+const TechnicianServicesAdmin = lazy(() => import("@/pages/admin/technician-services"));
 const CreateTechnicianUser = lazy(() => import("@/pages/create-technician-user"));
 const MaintenanceSchedules = lazy(() => import("@/pages/maintenance-schedules"));
 const EmailSettings = lazy(() => import("@/pages/email-settings"));
@@ -136,6 +137,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/spare-parts-catalog" component={AdminSparePartsCatalogPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/web-scraping" component={AdminWebScrapingPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/service-photos-test" component={AdminServicePhotosTest} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/technician-services" component={TechnicianServicesAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/suppliers" component={SuppliersPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/parts-catalog" component={PartsCatalogPage} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
