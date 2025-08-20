@@ -3905,6 +3905,15 @@ Frigo Sistem`;
       }
 
       const services = await storage.getAllServices();
+      console.log(`[SERVICES BY TECHNICIANS] Vraćam ${services.length} servisa sa podacima:`, 
+        services.slice(0, 1).map(s => ({
+          id: s.id,
+          clientName: s.clientName,
+          applianceName: s.applianceName,
+          technicianName: s.technicianName,
+          status: s.status
+        }))
+      );
       res.json(services);
     } catch (error) {
       console.error("Error fetching services by technicians:", error);
