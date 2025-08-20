@@ -38,7 +38,8 @@ interface ServicePhotosProps {
 }
 
 const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true }: ServicePhotosProps) => {
-  console.log('🔧 ServicePhotos rendered - serviceId:', serviceId, 'readOnly:', readOnly, 'showUpload:', showUpload);
+  console.log('🔧 *** SERVICESHOTS COMPONENT RENDER ***', { serviceId, readOnly, showUpload });
+  console.log('🔧 *** FORCE LOG - THIS SHOULD APPEAR IN CONSOLE ***');
 
   // Direct state management sa stabilizacijom
   const [photos, setPhotos] = useState<ServicePhoto[]>([]);
@@ -94,7 +95,7 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
       }
       
       const url = `/api/service-photos?serviceId=${serviceId}`;
-      console.log('🌐 Pozivam:', url, 'sa token:', token.substring(0, 20) + '...');
+      console.log('🌐 Pozivam:', url, 'sa token:', token ? token.substring(0, 20) + '...' : 'NEMA');
       
       const response = await fetch(url, {
         method: 'GET',
