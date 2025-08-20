@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Test - Frigo Sistem</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; }
+        input { padding: 8px; width: 300px; }
+        button { padding: 10px 20px; margin: 10px 5px; }
+        .result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Login Test - Frigo Sistem</h1>
+    <p>Test da li login radi za poslovne partnere:</p>
+    
+    <div class="form-group">
+        <label>Korisničko ime (email):</label>
+        <input type="email" id="username" value="testpartner@test.me">
+    </div>
+    
+    <div class="form-group">
+        <label>Lozinka:</label>
+        <input type="password" id="password" value="test123">
+    </div>
+    
+    <button onclick="testJWTLogin()">Test JWT Login (/api/jwt-login)</button>
+    <button onclick="testSessionLogin()">Test Session Login (/api/login)</button>
+    <button onclick="clearResults()">Očisti rezultate</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testJWTLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/jwt-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', 'JWT Login USPEŠAN!', {
+                        'Status': response.status,
+                        'Korisnik': data.user.fullName,
+                        'Uloga': data.user.role,
+                        'Token': data.token ? 'Kreiran' : 'Nedostaje'
+                    });
+                } else {
+                    showResult('error', 'JWT Login NEUSPEŠAN', {
+                        'Status': response.status,
+                        'Greška': data.error
+                    });
+                }
+            } catch (error) {
+                showResult('error', 'JWT Login GREŠKA', {
+                    'Greška': error.message
+                });
+            }
+        }
+        
+        async function testSessionLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', 'Session Login USPEŠAN!', {
+                        'Status': response.status,
+                        'Korisnik': data.fullName,
+                        'Uloga': data.role,
+                        'Session': 'Kreirana'
+                    });
+                } else {
+                    showResult('error', 'Session Login NEUSPEŠAN', {
+                        'Status': response.status,
+                        'Greška': data.error || 'Nepoznata greška'
+                    });
+                }
+            } catch (error) {
+                showResult('error', 'Session Login GREŠKA', {
+                    'Greška': error.message
+                });
+            }
+        }
+        
+        function showResult(type, title, details) {
+            const results = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            
+            let html = `<h3>${title}</h3>`;
+            for (const [key, value] of Object.entries(details)) {
+                html += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            
+            resultDiv.innerHTML = html;
+            results.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
