@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 - NIKAD ne diraj postojeće kodove koji rade
 - **NOVA KRITIČNA INSTRUKCIJA (Avgust 20, 2025): NIKAD ne dodaj, briši ili menjaj BILO KOJI kod bez EKSPLICITNOG odobrenja korisnika**
 - **SVE promene koda moraju biti prvo objašnjene korisniku i dobiti njegovo odobrenje**
+- **USVOJENO (Avgust 20, 2025): Korisnik je eksplicitno odobrio dodavanje `/api/technicians` endpoint-a za rešavanje problema sa odabirom servisera u admin panelu**
 - Kada dodaješ nove funkcije, proverava da li su u sukobu sa postojećim kodovima
 - Ako jesu u sukobu, napravi da se novi kodovi ne instaliraju dok ne budeš siguran u njihovu potpunu implementaciju i funkcionalnost
 - Uvek dodavaj nove endpoint-e na kraj server datoteke, ne menjaj redosled postojećih ruta
