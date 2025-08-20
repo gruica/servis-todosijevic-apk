@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,10 +37,10 @@ interface ServicePhotosProps {
   showUpload?: boolean;
 }
 
-export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }: ServicePhotosProps) {
+const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true }: ServicePhotosProps) => {
   console.log('🔧 ServicePhotos rendered - serviceId:', serviceId, 'readOnly:', readOnly, 'showUpload:', showUpload);
 
-  // Direct state management
+  // Direct state management sa stabilizacijom
   const [photos, setPhotos] = useState<ServicePhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -48,10 +48,18 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [lastLoadedServiceId, setLastLoadedServiceId] = useState<number>(-1);
   const { toast } = useToast();
 
   const loadPhotos = useCallback(async () => {
     console.log('🔥 DIREKTAN API POZIV ZAPOČET za serviceId:', serviceId);
+    
+    // Sprečava ponovno učitavanje istog servisa
+    if (lastLoadedServiceId === serviceId && photos.length > 0) {
+      console.log('🚫 PRESKAČEM UČITAVANJE - isti servis već učitan:', serviceId);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -91,7 +99,9 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
       console.log('✅ API USPEŠAN - učitano:', data.length, 'fotografija');
       console.log('✅ Podaci:', data);
       console.log('🎯 POSTAVLJAM STATE:', data);
+      
       setPhotos(data);
+      setLastLoadedServiceId(serviceId);
       
     } catch (err) {
       console.error('❌ Greška pri učitavanju fotografija:', err);
@@ -100,13 +110,14 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     } finally {
       setIsLoading(false);
     }
-  }, [serviceId]);
+  }, [serviceId, lastLoadedServiceId, photos.length]);
 
   useEffect(() => {
-    if (serviceId > 0) {
+    if (serviceId > 0 && serviceId !== lastLoadedServiceId) {
+      console.log('🔄 USEEFFECT: serviceId changed from', lastLoadedServiceId, 'to', serviceId);
       loadPhotos();
     }
-  }, [serviceId, loadPhotos]);
+  }, [serviceId, loadPhotos, lastLoadedServiceId]);
 
   // State logging
   console.log('🔍 DIREKTAN STATE:', { 
@@ -450,3 +461,12 @@ function PhotoCard({ photo, onView }: PhotoCardProps) {
     </div>
   );
 }
+
+// Eksportuj glavnu komponentu sa memoization
+export const ServicePhotos = React.memo(ServicePhotosComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.serviceId === nextProps.serviceId &&
+    prevProps.readOnly === nextProps.readOnly &&
+    prevProps.showUpload === nextProps.showUpload
+  );
+});
