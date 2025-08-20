@@ -3109,15 +3109,14 @@ Frigo Sistem`;
         console.error('📸 Failed to set ACL policy:', aclError);
       }
 
-      // Save to database
+      // Save to database with proper format
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoUrl,
-        photoCategory,
+        photoPath: photoUrl, // Use photoPath instead of photoUrl
+        category: photoCategory === 'other' ? 'general' as const : photoCategory as any,
         description: description || `Uploaded via object storage`,
         uploadedBy: userId,
-        uploadedAt: new Date().toISOString(),
-        fileName: photoUrl.split('/').pop() || 'unknown',
+        isBeforeRepair: photoCategory === 'before'
       };
 
       const newPhoto = await storage.createServicePhoto(photoData);
@@ -3127,6 +3126,18 @@ Frigo Sistem`;
     } catch (error) {
       console.error("Error saving photo metadata:", error);
       res.status(500).json({ error: "Greška pri čuvanju fotografije" });
+    }
+  });
+
+  // Test endpoint - get all photos (no auth)
+  app.get("/api/service-photos-test", async (req, res) => {
+    try {
+      const photos = await storage.getServicePhotos(234); // Test with serviceId 234
+      console.log('📸 TEST: Found photos for service 234:', photos.length);
+      res.json({ count: photos.length, photos: photos.slice(0, 3) });
+    } catch (error) {
+      console.error("Error in test endpoint:", error);
+      res.status(500).json({ error: String(error) });
     }
   });
 

@@ -42,16 +42,52 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
   const queryClient = useQueryClient();
 
   console.log('📸 SimpleServicePhotos rendered for serviceId:', serviceId);
+  
+  // Debug JWT token
+  const authToken = localStorage.getItem('auth_token');
+  console.log('📸 Current auth token:', authToken?.substring(0, 50) + '...');
+  console.log('📸 Token exists:', !!authToken);
 
-  // Fetch photos
+  // Manual test function
+  const testEndpoint = async () => {
+    const token = localStorage.getItem('auth_token');
+    const testUrl = `/api/service-photos?serviceId=${serviceId}`;
+    console.log('📸 Testing endpoint:', testUrl);
+    
+    try {
+      const response = await fetch(testUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include'
+      });
+      
+      console.log('📸 Test response status:', response.status);
+      console.log('📸 Test response ok:', response.ok);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📸 Test response data:', data);
+      } else {
+        const errorText = await response.text();
+        console.log('📸 Test error response:', errorText);
+      }
+    } catch (error) {
+      console.error('📸 Test fetch error:', error);
+    }
+  };
+  
+  // Run test on component mount
+  React.useEffect(() => {
+    if (serviceId > 0 && authToken) {
+      console.log('📸 Running endpoint test...');
+      testEndpoint();
+    }
+  }, [serviceId]);
+
+  // Fetch photos using standard queryKey pattern
   const { data: photos = [], isLoading, error, refetch } = useQuery<ServicePhoto[]>({
-    queryKey: ['/api/service-photos', serviceId],
-    queryFn: async () => {
-      console.log('📸 Fetching photos for serviceId:', serviceId);
-      const response = await apiRequest(`/api/service-photos?serviceId=${serviceId}`) as unknown;
-      console.log('📸 Photos response:', response);
-      return response as ServicePhoto[];
-    },
+    queryKey: [`/api/service-photos?serviceId=${serviceId}`],
     enabled: !!serviceId && serviceId > 0
   });
 
