@@ -45,6 +45,13 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
 
   // Debug logging
   console.log('🔧 ServicePhotos rendered - serviceId:', serviceId, 'readOnly:', readOnly, 'showUpload:', showUpload);
+  
+  // FORSIRANI ALERT ZA SERVIS 217
+  if (serviceId === 217) {
+    console.log('🚨 ServicePhotos KOMPONENTA RENDEROVANA ZA SERVIS 217!');
+    console.log('🚨 serviceId:', serviceId, 'type:', typeof serviceId);
+    console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
+  }
 
   // Fetch service photos
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({

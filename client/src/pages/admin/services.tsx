@@ -1149,6 +1149,23 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
+                  {/* FORSIRANI DEBUG ZA SERVIS 217 */}
+                  {selectedService.id === 217 && (
+                    <div className="mb-4 p-4 bg-red-100 border border-red-400 rounded">
+                      <h3 className="font-bold text-red-800">🚨 KRITIČNI DEBUG ZA SERVIS 217</h3>
+                      <p className="text-red-700">ServiceId: {selectedService.id}</p>
+                      <p className="text-red-700">Type: {typeof selectedService.id}</p>
+                      <p className="text-red-700">Bool check: {!!selectedService.id && selectedService.id > 0 ? 'TRUE' : 'FALSE'}</p>
+                      {(() => {
+                        console.log('🚨 ADMIN PHOTOS TAB - SERVIS 217 OPENED');
+                        console.log('🚨 selectedService.id:', selectedService.id);
+                        console.log('🚨 Type:', typeof selectedService.id);
+                        console.log('🚨 Boolean condition:', !!selectedService.id && selectedService.id > 0);
+                        return null;
+                      })()}
+                    </div>
+                  )}
+                  
                   {/* Debug test komponenta */}
                   {selectedService.id === 217 && (
                     <div className="mb-4">
