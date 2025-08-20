@@ -1150,39 +1150,26 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
-                  {/* FORSIRANI DEBUG ZA SERVIS 217 */}
-                  {selectedService.id === 217 && (
-                    <div className="mb-4 p-4 bg-red-100 border border-red-400 rounded">
-                      <h3 className="font-bold text-red-800">🚨 KRITIČNI DEBUG ZA SERVIS 217</h3>
-                      <p className="text-red-700">ServiceId: {selectedService.id}</p>
-                      <p className="text-red-700">Type: {typeof selectedService.id}</p>
-                      <p className="text-red-700">Bool check: {!!selectedService.id && selectedService.id > 0 ? 'TRUE' : 'FALSE'}</p>
-                      {(() => {
-                        console.log('🚨 ADMIN PHOTOS TAB - SERVIS 217 OPENED');
-                        console.log('🚨 selectedService.id:', selectedService.id);
-                        console.log('🚨 Type:', typeof selectedService.id);
-                        console.log('🚨 Boolean condition:', !!selectedService.id && selectedService.id > 0);
-                        return null;
-                      })()}
-                    </div>
-                  )}
-                  
-                  {/* Debug test komponenta */}
-                  {selectedService.id === 217 && (
-                    <div className="mb-4">
-                      <PhotoDebugTest serviceId={selectedService.id} />
-                    </div>
-                  )}
-                  
-                  {/* Debug info za fotografije tab */}
+                  {/* Uvek prikaži debug info */}
                   <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">
                     <h4 className="font-semibold text-blue-800 mb-2">🔧 Debug Info za Servis {selectedService.id}</h4>
                     <p className="text-sm text-blue-700">ServiceId: {selectedService.id}</p>
                     <p className="text-sm text-blue-700">Status: {selectedService.status}</p>
                     <p className="text-sm text-blue-700">Client: {selectedService.client?.fullName || 'N/A'}</p>
                     <p className="text-sm text-blue-600 mt-2">👀 Proverite console (F12) za detaljne debug logove!</p>
+                    {(() => {
+                      console.log('🔧 PHOTOS TAB OPENED for serviceId:', selectedService.id);
+                      console.log('🔧 Type:', typeof selectedService.id);
+                      return null;
+                    })()}
                   </div>
                   
+                  {/* Debug test komponenta - za sve servise */}
+                  <div className="mb-4">
+                    <PhotoDebugTest serviceId={selectedService.id} />
+                  </div>
+                  
+                  {/* Glavna ServicePhotos komponenta */}
                   <ServicePhotos 
                     serviceId={selectedService.id}
                     readOnly={false}
