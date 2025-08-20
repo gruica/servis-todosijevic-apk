@@ -3187,10 +3187,10 @@ Frigo Sistem`;
 
   // Image serving je prebačen u index.ts da se izbegnu TypeScript greške
 
-  // Mobile Photo Upload endpoint (Base64)
+  // Mobile Photo Upload endpoint (Base64) - UPDATED VERSION 
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
-      console.log(`📸 [MOBILE UPLOAD] Started mobile photo upload...`);
+      console.log(`🟢 [NEW MOBILE UPLOAD] ===== STARTED NEW MOBILE PHOTO UPLOAD =====`);
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
       
@@ -3222,17 +3222,9 @@ Frigo Sistem`;
         throw new Error('Slika je previše mala - možda je oštećena');
       }
       
-      // Optimize image using Sharp
-      const Sharp = (await import('sharp')).default;
-      const optimizedBuffer = await Sharp(imageBuffer)
-        .webp({ quality: 80 })
-        .resize(1200, 1200, { 
-          fit: 'inside',
-          withoutEnlargement: true 
-        })
-        .toBuffer();
-      
-      console.log(`📸 [MOBILE UPLOAD] Image optimized, new size: ${optimizedBuffer.length} bytes`);
+      // Koristi originalnu sliku bez Sharp optimizacije
+      const optimizedBuffer = imageBuffer;
+      console.log(`📸 [MOBILE UPLOAD] Using original image, size: ${optimizedBuffer.length} bytes`);
       
       // Generate unique filename  
       const uniqueId = Math.random().toString(36).substr(2, 9);
