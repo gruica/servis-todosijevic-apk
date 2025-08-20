@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ServicePhotos Debug Test</title>
+    <style>
+        .debug-panel {
+            background: #f0f0f0;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>ServicePhotos Component Debug Test</h1>
+    
+    <div class="debug-panel">
+        <h3>Test Plan za beli ekran problem:</h3>
+        
+        <p><strong>1. Proverim API endpoint direktno:</strong></p>
+        <p>GET /api/service-photos?serviceId=234</p>
+        
+        <p><strong>2. Proverim da li je problem u komponenti ili CSS-u:</strong></p>
+        <ul>
+            <li>Dodaću fallback render sa osnovnim HTML-om</li>
+            <li>Proverim da li se Card komponente pravilno importuju</li>
+            <li>Testiraću minimalan render bez Tabs/complex UI</li>
+        </ul>
+        
+        <p><strong>3. Alternativni pristup - kreiram backup komponentu:</strong></p>
+        <ul>
+            <li>SimplePhotoViewer bez složenih dependencies</li>
+            <li>Direktan pristup sa osnovnim HTML/CSS</li>
+            <li>Bez React Query, bez složenih UI komponenti</li>
+        </ul>
+        
+        <p><strong>4. Debugging strategija:</strong></p>
+        <ul>
+            <li>Console.log na svaki render step</li>
+            <li>Force render sa test podacima</li>
+            <li>Bypass React memo ako pravi probleme</li>
+        </ul>
+    </div>
+
+    <script>
+        // Test API poziv
+        async function testAPI() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch('/api/service-photos?serviceId=234', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                console.log('🔍 Direct API Test Result:', data);
+                document.getElementById('api-result').innerHTML = 
+                    `<span class="success">API Success: ${data.length} photos</span>`;
+            } catch (error) {
+                console.error('🔍 Direct API Test Error:', error);
+                document.getElementById('api-result').innerHTML = 
+                    `<span class="error">API Error: ${error.message}</span>`;
+            }
+        }
+        
+        // Auto test kada se stranica učita
+        setTimeout(testAPI, 1000);
+    </script>
+    
+    <div id="api-result" class="debug-panel">Testiranje API poziva...</div>
+</body>
+</html>

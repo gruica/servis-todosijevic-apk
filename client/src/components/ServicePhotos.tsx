@@ -66,6 +66,7 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     try {
       const token = localStorage.getItem('auth_token');
       console.log('🔑 JWT Token status:', token ? 'POSTOJI' : 'NEMA');
+      console.log('🔑 JWT Token preview:', token ? token.substring(0, 50) + '...' : 'NULL');
       
       if (!token) {
         throw new Error('Korisnik nije prijavljen');
@@ -92,6 +93,15 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ API greška:', errorText);
+        console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.status === 401) {
+          // Možda je problem sa token-om, probaj refresh
+          localStorage.removeItem('auth_token');
+          window.location.href = '/admin/login';
+          return;
+        }
+        
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
