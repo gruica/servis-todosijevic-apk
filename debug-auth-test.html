@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug Test</title>
+</head>
+<body>
+    <h1>Test autentifikacije i photo API-ja</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testPhotos()">Test Photos API</button>
+    <div id="results"></div>
+    
+    <script>
+    async function testLogin() {
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: 'jelena@frigosistemtodosijevic.me',
+                    password: 'admin123'
+                }),
+                credentials: 'include'
+            });
+            
+            const data = await response.json();
+            console.log('Login response:', data);
+            
+            if (data.token) {
+                localStorage.setItem('auth_token', data.token);
+                document.getElementById('results').innerHTML += `<p>✅ Login OK - Token: ${data.token.substring(0, 20)}...</p>`;
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            document.getElementById('results').innerHTML += `<p>❌ Login ERROR: ${error.message}</p>`;
+        }
+    }
+    
+    async function testPhotos() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                throw new Error('No token found');
+            }
+            
+            const response = await fetch('/api/service-photos?serviceId=234', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            
+            console.log('Photos response status:', response.status);
+            const data = await response.json();
+            console.log('Photos response data:', data);
+            
+            document.getElementById('results').innerHTML += `<p>Photos API - Status: ${response.status}</p>`;
+            document.getElementById('results').innerHTML += `<p>Data: ${JSON.stringify(data, null, 2)}</p>`;
+            
+        } catch (error) {
+            console.error('Photos error:', error);
+            document.getElementById('results').innerHTML += `<p>❌ Photos ERROR: ${error.message}</p>`;
+        }
+    }
+    </script>
+</body>
+</html>

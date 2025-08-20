@@ -95,9 +95,44 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
 
         
         if (response.status === 401) {
-          // Možda je problem sa token-om, probaj refresh
+          console.error('🔐 401 UNAUTHORIZED - možda zastario token');
+          // Pokušaj da dohvatiš fresh token preko useAuth
+          try {
+            const userResponse = await fetch('/api/jwt-user', {
+              method: 'GET',
+              credentials: 'include'
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              if (userData && userData.token) {
+                localStorage.setItem('auth_token', userData.token);
+                console.log('🔑 Dobio novi token, pokušavam ponovo...');
+                
+                // Ponovni pokušaj sa novim token-om
+                const retryResponse = await fetch(url, {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${userData.token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  credentials: 'include'
+                });
+                
+                if (retryResponse.ok) {
+                  const retryData = await retryResponse.json();
+                  setPhotos(retryData);
+                  setLastLoadedServiceId(serviceId);
+                  return;
+                }
+              }
+            }
+          } catch (refreshError) {
+            console.error('🔄 Refresh token neuspešan:', refreshError);
+          }
+          
           localStorage.removeItem('auth_token');
-          window.location.href = '/admin/login';
+          window.location.href = '/auth';
           return;
         }
         
