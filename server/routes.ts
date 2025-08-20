@@ -3044,6 +3044,103 @@ Frigo Sistem`;
     }
   });
 
+  // SUPPLEMENT GENERALI - Dopuna podataka aparata
+  app.patch("/api/services/:id/supplement-generali", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const { supplementGeneraliServiceSchema } = await import("@shared/schema");
+      
+      console.log(`[SUPPLEMENT GENERALI] Zahtev za dopunu servisa ${serviceId}`);
+      console.log(`[SUPPLEMENT GENERALI] Body:`, req.body);
+      
+      // Validate request data
+      const validatedData = supplementGeneraliServiceSchema.parse({
+        ...req.body,
+        serviceId
+      });
+      
+      // Get existing service
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      console.log(`[SUPPLEMENT GENERALI] Postojeći servis:`, service);
+      
+      // Update client data if provided
+      if (validatedData.clientEmail || validatedData.clientAddress || validatedData.clientCity) {
+        const client = await storage.getClient(service.clientId);
+        if (client) {
+          const updatedClientData = {
+            fullName: client.fullName,
+            phone: client.phone,
+            ...(validatedData.clientEmail && { email: validatedData.clientEmail }),
+            ...(validatedData.clientAddress && { address: validatedData.clientAddress }),
+            ...(validatedData.clientCity && { city: validatedData.clientCity })
+          };
+          
+          await storage.updateClient(client.id, updatedClientData);
+          console.log(`[SUPPLEMENT GENERALI] Klijent ažuriran:`, updatedClientData);
+        }
+      }
+      
+      // Update appliance data if provided
+      if (validatedData.serialNumber || validatedData.model || validatedData.purchaseDate) {
+        const appliance = await storage.getAppliance(service.applianceId);
+        if (appliance) {
+          const updatedApplianceData = {
+            categoryId: appliance.categoryId,
+            manufacturerId: appliance.manufacturerId,
+            clientId: appliance.clientId,
+            ...(validatedData.serialNumber && { serialNumber: validatedData.serialNumber }),
+            ...(validatedData.model && { model: validatedData.model }),
+            ...(validatedData.purchaseDate && { purchaseDate: validatedData.purchaseDate })
+          };
+          
+          await storage.updateAppliance(appliance.id, updatedApplianceData);
+          console.log(`[SUPPLEMENT GENERALI] Aparat ažuriran:`, updatedApplianceData);
+        }
+      }
+      
+      // Update service with supplement notes if provided
+      if (validatedData.supplementNotes) {
+        const updatedServiceData = {
+          ...service,
+          technicianNotes: service.technicianNotes 
+            ? `${service.technicianNotes}\n\n[DOPUNA GENERALI] ${validatedData.supplementNotes}`
+            : `[DOPUNA GENERALI] ${validatedData.supplementNotes}`
+        };
+        
+        await storage.updateService(serviceId, updatedServiceData);
+        console.log(`[SUPPLEMENT GENERALI] Servis ažuriran sa napomenama`);
+      }
+      
+      console.log(`[SUPPLEMENT GENERALI] ✅ Dopuna uspešna za servis ${serviceId}`);
+      
+      res.json({
+        success: true,
+        message: "Generali podaci uspešno dopunjeni",
+        updatedFields: {
+          client: validatedData.clientEmail || validatedData.clientAddress || validatedData.clientCity,
+          appliance: validatedData.serialNumber || validatedData.model || validatedData.purchaseDate,
+          notes: !!validatedData.supplementNotes
+        }
+      });
+      
+    } catch (error) {
+      console.error(`[SUPPLEMENT GENERALI] Greška:`, error);
+      
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          error: "Neispravni podaci", 
+          details: error.errors 
+        });
+      }
+      
+      res.status(500).json({ error: "Greška pri dopuni generali podataka" });
+    }
+  });
+
   // SERVICE PHOTOS API - Fotografije sa terena
   
   // Serving public objects endpoint
