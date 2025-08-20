@@ -53,38 +53,64 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
   }
 
-  // Service photos with stable query key and proper response handling
+  // Force fresh API call without cache interference
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
-    queryKey: ['/api/service-photos', serviceId], // Stable key
+    queryKey: [`service-photos-${serviceId}-${Date.now()}`], // Force unique key every time
     queryFn: async () => {
+      console.log('🔥 API POZIV ZAPOČET za serviceId:', serviceId);
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 JWT Token status:', token ? 'POSTOJI' : 'NEMA');
+      
       if (!token) {
+        console.error('❌ Nema JWT tokena');
         throw new Error('Korisnik nije prijavljen');
       }
       
-      const response = await fetch(`/api/service-photos?serviceId=${serviceId}`, {
+      const url = `/api/service-photos?serviceId=${serviceId}`;
+      console.log('🌐 Pozivam:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        credentials: 'include',
+        cache: 'no-store'
       });
       
+      console.log('🌐 Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ API greška:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const data: ServicePhoto[] = await response.json();
-      console.log('✅ Photos loaded successfully:', data.length, 'photos');
+      console.log('✅ API USPEŠAN - učitano:', data.length, 'fotografija');
+      console.log('✅ Podaci:', data);
       return data;
     },
-    enabled: serviceId > 0,
-    staleTime: 30 * 1000, // 30 seconds
-    refetchOnMount: false,
-    retry: 1
+    enabled: true, // Always enabled
+    staleTime: 0, // No cache
+    gcTime: 0, // No garbage collection
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    retry: false
   });
 
-  // Clean state logging
-  console.log('📷 Photos state:', { isLoading, hasPhotos: photos.length > 0, count: photos.length });
+  // Force API call logging
+  console.log('🔍 FORCE QUERY STATE:', { 
+    serviceId, 
+    isLoading, 
+    hasPhotos: photos.length > 0, 
+    count: photos.length,
+    error: error?.message 
+  });
   
   // Debug specific photo URLs
   if (Array.isArray(photos) && photos.length > 0) {

@@ -3448,6 +3448,11 @@ Frigo Sistem`;
       
       console.log(`📸 Transformed photos for frontend:`, transformedPhotos.map(p => ({ id: p.id, photoUrl: p.photoUrl, photoCategory: p.photoCategory })));
       
+      // Set no-cache headers to prevent stale data
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');  
+      res.setHeader('Expires', '0');
+      
       res.json(transformedPhotos);
     } catch (error) {
       console.error("[PHOTO GET] ❌ Greška:", error);
