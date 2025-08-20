@@ -3291,27 +3291,50 @@ Frigo Sistem`;
         throw new Error(`Buffer je previše mali (${imageBuffer.length} bajtova) - možda je base64 oštećen`);
       }
       
-      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE za mobilne upload-e
-      // Samo promenimo ekstenziju na .webp ali čuvamo original
+      // PREBACIVANJE NA OBJECT STORAGE prema Replit dokumentaciji
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
-      // Privremeno čuvaj u uploads folderu
-      const fs = await import('fs');
-      const path = await import('path');
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      // Koristi Object Storage umesto lokalnog čuvanja
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
       
-      // Osiguraj da uploads folder postoji
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      // Generiraj putanju za private object storage
+      const privateDir = objectStorageService.getPrivateObjectDir();
+      const objectPath = `${privateDir}/uploads/${fileName}`;
+      
+      // Parse object path i sačuvaj u Object Storage
+      const { bucketName, objectName } = parseObjectPath(objectPath);
+      const bucket = (await import('./objectStorage.js')).objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Upload buffer direktno u Object Storage
+      await file.save(imageBuffer, {
+        metadata: {
+          contentType: 'image/webp',
+          metadata: {
+            serviceId: serviceId.toString(),
+            category: photoCategory || 'other',
+            uploadedAt: new Date().toISOString()
+          }
+        }
+      });
+      
+      console.log("[BASE64 UPLOAD] File saved to Object Storage:", objectPath, "Size:", imageBuffer.length);
+      
+      // Helper function za parsing object path
+      function parseObjectPath(path: string): { bucketName: string; objectName: string } {
+        if (!path.startsWith("/")) path = `/${path}`;
+        const pathParts = path.split("/");
+        if (pathParts.length < 3) {
+          throw new Error("Invalid path: must contain at least a bucket name");
+        }
+        const bucketName = pathParts[1];
+        const objectName = pathParts.slice(2).join("/");
+        return { bucketName, objectName };
       }
       
-      // DIREKTNO ČUVANJE originalnog buffer-a bez optimizacije
-      fs.writeFileSync(uploadPath, imageBuffer);
-      console.log("[BASE64 UPLOAD] File saved directly to:", uploadPath, "Size:", imageBuffer.length);
-      
-      // Kreaj relativnu rutu za čuvanje u bazi
-      const photoPath = `/uploads/${fileName}`;
+      // Kreaj relativnu rutu za Object Storage - koristimo /objects/ path  
+      const photoPath = `/objects/uploads/${fileName}`;
       
       const photoData = {
         serviceId: parseInt(serviceId),
