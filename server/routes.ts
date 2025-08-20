@@ -3187,10 +3187,9 @@ Frigo Sistem`;
 
   // Image serving je prebačen u index.ts da se izbegnu TypeScript greške
 
-  // Mobile Photo Upload endpoint (Base64) - UPDATED VERSION 
+  // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
-      console.log(`🟢 [NEW MOBILE UPLOAD] ===== STARTED NEW MOBILE PHOTO UPLOAD =====`);
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
       
@@ -3200,7 +3199,6 @@ Frigo Sistem`;
       }
       
       const { base64Data, serviceId, photoCategory, description } = req.body;
-      console.log(`📸 [MOBILE UPLOAD] Data received - serviceId: ${serviceId}, category: ${photoCategory}`);
       
       if (!base64Data || !serviceId) {
         return res.status(400).json({ error: "Nedostaju obavezni podaci (base64Data, serviceId)" });
@@ -3215,56 +3213,51 @@ Frigo Sistem`;
       // Process Base64 image
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
-      console.log(`📸 [MOBILE UPLOAD] Image decoded, size: ${imageBuffer.length} bytes`);
       
-      // Basic validation
-      if (imageBuffer.length < 1000) {
-        throw new Error('Slika je previše mala - možda je oštećena');
-      }
-      
-      // Koristi originalnu sliku bez Sharp optimizacije
-      const optimizedBuffer = imageBuffer;
-      console.log(`📸 [MOBILE UPLOAD] Using original image, size: ${optimizedBuffer.length} bytes`);
-      
-      // Generate unique filename  
+      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
+      // ZAŠTITA OD DUPLIKATA - dodajemo random ID za jedinstvene nazive
       const uniqueId = Math.random().toString(36).substr(2, 9);
       const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
       const fs = await import('fs');
       const path = await import('path');
       
-      // Save in uploads folder
+      // Save locally in uploads folder using process.cwd()
       const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       const uploadsDir = path.dirname(uploadPath);
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      fs.writeFileSync(uploadPath, optimizedBuffer);
-      console.log(`📸 [MOBILE UPLOAD] File saved to: ${uploadPath}`);
+      // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
+      if (imageBuffer.length < 1000) {
+        throw new Error('Originalna slika je previše mala - možda je oštećena');
+      }
       
-      // Save to database
+      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
+      fs.writeFileSync(uploadPath, imageBuffer);
+      
+      // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/uploads/${fileName}`,
+        photoPath: `/uploads/${fileName}`, // Local path instead of Object Storage
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
-        uploadedBy: userId,
+        uploadedBy: userId!,
         isBeforeRepair: photoCategory === 'before',
         category: photoCategory || 'general'
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log(`📸 [MOBILE UPLOAD] Database record created: ${savedPhoto.id}`);
       
       res.status(201).json({
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
-        fileSize: optimizedBuffer.length,
+        fileSize: imageBuffer.length,
         message: "Fotografija uspešno uploaded"
       });
       
-    } catch (error: any) {
-      console.error("📸 [MOBILE UPLOAD] Error:", error);
+    } catch (error) {
+      console.error("Mobile photo upload error:", error);
       res.status(500).json({ error: "Upload failed: " + error.message });
     }
   });
