@@ -49,6 +49,39 @@ setupAuth(app);
 
 // Session middleware je konfigurisan u setupAuth()
 
+// JEDNOSTAVAN ENDPOINT ZA SERVIRANJE SLIKA DIREKTNO OVDE
+app.get('/uploads/:fileName', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const fileName = req.params.fileName;
+  const filePath = path.join(process.cwd(), 'uploads', fileName);
+  
+  console.log(`📷 Serving image: ${fileName}`);
+  
+  if (!fs.existsSync(filePath)) {
+    console.log(`📷 Image not found: ${filePath}`);
+    return res.status(404).send('Image not found');
+  }
+  
+  try {
+    const ext = path.extname(fileName).toLowerCase();
+    let contentType = 'image/jpeg';
+    if (ext === '.webp') contentType = 'image/webp';
+    else if (ext === '.png') contentType = 'image/png';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    console.log(`📷 ✅ Image served: ${fileName}`);
+    
+  } catch (error) {
+    console.error(`📷 ❌ Error serving image:`, error);
+    res.status(500).send('Error serving image');
+  }
+});
+
 // API logging middleware - optimized for production
 app.use((req, res, next) => {
   // Skip logging for health check endpoints to improve performance

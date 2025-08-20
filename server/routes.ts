@@ -3192,31 +3192,7 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // Endpoint za serviranje fotografija iz /uploads/ direktorijuma  
-  app.get("/uploads/:fileName", (req, res) => {
-    const fileName = req.params.fileName;
-    console.log("📷 [SERVE PHOTO] Zahtev za fotografiju:", fileName);
-    
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(process.cwd(), 'uploads', fileName);
-    
-    try {
-      if (!fs.existsSync(filePath)) {
-        console.log("📷 [SERVE PHOTO] Fajl ne postoji:", filePath);
-        return res.status(404).send("Fotografija nije pronađena");
-      }
-      
-      const data = fs.readFileSync(filePath);
-      res.set('Content-Type', 'image/webp');
-      res.send(data);
-      console.log("📷 [SERVE PHOTO] ✅ Fotografija servirana:", fileName);
-      
-    } catch (error) {
-      console.error("❌ [SERVE PHOTO] ERROR:", error);
-      res.status(500).send("Greška pri čitanju fotografije");
-    }
-  });
+  // Image serving je prebačen u index.ts da se izbegnu TypeScript greške
 
   // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
