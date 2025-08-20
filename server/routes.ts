@@ -3225,12 +3225,7 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      // Optimize image using existing service
-      const { ImageOptimizationService } = await import('./image-optimization-service.js');
-      const optimizationService = new ImageOptimizationService();
-      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
-      
-      // Fallback - save locally i avoid Object Storage issues
+      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
       const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
       const fs = await import('fs');
       const path = await import('path');
@@ -3242,12 +3237,13 @@ Frigo Sistem`;
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      // VALIDACIJA VELIČINE FAJLA
-      if (optimizedResult.buffer.length < 1000) {
-        throw new Error('Optimizovana slika je previše mala - možda je oštećena');
+      // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
+      if (imageBuffer.length < 1000) {
+        throw new Error('Originalna slika je previše mala - možda je oštećena');
       }
       
-      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
+      fs.writeFileSync(uploadPath, imageBuffer);
       console.log("📷 [MOBILE PHOTO] File saved locally:", uploadPath);
       
       // Save to database using existing storage method
@@ -3267,7 +3263,7 @@ Frigo Sistem`;
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
-        fileSize: optimizedResult.size,
+        fileSize: imageBuffer.length,
         message: "Fotografija uspešno uploaded"
       });
       
