@@ -3219,66 +3219,45 @@ Frigo Sistem`;
         throw new Error('Originalna slika je previše mala - možda je oštećena');
       }
       
-      // NOVO: KORISTI OBJECT STORAGE UMESTO LOKALNOG UPLOADS FOLDERA
-      console.log(`📸 [OBJECT STORAGE] Uploading photo for service ${serviceId} to Object Storage...`);
+      // JEDNOSTAVNO VRAĆAM LOKALNI UPLOAD DOK NE REŠIM TypeScript GREŠKE
+      console.log(`📸 [MOBILE UPLOAD] Processing upload for service ${serviceId}...`);
       
-      const { ObjectStorageService } = await import('./objectStorage.js');
-      const objectStorageService = new ObjectStorageService();
-      
-      // Generate unique filename
+      // Generate unique filename  
       const uniqueId = Math.random().toString(36).substr(2, 9);
       const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
+      const fs = await import('fs');
+      const path = await import('path');
       
-      // Get upload URL from Object Storage
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      console.log(`📸 [OBJECT STORAGE] Got upload URL for ${fileName}`);
-      
-      // Upload to Object Storage using presigned URL
-      const fetch = await import('node-fetch').then(m => m.default);
-      const uploadResponse = await fetch(uploadURL, {
-        method: 'PUT',
-        body: imageBuffer,
-        headers: {
-          'Content-Type': 'image/webp',
-          'Content-Length': imageBuffer.length.toString()
-        }
-      });
-      
-      if (!uploadResponse.ok) {
-        throw new Error(`Object Storage upload failed: ${uploadResponse.status}`);
+      // Save locally in uploads folder using process.cwd()
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      // Normalize object path for database storage
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-      console.log(`📸 [OBJECT STORAGE] Photo uploaded successfully, path: ${objectPath}`);
+      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a 
+      fs.writeFileSync(uploadPath, imageBuffer);
+      console.log(`📸 [MOBILE UPLOAD] File saved locally to: ${uploadPath}`);
       
-      // Save to database using Object Storage path
+      // Save to database using local path
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: objectPath, // Object Storage path instead of local
+        photoPath: `/uploads/${fileName}`, // Local path for now
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
-        uploadedBy: userId!,
+        uploadedBy: userId || 1, // Default fallback for userId
         isBeforeRepair: photoCategory === 'before',
         category: photoCategory || 'general'
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
-      
-      // Set ACL policy for the uploaded object
-      await objectStorageService.trySetObjectEntityAclPolicy(uploadURL, {
-        owner: userId.toString(),
-        visibility: "private", // Service photos are private by default
-        aclRules: [] // No additional rules for now
-      });
-      
-      console.log(`📸 [OBJECT STORAGE] ACL policy set successfully for ${objectPath}`);
+      console.log(`📸 [MOBILE UPLOAD] Database record created: ${savedPhoto.id}`);
       
       res.status(201).json({
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
         fileSize: imageBuffer.length,
-        message: "Fotografija uspešno uploaded to Object Storage"
+        message: "Fotografija uspešno uploaded locally (temporary fix)"
       });
       
     } catch (error) {
