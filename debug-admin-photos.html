@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Photos Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { background: #f0f8ff; padding: 15px; margin: 10px 0; border-left: 4px solid #007acc; }
+        .error { background: #ffe6e6; border-left-color: #cc0000; }
+        .success { background: #e6ffe6; border-left-color: #00cc00; }
+        .warning { background: #fff3cd; border-left-color: #ffcc00; }
+        button { padding: 10px 20px; margin: 5px; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005fa3; }
+        .result { white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Admin Photos Debug Test</h1>
+    
+    <div class="debug-section">
+        <h3>Test 1: Provera API endpoint-a</h3>
+        <p>Direktan poziv API-ja za servis 217</p>
+        <button onclick="testAPI()">Test API /api/service-photos?serviceId=217</button>
+        <div id="api-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Test 2: Provera autentifikacije</h3>
+        <p>Provera JWT token-a iz localStorage</p>
+        <button onclick="testAuth()">Test Auth Token</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Test 3: Manual fetch test</h3>
+        <p>Simulacija ServicePhotos komponente</p>
+        <button onclick="manualFetch()">Manual Fetch Test</button>
+        <div id="fetch-result" class="result"></div>
+    </div>
+
+    <div class="debug-section warning">
+        <h3>Instrukcije za debug:</h3>
+        <ol>
+            <li>Otvorite browser console (F12 ili Cmd+Option+I)</li>
+            <li>Kliknite testove iznad</li>
+            <li>Proverite rezultate u console-u i na stranici</li>
+            <li>Poredite sa admin panel ponašanjem</li>
+        </ol>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            console.log('🔍 ADMIN DEBUG: Testing API endpoint');
+            
+            try {
+                const response = await fetch('/api/service-photos?serviceId=217');
+                const data = await response.json();
+                
+                resultDiv.textContent = `Status: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+                
+                console.log('✅ API Response:', { status: response.status, data });
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+                console.error('❌ API Error:', error);
+            }
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            console.log('🔍 ADMIN DEBUG: Testing auth token');
+            
+            const token = localStorage.getItem('auth_token');
+            const jwtToken = localStorage.getItem('jwtToken');
+            
+            const result = {
+                'auth_token': token ? 'EXISTS' : 'MISSING',
+                'jwtToken': jwtToken ? 'EXISTS' : 'MISSING',
+                'auth_token_length': token ? token.length : 0,
+                'jwtToken_length': jwtToken ? jwtToken.length : 0
+            };
+            
+            resultDiv.textContent = JSON.stringify(result, null, 2);
+            resultDiv.className = token ? 'result success' : 'result error';
+            
+            console.log('🔍 Auth tokens:', result);
+        }
+
+        async function manualFetch() {
+            const resultDiv = document.getElementById('fetch-result');
+            console.log('🔍 ADMIN DEBUG: Manual fetch simulation');
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No auth_token in localStorage');
+                }
+                
+                console.log('🔍 Using token:', token.substring(0, 20) + '...');
+                
+                const response = await fetch('/api/service-photos?serviceId=217', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                const data = await response.json();
+                console.log('🔍 Response data:', data);
+                
+                resultDiv.textContent = `Status: ${response.status}\nPhotos count: ${data.length}\nData: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+                console.error('❌ Manual fetch error:', error);
+            }
+        }
+
+        // Auto-run basic checks
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 ADMIN PHOTOS DEBUG PAGE LOADED');
+            console.log('🔍 Current URL:', window.location.href);
+            console.log('🔍 Available localStorage keys:', Object.keys(localStorage));
+            
+            // Check if we're in the same domain as the app
+            if (window.location.hostname.includes('replit.dev')) {
+                console.log('✅ Same domain - localStorage should be accessible');
+            } else {
+                console.log('⚠️ Different domain - localStorage might not be accessible');
+            }
+        });
+    </script>
+</body>
+</html>
