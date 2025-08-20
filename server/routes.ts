@@ -3433,23 +3433,39 @@ Frigo Sistem`;
   });
 
   // Serviranje upload-ovanih fotografija
-  app.get("/uploads/:fileName", async (req, res) => {
+  app.get("/uploads/:fileName", (req, res) => {
     try {
       const fileName = req.params.fileName;
-      const path = await import('path');
-      const fs = await import('fs');
-      const filePath = path.join(process.cwd(), 'uploads', fileName);
+      const pathModule = require('path');
+      const fs = require('fs');
+      const filePath = pathModule.join(process.cwd(), 'uploads', fileName);
+      
+      console.log(`📸 [FILE SERVE] Pokušavam da servram: ${filePath}`);
       
       if (!fs.existsSync(filePath)) {
+        console.log(`📸 [FILE SERVE] ❌ Fajl ne postoji: ${filePath}`);
         return res.status(404).json({ error: "Fajl nije pronađen" });
       }
       
       // Set appropriate headers
-      res.setHeader('Content-Type', 'image/webp');
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour cache
+      const ext = pathModule.extname(fileName).toLowerCase();
+      const contentType = ext === '.webp' ? 'image/webp' : 
+                         ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                         ext === '.png' ? 'image/png' : 'image/webp';
+                         
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      
+      console.log(`📸 [FILE SERVE] ✅ Serviranje ${fileName} (${contentType})`);
       
       // Stream file
       const fileStream = fs.createReadStream(filePath);
+      fileStream.on('error', (err) => {
+        console.error('[FILE SERVE] ❌ Stream error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Greška pri čitanju fajla" });
+        }
+      });
       fileStream.pipe(res);
     } catch (error) {
       console.error("[FILE SERVE] ❌ Greška:", error);
