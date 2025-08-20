@@ -79,6 +79,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
         clientId,
         applianceId,
         description,
+        warrantyStatus, // NOVO OBAVEZNO POLJE
         // Dodatna polja za uređaj ako se novi kreira
         categoryId,
         manufacturerId,
@@ -98,6 +99,25 @@ export function registerBusinessPartnerRoutes(app: Express) {
         return res.status(400).json({
           error: "Nedostaje opis servisa",
           message: "Opis servisa je obavezno polje."
+        });
+      }
+
+      // KRITIČNA VALIDACIJA: warrantyStatus je OBAVEZNO polje za business partnere
+      if (!warrantyStatus) {
+        console.error("Nedostaje status garancije");
+        return res.status(400).json({
+          error: "Status garancije je obavezan",
+          message: "Molimo odaberite status garancije: 'u garanciji', 'van garancije' ili 'nepoznato'."
+        });
+      }
+
+      // Validacija warranty status enum vrednosti
+      const validWarrantyStatuses = ["u garanciji", "van garancije", "nepoznato"];
+      if (!validWarrantyStatuses.includes(warrantyStatus)) {
+        console.error("Nevažeći status garancije:", warrantyStatus);
+        return res.status(400).json({
+          error: "Nevažeći status garancije",
+          message: "Status garancije mora biti: 'u garanciji', 'van garancije' ili 'nepoznato'."
         });
       }
 
@@ -193,7 +213,7 @@ export function registerBusinessPartnerRoutes(app: Express) {
         usedParts: "[]", // Prazna lista za delove
         machineNotes: null,
         isCompletelyFixed: null,
-        warrantyStatus: "u garanciji", // dodano obavezno polje - srpski standard
+        warrantyStatus: warrantyStatus, // OBAVEZNO polje prosleđeno od business partnera
         // Dodajemo podatke o poslovnom partneru
         businessPartnerId: partnerId,
         partnerCompanyName

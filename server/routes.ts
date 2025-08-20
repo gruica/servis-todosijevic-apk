@@ -6,7 +6,7 @@ import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -1445,13 +1445,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Kreiraj objekat sa default vrednostima
+      // KRITIČNA VALIDACIJA: warrantyStatus je OBAVEZNO polje
+      const { warrantyStatus } = req.body;
+      if (!warrantyStatus) {
+        return res.status(400).json({ 
+          error: "Status garancije je obavezan", 
+          message: "Molimo odaberite status garancije: 'u garanciji', 'van garancije' ili 'nepoznato'."
+        });
+      }
+
+      // Validacija warranty status enum
+      try {
+        warrantyStatusEnum.parse(warrantyStatus);
+      } catch (error) {
+        return res.status(400).json({
+          error: "Nevažeći status garancije",
+          message: "Status garancije mora biti: 'u garanciji', 'van garancije' ili 'nepoznato'."
+        });
+      }
+
+      // Kreiraj objekat sa validiranim podacima
       const validatedData = {
         clientId: parseInt(clientId),
         applianceId: parseInt(applianceId),
         description: description.trim(),
         status: req.body.status || "pending",
-        warrantyStatus: req.body.warrantyStatus || "out_of_warranty",
+        warrantyStatus: warrantyStatus, // OBAVEZNO polje - mora biti prosleđeno
         createdAt: req.body.createdAt || new Date().toISOString().split('T')[0],
         technicianId: req.body.technicianId && req.body.technicianId > 0 ? parseInt(req.body.technicianId) : null,
         scheduledDate: req.body.scheduledDate || null,

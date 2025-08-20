@@ -21,7 +21,8 @@ import {
   ApplianceCategory, 
   Technician,
   insertServiceSchema, 
-  serviceStatusEnum 
+  serviceStatusEnum,
+  warrantyStatusEnum
 } from "@shared/schema";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -36,6 +37,9 @@ const serviceFormSchema = insertServiceSchema.extend({
   applianceId: z.coerce.number().min(1, "Obavezno polje"),
   description: z.string().min(1, "Obavezno polje"),
   status: z.string(),
+  warrantyStatus: warrantyStatusEnum.refine(val => val, {
+    message: "Status garancije je obavezan - odaberite 'u garanciji', 'van garancije' ili 'nepoznato'"
+  }),
   createdAt: z.string(),
   technicianId: z.coerce.number().optional(),
   scheduledDate: z.string().optional().nullable(),
@@ -206,6 +210,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
+      warrantyStatus: "nepoznato" as const, // OBAVEZNA default vrednost
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: "",
@@ -292,6 +297,7 @@ export default function Services() {
       applianceId: 0,
       description: "",
       status: "pending",
+      warrantyStatus: "nepoznato" as const, // OBAVEZNA default vrednost
       technicianId: 0,
       createdAt: new Date().toISOString().split('T')[0],
       scheduledDate: null,
@@ -321,6 +327,7 @@ export default function Services() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
+      warrantyStatus: ((service as any).warrantyStatus || "nepoznato") as const, // Dodaj warranty status ili default
       technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || null,
@@ -475,10 +482,8 @@ export default function Services() {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col">
-                                <span className="font-medium">{service.clientCity || "Nepoznato"}</span>
-                                {service.clientAddress && (
-                                  <span className="text-xs text-gray-500 mt-1">{service.clientAddress}</span>
-                                )}
+                                <span className="font-medium">{"Nepoznato"}</span>
+                                <span className="text-xs text-gray-500 mt-1">{"Adresa nepoznata"}</span>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -667,6 +672,55 @@ export default function Services() {
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* OBAVEZNO WARRANTY STATUS POLJE */}
+                <FormField
+                  control={form.control}
+                  name="warrantyStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-red-600 font-semibold">
+                        Status garancije *
+                      </FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        value={field.value || "nepoznato"}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="border-red-300 focus:border-red-500">
+                            <SelectValue placeholder="OBAVEZAN IZBOR - odaberite status garancije" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="u garanciji">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-green-600">✓</span>
+                              <span>U garanciji</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="van garancije">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-red-600">✗</span>
+                              <span>Van garancije</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="nepoznato">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-amber-600">?</span>
+                              <span>Nepoznato - treba proveriti</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      <p className="text-xs text-red-600 mt-1">
+                        * Obavezno polje - servis se ne može kreirati bez odabira statusa garancije
+                      </p>
                     </FormItem>
                   )}
                 />
