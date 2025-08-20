@@ -3215,7 +3215,9 @@ Frigo Sistem`;
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
       // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
-      const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
+      // ZAŠTITA OD DUPLIKATA - dodajemo random ID za jedinstvene nazive
+      const uniqueId = Math.random().toString(36).substr(2, 9);
+      const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
       const fs = await import('fs');
       const path = await import('path');
       
