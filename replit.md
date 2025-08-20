@@ -31,6 +31,19 @@ Preferred communication style: Simple, everyday language.
 - **Komponenta arhitektura**: Čista SimpleServicePhotos + PhotoUploader kombinacija
 - Status: **REŠENO** - fotografije se uspešno dohvataju iz baze
 
+**Admin Panel Service Deletion Issue - KONAČNO REŠEN (Avgust 20, 2025):**
+- **Osnovni uzrok PRONAĐEN**: Nedostajao DELETE endpoint za servise u backend-u + frontend koristio pogrešnu rutu
+- **Dijagnoza**: 
+  - Backend imao `deleteAdminService` metodu u storage-u ali bez API endpoint-a
+  - Frontend pozivao `/api/services/:id` umesto `/api/admin/services/:id`
+- **Rešenje implementirano**:
+  - Dodao `/api/admin/services/:id` DELETE endpoint sa kompletnim logging-om
+  - Ispravljen frontend kod da koristi ispravnu rutu
+  - Endpoint briše servis + povezane notifikacije
+  - Automatsko osvežavanje liste servisa nakon brisanja
+- **Test rezultati**: Uspešno brisanje servisa 236 sa detaljnim logging-om
+- Status: **REŠENO** - servisi se uspešno brišu iz admin panela
+
 **Mobilni Photo Upload System - IMPLEMENTIRAN:**
 - **Desktop Upload Poboljšanja**: Poboljšan `/api/service-photos/upload` endpoint sa detaljnim logging-om, JWT autentifikacijom u multipart requests, frontend validacija fajlova i progress tracking
 - **Mobilni Upload za Serviserе**: Kreiran `MobilePhotoUploader` component sa direktnim pristupom kameri telefona (`capture='environment'`), touch-friendly UI, quick kategorije (Pre, Posle, Delovi, Problem), GPS lokacija dodavanja, real-time image preview
