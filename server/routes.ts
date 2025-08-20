@@ -163,6 +163,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
+  // Get all technicians - NEDOSTAJUĆI ENDPOINT ZA ADMIN PANEL
+  app.get('/api/technicians', jwtAuth, async (req, res) => {
+    try {
+      console.log(`[TECHNICIANS] JWT: User ${req.user?.username} requesting technicians list`);
+      
+      // Only admin can access technicians list
+      if ((req.user as any).role !== 'admin') {
+        console.log(`[TECHNICIANS] JWT: Access denied - user is not admin`);
+        return res.status(403).json({ error: 'Nemate dozvolu za pristup listi servisera' });
+      }
+      
+      const technicians = await storage.getAllTechnicians();
+      console.log(`[TECHNICIANS] JWT: Found ${technicians.length} technicians`);
+      
+      res.json(technicians);
+    } catch (error) {
+      console.error('[TECHNICIANS] JWT: Greška pri dobijanju liste servisera:', error);
+      res.status(500).json({ error: 'Greška pri dobijanju liste servisera' });
+    }
+  });
+
   // Backend endpoint za statistike servisera
   app.get('/api/technicians/:id/stats', jwtAuth, async (req, res) => {
     try {
@@ -2852,10 +2873,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create technician users
-  app.post("/api/technician-users", async (req, res) => {
+  app.post("/api/technician-users", jwtAuth, async (req, res) => {
     try {
+      console.log(`[TECHNICIAN-USERS] JWT: User ${req.user?.username} creating technician user`);
+      
       // Verify that user is admin or has permission
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      if ((req.user as any).role !== "admin") {
+        console.log(`[TECHNICIAN-USERS] JWT: Access denied - user is not admin`);
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2878,6 +2902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password,
         fullName: fullName || technician.fullName,
+        email: username, // Use username as email since it's validated as email in frontend
         role: "technician",
         technicianId: technician.id
       });
