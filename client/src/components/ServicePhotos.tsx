@@ -147,6 +147,40 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     photosExist: Array.isArray(photos) && photos.length > 0
   });
 
+  // FORCE VISIBLE TEST - uvek prikaži nešto
+  if (serviceId === 234) {
+    console.log('🚨 FORCE RENDER TEST FOR SERVICE 234!');
+    return (
+      <div style={{
+        border: '3px solid red',
+        padding: '20px',
+        margin: '20px',
+        backgroundColor: 'yellow',
+        minHeight: '200px'
+      }}>
+        <h2 style={{ color: 'red', fontSize: '24px' }}>🚨 TEST RENDER - SERVICE 234</h2>
+        <p>Loading: {isLoading ? 'true' : 'false'}</p>
+        <p>Error: {error ? error.message : 'none'}</p>
+        <p>Photos: {photos.length}</p>
+        <p>ServiceId: {serviceId}</p>
+        <div>State: {JSON.stringify({ isLoading, error: error?.message, photosCount: photos.length })}</div>
+        {photos.length > 0 && (
+          <div>
+            <h3>FOTOGRAFIJE PRONAĐENE:</h3>
+            {photos.map((photo, index) => (
+              <div key={photo.id} style={{ border: '1px solid blue', padding: '10px', margin: '5px' }}>
+                <p>Photo {index + 1}: ID {photo.id}</p>
+                <p>URL: {photo.photoUrl}</p>
+                <img src={photo.photoUrl} alt="test" style={{ width: '100px', height: '100px', objectFit: 'cover' }} 
+                     onError={(e) => { (e.target as HTMLImageElement).src = '/api/placeholder/100x100?text=ERROR' }} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (serviceId === 217) {
     console.log('🚨 ServicePhotos KOMPONENTA RENDEROVANA ZA SERVIS 217!');
     console.log('🔧 ServicePhotos Debug for 217:', {
