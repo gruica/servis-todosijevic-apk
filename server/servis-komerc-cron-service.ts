@@ -29,8 +29,8 @@ export class ServisKomercCronService {
       cron.schedule('0 22 * * *', async () => {
         console.log('[SERVIS KOMERC CRON] 🕙 Pokretanje automatskog dnevnog Servis Komerc izvještaja...');
         try {
-          // TODO: Dodati pravu email adresu Servis Komerc-a kada bude dostupna
-          await this.dailyReportService.sendDailyReport(new Date(), 'servis.komerc@example.com');
+          // Servis Komerc email adresa
+          await this.dailyReportService.sendDailyReport(new Date(), 'info@serviscommerce.me');
           console.log('[SERVIS KOMERC CRON] ✅ Automatski dnevni Servis Komerc izvještaj uspešno poslat');
         } catch (error) {
           console.error('[SERVIS KOMERC CRON] ❌ Greška pri slanju automatskog dnevnog izvještaja:', error);
@@ -42,7 +42,7 @@ export class ServisKomercCronService {
       this.isRunning = true;
       console.log('[SERVIS KOMERC CRON] ✅ Servis Komerc cron job-ovi pokrenuti');
       console.log('[SERVIS KOMERC CRON] 📅 Dnevni izvještaj: svaki dan u 22:00 (Belgrade vreme)');
-      console.log('[SERVIS KOMERC CRON] 📧 Email adresa: servis.komerc@example.com (TODO: dodati pravu adresu)');
+      console.log('[SERVIS KOMERC CRON] 📧 Email adresa: info@serviscommerce.me');
 
     } catch (error) {
       console.error('[SERVIS KOMERC CRON] ❌ Greška pri pokretanju cron job-ova:', error);
@@ -78,7 +78,7 @@ export class ServisKomercCronService {
   async manualDailyReport(date: Date = new Date(), emailAddress?: string): Promise<boolean> {
     try {
       console.log('[SERVIS KOMERC CRON] 🚀 Ručno pokretanje dnevnog Servis Komerc izvještaja...');
-      const targetEmail = emailAddress || 'servis.komerc@example.com';
+      const targetEmail = emailAddress || 'info@serviscommerce.me';
       const success = await this.dailyReportService.sendDailyReport(date, targetEmail);
       
       if (success) {
