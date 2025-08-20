@@ -3291,47 +3291,43 @@ Frigo Sistem`;
         throw new Error(`Buffer je previše mali (${imageBuffer.length} bajtova) - možda je base64 oštećen`);
       }
       
-      // PREBACIVANJE NA OBJECT STORAGE prema Replit dokumentaciji
+      // JEDNOSTAVAN OBJECT STORAGE UPLOAD - HOTFIX
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
-      // Koristi Object Storage umesto lokalnog čuvanja
-      const { ObjectStorageService } = await import('./objectStorage.js');
-      const objectStorageService = new ObjectStorageService();
+      // Direktno koristi Google Cloud Storage SDK
+      const { Storage } = await import('@google-cloud/storage');
+      const storage = new Storage({
+        credentials: {
+          audience: "replit",
+          subject_token_type: "access_token", 
+          token_url: "http://127.0.0.1:1106/token",
+          type: "external_account",
+          credential_source: {
+            url: "http://127.0.0.1:1106/credential",
+            format: {
+              type: "json",
+              subject_token_field_name: "access_token",
+            },
+          },
+          universe_domain: "googleapis.com",
+        },
+        projectId: "",
+      });
       
-      // Generiraj putanju za private object storage
-      const privateDir = objectStorageService.getPrivateObjectDir();
-      const objectPath = `${privateDir}/uploads/${fileName}`;
-      
-      // Parse object path i sačuvaj u Object Storage
-      const { bucketName, objectName } = parseObjectPath(objectPath);
-      const bucket = (await import('./objectStorage.js')).objectStorageClient.bucket(bucketName);
+      // Koristi postojeći bucket
+      const bucketName = 'replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b';
+      const bucket = storage.bucket(bucketName);
+      const objectName = `.private/uploads/${fileName}`;
       const file = bucket.file(objectName);
       
-      // Upload buffer direktno u Object Storage
+      // Upload direktno
       await file.save(imageBuffer, {
         metadata: {
           contentType: 'image/webp',
-          metadata: {
-            serviceId: serviceId.toString(),
-            category: photoCategory || 'other',
-            uploadedAt: new Date().toISOString()
-          }
         }
       });
       
-      console.log("[BASE64 UPLOAD] File saved to Object Storage:", objectPath, "Size:", imageBuffer.length);
-      
-      // Helper function za parsing object path
-      function parseObjectPath(path: string): { bucketName: string; objectName: string } {
-        if (!path.startsWith("/")) path = `/${path}`;
-        const pathParts = path.split("/");
-        if (pathParts.length < 3) {
-          throw new Error("Invalid path: must contain at least a bucket name");
-        }
-        const bucketName = pathParts[1];
-        const objectName = pathParts.slice(2).join("/");
-        return { bucketName, objectName };
-      }
+      console.log("[BASE64 UPLOAD] ✅ File saved to Object Storage:", bucketName, objectName);
       
       // Kreaj relativnu rutu za Object Storage - koristimo /objects/ path  
       const photoPath = `/objects/uploads/${fileName}`;
@@ -3345,7 +3341,7 @@ Frigo Sistem`;
         isBeforeRepair: photoCategory === 'before'
       };
 
-      const savedPhoto = await storage.createServicePhoto(photoData);
+      const savedPhoto = await (await import('./storage.js')).storage.createServicePhoto(photoData);
       console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, originalSize: imageBuffer.length });
       
       res.status(201).json({
