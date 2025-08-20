@@ -53,9 +53,21 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
       console.log('🔗 ServicePhotos API poziv - serviceId:', serviceId);
       const url = `/api/service-photos?serviceId=${serviceId}`;
       console.log('🔗 ServicePhotos API URL:', url);
-      const response = await apiRequest(url);
-      console.log('🔗 ServicePhotos API response:', response);
-      return response as ServicePhoto[];
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('🔗 ServicePhotos API parsed data:', data);
+      return data as ServicePhoto[];
     },
     enabled: !!serviceId && serviceId > 0
   });
@@ -199,8 +211,15 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
       photosArray,
       photosArrayLength: photosArray.length,
       isLoading,
-      error
+      error,
+      photosType: typeof photos,
+      photosStringified: JSON.stringify(photos)
     });
+    
+    // Force alert for visibility
+    if (!isLoading && photos && photos.length > 0) {
+      alert(`DEBUG 217: Found ${photos.length} photos but photosArray length is ${photosArray.length}`);
+    }
   }
   
   const photosByCategory = photosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
@@ -307,6 +326,7 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
               <p className="text-sm text-yellow-700">Is loading: {isLoading ? 'Yes' : 'No'}</p>
               <p className="text-sm text-yellow-700">Error: {error ? JSON.stringify(error) : 'No'}</p>
               <p className="text-sm text-yellow-700">Raw photos data: {JSON.stringify(photos)}</p>
+              <p className="text-sm text-yellow-700">photosByCategory: {JSON.stringify(Object.keys(photosByCategory))}</p>
               {photosArray.length > 0 && (
                 <div className="mt-2">
                   <p className="text-sm font-medium text-yellow-800">Fotografije:</p>
