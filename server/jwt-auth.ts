@@ -22,13 +22,10 @@ export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string 
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    console.log('🔒 Verifying JWT with secret length:', JWT_SECRET.length);
     const result = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    console.log('🔒 JWT verification SUCCESS:', result);
     return result;
   } catch (error) {
-    console.error('🔒 JWT verification FAILED:', error.message);
-    console.error('🔒 Token structure:', token.split('.').map(part => `${part.length} chars`));
+    console.error('JWT verification failed:', error.message);
     return null;
   }
 }
@@ -51,24 +48,21 @@ export function extractTokenFromRequest(req: Request): string | null {
 export async function jwtAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = extractTokenFromRequest(req);
   
-  console.log('🔒 JWT Auth Debug - Request path:', req.path);
-  console.log('🔒 JWT Auth Debug - Authorization header:', req.headers.authorization ? 'postoji' : 'ne postoji');
+
   
   if (!token) {
-    console.log('🔒 JWT Auth: Token nije pronađen u zahtev');
+
     return res.status(401).json({ error: 'Potrebna je prijava' });
   }
   
-  console.log('🔒 JWT Auth: Verifikujem token (first 50 chars):', token.substring(0, 50) + '...');
-  console.log('🔒 JWT Auth: Token length:', token.length);
-  console.log('🔒 JWT Auth: Token parts:', token.split('.').map(part => part.length));
+
   const payload = verifyToken(token);
   if (!payload) {
-    console.log('🔒 JWT Auth: Token verifikacija neuspešna');
+
     return res.status(401).json({ error: 'Nevažeći token' });
   }
   
-  console.log('🔒 JWT Auth: Token uspešno verifikovan:', payload);
+
   
   // Get full user data from database to include technicianId
   const user = await storage.getUser(payload.userId);

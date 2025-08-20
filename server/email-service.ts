@@ -71,14 +71,13 @@ export class EmailService {
       console.error('[EMAIL] 💡 Email funkcionalnosti neće raditi bez SMTP lozinke');
     } else {
       const activePassSource = process.env.EMAIL_PASSWORD ? 'EMAIL_PASSWORD' : 'SMTP_PASSWORD';
-      console.log(`[EMAIL] ✅ ${activePassSource} environment varijabla je postavljena`);
+
     }
     
     // Dodatna provera formata host-a da eliminišemo čestu grešku
     const correctedHost = host.includes('@') ? host.replace('@', '.') : host;
     
-    console.log('[EMAIL] Kreiranje stabilnog email transportera...');
-    console.log(`[EMAIL] Konfiguracija: server=${host}, port=${port}, secure=${secure}`);
+
     
     // Kreiramo stabilnu konfiguraciju sa ispravljenim host-om
     this.configCache = {
@@ -94,7 +93,7 @@ export class EmailService {
       }
     };
     
-    console.log(`[EMAIL] Konfigurisani host: ${correctedHost} (originalni: ${host})`);
+
     
     // Kreiramo transporter koji se neće menjati tokom izvršavanja aplikacije
     this.transporter = nodemailer.createTransport({
@@ -104,7 +103,7 @@ export class EmailService {
       maxMessages: 100
     } as NodemailerTransportOptions);
     
-    console.log('[EMAIL] Email transporter kreiran');
+
   }
 
   /**

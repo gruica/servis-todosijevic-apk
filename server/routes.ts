@@ -115,12 +115,6 @@ const catalogUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    console.log('Multer file filter - file info:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      fieldname: file.fieldname
-    });
-    
     if (file.mimetype === 'text/csv' || 
         file.mimetype === 'application/csv' || 
         file.mimetype === 'text/plain' ||
@@ -137,19 +131,10 @@ const photoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    console.log('[PHOTO MULTER] 🔥 File filter pozvan - file info:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      fieldname: file.fieldname,
-      authorization: req.headers.authorization ? 'postoji' : 'ne postoji'
-    });
-    
     // Accept image files
     if (file.mimetype.startsWith('image/')) {
-      console.log('[PHOTO MULTER] ✅ Slika prihvaćena');
       cb(null, true);
     } else {
-      console.log('[PHOTO MULTER] ❌ Odbačena - nije slika');
       cb(new Error('Samo slike su dozvoljene'));
     }
   }
@@ -229,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const senderId = settingsMap.sms_mobile_sender_id || null; // Uklonjen fallback da se prikazuje broj
       const enabled = settingsMap.sms_mobile_enabled === 'true';
       
-      console.log('📱 SMS postavke:', { apiKey: apiKey ? '***' : 'nema', baseUrl, senderId, enabled });
+
       
       if (apiKey && baseUrl) {
         smsService = new SMSCommunicationService({
@@ -1610,9 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ako su svi uslovi zadovoljeni, kreiramo servis
-      console.log("==== DEBUG INFO ZA SERVIS ====");
-      console.log("Podaci o partneru - ID:", validatedData.businessPartnerId, "tip:", typeof validatedData.businessPartnerId);
-      console.log("Partner kompanija:", validatedData.partnerCompanyName);
+
       
       // Dodajna provera i konverzija businessPartnerId
       if (validatedData.businessPartnerId !== null && validatedData.businessPartnerId !== undefined) {
@@ -3174,12 +3157,8 @@ Frigo Sistem`;
         return res.status(400).json({ error: "Nevažeći ID fotografije" });
       }
 
-      console.log('📸 Deleting photo:', photoId, 'by user:', userId);
-      
       // Simply delete the photo - no ownership check for now
-
       await storage.deleteServicePhoto(photoId);
-      console.log('📸 Photo deleted successfully:', photoId);
       
       res.json({ success: true });
     } catch (error) {
@@ -3197,8 +3176,6 @@ Frigo Sistem`;
   // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
-      console.log("📷 [MOBILE PHOTO] Upload started sa Replit Object Storage");
-      
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
       
@@ -3218,8 +3195,6 @@ Frigo Sistem`;
       if (!service) {
         return res.status(404).json({ error: "Servis nije pronađen" });
       }
-      
-      console.log("📷 [MOBILE PHOTO] Processing Base64 image...");
       
       // Process Base64 image
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
@@ -3244,7 +3219,6 @@ Frigo Sistem`;
       
       // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
       fs.writeFileSync(uploadPath, imageBuffer);
-      console.log("📷 [MOBILE PHOTO] File saved locally:", uploadPath);
       
       // Save to database using existing storage method
       const photoData = {
@@ -3257,7 +3231,6 @@ Frigo Sistem`;
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("✅ [MOBILE PHOTO] SUCCESS! Photo saved to database, ID:", savedPhoto.id);
       
       res.status(201).json({
         success: true,
@@ -3268,7 +3241,7 @@ Frigo Sistem`;
       });
       
     } catch (error) {
-      console.error("❌ [MOBILE PHOTO] ERROR:", error);
+      console.error("Mobile photo upload error:", error);
       res.status(500).json({ error: "Upload failed: " + error.message });
     }
   });
@@ -3276,10 +3249,7 @@ Frigo Sistem`;
   // Base64 Photo Upload endpoint (zaobilazi multer probleme)
   app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
     try {
-      console.log("[BASE64 PHOTO UPLOAD] 📷 Upload fotografije servisa - ENDPOINT REACHED!");
-      console.log("[BASE64 PHOTO UPLOAD] User from JWT:", req.user);
-      console.log("[BASE64 PHOTO UPLOAD] Headers:", req.headers);
-      console.log("[BASE64 PHOTO UPLOAD] Body keys:", Object.keys(req.body));
+
       
       // Proveriu role
       const userRole = (req.user as any)?.role;
@@ -3297,7 +3267,7 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      console.log("[BASE64 PHOTO UPLOAD] Slika konvertovana, veličina:", imageBuffer.length);
+
       
       // Optimizuj i kompresuj sliku
       const { ImageOptimizationService } = await import('./image-optimization-service.js');
