@@ -400,9 +400,9 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                                   attemptedUrl: attemptedUrl,
                                   error: 'Failed to load image'
                                 });
-                                // Try alternative URL format
+                                // Try alternative URL format using window.location.origin
                                 const alternativeUrl = photo.photoUrl.startsWith('/') ? 
-                                  `https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev${photo.photoUrl}` : 
+                                  `${window.location.origin}${photo.photoUrl}` : 
                                   photo.photoUrl;
                                 if (target.src !== alternativeUrl) {
                                   console.log('🔄 Trying alternative URL:', alternativeUrl);
