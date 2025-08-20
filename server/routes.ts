@@ -3434,30 +3434,59 @@ Frigo Sistem`;
           return res.status(404).json({ error: "Servis nije pronađen" });
         }
 
-        console.log("📸 [PHOTO UPLOAD] DIREKTNO ČUVANJE bez optimizacije - originalna logika servis 234");
+        console.log("📸 [PHOTO UPLOAD] OBJECT STORAGE UPLOAD - perzistentno čuvanje umesto local storage");
         
-        // DIREKTNO ČUVANJE kao za servis 234 - BEZ ImageOptimizationService
-        const fs = await import('fs');
-        const path = await import('path');
+        // OBJECT STORAGE UPLOAD - umesto lokalnog čuvanja
+        const { ObjectStorageService } = await import('./objectStorage.js');
+        const objectStorageService = new ObjectStorageService();
         
         const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
-        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
-        const uploadsDir = path.dirname(uploadPath);
         
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
+        // Upload direktno u Object Storage
+        const { Storage } = await import('@google-cloud/storage');
+        const gcsStorage = new Storage({
+          credentials: {
+            audience: "replit",
+            subject_token_type: "access_token",
+            token_url: "http://127.0.0.1:1106/token",
+            type: "external_account",
+            credential_source: {
+              url: "http://127.0.0.1:1106/credential",
+              format: {
+                type: "json",
+                subject_token_field_name: "access_token",
+              },
+            },
+            universe_domain: "googleapis.com",
+          },
+          projectId: "",
+        });
         
-        // Direktno čuvanje originalnog buffer-a kao za servis 234
-        fs.writeFileSync(uploadPath, req.file.buffer);
-        console.log("📸 [PHOTO UPLOAD] ✅ Direktno sačuvano - originalna logika servis 234:", {
+        const bucketName = 'replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b';
+        const bucket = gcsStorage.bucket(bucketName);
+        const objectName = `.private/uploads/${fileName}`;
+        const file = bucket.file(objectName);
+        
+        await file.save(req.file.buffer, {
+          metadata: {
+            contentType: 'image/webp',
+            metadata: {
+              originalName: req.file.originalname,
+              serviceId: serviceId,
+              uploadedAt: new Date().toISOString()
+            }
+          }
+        });
+        
+        console.log("📸 [PHOTO UPLOAD] ✅ Object Storage upload uspešan:", {
           fileName: fileName,
-          uploadPath: uploadPath,
+          bucketName: bucketName,
+          objectPath: objectName,
           originalSize: req.file.size
         });
         
-        // Kreaj relativnu rutu za čuvanje u bazi - ista kao servis 234
-        const photoPath = `/uploads/${fileName}`;
+        // Kreaj rutu za Object Storage serviranje
+        const photoPath = `/objects/uploads/${fileName}`;
         
         const photoData = {
           serviceId: parseInt(serviceId),
@@ -3469,9 +3498,10 @@ Frigo Sistem`;
         };
 
         const savedPhoto = await storage.createServicePhoto(photoData);
-        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database - originalna logika:", { 
+        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database + Object Storage:", { 
           id: savedPhoto.id, 
           fileName: fileName, 
+          objectStoragePath: photoPath,
           originalSize: req.file.size
         });
         
