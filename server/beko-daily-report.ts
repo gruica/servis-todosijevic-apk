@@ -99,8 +99,8 @@ export class BekoDailyReportService {
               like(manufacturers.name, '%beko%'),
               like(manufacturers.name, '%BEKO%')
             ),
-            // KLJUČNO: Samo garantni servisi
-            eq(services.isWarrantyService, true)
+            // KLJUČNO: Samo garantni servisi (koristi warranty_status umesto isWarrantyService)
+            eq(services.warrantyStatus, 'u garanciji')
           )
         );
 
