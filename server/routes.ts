@@ -3146,17 +3146,20 @@ Frigo Sistem`;
     try {
       const serviceId = req.query.serviceId;
       
+      console.log('📸 [GET PHOTOS] Request received for serviceId:', serviceId);
+      console.log('📸 [GET PHOTOS] User from JWT:', req.user);
+      
       if (!serviceId) {
         return res.status(400).json({ error: "ServiceId je obavezan" });
       }
 
-      console.log('📸 Fetching photos for serviceId:', serviceId);
+      console.log('📸 [GET PHOTOS] Fetching photos from database...');
       const photos = await storage.getServicePhotos(parseInt(serviceId as string));
-      console.log('📸 Found photos:', photos.length);
+      console.log('📸 [GET PHOTOS] Found photos:', photos.length);
       
       res.json(photos);
     } catch (error) {
-      console.error("Error fetching service photos:", error);
+      console.error("📸 [GET PHOTOS] ERROR:", error);
       res.status(500).json({ error: "Greška pri dohvatanju fotografija" });
     }
   });
