@@ -397,16 +397,16 @@ export default function TechnicianServicesList() {
                             <StatusBadge status={service.status} />
                           </TableCell>
                           <TableCell className="font-medium">
-                            {service.client?.fullName || "N/A"}
+                            {service.clientName || "N/A"}
                           </TableCell>
                           <TableCell>
-                            {service.client?.phone || "N/A"}
+                            {service.clientPhone || "N/A"}
                           </TableCell>
                           <TableCell>
-                            {service.client?.city || "N/A"}
+                            {service.clientCity || "N/A"}
                           </TableCell>
                           <TableCell>
-                            {service.appliance?.category?.name || "N/A"} - {service.appliance?.manufacturer?.name || ""}
+                            {service.categoryName || "N/A"} - {service.manufacturerName || ""}
                           </TableCell>
                           <TableCell>{formatDate(service.createdAt)}</TableCell>
                           <TableCell>
@@ -420,7 +420,7 @@ export default function TechnicianServicesList() {
                               <span className="text-gray-500">U toku</span>
                             )}
                           </TableCell>
-                          <TableCell>{getTechnicianName(service.technicianId)}</TableCell>
+                          <TableCell>{service.technicianName || getTechnicianName(service.technicianId)}</TableCell>
                           <TableCell className="max-w-xs truncate">
                             {service.description}
                           </TableCell>
@@ -495,11 +495,11 @@ export default function TechnicianServicesList() {
               <div>
                 <h3 className="font-semibold text-sm text-gray-600 mb-2">Informacije o klijentu</h3>
                 <div className="bg-blue-50 p-3 rounded space-y-2">
-                  <p className="text-sm"><strong>Ime:</strong> {selectedService.client?.fullName || "N/A"}</p>
-                  <p className="text-sm"><strong>Telefon:</strong> {selectedService.client?.phone || "N/A"}</p>
-                  <p className="text-sm"><strong>Email:</strong> {selectedService.client?.email || "N/A"}</p>
-                  <p className="text-sm"><strong>Adresa:</strong> {selectedService.client?.address || "N/A"}</p>
-                  <p className="text-sm"><strong>Grad:</strong> {selectedService.client?.city || "N/A"}</p>
+                  <p className="text-sm"><strong>Ime:</strong> {selectedService.clientName || "N/A"}</p>
+                  <p className="text-sm"><strong>Telefon:</strong> {selectedService.clientPhone || "N/A"}</p>
+                  <p className="text-sm"><strong>Email:</strong> {selectedService.clientEmail || "N/A"}</p>
+                  <p className="text-sm"><strong>Adresa:</strong> {selectedService.clientAddress || "N/A"}</p>
+                  <p className="text-sm"><strong>Grad:</strong> {selectedService.clientCity || "N/A"}</p>
                 </div>
               </div>
 
@@ -507,10 +507,10 @@ export default function TechnicianServicesList() {
               <div>
                 <h3 className="font-semibold text-sm text-gray-600 mb-2">Informacije o uređaju</h3>
                 <div className="bg-purple-50 p-3 rounded space-y-2">
-                  <p className="text-sm"><strong>Kategorija:</strong> {selectedService.appliance?.category?.name || "N/A"}</p>
-                  <p className="text-sm"><strong>Proizvođač:</strong> {selectedService.appliance?.manufacturer?.name || "N/A"}</p>
-                  <p className="text-sm"><strong>Model:</strong> {selectedService.appliance?.model || "N/A"}</p>
-                  <p className="text-sm"><strong>Serijski broj:</strong> {selectedService.appliance?.serialNumber || "N/A"}</p>
+                  <p className="text-sm"><strong>Kategorija:</strong> {selectedService.categoryName || "N/A"}</p>
+                  <p className="text-sm"><strong>Proizvođač:</strong> {selectedService.manufacturerName || "N/A"}</p>
+                  <p className="text-sm"><strong>Model:</strong> {selectedService.applianceName || "N/A"}</p>
+                  <p className="text-sm"><strong>Serijski broj:</strong> {selectedService.applianceSerialNumber || "N/A"}</p>
                 </div>
               </div>
 
