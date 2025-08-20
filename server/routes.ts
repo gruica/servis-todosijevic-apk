@@ -3903,6 +3903,23 @@ Frigo Sistem`;
     }
   });
 
+  // Get services by technicians - Admin only
+  app.get("/api/admin/services-by-technicians", jwtAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const userRole = (req.user as any)?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
+      }
+
+      const services = await storage.getAllServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services by technicians:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju servisa po serviserima" });
+    }
+  });
+
   // Get all users - Admin only
   app.get("/api/users", jwtAuth, async (req, res) => {
     try {
