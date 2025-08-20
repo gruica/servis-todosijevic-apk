@@ -147,39 +147,7 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     photosExist: Array.isArray(photos) && photos.length > 0
   });
 
-  // FORCE VISIBLE TEST - uvek prikaži nešto
-  if (serviceId === 234) {
-    console.log('🚨 FORCE RENDER TEST FOR SERVICE 234!');
-    return (
-      <div style={{
-        border: '3px solid red',
-        padding: '20px',
-        margin: '20px',
-        backgroundColor: 'yellow',
-        minHeight: '200px'
-      }}>
-        <h2 style={{ color: 'red', fontSize: '24px' }}>🚨 TEST RENDER - SERVICE 234</h2>
-        <p>Loading: {isLoading ? 'true' : 'false'}</p>
-        <p>Error: {error ? error.message : 'none'}</p>
-        <p>Photos: {photos.length}</p>
-        <p>ServiceId: {serviceId}</p>
-        <div>State: {JSON.stringify({ isLoading, error: error?.message, photosCount: photos.length })}</div>
-        {photos.length > 0 && (
-          <div>
-            <h3>FOTOGRAFIJE PRONAĐENE:</h3>
-            {photos.map((photo, index) => (
-              <div key={photo.id} style={{ border: '1px solid blue', padding: '10px', margin: '5px' }}>
-                <p>Photo {index + 1}: ID {photo.id}</p>
-                <p>URL: {photo.photoUrl}</p>
-                <img src={photo.photoUrl} alt="test" style={{ width: '100px', height: '100px', objectFit: 'cover' }} 
-                     onError={(e) => { (e.target as HTMLImageElement).src = '/api/placeholder/100x100?text=ERROR' }} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+
 
   if (serviceId === 217) {
     console.log('🚨 ServicePhotos KOMPONENTA RENDEROVANA ZA SERVIS 217!');
@@ -403,41 +371,45 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
             </div>
           </div>
         ) : (
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="all">Sve ({photos.length})</TabsTrigger>
-              {PHOTO_CATEGORIES.map(category => {
-                const count = photosByCategory[category.value]?.length || 0;
-                return (
-                  <TabsTrigger
-                    key={category.value}
-                    value={category.value}
-                    className="text-xs"
-                  >
-                    {category.label} ({count})
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-
-            <TabsContent value="all" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {photos.map((photo) => (
-                  <PhotoCard key={photo.id} photo={photo} onView={setSelectedPhoto} />
-                ))}
-              </div>
-            </TabsContent>
-
-            {PHOTO_CATEGORIES.map(category => (
-              <TabsContent key={category.value} value={category.value} className="mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {photosByCategory[category.value]?.map((photo) => (
-                    <PhotoCard key={photo.id} photo={photo} onView={setSelectedPhoto} />
-                  )) || <p className="text-gray-500 col-span-full text-center py-8">Nema fotografija u ovoj kategoriji</p>}
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Prikazano: {photos.length} fotografija
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                  <img
+                    src={photo.photoUrl}
+                    alt={photo.description || 'Fotografija servisa'}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.src = '/api/placeholder/300x200?text=Slika+nedostaje';
+                    }}
+                  />
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                        {photo.photoCategory || 'ostalo'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ID: {photo.id}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 truncate">
+                      {photo.description || 'Bez opisa'}
+                    </p>
+                    <button
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="mt-2 w-full px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded transition-colors"
+                    >
+                      Prikaži veću sliku
+                    </button>
+                  </div>
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Photo View Modal */}
