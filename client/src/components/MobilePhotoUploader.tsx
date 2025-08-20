@@ -119,24 +119,19 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
       }
       enhancedDescription += ` [Mobilni upload: ${new Date().toLocaleString('sr-RS')}]`;
 
-      // Koristi originalnu logiku kao za servis 234 - Multer upload
-      const formData = new FormData();
-      
-      // Konvertuj base64 u blob
-      const base64Response = await fetch(capturedImage);
-      const blob = await base64Response.blob();
-      
-      formData.append('photo', blob, `mobile_${selectedCategory}_${serviceId}_${Date.now()}.jpg`);
-      formData.append('serviceId', serviceId.toString());
-      formData.append('photoCategory', selectedCategory);
-      formData.append('description', enhancedDescription);
-
-      const response = await fetch('/api/service-photos/upload', {
+      const response = await fetch('/api/service-photos/upload-base64', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: formData,
+        body: JSON.stringify({
+          base64Data: capturedImage,
+          serviceId: serviceId,
+          photoCategory: selectedCategory,
+          description: enhancedDescription,
+          filename: `mobile_${selectedCategory}_${serviceId}_${Date.now()}.jpg`
+        }),
       });
 
       if (!response.ok) {

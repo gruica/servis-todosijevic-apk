@@ -3189,7 +3189,6 @@ Frigo Sistem`;
 
   // Mobile Photo Upload endpoint - koristimo Replit Object Storage
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
-    console.log("📱 [MOBILE UPLOAD] /mobile-upload endpoint POZVAN!");
     try {
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
@@ -3215,54 +3214,32 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      // OBJECT STORAGE UPLOAD - PERZISTENTNO ČUVANJE
+      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
+      // ZAŠTITA OD DUPLIKATA - dodajemo random ID za jedinstvene nazive
       const uniqueId = Math.random().toString(36).substr(2, 9);
       const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Save locally in uploads folder using process.cwd()
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
       
       // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
       if (imageBuffer.length < 1000) {
         throw new Error('Originalna slika je previše mala - možda je oštećena');
       }
       
-      // Direktno koristi Google Cloud Storage SDK za Object Storage
-      const { Storage } = await import('@google-cloud/storage');
-      const gcsStorage = new Storage({
-        credentials: {
-          audience: "replit",
-          subject_token_type: "access_token", 
-          token_url: "http://127.0.0.1:1106/token",
-          type: "external_account",
-          credential_source: {
-            url: "http://127.0.0.1:1106/credential",
-            format: {
-              type: "json",
-              subject_token_field_name: "access_token",
-            },
-          },
-          universe_domain: "googleapis.com",
-        },
-        projectId: "",
-      });
+      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
+      fs.writeFileSync(uploadPath, imageBuffer);
       
-      // Upload u Object Storage bucket
-      const bucketName = 'replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b';
-      const bucket = gcsStorage.bucket(bucketName);
-      const objectName = `.private/uploads/${fileName}`;
-      const file = bucket.file(objectName);
-      
-      // Sačuvaj u Object Storage
-      await file.save(imageBuffer, {
-        metadata: {
-          contentType: 'image/webp',
-        }
-      });
-      
-      console.log("[MOBILE UPLOAD] ✅ File saved to Object Storage:", bucketName, objectName);
-      
-      // Save to database using Object Storage path
+      // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/objects/uploads/${fileName}`, // Object Storage path
+        photoPath: `/uploads/${fileName}`, // Local path instead of Object Storage
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
         uploadedBy: userId!,
         isBeforeRepair: photoCategory === 'before',
@@ -3285,11 +3262,12 @@ Frigo Sistem`;
     }
   });
 
-  // Base64 Photo Upload endpoint - PREBAČEN NA OBJECT STORAGE
+  // Base64 Photo Upload endpoint (zaobilazi multer probleme)
   app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
-    console.log("🔥 [OBJECT STORAGE] /upload-base64 endpoint POZVAN!");
     try {
-      const userId = (req.user as any).userId;
+
+      
+      // Proveriu role
       const userRole = (req.user as any)?.role;
       if (!["admin", "technician"].includes(userRole)) {
         return res.status(403).json({ error: "Nemate dozvolu za upload fotografija" });
@@ -3305,77 +3283,53 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      console.log("[BASE64 UPLOAD] Original base64 length:", base64Data.length);
-      console.log("[BASE64 UPLOAD] Buffer size after conversion:", imageBuffer.length);
+
       
-      // ZAŠTITA: Proveri da li je buffer dovoljno veliki
-      if (imageBuffer.length < 1000) {
-        throw new Error(`Buffer je previše mali (${imageBuffer.length} bajtova) - možda je base64 oštećen`);
+      // Optimizuj i kompresuj sliku
+      const { ImageOptimizationService } = await import('./image-optimization-service.js');
+      const optimizationService = new ImageOptimizationService();
+      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
+      
+      // Generiraj filename sa WebP ekstenzijom
+      const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
+      
+      // Privremeno čuvaj u uploads folderu
+      const fs = await import('fs');
+      const path = await import('path');
+      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      
+      // Osiguraj da uploads folder postoji
+      const uploadsDir = path.dirname(uploadPath);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      // OBJECT STORAGE UPLOAD - PERZISTENTNO ČUVANJE  
-      const uniqueId = Math.random().toString(36).substr(2, 9);
-      const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
+      fs.writeFileSync(uploadPath, optimizedResult.buffer);
       
-      // Direktno koristi Google Cloud Storage SDK za Object Storage
-      const { Storage } = await import('@google-cloud/storage');
-      const gcsStorage = new Storage({
-        credentials: {
-          audience: "replit",
-          subject_token_type: "access_token", 
-          token_url: "http://127.0.0.1:1106/token",
-          type: "external_account",
-          credential_source: {
-            url: "http://127.0.0.1:1106/credential",
-            format: {
-              type: "json",
-              subject_token_field_name: "access_token",
-            },
-          },
-          universe_domain: "googleapis.com",
-        },
-        projectId: "",
-      });
-      
-      // Upload u Object Storage bucket
-      const bucketName = 'replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b';
-      const bucket = gcsStorage.bucket(bucketName);
-      const objectName = `.private/uploads/${fileName}`;
-      const file = bucket.file(objectName);
-      
-      // Sačuvaj u Object Storage
-      await file.save(imageBuffer, {
-        metadata: {
-          contentType: 'image/webp',
-        }
-      });
-      
-      console.log("[BASE64 UPLOAD] ✅ File saved to Object Storage:", bucketName, objectName);
-      
-      // Kreaj relativnu rutu za Object Storage - koristimo /objects/ path  
-      const photoPath = `/objects/uploads/${fileName}`;
+      // Kreaj relativnu rutu za čuvanje u bazi
+      const photoPath = `/uploads/${fileName}`;
       
       const photoData = {
         serviceId: parseInt(serviceId),
         photoPath: photoPath,
         description: description || `Fotografija kategorije: ${photoCategory}`,
         category: photoCategory || 'other',
-        uploadedBy: userId || 1,
+        uploadedBy: req.user?.id || 1,
         isBeforeRepair: photoCategory === 'before'
       };
 
-      const savedPhoto = await (await import('./storage.js')).storage.createServicePhoto(photoData);
-      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana u Object Storage:", { fileName, originalSize: imageBuffer.length });
+      const savedPhoto = await storage.createServicePhoto(photoData);
+      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
       
       res.status(201).json({
         ...savedPhoto,
         photoUrl: photoPath,
         fileName: fileName,
-        fileSize: imageBuffer.length
+        fileSize: optimizedResult.size
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("[BASE64 PHOTO UPLOAD] ❌ Greška:", error);
-      res.status(500).json({ error: "Greška pri upload-u fotografije: " + error.message });
+      res.status(500).json({ error: "Greška pri upload-u fotografije" });
     }
   });
 
@@ -3434,75 +3388,53 @@ Frigo Sistem`;
           return res.status(404).json({ error: "Servis nije pronađen" });
         }
 
-        console.log("📸 [PHOTO UPLOAD] OBJECT STORAGE UPLOAD - perzistentno čuvanje umesto local storage");
+        console.log("📸 [PHOTO UPLOAD] Processing image optimization...");
         
-        // OBJECT STORAGE UPLOAD - umesto lokalnog čuvanja
-        const { ObjectStorageService } = await import('./objectStorage.js');
-        const objectStorageService = new ObjectStorageService();
-        
-        const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
-        
-        // Upload direktno u Object Storage
-        const { Storage } = await import('@google-cloud/storage');
-        const gcsStorage = new Storage({
-          credentials: {
-            audience: "replit",
-            subject_token_type: "access_token",
-            token_url: "http://127.0.0.1:1106/token",
-            type: "external_account",
-            credential_source: {
-              url: "http://127.0.0.1:1106/credential",
-              format: {
-                type: "json",
-                subject_token_field_name: "access_token",
-              },
-            },
-            universe_domain: "googleapis.com",
-          },
-          projectId: "",
+        // Optimizuj i kompresuj sliku
+        const { ImageOptimizationService } = await import('./image-optimization-service.js');
+        const optimizationService = new ImageOptimizationService();
+        const optimizedResult = await optimizationService.optimizeImage(req.file.buffer, { 
+          format: 'webp',
+          quality: 80,
+          maxWidth: 1920,
+          maxHeight: 1080
         });
         
-        const bucketName = 'replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b';
-        const bucket = gcsStorage.bucket(bucketName);
-        const objectName = `.private/uploads/${fileName}`;
-        const file = bucket.file(objectName);
+        // Generiraj filename sa WebP ekstenzijom
+        const fileName = `service_${serviceId}_${Date.now()}.webp`;
         
-        await file.save(req.file.buffer, {
-          metadata: {
-            contentType: 'image/webp',
-            metadata: {
-              originalName: req.file.originalname,
-              serviceId: serviceId,
-              uploadedAt: new Date().toISOString()
-            }
-          }
-        });
+        // Sačuvaj u uploads folderu
+        const fs = await import('fs');
+        const path = await import('path');
+        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
         
-        console.log("📸 [PHOTO UPLOAD] ✅ Object Storage upload uspešan:", {
-          fileName: fileName,
-          bucketName: bucketName,
-          objectPath: objectName,
-          originalSize: req.file.size
-        });
+        // Osiguraj da uploads folder postoji
+        const uploadsDir = path.dirname(uploadPath);
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
         
-        // Kreaj rutu za Object Storage serviranje
-        const photoPath = `/objects/uploads/${fileName}`;
+        fs.writeFileSync(uploadPath, optimizedResult.buffer);
+        console.log("📸 [PHOTO UPLOAD] File saved to:", uploadPath);
+        
+        // Kreaj relativnu rutu za čuvanje u bazi
+        const photoPath = `/uploads/${fileName}`;
         
         const photoData = {
           serviceId: parseInt(serviceId),
           photoPath: photoPath,
-          description: description || `Mobilna fotografija: 📸 ${photoCategory || 'general'}`,
-          category: photoCategory || 'general',
+          description: description || `Fotografija kategorije: ${photoCategory || 'other'}`,
+          category: photoCategory || 'other',
           uploadedBy: (req.user as any)?.id || 1,
           isBeforeRepair: photoCategory === 'before'
         };
 
         const savedPhoto = await storage.createServicePhoto(photoData);
-        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database + Object Storage:", { 
+        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database:", { 
           id: savedPhoto.id, 
-          fileName: fileName, 
-          objectStoragePath: photoPath,
-          originalSize: req.file.size
+          fileName, 
+          originalSize: req.file.size,
+          optimizedSize: optimizedResult.size 
         });
         
         res.status(201).json({
@@ -3514,13 +3446,13 @@ Frigo Sistem`;
             photoCategory: savedPhoto.category,
             description: savedPhoto.description,
             fileName: fileName,
-            fileSize: req.file.size,
+            fileSize: optimizedResult.size,
             uploadedBy: savedPhoto.uploadedBy,
-            uploadedAt: savedPhoto.uploadedAt || new Date()
+            uploadedAt: savedPhoto.createdAt
           }
         });
         
-      } catch (error: any) {
+      } catch (error) {
         console.error("📸 [PHOTO UPLOAD] ❌ Processing error:", error);
         res.status(500).json({ error: `Upload greška: ${error.message}` });
       }
