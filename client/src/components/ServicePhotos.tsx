@@ -129,6 +129,15 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     photos: photos
   });
 
+  // Debug render conditionals
+  console.log('🎨 RENDER CONDITIONS:', {
+    willShowLoading: isLoading,
+    willShowError: error !== null,
+    willShowEmpty: !isLoading && !error && photos.length === 0,
+    willShowPhotos: !isLoading && !error && photos.length > 0,
+    photosExist: Array.isArray(photos) && photos.length > 0
+  });
+
   if (serviceId === 217) {
     console.log('🚨 ServicePhotos KOMPONENTA RENDEROVANA ZA SERVIS 217!');
     console.log('🔧 ServicePhotos Debug for 217:', {
@@ -228,7 +237,15 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     return acc;
   }, {});
 
+  console.log('🔍 FINAL RENDER CHECK:', {
+    isLoading,
+    error: !!error,
+    photosLength: photos.length,
+    rendering: isLoading ? 'LOADING' : error ? 'ERROR' : photos.length === 0 ? 'EMPTY' : 'PHOTOS'
+  });
+
   if (isLoading) {
+    console.log('🟡 RENDERUJEM: Loading state');
     return (
       <Card>
         <CardHeader>
@@ -250,6 +267,7 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
   }
 
   if (error) {
+    console.log('🔴 RENDERUJEM: Error state:', error.message);
     return (
       <Card>
         <CardHeader>
@@ -273,6 +291,8 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     );
   }
 
+  console.log('🟢 RENDERUJEM: Main component sa', photos.length, 'fotografija');
+  
   return (
     <Card>
       <CardHeader>
