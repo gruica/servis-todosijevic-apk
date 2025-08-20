@@ -3187,9 +3187,10 @@ Frigo Sistem`;
 
   // Image serving je prebačen u index.ts da se izbegnu TypeScript greške
 
-  // Mobile Photo Upload endpoint - koristimo Replit Object Storage
+  // Mobile Photo Upload endpoint (Base64)
   app.post("/api/service-photos/mobile-upload", jwtAuth, async (req, res) => {
     try {
+      console.log(`📸 [MOBILE UPLOAD] Started mobile photo upload...`);
       const userId = (req.user as any).userId;
       const userRole = (req.user as any).role;
       
@@ -3199,6 +3200,7 @@ Frigo Sistem`;
       }
       
       const { base64Data, serviceId, photoCategory, description } = req.body;
+      console.log(`📸 [MOBILE UPLOAD] Data received - serviceId: ${serviceId}, category: ${photoCategory}`);
       
       if (!base64Data || !serviceId) {
         return res.status(400).json({ error: "Nedostaju obavezni podaci (base64Data, serviceId)" });
@@ -3213,14 +3215,24 @@ Frigo Sistem`;
       // Process Base64 image
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
+      console.log(`📸 [MOBILE UPLOAD] Image decoded, size: ${imageBuffer.length} bytes`);
       
-      // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
+      // Basic validation
       if (imageBuffer.length < 1000) {
-        throw new Error('Originalna slika je previše mala - možda je oštećena');
+        throw new Error('Slika je previše mala - možda je oštećena');
       }
       
-      // JEDNOSTAVNO VRAĆAM LOKALNI UPLOAD DOK NE REŠIM TypeScript GREŠKE
-      console.log(`📸 [MOBILE UPLOAD] Processing upload for service ${serviceId}...`);
+      // Optimize image using Sharp
+      const Sharp = (await import('sharp')).default;
+      const optimizedBuffer = await Sharp(imageBuffer)
+        .webp({ quality: 80 })
+        .resize(1200, 1200, { 
+          fit: 'inside',
+          withoutEnlargement: true 
+        })
+        .toBuffer();
+      
+      console.log(`📸 [MOBILE UPLOAD] Image optimized, new size: ${optimizedBuffer.length} bytes`);
       
       // Generate unique filename  
       const uniqueId = Math.random().toString(36).substr(2, 9);
@@ -3228,23 +3240,22 @@ Frigo Sistem`;
       const fs = await import('fs');
       const path = await import('path');
       
-      // Save locally in uploads folder using process.cwd()
+      // Save in uploads folder
       const uploadPath = path.join(process.cwd(), 'uploads', fileName);
       const uploadsDir = path.dirname(uploadPath);
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a 
-      fs.writeFileSync(uploadPath, imageBuffer);
-      console.log(`📸 [MOBILE UPLOAD] File saved locally to: ${uploadPath}`);
+      fs.writeFileSync(uploadPath, optimizedBuffer);
+      console.log(`📸 [MOBILE UPLOAD] File saved to: ${uploadPath}`);
       
-      // Save to database using local path
+      // Save to database
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/uploads/${fileName}`, // Local path for now
+        photoPath: `/uploads/${fileName}`,
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
-        uploadedBy: userId || 1, // Default fallback for userId
+        uploadedBy: userId,
         isBeforeRepair: photoCategory === 'before',
         category: photoCategory || 'general'
       };
@@ -3256,12 +3267,12 @@ Frigo Sistem`;
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
-        fileSize: imageBuffer.length,
-        message: "Fotografija uspešno uploaded locally (temporary fix)"
+        fileSize: optimizedBuffer.length,
+        message: "Fotografija uspešno uploaded"
       });
       
-    } catch (error) {
-      console.error("📸 [OBJECT STORAGE] Mobile photo upload error:", error);
+    } catch (error: any) {
+      console.error("📸 [MOBILE UPLOAD] Error:", error);
       res.status(500).json({ error: "Upload failed: " + error.message });
     }
   });
