@@ -125,10 +125,10 @@ const Dashboard = memo(function Dashboard() {
       // Osvežimo statistiku kada se prikaže dashboard
       refetchStats();
       
-      // PERFORMANCE FIX: Povećavamo interval na 30 sekundi da smanjimo re-renderovanje
+      // Postavimo interval za osvežavanje na svakih 5 sekundi
       const intervalId = setInterval(() => {
         refetchStats();
-      }, 30000);
+      }, 5000);
       
       // Čistimo interval pri demontiranju
       return () => clearInterval(intervalId);

@@ -74,7 +74,6 @@ const SystemDiagnostics = lazy(() => import("@/pages/system-diagnostics"));
 const EmailVerificationDemo = lazy(() => import("@/pages/email-verification-demo"));
 const DataExportPage = lazy(() => import("@/pages/admin/data-export"));
 const CameraUpload = lazy(() => import("@/pages/mobile/CameraUpload"));
-const AuthDebug = lazy(() => import("@/pages/auth-debug"));
 const ComprehensiveAnalytics = lazy(() => import("@/pages/admin/comprehensive-analytics"));
 const SMSMobileAPIConfigPage = lazy(() => import("@/pages/admin/sms-mobile-api-config"));
 const SMSBulkPage = lazy(() => import("@/pages/admin/sms-bulk"));
@@ -120,7 +119,6 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       <Route path="/complus-auth" component={ComplusAuthPage} />
-      <Route path="/auth-debug" component={AuthDebug} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />

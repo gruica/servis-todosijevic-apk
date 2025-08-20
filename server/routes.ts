@@ -163,27 +163,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Health check endpoints for deployment
   // Primary health check - used by cloud platforms
-  // Get all technicians - NEDOSTAJUĆI ENDPOINT ZA ADMIN PANEL
-  app.get('/api/technicians', jwtAuth, async (req, res) => {
-    try {
-      console.log(`[TECHNICIANS] JWT: User ${req.user?.username} requesting technicians list`);
-      
-      // Only admin can access technicians list
-      if ((req.user as any).role !== 'admin') {
-        console.log(`[TECHNICIANS] JWT: Access denied - user is not admin`);
-        return res.status(403).json({ error: 'Nemate dozvolu za pristup listi servisera' });
-      }
-      
-      const technicians = await storage.getAllTechnicians();
-      console.log(`[TECHNICIANS] JWT: Found ${technicians.length} technicians`);
-      
-      res.json(technicians);
-    } catch (error) {
-      console.error('[TECHNICIANS] JWT: Greška pri dobijanju liste servisera:', error);
-      res.status(500).json({ error: 'Greška pri dobijanju liste servisera' });
-    }
-  });
-
   // Backend endpoint za statistike servisera
   app.get('/api/technicians/:id/stats', jwtAuth, async (req, res) => {
     try {
@@ -2873,13 +2852,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create technician users
-  app.post("/api/technician-users", jwtAuth, async (req, res) => {
+  app.post("/api/technician-users", async (req, res) => {
     try {
-      console.log(`[TECHNICIAN-USERS] JWT: User ${req.user?.username} creating technician user`);
-      
       // Verify that user is admin or has permission
-      if ((req.user as any).role !== "admin") {
-        console.log(`[TECHNICIAN-USERS] JWT: Access denied - user is not admin`);
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
       }
       
@@ -2902,7 +2878,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password,
         fullName: fullName || technician.fullName,
-        email: username, // Use username as email since it's validated as email in frontend
         role: "technician",
         technicianId: technician.id
       });
@@ -3041,103 +3016,6 @@ Frigo Sistem`;
     } catch (error) {
       console.error(`[REPAIR FAILED] Greška kod servisa #${req.params.id}:`, error);
       res.status(500).json({ error: "Greška pri obeležavanju servisa kao neuspešnog" });
-    }
-  });
-
-  // SUPPLEMENT GENERALI - Dopuna podataka aparata
-  app.patch("/api/services/:id/supplement-generali", jwtAuth, async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.id);
-      const { supplementGeneraliServiceSchema } = await import("@shared/schema");
-      
-      console.log(`[SUPPLEMENT GENERALI] Zahtev za dopunu servisa ${serviceId}`);
-      console.log(`[SUPPLEMENT GENERALI] Body:`, req.body);
-      
-      // Validate request data
-      const validatedData = supplementGeneraliServiceSchema.parse({
-        ...req.body,
-        serviceId
-      });
-      
-      // Get existing service
-      const service = await storage.getService(serviceId);
-      if (!service) {
-        return res.status(404).json({ error: "Servis nije pronađen" });
-      }
-      
-      console.log(`[SUPPLEMENT GENERALI] Postojeći servis:`, service);
-      
-      // Update client data if provided
-      if (validatedData.clientEmail || validatedData.clientAddress || validatedData.clientCity) {
-        const client = await storage.getClient(service.clientId);
-        if (client) {
-          const updatedClientData = {
-            fullName: client.fullName,
-            phone: client.phone,
-            ...(validatedData.clientEmail && { email: validatedData.clientEmail }),
-            ...(validatedData.clientAddress && { address: validatedData.clientAddress }),
-            ...(validatedData.clientCity && { city: validatedData.clientCity })
-          };
-          
-          await storage.updateClient(client.id, updatedClientData);
-          console.log(`[SUPPLEMENT GENERALI] Klijent ažuriran:`, updatedClientData);
-        }
-      }
-      
-      // Update appliance data if provided
-      if (validatedData.serialNumber || validatedData.model || validatedData.purchaseDate) {
-        const appliance = await storage.getAppliance(service.applianceId);
-        if (appliance) {
-          const updatedApplianceData = {
-            categoryId: appliance.categoryId,
-            manufacturerId: appliance.manufacturerId,
-            clientId: appliance.clientId,
-            ...(validatedData.serialNumber && { serialNumber: validatedData.serialNumber }),
-            ...(validatedData.model && { model: validatedData.model }),
-            ...(validatedData.purchaseDate && { purchaseDate: validatedData.purchaseDate })
-          };
-          
-          await storage.updateAppliance(appliance.id, updatedApplianceData);
-          console.log(`[SUPPLEMENT GENERALI] Aparat ažuriran:`, updatedApplianceData);
-        }
-      }
-      
-      // Update service with supplement notes if provided
-      if (validatedData.supplementNotes) {
-        const updatedServiceData = {
-          ...service,
-          technicianNotes: service.technicianNotes 
-            ? `${service.technicianNotes}\n\n[DOPUNA GENERALI] ${validatedData.supplementNotes}`
-            : `[DOPUNA GENERALI] ${validatedData.supplementNotes}`
-        };
-        
-        await storage.updateService(serviceId, updatedServiceData);
-        console.log(`[SUPPLEMENT GENERALI] Servis ažuriran sa napomenama`);
-      }
-      
-      console.log(`[SUPPLEMENT GENERALI] ✅ Dopuna uspešna za servis ${serviceId}`);
-      
-      res.json({
-        success: true,
-        message: "Generali podaci uspešno dopunjeni",
-        updatedFields: {
-          client: validatedData.clientEmail || validatedData.clientAddress || validatedData.clientCity,
-          appliance: validatedData.serialNumber || validatedData.model || validatedData.purchaseDate,
-          notes: !!validatedData.supplementNotes
-        }
-      });
-      
-    } catch (error) {
-      console.error(`[SUPPLEMENT GENERALI] Greška:`, error);
-      
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      
-      res.status(500).json({ error: "Greška pri dopuni generali podataka" });
     }
   });
 
