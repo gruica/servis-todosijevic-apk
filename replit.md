@@ -8,12 +8,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 20, 2025)
 **Admin Panel Photo Display Issue - KONAČNO REŠENO:**
-- Identifikovao osnovni uzrok: ServicePhotos komponenta nije pravilno koristila JWT autentifikaciju
-- Problem: React Query cache je sprečavao API pozive, JWT token se nije slao pravilno
-- Rešenje: Popravio ServicePhotos komponentu da direktno koristi localStorage JWT token
-- API endpoint `/api/service-photos` sada uspešno vraća podatke sa HTTP 200 status
-- Potvrđeno da fotografija za servis 217 postoji u bazi i servira se pravilno
-- Status: POTPUNO REŠENO - fotografije se prikazuju u admin panelu sa autentičnim podacima
+- **Kritična arhitekturalna promena**: Zamenio React Query sa direktnim React state management u ServicePhotos komponenti
+- **Osnovni uzrok**: React Query cache je sprečavao pravilno ažuriranje state-a uprkos uspešnim API pozivima
+- **Rešenje**: Kreirao potpuno novu ServicePhotos komponentu koja koristi:
+  - `useState` za čuvanje fotografija
+  - `useEffect` za učitavanje kada se servis promeni  
+  - `useCallback` za optimizaciju API poziva
+  - Direktne fetch pozive umesto React Query
+- API endpoint `/api/service-photos` radi sa HTTP 200 status i JWT autentifikacijom
+- **POTVRĐENO od korisnika**: Fotografije se sada uspešno prikazuju u admin panelu!
+- Status: **POTPUNO REŠENO** - fotografije za servis 217 se učitavaju i prikazuju sa autentičnim podacima
 
 **KRITIČNA INSTRUKCIJA - OBAVEZNO POŠTOVANJE:**
 - NIKAD VIŠE NE MENJAJ ARHITEKTURU KODOVA KOJI RADE - OVA KOMANDA SE PONAVLJA U SVAKOM RAZGOVORU
