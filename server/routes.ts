@@ -3434,53 +3434,45 @@ Frigo Sistem`;
           return res.status(404).json({ error: "Servis nije pronađen" });
         }
 
-        console.log("📸 [PHOTO UPLOAD] Processing image optimization...");
+        console.log("📸 [PHOTO UPLOAD] DIREKTNO ČUVANJE bez optimizacije - originalna logika servis 234");
         
-        // Optimizuj i kompresuj sliku
-        const { ImageOptimizationService } = await import('./image-optimization-service.js');
-        const optimizationService = new ImageOptimizationService();
-        const optimizedResult = await optimizationService.optimizeImage(req.file.buffer, { 
-          format: 'webp',
-          quality: 80,
-          maxWidth: 1920,
-          maxHeight: 1080
-        });
-        
-        // Generiraj filename sa WebP ekstenzijom
-        const fileName = `service_${serviceId}_${Date.now()}.webp`;
-        
-        // Sačuvaj u uploads folderu
+        // DIREKTNO ČUVANJE kao za servis 234 - BEZ ImageOptimizationService
         const fs = await import('fs');
         const path = await import('path');
-        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
         
-        // Osiguraj da uploads folder postoji
+        const fileName = `mobile_service_${serviceId}_${Date.now()}.webp`;
+        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
         const uploadsDir = path.dirname(uploadPath);
+        
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
         
-        fs.writeFileSync(uploadPath, optimizedResult.buffer);
-        console.log("📸 [PHOTO UPLOAD] File saved to:", uploadPath);
+        // Direktno čuvanje originalnog buffer-a kao za servis 234
+        fs.writeFileSync(uploadPath, req.file.buffer);
+        console.log("📸 [PHOTO UPLOAD] ✅ Direktno sačuvano - originalna logika servis 234:", {
+          fileName: fileName,
+          uploadPath: uploadPath,
+          originalSize: req.file.size
+        });
         
-        // Kreaj relativnu rutu za čuvanje u bazi
+        // Kreaj relativnu rutu za čuvanje u bazi - ista kao servis 234
         const photoPath = `/uploads/${fileName}`;
         
         const photoData = {
           serviceId: parseInt(serviceId),
           photoPath: photoPath,
-          description: description || `Fotografija kategorije: ${photoCategory || 'other'}`,
-          category: photoCategory || 'other',
+          description: description || `Mobilna fotografija: 📸 ${photoCategory || 'general'}`,
+          category: photoCategory || 'general',
           uploadedBy: (req.user as any)?.id || 1,
           isBeforeRepair: photoCategory === 'before'
         };
 
         const savedPhoto = await storage.createServicePhoto(photoData);
-        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database:", { 
+        console.log("📸 [PHOTO UPLOAD] ✅ SUCCESS! Photo saved to database - originalna logika:", { 
           id: savedPhoto.id, 
-          fileName, 
-          originalSize: req.file.size,
-          optimizedSize: optimizedResult.size 
+          fileName: fileName, 
+          originalSize: req.file.size
         });
         
         res.status(201).json({
@@ -3492,7 +3484,7 @@ Frigo Sistem`;
             photoCategory: savedPhoto.category,
             description: savedPhoto.description,
             fileName: fileName,
-            fileSize: optimizedResult.size,
+            fileSize: req.file.size,
             uploadedBy: savedPhoto.uploadedBy,
             uploadedAt: savedPhoto.createdAt
           }
