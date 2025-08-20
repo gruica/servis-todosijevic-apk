@@ -3192,38 +3192,29 @@ Frigo Sistem`;
 
   // Service Photos endpoints
 
-  // Endpoint za serviranje fotografija iz local uploads
-  app.get("/objects/service-photos/:fileName", async (req, res) => {
+  // Endpoint za serviranje fotografija iz /uploads/ direktorijuma  
+  app.get("/uploads/:fileName", (req, res) => {
+    const fileName = req.params.fileName;
+    console.log("📷 [SERVE PHOTO] Zahtev za fotografiju:", fileName);
+    
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(process.cwd(), 'uploads', fileName);
+    
     try {
-      const fileName = req.params.fileName;
-      console.log("📷 [SERVE PHOTO] Zahtev za fotografiju:", fileName);
-      
-      const fs = await import('fs');
-      const path = await import('path');
-      const filePath = path.join(process.cwd(), 'uploads', fileName);
-      
-      console.log("📷 [SERVE PHOTO] Dohvatanje iz local storage:", filePath);
-      
       if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: "Fotografija nije pronađena" });
+        console.log("📷 [SERVE PHOTO] Fajl ne postoji:", filePath);
+        return res.status(404).send("Fotografija nije pronađena");
       }
       
-      // Read file
       const data = fs.readFileSync(filePath);
-      
-      // Set headers
-      res.set({
-        'Content-Type': 'image/webp',
-        'Content-Length': data.length.toString(),
-        'Cache-Control': 'public, max-age=3600'
-      });
-      
-      console.log("📷 [SERVE PHOTO] ✅ Fotografija uspešno dostavljana");
+      res.set('Content-Type', 'image/webp');
       res.send(data);
+      console.log("📷 [SERVE PHOTO] ✅ Fotografija servirana:", fileName);
       
     } catch (error) {
       console.error("❌ [SERVE PHOTO] ERROR:", error);
-      res.status(404).json({ error: "Fotografija nije pronađena" });
+      res.status(500).send("Greška pri čitanju fotografije");
     }
   });
 
