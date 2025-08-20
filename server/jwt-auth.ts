@@ -22,9 +22,13 @@ export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string 
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('🔒 Verifying JWT with secret length:', JWT_SECRET.length);
+    const result = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('🔒 JWT verification SUCCESS:', result);
+    return result;
   } catch (error) {
-    console.error('JWT verification failed:', error);
+    console.error('🔒 JWT verification FAILED:', error.message);
+    console.error('🔒 Token structure:', token.split('.').map(part => `${part.length} chars`));
     return null;
   }
 }

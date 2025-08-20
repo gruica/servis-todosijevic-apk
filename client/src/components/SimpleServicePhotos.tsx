@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { PhotoUploader } from './PhotoUploader';
@@ -56,10 +56,7 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
     
     try {
       const response = await fetch(testUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include'
+        credentials: 'include'  // Only need cookies for session auth
       });
       
       console.log('📸 Test response status:', response.status);
@@ -81,8 +78,7 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
   React.useEffect(() => {
     if (serviceId > 0 && authToken) {
       console.log('📸 Running endpoint test...');
-      console.log('📸 Full token length:', authToken.length);
-      console.log('📸 Token structure:', authToken.split('.').map(part => part.length));
+      console.log('📸 Auth system: Session-based (no JWT needed)');
       testEndpoint();
     }
   }, [serviceId]);
