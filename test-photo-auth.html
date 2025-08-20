@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Photo Auth Test - Admin Panel</title>
+</head>
+<body>
+    <h1>Test Photo Auth - Admin Panel Style</h1>
+    <button onclick="loginAndTest()" style="padding:10px;background:blue;color:white;">Login + Test Photos</button>
+    <div id="results" style="margin:10px;padding:10px;border:1px solid #ccc;"></div>
+    
+    <script>
+    function log(msg) {
+        document.getElementById('results').innerHTML += '<p>' + msg + '</p>';
+        console.log(msg);
+    }
+    
+    async function loginAndTest() {
+        try {
+            log('🔄 Starting login...');
+            
+            const loginResponse = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: 'jelena@frigosistemtodosijevic.me',
+                    password: 'admin123'
+                }),
+                credentials: 'include'
+            });
+            
+            const loginData = await loginResponse.json();
+            log('📊 Login Response: ' + JSON.stringify(loginData));
+            
+            if (!loginData.token) {
+                throw new Error('No token in response');
+            }
+            
+            localStorage.setItem('auth_token', loginData.token);
+            log('✅ Token saved: ' + loginData.token.substring(0, 30) + '...');
+            
+            // Test photos immediately
+            log('🔄 Testing photos API...');
+            const photosResponse = await fetch('/api/service-photos?serviceId=234', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + loginData.token,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            
+            log('📊 Photos Status: ' + photosResponse.status);
+            const photosData = await photosResponse.json();
+            log('📊 Photos Response: ' + JSON.stringify(photosData, null, 2));
+            
+            if (photosResponse.ok && Array.isArray(photosData)) {
+                log('✅ SUCCESS! Got ' + photosData.length + ' photos');
+                // Try to show first photo
+                if (photosData.length > 0) {
+                    const photoUrl = photosData[0].photoUrl || photosData[0].photoPath;
+                    if (photoUrl) {
+                        log('📸 First photo: ' + photoUrl);
+                        const img = document.createElement('img');
+                        img.src = photoUrl;
+                        img.style.maxWidth = '300px';
+                        img.onload = () => log('✅ Photo loaded successfully');
+                        img.onerror = () => log('❌ Photo failed to load');
+                        document.getElementById('results').appendChild(img);
+                    }
+                }
+            } else {
+                log('❌ Photos API failed: ' + JSON.stringify(photosData));
+            }
+            
+        } catch (error) {
+            log('❌ Error: ' + error.message);
+            console.error('Full error:', error);
+        }
+    }
+    </script>
+</body>
+</html>

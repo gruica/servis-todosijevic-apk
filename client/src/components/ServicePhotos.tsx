@@ -64,27 +64,45 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
     setError(null);
     
     try {
-      const token = localStorage.getItem('auth_token');
+      let token = localStorage.getItem('auth_token');
       console.log('🔑 JWT Token status:', token ? 'POSTOJI' : 'NEMA');
       
+      // Ako nema token, pokušaj da dohvatiš preko /api/jwt-user
       if (!token) {
-        throw new Error('Korisnik nije prijavljen');
+        console.log('🔄 Nema token, pokušavam refresh...');
+        try {
+          const userResponse = await fetch('/api/jwt-user', {
+            method: 'GET',
+            credentials: 'include'
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            if (userData && userData.token) {
+              token = userData.token;
+              localStorage.setItem('auth_token', token);
+              console.log('🔑 Dobio token preko /api/jwt-user');
+            }
+          }
+        } catch (refreshError) {
+          console.error('🔄 Refresh token neuspešan:', refreshError);
+        }
+      }
+      
+      if (!token) {
+        throw new Error('Korisnik nije prijavljen - nema token');
       }
       
       const url = `/api/service-photos?serviceId=${serviceId}`;
-      console.log('🌐 Pozivam:', url);
+      console.log('🌐 Pozivam:', url, 'sa token:', token.substring(0, 20) + '...');
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          'Content-Type': 'application/json'
         },
-        credentials: 'include',
-        cache: 'no-store'
+        credentials: 'include'
       });
       
       console.log('🌐 Response status:', response.status);
@@ -157,9 +175,13 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
   }, [serviceId, lastLoadedServiceId, photos.length]);
 
   useEffect(() => {
+    console.log('🔄 USEEFFECT FIRED:', { serviceId, lastLoadedServiceId, condition: serviceId > 0 && serviceId !== lastLoadedServiceId });
     if (serviceId > 0 && serviceId !== lastLoadedServiceId) {
       console.log('🔄 USEEFFECT: serviceId changed from', lastLoadedServiceId, 'to', serviceId);
+      console.log('🚀 TRIGGERING loadPhotos() NOW');
       loadPhotos();
+    } else {
+      console.log('🚫 USEEFFECT: Skipping loadPhotos because condition not met');
     }
   }, [serviceId, loadPhotos, lastLoadedServiceId]);
 
