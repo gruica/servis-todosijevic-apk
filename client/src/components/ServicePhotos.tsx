@@ -420,7 +420,14 @@ function PhotoCard({ photo, onView }: PhotoCardProps) {
           onClick={() => onView(photo)}
           onError={(e) => {
             const img = e.target as HTMLImageElement;
-            img.src = '/api/placeholder/300x300?text=Foto+nije+dostupna';
+            img.style.display = 'none';
+            const parent = img.parentElement;
+            if (parent && !parent.querySelector('.photo-error-placeholder')) {
+              const placeholder = document.createElement('div');
+              placeholder.className = 'photo-error-placeholder w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm';
+              placeholder.textContent = 'Fotografija nije dostupna';
+              parent.appendChild(placeholder);
+            }
           }}
         />
         <Badge 

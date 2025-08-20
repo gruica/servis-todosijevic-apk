@@ -390,16 +390,20 @@ const AdminServices = memo(function AdminServices() {
         
         // Čisti state posle otvaranja da se izbegnu duplikati
         setShouldAutoOpen(false);
+        clearHighlight();
         history.replaceState(null, '', '/admin/services');
       }
     }
-  }, [services, highlightedServiceId, shouldAutoOpen, setShouldAutoOpen]);
+  }, [highlightedServiceId, shouldAutoOpen, services.length]); // Removed dependencies that cause re-renders
 
 
 
   // Fetch technicians
   const { data: technicians = [] } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Update service mutation

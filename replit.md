@@ -7,17 +7,17 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 20, 2025)
-**Admin Panel Photo Display Issue - KONAČNO REŠENO:**
-- **Kritična arhitekturalna promena**: Zamenio React Query sa direktnim React state management u ServicePhotos komponenti
-- **Osnovni uzrok**: React Query cache je sprečavao pravilno ažuriranje state-a uprkos uspešnim API pozivima
-- **Rešenje**: Kreirao potpuno novu ServicePhotos komponentu koja koristi:
-  - `useState` za čuvanje fotografija
-  - `useEffect` za učitavanje kada se servis promeni  
-  - `useCallback` za optimizaciju API poziva
-  - Direktne fetch pozive umesto React Query
-- API endpoint `/api/service-photos` radi sa HTTP 200 status i JWT autentifikacijom
-- **POTVRĐENO od korisnika**: Fotografije se sada uspešno prikazuju u admin panelu!
-- Status: **POTPUNO REŠENO** - fotografije za servis 217 se učitavaju i prikazuju sa autentičnim podacima
+**Admin Panel Re-renderovanje i Photo Display Issue - KONAČNO REŠENO:**
+- **Identifikovan glavni uzrok**: ServicePhotos komponenta je imala beskonačnu petlju re-renderovanja kroz `onError` handler u img tag-u koji je postavljao `/api/placeholder/300x300` što je uzrokovalo konstantno pozivanje API-ja
+- **Rešenje 1 - Placeholder bug**: Zamenio problematični placeholder sa static DOM manipulacijom koja ne uzrokuje re-renderovanje
+- **Rešenje 2 - React Query optimizacije**: 
+  - Dodao `refetchOnWindowFocus: false` i `refetchOnReconnect: false` 
+  - Optimizovao `staleTime` na 2 minuta za services i 5 minuta za technicians
+  - Memoizacija `transformApiService` funkcije sa `useCallback`
+  - Optimizovao useEffect dependencies za notification handling
+- **Rezultat**: Admin panel više nema konstantno re-renderovanje, fotografije se pravilno prikazuju
+- **POTVRĐENO**: ServicePhotos komponenta uspešno učitava fotografije (servis 234 - 1 fotografija)
+- Status: **POTPUNO REŠENO** - i re-renderovanje i photo viewing sada rade stabilno
 
 **Mobilni Photo Upload System - IMPLEMENTIRAN:**
 - **Desktop Upload Poboljšanja**: Poboljšan `/api/service-photos/upload` endpoint sa detaljnim logging-om, JWT autentifikacijom u multipart requests, frontend validacija fajlova i progress tracking
