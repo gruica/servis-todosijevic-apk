@@ -53,29 +53,10 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
   }
 
-  // Fetch service photos - UKLONJEN ENABLED USLOV
+  // Fetch service photos - KORISTI STANDARDNI QUERY PATTERN
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
-    queryFn: async () => {
-      console.log('🔗 ServicePhotos API poziv - serviceId:', serviceId);
-      const url = `/api/service-photos?serviceId=${serviceId}`;
-      console.log('🔗 ServicePhotos API URL:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('🔗 ServicePhotos API parsed data:', data);
-      return data as ServicePhoto[];
-    }
+    enabled: serviceId > 0
   });
 
   // Debug logging za API poziv
