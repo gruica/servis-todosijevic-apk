@@ -53,50 +53,38 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
   }
 
-  // Clear cache and force fresh API call
+  // Service photos with stable query key and proper response handling
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
-    queryKey: [`/api/service-photos-fresh-${serviceId}-${Date.now()}`], // Force unique key
+    queryKey: ['/api/service-photos', serviceId], // Stable key
     queryFn: async () => {
-      console.log('🔥 FRESH API CALL START for serviceId:', serviceId);
       const token = localStorage.getItem('auth_token');
-      console.log('🔑 Token available:', !!token);
-      
       if (!token) {
         throw new Error('Korisnik nije prijavljen');
       }
       
-      const url = `/api/service-photos?serviceId=${serviceId}`;
-      console.log('📡 Making request to:', url);
-      
-      const response = await fetch(url, {
+      const response = await fetch(`/api/service-photos?serviceId=${serviceId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        }
       });
       
-      console.log('📡 Response status:', response.status);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('📡 Response error:', errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        throw new Error(`HTTP ${response.status}`);
       }
       
-      const data = await response.json();
-      console.log('📡 Response data:', data);
+      const data: ServicePhoto[] = await response.json();
+      console.log('✅ Photos loaded successfully:', data.length, 'photos');
       return data;
     },
-    enabled: true, // Always enabled
-    staleTime: 0, // No cache
-    gcTime: 0, // No garbage collection time
-    refetchOnMount: true,
-    refetchOnWindowFocus: false
+    enabled: serviceId > 0,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnMount: false,
+    retry: 1
   });
 
-  // Debug logging za API poziv
-  console.log('🔧 ServicePhotos API state - isLoading:', isLoading, 'error:', error, 'photos:', photos, 'photos.length:', Array.isArray(photos) ? photos.length : 'NOT_ARRAY');
+  // Clean state logging
+  console.log('📷 Photos state:', { isLoading, hasPhotos: photos.length > 0, count: photos.length });
   
   // Debug specific photo URLs
   if (Array.isArray(photos) && photos.length > 0) {
