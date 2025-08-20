@@ -53,16 +53,22 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
     console.log('🚨 enabled condition:', !!serviceId && serviceId > 0);
   }
 
-  // Fetch service photos with proper JWT authentication
+  // Clear cache and force fresh API call
   const { data: photos = [], isLoading, refetch, error } = useQuery<ServicePhoto[]>({
-    queryKey: ['/api/service-photos', serviceId],
+    queryKey: [`/api/service-photos-fresh-${serviceId}-${Date.now()}`], // Force unique key
     queryFn: async () => {
+      console.log('🔥 FRESH API CALL START for serviceId:', serviceId);
       const token = localStorage.getItem('auth_token');
+      console.log('🔑 Token available:', !!token);
+      
       if (!token) {
         throw new Error('Korisnik nije prijavljen');
       }
       
-      const response = await fetch(`/api/service-photos?serviceId=${serviceId}`, {
+      const url = `/api/service-photos?serviceId=${serviceId}`;
+      console.log('📡 Making request to:', url);
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -70,16 +76,23 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
         credentials: 'include'
       });
       
+      console.log('📡 Response status:', response.status);
+      
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('📡 Response error:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('📡 Response data:', data);
+      return data;
     },
-    enabled: serviceId > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
-    refetchOnMount: true
+    enabled: true, // Always enabled
+    staleTime: 0, // No cache
+    gcTime: 0, // No garbage collection time
+    refetchOnMount: true,
+    refetchOnWindowFocus: false
   });
 
   // Debug logging za API poziv
