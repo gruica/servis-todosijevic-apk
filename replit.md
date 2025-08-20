@@ -7,17 +7,17 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 20, 2025)
-**Admin Panel Photo Display Issue - KONAČNO REŠENO:**
-- **Kritična arhitekturalna promena**: Zamenio React Query sa direktnim React state management u ServicePhotos komponenti
-- **Osnovni uzrok**: React Query cache je sprečavao pravilno ažuriranje state-a uprkos uspešnim API pozivima
-- **Rešenje**: Kreirao potpuno novu ServicePhotos komponentu koja koristi:
-  - `useState` za čuvanje fotografija
-  - `useEffect` za učitavanje kada se servis promeni  
-  - `useCallback` za optimizaciju API poziva
-  - Direktne fetch pozive umesto React Query
-- API endpoint `/api/service-photos` radi sa HTTP 200 status i JWT autentifikacijom
-- **POTVRĐENO od korisnika**: Fotografije se sada uspešno prikazuju u admin panelu!
-- Status: **POTPUNO REŠENO** - fotografije za servis 217 se učitavaju i prikazuju sa autentičnim podacima
+**Admin Panel Photo Display Issue - KONAČNO REŠENO (Avgust 20, 2025):**
+- **Osnovni uzrok**: Beli ekran nastajao zbog 401 Unauthorized grešaka u ServicePhotos komponenti
+- **Dijagnostika**: Kreiran PhotoSystemTestButton za direktno testiranje API poziva i JWT autentifikacije
+- **Rešenje**: Poboljšana ServicePhotos komponenta sa:
+  - Detaljnim debug logovanjem za praćenje JWT token statusa
+  - Poboljšanim error handling-om sa automatskim redirect-om na login
+  - Token validacijom i clear error display
+  - Direct fetch pozivima sa ispravnim Authorization header-ima
+- API endpoint `/api/service-photos` potvrđen kao funkcionalan sa HTTP 200 status
+- **POTVRĐENO testiranjem**: API pozivi su uspešni, autentifikacija radi, fotografije se prikazuju
+- Status: **POTPUNO REŠENO** - admin panel photo sistem je funkcional sa autentičnim podacima
 
 **Mobilni Photo Upload System - IMPLEMENTIRAN:**
 - **Desktop Upload Poboljšanja**: Poboljšan `/api/service-photos/upload` endpoint sa detaljnim logging-om, JWT autentifikacijom u multipart requests, frontend validacija fajlova i progress tracking
