@@ -3433,16 +3433,16 @@ Frigo Sistem`;
         });
       }
       
-      // Transformiši fotografije za frontend - ISPRAVLJEN MAPPING PHOTO_PATH
+      // Transformiši fotografije za frontend - KONAČNO REŠENO
       const transformedPhotos = photos.map(photo => ({
         id: photo.id,
         serviceId: photo.serviceId,
-        photoUrl: photo.photoPath || photo.photo_path, // ISPRAVLJEN: photo_path je column name
+        photoUrl: photo.photoPath, // Drizzle pravilno mapira photoPath iz schema
         photoCategory: photo.category,
         description: photo.description,
         uploadedBy: photo.uploadedBy,
         uploadedAt: photo.uploadedAt,
-        fileName: (photo.photoPath || photo.photo_path) ? (photo.photoPath || photo.photo_path).split('/').pop() : null,
+        fileName: photo.photoPath ? photo.photoPath.split('/').pop() : null,
         fileSize: null // fileSize nije u trenutnom schema
       }));
       

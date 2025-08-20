@@ -209,17 +209,8 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
   // Group photos by category - safe guard against undefined photos
   const photosArray = Array.isArray(photos) ? photos : [];
   
-  // FORCE MANUAL PHOTO DATA FOR SERVIS 217 - TEMPORARY FIX
-  const manualPhotos217 = serviceId === 217 ? [{
-    id: 5,
-    serviceId: 217,
-    photoUrl: '/uploads/mobile_service_217_1755630276403.webp',
-    photoCategory: 'before',
-    description: 'Mobilna fotografija: 📸 Pre popravke'
-  }] : [];
-  
-  // Use manual data for 217, normal data for others
-  const finalPhotosArray = serviceId === 217 ? manualPhotos217 : photosArray;
+  // Group photos by category - no manual fixes needed
+  const finalPhotosArray = photosArray;
   
   // Debug logging specifically for service 217
   if (serviceId === 217) {
