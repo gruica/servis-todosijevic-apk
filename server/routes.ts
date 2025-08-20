@@ -3283,14 +3283,16 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-
+      console.log("[BASE64 UPLOAD] Original base64 length:", base64Data.length);
+      console.log("[BASE64 UPLOAD] Buffer size after conversion:", imageBuffer.length);
       
-      // Optimizuj i kompresuj sliku
-      const { ImageOptimizationService } = await import('./image-optimization-service.js');
-      const optimizationService = new ImageOptimizationService();
-      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
+      // ZAŠTITA: Proveri da li je buffer dovoljno veliki
+      if (imageBuffer.length < 1000) {
+        throw new Error(`Buffer je previše mali (${imageBuffer.length} bajtova) - možda je base64 oštećen`);
+      }
       
-      // Generiraj filename sa WebP ekstenzijom
+      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE za mobilne upload-e
+      // Samo promenimo ekstenziju na .webp ali čuvamo original
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
       // Privremeno čuvaj u uploads folderu
@@ -3304,7 +3306,9 @@ Frigo Sistem`;
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
-      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      // DIREKTNO ČUVANJE originalnog buffer-a bez optimizacije
+      fs.writeFileSync(uploadPath, imageBuffer);
+      console.log("[BASE64 UPLOAD] File saved directly to:", uploadPath, "Size:", imageBuffer.length);
       
       // Kreaj relativnu rutu za čuvanje u bazi
       const photoPath = `/uploads/${fileName}`;
@@ -3319,13 +3323,13 @@ Frigo Sistem`;
       };
 
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
+      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, originalSize: imageBuffer.length });
       
       res.status(201).json({
         ...savedPhoto,
         photoUrl: photoPath,
         fileName: fileName,
-        fileSize: optimizedResult.size
+        fileSize: imageBuffer.length
       });
     } catch (error) {
       console.error("[BASE64 PHOTO UPLOAD] ❌ Greška:", error);
