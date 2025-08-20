@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="sr-RS">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warranty Status Mockup</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .mockup-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .mockup-title {
+            color: #2563eb;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-section {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9fafb;
+        }
+
+        .form-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-title .new-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: 700;
+        }
+
+        .warranty-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .warranty-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .warranty-option:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .warranty-option.selected {
+            border-color: #2563eb;
+            background: #dbeafe;
+        }
+
+        .warranty-option.warning {
+            border-color: #f59e0b;
+            background: #fefbf0;
+        }
+
+        .warranty-option.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .warranty-radio {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .warranty-icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .warranty-text {
+            flex: 1;
+        }
+
+        .warranty-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .warranty-description {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .validation-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .validation-message.show {
+            display: block;
+        }
+
+        .business-partner-note {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0c4a6e;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .other-fields {
+            opacity: 0.6;
+            margin: 20px 0;
+        }
+
+        .field-group {
+            margin-bottom: 15px;
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .submit-section {
+            border-top: 2px solid #e5e7eb;
+            padding-top: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .submit-btn {
+            background: #2563eb;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-container">
+        <h1 class="mockup-title">🔧 KREIRANJE NOVOG SERVISA - Warranty Status Mockup</h1>
+        
+        <form id="serviceForm">
+            <!-- Other existing fields (shown dimmed) -->
+            <div class="other-fields">
+                <div class="field-group">
+                    <label class="field-label">Klijent</label>
+                    <input type="text" class="field-input" value="Marko Petrović" readonly>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Uređaj</label>
+                    <input type="text" class="field-input" value="Beko frižider BCN130020" readonly>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Opis problema</label>
+                    <input type="text" class="field-input" value="Frižider ne hladi dovoljno" readonly>
+                </div>
+            </div>
+
+            <!-- NEW WARRANTY STATUS SECTION -->
+            <div class="form-section">
+                <div class="form-title">
+                    🛡️ Status garancije
+                    <span class="new-badge">NOVO</span>
+                </div>
+                
+                <div class="warranty-options">
+                    <label class="warranty-option" for="warranty-in">
+                        <input type="radio" name="warrantyStatus" value="u garanciji" id="warranty-in" class="warranty-radio">
+                        <span class="warranty-icon">🟢</span>
+                        <div class="warranty-text">
+                            <div class="warranty-title">U garanciji</div>
+                            <div class="warranty-description">Garantni servis - uključuje se u Beko/ComPlus izveštaje</div>
+                        </div>
+                    </label>
+
+                    <label class="warranty-option" for="warranty-out">
+                        <input type="radio" name="warrantyStatus" value="van garancije" id="warranty-out" class="warranty-radio">
+                        <span class="warranty-icon">🔴</span>
+                        <div class="warranty-text">
+                            <div class="warranty-title">Van garancije</div>
+                            <div class="warranty-description">Plaćeni servis - neće biti uključen u garantne izveštaje</div>
+                        </div>
+                    </label>
+
+                    <label class="warranty-option warning" for="warranty-unknown">
+                        <input type="radio" name="warrantyStatus" value="nepoznato" id="warranty-unknown" class="warranty-radio">
+                        <span class="warranty-icon">🟡</span>
+                        <div class="warranty-text">
+                            <div class="warranty-title">Nepoznato</div>
+                            <div class="warranty-description">Nije jasno - potrebno je later proveriti i ažurirati</div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="validation-message" id="validationMsg">
+                    ⚠️ Morate odabrati status garancije pre slanja forme!
+                </div>
+
+                <div class="business-partner-note">
+                    💡 <strong>Business Partner savet:</strong> Većina servisa koju šaljete su garantni - možemo postaviti "U garanciji" kao default za vašu grupu.
+                </div>
+            </div>
+
+            <div class="submit-section">
+                <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                    Kreiraj Servis
+                </button>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+                    Forma neće biti poslata bez odabira warranty statusa
+                </p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('serviceForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const validationMsg = document.getElementById('validationMsg');
+        const warrantyOptions = document.querySelectorAll('input[name="warrantyStatus"]');
+
+        // Handle warranty status selection
+        warrantyOptions.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove all selection classes
+                document.querySelectorAll('.warranty-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+                // Add selected class to current option
+                this.closest('.warranty-option').classList.add('selected');
+
+                // Enable submit button
+                submitBtn.disabled = false;
+                validationMsg.classList.remove('show');
+
+                // Show warning if "unknown" is selected
+                if (this.value === 'nepoznato') {
+                    setTimeout(() => {
+                        alert('⚠️ UPOZORENJE: Odabrali ste "Nepoznato" - molimo da später ažurirate warranty status!');
+                    }, 100);
+                }
+            });
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const selectedWarranty = document.querySelector('input[name="warrantyStatus"]:checked');
+            
+            if (!selectedWarranty) {
+                validationMsg.classList.add('show');
+                submitBtn.disabled = true;
+                return;
+            }
+
+            alert(`✅ Servis kreiran sa warranty statusom: "${selectedWarranty.value}"`);
+        });
+
+        // Simulate hover effects
+        document.querySelectorAll('.warranty-option').forEach(option => {
+            option.addEventListener('mouseenter', function() {
+                if (!this.classList.contains('selected')) {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                }
+            });
+            
+            option.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
