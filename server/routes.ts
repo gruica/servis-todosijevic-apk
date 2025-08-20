@@ -28,7 +28,7 @@ import { ServisKomercCronService } from './servis-komerc-cron-service.js';
 import { ServisKomercNotificationService } from './servis-komerc-notification-service.js';
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 import { ObjectStorageService } from './objectStorage.js';
-// SMS mobile functionality has been completely removed
+// SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
 async function setupEnterpriseHealthEndpoint(app: Express) {
@@ -79,9 +79,11 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
   'cancelled': 'Otkazan'
 };
 
-// SMS functionality has been completely removed from the application
+// SMS funkcionalnost AKTIVNA - za automatske notifikacije statusa
 function generateStatusUpdateMessage(serviceId: number, newStatus: string, technicianName?: string | null): string {
-  return '';
+  const statusDescription = STATUS_DESCRIPTIONS[newStatus] || newStatus;
+  const technicianPart = technicianName ? ` Serviser: ${technicianName}.` : '';
+  return `Servis #${serviceId}: ${statusDescription}.${technicianPart} Frigo Sistem Todosijević`;
 }
 
 // Email postavke schema
@@ -214,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const senderId = settingsMap.sms_mobile_sender_id || null; // Uklonjen fallback da se prikazuje broj
       const enabled = settingsMap.sms_mobile_enabled === 'true';
       
-
+      console.log(`🔧 SMS Config Debug: apiKey=${!!apiKey}, baseUrl=${baseUrl}, enabled=${enabled}`);
       
       if (apiKey && baseUrl) {
         smsService = new SMSCommunicationService({
@@ -224,6 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled
         });
         console.log('✅ SMS Communication Service inicijalizovan uspešno');
+        console.log(`🔧 SMS isConfigured: ${smsService.isConfigured()}`);
       } else {
         console.log('⚠️ SMS servis nije inicijalizovan - nedostaju API ključ ili URL');
       }
