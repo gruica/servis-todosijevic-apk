@@ -81,13 +81,15 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
   React.useEffect(() => {
     if (serviceId > 0 && authToken) {
       console.log('📸 Running endpoint test...');
+      console.log('📸 Full token length:', authToken.length);
+      console.log('📸 Token structure:', authToken.split('.').map(part => part.length));
       testEndpoint();
     }
   }, [serviceId]);
 
-  // Temporarily use test endpoint to bypass JWT issues
+  // Use the actual JWT-protected endpoint  
   const { data: photos = [], isLoading, error, refetch } = useQuery<ServicePhoto[]>({
-    queryKey: [`/api/service-photos-test`],
+    queryKey: [`/api/service-photos?serviceId=${serviceId}`],
     enabled: !!serviceId && serviceId > 0
   });
 

@@ -55,7 +55,9 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
     return res.status(401).json({ error: 'Potrebna je prijava' });
   }
   
-  console.log('🔒 JWT Auth: Verifikujem token:', token.substring(0, 50) + '...');
+  console.log('🔒 JWT Auth: Verifikujem token (first 50 chars):', token.substring(0, 50) + '...');
+  console.log('🔒 JWT Auth: Token length:', token.length);
+  console.log('🔒 JWT Auth: Token parts:', token.split('.').map(part => part.length));
   const payload = verifyToken(token);
   if (!payload) {
     console.log('🔒 JWT Auth: Token verifikacija neuspešna');
