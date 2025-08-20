@@ -3341,7 +3341,7 @@ Frigo Sistem`;
         photoPath: photoPath,
         description: description || `Fotografija kategorije: ${photoCategory}`,
         category: photoCategory || 'other',
-        uploadedBy: req.user?.id || 1,
+        uploadedBy: (req.user as any)?.id || 1,
         isBeforeRepair: photoCategory === 'before'
       };
 
@@ -3354,9 +3354,9 @@ Frigo Sistem`;
         fileName: fileName,
         fileSize: imageBuffer.length
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("[BASE64 PHOTO UPLOAD] ❌ Greška:", error);
-      res.status(500).json({ error: "Greška pri upload-u fotografije" });
+      res.status(500).json({ error: "Greška pri upload-u fotografije: " + error.message });
     }
   });
 
