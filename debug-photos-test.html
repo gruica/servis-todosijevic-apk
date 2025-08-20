@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Fotografije Servis 217</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        img { max-width: 300px; border: 2px solid #ccc; margin: 10px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Test - Fotografije Servis 217</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Direktan pristup fotografiji</h2>
+        <p class="info">URL: /uploads/mobile_service_217_1755630276403.webp</p>
+        <img src="/uploads/mobile_service_217_1755630276403.webp" 
+             alt="Test fotografija servis 217"
+             onload="document.getElementById('result1').innerHTML = '✅ Fotografija se učitala uspešno'"
+             onerror="document.getElementById('result1').innerHTML = '❌ Greška pri učitavanju fotografije'">
+        <div id="result1" class="info">Učitavanje...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Sa punim URL-om</h2>
+        <p class="info">URL: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/uploads/mobile_service_217_1755630276403.webp</p>
+        <img src="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/uploads/mobile_service_217_1755630276403.webp" 
+             alt="Test fotografija sa punim URL"
+             onload="document.getElementById('result2').innerHTML = '✅ Fotografija se učitala uspešno'"
+             onerror="document.getElementById('result2').innerHTML = '❌ Greška pri učitavanju fotografije'">
+        <div id="result2" class="info">Učitavanje...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: API poziv za fotografije</h2>
+        <button onclick="testAPI()">Testiraj API</button>
+        <div id="api-result" class="info">Kliknite dugme za test</div>
+        <pre id="api-data" style="background: #f5f5f5; padding: 10px; margin-top: 10px;"></pre>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            const dataDiv = document.getElementById('api-data');
+            
+            try {
+                // First login as admin
+                const loginResponse = await fetch('/api/jwt-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'jelena@frigosistemtodosijevic.me',
+                        password: 'admin123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                if (!loginData.token) {
+                    throw new Error('Login failed');
+                }
+                
+                // Now fetch photos
+                const photosResponse = await fetch('/api/service-photos?serviceId=217', {
+                    headers: { 'Authorization': `Bearer ${loginData.token}` }
+                });
+                
+                const photosData = await photosResponse.json();
+                
+                resultDiv.innerHTML = `✅ API poziv uspešan. Pronađeno ${photosData.length} fotografija.`;
+                dataDiv.textContent = JSON.stringify(photosData, null, 2);
+                
+                // Try to load images from API data
+                if (photosData.length > 0) {
+                    const imageContainer = document.createElement('div');
+                    imageContainer.innerHTML = '<h4>Fotografije iz API-ja:</h4>';
+                    
+                    photosData.forEach((photo, index) => {
+                        const img = document.createElement('img');
+                        const fullUrl = photo.photoUrl.startsWith('http') ? photo.photoUrl : window.location.origin + photo.photoUrl;
+                        img.src = fullUrl;
+                        img.alt = `Fotografija ${index + 1}`;
+                        img.onload = () => console.log(`✅ Fotografija ${index + 1} učitana:`, fullUrl);
+                        img.onerror = () => console.error(`❌ Greška fotografija ${index + 1}:`, fullUrl);
+                        imageContainer.appendChild(img);
+                    });
+                    
+                    dataDiv.appendChild(imageContainer);
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Greška: ${error.message}`;
+                dataDiv.textContent = error.stack;
+            }
+        }
+    </script>
+</body>
+</html>

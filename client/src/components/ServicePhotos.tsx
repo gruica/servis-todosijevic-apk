@@ -278,6 +278,26 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Debug section for troubleshooting */}
+          {serviceId === 217 && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h4 className="font-semibold text-yellow-800 mb-2">🔧 Debug Info - Servis 217</h4>
+              <p className="text-sm text-yellow-700">Photos array length: {photosArray.length}</p>
+              <p className="text-sm text-yellow-700">Is loading: {isLoading ? 'Yes' : 'No'}</p>
+              <p className="text-sm text-yellow-700">Error: {error ? 'Yes' : 'No'}</p>
+              {photosArray.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium text-yellow-800">Fotografije:</p>
+                  {photosArray.map(photo => (
+                    <div key={photo.id} className="text-xs text-yellow-600 ml-2">
+                      ID: {photo.id}, URL: {photo.photoUrl}, Category: {photo.photoCategory}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
           {photosArray.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Camera className="h-16 w-16 mx-auto mb-4 opacity-50" />
@@ -312,15 +332,35 @@ export function ServicePhotos({ serviceId, readOnly = false, showUpload = true }
                               src={photo.photoUrl.startsWith('http') ? photo.photoUrl : `${window.location.origin}${photo.photoUrl}`}
                               alt={photo.description || 'Service photo'}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                              onLoad={() => {
-                                console.log('🖼️ Image loaded successfully:', photo.photoUrl);
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                console.log('🖼️ Image loaded successfully:', {
+                                  photoId: photo.id,
+                                  originalUrl: photo.photoUrl,
+                                  finalUrl: target.src,
+                                  naturalWidth: target.naturalWidth,
+                                  naturalHeight: target.naturalHeight
+                                });
                               }}
                               onError={(e) => {
-                                console.error('❌ Image failed to load:', photo.photoUrl);
-                                console.error('❌ Full photo object:', photo);
-                                console.error('❌ Attempted URL:', photo.photoUrl.startsWith('http') ? photo.photoUrl : `${window.location.origin}${photo.photoUrl}`);
                                 const target = e.target as HTMLImageElement;
-                                target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f3f4f6"/><text x="100" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="sans-serif">Fotografija nedostupna</text></svg>';
+                                const attemptedUrl = photo.photoUrl.startsWith('http') ? photo.photoUrl : `${window.location.origin}${photo.photoUrl}`;
+                                console.error('❌ Image failed to load:', {
+                                  photoId: photo.id,
+                                  originalUrl: photo.photoUrl,
+                                  attemptedUrl: attemptedUrl,
+                                  error: 'Failed to load image'
+                                });
+                                // Try alternative URL format
+                                const alternativeUrl = photo.photoUrl.startsWith('/') ? 
+                                  `https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev${photo.photoUrl}` : 
+                                  photo.photoUrl;
+                                if (target.src !== alternativeUrl) {
+                                  console.log('🔄 Trying alternative URL:', alternativeUrl);
+                                  target.src = alternativeUrl;
+                                } else {
+                                  target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f3f4f6"/><text x="100" y="100" text-anchor="middle" dy=".3em" fill="%236b7280" font-family="sans-serif">Fotografija nedostupna</text></svg>';
+                                }
                               }}
                             />
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
