@@ -44,7 +44,7 @@ import {
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 import { ServicePhotos } from "@/components/ServicePhotos";
-import { PhotoSystemTestButton } from "@/components/PhotoSystemTestButton";
+
 import { PhotoDebugTest } from "@/components/PhotoDebugTest";
 
 interface AdminService {
@@ -657,7 +657,6 @@ const AdminServices = memo(function AdminServices() {
             </p>
           </div>
           <div className="flex gap-3">
-            <PhotoSystemTestButton />
             <AdminSparePartsOrderingSimple />
             <Button 
               onClick={() => window.location.href = '/admin/create-service'} 

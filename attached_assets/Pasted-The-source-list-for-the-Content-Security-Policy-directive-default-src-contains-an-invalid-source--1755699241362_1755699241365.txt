@@ -1,0 +1,1599 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-5effca3d7dbce84c.js:13 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+/~:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+/~:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+/~:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-5effca3d7dbce84c.js:13 [LaunchDarkly] LaunchDarkly client initialized
+ stallwart: failed ping 1
+googleads.g.doubleclick.net/pagead/viewthroughconversion/11411994397/?random=1755698587993&cv=11&fst=1755698587993&bg=ffffff&guid=ON&async=1&en=page_view&gtm=45be58i1h1v9171242957za200zd9171242957xec&gcd=13l3l3l3l1l1&dma=0&tag_exp=101509157~103116026~103200004~103233427~104527906~104528500~104684208~104684211~104948813~105330666&u_w=1920&u_h=1080&url=https%3A%2F%2Freplit.com%2Fusage&ref=https%3A%2F%2Freplit.com%2F~&hn=www.googleadservices.com&frm=0&tiba=Usage%20-%20Replit&npa=0&pscdl=label_only_5&auid=1987404906.1753812447&uaa=x86&uab=64&uafvl=Not%253BA%253DBrand%3B99.0.0.0%7CGoogle%2520Chrome%3B139.0.7258.67%7CChromium%3B139.0.7258.67&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dpage_view&rfmt=3&fmt=4:1  Failed to load resource: net::ERR_CONNECTION_CLOSED
+null:1  Failed to load resource: the server responded with a status of 404 ()
+ stallwart: failed ping 1
+ stallwart: failed ping 1
+ stallwart: failed ping 1
+ stallwart: failed ping 2
+ stallwart: failed ping 3
+ stallwart: failed ping 4
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+ Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'battery'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'layout-animations'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'navigation-override'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'oversized-images'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'publickey-credentials'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'speaker-selection'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'unoptimized-images'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'unsized-media'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Unrecognized feature: 'pointer-lock'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+ Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-9604e9a1b5ea3c0c.js:1
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar1l2%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+ [vite] connecting...
+ [vite] connected.
+client:733 [vite] connecting...
+client:827 [vite] connected.
+ 📊 Performance monitoring initialized - v2025.1.0
+ 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+ 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+performance-monitor.js:345 📊 Performance monitoring initialized - v2025.1.0
+(индекс):626 🎯 Service Worker registrovan uspešno: https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/
+icon-overlay-system.ts:68 🎯 Icon Overlay System aktiviran - Material Icons → Lucide React
+ [useAuth] JWT User data received: Object
+ 🎨 Dashboard Enhancement System aktiviran sa Lucide ikonama
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/jwt-user:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+use-auth.tsx:58 [useAuth] JWT User data received: Object
+stallwart.build.js:1 stallwart: failed ping 1
+dashboard-enhancement-system.ts:54 🎨 Dashboard Enhancement System aktiviran sa Lucide ikonama
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+stallwart.build.js:1 stallwart: failed ping 4
+sw.js:312 🎯 Service Worker: Frigo Sistem v2025.1.0 ready
+ 🔄 Zamenjen "mail" → Lucide React ikona
+ 🔄 Zamenjen "mail_outline" → Lucide React ikona
+ 🔄 Zamenjen "storage" → Lucide React ikona
+ 🔄 Zamenjen "import_export" → Lucide React ikona
+ 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "account_circle" → Lucide React ikona
+ 🎨 Dashboard Enhancement System deaktiviran
+ 🔄 Zamenjen "mail" → Lucide React ikona
+ 🔄 Zamenjen "mail_outline" → Lucide React ikona
+ 🔄 Zamenjen "storage" → Lucide React ikona
+ 🔄 Zamenjen "import_export" → Lucide React ikona
+ 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "account_circle" → Lucide React ikona
+ServicePhotos.tsx:41 🔧 ServicePhotos rendered - serviceId: 234 readOnly: false showUpload: true
+ServicePhotos.tsx:133 🔍 DIREKTAN STATE: Object
+ServicePhotos.tsx:143 🎨 RENDER CONDITIONS: Object
+ServicePhotos.tsx:250 🔍 FINAL RENDER CHECK: Object
+ServicePhotos.tsx:258 🟡 RENDERUJEM: Loading state
+ServicePhotos.tsx:127 🔄 USEEFFECT: serviceId changed from -1 to 234
+ServicePhotos.tsx:55 🔥 DIREKTAN API POZIV ZAPOČET za serviceId: 234
+ServicePhotos.tsx:68 🔑 JWT Token status: POSTOJI
+ServicePhotos.tsx:69 🔑 JWT Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
+ServicePhotos.tsx:76 🌐 Pozivam: /api/service-photos?serviceId=234
+ServicePhotos.tsx:91 🌐 Response status: 200
+ServicePhotos.tsx:109 ✅ API USPEŠAN - učitano: 1 fotografija
+ServicePhotos.tsx:110 ✅ Podaci: Array(1)
+ServicePhotos.tsx:111 🎯 POSTAVLJAM STATE: Array(1)
+ServicePhotos.tsx:41 🔧 ServicePhotos rendered - serviceId: 234 readOnly: false showUpload: true
+ServicePhotos.tsx:133 🔍 DIREKTAN STATE: Object
+ServicePhotos.tsx:143 🎨 RENDER CONDITIONS: Object
+ServicePhotos.tsx:250 🔍 FINAL RENDER CHECK: Object
+ServicePhotos.tsx:304 🟢 RENDERUJEM: Main component sa 1 fotografija
+mobile_service_234_1755690997335.webp:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+mobile_service_234_1755690997335.webp:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+ 🔄 Zamenjen "mail" → Lucide React ikona
+ 🔄 Zamenjen "mail_outline" → Lucide React ikona
+ 🔄 Zamenjen "storage" → Lucide React ikona
+ 🔄 Zamenjen "import_export" → Lucide React ikona
+ 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "account_circle" → Lucide React ikona
+ 🔄 Zamenjen "mail" → Lucide React ikona
+ 🔄 Zamenjen "mail_outline" → Lucide React ikona
+ 🔄 Zamenjen "storage" → Lucide React ikona
+ 🔄 Zamenjen "import_export" → Lucide React ikona
+ 🔄 Zamenjen "cleaning_services" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "euro" → Lucide React ikona
+ 🔄 Zamenjen "account_circle" → Lucide React ikona
+ServicePhotos.tsx:41 🔧 ServicePhotos rendered - serviceId: 234 readOnly: false showUpload: true
+ServicePhotos.tsx:133 🔍 DIREKTAN STATE: Object
+ServicePhotos.tsx:143 🎨 RENDER CONDITIONS: Object
+ServicePhotos.tsx:250 🔍 FINAL RENDER CHECK: Object
+ServicePhotos.tsx:258 🟡 RENDERUJEM: Loading state
+ServicePhotos.tsx:127 🔄 USEEFFECT: serviceId changed from -1 to 234
+ServicePhotos.tsx:55 🔥 DIREKTAN API POZIV ZAPOČET za serviceId: 234
+ServicePhotos.tsx:68 🔑 JWT Token status: POSTOJI
+ServicePhotos.tsx:69 🔑 JWT Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
+ServicePhotos.tsx:76 🌐 Pozivam: /api/service-photos?serviceId=234
+ServicePhotos.tsx:91 🌐 Response status: 200
+ServicePhotos.tsx:109 ✅ API USPEŠAN - učitano: 1 fotografija
+ServicePhotos.tsx:110 ✅ Podaci: Array(1)
+ServicePhotos.tsx:111 🎯 POSTAVLJAM STATE: Array(1)
+ServicePhotos.tsx:41 🔧 ServicePhotos rendered - serviceId: 234 readOnly: false showUpload: true
+ServicePhotos.tsx:133 🔍 DIREKTAN STATE: Object
+ServicePhotos.tsx:143 🎨 RENDER CONDITIONS: Object
+ServicePhotos.tsx:250 🔍 FINAL RENDER CHECK: Object
+ServicePhotos.tsx:304 🟢 RENDERUJEM: Main component sa 1 fotografija
+mobile_service_234_1755690997335.webp:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+mobile_service_234_1755690997335.webp:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+stallwart.build.js:1 stallwart: failed ping 1
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Преузимање је завршио учитавање GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+Учитавање ставке Преузимање није успело: GET <URL>.
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+sw.js:110 Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+ Учитавање ставке Преузимање није успело: GET https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/placeholder/300x300?text=Foto+nije+dostupna.
+handleAPIRequest @ sw.js:110
+(анонимно) @ sw.js:94
+stallwart.build.js:1 stallwart: failed ping 2
+_app-5effca3d7dbce84c.js:13 [Violation] 'setTimeout' handler took 71ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] 'message' handler трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+[Violation] Forced reflow while executing JavaScript трајало је <N>ms
+_app-5effca3d7dbce84c.js:13 Преузимање је завршио учитавање POST https://replit.com/graphql.
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+e @ _app-5effca3d7dbce84c.js:23
+t.subscribe @ _app-5effca3d7dbce84c.js:23
+e.consumeQueue @ _app-5effca3d7dbce84c.js:40
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e.scheduleQueueConsumption @ _app-5effca3d7dbce84c.js:40
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+e @ _app-5effca3d7dbce84c.js:23
+t.subscribe @ _app-5effca3d7dbce84c.js:23
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+e @ _app-5effca3d7dbce84c.js:23
+t.subscribe @ _app-5effca3d7dbce84c.js:23
+e.try @ _app-5effca3d7dbce84c.js:40
+e.start @ _app-5effca3d7dbce84c.js:40
+t.request @ _app-5effca3d7dbce84c.js:40
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+e.execute @ _app-5effca3d7dbce84c.js:28
+e.getObservableFromLink @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+s @ _app-5effca3d7dbce84c.js:15
+e.mutate @ _app-5effca3d7dbce84c.js:28
+e.mutate @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:20
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+(анонимно) @ main-d136f6261ddee54c.js:1
+n @ main-d136f6261ddee54c.js:1
+u @ main-d136f6261ddee54c.js:1
+(анонимно) @ main-d136f6261ddee54c.js:1
+(анонимно) @ main-d136f6261ddee54c.js:1
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+n @ _app-5effca3d7dbce84c.js:13
+_app-5effca3d7dbce84c.js:13 XHR је завршио учитавање POST https://events.launchdarkly.com/events/bulk/62b35a865152ab14c5942820.
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ _app-5effca3d7dbce84c.js:20
+o @ _app-5effca3d7dbce84c.js:20
+promise @ _app-5effca3d7dbce84c.js:40
+(анонимно) @ _app-5effca3d7dbce84c.js:40
+r.httpRequest @ _app-5effca3d7dbce84c.js:40
+t @ _app-5effca3d7dbce84c.js:40
+a.sendChunk @ _app-5effca3d7dbce84c.js:40
+a.sendEvents @ _app-5effca3d7dbce84c.js:40
+a.flush @ _app-5effca3d7dbce84c.js:40
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+e @ _app-5effca3d7dbce84c.js:40
+n @ _app-5effca3d7dbce84c.js:13
+_app-5effca3d7dbce84c.js:13 Преузимање је завршио учитавање POST https://logs.browser-intake-us5-datadoghq.com/api/v2/logs?ddsource=browser&ddtags=sdk_version%3A4.46.0%2Capi%3Afetch%2Cenv%3Aproduction%2Cservice%3Awebsite%2Cversion%3Afcb33507&dd-api-key=pub31a5047a3a4692afb84a423db984dc57&dd-evp-origin-version=4.46.0&dd-evp-origin=browser&dd-request-id=e40e1b9c-b609-4f67-b4e1-ef7a8f5b543e.
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ _app-5effca3d7dbce84c.js:1
+o @ _app-5effca3d7dbce84c.js:20
+a @ _app-5effca3d7dbce84c.js:40
+m @ _app-5effca3d7dbce84c.js:40
+g @ _app-5effca3d7dbce84c.js:40
+send @ _app-5effca3d7dbce84c.js:40
+e.flush @ _app-5effca3d7dbce84c.js:15
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+e.notify @ _app-5effca3d7dbce84c.js:15
+f @ _app-5effca3d7dbce84c.js:15
+(анонимно) @ _app-5effca3d7dbce84c.js:15
+d @ _app-5effca3d7dbce84c.js:1
+(анонимно) @ _app-5effca3d7dbce84c.js:1
+n @ _app-5effca3d7dbce84c.js:13
+setTimeout
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+a @ _app-5effca3d7dbce84c.js:15
+notifyBeforeAddMessage @ _app-5effca3d7dbce84c.js:15
+e.push @ _app-5effca3d7dbce84c.js:15
+e.addOrUpdate @ _app-5effca3d7dbce84c.js:15
+e.add @ _app-5effca3d7dbce84c.js:15
+add @ _app-5effca3d7dbce84c.js:23
+(анонимно) @ _app-5effca3d7dbce84c.js:23
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+e.notify @ _app-5effca3d7dbce84c.js:28
+(анонимно) @ _app-5effca3d7dbce84c.js:23
+(анонимно) @ _app-5effca3d7dbce84c.js:28
+e.notify @ _app-5effca3d7dbce84c.js:28
+handleLog @ _app-5effca3d7dbce84c.js:23
+(анонимно) @ _app-5effca3d7dbce84c.js:23
+e.log @ _app-5effca3d7dbce84c.js:23
+d @ _app-5effca3d7dbce84c.js:1
+(анонимно) @ _app-5effca3d7dbce84c.js:1
+r.value @ _app-5effca3d7dbce84c.js:1
+e.info @ _app-5effca3d7dbce84c.js:23
+info @ _app-5effca3d7dbce84c.js:23
+n @ 9773-bca195b7d7ab28eb.js:1
+n @ _app-5effca3d7dbce84c.js:13
+stallwart.build.js:1 stallwart: failed ping 1
+[Violation] 'click' handler трајало је <N>ms
+[Violation] 'click' handler трајало је <N>ms
+[Violation] 'click' handler трајало је <N>ms
+[Violation] 'click' handler трајало је <N>ms
+[Violation] 'click' handler трајало је <N>ms
+_app-5effca3d7dbce84c.js:13 [Violation] Added non-passive event listener to a scroll-blocking 'wheel' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ _app-5effca3d7dbce84c.js:13
+(анонимно) @ 9773-bca195b7d7ab28eb.js:1
+oO @ framework-9604e9a1b5ea3c0c.js:1
+uB @ framework-9604e9a1b5ea3c0c.js:1
+(анонимно) @ framework-9604e9a1b5ea3c0c.js:1
+uO @ framework-9604e9a1b5ea3c0c.js:1
+u_ @ framework-9604e9a1b5ea3c0c.js:1
+r6 @ framework-9604e9a1b5ea3c0c.js:1
+(анонимно) @ framework-9604e9a1b5ea3c0c.js:1
+_app-5effca3d7dbce84c.js:13 [Violation] 'requestAnimationFrame' handler took 99ms
+stallwart.build.js:1 stallwart: failed ping 1
+_app-5effca3d7dbce84c.js:13 [Violation] 'requestAnimationFrame' handler took 69ms
+_app-5effca3d7dbce84c.js:13 [Violation] 'requestAnimationFrame' handler took 182ms
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+stallwart.build.js:1 stallwart: failed ping 3
+_app-5effca3d7dbce84c.js:1 [Violation] 'setInterval' handler took 93ms
+attached_assets/Snimak%20ekrana%20(131)_1755699123252.png:1  Failed to load resource: the server responded with a status of 404 ()
+Snimak%20ekrana%20(132)_1755699109836.png:1  Failed to load resource: the server responded with a status of 404 ()
+_app-5effca3d7dbce84c.js:13 [Violation] 'requestAnimationFrame' handler took 257ms
+_app-5effca3d7dbce84c.js:1 [Violation] 'setInterval' handler took 50ms
+_app-5effca3d7dbce84c.js:13 [Violation] 'mousemove' handler took 343ms
