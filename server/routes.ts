@@ -15,7 +15,7 @@ import { promises as fs } from "fs";
 import { eq, and, desc, gte, lte, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { SMSCommunicationService } from "./sms-communication-service.js";
-const { availableParts, appliances, applianceCategories, manufacturers, services, spareParts, users, technicians, sparePartOrders } = schema;
+const { availableParts, appliances, applianceCategories, manufacturers, services, spareParts, users, technicians, sparePartOrders, servicePhotos } = schema;
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
@@ -3464,6 +3464,64 @@ Frigo Sistem`;
     } catch (error) {
       console.error("[PHOTO TEST] ❌ Greška:", error);
       res.status(500).json({ error: "Test endpoint greška", details: error.message });
+    }
+  });
+
+  // Proxy endpoint za serviranje fotografija bez autentifikacije problema
+  app.get("/api/service-photo-proxy/:photoId", async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.photoId);
+      console.log(`📸 [PHOTO PROXY] Request za photo ID: ${photoId}`);
+      
+      // Dohvati informacije o fotografiji iz baze - direktno SQL
+      const photoResults = await db.select().from(servicePhotos).where(eq(servicePhotos.id, photoId));
+      const photo = photoResults[0];
+      if (!photo) {
+        console.log(`📸 [PHOTO PROXY] Photo ID ${photoId} not found in database`);
+        return res.status(404).json({ error: "Fotografija nije pronađena" });
+      }
+      
+      console.log(`📸 [PHOTO PROXY] Found photo:`, { id: photo.id, path: photo.photoPath });
+      
+      // Proverava da li je Object Storage putanja
+      if (photo.photoPath.startsWith('/objects/')) {
+        console.log(`📸 [PHOTO PROXY] Serving Object Storage photo: ${photo.photoPath}`);
+        const objectStorageService = new ObjectStorageService();
+        
+        try {
+          const objectFile = await objectStorageService.getObjectEntityFile(photo.photoPath);
+          console.log(`📸 [PHOTO PROXY] Object file found, downloading...`);
+          await objectStorageService.downloadObject(objectFile, res);
+          return;
+        } catch (error) {
+          console.error(`📸 [PHOTO PROXY] Object Storage error:`, error);
+          return res.status(404).json({ error: "Fotografija nije dostupna" });
+        }
+      }
+      
+      // Legacy /uploads/ putanje
+      if (photo.photoPath.startsWith('/uploads/')) {
+        console.log(`📸 [PHOTO PROXY] Serving legacy photo: ${photo.photoPath}`);
+        const fs = require('fs');
+        const path = require('path');
+        const fullPath = path.join(process.cwd(), photo.photoPath);
+        
+        if (fs.existsSync(fullPath)) {
+          console.log(`📸 [PHOTO PROXY] Legacy file exists: ${fullPath}`);
+          res.sendFile(fullPath);
+          return;
+        } else {
+          console.log(`📸 [PHOTO PROXY] Legacy file not found: ${fullPath}`);
+          return res.status(404).json({ error: "Fotografija nije pronađena na disku" });
+        }
+      }
+      
+      console.log(`📸 [PHOTO PROXY] Unknown path format: ${photo.photoPath}`);
+      return res.status(404).json({ error: "Nepoznat format putanje" });
+      
+    } catch (error) {
+      console.error(`📸 [PHOTO PROXY] Error:`, error);
+      res.status(500).json({ error: "Greška pri služenju fotografije" });
     }
   });
 

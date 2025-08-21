@@ -158,11 +158,11 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
     console.log('📸 Getting upload parameters...');
     const response = await apiRequest('/api/objects/upload', {
       method: 'POST'
-    }) as { uploadURL: string };
+    });
     console.log('📸 Upload parameters:', response);
     return {
       method: 'PUT' as const,
-      url: response.uploadURL,
+      url: (response as any).uploadURL,
     };
   };
 
@@ -264,19 +264,13 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
                   <div key={photo.id} className="relative group">
                     <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
                       <img
-                        src={photo.photoUrl}
+                        src={`/api/service-photo-proxy/${photo.id}`}
                         alt={photo.description || 'Service photo'}
                         className="w-full h-full object-cover cursor-pointer transition-all group-hover:scale-105"
                         onClick={() => setSelectedPhoto(photo)}
                         onError={(e) => {
-                          console.error('📸 Image load error:', photo.photoUrl);
+                          console.error('📸 Image load error for photo ID:', photo.id);
                           const target = e.target as HTMLImageElement;
-                          // FALLBACK STRATEGIJA: Pokušaj alternativne putanje
-                          const altSrc = photo.photoPath?.replace('/uploads/', '/uploads/') || photo.photoUrl;
-                          if (target.src !== altSrc && altSrc !== photo.photoUrl) {
-                            target.src = altSrc;
-                            return;
-                          }
                           target.src = '/api/placeholder/300x200?text=Slika+nedostaje';
                         }}
                       />
@@ -331,7 +325,7 @@ export function SimpleServicePhotos({ serviceId, readOnly = false, showUpload = 
             </DialogHeader>
             <div className="flex flex-col items-center space-y-4">
               <img
-                src={selectedPhoto.photoUrl}
+                src={`/api/service-photo-proxy/${selectedPhoto.id}`}
                 alt={selectedPhoto.description || 'Service photo'}
                 className="max-w-full max-h-[60vh] object-contain rounded-lg"
               />
