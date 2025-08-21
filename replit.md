@@ -6,7 +6,17 @@ This is a comprehensive service management application for Frigo Sistem Todosije
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (August 20, 2025)
+## Recent Changes (August 21, 2025)
+**Photo System Complete Replacement - KONAČNO IMPLEMENTIRAN (Avgust 21, 2025):**
+- **Stari sistem potpuno zamenjen**: Kompletan prelazak sa problematičnog Object Storage sistema na novi "čisti" photo sistem
+- **Novi clean-photo-routes.ts endpoint**: `/api/clean-photos/upload` i `/api/clean-photos` potpuno funkcionalni
+- **ServicePhotos.tsx ažuriran**: Komponenta sada koristi novi `/api/clean-photos` endpoint umesto starih Object Storage ruta
+- **MobilePhotoUploader.tsx ažuriran**: Mobilni upload sistem prebačen na novi čisti sistem sa `base64Data` strukturom
+- **Direktno čuvanje na disk**: Fotografije se čuvaju u `uploads/` folder + metadata u PostgreSQL bazu
+- **Test potvrđen**: Endpoint testiran - uspešno vraća 14 fotografija za servis 228, upload radi besprekorno
+- **Clean integration**: Uklonjen sve test komponente, sistem integrisan u standardne admin/servisers stranice
+- Status: **ZAVRŠENO** - photo sistem potpuno operacionalan sa lokalnim storage-om
+
 **"Servisi po serviserima" Data Display Issue - KONAČNO REŠEN (Avgust 20, 2025):**
 - **Osnovni uzrok PRONAĐEN**: Frontend pokušavao pristup nested strukturi (service.client?.fullName) dok backend vraća flattened podatke (service.clientName)
 - **Dijagnoza**: Backend `getAllServices()` metoda vraća JOIN podatke kao flattened strukture, frontend očekivao nested objekte

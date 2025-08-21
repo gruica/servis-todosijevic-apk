@@ -94,7 +94,7 @@ const ServicePhotosComponent = ({ serviceId, readOnly = false, showUpload = true
         throw new Error('Korisnik nije prijavljen - nema token');
       }
       
-      const url = `/api/service-photos?serviceId=${serviceId}`;
+      const url = `/api/clean-photos?serviceId=${serviceId}`;
       console.log('🌐 Pozivam:', url, 'sa token:', token ? token.substring(0, 20) + '...' : 'NEMA');
       
       const response = await fetch(url, {

@@ -36,7 +36,6 @@ import {
   Plus
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { CleanPhotoTest } from "@/components/CleanPhotoTest";
 
 // Service status configuration
 const statusConfig = {
@@ -523,10 +522,7 @@ export default function TechnicianServices() {
           </DialogContent>
         </Dialog>
 
-        {/* Photo Upload Test za Servisere */}
-        <div className="mt-8 mb-6">
-          <CleanPhotoTest />
-        </div>
+
       </div>
     </div>
   );

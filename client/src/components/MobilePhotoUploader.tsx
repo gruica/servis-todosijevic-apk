@@ -119,7 +119,7 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
       }
       enhancedDescription += ` [Mobilni upload: ${new Date().toLocaleString('sr-RS')}]`;
 
-      const response = await fetch('/api/service-photos/upload-base64', {
+      const response = await fetch('/api/clean-photos/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

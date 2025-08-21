@@ -58,7 +58,8 @@ export function registerCleanPhotoRoutes(app: Express): void {
         serviceId: parseInt(serviceId),
         photoPath: photoPath,
         description: description || 'Clean upload test',
-        uploadedBy: req.user.id,
+        uploadedBy: req.user?.id || 1,
+        isBeforeRepair: false,
         category: photoCategory || 'general'
       });
 
