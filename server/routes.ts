@@ -3214,32 +3214,52 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-      // DIREKTNO ČUVANJE BEZ OPTIMIZACIJE - ispravljka za oštećene slike
-      // ZAŠTITA OD DUPLIKATA - dodajemo random ID za jedinstvene nazive
-      const uniqueId = Math.random().toString(36).substr(2, 9);
-      const fileName = `mobile_service_${serviceId}_${Date.now()}_${uniqueId}.webp`;
-      const fs = await import('fs');
-      const path = await import('path');
-      
-      // Save locally in uploads folder using process.cwd()
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      
       // VALIDACIJA VELIČINE ORIGINALNOG FAJLA
       if (imageBuffer.length < 1000) {
         throw new Error('Originalna slika je previše mala - možda je oštećena');
       }
       
-      // DIREKTNO ČUVANJE ORIGINALNOG BUFFER-a BEZ OPTIMIZACIJE
-      fs.writeFileSync(uploadPath, imageBuffer);
+      console.log("📸 [MOBILE UPLOAD] Original image size:", imageBuffer.length, "bytes");
+      
+      // OPTIMIZACIJA SLIKE PRIJE UPLOAD-A U OBJECT STORAGE
+      const { ImageOptimizationService } = await import('./image-optimization-service.js');
+      const optimizationService = new ImageOptimizationService();
+      const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
+      
+      console.log("📸 [MOBILE UPLOAD] Optimized image size:", optimizedResult.size, "bytes");
+      
+      // UPLOAD U OBJECT STORAGE umesto lokalnog foldera
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
+      
+      // Dobij presigned URL za upload
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      console.log("📸 [MOBILE UPLOAD] Got presigned URL for Object Storage");
+      
+      // Upload optimizirane slike u Object Storage
+      const response = await fetch(uploadURL, {
+        method: 'PUT',
+        body: optimizedResult.buffer,
+        headers: {
+          'Content-Type': 'image/webp',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Object Storage upload failed: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log("📸 [MOBILE UPLOAD] Successfully uploaded to Object Storage");
+      
+      // Izvuci object ID iz upload URL-a i kreiraj object path
+      const urlParts = new URL(uploadURL);
+      const objectName = urlParts.pathname.split('/').pop();
+      const photoPath = `/objects/uploads/${objectName}`;
       
       // Save to database using existing storage method
       const photoData = {
         serviceId: parseInt(serviceId),
-        photoPath: `/uploads/${fileName}`, // Local path instead of Object Storage
+        photoPath: photoPath, // Object Storage path umesto lokalnog
         description: description || `Mobilna fotografija: ${photoCategory || 'general'}`,
         uploadedBy: userId!,
         isBeforeRepair: photoCategory === 'before',
@@ -3252,8 +3272,8 @@ Frigo Sistem`;
         success: true,
         photoId: savedPhoto.id,
         photoPath: savedPhoto.photoPath,
-        fileSize: imageBuffer.length,
-        message: "Fotografija uspešno uploaded"
+        fileSize: optimizedResult.size,
+        message: "Fotografija uspešno uploaded u Object Storage"
       });
       
     } catch (error) {
@@ -3262,10 +3282,10 @@ Frigo Sistem`;
     }
   });
 
-  // Base64 Photo Upload endpoint (zaobilazi multer probleme)
+  // Base64 Photo Upload endpoint (koristi Object Storage za trajno čuvanje)
   app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
     try {
-
+      console.log("📸 [BASE64 UPLOAD] Upload started - koristi Object Storage");
       
       // Proveriu role
       const userRole = (req.user as any)?.role;
@@ -3283,31 +3303,45 @@ Frigo Sistem`;
       const base64WithoutPrefix = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
       const imageBuffer = Buffer.from(base64WithoutPrefix, 'base64');
       
-
+      console.log("📸 [BASE64 UPLOAD] Original image size:", imageBuffer.length, "bytes");
       
       // Optimizuj i kompresuj sliku
       const { ImageOptimizationService } = await import('./image-optimization-service.js');
       const optimizationService = new ImageOptimizationService();
       const optimizedResult = await optimizationService.optimizeImage(imageBuffer, { format: 'webp' });
       
+      console.log("📸 [BASE64 UPLOAD] Optimized image size:", optimizedResult.size, "bytes");
+      
       // Generiraj filename sa WebP ekstenzijom
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
-      // Privremeno čuvaj u uploads folderu
-      const fs = await import('fs');
-      const path = await import('path');
-      const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+      // UPLOAD U OBJECT STORAGE umesto lokalnog foldera
+      const { ObjectStorageService } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
       
-      // Osiguraj da uploads folder postoji
-      const uploadsDir = path.dirname(uploadPath);
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      // Dobij presigned URL za upload
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      console.log("📸 [BASE64 UPLOAD] Got presigned URL for Object Storage");
+      
+      // Upload optimizirane slike u Object Storage
+      const response = await fetch(uploadURL, {
+        method: 'PUT',
+        body: optimizedResult.buffer,
+        headers: {
+          'Content-Type': 'image/webp',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Object Storage upload failed: ${response.status} ${response.statusText}`);
       }
       
-      fs.writeFileSync(uploadPath, optimizedResult.buffer);
+      console.log("📸 [BASE64 UPLOAD] Successfully uploaded to Object Storage");
       
-      // Kreaj relativnu rutu za čuvanje u bazi
-      const photoPath = `/uploads/${fileName}`;
+      // Izvuci object ID iz upload URL-a i kreiraj object path
+      const urlParts = new URL(uploadURL);
+      const objectName = urlParts.pathname.split('/').pop();
+      const photoPath = `/objects/uploads/${objectName}`;
       
       const photoData = {
         serviceId: parseInt(serviceId),
@@ -3400,25 +3434,35 @@ Frigo Sistem`;
           maxHeight: 1080
         });
         
-        // Generiraj filename sa WebP ekstenzijom
-        const fileName = `service_${serviceId}_${Date.now()}.webp`;
+        console.log("📸 [PHOTO UPLOAD] Optimized image size:", optimizedResult.size, "bytes");
         
-        // Sačuvaj u uploads folderu
-        const fs = await import('fs');
-        const path = await import('path');
-        const uploadPath = path.join(process.cwd(), 'uploads', fileName);
+        // UPLOAD U OBJECT STORAGE umesto lokalnog foldera
+        const { ObjectStorageService } = await import('./objectStorage.js');
+        const objectStorageService = new ObjectStorageService();
         
-        // Osiguraj da uploads folder postoji
-        const uploadsDir = path.dirname(uploadPath);
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
+        // Dobij presigned URL za upload
+        const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+        console.log("📸 [PHOTO UPLOAD] Got presigned URL for Object Storage");
+        
+        // Upload optimizirane slike u Object Storage
+        const response = await fetch(uploadURL, {
+          method: 'PUT',
+          body: optimizedResult.buffer,
+          headers: {
+            'Content-Type': 'image/webp',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Object Storage upload failed: ${response.status} ${response.statusText}`);
         }
         
-        fs.writeFileSync(uploadPath, optimizedResult.buffer);
-        console.log("📸 [PHOTO UPLOAD] File saved to:", uploadPath);
+        console.log("📸 [PHOTO UPLOAD] Successfully uploaded to Object Storage");
         
-        // Kreaj relativnu rutu za čuvanje u bazi
-        const photoPath = `/uploads/${fileName}`;
+        // Izvuci object ID iz upload URL-a i kreiraj object path
+        const urlParts = new URL(uploadURL);
+        const objectName = urlParts.pathname.split('/').pop();
+        const photoPath = `/objects/uploads/${objectName}`;
         
         const photoData = {
           serviceId: parseInt(serviceId),
