@@ -3035,31 +3035,34 @@ Frigo Sistem`;
     }
   });
 
-  // Serving private objects endpoint
-  app.get("/objects/:objectPath(*)", jwtAuth, async (req, res) => {
-    const userId = req.user.id;
-    const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage");
-    const { ObjectPermission } = await import("./objectAcl");
-    const objectStorageService = new ObjectStorageService();
+  // Serving private objects endpoint  
+  app.get("/objects/:objectPath(*)", async (req, res) => {
     try {
-      const objectFile = await objectStorageService.getObjectEntityFile(
-        req.path,
-      );
-      const canAccess = await objectStorageService.canAccessObjectEntity({
-        objectFile,
-        userId: userId.toString(),
-        requestedPermission: ObjectPermission.READ,
-      });
-      if (!canAccess) {
-        return res.sendStatus(401);
+      // Session-based auth check (kao za admin panel)
+      if (!req.session || !req.session.user) {
+        console.log("📸 [OBJECT SERVE] ❌ Nema session ili korisnika");
+        return res.status(401).json({ error: "Nemate dozvolu za pristup fotografijama" });
       }
-      objectStorageService.downloadObject(objectFile, res);
+
+      const userRole = req.session.user.role;
+      if (!["admin", "technician"].includes(userRole)) {
+        console.log(`📸 [OBJECT SERVE] ❌ Neispravna uloga: ${userRole}`);
+        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama" });
+      }
+
+      const { ObjectStorageService, ObjectNotFoundError } = await import('./objectStorage.js');
+      const objectStorageService = new ObjectStorageService();
+      
+      console.log(`📸 [OBJECT SERVE] Serviranje: ${req.path}`);
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      await objectStorageService.downloadObject(objectFile, res);
+      
     } catch (error) {
-      console.error("Error checking object access:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
+      console.error("❌ [OBJECT SERVE] Greška pri serviranju fotografije:", error);
+      if (error?.name === 'ObjectNotFoundError') {
+        return res.status(404).json({ error: "Fotografija nije pronađena" });
       }
-      return res.sendStatus(500);
+      return res.status(500).json({ error: "Greška pri učitavanju fotografije" });
     }
   });
 
@@ -3319,28 +3322,7 @@ Frigo Sistem`;
     }
   });
 
-  // Serviranje Object Storage fotografija preko /objects/ rute
-  app.get("/objects/:objectPath(*)", jwtAuth, async (req, res) => {
-    try {
-      const userRole = (req.user as any)?.role;
-      if (!["admin", "technician"].includes(userRole)) {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama" });
-      }
 
-      const { ObjectStorageService } = await import('./objectStorage.js');
-      const objectStorageService = new ObjectStorageService();
-      
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      await objectStorageService.downloadObject(objectFile, res);
-      
-    } catch (error) {
-      console.error("❌ [OBJECT STORAGE] Greška pri serviranje fotografije:", error);
-      if (error.name === 'ObjectNotFoundError') {
-        return res.status(404).json({ error: "Fotografija nije pronađena" });
-      }
-      return res.status(500).json({ error: "Greška pri učitavanju fotografije" });
-    }
-  });
 
   // Serviranje upload-ovanih fotografija (legacy - za stare fotografije)
   app.get("/uploads/:fileName", (req, res) => {
