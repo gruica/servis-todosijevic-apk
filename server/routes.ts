@@ -3266,6 +3266,197 @@ Frigo Sistem`;
     }
   });
 
+  // POST endpoint za kreiranje servisa od strane business partnera
+  app.post("/api/business/services-jwt", jwtAuth, async (req, res) => {
+    try {
+      console.log("=== KREIRANJE NOVOG SERVISA OD BUSINESS PARTNERA ===");
+      console.log("Podaci iz frontend forme:", req.body);
+      
+      // Provera da li je korisnik business partner
+      if (req.user?.role !== 'business_partner') {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu", 
+          message: "Samo poslovni partneri mogu kreirati servise preko ovog endpoint-a."
+        });
+      }
+      
+      console.log("Business partner kreira servis:", req.user?.username, "ID:", req.user?.id);
+      
+      // Izvuci podatke iz request body-ja
+      const { 
+        clientFullName, 
+        clientPhone, 
+        clientEmail, 
+        clientAddress, 
+        clientCity,
+        categoryId,
+        manufacturerId,
+        model,
+        serialNumber,
+        description
+      } = req.body;
+      
+      // Validacija obaveznih polja
+      if (!clientFullName?.trim()) {
+        return res.status(400).json({ 
+          error: "Ime klijenta je obavezno", 
+          message: "Molimo unesite ime i prezime klijenta."
+        });
+      }
+      
+      if (!clientPhone?.trim()) {
+        return res.status(400).json({ 
+          error: "Telefon klijenta je obavezan", 
+          message: "Molimo unesite telefon klijenta."
+        });
+      }
+      
+      if (!categoryId || categoryId === "") {
+        return res.status(400).json({ 
+          error: "Kategorija uređaja je obavezna", 
+          message: "Molimo izaberite kategoriju uređaja."
+        });
+      }
+      
+      if (!manufacturerId || manufacturerId === "") {
+        return res.status(400).json({ 
+          error: "Proizvođač je obavezan", 
+          message: "Molimo izaberite proizvođača uređaja."
+        });
+      }
+      
+      if (!model?.trim()) {
+        return res.status(400).json({ 
+          error: "Model uređaja je obavezan", 
+          message: "Molimo unesite model uređaja."
+        });
+      }
+      
+      if (!description?.trim() || description.trim().length < 5) {
+        return res.status(400).json({ 
+          error: "Opis problema je obavezan", 
+          message: "Opis problema mora biti detaljniji (minimum 5 karaktera)."
+        });
+      }
+
+      // 1. PRVO - Kreiraj ili pronađi klijenta
+      let client;
+      try {
+        // Pokušaj da pronađeš postojećeg klijenta po telefonu
+        const existingClients = await storage.getAllClients();
+        client = existingClients.find(c => c.phone === clientPhone.trim());
+        
+        if (!client) {
+          // Kreiraj novog klijenta
+          const clientData = {
+            fullName: clientFullName.trim(),
+            phone: clientPhone.trim(),
+            email: clientEmail?.trim() || null,
+            address: clientAddress?.trim() || null,
+            city: clientCity?.trim() || null,
+          };
+          
+          console.log("Kreiram novog klijenta:", clientData);
+          client = await storage.createClient(clientData);
+          console.log("Novi klijent kreiran sa ID:", client.id);
+        } else {
+          console.log("Koristim postojećeg klijenta:", client.id);
+        }
+      } catch (error) {
+        console.error("Greška pri kreiranju/pronalaženju klijenta:", error);
+        return res.status(500).json({ 
+          error: "Greška pri obradi klijenta", 
+          message: "Došlo je do greške prilikom kreiranja/pronalaska klijenta."
+        });
+      }
+
+      // 2. DRUGO - Kreiraj ili pronađi uređaj
+      let appliance;
+      try {
+        // Pokušaj da pronađeš postojeći uređaj
+        const existingAppliances = await storage.getAppliancesByClient(client.id);
+        appliance = existingAppliances.find(a => 
+          a.model === model.trim() && 
+          a.categoryId === parseInt(categoryId) &&
+          a.manufacturerId === parseInt(manufacturerId) &&
+          (!serialNumber?.trim() || a.serialNumber === serialNumber.trim())
+        );
+        
+        if (!appliance) {
+          // Kreiraj novi uređaj
+          const applianceData = {
+            clientId: client.id,
+            categoryId: parseInt(categoryId),
+            manufacturerId: parseInt(manufacturerId),
+            model: model.trim(),
+            serialNumber: serialNumber?.trim() || null,
+            purchaseDate: null, // Business partner ne šalje datum kupovine
+            warrantyExpires: null, // Neće biti postavljeno inicijalno
+            notes: null
+          };
+          
+          console.log("Kreiram novi uređaj:", applianceData);
+          appliance = await storage.createAppliance(applianceData);
+          console.log("Novi uređaj kreiran sa ID:", appliance.id);
+        } else {
+          console.log("Koristim postojeći uređaj:", appliance.id);
+        }
+      } catch (error) {
+        console.error("Greška pri kreiranju/pronalaženju uređaja:", error);
+        return res.status(500).json({ 
+          error: "Greška pri obradi uređaja", 
+          message: "Došlo je do greške prilikom kreiranja/pronalaska uređaja."
+        });
+      }
+
+      // 3. TREĆE - Kreiraj servis
+      try {
+        const serviceData = {
+          clientId: client.id,
+          applianceId: appliance.id,
+          description: description.trim(),
+          status: "pending" as const,
+          warrantyStatus: "nepoznato" as const, // Default za business partners
+          createdAt: new Date().toISOString().split('T')[0],
+          technicianId: null, // Biće dodeljen kasnije
+          scheduledDate: null,
+          completedDate: null,
+          technicianNotes: null,
+          cost: null,
+          usedParts: "[]",
+          machineNotes: null,
+          isCompletelyFixed: null,
+          businessPartnerId: req.user?.id || null,
+          partnerCompanyName: req.user?.companyName || null
+        };
+        
+        console.log("Kreiram novi servis:", serviceData);
+        const service = await storage.createService(serviceData);
+        console.log("Novi servis kreiran sa ID:", service.id);
+        
+        res.json({ 
+          success: true, 
+          service,
+          message: "Servis je uspešno kreiran" 
+        });
+        
+      } catch (error) {
+        console.error("Greška pri kreiranju servisa:", error);
+        return res.status(500).json({ 
+          error: "Greška pri kreiranju servisa", 
+          message: "Došlo je do greške prilikom kreiranja servisa."
+        });
+      }
+      
+    } catch (error) {
+      console.error("Opšta greška pri kreiranju business partner servisa:", error);
+      res.status(500).json({ 
+        error: "Greška servera", 
+        message: "Došlo je do neočekivane greške. Molimo pokušajte ponovo."
+      });
+    }
+  });
+
   return server;
 }
 
