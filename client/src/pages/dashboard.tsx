@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { ApplianceCategory, Client, Service } from "@shared/schema";
 import { WaitingForPartsSection } from "@/components/admin/WaitingForPartsSection";
+import { SimplePhotoTest } from "@/components/SimplePhotoTest";
 import { 
   Activity, 
   Users, 
@@ -204,6 +205,9 @@ const Dashboard = memo(function Dashboard() {
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto space-y-6">
+
+            {/* TEST KOMPONENTA - jednostavan photo sistem */}
+            <SimplePhotoTest />
 
             {/* Dashboard Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
