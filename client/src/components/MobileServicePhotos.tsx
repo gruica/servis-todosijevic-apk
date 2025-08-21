@@ -130,7 +130,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
       console.log('[BASE64 UPLOAD] Auth token exists:', !!token);
       console.log('[BASE64 UPLOAD] Auth token length:', token?.length);
 
-      const result = await apiRequest('/api/service-photos/mobile-upload', {
+      const result = await apiRequest('/api/service-photos/upload-base64', {
         method: 'POST',
         body: JSON.stringify(uploadData),
         headers: {
