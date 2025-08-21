@@ -3192,12 +3192,12 @@ Frigo Sistem`;
 
   // OBRISANO - konsolidovano u upload-base64 endpoint
 
-  // Base64 Photo Upload endpoint (koristi Object Storage za trajno čuvanje)
-  app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
+  // TEST: Lokalni uploads endpoint (kao servis 234)
+  app.post("/api/service-photos/upload-local-test", jwtAuth, async (req, res) => {
     try {
-      console.log("🚀 [BASE64 UPLOAD] ===== POČETAK UPLOAD PROCESA =====");
-      console.log("📸 [BASE64 UPLOAD] Upload started - koristi Object Storage");
-      console.log("🔍 [BASE64 UPLOAD] Request body keys:", Object.keys(req.body));
+      console.log("🚀 [LOCAL TEST] ===== TEST LOKALNOG UPLOAD SISTEMA =====");
+      console.log("📸 [LOCAL TEST] Upload started - koristi lokalni uploads folder");
+      console.log("🔍 [LOCAL TEST] Request body keys:", Object.keys(req.body));
       
       // Proveriu role
       const userRole = (req.user as any)?.role;
@@ -3224,36 +3224,20 @@ Frigo Sistem`;
       
       console.log("📸 [BASE64 UPLOAD] Optimized image size:", optimizedResult.size, "bytes");
       
-      // Generiraj filename sa WebP ekstenzijom
+      // Generiraj filename sa WebP ekstenzijom za lokalni sistem
       const fileName = filename ? filename.replace(/\.[^/.]+$/, '.webp') : `service_${serviceId}_${Date.now()}.webp`;
       
-      // UPLOAD U OBJECT STORAGE umesto lokalnog foldera
-      const { ObjectStorageService } = await import('./objectStorage.js');
-      const objectStorageService = new ObjectStorageService();
+      // UPLOAD U LOKALNI UPLOADS FOLDER (kao servis 234)
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      await fs.mkdir(uploadsDir, { recursive: true });
       
-      // Dobij presigned URL za upload
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      console.log("📸 [BASE64 UPLOAD] Got presigned URL for Object Storage");
+      const filePath = path.join(uploadsDir, fileName);
+      await fs.writeFile(filePath, optimizedResult.buffer);
       
-      // Upload optimizirane slike u Object Storage
-      const response = await fetch(uploadURL, {
-        method: 'PUT',
-        body: optimizedResult.buffer,
-        headers: {
-          'Content-Type': 'image/webp',
-        },
-      });
+      console.log(`📸 [LOCAL TEST] Successfully uploaded to local folder: ${fileName}`);
       
-      if (!response.ok) {
-        throw new Error(`Object Storage upload failed: ${response.status} ${response.statusText}`);
-      }
-      
-      console.log("📸 [BASE64 UPLOAD] Successfully uploaded to Object Storage");
-      
-      // Izvuci object ID iz upload URL-a i kreiraj object path
-      const urlParts = new URL(uploadURL);
-      const objectName = urlParts.pathname.split('/').pop();
-      const photoPath = `/objects/uploads/${objectName}`;
+      // Kreiraj lokalni photo path
+      const photoPath = `/uploads/${fileName}`;
       
       const photoData = {
         serviceId: parseInt(serviceId),
@@ -3264,9 +3248,9 @@ Frigo Sistem`;
         isBeforeRepair: photoCategory === 'before'
       };
 
-      console.log("🔍 [BASE64 UPLOAD] Pokušavam da sačuvam u bazu:", { photoPath, serviceId, category: photoCategory });
+      console.log("🔍 [LOCAL TEST] Pokušavam da sačuvam u bazu:", { photoPath, serviceId, category: photoCategory });
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("🔍 [BASE64 UPLOAD] ✅ USPEŠNO sačuvano u bazu:", { 
+      console.log("🔍 [LOCAL TEST] ✅ USPEŠNO sačuvano u bazu:", { 
         photoId: savedPhoto.id, 
         photoPath: savedPhoto.photoPath, 
         fileName, 
