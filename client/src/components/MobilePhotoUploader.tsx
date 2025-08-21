@@ -119,18 +119,21 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
       }
       enhancedDescription += ` [Mobilni upload: ${new Date().toLocaleString('sr-RS')}]`;
 
-      const response = await fetch('/api/clean-photos/upload', {
+      const response = await fetch('/api/service-photos/upload-base64', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          base64Data: capturedImage,
+          image: capturedImage,
           serviceId: serviceId,
-          photoCategory: selectedCategory,
+          category: selectedCategory,
           description: enhancedDescription,
-          filename: `mobile_${selectedCategory}_${serviceId}_${Date.now()}.jpg`
+          location: location ? {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude
+          } : undefined
         }),
       });
 
