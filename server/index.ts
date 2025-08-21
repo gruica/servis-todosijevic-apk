@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { registerSimpleRoutes } from "./simple-routes";
+import { registerCleanPhotoRoutes } from "./clean-photo-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
 import { setupAuth } from "./auth";
@@ -131,6 +132,9 @@ app.use((req, res, next) => {
   
   // Registruj jednostavne photo routes
   registerSimpleRoutes(app);
+  
+  // ČISTI photo routes sistem
+  registerCleanPhotoRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

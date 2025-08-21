@@ -3192,12 +3192,12 @@ Frigo Sistem`;
 
   // OBRISANO - konsolidovano u upload-base64 endpoint
 
-  // TEST: Lokalni uploads endpoint (kao servis 234) - BEZ AUTH za testiranje
-  app.post("/api/service-photos/upload-local-test", async (req, res) => {
+  // GLAVNI LOKALNI UPLOADS ENDPOINT (kao servis 234)
+  app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
     try {
-      console.log("🚀 [LOCAL TEST] ===== TEST LOKALNOG UPLOAD SISTEMA =====");
-      console.log("📸 [LOCAL TEST] Upload started - koristi lokalni uploads folder");
-      console.log("🔍 [LOCAL TEST] Request body keys:", Object.keys(req.body));
+      console.log("🚀 [BASE64 UPLOAD] ===== LOKALNI UPLOAD SISTEM =====");
+      console.log("📸 [BASE64 UPLOAD] Upload started - koristi lokalni uploads folder");
+      console.log("🔍 [BASE64 UPLOAD] Request body keys:", Object.keys(req.body));
       
       // Proveriu role
       const userRole = (req.user as any)?.role;
@@ -3234,7 +3234,7 @@ Frigo Sistem`;
       const filePath = path.join(uploadsDir, fileName);
       await fs.writeFile(filePath, optimizedResult.buffer);
       
-      console.log(`📸 [LOCAL TEST] Successfully uploaded to local folder: ${fileName}`);
+      console.log(`📸 [BASE64 UPLOAD] Successfully uploaded to local folder: ${fileName}`);
       
       // Kreiraj lokalni photo path
       const photoPath = `/uploads/${fileName}`;
@@ -3248,9 +3248,9 @@ Frigo Sistem`;
         isBeforeRepair: photoCategory === 'before'
       };
 
-      console.log("🔍 [LOCAL TEST] Pokušavam da sačuvam u bazu:", { photoPath, serviceId, category: photoCategory });
+      console.log("🔍 [BASE64 UPLOAD] Pokušavam da sačuvam u bazu:", { photoPath, serviceId, category: photoCategory });
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("🔍 [LOCAL TEST] ✅ USPEŠNO sačuvano u bazu:", { 
+      console.log("🔍 [BASE64 UPLOAD] ✅ USPEŠNO sačuvano u bazu:", { 
         photoId: savedPhoto.id, 
         photoPath: savedPhoto.photoPath, 
         fileName, 

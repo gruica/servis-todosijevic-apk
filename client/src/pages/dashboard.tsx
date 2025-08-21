@@ -12,6 +12,7 @@ import { Link, useLocation } from "wouter";
 import { ApplianceCategory, Client, Service } from "@shared/schema";
 import { WaitingForPartsSection } from "@/components/admin/WaitingForPartsSection";
 import { SimplePhotoTest } from "@/components/SimplePhotoTest";
+import { CleanPhotoTest } from "@/components/CleanPhotoTest";
 import { 
   Activity, 
   Users, 
@@ -569,6 +570,12 @@ const Dashboard = memo(function Dashboard() {
                 <WaitingForPartsSection />
               </CardContent>
             </Card>
+
+            {/* Clean Photo System Test */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+              <CleanPhotoTest />
+              <SimplePhotoTest />
+            </div>
           </div>
         </main>
       </div>
