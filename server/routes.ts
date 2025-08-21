@@ -3192,8 +3192,8 @@ Frigo Sistem`;
 
   // OBRISANO - konsolidovano u upload-base64 endpoint
 
-  // TEST: Lokalni uploads endpoint (kao servis 234)
-  app.post("/api/service-photos/upload-local-test", jwtAuth, async (req, res) => {
+  // TEST: Lokalni uploads endpoint (kao servis 234) - BEZ AUTH za testiranje
+  app.post("/api/service-photos/upload-local-test", async (req, res) => {
     try {
       console.log("🚀 [LOCAL TEST] ===== TEST LOKALNOG UPLOAD SISTEMA =====");
       console.log("📸 [LOCAL TEST] Upload started - koristi lokalni uploads folder");
