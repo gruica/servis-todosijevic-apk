@@ -3192,7 +3192,9 @@ Frigo Sistem`;
   // Base64 Photo Upload endpoint (koristi Object Storage za trajno čuvanje)
   app.post("/api/service-photos/upload-base64", jwtAuth, async (req, res) => {
     try {
+      console.log("🚀 [BASE64 UPLOAD] ===== POČETAK UPLOAD PROCESA =====");
       console.log("📸 [BASE64 UPLOAD] Upload started - koristi Object Storage");
+      console.log("🔍 [BASE64 UPLOAD] Request body keys:", Object.keys(req.body));
       
       // Proveriu role
       const userRole = (req.user as any)?.role;
@@ -3259,8 +3261,14 @@ Frigo Sistem`;
         isBeforeRepair: photoCategory === 'before'
       };
 
+      console.log("🔍 [BASE64 UPLOAD] Pokušavam da sačuvam u bazu:", { photoPath, serviceId, category: photoCategory });
       const savedPhoto = await storage.createServicePhoto(photoData);
-      console.log("[BASE64 PHOTO UPLOAD] ✅ Fotografija sačuvana:", { fileName, optimizedSize: optimizedResult.size });
+      console.log("🔍 [BASE64 UPLOAD] ✅ USPEŠNO sačuvano u bazu:", { 
+        photoId: savedPhoto.id, 
+        photoPath: savedPhoto.photoPath, 
+        fileName, 
+        optimizedSize: optimizedResult.size 
+      });
       
       res.status(201).json({
         ...savedPhoto,
