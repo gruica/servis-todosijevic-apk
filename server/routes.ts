@@ -3487,6 +3487,129 @@ Frigo Sistem`;
     }
   });
 
+  // ADMIN CLIENT ENDPOINT-I - DODATO ZA REŠAVANJE PROBLEMA SA CLIENT ANALYTICS
+  
+  // Delete client endpoint (samo admin)
+  app.delete("/api/admin/clients/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`DELETE /api/admin/clients/${req.params.id} - Admin deleting client`);
+      console.log(`JWT Admin: ${(req.user as any)?.username} (ID: ${(req.user as any)?.id})`);
+
+      const clientId = parseInt(req.params.id);
+      console.log(`Attempting to delete client ID: ${clientId}`);
+      
+      if (isNaN(clientId)) {
+        return res.status(400).json({ error: "Neispravan ID klijenta" });
+      }
+
+      // Check if client has any services
+      const clientServices = await storage.getServicesByClient(clientId);
+      if (clientServices.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima aktivne servise", 
+          message: "Prvo obriši sve servise povezane sa ovim klijentom" 
+        });
+      }
+
+      // Check if client has any appliances
+      const clientAppliances = await storage.getAppliancesByClient(clientId);
+      if (clientAppliances.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima registrovane uređaje", 
+          message: "Prvo obriši sve uređaje povezane sa ovim klijentom" 
+        });
+      }
+
+      // Delete client
+      console.log("Executing client delete query...");
+      const success = await storage.deleteClient(clientId);
+      
+      if (!success) {
+        console.log("Client not found or delete failed");
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+
+      console.log("Client deleted successfully");
+      res.json({ success: true, message: "Klijent je uspešno obrisan" });
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ error: "Greška pri brisanju klijenta" });
+    }
+  });
+
+  // Client comprehensive analysis endpoint (samo admin)
+  app.get("/api/admin/clients/:id/comprehensive-analysis", jwtAuth, requireRole(['admin']), async (req, res) => {
+    console.log(`🔥 [CLIENT ANALYSIS ENDPOINT] POZVAN SA clientId: ${req.params.id}`);
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClient(clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+
+      // Get client's appliances
+      const clientAppliances = await storage.getAppliancesByClient(clientId);
+      
+      // Get client's services
+      const clientServices = await storage.getServicesByClient(clientId);
+      
+      // Calculate service statistics
+      const completedServices = clientServices.filter(s => s.status === 'completed').length;
+      const activeServices = clientServices.filter(s => s.status === 'in_progress').length;
+      const warrantyServices = clientServices.filter(s => s.warrantyStatus === 'u garanciji').length;
+      const totalCost = clientServices.reduce((sum, service) => sum + parseFloat(service.cost || '0'), 0);
+      
+      const response = {
+        reportMetadata: {
+          generatedAt: new Date().toISOString(),
+          reportId: `CLIENT_ANALYSIS_${clientId}_${Date.now()}`,
+          clientId: clientId,
+          reportType: "comprehensive_client_analysis"
+        },
+        clientInfo: {
+          id: client.id,
+          fullName: client.fullName,
+          email: client.email || "",
+          phone: client.phone,
+          address: client.address || "",
+          city: client.city || "",
+          totalAppliances: clientAppliances.length,
+          registrationDate: client.createdAt || new Date().toISOString()
+        },
+        serviceStatistics: {
+          totalServices: clientServices.length,
+          completedServices: completedServices,
+          activeServices: activeServices,
+          warrantyServices: warrantyServices,
+          totalCost: totalCost,
+          averageServiceTimeInDays: 0,
+          completionRate: clientServices.length > 0 ? Math.round((completedServices / clientServices.length) * 100) : 0,
+          warrantyRate: clientServices.length > 0 ? Math.round((warrantyServices / clientServices.length) * 100) : 0
+        },
+        appliances: clientAppliances,
+        services: clientServices,
+        analytics: { 
+          applianceStats: {}, 
+          technicianStats: {}, 
+          monthlyServiceHistory: {}, 
+          problematicAppliances: [] 
+        },
+        spareParts: [],
+        recommendations: { 
+          maintenanceAlerts: 'Nema aktivnih upozorenja', 
+          costOptimization: 'Redovno održavanje preporučeno', 
+          technicianPreference: 'Najčešći serviser će biti prikazan' 
+        }
+      };
+      
+      console.log(`[CLIENT ANALYSIS] Kompletna analiza klijenta ${clientId} kreirana uspešno`);
+      res.json(response);
+    } catch (error) {
+      console.error("[CLIENT ANALYSIS] Greška:", error);
+      res.status(500).json({ error: "Greška pri kreiranju analize klijenta" });
+    }
+  });
+
   return server;
 }
 
