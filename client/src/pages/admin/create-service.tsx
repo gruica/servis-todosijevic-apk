@@ -24,6 +24,7 @@ const createServiceSchema = z.object({
   applianceId: z.string().min(1, "Uređaj je obavezan"),
   description: z.string().min(1, "Opis problema je obavezan"),
   status: z.string().default("pending"),
+  warrantyStatus: z.string().min(1, "Status garancije je obavezan - odaberite 'u garanciji', 'van garancije' ili 'nepoznato'"),
   technicianId: z.string().optional(),
   scheduledDate: z.string().optional(),
   priority: z.string().default("medium"),
@@ -87,6 +88,7 @@ export default function CreateService() {
       applianceId: "",
       description: "",
       status: "pending",
+      warrantyStatus: "",
       priority: "medium",
       technicianId: "",
       scheduledDate: "",
@@ -151,6 +153,7 @@ export default function CreateService() {
         applianceId: parseInt(data.applianceId),
         description: data.description,
         status: data.status,
+        warrantyStatus: data.warrantyStatus, // KRITIČNO - warranty status polje
         technicianId: data.technicianId && data.technicianId !== "" && data.technicianId !== "none" ? parseInt(data.technicianId) : null,
         scheduledDate: data.scheduledDate || null,
         priority: data.priority,
@@ -197,6 +200,16 @@ export default function CreateService() {
       toast({
         title: "Greška",
         description: "Klijent i uređaj moraju biti odabrani",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // KRITIČNA VALIDACIJA: warranty status je obavezan
+    if (!data.warrantyStatus) {
+      toast({
+        title: "Greška",
+        description: "Status garancije je obavezan - molimo odaberite opciju",
         variant: "destructive",
       });
       return;
@@ -405,6 +418,47 @@ export default function CreateService() {
                       <SelectItem value="in_progress">U toku</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* OBAVEZNO WARRANTY STATUS POLJE */}
+                <div>
+                  <Label htmlFor="warrantyStatus" className="text-red-600 font-semibold">
+                    Status garancije *
+                  </Label>
+                  <Select
+                    value={watch("warrantyStatus") || ""}
+                    onValueChange={(value) => setValue("warrantyStatus", value)}
+                  >
+                    <SelectTrigger className="border-red-300 focus:border-red-500">
+                      <SelectValue placeholder="OBAVEZAN IZBOR - odaberite status garancije" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="u garanciji">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-green-600">✓</span>
+                          <span>U garanciji</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="van garancije">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-red-600">✗</span>
+                          <span>Van garancije</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="nepoznato">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-500">?</span>
+                          <span>Nepoznato</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.warrantyStatus && (
+                    <p className="text-sm text-red-500 mt-1">{errors.warrantyStatus.message}</p>
+                  )}
+                  <p className="text-xs text-red-600 mt-1">
+                    * Obavezno polje - servis se ne može kreirati bez odabira statusa garancije
+                  </p>
                 </div>
 
                 <div>
