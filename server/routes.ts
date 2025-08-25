@@ -3457,6 +3457,36 @@ Frigo Sistem`;
     }
   });
 
+  // Dashboard stats route - DODATO ZA REŠAVANJE PROBLEMA SA ADMIN STATISTIKAMA
+  app.get("/api/stats", async (req, res) => {
+    try {
+      console.log("📊 Dohvatanje dashboard statistika...");
+      
+      const activeServices = await storage.getServicesByStatus("in_progress");
+      const completedServices = await storage.getServicesByStatus("completed");
+      const pendingServices = await storage.getServicesByStatus("pending");
+      const clients = await storage.getAllClients();
+      const applianceStats = await storage.getApplianceStats();
+      const recentServices = await storage.getRecentServices(5);
+      const recentClients = await storage.getRecentClients(3);
+
+      console.log(`📊 Statistike: ${activeServices.length} aktivnih, ${completedServices.length} završenih, ${pendingServices.length} na čekanju, ${clients.length} klijenata`);
+
+      res.json({
+        activeCount: activeServices.length,
+        completedCount: completedServices.length,
+        pendingCount: pendingServices.length,
+        clientCount: clients.length,
+        recentServices,
+        recentClients,
+        applianceStats
+      });
+    } catch (error) {
+      console.error("❌ Greška pri dobijanju statistike:", error);
+      res.status(500).json({ error: "Greška pri dobijanju statistike" });
+    }
+  });
+
   return server;
 }
 
