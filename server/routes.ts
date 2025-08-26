@@ -2366,15 +2366,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!serviceWithDetails) return;
           
           // Send SMS notifications using existing universal SMS system
+          console.log(`[SERVICE COMPLETE] 📱 Pripremam SMS notifikacije...`);
+          console.log(`[SERVICE COMPLETE] 📱 smsService exists: ${!!smsService}`);
+          console.log(`[SERVICE COMPLETE] 📱 smsService isConfigured: ${smsService?.isConfigured()}`);
+          
           try {
             if (smsService && smsService.isConfigured()) {
               const client = serviceWithDetails.client;
+              console.log(`[SERVICE COMPLETE] 📱 Client podatci: ${client?.fullName} (${client?.phone})`);
+              
               if (client?.phone) {
-                const message = `SERVIS ZAVRŠEN #${serviceId}\\n\\nPoštovani ${client.fullName},\\n\\nVaš servis je uspešno završen.\\nRad: ${workPerformed}\\nCena: ${cost || 'Kontakt telefon za informacije'} RSD\\n\\nHvala vam!\\n\\nFrigo Sistem Todosijević\\n067-051-141`;
+                // Popravljam newline karaktere - koristim \n umesto \\n
+                const message = `SERVIS ZAVRŠEN #${serviceId}\n\nPoštovani ${client.fullName},\n\nVaš servis je uspešno završen.\nRad: ${workPerformed}\nCena: ${cost || 'Besplatno (garancija)'} RSD\n\nHvala vam!\n\nFrigo Sistem Todosijević\n067-051-141`;
                 
-                await smsService.sendSMS(client.phone, message);
-                console.log(`[SERVICE COMPLETE] ✅ SMS poslat klijentu ${client.fullName}`);
+                console.log(`[SERVICE COMPLETE] 📱 Šalje SMS: "${message}"`);
+                
+                // Pozivam SMS sa ispravnim parametrima
+                await smsService.notifyServiceStatusChange({
+                  serviceId: serviceId.toString(),
+                  clientPhone: client.phone,
+                  clientName: client.fullName,
+                  newStatus: 'completed',
+                  statusDescription: 'Završen',
+                  technicianNotes: `${workPerformed} | Cena: ${cost || 'Besplatno'} RSD`,
+                  businessPartnerPhone: null,
+                  businessPartnerName: null
+                });
+                
+                console.log(`[SERVICE COMPLETE] ✅ SMS poslat klijentu ${client.fullName} (${client.phone})`);
+              } else {
+                console.log(`[SERVICE COMPLETE] ⚠️ Klijent nema telefon za SMS`);
               }
+            } else {
+              console.log(`[SERVICE COMPLETE] ⚠️ SMS servis nije konfigurisan`);
             }
           } catch (smsError) {
             console.error(`[SERVICE COMPLETE] ❌ SMS greška:`, smsError);
