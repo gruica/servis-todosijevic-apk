@@ -160,12 +160,37 @@ function ServiceCard({ service }: { service: Service }) {
         method: 'PUT',
         body: JSON.stringify({ status: 'completed' })
       }),
+    onMutate: async (serviceId: number) => {
+      // Optimistic update - odmah ukloni servis iz cache-a
+      await queryClient.cancelQueries({ queryKey: ['/api/my-services'] });
+      
+      const previousServices = queryClient.getQueryData(['/api/my-services']);
+      
+      // Optimisticki ažuriraj cache da ukloni completed servis
+      queryClient.setQueryData(['/api/my-services'], (old: any) => {
+        if (!old) return old;
+        return old.map((service: any) => 
+          service.id === serviceId 
+            ? { ...service, status: 'completed' }
+            : service
+        );
+      });
+      
+      return { previousServices };
+    },
     onSuccess: () => {
+      // Dodatno refresh-uj cache za sigurnost
       queryClient.invalidateQueries({ queryKey: ['/api/my-services'] });
       toast({
         title: "Servis završen",
         description: "Klijent će biti obavešten o završetku servisa",
       });
+    },
+    onError: (err, serviceId, context) => {
+      // Rollback optimistic update u slučaju greške
+      if (context?.previousServices) {
+        queryClient.setQueryData(['/api/my-services'], context.previousServices);
+      }
     }
   });
 
