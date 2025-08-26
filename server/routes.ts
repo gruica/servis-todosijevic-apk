@@ -3754,6 +3754,109 @@ Frigo Sistem`;
     }
   });
 
+  // Endpoint za dopunjavanje Generali servisa
+  app.patch("/api/services/:id/supplement-generali", jwtAuth, async (req, res) => {
+    try {
+      console.log(`[GENERALI DOPUNA] ✅ Početak dopunjavanja servisa #${req.params.id}`);
+      
+      if (req.user?.role !== "technician" && req.user?.role !== "business_partner") {
+        return res.status(403).json({ error: "Samo serviseri i poslovni partneri mogu dopunjavati Generali servise" });
+      }
+
+      const serviceId = parseInt(req.params.id);
+      const updateData = req.body;
+      console.log(`[GENERALI DOPUNA] 📝 Podaci za dopunu:`, updateData);
+
+      // Validacija podataka
+      const { supplementGeneraliServiceSchema } = await import("@shared/schema");
+      const validationResult = supplementGeneraliServiceSchema.safeParse({
+        serviceId,
+        ...updateData
+      });
+
+      if (!validationResult.success) {
+        console.log(`[GENERALI DOPUNA] ❌ Validacija neuspešna:`, validationResult.error.errors);
+        return res.status(400).json({
+          error: "Neispravni podaci",
+          details: validationResult.error.errors
+        });
+      }
+
+      const validData = validationResult.data;
+      console.log(`[GENERALI DOPUNA] ✅ Validacija uspešna`);
+
+      // Proveri da li servis postoji
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      // Povuci korisničke podatke da bi dobio technicianId
+      const userDetails = await storage.getUser(req.user.id);
+      
+      // Za servisere je potreban technicianId, za poslovne partnere nije
+      if (req.user.role === "technician" && (!userDetails || !userDetails.technicianId)) {
+        return res.status(403).json({ error: "Nemate ulogu servisera" });
+      }
+
+      // Za poslovne partnere, proveri da li su oni kreatori servisa
+      if (req.user.role === "business_partner") {
+        if (service.businessPartnerId !== req.user.id) {
+          return res.status(403).json({ error: "Možete dopunjavati samo servise koje ste vi kreirali" });
+        }
+      }
+
+      console.log(`[GENERALI DOPUNA] 🔄 Ažuriranje podataka...`);
+
+      // Dopuni podatke o klijentu ako su navedeni
+      if (validData.clientEmail || validData.clientAddress || validData.clientCity) {
+        const updateClientData: any = {};
+        if (validData.clientEmail) updateClientData.email = validData.clientEmail;
+        if (validData.clientAddress) updateClientData.address = validData.clientAddress;
+        if (validData.clientCity) updateClientData.city = validData.clientCity;
+
+        await storage.updateClient(service.clientId, updateClientData);
+        console.log(`[GENERALI DOPUNA] ✅ Klijent ažuriran`);
+      }
+
+      // Dopuni podatke o aparatu ako su navedeni
+      if (validData.serialNumber || validData.model || validData.purchaseDate) {
+        const updateApplianceData: any = {};
+        if (validData.serialNumber) updateApplianceData.serialNumber = validData.serialNumber;
+        if (validData.model) updateApplianceData.model = validData.model;
+        if (validData.purchaseDate) updateApplianceData.purchaseDate = validData.purchaseDate;
+
+        await storage.updateAppliance(service.applianceId, updateApplianceData);
+        console.log(`[GENERALI DOPUNA] ✅ Aparat ažuriran`);
+      }
+
+      // Dodaj napomene o dopuni u tehnicianske napomene ako postoje
+      if (validData.supplementNotes) {
+        const currentNotes = service.technicianNotes || "";
+        const updatedNotes = currentNotes ? 
+          `${currentNotes}\n\n[DOPUNA GENERALI] ${validData.supplementNotes}` :
+          `[DOPUNA GENERALI] ${validData.supplementNotes}`;
+        
+        await storage.updateService(serviceId, { technicianNotes: updatedNotes });
+        console.log(`[GENERALI DOPUNA] ✅ Napomene dodane`);
+      }
+
+      // Vraćaj ažurirani servis
+      const updatedService = await storage.getService(serviceId);
+      console.log(`[GENERALI DOPUNA] ✅ Generali servis #${serviceId} uspešno dopunjen`);
+      
+      res.json({ 
+        success: true, 
+        message: "Generali servis je uspešno dopunjen",
+        service: updatedService 
+      });
+
+    } catch (error) {
+      console.error("❌ GENERALI DOPUNA - Greška:", error);
+      res.status(500).json({ error: "Greška pri dopunjavanju servisa" });
+    }
+  });
+
   return server;
 }
 
