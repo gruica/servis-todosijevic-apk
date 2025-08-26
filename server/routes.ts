@@ -2280,6 +2280,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Complete service with detailed data (for technicians) - MISSING ENDPOINT IMPLEMENTATION
+  app.post("/api/services/:id/complete", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const {
+        technicianNotes,
+        workPerformed,
+        usedParts,
+        machineNotes,
+        cost,
+        warrantyInfo,
+        clientSignature,
+        workQuality,
+        clientSatisfaction,
+        isWarrantyService
+      } = req.body;
+      
+      console.log(`[SERVICE COMPLETE] 🎯 Završavanje servisa #${serviceId} sa kompletnim podacima`);
+      console.log("Podaci:", { technicianNotes, workPerformed, cost });
+      
+      // Validate required fields
+      if (!technicianNotes?.trim() || !workPerformed?.trim()) {
+        return res.status(400).json({ 
+          error: "Napomene servisera i opis rada su obavezni" 
+        });
+      }
+      
+      // Get existing service
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // Build comprehensive update data with ALL required fields
+      const updateData = {
+        // Keep existing data
+        id: service.id,
+        clientId: service.clientId,
+        applianceId: service.applianceId,
+        description: service.description,
+        warrantyStatus: service.warrantyStatus,
+        createdAt: service.createdAt,
+        
+        // Update these fields
+        status: 'completed',
+        technicianNotes: technicianNotes.trim(),
+        machineNotes: machineNotes?.trim() || service.machineNotes,
+        cost: cost?.trim() || service.cost,
+        usedParts: usedParts?.trim() || service.usedParts || "[]",
+        isCompletelyFixed: true,
+        completedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+        isWarrantyService: isWarrantyService || service.isWarrantyService || false,
+        
+        // Keep other existing fields
+        technicianId: service.technicianId,
+        scheduledDate: service.scheduledDate,
+        businessPartnerId: service.businessPartnerId,
+        partnerCompanyName: service.partnerCompanyName,
+        clientUnavailableReason: service.clientUnavailableReason,
+        needsRescheduling: service.needsRescheduling || false,
+        reschedulingNotes: service.reschedulingNotes,
+        devicePickedUp: service.devicePickedUp || false,
+        pickupDate: service.pickupDate,
+        pickupNotes: service.pickupNotes,
+        customerRefusesRepair: service.customerRefusesRepair || false,
+        customerRefusalReason: service.customerRefusalReason,
+        repairFailed: service.repairFailed || false,
+        repairFailureReason: service.repairFailureReason,
+        replacedPartsBeforeFailure: service.replacedPartsBeforeFailure,
+        repairFailureDate: service.repairFailureDate
+      };
+      
+      // Update service in database
+      const updatedService = await storage.updateService(serviceId, updateData);
+      console.log(`[SERVICE COMPLETE] ✅ Servis #${serviceId} uspešno završen`);
+      
+      // Send notifications asynchronously
+      setTimeout(async () => {
+        try {
+          console.log(`[SERVICE COMPLETE] 📧 Šalje notifikacije za servis #${serviceId}`);
+          
+          // Get updated service with relationships
+          const serviceWithDetails = await storage.getServiceWithDetails(serviceId);
+          if (!serviceWithDetails) return;
+          
+          // Send SMS notifications using existing universal SMS system
+          try {
+            if (smsService && smsService.isConfigured()) {
+              const client = serviceWithDetails.client;
+              if (client?.phone) {
+                const message = `SERVIS ZAVRŠEN #${serviceId}\\n\\nPoštovani ${client.fullName},\\n\\nVaš servis je uspešno završen.\\nRad: ${workPerformed}\\nCena: ${cost || 'Kontakt telefon za informacije'} RSD\\n\\nHvala vam!\\n\\nFrigo Sistem Todosijević\\n067-051-141`;
+                
+                await smsService.sendSMS(client.phone, message);
+                console.log(`[SERVICE COMPLETE] ✅ SMS poslat klijentu ${client.fullName}`);
+              }
+            }
+          } catch (smsError) {
+            console.error(`[SERVICE COMPLETE] ❌ SMS greška:`, smsError);
+          }
+          
+        } catch (notifError) {
+          console.error(`[SERVICE COMPLETE] ❌ Greška pri slanju notifikacija:`, notifError);
+        }
+      }, 500);
+      
+      res.json({ 
+        success: true, 
+        message: "Servis uspešno završen",
+        service: updatedService
+      });
+      
+    } catch (error) {
+      console.error(`[SERVICE COMPLETE] ❌ Greška pri završavanju servisa:`, error);
+      res.status(500).json({ 
+        error: "Greška pri završavanju servisa",
+        details: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
   // Update service status (for technicians)
   app.put("/api/services/:id/status", jwtAuth, async (req, res) => {
     try {
