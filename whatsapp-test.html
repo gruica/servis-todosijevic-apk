@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WhatsApp Test - Frigo Sistem</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #25D366;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #128C7E;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #cce7ff; border: 1px solid #99d6ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 WhatsApp API Test - Frigo Sistem</h1>
+        <p><strong>NAPOMENA:</strong> Ovaj test koristi vaš postojeći SMS Mobile API koji već podržava WhatsApp!</p>
+        
+        <form id="whatsappTestForm">
+            <div class="form-group">
+                <label for="phoneNumber">Broj telefona (format: 067077092):</label>
+                <input type="text" id="phoneNumber" value="067077092" required>
+                <small>Test će poslati poruku na ovaj broj putem WhatsApp-a</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Test poruka:</label>
+                <textarea id="message" rows="4" required>🔧 TEST WHATSAPP INTEGRACIJE
+
+Servis: Frigo Sistem Todosijević  
+Vreme: ${new Date().toLocaleString('sr-RS')}
+Tip: Photo notification test
+
+Ova poruka potvrđuje da WhatsApp integracija radi! ✅</textarea>
+            </div>
+            
+            <button type="button" onclick="testWhatsAppConnection()">📱 Test WhatsApp Connection</button>
+            <button type="button" onclick="sendWhatsAppMessage()">📤 Pošalji WhatsApp Poruku</button>
+            <button type="button" onclick="checkAPIStatus()">🔍 Proveri API Status</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        function getAuthToken() {
+            // Pokušaj da dobije JWT token iz localStorage ili sessionStorage
+            return localStorage.getItem('token') || sessionStorage.getItem('token') || prompt('Unesite JWT token za autentifikaciju:');
+        }
+        
+        async function makeApiRequest(endpoint, options = {}) {
+            const token = getAuthToken();
+            if (!token) {
+                showResult('❌ GREŠKA: JWT token nije pronađen. Molimo prijavite se u aplikaciju.', 'error');
+                return null;
+            }
+            
+            const response = await fetch(`${API_BASE}${endpoint}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return response.json();
+        }
+        
+        async function testWhatsAppConnection() {
+            showResult('🔄 Testiram konekciju sa SMS Mobile API...', 'info');
+            
+            try {
+                const result = await makeApiRequest('/api/sms-mobile-api/test', {
+                    method: 'POST'
+                });
+                
+                if (result.success) {
+                    showResult(`✅ KONEKCIJA USPEŠNA!
+                    
+Poruka: ${result.message}
+API je spreman za slanje WhatsApp poruka!`, 'success');
+                } else {
+                    showResult(`❌ KONEKCIJA NEUSPEŠNA: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ GREŠKA PRI TESTIRANJU: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendWhatsAppMessage() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const message = document.getElementById('message').value;
+            
+            if (!phoneNumber || !message) {
+                showResult('❌ Molimo unesite broj telefona i poruku!', 'error');
+                return;
+            }
+            
+            showResult('📤 Šaljem WhatsApp poruku...', 'info');
+            
+            try {
+                const result = await makeApiRequest('/api/sms-mobile-api/send', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        phoneNumber: phoneNumber,
+                        message: message,
+                        sendWhatsApp: true  // KLJUČNO: Ovo govori API-ju da koristi WhatsApp
+                    })
+                });
+                
+                if (result.success) {
+                    showResult(`✅ WHATSAPP PORUKA POSLANA!
+                    
+Poslano na: ${phoneNumber}
+Message ID: ${result.messageId || 'N/A'}
+Detalji: ${result.message || 'Poruka uspešno dostavljena'}
+
+Proverite WhatsApp na telefonu ${phoneNumber}!`, 'success');
+                } else {
+                    showResult(`❌ SLANJE NEUSPEŠNO: ${result.error || result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ GREŠKA PRI SLANJU: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAPIStatus() {
+            showResult('🔍 Proveravam status SMS Mobile API...', 'info');
+            
+            try {
+                const result = await makeApiRequest('/api/sms-mobile-api/status');
+                
+                showResult(`📊 SMS MOBILE API STATUS:
+                
+Omogućen: ${result.enabled ? '✅ DA' : '❌ NE'}
+Konfigurisan: ${result.configured ? '✅ DA' : '❌ NE'}  
+Base URL: ${result.baseUrl}
+Timeout: ${result.timeout}ms
+API Status: ${JSON.stringify(result.apiStatus, null, 2)}`, result.enabled && result.configured ? 'success' : 'error');
+            } catch (error) {
+                showResult(`❌ GREŠKA PRI PROVERI STATUSA: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-fill current timestamp in message
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageArea = document.getElementById('message');
+            messageArea.value = messageArea.value.replace('${new Date().toLocaleString(\'sr-RS\')}', new Date().toLocaleString('sr-RS'));
+        });
+    </script>
+</body>
+</html>
