@@ -153,13 +153,17 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   const { data: orders = [], isLoading, error } = useQuery<SparePartOrder[]>({
     queryKey: ['/api/admin/spare-parts'],
     staleTime: 2 * 60 * 1000, // 2 minutes
-    onSuccess: (data) => {
-      console.log('✅ Spare parts data received:', data?.length || 0, 'orders');
-    },
-    onError: (error) => {
+  });
+
+  // Debug logging for TanStack Query v5
+  React.useEffect(() => {
+    if (orders && orders.length > 0) {
+      console.log('✅ Spare parts data received:', orders.length, 'orders');
+    }
+    if (error) {
       console.error('❌ Spare parts query error:', error);
     }
-  });
+  }, [orders, error]);
 
   // Update order mutation
   const updateOrderMutation = useMutation({
