@@ -3410,6 +3410,11 @@ export class DatabaseStorage implements IStorage {
     return orders;
   }
 
+  async getSparePartOrdersByStatus(status: string): Promise<SparePartOrder[]> {
+    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.status, status)).orderBy(desc(sparePartOrders.createdAt));
+    return orders;
+  }
+
   async getAllSparePartOrders(): Promise<any[]> {
     try {
       // Prvo dohvati sve spare part orders

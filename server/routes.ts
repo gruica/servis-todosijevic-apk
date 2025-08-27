@@ -146,9 +146,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== NOVI OPTIMIZOVANI WORKFLOW ZA REZERVNE DELOVE =====
   
   // 1. Zahtev servisera za rezervni deo
-  app.post("/api/technician/spare-parts/request", async (req, res) => {
+  app.post("/api/technician/spare-parts/request", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user?.role !== 'technician' && req.user?.role !== 'admin')) {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo serviseri mogu da zahtevaju rezervne delove" });
       }
 
@@ -175,9 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 2. Admin označi deo kao poručen
-  app.patch("/api/admin/spare-parts/:id/order", async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/order", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da poručuju rezervne delove" });
       }
 
@@ -206,9 +206,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 3. Admin potvrdi prijem rezervnog dela
-  app.patch("/api/admin/spare-parts/:id/receive", async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/receive", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da potvrđuju prijem rezervnih delova" });
       }
 
@@ -236,9 +236,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 4. Admin prebaci deo u dostupno stanje
-  app.patch("/api/admin/spare-parts/:id/make-available", async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/make-available", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da prebacuju delove u dostupno stanje" });
       }
 
@@ -263,9 +263,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 5. Serviser označava da je potrošio rezervni deo
-  app.patch("/api/technician/spare-parts/:id/consume", async (req, res) => {
+  app.patch("/api/technician/spare-parts/:id/consume", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user?.role !== 'technician' && req.user?.role !== 'admin')) {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo serviseri mogu da označavaju potrošnju rezervnih delova" });
       }
 
@@ -292,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 6. Dohvati rezervne delove po statusu (za admin interface)
-  app.get("/api/admin/spare-parts/status/:status", async (req, res) => {
+  app.get("/api/admin/spare-parts/status/:status", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da pristupe ovim podacima" });
       }
 
@@ -309,9 +309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 7. Dohvati rezervne delove servisera (njegove zahteve)
-  app.get("/api/technician/spare-parts", async (req, res) => {
+  app.get("/api/technician/spare-parts", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user?.role !== 'technician' && req.user?.role !== 'admin')) {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo serviseri mogu da pristupe svojim zahtevima" });
       }
 
@@ -326,9 +326,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 8. Dohvati dostupne rezervne delove za servisera
-  app.get("/api/technician/spare-parts/available", async (req, res) => {
+  app.get("/api/technician/spare-parts/available", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user?.role !== 'technician' && req.user?.role !== 'admin')) {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo serviseri mogu da pristupe dostupnim delovima" });
       }
 
