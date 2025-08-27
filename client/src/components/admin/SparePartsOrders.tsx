@@ -155,8 +155,9 @@ const SparePartsOrders = memo(function SparePartsOrders() {
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
+
   // Debug logging for TanStack Query v5
-  React.useEffect(() => {
+  useEffect(() => {
     if (orders && orders.length > 0) {
       console.log('✅ Spare parts data received:', orders.length, 'orders');
     }

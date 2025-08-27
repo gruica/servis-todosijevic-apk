@@ -131,6 +131,18 @@ const catalogUpload = multer({
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // ===== SPARE PARTS ADMIN ENDPOINTS =====
+  app.get("/api/admin/spare-parts", async (req, res) => {
+    try {
+      const orders = await storage.getAllSparePartOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
+      res.status(500).json({ error: "Greška pri učitavanju porudžbina rezervnih delova" });
+    }
+  });
+
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
 
@@ -3877,22 +3889,7 @@ Frigo Sistem`;
     }
   });
 
-  // ===== SPARE PARTS ADMIN ENDPOINTS =====
-  
-  // Get all spare part orders for admin
-  app.get("/api/admin/spare-parts", async (req, res) => {
-    try {
-      console.log(`📦 [SPARE PARTS] Zahtev za sve rezervne delove - session: ${req.isAuthenticated()}, user: ${req.user?.username}, role: ${req.user?.role}`);
-      
-      const orders = await storage.getAllSparePartOrders();
-      console.log(`📦 [SPARE PARTS] Uspešno dohvaćeno ${orders.length} porudžbina rezervnih delova`);
-      
-      res.json(orders);
-    } catch (error) {
-      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
-      res.status(500).json({ error: "Greška pri učitavanju porudžbina rezervnih delova" });
-    }
-  });
+  // ===== SPARE PARTS ADMIN ENDPOINTS UKLONJENI - SADA NA VRHU =====
 
   // ===== JWT TOKEN GENERATION FOR SESSION USERS =====
   
