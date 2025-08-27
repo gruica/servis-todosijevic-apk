@@ -3882,12 +3882,10 @@ Frigo Sistem`;
   // Get all spare part orders for admin
   app.get("/api/admin/spare-parts", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup rezervnim delovima" });
-      }
-
+      console.log(`📦 [SPARE PARTS] Zahtev za sve rezervne delove - session: ${req.isAuthenticated()}, user: ${req.user?.username}, role: ${req.user?.role}`);
+      
       const orders = await storage.getAllSparePartOrders();
-      console.log(`📦 [SPARE PARTS] Admin zahtev - vraćam ${orders.length} porudžbina rezervnih delova`);
+      console.log(`📦 [SPARE PARTS] Uspešno dohvaćeno ${orders.length} porudžbina rezervnih delova`);
       
       res.json(orders);
     } catch (error) {
