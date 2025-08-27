@@ -3399,6 +3399,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Spare parts methods
+  // NOVI OPTIMIZOVANI WORKFLOW STORAGE METODE
+  async getTechnicianSparePartRequests(technicianId: number): Promise<SparePartOrder[]> {
+    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.requestedBy, technicianId)).orderBy(desc(sparePartOrders.createdAt));
+    return orders;
+  }
+
+  async getSparePartsByStatus(status: string): Promise<SparePartOrder[]> {
+    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.status, status)).orderBy(desc(sparePartOrders.createdAt));
+    return orders;
+  }
+
   async getAllSparePartOrders(): Promise<any[]> {
     try {
       // Prvo dohvati sve spare part orders

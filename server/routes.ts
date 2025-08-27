@@ -308,7 +308,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 7. Dohvati dostupne rezervne delove za servisera
+  // 7. Dohvati rezervne delove servisera (njegove zahteve)
+  app.get("/api/technician/spare-parts", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo serviseri mogu da pristupe svojim zahtevima" });
+      }
+
+      const technicianId = req.user.technicianId || req.user.id;
+      const requests = await storage.getTechnicianSparePartRequests(technicianId);
+      
+      res.json(requests);
+    } catch (error) {
+      console.error("Greška pri dohvatanju zahteva servisera za rezervne delove:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju zahteva" });
+    }
+  });
+
+  // 8. Dohvati dostupne rezervne delove za servisera
   app.get("/api/technician/spare-parts/available", jwtAuth, async (req, res) => {
     try {
       if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
