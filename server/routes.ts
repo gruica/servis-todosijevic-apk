@@ -3877,6 +3877,43 @@ Frigo Sistem`;
     }
   });
 
+  // ===== JWT TOKEN GENERATION FOR SESSION USERS =====
+  
+  // Generate JWT token for session-authenticated users
+  app.post("/api/generate-jwt-token", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ error: "Korisnik nije prijavljen" });
+      }
+      
+      const user = req.user as any;
+
+      // Generiši JWT token za trenutno prijavljenog korisnika
+      const tokenPayload = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email,
+        technicianId: user.technicianId
+      };
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "30d" });
+      
+      console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
+      
+      res.json({ 
+        token,
+        user: tokenPayload,
+        message: "JWT token uspešno generisan"
+      });
+
+    } catch (error) {
+      console.error("❌ [JWT TOKEN GENERATION] Greška:", error);
+      res.status(500).json({ error: "Greška pri generisanju JWT tokena" });
+    }
+  });
+
   return server;
 }
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +107,34 @@ const SparePartsOrders = memo(function SparePartsOrders() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Auto-generate JWT token if not present
+  useEffect(() => {
+    const generateTokenIfNeeded = async () => {
+      const existingToken = localStorage.getItem('auth_token');
+      if (!existingToken) {
+        try {
+          const response = await fetch('/api/generate-jwt-token', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('auth_token', data.token);
+            console.log('🔑 JWT token automatski generisan za rezervne delove');
+            
+            // Refresh spare parts data after token is set
+            queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+          }
+        } catch (error) {
+          console.error('Greška pri generisanju JWT tokena:', error);
+        }
+      }
+    };
+    
+    generateTokenIfNeeded();
+  }, [queryClient]);
 
   // Fetch all spare part orders
   const { data: orders = [], isLoading, error } = useQuery<SparePartOrder[]>({
