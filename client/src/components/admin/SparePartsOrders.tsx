@@ -112,24 +112,37 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   useEffect(() => {
     const generateTokenIfNeeded = async () => {
       const existingToken = localStorage.getItem('auth_token');
+      console.log('🔍 Checking for existing JWT token:', existingToken ? 'Found' : 'Not found');
+      
       if (!existingToken) {
         try {
+          console.log('🔑 Attempting to generate JWT token...');
           const response = await fetch('/api/generate-jwt-token', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            }
           });
+          
+          console.log('🔑 JWT token response status:', response.status);
           
           if (response.ok) {
             const data = await response.json();
             localStorage.setItem('auth_token', data.token);
-            console.log('🔑 JWT token automatski generisan za rezervne delove');
+            console.log('✅ JWT token automatski generisan za rezervne delove');
             
             // Refresh spare parts data after token is set
             queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+          } else {
+            const errorData = await response.json();
+            console.error('❌ JWT token generation failed:', errorData);
           }
         } catch (error) {
-          console.error('Greška pri generisanju JWT tokena:', error);
+          console.error('❌ Greška pri generisanju JWT tokena:', error);
         }
+      } else {
+        console.log('✅ JWT token već postoji u localStorage');
       }
     };
     
