@@ -3877,6 +3877,25 @@ Frigo Sistem`;
     }
   });
 
+  // ===== SPARE PARTS ADMIN ENDPOINTS =====
+  
+  // Get all spare part orders for admin
+  app.get("/api/admin/spare-parts", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup rezervnim delovima" });
+      }
+
+      const orders = await storage.getAllSparePartOrders();
+      console.log(`📦 [SPARE PARTS] Admin zahtev - vraćam ${orders.length} porudžbina rezervnih delova`);
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
+      res.status(500).json({ error: "Greška pri učitavanju porudžbina rezervnih delova" });
+    }
+  });
+
   // ===== JWT TOKEN GENERATION FOR SESSION USERS =====
   
   // Generate JWT token for session-authenticated users

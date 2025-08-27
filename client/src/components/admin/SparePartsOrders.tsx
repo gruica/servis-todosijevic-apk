@@ -153,6 +153,12 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   const { data: orders = [], isLoading, error } = useQuery<SparePartOrder[]>({
     queryKey: ['/api/admin/spare-parts'],
     staleTime: 2 * 60 * 1000, // 2 minutes
+    onSuccess: (data) => {
+      console.log('✅ Spare parts data received:', data?.length || 0, 'orders');
+    },
+    onError: (error) => {
+      console.error('❌ Spare parts query error:', error);
+    }
   });
 
   // Update order mutation
