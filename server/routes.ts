@@ -15,7 +15,7 @@ import { promises as fs } from "fs";
 import { eq, and, desc, gte, lte, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { SMSCommunicationService } from "./sms-communication-service.js";
-const { availableParts, appliances, applianceCategories, manufacturers, services, spareParts, users, technicians, sparePartOrders, servicePhotos } = schema;
+const { availableParts, appliances, applianceCategories, manufacturers, services, users, technicians, sparePartOrders, servicePhotos } = schema;
 import { getBotChallenge, verifyBotAnswer, checkBotVerification } from "./bot-verification";
 import { checkServiceRequestRateLimit, checkRegistrationRateLimit, getRateLimitStatus } from "./rate-limiting";
 import { emailVerificationService } from "./email-verification";
@@ -140,6 +140,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
       res.status(500).json({ error: "Greška pri učitavanju porudžbina rezervnih delova" });
+    }
+  });
+
+  // ===== NOVI OPTIMIZOVANI WORKFLOW ZA REZERVNE DELOVE =====
+  
+  // 1. Zahtev servisera za rezervni deo
+  app.post("/api/technician/spare-parts/request", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo serviseri mogu da zahtevaju rezervne delove" });
+      }
+
+      const requestData = {
+        ...req.body,
+        status: "requested",
+        technicianId: req.user.technicianId || req.user.id,
+        requestedBy: req.user.technicianId || req.user.id,
+        requestedAt: new Date()
+      };
+
+      const order = await storage.createSparePartOrder(requestData);
+      console.log(`📦 [WORKFLOW] Serviser ${req.user.username} zahtevao rezervni deo: ${requestData.partName}`);
+      
+      res.json({ 
+        success: true, 
+        message: "Zahtev za rezervni deo je uspešno poslat", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri zahtevu za rezervni deo:", error);
+      res.status(500).json({ error: "Greška pri slanju zahteva za rezervni deo" });
+    }
+  });
+
+  // 2. Admin označi deo kao poručen
+  app.patch("/api/admin/spare-parts/:id/order", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da poručuju rezervne delove" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { supplierName, estimatedDelivery, adminNotes } = req.body;
+
+      const order = await storage.updateSparePartOrderStatus(orderId, {
+        status: "admin_ordered",
+        supplierName,
+        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+        adminNotes,
+        orderedBy: req.user.id,
+        orderedAt: new Date()
+      });
+
+      console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
+      res.json({ 
+        success: true, 
+        message: "Rezervni deo je uspešno poručen", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri poručivanju rezervnog dela:", error);
+      res.status(500).json({ error: "Greška pri poručivanju rezervnog dela" });
+    }
+  });
+
+  // 3. Admin potvrdi prijem rezervnog dela
+  app.patch("/api/admin/spare-parts/:id/receive", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da potvrđuju prijem rezervnih delova" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { actualCost, adminNotes } = req.body;
+
+      const order = await storage.updateSparePartOrderStatus(orderId, {
+        status: "waiting_delivery",
+        actualCost,
+        adminNotes: adminNotes || null,
+        receivedBy: req.user.id,
+        receivedAt: new Date()
+      });
+
+      console.log(`📦 [WORKFLOW] Admin ${req.user.username} potvrdio prijem rezervnog dela ID: ${orderId}`);
+      res.json({ 
+        success: true, 
+        message: "Prijem rezervnog dela je uspešno potvrđen", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri potvrđivanju prijema:", error);
+      res.status(500).json({ error: "Greška pri potvrđivanju prijema rezervnog dela" });
+    }
+  });
+
+  // 4. Admin prebaci deo u dostupno stanje
+  app.patch("/api/admin/spare-parts/:id/make-available", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da prebacuju delove u dostupno stanje" });
+      }
+
+      const orderId = parseInt(req.params.id);
+
+      const order = await storage.updateSparePartOrderStatus(orderId, {
+        status: "available",
+        madeAvailableBy: req.user.id,
+        madeAvailableAt: new Date()
+      });
+
+      console.log(`📦 [WORKFLOW] Admin ${req.user.username} prebacio deo u dostupno: ID ${orderId}`);
+      res.json({ 
+        success: true, 
+        message: "Rezervni deo je prebačen u dostupno stanje", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri prebacivanju u dostupno:", error);
+      res.status(500).json({ error: "Greška pri prebacivanju rezervnog dela u dostupno stanje" });
+    }
+  });
+
+  // 5. Serviser označava da je potrošio rezervni deo
+  app.patch("/api/technician/spare-parts/:id/consume", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo serviseri mogu da označavaju potrošnju rezervnih delova" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { consumedForServiceId } = req.body;
+
+      const order = await storage.updateSparePartOrderStatus(orderId, {
+        status: "consumed",
+        consumedBy: req.user.technicianId || req.user.id,
+        consumedAt: new Date(),
+        consumedForServiceId: consumedForServiceId || null
+      });
+
+      console.log(`📦 [WORKFLOW] Serviser ${req.user.username} označio potrošnju dela ID: ${orderId}`);
+      res.json({ 
+        success: true, 
+        message: "Rezervni deo je označen kao potrošen", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri označavanju potrošnje:", error);
+      res.status(500).json({ error: "Greška pri označavanju potrošnje rezervnog dela" });
+    }
+  });
+
+  // 6. Dohvati rezervne delove po statusu (za admin interface)
+  app.get("/api/admin/spare-parts/status/:status", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da pristupe ovim podacima" });
+      }
+
+      const status = req.params.status;
+      const orders = await storage.getSparePartOrdersByStatus(status);
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri dohvatanju po statusu:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju rezervnih delova po statusu" });
+    }
+  });
+
+  // 7. Dohvati dostupne rezervne delove za servisera
+  app.get("/api/technician/spare-parts/available", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo serviseri mogu da pristupe dostupnim delovima" });
+      }
+
+      const orders = await storage.getSparePartOrdersByStatus("available");
+      
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [WORKFLOW] Greška pri dohvatanju dostupnih delova:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dostupnih rezervnih delova" });
     }
   });
 

@@ -188,6 +188,7 @@ export interface IStorage {
   getPendingSparePartOrders(): Promise<SparePartOrder[]>;
   createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
   updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
+  updateSparePartOrderStatus(id: number, updates: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
   deleteSparePartOrder(id: number): Promise<boolean>;
   markSparePartAsReceived(orderId: number, adminId: number, receivedData: { actualCost?: string; location?: string; notes?: string }): Promise<{ order: SparePartOrder; availablePart: AvailablePart } | undefined>;
 
@@ -3548,6 +3549,33 @@ export class DatabaseStorage implements IStorage {
       return updatedOrder;
     } catch (error) {
       console.error('Greška pri ažuriranju porudžbine rezervnog dela:', error);
+      throw error;
+    }
+  }
+
+  async updateSparePartOrderStatus(id: number, updates: Partial<SparePartOrder>): Promise<SparePartOrder | undefined> {
+    try {
+      // Dodaj updatedAt timestamp
+      const updateData = {
+        ...updates,
+        updatedAt: new Date()
+      };
+
+      const [updatedOrder] = await db
+        .update(sparePartOrders)
+        .set(updateData)
+        .where(eq(sparePartOrders.id, id))
+        .returning();
+      
+      if (!updatedOrder) {
+        console.warn(`❌ [WORKFLOW] Rezervni deo sa ID ${id} nije pronađen za ažuriranje`);
+        return undefined;
+      }
+
+      console.log(`📦 [WORKFLOW] Uspešno ažuriran rezervni deo ID: ${id}, novi status: ${updates.status}`);
+      return updatedOrder;
+    } catch (error) {
+      console.error('❌ [WORKFLOW] Greška pri ažuriranju statusa rezervnog dela:', error);
       throw error;
     }
   }

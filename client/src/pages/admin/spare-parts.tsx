@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { SparePartsManagement } from "@/components/admin/SparePartsManagement";
 import SparePartsOrders from "@/components/admin/SparePartsOrders";
+import { SparePartsWorkflow } from "@/components/admin/SparePartsWorkflow";
 import { AvailablePartsManagement } from "@/components/admin/AvailablePartsManagement";
 import { PartsActivityLog } from "@/components/admin/PartsActivityLog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,13 +17,18 @@ export default function AdminSparePartsPage() {
           </p>
         </div>
         
-        <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="workflow" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="workflow">🔄 Workflow</TabsTrigger>
             <TabsTrigger value="orders">Trenutne porudžbine</TabsTrigger>
             <TabsTrigger value="available">Djelovi na stanju</TabsTrigger>
             <TabsTrigger value="activity">Real-time aktivnost</TabsTrigger>
             <TabsTrigger value="management">Upravljanje delovima</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="workflow" className="space-y-4">
+            <SparePartsWorkflow />
+          </TabsContent>
           
           <TabsContent value="orders" className="space-y-4">
             <SparePartsOrders />

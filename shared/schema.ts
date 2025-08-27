@@ -948,6 +948,20 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   deliveryConfirmedBy: integer("delivery_confirmed_by"), // Ko je potvrdio isporuku
   autoRemoveAfterDelivery: boolean("auto_remove_after_delivery").default(true).notNull(), // Auto uklanjanje nakon isporuke
   removedFromOrderingAt: timestamp("removed_from_ordering_at"), // Kada je uklonjen iz sistema poručivanja
+  
+  // ===== NOVA POLJA ZA OPTIMIZOVANI WORKFLOW =====
+  requestedBy: integer("requested_by"), // Ko je zahtevao rezervni deo (technician ID)
+  requestedAt: timestamp("requested_at"), // Kada je zahtevano
+  orderedBy: integer("ordered_by"), // Ko je poručio (admin user ID)
+  orderedAt: timestamp("ordered_at"), // Kada je poručeno od strane admin-a
+  receivedBy: integer("received_by"), // Ko je potvrdio prijem (admin user ID)
+  receivedAt: timestamp("received_at"), // Kada je potvrđen prijem
+  madeAvailableBy: integer("made_available_by"), // Ko je prebacio u dostupno (admin user ID)
+  madeAvailableAt: timestamp("made_available_at"), // Kada je prebačeno u dostupno
+  consumedBy: integer("consumed_by"), // Ko je potrošio (technician ID)
+  consumedAt: timestamp("consumed_at"), // Kada je potrošeno
+  consumedForServiceId: integer("consumed_for_service_id"), // Za koji servis je potrošeno
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -960,13 +974,20 @@ export const sparePartUrgencyEnum = z.enum([
 ]);
 
 export const sparePartStatusEnum = z.enum([
-  "pending", // čeka odobrenje
-  "approved", // odobreno
-  "ordered", // poručeno (sprečava duplo poručivanje)
-  "received", // primljeno
-  "delivered", // isporučeno i potvrđeno
+  "pending", // čeka odobrenje (legacy)
+  "approved", // odobreno (legacy)
+  "ordered", // poručeno (legacy)
+  "received", // primljeno (legacy)
+  "delivered", // isporučeno i potvrđeno (legacy)
   "cancelled", // otkazano
-  "removed_from_ordering", // uklonjen iz sistema poručivanja
+  "removed_from_ordering", // uklonjen iz sistema poručivanja (legacy)
+  
+  // ===== NOVI OPTIMIZOVANI WORKFLOW =====
+  "requested", // zahtev servisera za rezervni deo
+  "admin_ordered", // administrator je poručio deo
+  "waiting_delivery", // na čekanju dostave od dobavljača
+  "available", // dostupno u magacinu za izdavanje
+  "consumed" // potrošeno/iskorišeno od strane servisera
 ]);
 
 export const sparePartWarrantyStatusEnum = z.enum([
