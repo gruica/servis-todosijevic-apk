@@ -1,5 +1,23 @@
 # Servis Todosijević - Service Management Application
 
+## 🛡️ OBAVEZNE SMERNICE ZA RAD - PONAVLJAJU SE PRI SVAKOM RAZGOVORU
+
+**OVE INSTRUKCIJE MORAJU SE POŠTOVATI BEZ IZUZETKA:**
+
+1. **Postojeća baza koda i logika se NE SMEJU menjati**
+2. **Postojeći endpoint-i moraju ostati netaknuti**  
+3. **Izmene NE SMEJU uticati na funkcionalnost aplikacije**
+4. **Fokus na implementaciji i isporuci funkcionalnih rešenja**
+
+**PRISTUP RADU:**
+- **UVEK prvo pitaj za dozvolu** pre bilo kakve izmene
+- **SAMO dodavanje novih funkcionalnosti** - bez menjanja postojećih
+- **Testiranje da postojeće funkcije rade** pre i posle izmena
+- **Dodavanje novih endpoint-a na kraju** server datoteke
+- **Prilagođavanje novih kodova postojećim strukturama**
+
+---
+
 ## Overview
 This is a comprehensive service management application for Frigo Sistem Todosijević, a Serbian appliance repair company. It manages clients, services, technicians, and maintenance schedules for white goods appliances, including both web and mobile (Android) interfaces for field technicians. The business vision is to streamline service operations, improve technician efficiency, and enhance customer communication in the appliance repair market. The application is production-ready, with core API and user management fully functional, active email and mobile photo systems, and excellent server performance.
 
