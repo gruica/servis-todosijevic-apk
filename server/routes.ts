@@ -292,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 6. Dohvati rezervne delove po statusu (za admin interface)
-  app.get("/api/admin/spare-parts/status/:status", async (req, res) => {
+  app.get("/api/admin/spare-parts/status/:status", jwtAuth, async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da pristupe ovim podacima" });
       }
 
@@ -342,11 +342,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 9. DELETE endpoint za brisanje spare parts order-a
-  app.delete("/api/admin/spare-parts/:id", async (req, res) => {
+  app.delete("/api/admin/spare-parts/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
-        return res.status(403).json({ error: "Samo administratori mogu da brišu porudžbine" });
-      }
 
       const orderId = parseInt(req.params.id);
       console.log(`🗑️ [DELETE] Admin pokušava da obriše spare parts order ID: ${orderId}`);
