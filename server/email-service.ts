@@ -2820,6 +2820,200 @@ ${currentDate} ${currentTime}
       return false;
     }
   }
+
+  /**
+   * Šalje automatsku porudžbinu rezervnog dela dobavljaču sa kompletnim podacima
+   */
+  async sendSparePartOrderToSupplier(supplierData: {
+    email: string;
+    name: string;
+  }, orderData: {
+    partName: string;
+    partNumber?: string;
+    quantity: number;
+    urgency: string;
+    description?: string;
+    serviceId?: number;
+    clientName?: string;
+    clientPhone?: string;
+    applianceModel?: string;
+    applianceSerialNumber?: string;
+    manufacturerName?: string;
+    categoryName?: string;
+    technicianName?: string;
+    orderDate: Date;
+    adminNotes?: string;
+  }): Promise<boolean> {
+    try {
+      console.log(`[EMAIL] Šaljem automatsku porudžbinu rezervnog dela dobavljaču: ${supplierData.name} (${supplierData.email})`);
+      
+      const subject = `🔧 PORUDŽBINA REZERVNOG DELA - ${orderData.partName}${orderData.urgency === 'urgent' ? ' [HITNO]' : ''}`;
+      
+      // Generisi HTML template sa kompletnim podacima
+      const html = this.generateSupplierOrderEmailTemplate(supplierData, orderData);
+      
+      // Generisi plain text verziju
+      const text = this.generateSupplierOrderTextTemplate(supplierData, orderData);
+      
+      const result = await this.sendEmail({
+        to: supplierData.email,
+        subject,
+        html,
+        text
+      }, 3); // 3 pokušaja slanja za važne porudžbine
+      
+      if (result) {
+        console.log(`[EMAIL] ✅ Porudžbina uspešno poslata dobavljaču ${supplierData.name}`);
+      } else {
+        console.error(`[EMAIL] ❌ Neuspešno slanje porudžbine dobavljaču ${supplierData.name}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`[EMAIL] Greška pri slanju porudžbine dobavljaču ${supplierData.name}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Generiše HTML template za porudžbinu rezervnog dela
+   */
+  private generateSupplierOrderEmailTemplate(supplierData: any, orderData: any): string {
+    const urgencyBadge = orderData.urgency === 'urgent' 
+      ? '<span style="background: #ff4444; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;">HITNO</span>'
+      : '<span style="background: #4CAF50; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;">REDOVNO</span>';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Porudžbina rezervnog dela</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px;">
+        <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1>📦 PORUDŽBINA REZERVNOG DELA</h1>
+            <p style="font-size: 16px; margin: 10px 0 0 0;">Frigo Sistem Todosijević</p>
+            <p style="font-size: 14px; margin: 5px 0 0 0;">Datum porudžbine: ${orderData.orderDate.toLocaleDateString('sr-RS')}</p>
+          </div>
+          
+          <div style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h2>Poštovani ${supplierData.name},</h2>
+              <p>Molimo Vas da obradite sledeću porudžbinu rezervnog dela:</p>
+              ${urgencyBadge}
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 5px;">📋 DETALJI PORUDŽBINE</h3>
+              <p><strong>Naziv dela:</strong> ${orderData.partName}</p>
+              ${orderData.partNumber ? `<p><strong>Kataloški broj:</strong> ${orderData.partNumber}</p>` : ''}
+              <p><strong>Količina:</strong> ${orderData.quantity} kom</p>
+              <p><strong>Hitnost:</strong> <span style="color: ${orderData.urgency === 'urgent' ? '#ff4444' : '#4CAF50'};"><strong>${orderData.urgency === 'urgent' ? 'HITNO' : 'Redovno'}</strong></span></p>
+              ${orderData.description ? `<p><strong>Opis potrebe:</strong> ${orderData.description}</p>` : ''}
+            </div>
+
+            ${orderData.applianceModel || orderData.manufacturerName ? `
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <h3 style="color: #333; margin-bottom: 10px;">🔧 INFORMACIJE O UREĐAJU</h3>
+              ${orderData.manufacturerName ? `<p><strong>Proizvođač:</strong> ${orderData.manufacturerName}</p>` : ''}
+              ${orderData.categoryName ? `<p><strong>Kategorija:</strong> ${orderData.categoryName}</p>` : ''}
+              ${orderData.applianceModel ? `<p><strong>Model:</strong> ${orderData.applianceModel}</p>` : ''}
+              ${orderData.applianceSerialNumber ? `<p><strong>Serijski broj:</strong> ${orderData.applianceSerialNumber}</p>` : ''}
+            </div>` : ''}
+
+            ${orderData.clientName || orderData.clientPhone ? `
+            <div style="background: #f0f8ff; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <h3 style="color: #333; margin-bottom: 10px;">👤 PODACI O KLIJENTU</h3>
+              ${orderData.clientName ? `<p><strong>Ime klijenta:</strong> ${orderData.clientName}</p>` : ''}
+              ${orderData.clientPhone ? `<p><strong>Telefon:</strong> ${orderData.clientPhone}</p>` : ''}
+            </div>` : ''}
+
+            ${orderData.serviceId || orderData.technicianName ? `
+            <div style="background: #fff8e1; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <h3 style="color: #333; margin-bottom: 10px;">🛠️ INFORMACIJE O SERVISU</h3>
+              ${orderData.serviceId ? `<p><strong>ID servisa:</strong> #${orderData.serviceId}</p>` : ''}
+              ${orderData.technicianName ? `<p><strong>Serviser:</strong> ${orderData.technicianName}</p>` : ''}
+            </div>` : ''}
+
+            ${orderData.adminNotes ? `
+            <div style="background: #fef7e0; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #f59e0b;">
+              <h3 style="color: #92400e; margin-bottom: 10px;">📝 NAPOMENE ADMINISTRATORA</h3>
+              <p style="color: #92400e; margin: 0;">${orderData.adminNotes}</p>
+            </div>` : ''}
+
+            <div style="text-align: center; margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 6px;">
+              <h3>🏢 KONTAKT INFORMACIJE</h3>
+              <p><strong>Frigo Sistem Todosijević</strong></p>
+              <p>📧 Email: info@frigosistemtodosijevic.com</p>
+              <p>📱 Telefon: +382 67 123 456</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0; padding: 20px; background: #f0f9ff; border-radius: 8px;">
+              <h3 style="color: #0369a1;">💼 MOLIMO VAS DA:</h3>
+              <div style="text-align: left; display: inline-block; color: #0369a1;">
+                <p>• Potvrdite dostupnost rezervnog dela</p>
+                <p>• Pošaljete cenu i vreme isporuke</p>
+                <p>• Obavestite nas o statusu porudžbine</p>
+                ${orderData.urgency === 'urgent' ? '<p style="color: #dc2626; font-weight: bold;">• Obradite HITNO - klijent čeka!</p>' : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px;">
+            <p>Automatska poruka iz sistema za upravljanje servisima</p>
+            <p>Frigo Sistem Todosijević © ${new Date().getFullYear()}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Generiše plain text template za porudžbinu rezervnog dela
+   */
+  private generateSupplierOrderTextTemplate(supplierData: any, orderData: any): string {
+    return `PORUDŽBINA REZERVNOG DELA - ${supplierData.name}
+
+Poštovani ${supplierData.name},
+
+Molimo Vas da obradite sledeću porudžbinu rezervnog dela:
+
+DETALJI PORUDŽBINE:
+-------------------
+Naziv dela: ${orderData.partName}
+${orderData.partNumber ? `Kataloški broj: ${orderData.partNumber}` : ''}
+Količina: ${orderData.quantity} kom
+Hitnost: ${orderData.urgency === 'urgent' ? 'HITNO' : 'Redovno'}
+Datum: ${orderData.orderDate.toLocaleDateString('sr-RS')}
+${orderData.description ? `Opis: ${orderData.description}` : ''}
+
+${orderData.manufacturerName || orderData.applianceModel ? `
+UREĐAJ:
+-------
+${orderData.manufacturerName ? `Proizvođač: ${orderData.manufacturerName}` : ''}
+${orderData.applianceModel ? `Model: ${orderData.applianceModel}` : ''}
+${orderData.applianceSerialNumber ? `Serijski broj: ${orderData.applianceSerialNumber}` : ''}
+` : ''}
+${orderData.clientName ? `
+KLIJENT: ${orderData.clientName}${orderData.clientPhone ? ` (${orderData.clientPhone})` : ''}
+` : ''}
+${orderData.serviceId ? `SERVIS: #${orderData.serviceId}${orderData.technicianName ? ` - ${orderData.technicianName}` : ''}` : ''}
+${orderData.adminNotes ? `
+NAPOMENE: ${orderData.adminNotes}
+` : ''}
+
+MOLIMO:
+- Potvrdite dostupnost
+- Pošaljite cenu i rok isporuke
+- Obavestite o statusu
+${orderData.urgency === 'urgent' ? '- HITNO - klijent čeka!' : ''}
+
+Kontakt: info@frigosistemtodosijevic.com
+Frigo Sistem Todosijević`;
+  }
 }
 
 export const emailService = EmailService.getInstance();

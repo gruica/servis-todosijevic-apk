@@ -143,6 +143,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== KONFIGURACIJA DOBAVLJAČA ZA AUTOMATSKI EMAIL SISTEM =====
+  
+  // Mapa dobavljača sa njihovim email adresama
+  const supplierEmailConfig = new Map([
+    // Glavni dobavljači rezervnih delova
+    ["Frigo Expert", "info@frigoexpert.rs"],
+    ["Bosch Service", "servis@bosch.rs"],
+    ["Gorenje Servis", "rezervni.delovi@gorenje.com"],
+    ["Whirlpool Parts", "parts@whirlpool.rs"],
+    ["Electrolux Service", "delovi@electrolux.rs"],
+    ["Samsung Service", "spareparts@samsung.rs"],
+    ["LG Electronics", "parts@lg.rs"],
+    ["Beko Servis", "rezervni@beko.rs"],
+    ["Miele Service", "parts@miele.rs"],
+    ["Candy Hoover", "service@candy-hoover.rs"],
+    ["Indesit Ariston", "delovi@indesit.rs"],
+    ["Liebherr Service", "parts@liebherr.rs"],
+    ["AEG Service", "rezervni@aeg.rs"],
+    ["Zanussi Parts", "parts@zanussi.rs"],
+    ["Siemens Service", "delovi@siemens.rs"],
+    // Lokalni dobavljači
+    ["Auto Delovi BG", "porudzbine@autodelivobg.rs"],
+    ["ElektroMag", "rezervni@elektromag.rs"],
+    ["TehnoServis", "parts@tehnoservis.rs"],
+    ["Frigo Centar", "info@frigocentar.rs"],
+    ["Univerzal Delovi", "prodaja@univerzaldelovi.rs"]
+  ]);
+
+  /**
+   * Dohvata email adresu dobavljača na osnovu naziva
+   */
+  function getSupplierEmailByName(supplierName: string): string | null {
+    if (!supplierName) return null;
+    
+    // Prva provera - direktno poklapanje
+    const directMatch = supplierEmailConfig.get(supplierName);
+    if (directMatch) return directMatch;
+    
+    // Druga provera - case-insensitive poklapanje
+    const normalizedName = supplierName.toLowerCase().trim();
+    for (const [name, email] of supplierEmailConfig.entries()) {
+      if (name.toLowerCase() === normalizedName) {
+        return email;
+      }
+    }
+    
+    // Treća provera - parcijalno poklapanje (sadrži reči)
+    for (const [name, email] of supplierEmailConfig.entries()) {
+      const nameWords = name.toLowerCase().split(' ');
+      const supplierWords = normalizedName.split(' ');
+      
+      const hasCommonWord = nameWords.some(nameWord => 
+        supplierWords.some(supplierWord => 
+          nameWord.includes(supplierWord) || supplierWord.includes(nameWord)
+        )
+      );
+      
+      if (hasCommonWord) return email;
+    }
+    
+    return null; // Dobavljač nije pronađen
+  }
+
   // ===== NOVI OPTIMIZOVANI WORKFLOW ZA REZERVNE DELOVE =====
   
   // 1. Zahtev servisera za rezervni deo
@@ -174,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 2. Admin označi deo kao poručen
+  // 2. Admin označi deo kao poručen + automatski pošalji email dobavljaču
   app.patch("/api/admin/spare-parts/:id/order", jwtAuth, async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
@@ -182,8 +245,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const orderId = parseInt(req.params.id);
-      const { supplierName, estimatedDelivery, adminNotes } = req.body;
+      const { supplierName, estimatedDelivery, adminNotes, urgency = 'normal' } = req.body;
 
+      // Dohvati kompletan order sa svim povezanim podacima
+      const existingOrder = await storage.getSparePartOrderById(orderId);
+      if (!existingOrder) {
+        return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
+      }
+
+      // Ažuriraj status porudžbine
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "ordered", // Menjamo iz "admin_ordered" u "ordered" za kompatibilnost sa frontend-om
         supplierName,
@@ -194,6 +264,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
+
+      // NOVO: Automatski pošalji email dobavljaču
+      try {
+        const supplierEmail = getSupplierEmailByName(supplierName);
+        
+        if (supplierEmail) {
+          // Dohvati dodatne podatke za email
+          let serviceData = null;
+          let clientData = null;
+          let applianceData = null;
+          let technicianData = null;
+
+          if (existingOrder.serviceId) {
+            serviceData = await storage.getServiceById(existingOrder.serviceId);
+            if (serviceData) {
+              if (serviceData.clientId) {
+                clientData = await storage.getClientById(serviceData.clientId);
+              }
+              if (serviceData.applianceId) {
+                applianceData = await storage.getApplianceById(serviceData.applianceId);
+              }
+              if (serviceData.technicianId) {
+                technicianData = await storage.getTechnician(serviceData.technicianId);
+              }
+            }
+          }
+
+          // Pripremi podatke za email
+          const orderData = {
+            partName: existingOrder.partName,
+            partNumber: existingOrder.partNumber,
+            quantity: existingOrder.quantity,
+            urgency: urgency,
+            description: existingOrder.description,
+            serviceId: existingOrder.serviceId,
+            clientName: clientData?.fullName,
+            clientPhone: clientData?.phone,
+            applianceModel: applianceData?.model,
+            applianceSerialNumber: applianceData?.serialNumber,
+            manufacturerName: applianceData?.manufacturerName || serviceData?.manufacturerName,
+            categoryName: applianceData?.categoryName || serviceData?.categoryName,
+            technicianName: technicianData?.name,
+            orderDate: new Date(),
+            adminNotes: adminNotes
+          };
+
+          // Pošalji email dobavljaču
+          const emailSent = await emailService.sendSparePartOrderToSupplier(
+            { email: supplierEmail, name: supplierName },
+            orderData
+          );
+
+          if (emailSent) {
+            console.log(`📧 [EMAIL] ✅ Automatski email poslat dobavljaču ${supplierName} (${supplierEmail})`);
+          } else {
+            console.error(`📧 [EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
+          }
+        } else {
+          console.log(`📧 [EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
+        }
+      } catch (emailError) {
+        console.error("📧 [EMAIL] Greška pri slanju email-a dobavljaču:", emailError);
+        // Email greška ne prekida workflow - admin je svakako poručio deo
+      }
+
       res.json({ 
         success: true, 
         message: "Rezervni deo je uspešno poručen", 
