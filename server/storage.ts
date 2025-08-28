@@ -3410,10 +3410,6 @@ export class DatabaseStorage implements IStorage {
     return orders;
   }
 
-  async getSparePartOrdersByStatus(status: string): Promise<SparePartOrder[]> {
-    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.status, status)).orderBy(desc(sparePartOrders.createdAt));
-    return orders;
-  }
 
   async getAllSparePartOrders(): Promise<any[]> {
     try {
@@ -3516,14 +3512,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSparePartOrdersByStatus(status: SparePartStatus): Promise<SparePartOrder[]> {
+  async getSparePartOrdersByStatus(status: SparePartStatus): Promise<any[]> {
     try {
-      const orders = await db
-        .select()
-        .from(sparePartOrders)
-        .where(eq(sparePartOrders.status, status))
-        .orderBy(desc(sparePartOrders.createdAt));
-      return orders;
+      // RAW SQL pristup da zaobiđe Drizzle ORM greške (kao u getAllSparePartOrders)
+      const result = await pool.query(`
+        SELECT id, part_name, quantity, status, urgency, created_at
+        FROM spare_part_orders 
+        WHERE status = $1
+        ORDER BY created_at DESC
+      `, [status]);
+      
+      return result.rows;
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbina po statusu:', error);
       throw error;

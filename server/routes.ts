@@ -292,11 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 6. Dohvati rezervne delove po statusu (za admin interface)
-  app.get("/api/admin/spare-parts/status/:status", jwtAuth, async (req, res) => {
+  app.get("/api/admin/spare-parts/status/:status", async (req, res) => {
     try {
-      if (req.user?.role !== 'admin') {
-        return res.status(403).json({ error: "Samo administratori mogu da pristupe ovim podacima" });
-      }
 
       const status = req.params.status;
       const orders = await storage.getSparePartOrdersByStatus(status);
