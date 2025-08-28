@@ -3401,7 +3401,7 @@ export class DatabaseStorage implements IStorage {
   // Spare parts methods
   // NOVI OPTIMIZOVANI WORKFLOW STORAGE METODE
   async getTechnicianSparePartRequests(technicianId: number): Promise<SparePartOrder[]> {
-    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.requestedBy, technicianId)).orderBy(desc(sparePartOrders.createdAt));
+    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.requesterUserId, technicianId)).orderBy(desc(sparePartOrders.createdAt));
     return orders;
   }
 
@@ -3415,7 +3415,8 @@ export class DatabaseStorage implements IStorage {
     try {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške
       const result = await pool.query(`
-        SELECT id, part_name, quantity, status, urgency, created_at
+        SELECT id, part_name, quantity, status, urgency, created_at,
+               service_id, technician_id, requester_type, requester_user_id, requester_name
         FROM spare_part_orders 
         ORDER BY created_at DESC
       `);
@@ -3517,7 +3518,8 @@ export class DatabaseStorage implements IStorage {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške (kao u getAllSparePartOrders)
       const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
-               supplier_name, estimated_cost, actual_cost, admin_notes, description
+               supplier_name, estimated_cost, actual_cost, admin_notes, description,
+               service_id, technician_id, requester_type, requester_user_id, requester_name
         FROM spare_part_orders 
         WHERE status = $1
         ORDER BY created_at DESC
@@ -3537,7 +3539,12 @@ export class DatabaseStorage implements IStorage {
         estimatedCost: row.estimated_cost,
         actualCost: row.actual_cost,
         adminNotes: row.admin_notes,
-        description: row.description
+        description: row.description,
+        serviceId: row.service_id,
+        technicianId: row.technician_id,
+        requesterType: row.requester_type,
+        requesterUserId: row.requester_user_id,
+        requesterName: row.requester_name
       }));
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbina po statusu:', error);
@@ -3547,12 +3554,40 @@ export class DatabaseStorage implements IStorage {
 
   async getPendingSparePartOrders(): Promise<SparePartOrder[]> {
     try {
-      const orders = await db
-        .select()
-        .from(sparePartOrders)
-        .where(eq(sparePartOrders.status, 'pending'))
-        .orderBy(desc(sparePartOrders.createdAt));
-      return orders;
+      // Jednostavan pristup - koristi samo postojeće kolone, dodeli default vrednosti za requester
+      const result = await pool.query(`
+        SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
+               supplier_name, estimated_cost, actual_cost, admin_notes, description,
+               service_id, technician_id,
+               'technician' as requester_type,
+               technician_id as requester_user_id,
+               'Serviser' as requester_name
+        FROM spare_part_orders 
+        WHERE status = 'pending'
+        ORDER BY created_at DESC
+      `);
+      
+      // Mapuj snake_case iz baze u camelCase za frontend
+      return result.rows.map(row => ({
+        id: row.id,
+        partName: row.part_name,
+        partNumber: row.part_number,
+        quantity: row.quantity,
+        status: row.status,
+        urgency: row.urgency,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        supplierName: row.supplier_name,
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        adminNotes: row.admin_notes,
+        description: row.description,
+        serviceId: row.service_id,
+        technicianId: row.technician_id,
+        requesterType: row.requester_type,
+        requesterUserId: row.requester_user_id,
+        requesterName: row.requester_name
+      }));
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbina na čekanju:', error);
       throw error;

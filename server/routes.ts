@@ -143,6 +143,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/spare-parts/pending", async (req, res) => {
+    try {
+      const orders = await storage.getPendingSparePartOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina na čekanju:", error);
+      res.status(500).json({ error: "Greška pri učitavanju porudžbina na čekanju" });
+    }
+  });
+
   // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
   
   // ComPlus brendovi za automatsku detekciju - STVARNI PODACI
@@ -244,8 +254,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         status: "requested",
         technicianId: req.user.technicianId || req.user.id,
-        requestedBy: req.user.technicianId || req.user.id,
-        requestedAt: new Date()
+        requesterType: "technician",
+        requesterUserId: req.user.technicianId || req.user.id,
+        requesterName: req.user.fullName || req.user.username
       };
 
       const order = await storage.createSparePartOrder(requestData);
@@ -872,7 +883,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         applianceModel: applianceModel || "",
         status: "pending",
         createdAt: new Date().toISOString(),
-        requestedBy: reqUser.id
+        requesterType: "admin",
+        requesterUserId: reqUser.id,
+        requesterName: reqUser.fullName || reqUser.username
       };
 
       console.log("Creating spare parts order:", orderData);

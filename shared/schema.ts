@@ -962,6 +962,11 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   consumedAt: timestamp("consumed_at"), // Kada je potrošeno
   consumedForServiceId: integer("consumed_for_service_id"), // Za koji servis je potrošeno
   
+  // ===== POLJA ZA SPAJANJE ADMIN I TEHNIKER WORKFLOW-A =====
+  requesterType: text("requester_type"), // "admin" ili "technician" - ko je kreirao zahtev
+  requesterUserId: integer("requester_user_id"), // user ID iz users tabele (admin ili technician user)
+  requesterName: text("requester_name"), // Ime korisnika koji je kreirao zahtev
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -995,9 +1000,15 @@ export const sparePartWarrantyStatusEnum = z.enum([
   "van garancije", // out of warranty
 ]);
 
+export const sparePartRequesterTypeEnum = z.enum([
+  "admin", // administrattor je kreirao zahtev
+  "technician", // serviser je kreirao zahtev
+]);
+
 export type SparePartUrgency = z.infer<typeof sparePartUrgencyEnum>;
 export type SparePartStatus = z.infer<typeof sparePartStatusEnum>;
 export type SparePartWarrantyStatus = z.infer<typeof sparePartWarrantyStatusEnum>;
+export type SparePartRequesterType = z.infer<typeof sparePartRequesterTypeEnum>;
 
 // Tabela za detaljno dokumentovanje završenih servisa
 export const serviceCompletionReports = pgTable('service_completion_reports', {
@@ -1060,6 +1071,9 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   expectedDelivery: true,
   receivedDate: true,
   adminNotes: true,
+  requesterType: true,
+  requesterUserId: true,
+  requesterName: true,
 }).extend({
   serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj").optional(),
   technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").optional(),
@@ -1078,6 +1092,9 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   isDelivered: z.boolean().default(false).optional(),
   deliveryConfirmedBy: z.number().int().positive().optional(),
   autoRemoveAfterDelivery: z.boolean().default(true).optional(),
+  requesterType: sparePartRequesterTypeEnum.optional(),
+  requesterUserId: z.number().int().positive("ID korisnika mora biti pozitivan broj").optional(),
+  requesterName: z.string().max(100, "Ime korisnika je predugačko").or(z.literal("")).optional(),
 });
 
 export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
