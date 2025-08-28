@@ -217,6 +217,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
         description: error.message || "Nije moguće obrisati porudžbinu. Proverite da li ste prijavljeni.",
         variant: "destructive",
       });
+    }
   });
 
   // Confirm delivery mutation (NOVA FUNKCIONALNOST)
