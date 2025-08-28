@@ -3401,7 +3401,7 @@ export class DatabaseStorage implements IStorage {
   // Spare parts methods
   // NOVI OPTIMIZOVANI WORKFLOW STORAGE METODE
   async getTechnicianSparePartRequests(technicianId: number): Promise<SparePartOrder[]> {
-    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.requesterUserId, technicianId)).orderBy(desc(sparePartOrders.createdAt));
+    const orders = await db.select().from(sparePartOrders).where(eq(sparePartOrders.technicianId, technicianId)).orderBy(desc(sparePartOrders.createdAt));
     return orders;
   }
 
@@ -3416,7 +3416,10 @@ export class DatabaseStorage implements IStorage {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške
       const result = await pool.query(`
         SELECT id, part_name, quantity, status, urgency, created_at,
-               service_id, technician_id, requester_type, requester_user_id, requester_name
+               service_id, technician_id,
+               'technician' as requester_type,
+               technician_id as requester_user_id,
+               'Serviser' as requester_name
         FROM spare_part_orders 
         ORDER BY created_at DESC
       `);
@@ -3515,11 +3518,14 @@ export class DatabaseStorage implements IStorage {
 
   async getSparePartOrdersByStatus(status: SparePartStatus): Promise<any[]> {
     try {
-      // RAW SQL pristup da zaobiđe Drizzle ORM greške (kao u getAllSparePartOrders)
+      // RAW SQL pristup sa postojećim kolonama - dodeli default vrednosti za requester polja
       const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
-               service_id, technician_id, requester_type, requester_user_id, requester_name
+               service_id, technician_id,
+               'technician' as requester_type,
+               technician_id as requester_user_id,
+               'Serviser' as requester_name
         FROM spare_part_orders 
         WHERE status = $1
         ORDER BY created_at DESC
