@@ -3402,7 +3402,7 @@ Frigo Sistem`;
   // ====================================
   
   // Return service from technician to admin
-  app.post('/api/services/:id/return-from-technician', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+  app.post('/api/admin/services/:id/return-from-technician', jwtAuth, requireRole(['admin']), async (req: any, res) => {
     try {
       const serviceId = parseInt(req.params.id);
       const { reason, notes } = req.body;
