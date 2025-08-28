@@ -185,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { supplierName, estimatedDelivery, adminNotes } = req.body;
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
-        status: "admin_ordered",
+        status: "ordered", // Menjamo iz "admin_ordered" u "ordered" za kompatibilnost sa frontend-om
         supplierName,
         expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
         adminNotes,

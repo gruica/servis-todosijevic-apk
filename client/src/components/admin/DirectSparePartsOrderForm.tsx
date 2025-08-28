@@ -12,6 +12,7 @@ import { Package } from 'lucide-react';
 
 interface DirectSparePartsOrderFormProps {
   serviceId?: number | null;
+  orderId?: number; // ID postojeće porudžbine koju treba ažurirati
   prefilledData?: {
     partName?: string;
     partNumber?: string;
@@ -37,7 +38,7 @@ interface FormData {
   urgency: 'normal' | 'high' | 'urgent';
 }
 
-export default function DirectSparePartsOrderForm({ serviceId, prefilledData, onSuccess }: DirectSparePartsOrderFormProps) {
+export default function DirectSparePartsOrderForm({ serviceId, orderId, prefilledData, onSuccess }: DirectSparePartsOrderFormProps) {
   const [formData, setFormData] = useState<FormData>({
     selectedBrand: null,
     deviceModel: prefilledData?.deviceModel || '',
@@ -59,18 +60,36 @@ export default function DirectSparePartsOrderForm({ serviceId, prefilledData, on
 
   const mutation = useMutation({
     mutationFn: async (data: FormData & { serviceId?: number | null }) => {
-      const response = await apiRequest('/api/admin/spare-parts/order', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      return response.json();
+      // Ako imamo orderId, ažuriramo postojeću porudžbinu
+      if (orderId) {
+        const response = await apiRequest(`/api/admin/spare-parts/${orderId}/order`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            supplierName: data.selectedBrand === 'beko' ? 'Eurotehnika' : 'ComPlus',
+            estimatedDelivery: null,
+            adminNotes: `Poručen kroz direktni sistem - ${data.selectedBrand?.toUpperCase()} brend`
+          })
+        });
+        return response.json();
+      } else {
+        // Inače kreiramo novu porudžbinu
+        const response = await apiRequest('/api/spare-parts/order', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        return response.json();
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast({
         title: "Rezervni deo uspešno poručen",
-        description: "Email je poslat dobavljaču sa detaljima o rezervnom delu.",
+        description: orderId 
+          ? "Status porudžbine je automatski ažuriran na 'Poručeno' i poslat je email dobavljaču."
+          : "Email je poslat dobavljaču sa detaljima o rezervnom delu.",
       });
+      // Ažuriranje cache-a
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
       onSuccess?.();
     },
     onError: (error: any) => {

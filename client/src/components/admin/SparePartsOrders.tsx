@@ -1055,6 +1055,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
               {/* Direct Ordering Form */}
               <DirectSparePartsOrderForm 
                 serviceId={selectedOrder.serviceId}
+                orderId={selectedOrder.id} // Proslijedi ID postojeće porudžbine
                 prefilledData={{
                   partName: selectedOrder.partName,
                   partNumber: selectedOrder.partNumber || '',
@@ -1069,7 +1070,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
                   setIsDirectOrderOpen(false);
                   toast({
                     title: "Uspešno poručeno",
-                    description: "Rezervni deo je uspešno poručen direktno.",
+                    description: "Status je automatski ažuriran na 'Poručeno'.",
                   });
                   // Optimized: Single targeted invalidation
                   queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'], exact: true });
