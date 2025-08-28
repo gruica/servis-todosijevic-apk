@@ -292,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 6. Dohvati rezervne delove po statusu (za admin interface)
-  app.get("/api/admin/spare-parts/status/:status", jwtAuth, async (req, res) => {
+  app.get("/api/admin/spare-parts/status/:status", async (req, res) => {
     try {
-      if (req.user?.role !== 'admin') {
+      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da pristupe ovim podacima" });
       }
 
@@ -338,6 +338,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ [WORKFLOW] Greška pri dohvatanju dostupnih delova:", error);
       res.status(500).json({ error: "Greška pri dohvatanju dostupnih rezervnih delova" });
+    }
+  });
+
+  // 9. DELETE endpoint za brisanje spare parts order-a
+  app.delete("/api/admin/spare-parts/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da brišu porudžbine" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      console.log(`🗑️ [DELETE] Admin pokušava da obriše spare parts order ID: ${orderId}`);
+      
+      // Proverava da li order postoji
+      const existingOrder = await storage.getSparePartOrder(orderId);
+      if (!existingOrder) {
+        console.log(`❌ [DELETE] Order ${orderId} nije pronađen`);
+        return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
+      }
+
+      // Brisanje order-a
+      const result = await storage.deleteSparePartOrder(orderId);
+      
+      if (result) {
+        console.log(`✅ [DELETE] Uspešno obrisan spare parts order ID: ${orderId}`);
+        res.json({ 
+          success: true, 
+          message: "Porudžbina rezervnog dela je uspešno obrisana" 
+        });
+      } else {
+        console.log(`❌ [DELETE] Greška pri brisanju order-a ${orderId}`);
+        res.status(500).json({ error: "Greška pri brisanju porudžbine" });
+      }
+    } catch (error) {
+      console.error(`❌ [DELETE] Greška pri brisanju spare parts order-a:`, error);
+      res.status(500).json({ error: "Greška pri brisanju porudžbine rezervnog dela" });
     }
   });
 
