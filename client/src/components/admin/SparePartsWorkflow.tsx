@@ -348,16 +348,8 @@ export function SparePartsWorkflow() {
     query: useQuery({
       queryKey: ['/api/admin/spare-parts/status', status],
       queryFn: async () => {
-        console.log(`🔄 [WORKFLOW DEBUG] Pozivam API za status: ${status}`);
-        try {
-          const response = await apiRequest(`/api/admin/spare-parts/status/${status}`);
-          const data = await response.json();
-          console.log(`✅ [WORKFLOW DEBUG] Dobio podatke za ${status}:`, data);
-          return data;
-        } catch (error) {
-          console.error(`❌ [WORKFLOW DEBUG] Greška za ${status}:`, error);
-          throw error;
-        }
+        const response = await apiRequest(`/api/admin/spare-parts/status/${status}`);
+        return await response.json();
       },
     })
   }));
