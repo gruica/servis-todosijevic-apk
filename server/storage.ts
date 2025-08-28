@@ -3516,13 +3516,29 @@ export class DatabaseStorage implements IStorage {
     try {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške (kao u getAllSparePartOrders)
       const result = await pool.query(`
-        SELECT id, part_name, quantity, status, urgency, created_at
+        SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
+               supplier_name, estimated_cost, actual_cost, admin_notes, description
         FROM spare_part_orders 
         WHERE status = $1
         ORDER BY created_at DESC
       `, [status]);
       
-      return result.rows;
+      // Mapuj snake_case iz baze u camelCase za frontend
+      return result.rows.map(row => ({
+        id: row.id,
+        partName: row.part_name,
+        partNumber: row.part_number,
+        quantity: row.quantity,
+        status: row.status,
+        urgency: row.urgency,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        supplierName: row.supplier_name,
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        adminNotes: row.admin_notes,
+        description: row.description
+      }));
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbina po statusu:', error);
       throw error;
