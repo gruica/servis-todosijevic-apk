@@ -4360,6 +4360,46 @@ Frigo Sistem`;
     }
   });
 
+  // ===== POVEZIVANJE MOBILNOG INTERFEJSA SA ADMIN PANELOM =====
+  // Endpoint koji poziva mobilni interface za rezervne delove
+  app.post("/api/services/:serviceId/spare-parts", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'technician' && req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo serviseri mogu da zahtevaju rezervne delove" });
+      }
+
+      const serviceId = parseInt(req.params.serviceId);
+      
+      // Pripremi podatke koristeći isti format kao postojeći sistem
+      const requestData = {
+        partName: req.body.partName || '',
+        partNumber: req.body.catalogNumber || req.body.partNumber || '',
+        quantity: req.body.quantity || 1,
+        description: req.body.description || '',
+        urgency: req.body.urgency || 'normal',
+        serviceId: serviceId,
+        status: "pending", // Koristi pending status koji admin očekuje
+        technicianId: req.user.technicianId || req.user.id,
+        requesterType: "technician",
+        requesterUserId: req.user.technicianId || req.user.id,
+        requesterName: req.user.fullName || req.user.username
+      };
+
+      console.log(`📱 [MOBILNI] Serviser ${req.user.username} zahtevao rezervni deo za servis #${serviceId}: ${requestData.partName}`);
+      
+      const order = await storage.createSparePartOrder(requestData);
+      
+      res.json({ 
+        success: true, 
+        message: "Zahtev za rezervni deo je uspešno poslat administratoru", 
+        order 
+      });
+    } catch (error) {
+      console.error("❌ [MOBILNI] Greška pri zahtevu za rezervni deo:", error);
+      res.status(500).json({ error: "Greška pri slanju zahteva za rezervni deo" });
+    }
+  });
+
   return server;
 }
 
