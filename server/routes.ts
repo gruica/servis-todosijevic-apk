@@ -143,13 +143,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== KONFIGURACIJA DOBAVLJAČA ZA AUTOMATSKI EMAIL SISTEM =====
+  // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
   
-  // Mapa dobavljača sa njihovim email adresama
+  // ComPlus brendovi za automatsku detekciju
+  const complusBrands = [
+    'Bosch', 'Siemens', 'Neff', 'Gaggenau', 'Constructa',
+    'Pitsos', 'Profilo', 'Zelmer', 'Ufesa', 'Balay', 
+    'Lynx', 'Coldex', 'Electrodomésticos', 'SuperSer',
+    'BSH'
+  ];
+
+  // Mapa dobavljača sa prioritetom za ComPlus brend
   const supplierEmailConfig = new Map([
-    // Glavni dobavljači rezervnih delova
-    ["Frigo Expert", "info@frigoexpert.rs"],
-    ["Bosch Service", "servis@bosch.rs"],
+    // 🎯 COMPLUS - GLAVNA DESTINACIJA ZA REZERVNE DELOVE
+    ["ComPlus", "servis@complus.me"],
+    ["ComPlus Servis", "servis@complus.me"],
+    ["servis@complus.me", "servis@complus.me"],
+    
+    // ComPlus povezani dobavljači
+    ["Bosch Service", "servis@complus.me"], // PreusmeriCOMPLUS
+    ["BSH", "servis@complus.me"], // Preusmeri na COMPLUS
+    ["Siemens Service", "servis@complus.me"], // Preusmeri na COMPLUS
+    ["Bosch", "servis@complus.me"], // Preusmeri na COMPLUS
+    ["Siemens", "servis@complus.me"], // Preusmeri na COMPLUS
+    
+    // Lokalni ComPlus partneri
+    ["TehnoPlus", "robert.ivezic@tehnoplus.me"],
+    ["Frigo Sistem Todosijević", "gruica@frigosistemtodosijevic.com"],
+    
+    // Ostali dobavljači (backup)
     ["Gorenje Servis", "rezervni.delovi@gorenje.com"],
     ["Whirlpool Parts", "parts@whirlpool.rs"],
     ["Electrolux Service", "delovi@electrolux.rs"],
@@ -157,22 +179,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ["LG Electronics", "parts@lg.rs"],
     ["Beko Servis", "rezervni@beko.rs"],
     ["Miele Service", "parts@miele.rs"],
-    ["Candy Hoover", "service@candy-hoover.rs"],
-    ["Indesit Ariston", "delovi@indesit.rs"],
-    ["Liebherr Service", "parts@liebherr.rs"],
-    ["AEG Service", "rezervni@aeg.rs"],
-    ["Zanussi Parts", "parts@zanussi.rs"],
-    ["Siemens Service", "delovi@siemens.rs"],
-    // Lokalni dobavljači
-    ["Auto Delovi BG", "porudzbine@autodelivobg.rs"],
-    ["ElektroMag", "rezervni@elektromag.rs"],
-    ["TehnoServis", "parts@tehnoservis.rs"],
-    ["Frigo Centar", "info@frigocentar.rs"],
-    ["Univerzal Delovi", "prodaja@univerzaldelovi.rs"]
+    ["Candy Hoover", "service@candy-hoover.rs"]
   ]);
 
   /**
-   * Dohvata email adresu dobavljača na osnovu naziva
+   * Provera da li je uređaj ComPlus brenda na osnovu proizvođača
+   */
+  function isComplusBrand(manufacturerName: string): boolean {
+    if (!manufacturerName) return false;
+    return complusBrands.some(brand => 
+      manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
+      brand.toLowerCase().includes(manufacturerName.toLowerCase())
+    );
+  }
+
+  /**
+   * Dohvata email adresu dobavljača na osnovu naziva - OPTIMIZOVANO ZA COMPLUS
    */
   function getSupplierEmailByName(supplierName: string): string | null {
     if (!supplierName) return null;
@@ -265,67 +287,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
-      // NOVO: Automatski pošalji email dobavljaču
+      // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
       try {
-        const supplierEmail = getSupplierEmailByName(supplierName);
-        
-        if (supplierEmail) {
-          // Dohvati dodatne podatke za email
-          let serviceData = null;
-          let clientData = null;
-          let applianceData = null;
-          let technicianData = null;
+        // Dohvati dodatne podatke za email
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
 
-          if (existingOrder.serviceId) {
-            serviceData = await storage.getServiceById(existingOrder.serviceId);
-            if (serviceData) {
-              if (serviceData.clientId) {
-                clientData = await storage.getClientById(serviceData.clientId);
-              }
-              if (serviceData.applianceId) {
-                applianceData = await storage.getApplianceById(serviceData.applianceId);
-              }
-              if (serviceData.technicianId) {
-                technicianData = await storage.getTechnician(serviceData.technicianId);
-              }
+        if (existingOrder.serviceId) {
+          serviceData = await storage.getServiceById(existingOrder.serviceId);
+          if (serviceData) {
+            if (serviceData.clientId) {
+              clientData = await storage.getClientById(serviceData.clientId);
+            }
+            if (serviceData.applianceId) {
+              applianceData = await storage.getApplianceById(serviceData.applianceId);
+            }
+            if (serviceData.technicianId) {
+              technicianData = await storage.getTechnician(serviceData.technicianId);
             }
           }
+        }
 
-          // Pripremi podatke za email
-          const orderData = {
-            partName: existingOrder.partName,
-            partNumber: existingOrder.partNumber,
-            quantity: existingOrder.quantity,
-            urgency: urgency,
-            description: existingOrder.description,
-            serviceId: existingOrder.serviceId,
-            clientName: clientData?.fullName,
-            clientPhone: clientData?.phone,
-            applianceModel: applianceData?.model,
-            applianceSerialNumber: applianceData?.serialNumber,
-            manufacturerName: applianceData?.manufacturerName || serviceData?.manufacturerName,
-            categoryName: applianceData?.categoryName || serviceData?.categoryName,
-            technicianName: technicianData?.name,
-            orderDate: new Date(),
-            adminNotes: adminNotes
-          };
+        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        const isComPlus = isComplusBrand(manufacturerName);
 
-          // Pošalji email dobavljaču
-          const emailSent = await emailService.sendSparePartOrderToSupplier(
-            { email: supplierEmail, name: supplierName },
-            orderData
+        console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
+
+        // 🎯 COMPLUS BREND - Koristi postojeći ComPlus email sistem
+        if (isComPlus) {
+          console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
+          
+          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          const complusEmailSent = await emailService.sendComplusSparePartOrder(
+            existingOrder.serviceId || 0,
+            clientData?.fullName || 'N/A',
+            technicianData?.name || 'N/A',
+            deviceType,
+            manufacturerName,
+            existingOrder.partName,
+            existingOrder.partNumber || 'N/A',
+            urgency,
+            existingOrder.description
           );
 
-          if (emailSent) {
-            console.log(`📧 [EMAIL] ✅ Automatski email poslat dobavljaču ${supplierName} (${supplierEmail})`);
+          if (complusEmailSent) {
+            console.log(`🎯 [COMPLUS EMAIL] ✅ ComPlus email uspešno poslat na servis@complus.me za deo: ${existingOrder.partName}`);
           } else {
-            console.error(`📧 [EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
+            console.error(`🎯 [COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
           }
-        } else {
-          console.log(`📧 [EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
+        } 
+        // 📧 OSTALI BRENDOVI - Koristi opšti supplier sistem
+        else {
+          const supplierEmail = getSupplierEmailByName(supplierName);
+          
+          if (supplierEmail) {
+            // Pripremi podatke za opšti email template
+            const orderData = {
+              partName: existingOrder.partName,
+              partNumber: existingOrder.partNumber,
+              quantity: existingOrder.quantity,
+              urgency: urgency,
+              description: existingOrder.description,
+              serviceId: existingOrder.serviceId,
+              clientName: clientData?.fullName,
+              clientPhone: clientData?.phone,
+              applianceModel: applianceData?.model,
+              applianceSerialNumber: applianceData?.serialNumber,
+              manufacturerName: manufacturerName,
+              categoryName: applianceData?.categoryName || serviceData?.categoryName,
+              technicianName: technicianData?.name,
+              orderDate: new Date(),
+              adminNotes: adminNotes
+            };
+
+            // Pošalji email opštem dobavljaču
+            const emailSent = await emailService.sendSparePartOrderToSupplier(
+              { email: supplierEmail, name: supplierName },
+              orderData
+            );
+
+            if (emailSent) {
+              console.log(`📧 [GENERAL EMAIL] ✅ Email poslat dobavljaču ${supplierName} (${supplierEmail})`);
+            } else {
+              console.error(`📧 [GENERAL EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
+            }
+          } else {
+            console.log(`📧 [GENERAL EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
+          }
         }
       } catch (emailError) {
-        console.error("📧 [EMAIL] Greška pri slanju email-a dobavljaču:", emailError);
+        console.error("📧 [EMAIL ERROR] Greška pri slanju email-a:", emailError);
         // Email greška ne prekida workflow - admin je svakako poručio deo
       }
 
