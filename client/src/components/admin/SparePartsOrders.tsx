@@ -211,12 +211,12 @@ const SparePartsOrders = memo(function SparePartsOrders() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
+      console.error('❌ [DELETE MUTATION] Greška pri brisanju:', error);
       toast({
         title: "Greška pri brisanju",
-        description: error.message || "Došlo je do greške pri brisanju porudžbine.",
+        description: error.message || "Nije moguće obrisati porudžbinu. Proverite da li ste prijavljeni.",
         variant: "destructive",
       });
-    }
   });
 
   // Confirm delivery mutation (NOVA FUNKCIONALNOST)
