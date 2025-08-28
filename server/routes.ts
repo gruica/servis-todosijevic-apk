@@ -145,41 +145,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
   
-  // ComPlus brendovi za automatsku detekciju
+  // ComPlus brendovi za automatsku detekciju - STVARNI PODACI
   const complusBrands = [
-    'Bosch', 'Siemens', 'Neff', 'Gaggenau', 'Constructa',
-    'Pitsos', 'Profilo', 'Zelmer', 'Ufesa', 'Balay', 
-    'Lynx', 'Coldex', 'Electrodomésticos', 'SuperSer',
-    'BSH'
+    'Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'
   ];
 
-  // Mapa dobavljača sa prioritetom za ComPlus brend
+  // Mapa dobavljača sa prioritetom za ComPlus brend - AŽURIRANO SA STVARNIM PODACIMA
   const supplierEmailConfig = new Map([
     // 🎯 COMPLUS - GLAVNA DESTINACIJA ZA REZERVNE DELOVE
     ["ComPlus", "servis@complus.me"],
     ["ComPlus Servis", "servis@complus.me"],
     ["servis@complus.me", "servis@complus.me"],
     
-    // ComPlus povezani dobavljači
-    ["Bosch Service", "servis@complus.me"], // PreusmeriCOMPLUS
-    ["BSH", "servis@complus.me"], // Preusmeri na COMPLUS
-    ["Siemens Service", "servis@complus.me"], // Preusmeri na COMPLUS
-    ["Bosch", "servis@complus.me"], // Preusmeri na COMPLUS
-    ["Siemens", "servis@complus.me"], // Preusmeri na COMPLUS
+    // ComPlus povezani brendovi - STVARNI PODACI
+    ["Electrolux", "servis@complus.me"], // ComPlus brend
+    ["Electrolux Service", "servis@complus.me"], // ComPlus brend
+    ["Elica", "servis@complus.me"], // ComPlus brend
+    ["Elica Service", "servis@complus.me"], // ComPlus brend
+    ["Candy", "servis@complus.me"], // ComPlus brend
+    ["Candy Service", "servis@complus.me"], // ComPlus brend
+    ["Hoover", "servis@complus.me"], // ComPlus brend
+    ["Hoover Service", "servis@complus.me"], // ComPlus brend
+    ["Turbo Air", "servis@complus.me"], // ComPlus brend
+    ["TurboAir", "servis@complus.me"], // ComPlus brend
+    ["Turbo Air Service", "servis@complus.me"], // ComPlus brend
     
     // Lokalni ComPlus partneri
     ["TehnoPlus", "robert.ivezic@tehnoplus.me"],
     ["Frigo Sistem Todosijević", "gruica@frigosistemtodosijevic.com"],
     
-    // Ostali dobavljači (backup)
+    // Ostali dobavljači (backup za ne-ComPlus brendove)
+    ["Bosch Service", "servis@bosch.rs"],
+    ["Siemens Service", "delovi@siemens.rs"],
     ["Gorenje Servis", "rezervni.delovi@gorenje.com"],
     ["Whirlpool Parts", "parts@whirlpool.rs"],
-    ["Electrolux Service", "delovi@electrolux.rs"],
     ["Samsung Service", "spareparts@samsung.rs"],
     ["LG Electronics", "parts@lg.rs"],
     ["Beko Servis", "rezervni@beko.rs"],
-    ["Miele Service", "parts@miele.rs"],
-    ["Candy Hoover", "service@candy-hoover.rs"]
+    ["Miele Service", "parts@miele.rs"]
   ]);
 
   /**
