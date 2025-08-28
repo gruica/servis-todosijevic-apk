@@ -3417,11 +3417,13 @@ export class DatabaseStorage implements IStorage {
 
   async getAllSparePartOrders(): Promise<any[]> {
     try {
-      // Prvo dohvati sve spare part orders
-      const orders = await db
-        .select()
-        .from(sparePartOrders)
-        .orderBy(desc(sparePartOrders.createdAt));
+      // RAW SQL pristup da zaobiđe Drizzle ORM greške
+      const result = await pool.query(`
+        SELECT id, part_name, quantity, status, urgency, created_at
+        FROM spare_part_orders 
+        ORDER BY created_at DESC
+      `);
+      const orders = result.rows;
 
       // Zatim dodaj povezane podatke za svaki order
       const enrichedOrders = await Promise.all(

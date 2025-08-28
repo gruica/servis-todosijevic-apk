@@ -347,12 +347,7 @@ export function SparePartsWorkflow() {
     status,
     query: useQuery({
       queryKey: ['/api/admin/spare-parts/status', status],
-      queryFn: () => {
-        console.log(`[SparePartsWorkflow] Pozivam endpoint: /api/admin/spare-parts/status/${status}`);
-        const token = localStorage.getItem('auth_token');
-        console.log(`[SparePartsWorkflow] Token exists: ${!!token}`);
-        return apiRequest(`/api/admin/spare-parts/status/${status}`);
-      },
+      queryFn: () => apiRequest(`/api/admin/spare-parts/status/${status}`),
     })
   }));
 
