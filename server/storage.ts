@@ -3478,7 +3478,27 @@ export class DatabaseStorage implements IStorage {
   async getSparePartOrder(id: number): Promise<SparePartOrder | undefined> {
     try {
       const [order] = await db
-        .select()
+        .select({
+          id: sparePartOrders.id,
+          serviceId: sparePartOrders.serviceId,
+          technicianId: sparePartOrders.technicianId,
+          applianceId: sparePartOrders.applianceId,
+          partName: sparePartOrders.partName,
+          partNumber: sparePartOrders.partNumber,
+          quantity: sparePartOrders.quantity,
+          description: sparePartOrders.description,
+          urgency: sparePartOrders.urgency,
+          status: sparePartOrders.status,
+          estimatedCost: sparePartOrders.estimatedCost,
+          actualCost: sparePartOrders.actualCost,
+          supplierName: sparePartOrders.supplierName,
+          orderDate: sparePartOrders.orderDate,
+          expectedDelivery: sparePartOrders.expectedDelivery,
+          receivedDate: sparePartOrders.receivedDate,
+          adminNotes: sparePartOrders.adminNotes,
+          createdAt: sparePartOrders.createdAt,
+          updatedAt: sparePartOrders.updatedAt
+        })
         .from(sparePartOrders)
         .where(eq(sparePartOrders.id, id));
       return order;
@@ -3656,10 +3676,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSparePartOrder(id: number): Promise<boolean> {
     try {
-      // First delete any related notifications
-      await db
-        .delete(notifications)
-        .where(eq(notifications.relatedSparePartId, id));
+      // First delete any related notifications using RAW SQL to avoid schema issues
+      await pool.query('DELETE FROM notifications WHERE related_spare_part_id = $1', [id]);
       
       // Then delete the spare part order
       const result = await db

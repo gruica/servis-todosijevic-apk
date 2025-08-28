@@ -935,7 +935,6 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   description: text("description"), // Dodatni opis potrebe
   urgency: text("urgency").notNull().default("normal"), // normal, high, urgent
   status: text("status").notNull().default("pending"), // pending, approved, ordered, received, cancelled
-  warrantyStatus: text("warranty_status").notNull(), // in_warranty, out_of_warranty
   estimatedCost: text("estimated_cost"), // Procenjena cena
   actualCost: text("actual_cost"), // Stvarna cena
   supplierName: text("supplier_name"), // Dobavljač
@@ -943,30 +942,6 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   expectedDelivery: timestamp("expected_delivery"),
   receivedDate: timestamp("received_date"),
   adminNotes: text("admin_notes"), // Napomene administratora
-  isDelivered: boolean("is_delivered").default(false).notNull(), // Potvrda isporuke
-  deliveryConfirmedAt: timestamp("delivery_confirmed_at"), // Datum potvrde isporuke
-  deliveryConfirmedBy: integer("delivery_confirmed_by"), // Ko je potvrdio isporuku
-  autoRemoveAfterDelivery: boolean("auto_remove_after_delivery").default(true).notNull(), // Auto uklanjanje nakon isporuke
-  removedFromOrderingAt: timestamp("removed_from_ordering_at"), // Kada je uklonjen iz sistema poručivanja
-  
-  // ===== NOVA POLJA ZA OPTIMIZOVANI WORKFLOW =====
-  requestedBy: integer("requested_by"), // Ko je zahtevao rezervni deo (technician ID)
-  requestedAt: timestamp("requested_at"), // Kada je zahtevano
-  orderedBy: integer("ordered_by"), // Ko je poručio (admin user ID)
-  orderedAt: timestamp("ordered_at"), // Kada je poručeno od strane admin-a
-  receivedBy: integer("received_by"), // Ko je potvrdio prijem (admin user ID)
-  receivedAt: timestamp("received_at"), // Kada je potvrđen prijem
-  madeAvailableBy: integer("made_available_by"), // Ko je prebacio u dostupno (admin user ID)
-  madeAvailableAt: timestamp("made_available_at"), // Kada je prebačeno u dostupno
-  consumedBy: integer("consumed_by"), // Ko je potrošio (technician ID)
-  consumedAt: timestamp("consumed_at"), // Kada je potrošeno
-  consumedForServiceId: integer("consumed_for_service_id"), // Za koji servis je potrošeno
-  
-  // ===== POLJA ZA SPAJANJE ADMIN I TEHNIKER WORKFLOW-A =====
-  requesterType: text("requester_type"), // "admin" ili "technician" - ko je kreirao zahtev
-  requesterUserId: integer("requester_user_id"), // user ID iz users tabele (admin ili technician user)
-  requesterName: text("requester_name"), // Ime korisnika koji je kreirao zahtev
-  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
