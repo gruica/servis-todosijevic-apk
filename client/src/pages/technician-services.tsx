@@ -11,13 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Wrench, CheckCircle, XCircle, Package } from "lucide-react";
+import { Eye, Calendar as CalendarIcon, User, Phone, Mail, MapPin, Wrench, CheckCircle, XCircle, Package, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale/sr";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNotification } from "@/contexts/notification-context";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
 
 // Jednostavna komponenta za status servisa
 const StatusBadge = ({ status }: { status: string }) => {
@@ -53,12 +56,20 @@ export default function TechnicianServicesList() {
   const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isPullBackOpen, setIsPullBackOpen] = useState(false);
   const [showReturnConfirmation, setShowReturnConfirmation] = useState(false);
   const [returnNotes, setReturnNotes] = useState("");
   const [isReturning, setIsReturning] = useState(false);
+  const [pullBackReason, setPullBackReason] = useState("");
+  const [pullBackNotes, setPullBackNotes] = useState("");
   
   // Koristi notification context
   const { highlightedServiceId, setHighlightedServiceId, clearHighlight, shouldAutoOpen, setShouldAutoOpen } = useNotification();
+  
+  // Toast notifications
+  const { toast } = useToast();
 
   // Učitavanje servisera
   const { data: technicians } = useQuery<any[]>({
@@ -68,6 +79,59 @@ export default function TechnicianServicesList() {
   // Učitavanje servisa - admin vidi sve servise, tehnićar samo svoje
   const { data: services, isLoading: servicesLoading, error: servicesError } = useQuery<any[]>({
     queryKey: ["/api/admin/services-by-technicians"],
+  });
+
+  // Mutation za brisanje servisa
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: number) => {
+      return apiRequest(`/api/admin/services/${serviceId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno obrisano",
+        description: "Servis je uspešno obrisan.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services-by-technicians"] });
+      setIsDeleteOpen(false);
+      setSelectedService(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Neuspešno brisanje servisa.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation za povlačenje servisa od servisera
+  const pullBackServiceMutation = useMutation({
+    mutationFn: async ({ serviceId, reason, notes }: { serviceId: number, reason: string, notes: string }) => {
+      return apiRequest(`/api/admin/services/${serviceId}/return-from-technician`, {
+        method: 'POST',
+        body: JSON.stringify({ reason, notes })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Uspešno povučeno",
+        description: "Servis je uspešno povučen od servisera.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services-by-technicians"] });
+      setIsPullBackOpen(false);
+      setSelectedService(null);
+      setPullBackReason("");
+      setPullBackNotes("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Greška",
+        description: error.message || "Neuspešno povlačenje servisa.",
+        variant: "destructive",
+      });
+    }
   });
 
 
@@ -198,6 +262,37 @@ export default function TechnicianServicesList() {
   const handleViewDetails = (service: any) => {
     setSelectedService(service);
     setIsDetailsOpen(true);
+  };
+
+  const handleEditService = (service: any) => {
+    setSelectedService(service);
+    setIsEditOpen(true);
+  };
+
+  const handleDeleteService = (service: any) => {
+    setSelectedService(service);
+    setIsDeleteOpen(true);
+  };
+
+  const handlePullBackService = (service: any) => {
+    setSelectedService(service);
+    setIsPullBackOpen(true);
+  };
+
+  const confirmDeleteService = () => {
+    if (selectedService) {
+      deleteServiceMutation.mutate(selectedService.id);
+    }
+  };
+
+  const confirmPullBackService = () => {
+    if (selectedService && pullBackReason.trim()) {
+      pullBackServiceMutation.mutate({
+        serviceId: selectedService.id,
+        reason: pullBackReason,
+        notes: pullBackNotes
+      });
+    }
   };
 
   const handleReturnDevice = async () => {
@@ -425,14 +520,46 @@ export default function TechnicianServicesList() {
                             {service.description}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDetails(service)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Detalji
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetails(service)}
+                                className="p-1"
+                                title="Pogledaj detalje"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditService(service)}
+                                className="p-1 text-green-600 hover:text-green-700"
+                                title="Uredi servis"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteService(service)}
+                                className="p-1 text-red-600 hover:text-red-700"
+                                title="Obriši servis"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              {service.technicianId && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handlePullBackService(service)}
+                                  className="p-1 text-orange-600 hover:text-orange-700"
+                                  title="Povuci servis od servisera"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -611,6 +738,135 @@ export default function TechnicianServicesList() {
                   <Package className="h-4 w-4 mr-2" />
                 )}
                 {isReturning ? "Vraćam..." : "Vrati aparat"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Service Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Uredi servis</DialogTitle>
+            <DialogDescription>
+              Za kompleksno uređivanje servisa, koristite glavni Admin panel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-6">
+            <p className="text-muted-foreground mb-4">
+              Funkcionalnost uređivanja servisa je dostupna u glavnom Admin panelu sa svim opcijama.
+            </p>
+            <Button 
+              onClick={() => {
+                setIsEditOpen(false);
+                navigate(`/admin/services`);
+              }}
+              className="w-full"
+            >
+              Otvori u Admin panelu
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Service Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Obriši servis</DialogTitle>
+            <DialogDescription>
+              Da li ste sigurni da želite da obrišete servis #{selectedService?.id}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <p className="text-sm text-red-700">
+                <strong>Upozorenje:</strong> Ova akcija je nepovratna. Servis će biti trajno obrisan iz sistema.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsDeleteOpen(false)}
+                disabled={deleteServiceMutation.isPending}
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={confirmDeleteService}
+                disabled={deleteServiceMutation.isPending}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {deleteServiceMutation.isPending ? "Brišem..." : "Obriši servis"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pull Back Service Dialog */}
+      <Dialog open={isPullBackOpen} onOpenChange={setIsPullBackOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Povuci servis od servisera</DialogTitle>
+            <DialogDescription>
+              Molim vas unesite razlog povlačenja servisa #{selectedService?.id}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Razlog povlačenja: <span className="text-red-500">*</span>
+              </label>
+              <Select value={pullBackReason} onValueChange={setPullBackReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Izaberite razlog" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nedostupnost_servisera">Nedostupnost servisera</SelectItem>
+                  <SelectItem value="promena_prioriteta">Promena prioriteta</SelectItem>
+                  <SelectItem value="tehnicke_poteskoce">Tehničke poteškoće</SelectItem>
+                  <SelectItem value="zahtev_klijenta">Zahtev klijenta</SelectItem>
+                  <SelectItem value="prerasporedivanje">Preraspoređivanje posla</SelectItem>
+                  <SelectItem value="ostalo">Ostalo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Dodatne napomene:
+              </label>
+              <Textarea
+                value={pullBackNotes}
+                onChange={(e) => setPullBackNotes(e.target.value)}
+                placeholder="Unesite dodatne informacije o razlogu povlačenja..."
+                className="min-h-[100px] resize-none"
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setIsPullBackOpen(false);
+                  setPullBackReason("");
+                  setPullBackNotes("");
+                }}
+                disabled={pullBackServiceMutation.isPending}
+              >
+                Otkaži
+              </Button>
+              <Button
+                onClick={confirmPullBackService}
+                disabled={pullBackServiceMutation.isPending || !pullBackReason.trim()}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                {pullBackServiceMutation.isPending ? "Povlačim..." : "Povuci servis"}
               </Button>
             </div>
           </div>
