@@ -17,7 +17,7 @@ export default function AdminSparePartsPage() {
           </p>
         </div>
         
-        <Tabs defaultValue="orders" className="w-full">
+        <Tabs defaultValue="workflow" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="workflow">🔄 Workflow</TabsTrigger>
             <TabsTrigger value="orders">Trenutne porudžbine</TabsTrigger>
