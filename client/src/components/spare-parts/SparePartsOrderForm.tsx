@@ -112,7 +112,7 @@ export function SparePartsOrderForm({
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['/api/spare-parts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/all-requests'] });
       
       onSuccess?.();
     },

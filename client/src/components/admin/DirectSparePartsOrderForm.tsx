@@ -89,7 +89,7 @@ export default function DirectSparePartsOrderForm({ serviceId, orderId, prefille
       });
       // Ažuriranje cache-a
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts/all-requests'] });
       onSuccess?.();
     },
     onError: (error: any) => {
