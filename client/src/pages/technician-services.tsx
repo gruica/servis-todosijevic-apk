@@ -53,6 +53,7 @@ export default function TechnicianServicesList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dateString, setDateString] = useState<string>("");
+  const [dateType, setDateType] = useState<"created" | "completed">("created"); // Tip datuma za filtriranje
   const [totalAmountForDay, setTotalAmountForDay] = useState<number>(0);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -191,10 +192,16 @@ export default function TechnicianServicesList() {
       return false;
     }
     
-    // Filter po datumu
-    if (dateString && service.createdAt) {
-      // Konvertujemo i poredimo samo datum (bez vremena)
-      const serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+    // Filter po datumu - fleksibilan po tipu datuma
+    if (dateString) {
+      let serviceDate = null;
+      
+      if (dateType === "created" && service.createdAt) {
+        serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+      } else if (dateType === "completed" && service.completedDate) {
+        serviceDate = new Date(service.completedDate).toISOString().split('T')[0];
+      }
+      
       if (serviceDate !== dateString) {
         return false;
       }
@@ -222,8 +229,15 @@ export default function TechnicianServicesList() {
     const techId = selectedTechnicianId !== "all" ? parseInt(selectedTechnicianId) : null;
     
     services.forEach(service => {
-      // Provera da li je servis odgovarajući za dati datum
-      const serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+      // Provera da li je servis odgovarajući za dati datum - fleksibilan po tipu datuma
+      let serviceDate = null;
+      
+      if (dateType === "created" && service.createdAt) {
+        serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+      } else if (dateType === "completed" && service.completedDate) {
+        serviceDate = new Date(service.completedDate).toISOString().split('T')[0];
+      }
+      
       if (serviceDate === dateString) {
         // Ako je filter po serviseru aktivan, saberi samo njegove servise
         if (techId && service.technicianId === techId) {
@@ -243,7 +257,7 @@ export default function TechnicianServicesList() {
     });
 
     setTotalAmountForDay(total);
-  }, [services, dateString, selectedTechnicianId]);
+  }, [services, dateString, selectedTechnicianId, dateType]);
 
   // Funkcija za formatiranje datuma
   const formatDate = (dateString: string) => {
@@ -356,7 +370,7 @@ export default function TechnicianServicesList() {
             {/* Filteri */}
             <Card>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
                     <Select
                       value={selectedTechnicianId}
@@ -419,6 +433,20 @@ export default function TechnicianServicesList() {
                     </Popover>
                   </div>
                   <div>
+                    <Select
+                      value={dateType}
+                      onValueChange={setDateType}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tip datuma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created">Datum kreiranja</SelectItem>
+                        <SelectItem value="completed">Datum završetka</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Input
                       placeholder="Pretraga"
                       value={searchQuery}
@@ -432,7 +460,9 @@ export default function TechnicianServicesList() {
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-medium">Izabrani datum: </span>
+                        <span className="font-medium">
+                          {dateType === "created" ? "Datum kreiranja: " : "Datum završetka: "}
+                        </span>
                         <span>{date ? format(date, "dd.MM.yyyy") : ""}</span>
                       </div>
                       <div>
