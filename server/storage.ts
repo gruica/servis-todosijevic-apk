@@ -2177,15 +2177,19 @@ export class DatabaseStorage implements IStorage {
       
       // Transformacija naziva iz snake_case u camelCase ako je potrebno
       const transformedResult = result.map(service => {
+        const transformed = { ...service };
+        
         // Ako je slučajno createdAt transformirano iz created_at nazad u snake_case od strane orm-a
-        if (!service.createdAt && (service as any).created_at) {
-          return {
-            ...service,
-            // Ako imamo created_at umesto createdAt, prebacujemo u camelCase format
-            createdAt: (service as any).created_at,
-          };
+        if (!transformed.createdAt && (transformed as any).created_at) {
+          transformed.createdAt = (transformed as any).created_at;
         }
-        return service;
+        
+        // Ako je slučajno completedDate transformirano iz completed_date nazad u snake_case od strane orm-a
+        if (!transformed.completedDate && (transformed as any).completed_date) {
+          transformed.completedDate = (transformed as any).completed_date;
+        }
+        
+        return transformed;
       });
       
       return transformedResult.map(service => ({
