@@ -153,6 +153,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/spare-parts/all-requests", async (req, res) => {
+    try {
+      console.log("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
+      const orders = await storage.getAllRequestsSparePartOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:", error);
+      res.status(500).json({ error: "Greška pri učitavanju svih zahteva rezervnih delova" });
+    }
+  });
+
   // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
   
   // ComPlus brendovi za automatsku detekciju - STVARNI PODACI

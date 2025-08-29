@@ -186,6 +186,7 @@ export interface IStorage {
   getSparePartOrdersByTechnician(technicianId: number): Promise<SparePartOrder[]>;
   getSparePartOrdersByStatus(status: SparePartStatus): Promise<SparePartOrder[]>;
   getPendingSparePartOrders(): Promise<SparePartOrder[]>;
+  getAllRequestsSparePartOrders(): Promise<SparePartOrder[]>; // Kombinuje 'pending' i 'requested'
   createSparePartOrder(order: InsertSparePartOrder): Promise<SparePartOrder>;
   updateSparePartOrder(id: number, order: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
   updateSparePartOrderStatus(id: number, updates: Partial<SparePartOrder>): Promise<SparePartOrder | undefined>;
@@ -3616,6 +3617,50 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbina na čekanju:', error);
+      throw error;
+    }
+  }
+
+  async getAllRequestsSparePartOrders(): Promise<SparePartOrder[]> {
+    try {
+      // Dohvati sve zahteve: i "pending" i "requested" statuse
+      const result = await pool.query(`
+        SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
+               supplier_name, estimated_cost, actual_cost, admin_notes, description,
+               service_id, technician_id,
+               'technician' as requester_type,
+               technician_id as requester_user_id,
+               'Serviser' as requester_name
+        FROM spare_part_orders 
+        WHERE status IN ('pending', 'requested')
+        ORDER BY created_at DESC
+      `);
+      
+      console.log(`📋 [ALL-REQUESTS] Pronađeno ${result.rows.length} zahteva (pending + requested)`);
+      
+      // Mapuj snake_case iz baze u camelCase za frontend
+      return result.rows.map(row => ({
+        id: row.id,
+        partName: row.part_name,
+        partNumber: row.part_number,
+        quantity: row.quantity,
+        status: row.status,
+        urgency: row.urgency,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        supplierName: row.supplier_name,
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        adminNotes: row.admin_notes,
+        description: row.description,
+        serviceId: row.service_id,
+        technicianId: row.technician_id,
+        requesterType: row.requester_type,
+        requesterUserId: row.requester_user_id,
+        requesterName: row.requester_name
+      }));
+    } catch (error) {
+      console.error('❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:', error);
       throw error;
     }
   }
