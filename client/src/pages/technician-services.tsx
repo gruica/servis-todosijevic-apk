@@ -192,14 +192,27 @@ export default function TechnicianServicesList() {
       return false;
     }
     
-    // Filter po datumu - fleksibilan po tipu datuma
+    // Filter po datumu - fleksibilan po tipu datuma  
     if (dateString) {
       let serviceDate = null;
       
       if (dateType === "created" && service.createdAt) {
         serviceDate = new Date(service.createdAt).toISOString().split('T')[0];
+        // Debug
+        if (service.id === 59 || service.id === 225 || service.id === 226 || service.id === 238) {
+          console.log(`[DEBUG] Service ${service.id}: dateType=${dateType}, createdAt=${service.createdAt}, serviceDate=${serviceDate}, dateString=${dateString}`);
+        }
       } else if (dateType === "completed" && service.completedDate) {
         serviceDate = new Date(service.completedDate).toISOString().split('T')[0];
+        // Debug
+        if (service.id === 59 || service.id === 225 || service.id === 226 || service.id === 238) {
+          console.log(`[DEBUG] Service ${service.id}: dateType=${dateType}, completedDate=${service.completedDate}, serviceDate=${serviceDate}, dateString=${dateString}`);
+        }
+      } else if (dateType === "completed" && !service.completedDate) {
+        // Debug: servisi bez completedDate kada je tip "completed"
+        if (service.id === 59 || service.id === 225 || service.id === 226 || service.id === 238) {
+          console.log(`[DEBUG] Service ${service.id}: dateType=${dateType}, completedDate=NULL - SKIPPING`);
+        }
       }
       
       if (serviceDate !== dateString) {
