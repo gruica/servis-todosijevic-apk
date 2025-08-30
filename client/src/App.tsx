@@ -84,6 +84,7 @@ const BusinessPartnersAdminPageFixed = lazy(() => import("@/pages/admin/business
 const ServisKomerc = lazy(() => import("@/pages/admin/servis-komerc"));
 const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predictive-maintenance"));
 const ComplusDashboard = lazy(() => import("@/pages/complus"));
+const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -160,6 +161,7 @@ function Router() {
 
       <RoleProtectedRoute path="/admin/sms-mobile-api-config" component={SMSMobileAPIConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-bulk" component={SMSBulkPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/whatsapp-test" component={WhatsAppTest} allowedRoles={["admin", "technician"]} />
 
       <RoleProtectedRoute path="/admin/data-export" component={DataExportPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/comprehensive-analytics" component={ComprehensiveAnalytics} allowedRoles={["admin"]} />

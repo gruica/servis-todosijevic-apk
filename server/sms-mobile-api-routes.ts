@@ -1,26 +1,37 @@
 import { Router, Request, Response } from 'express';
 import { IStorage } from './storage';
-import { createSMSMobileAPIService } from './sms-mobile-api-service';
+import { SMSMobileAPIService, SendSMSRequest } from './sms-mobile-api-service';
 import { jwtAuth, requireRole } from './jwt-auth';
 
 export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   const router = Router();
-  const smsService = createSMSMobileAPIService(storage);
 
-  // Inicijalizuj servis
-  smsService.initialize();
+  // Kreiranje SMS servisa - trebamo da učitamo config iz storage
+  async function getSMSService(): Promise<SMSMobileAPIService> {
+    const settings = await storage.getAllSystemSettings();
+    const settingsMap = Object.fromEntries(settings.map(s => [s.name, s.value]));
+    
+    return new SMSMobileAPIService({
+      apiKey: settingsMap.sms_mobile_api_key || '',
+      baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+      timeout: parseInt(settingsMap.sms_mobile_timeout) || 10000
+    });
+  }
 
   // GET /api/sms-mobile-api/status - Status SMS Mobile API servisa
   router.get('/status', jwtAuth, requireRole(['admin', 'technician']), async (req: Request, res: Response) => {
     try {
-      const config = smsService.getConfiguration();
-      const status = await smsService.getApiStatus();
+      const smsService = await getSMSService();
+      const settings = await storage.getAllSystemSettings();
+      const settingsMap = Object.fromEntries(settings.map(s => [s.name, s.value]));
+      
+      const status = await smsService.testConnection();
       
       res.json({
-        enabled: config.enabled,
-        configured: !!config.apiKey,
-        baseUrl: config.baseUrl,
-        timeout: config.timeout,
+        enabled: settingsMap.sms_mobile_enabled === 'true',
+        configured: !!settingsMap.sms_mobile_api_key,
+        baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        timeout: parseInt(settingsMap.sms_mobile_timeout) || 10000,
         apiStatus: status
       });
     } catch (error) {
@@ -83,6 +94,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   // POST /api/sms-mobile-api/test - Test SMS Mobile API konekcije
   router.post('/test', jwtAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
+      const smsService = await getSMSService();
       const result = await smsService.testConnection();
       
       if (result.success) {
@@ -99,10 +111,79 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
     }
   });
 
+  // POST /api/sms-mobile-api/whatsapp-with-image - Pošalji WhatsApp poruku sa slikom
+  router.post('/whatsapp-with-image', jwtAuth, requireRole(['admin', 'technician']), async (req: Request, res: Response) => {
+    try {
+      const { phoneNumber, message, imageUrl, serviceId } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({
+          success: false,
+          error: 'Broj telefona i poruka su obavezni'
+        });
+      }
+
+      if (!imageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'URL slike je obavezan za WhatsApp slanje sa slikom'
+        });
+      }
+      
+      const smsService = await getSMSService();
+      const formattedPhone = smsService.formatPhoneNumber(phoneNumber);
+      
+      const smsRequest: SendSMSRequest = {
+        recipients: formattedPhone,
+        message: message,
+        sendername: 'FrigoSistem',
+        url_media: imageUrl,
+        whatsappOnly: true // Samo WhatsApp za slanje slika
+      };
+      
+      console.log(`📷 WhatsApp sa slikom: ${formattedPhone} - ${imageUrl}`);
+      const result = await smsService.sendSMS(smsRequest);
+      
+      // Log aktivnost za servis ako je specificiran
+      if (serviceId) {
+        try {
+          await storage.logServiceActivity({
+            serviceId: parseInt(serviceId),
+            activity: `WhatsApp poruka poslata sa slikom: ${imageUrl}`,
+            performedBy: (req as any).user.id,
+            timestamp: new Date()
+          });
+        } catch (logError) {
+          console.error('Greška pri logovanju aktivnosti:', logError);
+        }
+      }
+      
+      if (result.error === 0 || result.error === '0') {
+        res.json({
+          success: true,
+          message: 'WhatsApp poruka sa slikom je uspešno poslata',
+          details: result
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: result.details || 'Greška pri slanju WhatsApp poruke sa slikom',
+          details: result
+        });
+      }
+    } catch (error) {
+      console.error('[SMS MOBILE API ROUTES] Greška pri slanju WhatsApp sa slikom:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Greška pri slanju WhatsApp poruke sa slikom'
+      });
+    }
+  });
+
   // POST /api/sms-mobile-api/send - Pošalji SMS poruku
   router.post('/send', jwtAuth, requireRole(['admin', 'technician']), async (req: Request, res: Response) => {
     try {
-      const { phoneNumber, message, sendWhatsApp } = req.body;
+      const { phoneNumber, message, sendWhatsApp, mediaUrl, whatsappOnly } = req.body;
       
       if (!phoneNumber || !message) {
         return res.status(400).json({
@@ -111,9 +192,21 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         });
       }
       
-      const result = await smsService.sendSMS(phoneNumber, message, {
-        sendWhatsApp: sendWhatsApp === true || sendWhatsApp === 'true'
-      });
+      const smsService = await getSMSService();
+      
+      // Formatiranje broja telefona
+      const formattedPhone = smsService.formatPhoneNumber(phoneNumber);
+      
+      // Kreiranje zahteva
+      const smsRequest: SendSMSRequest = {
+        recipients: formattedPhone,
+        message: message,
+        sendername: 'FrigoSistem', // Dodaj sender ID
+        url_media: mediaUrl || undefined,
+        whatsappOnly: whatsappOnly === true || whatsappOnly === 'true'
+      };
+      
+      const result = await smsService.sendSMS(smsRequest);
       
       if (result.success) {
         res.json(result);
@@ -132,7 +225,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   // POST /api/sms-mobile-api/send-bulk - Pošalji bulk SMS poruke
   router.post('/send-bulk', jwtAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
-      const { recipients, message, sendWhatsApp } = req.body;
+      const { recipients, message, sendWhatsApp, mediaUrl, whatsappOnly } = req.body;
       
       if (!recipients || !Array.isArray(recipients) || recipients.length === 0 || !message) {
         return res.status(400).json({
@@ -141,9 +234,34 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         });
       }
       
-      const result = await smsService.sendBulkSMS(recipients, message, {
-        sendWhatsApp: sendWhatsApp === true || sendWhatsApp === 'true'
-      });
+      const smsService = await getSMSService();
+      const results = [];
+      
+      for (const phoneNumber of recipients) {
+        const formattedPhone = smsService.formatPhoneNumber(phoneNumber);
+        
+        const smsRequest: SendSMSRequest = {
+          recipients: formattedPhone,
+          message: message,
+          sendername: 'FrigoSistem',
+          url_media: mediaUrl || undefined,
+          whatsappOnly: whatsappOnly === true || whatsappOnly === 'true'
+        };
+        
+        const result = await smsService.sendSMS(smsRequest);
+        results.push(result);
+        
+        // Kratka pauza između slanja
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      const allSuccessful = results.every(r => r.error === 0 || r.error === '0');
+      const result = {
+        success: allSuccessful,
+        results: results,
+        total: recipients.length,
+        sent: results.filter(r => r.error === 0 || r.error === '0').length
+      };
       
       if (result.success) {
         res.json(result);

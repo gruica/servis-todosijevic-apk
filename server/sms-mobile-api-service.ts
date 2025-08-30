@@ -10,6 +10,8 @@ export interface SendSMSRequest {
   recipients: string;
   message: string;
   sendername?: string; // Sender ID - ime firme koje će se prikazati umesto broja
+  url_media?: string; // URL do media fajla (slike, dokumenti) za WhatsApp
+  whatsappOnly?: boolean; // Pošalji samo preko WhatsApp-a
 }
 
 export interface SendSMSResponse {
@@ -42,7 +44,9 @@ export class SMSMobileAPIService {
         request.message = truncatedMessage;
       }
       
-      console.log(`📱 SMS Mobile API: Šaljem SMS na ${request.recipients} (${request.message.length} karaktera)`);
+      // Log tip poruke
+      const messageType = request.url_media ? '📷 WhatsApp Media' : '📱 SMS';
+      console.log(`${messageType}: Šaljem na ${request.recipients} (${request.message.length} karaktera)`);
       
       // SMS Mobile API zahteva application/x-www-form-urlencoded format
       const formData = new URLSearchParams();
@@ -56,8 +60,21 @@ export class SMSMobileAPIService {
         console.log(`📤 Sender ID: ${request.sendername.trim()}`);
       }
 
+      // Dodavanje media URL-a za WhatsApp
+      if (request.url_media && request.url_media.trim()) {
+        formData.append('url_media', request.url_media.trim());
+        console.log(`📷 Media URL: ${request.url_media.trim()}`);
+      }
+
+      // Postavljanje WhatsApp only mode
+      let apiUrl = `${this.config.baseUrl}/sendsms/`;
+      if (request.whatsappOnly) {
+        apiUrl += '?waonly=yes';
+        console.log(`💬 WhatsApp Only Mode aktiviran`);
+      }
+
       const response = await axios.post(
-        `${this.config.baseUrl}/sendsms/`,
+        apiUrl,
         formData,
         {
           timeout: this.config.timeout,
