@@ -55,21 +55,53 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
       const token = localStorage.getItem('auth_token');
       if (!token) throw new Error('No auth token found');
 
-      const response = await fetch('/api/sms-mobile-api/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // Timeout handling sa AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 sekundi timeout
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Greška pri slanju WhatsApp poruke');
+      try {
+        const response = await fetch('/api/sms-mobile-api/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          // Safe JSON parsing sa content-type proveri
+          let errorMessage = 'Greška pri slanju WhatsApp poruke';
+          const contentType = response.headers.get('content-type');
+          
+          if (contentType?.includes('application/json')) {
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch (parseError) {
+              errorMessage = `Server greška: ${response.status} ${response.statusText}`;
+            }
+          } else {
+            errorMessage = `Server greška: ${response.status} ${response.statusText}`;
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        return response.json();
+        
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+          throw new Error('Timeout - server ne odgovara nakon 30 sekundi');
+        }
+        
+        throw error;
       }
-
-      return response.json();
     },
     onSuccess: (data) => {
       toast({
