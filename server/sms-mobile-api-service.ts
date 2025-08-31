@@ -37,15 +37,17 @@ export class SMSMobileAPIService {
    */
   async sendSMS(request: SendSMSRequest): Promise<SendSMSResponse> {
     try {
-      // VALIDACIJA: SMS ne sme biti duži od 160 karaktera
-      if (request.message.length > 160) {
+      // VALIDACIJA: SMS ne sme biti duži od 160 karaktera (samo za SMS, WhatsApp može duže)
+      if (!request.whatsappOnly && request.message.length > 160) {
         const truncatedMessage = request.message.substring(0, 160);
         console.log(`⚠️ SMS skraćen sa ${request.message.length} na 160 karaktera`);
         request.message = truncatedMessage;
       }
       
       // Log tip poruke
-      const messageType = request.url_media ? '📷 WhatsApp Media' : '📱 SMS';
+      const messageType = request.whatsappOnly 
+        ? (request.url_media ? '📷 WhatsApp Media' : '💬 WhatsApp') 
+        : '📱 SMS';
       console.log(`${messageType}: Šaljem na ${request.recipients} (${request.message.length} karaktera)`);
       
       // SMS Mobile API zahteva application/x-www-form-urlencoded format
@@ -54,8 +56,14 @@ export class SMSMobileAPIService {
       formData.append('message', request.message);
       formData.append('apikey', this.config.apiKey);
       
-      // Dodavanje Sender ID (ime firme) ako je specificirano
-      if (request.sendername && request.sendername.trim()) {
+      // ISPRAVKA: WhatsApp only mode ide u form data, ne u URL
+      if (request.whatsappOnly) {
+        formData.append('waonly', 'yes');
+        console.log(`💬 WhatsApp Only Mode aktiviran`);
+      }
+      
+      // Dodavanje Sender ID (ime firme) ako je specificirano - SAMO za SMS
+      if (request.sendername && request.sendername.trim() && !request.whatsappOnly) {
         formData.append('sendername', request.sendername.trim());
         console.log(`📤 Sender ID: ${request.sendername.trim()}`);
       }
@@ -66,12 +74,8 @@ export class SMSMobileAPIService {
         console.log(`📷 Media URL: ${request.url_media.trim()}`);
       }
 
-      // Postavljanje WhatsApp only mode
-      let apiUrl = `${this.config.baseUrl}/sendsms/`;
-      if (request.whatsappOnly) {
-        apiUrl += '?waonly=yes';
-        console.log(`💬 WhatsApp Only Mode aktiviran`);
-      }
+      // ISPRAVKA: Endpoint bez završnog slash-a
+      const apiUrl = `${this.config.baseUrl}/sendsms`;
 
       const response = await axios.post(
         apiUrl,
@@ -126,7 +130,7 @@ export class SMSMobileAPIService {
       formData.append('apikey', this.config.apiKey);
 
       const response = await axios.post(
-        `${this.config.baseUrl}/sendsms/`,
+        `${this.config.baseUrl}/sendsms`,
         formData,
         {
           timeout: this.config.timeout,
