@@ -65,9 +65,17 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
           body: JSON.stringify(payload)
         });
 
-        // Jednostavan error handling bez komplikacija
+        // Robust error handling for auth issues  
         if (!response.ok) {
           let errorMsg = `Server greška ${response.status}`;
+          
+          if (response.status === 401) {
+            // JWT token je nevažeći - redirect na login
+            localStorage.removeItem('auth_token');
+            window.location.href = '/login';
+            throw new Error('Sesija je istekla - molimo prijavite se ponovo');
+          }
+          
           try {
             const errorData = await response.json();
             if (errorData.error) errorMsg = errorData.error;
