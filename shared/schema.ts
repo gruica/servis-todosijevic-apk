@@ -1815,4 +1815,75 @@ export const aiAnalysisResultsRelations = relations(aiAnalysisResults, ({ one })
   }),
 }));
 
+// ============================================================================
+// CONVERSATION MESSAGES - WhatsApp/SMS COMMUNICATION HISTORY  
+// ============================================================================
+
+// Enum-i za conversation messages (novo - bez konflikta sa postojećim)
+export const conversationMessageTypeEnum = pgEnum("conversation_message_type", ["whatsapp", "sms", "auto"]);
+export const conversationMessageDirectionEnum = pgEnum("conversation_message_direction", ["outgoing", "incoming"]);
+export const conversationDeliveryStatusEnum = pgEnum("conversation_delivery_status", ["sent", "delivered", "failed", "pending"]);
+
+// Tabela za conversation messages - WhatsApp i SMS komunikacija
+export const conversationMessages = pgTable("conversation_messages", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull().references(() => services.id),
+  senderId: integer("sender_id").notNull().references(() => users.id), // Korisnik koji šalje poruku
+  recipientPhone: text("recipient_phone").notNull(), // Formatiran broj telefona primaoca
+  messageType: conversationMessageTypeEnum("message_type").notNull(), // whatsapp, sms, auto
+  messageContent: text("message_content").notNull(), // Sadržaj poruke
+  mediaUrl: text("media_url"), // Opciono - URL slike ili media fajla
+  messageDirection: conversationMessageDirectionEnum("message_direction").notNull().default('outgoing'), // outgoing ili incoming
+  sentAt: timestamp("sent_at").defaultNow().notNull(), // Vreme slanja
+  deliveryStatus: conversationDeliveryStatusEnum("delivery_status").notNull().default('pending'), // sent, delivered, failed, pending
+  messageId: text("message_id"), // ID poruke iz SMS Mobile API response
+  relatedUserId: integer("related_user_id").references(() => users.id), // Povezani korisnik (opciono)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Validation schema za conversation messages
+export const insertConversationMessageSchema = createInsertSchema(conversationMessages).pick({
+  serviceId: true,
+  senderId: true,
+  recipientPhone: true,
+  messageType: true,
+  messageContent: true,
+  mediaUrl: true,
+  messageDirection: true,
+  deliveryStatus: true,
+  messageId: true,
+  relatedUserId: true,
+}).extend({
+  serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj"),
+  senderId: z.number().int().positive("ID pošaljaoca mora biti pozitivan broj"),
+  recipientPhone: z.string().min(8, "Broj telefona mora imati najmanje 8 karaktera").max(20, "Broj telefona je predugačak"),
+  messageType: z.enum(["whatsapp", "sms", "auto"]),
+  messageContent: z.string().min(1, "Sadržaj poruke je obavezan").max(2000, "Poruka je predugačka"),
+  mediaUrl: z.string().url("URL mora biti validan").or(z.literal("")).nullable().optional(),
+  messageDirection: z.enum(["outgoing", "incoming"]).default("outgoing"),
+  deliveryStatus: z.enum(["sent", "delivered", "failed", "pending"]).default("pending"),
+  messageId: z.string().max(100, "ID poruke je predugačak").or(z.literal("")).nullable().optional(),
+  relatedUserId: z.number().int().positive("ID povezanog korisnika mora biti pozitivan broj").nullable().optional(),
+});
+
+export type InsertConversationMessage = z.infer<typeof insertConversationMessageSchema>;
+export type ConversationMessage = typeof conversationMessages.$inferSelect;
+
+// Relations za conversation messages
+export const conversationMessagesRelations = relations(conversationMessages, ({ one }) => ({
+  service: one(services, {
+    fields: [conversationMessages.serviceId],
+    references: [services.id],
+  }),
+  sender: one(users, {
+    fields: [conversationMessages.senderId],
+    references: [users.id],
+  }),
+  relatedUser: one(users, {
+    fields: [conversationMessages.relatedUserId],
+    references: [users.id],
+  }),
+}));
+
 
