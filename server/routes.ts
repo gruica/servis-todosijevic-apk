@@ -4411,6 +4411,82 @@ Frigo Sistem`;
     }
   });
 
+  // ===== CONVERSATION MESSAGES API ENDPOINTS =====
+  // Ovi endpoint-i omogućavaju WhatsApp conversation tracking za servise
+  
+  // GET /api/conversations/:serviceId - Dohvata sve conversation poruke za servis
+  app.get('/api/conversations/:serviceId', jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      console.log(`📞 [CONVERSATION] Admin dohvata conversation za servis #${serviceId}`);
+      
+      const messages = await storage.getConversationMessages(serviceId);
+      console.log(`📞 [CONVERSATION] Pronađeno ${messages.length} poruka za servis #${serviceId}`);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error('❌ [CONVERSATION] Greška pri dohvatanju conversation poruka:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju conversation poruka' });
+    }
+  });
+
+  // POST /api/conversations/message - Kreira novu conversation poruku
+  app.post('/api/conversations/message', jwtAuth, async (req, res) => {
+    try {
+      console.log(`📞 [CONVERSATION] Nova conversation poruka: ${JSON.stringify(req.body)}`);
+      
+      const message = await storage.createConversationMessage(req.body);
+      console.log(`📞 [CONVERSATION] ✅ Conversation poruka kreirana: ID #${message.id}`);
+      
+      res.json(message);
+    } catch (error) {
+      console.error('❌ [CONVERSATION] Greška pri kreiranju conversation poruke:', error);
+      res.status(500).json({ error: 'Greška pri kreiranju conversation poruke' });
+    }
+  });
+
+  // PUT /api/conversations/:id/status - Ažurira status conversation poruke
+  app.put('/api/conversations/:id/status', jwtAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      console.log(`📞 [CONVERSATION] Ažuriranje statusa poruke #${messageId} na "${status}"`);
+      
+      const updatedMessage = await storage.updateConversationMessageStatus(messageId, status);
+      if (!updatedMessage) {
+        return res.status(404).json({ error: 'Conversation poruka nije pronađena' });
+      }
+      
+      console.log(`📞 [CONVERSATION] ✅ Status poruke #${messageId} ažuriran na "${status}"`);
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error('❌ [CONVERSATION] Greška pri ažuriranju statusa poruke:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju statusa conversation poruke' });
+    }
+  });
+
+  // GET /api/conversations/:serviceId/history - Dohvata detaljnu conversation istoriju
+  app.get('/api/conversations/:serviceId/history', jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      console.log(`📞 [CONVERSATION] Admin dohvata detaljnu conversation istoriju za servis #${serviceId}`);
+      
+      const history = await storage.getServiceConversationHistory(serviceId);
+      console.log(`📞 [CONVERSATION] Detaljana istorija: ${history.length} poruka za servis #${serviceId}`);
+      
+      res.json({
+        serviceId,
+        totalMessages: history.length,
+        messages: history,
+        lastActivity: history.length > 0 ? history[history.length - 1].createdAt : null
+      });
+    } catch (error) {
+      console.error('❌ [CONVERSATION] Greška pri dohvatanju conversation istorije:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju conversation istorije' });
+    }
+  });
+
   return server;
 }
 

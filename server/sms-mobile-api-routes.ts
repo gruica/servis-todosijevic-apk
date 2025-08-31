@@ -6,6 +6,28 @@ import { jwtAuth, requireRole } from './jwt-auth';
 export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   const router = Router();
 
+  // Helper funkcija za conversation logging - NOVO DODANO
+  async function logConversationMessage(serviceId: number, phoneNumber: string, message: string, messageType: 'text' | 'image' = 'text', mediaUrl?: string) {
+    try {
+      if (serviceId && phoneNumber && message) {
+        await storage.createConversationMessage({
+          serviceId,
+          phoneNumber,
+          messageType,
+          direction: 'outgoing',
+          content: message,
+          mediaUrl,
+          deliveryStatus: 'sent',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        console.log(`📞 [CONVERSATION] ✅ Zabeležena WhatsApp poruka za servis #${serviceId}: ${phoneNumber}`);
+      }
+    } catch (error) {
+      console.error('📞 [CONVERSATION] ❌ Greška pri logovanju conversation poruke:', error);
+    }
+  }
+
   // Kreiranje SMS servisa - trebamo da učitamo config iz storage
   async function getSMSService(): Promise<SMSMobileAPIService> {
     const settings = await storage.getAllSystemSettings();
@@ -159,6 +181,10 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       }
       
       if (result.error === 0 || result.error === '0') {
+        // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke sa slikom
+        if (serviceId) {
+          await logConversationMessage(parseInt(serviceId), formattedPhone, message, 'image', imageUrl);
+        }
         res.json({
           success: true,
           message: 'WhatsApp poruka sa slikom je uspešno poslata',
@@ -209,6 +235,10 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       const result = await smsService.sendSMS(smsRequest);
       
       if (result.success) {
+        // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke
+        if (req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
+          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, mediaUrl ? 'image' : 'text', mediaUrl);
+        }
         res.json(result);
       } else {
         res.status(400).json(result);
@@ -250,6 +280,11 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         
         const result = await smsService.sendSMS(smsRequest);
         results.push(result);
+        
+        // NOVO DODANO: Conversation logging za uspešno poslate bulk WhatsApp poruke
+        if (result.success && req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
+          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, mediaUrl ? 'image' : 'text', mediaUrl);
+        }
         
         // Kratka pauza između slanja
         await new Promise(resolve => setTimeout(resolve, 100));

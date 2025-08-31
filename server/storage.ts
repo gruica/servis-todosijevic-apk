@@ -40,7 +40,9 @@ import {
   // AI Prediktivno održavanje tabele
   maintenancePatterns, predictiveInsights, aiAnalysisResults,
   // Fotografije servisa
-  servicePhotos
+  servicePhotos,
+  // Conversation messages
+  ConversationMessage, InsertConversationMessage, conversationMessages
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -335,6 +337,12 @@ export interface IStorage {
   createAiAnalysisResult(result: InsertAiAnalysisResults): Promise<AiAnalysisResults>;
   updateAiAnalysisResult(id: number, result: Partial<AiAnalysisResults>): Promise<AiAnalysisResults | undefined>;
   deleteAiAnalysisResult(id: number): Promise<boolean>;
+
+  // Conversation messages methods
+  getConversationMessages(serviceId: number): Promise<ConversationMessage[]>;
+  createConversationMessage(message: InsertConversationMessage): Promise<ConversationMessage>;
+  updateConversationMessageStatus(id: number, status: string): Promise<ConversationMessage | undefined>;
+  getServiceConversationHistory(serviceId: number): Promise<ConversationMessage[]>;
 }
 
 // @ts-ignore - MemStorage class is not used in production, only for testing
@@ -5475,7 +5483,56 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Conversation messages methods
+  async getConversationMessages(serviceId: number): Promise<ConversationMessage[]> {
+    try {
+      return await db.select()
+        .from(conversationMessages)
+        .where(eq(conversationMessages.serviceId, serviceId))
+        .orderBy(conversationMessages.createdAt);
+    } catch (error) {
+      console.error('Greška pri dohvatanju conversation poruka:', error);
+      return [];
+    }
+  }
 
+  async createConversationMessage(message: InsertConversationMessage): Promise<ConversationMessage> {
+    try {
+      const [newMessage] = await db.insert(conversationMessages).values(message).returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Greška pri kreiranju conversation poruke:', error);
+      throw error;
+    }
+  }
+
+  async updateConversationMessageStatus(id: number, status: string): Promise<ConversationMessage | undefined> {
+    try {
+      const [updatedMessage] = await db.update(conversationMessages)
+        .set({ 
+          deliveryStatus: status as any,
+          updatedAt: new Date()
+        })
+        .where(eq(conversationMessages.id, id))
+        .returning();
+      return updatedMessage;
+    } catch (error) {
+      console.error('Greška pri ažuriranju conversation poruke:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceConversationHistory(serviceId: number): Promise<ConversationMessage[]> {
+    try {
+      return await db.select()
+        .from(conversationMessages)
+        .where(eq(conversationMessages.serviceId, serviceId))
+        .orderBy(conversationMessages.createdAt);
+    } catch (error) {
+      console.error('Greška pri dohvatanju conversation istorije:', error);
+      return [];
+    }
+  }
 
 }
 
