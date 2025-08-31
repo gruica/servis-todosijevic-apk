@@ -63,11 +63,11 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            phoneNumber: payload.recipientPhone,
+            phoneNumber: payload.phoneNumber,
             message: payload.message,
             sendWhatsApp: true,
-            whatsappOnly: payload.type === 'whatsapp',
-            mediaUrl: payload.mediaUrl
+            whatsappOnly: payload.whatsappOnly,
+            serviceId: payload.serviceId
           })
         });
 

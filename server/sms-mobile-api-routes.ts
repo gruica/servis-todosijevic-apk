@@ -7,19 +7,18 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   const router = Router();
 
   // Helper funkcija za conversation logging - NOVO DODANO
-  async function logConversationMessage(serviceId: number, phoneNumber: string, message: string, messageType: 'text' | 'image' = 'text', mediaUrl?: string) {
+  async function logConversationMessage(serviceId: number, phoneNumber: string, message: string, messageType: 'whatsapp' | 'sms' | 'auto' = 'whatsapp', mediaUrl?: string) {
     try {
       if (serviceId && phoneNumber && message) {
         await storage.createConversationMessage({
           serviceId,
-          phoneNumber,
-          messageType,
-          direction: 'outgoing',
-          content: message,
-          mediaUrl,
+          senderId: 1, // System/Admin user
+          recipientPhone: phoneNumber,
+          messageType: messageType as any,
+          messageContent: message,
+          messageDirection: 'outgoing',
           deliveryStatus: 'sent',
-          createdAt: new Date(),
-          updatedAt: new Date()
+          mediaUrl
         });
         console.log(`📞 [CONVERSATION] ✅ Zabeležena WhatsApp poruka za servis #${serviceId}: ${phoneNumber}`);
       }
@@ -31,12 +30,12 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   // Kreiranje SMS servisa - trebamo da učitamo config iz storage
   async function getSMSService(): Promise<SMSMobileAPIService> {
     const settings = await storage.getAllSystemSettings();
-    const settingsMap = Object.fromEntries(settings.map(s => [s.name, s.value]));
+    const settingsMap = Object.fromEntries(settings.map(s => [s.key, s.value]));
     
     return new SMSMobileAPIService({
       apiKey: settingsMap.sms_mobile_api_key || '',
       baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-      timeout: parseInt(settingsMap.sms_mobile_timeout) || 10000
+      timeout: parseInt(settingsMap.sms_mobile_timeout || '10000') || 10000
     });
   }
 
@@ -45,7 +44,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
     try {
       const smsService = await getSMSService();
       const settings = await storage.getAllSystemSettings();
-      const settingsMap = Object.fromEntries(settings.map(s => [s.name, s.value]));
+      const settingsMap = Object.fromEntries(settings.map(s => [s.key, s.value]));
       
       const status = await smsService.testConnection();
       
@@ -53,7 +52,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         enabled: settingsMap.sms_mobile_enabled === 'true',
         configured: !!settingsMap.sms_mobile_api_key,
         baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-        timeout: parseInt(settingsMap.sms_mobile_timeout) || 10000,
+        timeout: parseInt(settingsMap.sms_mobile_timeout || '10000') || 10000,
         apiStatus: status
       });
     } catch (error) {
@@ -68,14 +67,16 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
   // GET /api/sms-mobile-api/config - Dobij konfiguraciju
   router.get('/config', jwtAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
-      const config = smsService.getConfiguration();
+      const smsService = await getSMSService();
+      const settings = await storage.getAllSystemSettings();
+      const settingsMap = Object.fromEntries(settings.map(s => [s.key, s.value]));
       
       // Ne vraćaj API ključ iz sigurnosnih razloga
       res.json({
-        baseUrl: config.baseUrl,
-        timeout: config.timeout,
-        enabled: config.enabled,
-        hasApiKey: !!config.apiKey
+        baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        timeout: parseInt(settingsMap.sms_mobile_timeout || '10000') || 10000,
+        enabled: settingsMap.sms_mobile_enabled === 'true',
+        hasApiKey: !!settingsMap.sms_mobile_api_key
       });
     } catch (error) {
       console.error('[SMS MOBILE API ROUTES] Greška pri dobijanju konfiguracije:', error);
@@ -98,7 +99,19 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       if (timeout !== undefined) updateData.timeout = parseInt(timeout);
       if (enabled !== undefined) updateData.enabled = enabled === true || enabled === 'true';
       
-      await smsService.updateConfiguration(updateData);
+      // Ažuriranje u bazi preko storage
+      if (apiKey !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_api_key', apiKey);
+      }
+      if (baseUrl !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_base_url', baseUrl);
+      }
+      if (timeout !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_timeout', timeout.toString());
+      }
+      if (enabled !== undefined) {
+        await storage.updateSystemSetting('sms_mobile_enabled', enabled.toString());
+      }
       
       res.json({
         success: true,
@@ -168,22 +181,13 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       
       // Log aktivnost za servis ako je specificiran
       if (serviceId) {
-        try {
-          await storage.logServiceActivity({
-            serviceId: parseInt(serviceId),
-            activity: `WhatsApp poruka poslata sa slikom: ${imageUrl}`,
-            performedBy: (req as any).user.id,
-            timestamp: new Date()
-          });
-        } catch (logError) {
-          console.error('Greška pri logovanju aktivnosti:', logError);
-        }
+        console.log(`📝 WhatsApp sa slikom poslat za servis #${serviceId}`);
       }
       
-      if (result.error === 0 || result.error === '0') {
+      if (result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) {
         // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke sa slikom
         if (serviceId) {
-          await logConversationMessage(parseInt(serviceId), formattedPhone, message, 'image', imageUrl);
+          await logConversationMessage(parseInt(serviceId), formattedPhone, message, 'whatsapp', imageUrl);
         }
         res.json({
           success: true,
@@ -234,14 +238,22 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       
       const result = await smsService.sendSMS(smsRequest);
       
-      if (result.success) {
+      if (result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) {
         // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke
         if (req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
-          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, mediaUrl ? 'image' : 'text', mediaUrl);
+          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, 'whatsapp', mediaUrl);
         }
-        res.json(result);
+        res.json({
+          success: true,
+          message: 'Poruka je uspešno poslata',
+          details: result
+        });
       } else {
-        res.status(400).json(result);
+        res.status(400).json({
+          success: false,
+          error: result.details || 'Greška pri slanju poruke',
+          details: result
+        });
       }
     } catch (error) {
       console.error('[SMS MOBILE API ROUTES] Greška pri slanju SMS-a:', error);
@@ -282,20 +294,20 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         results.push(result);
         
         // NOVO DODANO: Conversation logging za uspešno poslate bulk WhatsApp poruke
-        if (result.success && req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
-          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, mediaUrl ? 'image' : 'text', mediaUrl);
+        if ((result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) && req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
+          await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, 'whatsapp', mediaUrl);
         }
         
         // Kratka pauza između slanja
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
-      const allSuccessful = results.every(r => r.error === 0 || r.error === '0');
+      const allSuccessful = results.every(r => r.error === 0 || r.error === '0' || (r.sent && r.sent > 0));
       const result = {
         success: allSuccessful,
         results: results,
         total: recipients.length,
-        sent: results.filter(r => r.error === 0 || r.error === '0').length
+        sent: results.filter(r => r.error === 0 || r.error === '0' || (r.sent && r.sent > 0)).length
       };
       
       if (result.success) {
