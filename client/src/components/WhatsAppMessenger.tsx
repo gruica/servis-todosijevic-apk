@@ -79,9 +79,17 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
 
         return await response.json();
       } catch (error: any) {
-        // Jednostavan error handling
+        // Robust error handling - never throw empty errors
         console.error('WhatsApp send error:', error);
-        throw new Error(error.message || 'Greška pri slanju WhatsApp poruke');
+        
+        let errorMessage = 'Greška pri slanju WhatsApp poruke';
+        if (error && typeof error.message === 'string' && error.message.trim()) {
+          errorMessage = error.message;
+        } else if (error && typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        throw new Error(errorMessage);
       }
     },
     onSuccess: (data) => {
