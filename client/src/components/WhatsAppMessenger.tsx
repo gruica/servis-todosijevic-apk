@@ -80,12 +80,18 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
           if (contentType?.includes('application/json')) {
             try {
               const errorData = await response.json();
-              errorMessage = errorData.error || errorMessage;
+              errorMessage = errorData.error || `Server greška: ${response.status}`;
             } catch (parseError) {
               errorMessage = `Server greška: ${response.status} ${response.statusText}`;
             }
           } else {
-            errorMessage = `Server greška: ${response.status} ${response.statusText}`;
+            // Pokušaj da pročita kao text ako nije JSON
+            try {
+              const textData = await response.text();
+              errorMessage = textData || `Server greška: ${response.status} ${response.statusText}`;
+            } catch {
+              errorMessage = `Server greška: ${response.status} ${response.statusText}`;
+            }
           }
           
           throw new Error(errorMessage);
@@ -100,7 +106,12 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
           throw new Error('Timeout - server ne odgovara nakon 30 sekundi');
         }
         
-        throw error;
+        // Prosledi originalnu grešku ili stvori novu sa jasnijim opisom
+        if (error.message && !error.message.includes('undefined')) {
+          throw error;
+        } else {
+          throw new Error(`Neočekivana greška pri komunikaciji sa serverom: ${error.message || 'Unknown error'}`);
+        }
       }
     },
     onSuccess: (data) => {
