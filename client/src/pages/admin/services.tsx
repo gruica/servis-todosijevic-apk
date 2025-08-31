@@ -45,6 +45,7 @@ import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 import { SimpleServicePhotos } from "@/components/SimpleServicePhotos";
 import { ConversationHistory } from "@/components/ConversationHistory";
+import { WhatsAppMessenger } from "@/components/WhatsAppMessenger";
 
 interface AdminService {
   id: number;
@@ -1158,6 +1159,15 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="conversations" className="space-y-4">
+                  {/* WhatsApp Messenger - Slanje poruka */}
+                  <WhatsAppMessenger 
+                    serviceId={selectedService.id}
+                    clientPhone={selectedService.client.phone}
+                    clientName={selectedService.client.fullName}
+                    readOnly={false}
+                  />
+                  
+                  {/* Conversation History - Pregled poruka */}
                   <ConversationHistory 
                     serviceId={selectedService.id}
                     readOnly={false}
