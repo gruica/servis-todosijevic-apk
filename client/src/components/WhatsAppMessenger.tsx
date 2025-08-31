@@ -52,16 +52,13 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
   // Mutation za slanje WhatsApp poruke
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload) => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
-
       try {
         const response = await fetch('/api/sms-mobile-api/send', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          credentials: 'include', // Koristi session cookies
           body: JSON.stringify(payload)
         });
 
