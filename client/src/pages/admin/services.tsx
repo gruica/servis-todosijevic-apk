@@ -44,6 +44,7 @@ import {
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 import { SimpleServicePhotos } from "@/components/SimpleServicePhotos";
+import { ConversationHistory } from "@/components/ConversationHistory";
 
 interface AdminService {
   id: number;
@@ -915,12 +916,13 @@ const AdminServices = memo(function AdminServices() {
             
             {selectedService && (
               <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="general">Opšte informacije</TabsTrigger>
                   <TabsTrigger value="client">Klijent</TabsTrigger>
                   <TabsTrigger value="technician">Serviser</TabsTrigger>
                   <TabsTrigger value="technical">Tehnički detalji</TabsTrigger>
                   <TabsTrigger value="photos">Fotografije</TabsTrigger>
+                  <TabsTrigger value="conversations">Razgovori</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="general" className="space-y-4">
@@ -1152,6 +1154,13 @@ const AdminServices = memo(function AdminServices() {
                     serviceId={selectedService.id}
                     readOnly={false}
                     showUpload={true}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="conversations" className="space-y-4">
+                  <ConversationHistory 
+                    serviceId={selectedService.id}
+                    readOnly={false}
                   />
                 </TabsContent>
               </Tabs>
