@@ -94,9 +94,11 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
       setMessage('');
       setSelectedTemplate('');
       
-      // Invalidate conversation history da se osveži
+      // Invalidate conversation history da se osveži - with proper error handling
       queryClient.invalidateQueries({ 
         queryKey: [`/api/conversations/${serviceId}/history`] 
+      }).catch(err => {
+        console.warn('Query invalidation failed:', err);
       });
     },
     onError: (error: any) => {
