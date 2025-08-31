@@ -4487,6 +4487,9 @@ Frigo Sistem`;
     }
   });
 
+  // SMS Mobile API Routes - WhatsApp komunikacija
+  app.use('/api/sms-mobile-api', createSMSMobileAPIRoutes(storage));
+
   return server;
 }
 
