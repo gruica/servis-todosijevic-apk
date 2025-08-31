@@ -4347,15 +4347,12 @@ Frigo Sistem`;
 
       // Generiši JWT token za trenutno prijavljenog korisnika
       const tokenPayload = {
-        id: user.id,
+        userId: user.id,
         username: user.username,
-        role: user.role,
-        fullName: user.fullName,
-        email: user.email,
-        technicianId: user.technicianId
+        role: user.role
       };
 
-      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "30d" });
+      const token = generateToken(tokenPayload);
       
       console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
       
