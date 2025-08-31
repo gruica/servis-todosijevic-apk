@@ -1,0 +1,253 @@
+ Send WhatsApp API 
+This API endpoint is used to send WhatsApp messages.
+
+Endpoint:
+
+GET POST https://api.smsmobileapi.com/sendsms
+ 
+Parameters:
+
+Parameter	Description
+apikey	Required Your unique API key.
+recipients	Required The recipient's phone number (The number must be available on WhatsApp).
+Enter the phone number starting with the country code (without ‘+’ and without ‘00’), followed directly by the rest of your number.
+Example: 191728660
+message	Required The message to send (Multiple lines possible).
+waonly	Required Must have the value yes → Required to specify that only one WhatsApp message should be sent.
+url_media	The direct URL of the media file you want to send via WhatsApp. Must start with https:// and point to a valid PDF, doc or image file.
+The file must be publicly accessible without authentication.
+Supported formats:
+Documents: pdf, xml, doc, docx, odt, rtf, txt, tex, xls, xlsx, csv, ods, ppt, pptx, odp, zip, rar, 7z, tar, gz
+Images: jpg, jpeg, png
+url_media_shorted	If the value is yes, and [pdf_with_image=yes] is set, the display of the download link for the PDF goes through a short URL.
+pdf_with_image	If the value is yes, an image preview of the PDF will be displayed to accompany the message (only if the file is a PDF).
+encrypt_message	yes = The message will be encrypted when read by the recipient.
+The recipient will need to enter a unique key to decrypt the message.
+Learn more about message encryption
+contactGroup	Enter the group GUID (available in the dashboard) when you are editing the group of contact.
+By defining a contact group using this setting, messages will be automatically sent to all contacts in the group.
+Click here to learn more about contact group management.
+
+Example without media :
+
+GET https://api.smsmobileapi.com/sendsms?apikey=YOUR_API_KEY&waonly=yes&recipients=191728660&message=Hello%20World
+
+Example with media :
+
+GET https://api.smsmobileapi.com/sendsms?apikey=YOUR_API_KEY&waonly=yes&recipients=191728660&message=Hello%20World&url_media=https://smsmobileapi.com/logo.png
+
+Format Text in WhatsApp :
+
+Italic: Use underscores → _text_
+Bold: Use asterisks → *text*
+Strikethrough: Use tildes → ~text~
+Monospace: Use backticks → ```text```
+For example : _Hello_ world, How *are* you ~today~ from ```SMSMobileAPI```
+
+ Resend an unsent WhatsApp messages
+
+ This API endpoint is used to resend an unsent message (only if the message has an error status)
+
+Endpoint:
+
+GET   POST https://api.smsmobileapi.com/resendwa/
+
+Parameter: 
+
+Parameter	Description
+guid	Required GUID of the message to be resent.
+
+Example:
+
+GET https://api.smsmobileapi.com/resendwa/?apikey=YOUR_API_KEY&guid=GUID_OF_THE_MESSAGE
+
+
+
+Active retrieve message feature 
+This API endpoint is used to activate the WhatsApp message retrieval service linked to your phone number.
+Once enabled, the system will start receiving incoming WhatsApp messages for your account through our API.
+
+Important: By default, this feature is not activated to ensure full control and privacy.
+You must explicitly activate it using this endpoint in order to retrieve WhatsApp messages.
+
+To deactivate the service later, simply call the same endpoint again with the appropriate parameter.
+
+Endpoint:
+
+GET https://api.smsmobileapi.com/getwa/active/
+ 
+Parameter:
+
+Parameter	Description
+apikey (required)	RequiredThe API key you have or will receive.
+statut (optional)	
+1 : activate WhatsApp message retrieval. 
+0  : deactivate WhatsApp message retrieval.
+x : (or omitted) – toggle: switch to the opposite of the current state.
+
+Example:
+
+GEThttps://api.smsmobileapi.com/getwa/active/?apikey=YOUR_API_KEY
+
+Reply :
+
+{
+"success": true,
+"read_message_active": 1,
+"status_note": "Activated"
+}
+
+
+
+Synchronization to retrieve message  
+This API endpoint is used to send a request to synchronize and retrieve WhatsApp messages.
+This step is mandatory and must be executed before calling the endpoint that retrieves the messages.
+First of all, the service must be activated before starting a synchronization (see endpoint: Active feature )
+
+Warning: Synchronization is strictly required only for the message retrieval function. Do not start a synchronization to send a message.
+
+Endpoint:
+
+GET https://api.smsmobileapi.com/getwa/synchronisation/
+ 
+Parameter:
+
+Parameter	Description
+apikey (required)	RequiredThe API key you have or will receive.
+
+Example:
+
+GET https://api.smsmobileapi.com/getwa/synchronisation/?apikey=YOUR_API_KEY
+
+Reply :
+
+{
+"error": "0",
+"messages": "synchronized",
+"expire_at ": "2025-03-11 12:27:00",
+"expire_at_unix": "1741692420",
+}
+
+Retrieve WhatsApp Message 
+This API endpoint is used to retrieve WhatsApp messages received.
+Before retrieving messages, you must request a message synchronization. See the synchronization endpoint."
+
+Endpoint:
+
+GET https://api.smsmobileapi.com/getwa
+ 
+Parameter:
+
+Parameter	Description
+apikey	Required The API key you have or will receive.
+before	Pass the timestamp as a parameter and display the records below this timestamp.
+date	(yyyy-mm-dd) Get all records based on the date.
+message_type	
+Leave empty to see all (text and audio messages)
+Use
+text
+to see only text messages
+Use
+audio
+to see only audio messages converted to text
+
+
+Example:
+
+GET https://api.smsmobileapi.com/getwa/?apikey=YOUR_API_KEY
+
+Reply :
+
+{
+"date": "2025-03-11",
+"hour": "12:27:00",
+"timestamp": "1741692420",
+"number": "19176728660",
+"contact": "Smsmobileapi",
+"message": "Can you tell me when I will receive my order?",
+"guid": "652fcfc0-12a8-46f5-b5ba-9391135b8b4c",
+"more": {
+"auto_reply": "1",
+"transfert_to_email": "1",
+"chatgpt_reply": "1"
+},
+"chatgpt": {
+"prompt_tokens": "900",
+"completion_tokens": "10",
+"total_tokens": "910",
+"total_tokens_cost": "0.182"
+"response": "Your order #576 will be shipped tomorrow."
+}
+}
+
+Check Number on WhatsApp 
+This API endpoint allows you to check if the phone number is available on the WhatsApp network.
+
+Endpoint:
+
+GET https://api.smsmobileapi.com/whatsapp/checknumber/
+ 
+Parameter:
+
+Parameter	Description
+apikey	Required Your apikey
+recipients	Required The phone number to verify
+
+
+Example:
+
+GET https://api.smsmobileapi.com/whatsapp/checknumber/?recipients=_YOUR_API_KEY_&apikey=_PHONE_NUMBER_
+
+Reply :
+
+{
+"contact_found_on_whatsapp": "yes",
+"recipients": 19176728660",
+}
+
+Authentication
+ 
+The SMSMobile API supports two authentication methods: using a simple API Key or the OAuth2 protocol with a client ID and client secret.
+
+1. API Key Authentication  
+
+To send or retrieve WhatsApp messages via our API, authentication is required using an API key. This ensures secure and authorized access to the messaging service. Simply include your API key in the request to authenticate and start sending messages seamlessly.
+
+2. OAuth2 Authentication
+
+OAuth2 provides a more secure and scalable authentication method.
+You will need to use a client ID and client secret to obtain an access token, which should then be included in your API requests using the Authorization header.
+
+The client_id and client_secret are available in your dashboard.
+
+Obtaining an Access Token
+
+To get an access token, send a POST request to the token endpoint with your client ID and client secret.
+
+curl -X POST https://api.smsmobileapi.com/oauth2/token \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "grant_type=client_credentials" \
+-d "client_id=1ab0ex4b4c1ef2c800690d" \
+-d "client_secret=3ed108a93d0414074b94364290b6a7348475e93a0567005"
+
+Using the Access Token:
+
+Once you have the access token, include it in the Authorization header of your API requests:
+
+curl -X POST https://api.smsmobileapi.com/sendsms?waonly=yes \
+-H "Authorization: Bearer abc123xyz456" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+-d "recipients=+1234567890" \
+-d "message=Hello"
+
+Which Method Should You Use?
+
+- Use API Key Authentication for quick and straightforward integrations.
+
+- Use OAuth2 Authentication for enhanced security and scalability in your integrations.
+
+
+It is also possible to send a WhatsApp message and an SMS simultaneously.
+
+If you have any questions, suggestions, or need assistance, our team is here to help.
+Feel free to reach out to us at api@smsmobileapi.com
