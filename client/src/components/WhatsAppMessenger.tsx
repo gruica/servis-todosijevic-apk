@@ -55,10 +55,6 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
       const token = localStorage.getItem('auth_token');
       if (!token) throw new Error('No auth token found');
 
-      // Timeout handling sa AbortController
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 sekundi timeout
-
       try {
         const response = await fetch('/api/sms-mobile-api/send', {
           method: 'POST',
@@ -66,52 +62,26 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload),
-          signal: controller.signal
+          body: JSON.stringify(payload)
         });
 
-        clearTimeout(timeoutId);
-
+        // Jednostavan error handling bez komplikacija
         if (!response.ok) {
-          // Safe JSON parsing sa content-type proveri
-          let errorMessage = 'Greška pri slanju WhatsApp poruke';
-          const contentType = response.headers.get('content-type');
-          
-          if (contentType?.includes('application/json')) {
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.error || `Server greška: ${response.status}`;
-            } catch (parseError) {
-              errorMessage = `Server greška: ${response.status} ${response.statusText}`;
-            }
-          } else {
-            // Pokušaj da pročita kao text ako nije JSON
-            try {
-              const textData = await response.text();
-              errorMessage = textData || `Server greška: ${response.status} ${response.statusText}`;
-            } catch {
-              errorMessage = `Server greška: ${response.status} ${response.statusText}`;
-            }
+          let errorMsg = `Server greška ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.error) errorMsg = errorData.error;
+          } catch {
+            // Ignorisi JSON greške, koristi osnovnu poruku
           }
-          
-          throw new Error(errorMessage);
+          throw new Error(errorMsg);
         }
 
-        return response.json();
-        
+        return await response.json();
       } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        if (error.name === 'AbortError') {
-          throw new Error('Timeout - server ne odgovara nakon 30 sekundi');
-        }
-        
-        // Prosledi originalnu grešku ili stvori novu sa jasnijim opisom
-        if (error.message && !error.message.includes('undefined')) {
-          throw error;
-        } else {
-          throw new Error(`Neočekivana greška pri komunikaciji sa serverom: ${error.message || 'Unknown error'}`);
-        }
+        // Jednostavan error handling
+        console.error('WhatsApp send error:', error);
+        throw new Error(error.message || 'Greška pri slanju WhatsApp poruke');
       }
     },
     onSuccess: (data) => {
