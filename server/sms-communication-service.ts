@@ -617,7 +617,7 @@ export class SMSCommunicationService {
         if (additionalAdminSetting) {
           console.log(`📱 Šalje SMS dodatnom administratoru Teodora Todosijević`);
           const teodoraSMSResult = await this.sendTemplatedSMS(templateType,
-            { phone: additionalAdminSetting, name: 'Teodora Todosijević', role: 'admin' },
+            { phone: additionalAdminSetting.value || '', name: 'Teodora Todosijević', role: 'admin' },
             { ...templateData, adminName: 'Teodora Todosijević' }
           );
           adminResults.push(teodoraSMSResult);
@@ -1223,9 +1223,9 @@ export class SMSCommunicationService {
       // 1. SMS klijentu
       if (clientPhone) {
         console.log(`📱 Šaljem SMS klijentu o dodeli dela - Servis #${serviceId}`);
-        const clientResult = await this.sendSMS(
-          { phone: clientPhone, name: clientName },
+        const clientResult = await this.sendTemplatedSMS(
           'client_parts_allocated',
+          { phone: clientPhone, name: clientName },
           templateData
         );
         results.push(clientResult);
@@ -1234,9 +1234,9 @@ export class SMSCommunicationService {
       // 2. SMS poslovnom partneru (ako postoji)
       if (businessPartnerPhone) {
         console.log(`📱 Šaljem SMS poslovnom partneru o dodeli dela - Servis #${serviceId}`);
-        const partnerResult = await this.sendSMS(
-          { phone: businessPartnerPhone, name: 'Poslovni partner' },
+        const partnerResult = await this.sendTemplatedSMS(
           'business_partner_parts_allocated',
+          { phone: businessPartnerPhone, name: 'Poslovni partner' },
           templateData
         );
         results.push(partnerResult);

@@ -184,7 +184,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         console.log(`📝 WhatsApp sa slikom poslat za servis #${serviceId}`);
       }
       
-      if (result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) {
+      if (result.error === 0 || (result.sent && result.sent > 0)) {
         // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke sa slikom
         if (serviceId) {
           await logConversationMessage(parseInt(serviceId), formattedPhone, message, 'whatsapp', imageUrl);
@@ -238,7 +238,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
       
       const result = await smsService.sendSMS(smsRequest);
       
-      if (result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) {
+      if (result.error === 0 || (result.sent && result.sent > 0)) {
         // NOVO DODANO: Conversation logging za uspešno poslate WhatsApp poruke
         if (req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
           await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, 'whatsapp', mediaUrl);
@@ -294,7 +294,7 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         results.push(result);
         
         // NOVO DODANO: Conversation logging za uspešno poslate bulk WhatsApp poruke
-        if ((result.error === 0 || result.error === '0' || (result.sent && result.sent > 0)) && req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
+        if ((result.error === 0 || (result.sent && result.sent > 0)) && req.body.serviceId && (whatsappOnly || sendWhatsApp)) {
           await logConversationMessage(parseInt(req.body.serviceId), formattedPhone, message, 'whatsapp', mediaUrl);
         }
         
@@ -302,12 +302,12 @@ export function createSMSMobileAPIRoutes(storage: IStorage): Router {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
-      const allSuccessful = results.every(r => r.error === 0 || r.error === '0' || (r.sent && r.sent > 0));
+      const allSuccessful = results.every(r => r.error === 0 || (r.sent && r.sent > 0));
       const result = {
         success: allSuccessful,
         results: results,
         total: recipients.length,
-        sent: results.filter(r => r.error === 0 || r.error === '0' || (r.sent && r.sent > 0)).length
+        sent: results.filter(r => r.error === 0 || (r.sent && r.sent > 0)).length
       };
       
       if (result.success) {
