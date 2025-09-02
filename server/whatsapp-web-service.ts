@@ -1,5 +1,5 @@
-const WhatsAppWeb = require('whatsapp-web.js');
-const { Client, LocalAuth, MessageMedia } = WhatsAppWeb;
+import WhatsAppWeb from 'whatsapp-web.js';
+const { Client, LocalAuth, MessageMedia } = WhatsAppWeb.default || WhatsAppWeb;
 import QRCode from 'qrcode';
 
 export interface WhatsAppWebMessage {
