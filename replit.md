@@ -1,5 +1,44 @@
 # Servis Todosijević - Service Management Application
 
+## ⚠️ PROTOKOL ZA BUDUĆE IMPLEMENTACIJE - OBAVEZNO ZA SVAKI RAZGOVOR
+
+**SVAKI RAZGOVOR MORA POČETI SA OVIM PROTOKOLOM. NIJEDAN RAZGOVOR NE SMIJE POČETI BEZ OVIH SMJERNICA.**
+
+### NEPREKORAČIVE PRAVILA:
+1. **NIKADA NE MIJENJAŠ POSTOJEĆE KODOVE** - Ne diramo postojeće funkcije, endpoint-e, logiku
+2. **NIKADA NE MIJENJAŠ POZICIJE POSTOJEĆIH KODOVA** - Postojeći kod ostaje tačno gdje jest
+3. **NIKADA NE BRIŠEŠ POSTOJEĆI KOD** - Čak i ako izgleda nekorišćen
+4. **NIKADA NE REFAKTOR POSTOJEĆE FUNKCIJE** - Dodaješ samo nove funkcije
+5. **SAMO DODAVANJE NOVIH FUNKCIJA** - Na kraj postojećih fajlova
+6. **SVE PROMJENE MORAJU BITI EKSPLICITNO ODOBRENE** - Objasniš plan, čekaš dozvolu
+7. **TESTIRAŠ DA POSTOJEĆE FUNKCIJE RADE** - Prije i nakon implementacije
+
+### OBAVEZNI WORKFLOW:
+1. **ČITAJ** postojeći kod da vidiš šta NIJE smješ dirati
+2. **OBJASNI** plan implementacije - tačno gdje ćeš dodati novi kod
+3. **TRAŽI EKSPLICITNU DOZVOLU** - Ne implementiraš bez "DA, možeš"
+4. **DODAJ SAMO NOVI KOD** - Na kraj postojećih fajlova
+5. **TESTIRAJ** da postojeće funkcionalnosti rade
+6. **POTVRDI** sa korisnikom da sve radi
+
+### ZABRANJENO:
+- ❌ Mijenjanje postojećih funkcija
+- ❌ Prebacivanje postojećeg koda
+- ❌ Brisanje postojećeg koda  
+- ❌ Refaktoring postojećih funkcija
+- ❌ Implementacija bez eksplicitne dozvole
+- ❌ Diranja pozicije postojećih endpoint-a
+
+### DOZVOLJENO:
+- ✅ Dodavanje novih funkcija na kraj fajlova
+- ✅ Kreiranje potpuno novih fajlova (uz dozvolu)
+- ✅ Dodavanje novih endpoint-a na kraj
+- ✅ Adaptacija novog koda postojećim strukturama
+
+**OVE SMJERNICE SU NEPREKORAČNE I MORAJU SE POŠTOVATI U SVAKOM RAZGOVORU.**
+
+---
+
 ## Overview
 This is a comprehensive service management application for Frigo Sistem Todosijević, an appliance repair company. Its purpose is to streamline service operations, improve technician efficiency, and enhance customer communication. The application manages clients, services, technicians, and maintenance schedules for white goods appliances, offering both web and mobile (Android) interfaces for field technicians. The core API and user management are fully functional, with active email and mobile photo systems, and excellent server performance.
 
