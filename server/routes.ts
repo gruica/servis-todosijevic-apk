@@ -4914,6 +4914,95 @@ Frigo Sistem`;
     }
   });
 
+  // ====================================================================================
+  // NOVO: TEST ENDPOINT ZA SMS SEGMENTACIJU - DODANO 02.09.2025
+  // ====================================================================================
+  
+  // POST /api/test-sms-segments - Test endpoint za novo SMS segmentacijsko pravilo
+  app.post('/api/test-sms-segments', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      const { phone, message, testType } = req.body;
+      
+      if (!phone || !message) {
+        return res.status(400).json({ error: 'Phone i message su obavezni' });
+      }
+
+      console.log(`📱 [TEST-SMS-SEGMENTS] Test tip: ${testType}, poruka: ${message.length} karaktera`);
+      
+      // Import novih SMS funkcija
+      const { splitLongSMS, MultiSegmentSMSService } = await import('./sms-communication-service.js');
+      
+      // Get SMS konfiguraciju
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+      const smsConfig = {
+        apiKey: settingsMap.sms_mobile_api_key,
+        baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settingsMap.sms_mobile_sender_id || null,
+        enabled: settingsMap.sms_mobile_enabled === 'true'
+      };
+
+      if (testType === 'preview') {
+        // Samo prikaži kako će biti podeljeno
+        const segments = splitLongSMS(message);
+        
+        return res.json({
+          success: true,
+          message: 'Pregled podele poruke',
+          originalLength: message.length,
+          totalSegments: segments.length,
+          segments: segments.map(s => ({
+            number: s.segmentNumber,
+            text: s.text,
+            length: s.text.length
+          })),
+          wouldSend: segments.length > 1 
+            ? `Poruka bi bila poslana kao ${segments.length} SMS-a`
+            : 'Poruka bi bila poslana kao jedan SMS'
+        });
+        
+      } else if (testType === 'send') {
+        // Stvarno pošalji SMS koristeći novi sistem
+        const { SMSCommunicationService } = await import('./sms-communication-service.js');
+        const smsService = new SMSCommunicationService(smsConfig);
+        const multiSmsService = new MultiSegmentSMSService(smsService);
+        
+        const result = await multiSmsService.sendLongSMS(
+          { phone: phone, name: 'Test korisnik' },
+          message
+        );
+        
+        return res.json({
+          success: result.success,
+          message: `SMS ${result.success ? 'uspešno poslat' : 'neuspešno poslat'}`,
+          totalSegments: result.totalSegments,
+          sentSegments: result.segments.length,
+          details: result.segments.map(s => ({
+            segmentNumber: s.segment.segmentNumber,
+            text: s.segment.text,
+            length: s.segment.text.length,
+            success: s.result.success,
+            messageId: s.result.messageId,
+            error: s.result.error
+          })),
+          overallError: result.error
+        });
+        
+      } else {
+        return res.status(400).json({ 
+          error: 'testType mora biti "preview" ili "send"' 
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Greška pri testiranju SMS segmentacije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri testiranju SMS segmentacije',
+        details: error.message 
+      });
+    }
+  });
+
   return server;
 }
 

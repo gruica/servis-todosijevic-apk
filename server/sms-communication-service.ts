@@ -1656,3 +1656,199 @@ export function createProtocolSMSService(config: SMSConfig, storage: any): Proto
   const smsService = new SMSCommunicationService(config);
   return new ProtocolSMSService(smsService, storage);
 }
+
+// ====================================================================================
+// NOVO: SMS SEGMENTACIJSKI SISTEM - PODELA DUGIH PORUKA NA VIŠE SMS-OVA
+// ====================================================================================
+
+/**
+ * Novi servis za podelu dugih SMS poruka na segmente od 160 karaktera
+ * DODANO: 02.09.2025 - Ne mijenja postojeći kod!
+ */
+export interface SMSSegment {
+  text: string;
+  segmentNumber: number;
+  totalSegments: number;
+}
+
+export interface MultiSMSResult {
+  success: boolean;
+  segments: Array<{
+    segment: SMSSegment;
+    result: SMSResult;
+  }>;
+  totalSegments: number;
+  error?: string;
+}
+
+/**
+ * NOVA FUNKCIJA: Dijeli dugu SMS poruku na segmente od max 160 karaktera
+ * Pametno dijeli na granicama reči, dodaje broj segmenta (1/3, 2/3, itd.)
+ */
+export function splitLongSMS(message: string, maxLength: number = 160): SMSSegment[] {
+  // Ako poruka stane u jedan SMS, vrati je kako jest
+  if (message.length <= maxLength) {
+    return [{
+      text: message,
+      segmentNumber: 1,
+      totalSegments: 1
+    }];
+  }
+
+  const segments: SMSSegment[] = [];
+  let remainingText = message.trim();
+  
+  // Rezerviši prostor za brojanje segmenata " (X/Y)" = 6 karaktera max
+  const segmentOverhead = 6;
+  const effectiveLength = maxLength - segmentOverhead;
+  
+  // Prvi prolaz: izračunaj koliko segmenata treba
+  let tempText = remainingText;
+  let segmentCount = 0;
+  
+  while (tempText.length > 0) {
+    segmentCount++;
+    if (tempText.length <= effectiveLength) {
+      break;
+    }
+    
+    // Nađi najbolje mesto za podelu (granica reči)
+    let splitPoint = effectiveLength;
+    const lastSpace = tempText.lastIndexOf(' ', effectiveLength);
+    if (lastSpace > effectiveLength * 0.8) { // Ako je space u poslednih 20%, koristi ga
+      splitPoint = lastSpace;
+    }
+    
+    tempText = tempText.substring(splitPoint).trim();
+  }
+  
+  // Drugi prolaz: kreiraj segmente sa brojevima
+  let currentSegment = 1;
+  remainingText = message.trim();
+  
+  while (remainingText.length > 0 && currentSegment <= segmentCount) {
+    let segmentText: string;
+    
+    if (remainingText.length <= effectiveLength) {
+      // Poslednji segment
+      segmentText = remainingText;
+      remainingText = '';
+    } else {
+      // Nađi najbolje mesto za podelu
+      let splitPoint = effectiveLength;
+      const lastSpace = remainingText.lastIndexOf(' ', effectiveLength);
+      if (lastSpace > effectiveLength * 0.8) {
+        splitPoint = lastSpace;
+      }
+      
+      segmentText = remainingText.substring(0, splitPoint).trim();
+      remainingText = remainingText.substring(splitPoint).trim();
+    }
+    
+    // Dodaj broj segmenta samo ako ima više segmenata
+    const finalText = segmentCount > 1 
+      ? `${segmentText} (${currentSegment}/${segmentCount})`
+      : segmentText;
+    
+    segments.push({
+      text: finalText,
+      segmentNumber: currentSegment,
+      totalSegments: segmentCount
+    });
+    
+    currentSegment++;
+  }
+  
+  return segments;
+}
+
+/**
+ * NOVA FUNKCIJA: Šalje više SMS segmenata u nizu
+ * Koristi postojeći SMS servis, ne mijenja postojeće funkcije
+ */
+export class MultiSegmentSMSService {
+  private smsService: SMSCommunicationService;
+  
+  constructor(smsService: SMSCommunicationService) {
+    this.smsService = smsService;
+  }
+  
+  /**
+   * Šalje poruku kao više segmenata ako je dugа preko 160 karaktera
+   */
+  async sendLongSMS(
+    recipient: SMSRecipient,
+    message: string,
+    templateType: string = 'custom'
+  ): Promise<MultiSMSResult> {
+    try {
+      console.log(`📱 [MULTI-SMS] Provjeravam dužinu poruke: ${message.length} karaktera`);
+      
+      // Podeli poruku na segmente
+      const segments = splitLongSMS(message);
+      
+      if (segments.length === 1) {
+        console.log(`📱 [MULTI-SMS] Poruka stane u jedan SMS, koristim regularno slanje`);
+        // Koristi postojeći SMS servis za kratke poruke
+        const result = await this.smsService.sendCustomMessage(recipient.phone, message);
+        return {
+          success: result.success,
+          segments: [{
+            segment: segments[0],
+            result: result
+          }],
+          totalSegments: 1,
+          error: result.error
+        };
+      }
+      
+      console.log(`📱 [MULTI-SMS] Poruka podеljena na ${segments.length} segmenata`);
+      
+      const results: Array<{segment: SMSSegment, result: SMSResult}> = [];
+      let overallSuccess = true;
+      const errors: string[] = [];
+      
+      // Šalje svaki segment
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        console.log(`📱 [MULTI-SMS] Šaljem segment ${segment.segmentNumber}/${segment.totalSegments}: "${segment.text}"`);
+        
+        // Koristi postojeći SMS servis
+        const result = await this.smsService.sendCustomMessage(recipient.phone, segment.text);
+        
+        results.push({
+          segment: segment,
+          result: result
+        });
+        
+        if (!result.success) {
+          overallSuccess = false;
+          errors.push(`Segment ${segment.segmentNumber}: ${result.error}`);
+        }
+        
+        // Kratka pauza između segmenata da ne preopteretimo API
+        if (i < segments.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      console.log(`📱 [MULTI-SMS] Završeno slanje ${segments.length} segmenata. Uspešno: ${overallSuccess}`);
+      
+      return {
+        success: overallSuccess,
+        segments: results,
+        totalSegments: segments.length,
+        error: errors.length > 0 ? errors.join('; ') : undefined
+      };
+      
+    } catch (error: any) {
+      console.error('❌ [MULTI-SMS] Greška pri slanju dugе SMS poruke:', error);
+      return {
+        success: false,
+        segments: [],
+        totalSegments: 0,
+        error: error.message
+      };
+    }
+  }
+}
