@@ -164,7 +164,7 @@ export class SMSMobileAPIService {
 
   /**
    * Formatira broj telefona za SMS Mobile API
-   * ISPRAVKA: 067077092 → 38267077092 (bez dodavanja nule)
+   * ISPRAVKA: 067051141 → 38267051141 (bez dodavanja nule)
    */
   formatPhoneNumber(phone: string): string {
     // Ukloni sve što nije broj

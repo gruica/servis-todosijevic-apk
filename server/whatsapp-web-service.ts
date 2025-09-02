@@ -337,7 +337,7 @@ Vaš servis je uspešno završen!
 • Garancija: ${serviceData.warrantyStatus}
 
 ${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\n\n` : ''}${serviceData.machineNotes ? `📝 *Napomene:*\n${serviceData.machineNotes}\n\n` : ''}${serviceData.cost ? `💰 *Troškovi:* ${serviceData.cost} RSD\n\n` : ''}Hvala što ste odabrali Frigo Sistem Todosijević!
-📞 Za dodatne informacije: +382 67 077 092`;
+📞 Za dodatne informacije: 067051141`;
 
     return await this.sendMessage(serviceData.clientPhone, message);
   }
@@ -358,7 +358,7 @@ ${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\
     isCompletelyFixed: boolean;
     warrantyStatus: string;
   }): Promise<boolean> {
-    const adminPhone = '067077092'; // Admin broj
+    const adminPhone = '067051141'; // Admin broj
     
     const message = `🎯 *SERVIS ZAVRŠEN - ADMIN OBAVEŠTENJE*
 
