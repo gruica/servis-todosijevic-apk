@@ -4649,6 +4649,141 @@ Frigo Sistem`;
     }
   });
 
+  // POST /api/whatsapp-web/auto-notify-completed - Automatska obaveštenja o završenom servisu
+  app.post('/api/whatsapp-web/auto-notify-completed', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
+        return res.status(403).json({ error: "Samo administratori i serviseri mogu pokrenuti automatska obaveštenja" });
+      }
+
+      const { serviceId } = req.body;
+
+      if (!serviceId) {
+        return res.status(400).json({ error: "Service ID je obavezan" });
+      }
+
+      console.log(`📱 [WHATSAPP AUTO] Pokretanje automatskih obaveštenja za servis #${serviceId}`);
+
+      // Dohvati kompletne podatke o servisu
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+
+      const client = await storage.getClient(service.clientId);
+      const appliance = await storage.getAppliance(service.applianceId);
+      const category = await storage.getCategory(appliance.categoryId);
+      const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
+      const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
+
+      const whatsappService = await getWhatsAppWebService();
+      const notificationResults = {
+        client: { success: false, error: null },
+        admin: { success: false, error: null },
+        businessPartner: { success: false, error: null },
+        technician: { success: false, error: null }
+      };
+
+      const serviceData = {
+        serviceId: service.id.toString(),
+        clientName: client.fullName,
+        clientPhone: client.phone,
+        deviceType: category?.name || 'Uređaj',
+        deviceModel: appliance.model,
+        technicianName: technician?.fullName || 'Serviser',
+        completedDate: new Date().toLocaleDateString('sr-RS'),
+        usedParts: service.usedParts || undefined,
+        machineNotes: service.machineNotes || undefined,
+        cost: service.cost ? service.cost.toString() : undefined,
+        isCompletelyFixed: service.isCompletelyFixed || false,
+        warrantyStatus: service.warrantyStatus || 'nepoznato'
+      };
+
+      // 1. OBAVEŠTENJE KLIJENTU (ako ima telefon)
+      if (client.phone) {
+        try {
+          const success = await whatsappService.notifyServiceCompleted(serviceData);
+          notificationResults.client = { success, error: success ? null : 'Slanje neuspešno' };
+          console.log(`📱 [WHATSAPP AUTO] Klijent obaveštenje: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+        } catch (error: any) {
+          notificationResults.client = { success: false, error: error.message };
+          console.error(`❌ [WHATSAPP AUTO] Greška pri obaveštenju klijenta:`, error);
+        }
+      }
+
+      // 2. OBAVEŠTENJE ADMINU
+      try {
+        const success = await whatsappService.notifyAdminServiceCompleted(serviceData);
+        notificationResults.admin = { success, error: success ? null : 'Slanje neuspešno' };
+        console.log(`🎯 [WHATSAPP AUTO] Admin obaveštenje: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+      } catch (error: any) {
+        notificationResults.admin = { success: false, error: error.message };
+        console.error(`❌ [WHATSAPP AUTO] Greška pri obaveštenju admina:`, error);
+      }
+
+      // 3. OBAVEŠTENJE BUSINESS PARTNER-U (ako postoji)
+      if (service.businessPartnerId) {
+        try {
+          const businessPartner = await storage.getBusinessPartner(service.businessPartnerId);
+          if (businessPartner && businessPartner.phone) {
+            const success = await whatsappService.notifyBusinessPartnerServiceCompleted({
+              partnerPhone: businessPartner.phone,
+              partnerName: businessPartner.name,
+              serviceId: serviceData.serviceId,
+              clientName: serviceData.clientName,
+              deviceType: serviceData.deviceType,
+              deviceModel: serviceData.deviceModel,
+              technicianName: serviceData.technicianName,
+              completedDate: serviceData.completedDate,
+              cost: serviceData.cost,
+              isCompletelyFixed: serviceData.isCompletelyFixed
+            });
+            notificationResults.businessPartner = { success, error: success ? null : 'Slanje neuspešno' };
+            console.log(`📋 [WHATSAPP AUTO] Business partner obaveštenje: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+          }
+        } catch (error: any) {
+          notificationResults.businessPartner = { success: false, error: error.message };
+          console.error(`❌ [WHATSAPP AUTO] Greška pri obaveštenju business partner-a:`, error);
+        }
+      }
+
+      // 4. POTVRDA TEHNICIAN-U (ako ima telefon)
+      if (technician?.phone) {
+        try {
+          const success = await whatsappService.notifyTechnicianServiceCompleted({
+            technicianPhone: technician.phone,
+            technicianName: technician.fullName,
+            serviceId: serviceData.serviceId,
+            clientName: serviceData.clientName,
+            deviceType: serviceData.deviceType,
+            completedDate: serviceData.completedDate
+          });
+          notificationResults.technician = { success, error: success ? null : 'Slanje neuspešno' };
+          console.log(`✅ [WHATSAPP AUTO] Technician potvrda: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+        } catch (error: any) {
+          notificationResults.technician = { success: false, error: error.message };
+          console.error(`❌ [WHATSAPP AUTO] Greška pri potvrdi tehnician-u:`, error);
+        }
+      }
+
+      console.log(`📊 [WHATSAPP AUTO] Sažetak obaveštenja za servis #${serviceId}:`, notificationResults);
+
+      res.json({
+        success: true,
+        message: 'Automatska WhatsApp obaveštenja pokrenuta',
+        serviceId,
+        results: notificationResults
+      });
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP AUTO] Greška pri automatskim obaveštenjima:', error);
+      res.status(500).json({ 
+        error: 'Greška pri automatskim WhatsApp obaveštenjima',
+        details: error.message 
+      });
+    }
+  });
+
   return server;
 }
 

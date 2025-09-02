@@ -303,6 +303,145 @@ export class WhatsAppWebService {
     this.isConnected = false;
     this.qrCode = null;
   }
+
+  // TEMPLATE FUNKCIJE ZA AUTOMATSKA OBAVEŠTENJA
+  
+  /**
+   * Pošalje obaveštenje klijentu o završenom servisu - BOGATIJI SADRŽAJ
+   */
+  async notifyServiceCompleted(serviceData: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: string;
+    deviceType: string;
+    deviceModel: string;
+    technicianName: string;
+    completedDate: string;
+    usedParts?: string;
+    machineNotes?: string;
+    cost?: string;
+    isCompletelyFixed: boolean;
+    warrantyStatus: string;
+  }): Promise<boolean> {
+    const message = `🎉 *SERVIS ZAVRŠEN*
+
+Poštovani ${serviceData.clientName},
+Vaš servis je uspešno završen!
+
+📋 *Detalji servisa:*
+• Servis ID: #${serviceData.serviceId}
+• Uređaj: ${serviceData.deviceType} - ${serviceData.deviceModel}
+• Datum završetka: ${serviceData.completedDate}
+• Serviser: ${serviceData.technicianName}
+• Status: ${serviceData.isCompletelyFixed ? '✅ Potpuno popravljen' : '⚠️ Delimično popravljen'}
+• Garancija: ${serviceData.warrantyStatus}
+
+${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\n\n` : ''}${serviceData.machineNotes ? `📝 *Napomene:*\n${serviceData.machineNotes}\n\n` : ''}${serviceData.cost ? `💰 *Troškovi:* ${serviceData.cost} RSD\n\n` : ''}Hvala što ste odabrali Frigo Sistem Todosijević!
+📞 Za dodatne informacije: +382 67 077 092`;
+
+    return await this.sendMessage(serviceData.clientPhone, message);
+  }
+
+  /**
+   * Pošalje admin obaveštenje o završenom servisu
+   */
+  async notifyAdminServiceCompleted(serviceData: {
+    serviceId: string;
+    clientName: string;
+    clientPhone: string;
+    deviceType: string;
+    deviceModel: string;
+    technicianName: string;
+    completedDate: string;
+    usedParts?: string;
+    cost?: string;
+    isCompletelyFixed: boolean;
+    warrantyStatus: string;
+  }): Promise<boolean> {
+    const adminPhone = '067077092'; // Admin broj
+    
+    const message = `🎯 *SERVIS ZAVRŠEN - ADMIN OBAVEŠTENJE*
+
+Serviser ${serviceData.technicianName} je završio servis.
+
+📋 *Detalji:*
+• ID: #${serviceData.serviceId}
+• Klijent: ${serviceData.clientName} (${serviceData.clientPhone})
+• Uređaj: ${serviceData.deviceType} - ${serviceData.deviceModel}
+• Serviser: ${serviceData.technicianName}
+• Status: ${serviceData.isCompletelyFixed ? 'Potpuno popravljen' : 'Delimično popravljen'}
+• Garancija: ${serviceData.warrantyStatus}
+${serviceData.cost ? `• Troškovi: ${serviceData.cost} RSD` : ''}
+${serviceData.usedParts ? `• Delovi: ${serviceData.usedParts}` : ''}
+
+⏰ Završeno: ${serviceData.completedDate}`;
+
+    return await this.sendMessage(adminPhone, message);
+  }
+
+  /**
+   * Pošalje obaveštenje business partner-u o završenom servisu
+   */
+  async notifyBusinessPartnerServiceCompleted(serviceData: {
+    partnerPhone: string;
+    partnerName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    deviceModel: string;
+    technicianName: string;
+    completedDate: string;
+    cost?: string;
+    isCompletelyFixed: boolean;
+  }): Promise<boolean> {
+    const message = `📋 *SERVIS ZAVRŠEN - PARTNER OBAVEŠTENJE*
+
+Poštovani ${serviceData.partnerName},
+Servis koji ste prosledili je završen.
+
+📋 *Detalji:*
+• Servis ID: #${serviceData.serviceId}
+• Klijent: ${serviceData.clientName}
+• Uređaj: ${serviceData.deviceType} - ${serviceData.deviceModel}
+• Serviser: ${serviceData.technicianName}
+• Status: ${serviceData.isCompletelyFixed ? '✅ Uspešno popravljen' : '⚠️ Delimično popravljen'}
+${serviceData.cost ? `• Troškovi: ${serviceData.cost} RSD` : ''}
+
+⏰ Završeno: ${serviceData.completedDate}
+
+Hvala na saradnji!
+*Frigo Sistem Todosijević*`;
+
+    return await this.sendMessage(serviceData.partnerPhone, message);
+  }
+
+  /**
+   * Pošalje potvrdu tehnician-u o završenom servisu
+   */
+  async notifyTechnicianServiceCompleted(serviceData: {
+    technicianPhone: string;
+    technicianName: string;
+    serviceId: string;
+    clientName: string;
+    deviceType: string;
+    completedDate: string;
+  }): Promise<boolean> {
+    const message = `✅ *POTVRDA ZAVRŠETKA SERVISA*
+
+Poštovani ${serviceData.technicianName},
+Vaš servis je uspešno zabeležen kao završen.
+
+📋 *Potvrda:*
+• Servis ID: #${serviceData.serviceId}
+• Klijent: ${serviceData.clientName}
+• Uređaj: ${serviceData.deviceType}
+• Završeno: ${serviceData.completedDate}
+
+Odličan posao! 👏
+*Frigo Sistem Todosijević*`;
+
+    return await this.sendMessage(serviceData.technicianPhone, message);
+  }
 }
 
 // Singleton instanca

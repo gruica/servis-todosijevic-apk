@@ -97,11 +97,43 @@ function ServiceCompletionForm({ service, isOpen, onClose }: ServiceCompletionFo
 
       return reportResponse;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Servis uspešno završen",
         description: "Detaljni izveštaj je kreiran i servis je označen kao završen."
       });
+      
+      // AUTOMATSKA WHATSAPP OBAVEŠTENJA - DODANO
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          const response = await fetch('/api/whatsapp-web/auto-notify-completed', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ serviceId: service.id })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('📱 [WHATSAPP AUTO] Obaveštenja poslata:', result);
+            
+            toast({
+              title: "✅ WhatsApp obaveštenja poslata",
+              description: "Klijent, admin i ostali su obavešteni o završetku servisa preko WhatsApp-a"
+            });
+          } else {
+            console.warn('⚠️ [WHATSAPP AUTO] WhatsApp obaveštenja nisu poslata');
+            // Ne prikazuj grešku korisniku - nije kritično
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ [WHATSAPP AUTO] Greška pri WhatsApp obaveštenjima:', error);
+        // Ne blokira postojeći workflow
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/api/my-services"] });
       onClose();
       form.reset();

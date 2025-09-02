@@ -230,12 +230,40 @@ export default function ComplusDashboard() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       toast({
         title: "Uspešno!",
         description: "Com Plus servis je uspešno ažuriran.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/complus/services"] });
+      
+      // AUTOMATSKA WHATSAPP OBAVEŠTENJA - ako je status "completed"
+      if (variables.data.status === "completed") {
+        try {
+          const token = localStorage.getItem('auth_token');
+          if (token) {
+            const response = await fetch('/api/whatsapp-web/auto-notify-completed', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ serviceId: variables.serviceId })
+            });
+
+            if (response.ok) {
+              console.log('📱 [WHATSAPP AUTO] Obaveštenja poslata za ComPlus servis:', variables.serviceId);
+              toast({
+                title: "📱 WhatsApp obaveštenja poslata",
+                description: "Com Plus servis - svi učesnici su obavešteni"
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [WHATSAPP AUTO] Greška pri ComPlus obaveštenjima:', error);
+        }
+      }
+      
       setEditingService(null);
       setEditFormData({ description: "", cost: "", status: "" });
     },

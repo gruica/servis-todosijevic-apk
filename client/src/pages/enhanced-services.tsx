@@ -563,7 +563,7 @@ export default function EnhancedServices() {
       const res = await apiRequest(`/api/services/${serviceId}/update-status`, { method: "PUT", body: JSON.stringify({ status }) });
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       console.log("Uspešno ažuriran status:", data);
       
       // Optimizovana invalidacija samo za servise
@@ -573,6 +573,33 @@ export default function EnhancedServices() {
         title: "✅ Status ažuriran",
         description: data.message || "Status servisa je uspešno ažuriran",
       });
+
+      // AUTOMATSKA WHATSAPP OBAVEŠTENJA - ako je status "completed"
+      if (variables.status === "completed") {
+        try {
+          const token = localStorage.getItem('auth_token');
+          if (token) {
+            const response = await fetch('/api/whatsapp-web/auto-notify-completed', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ serviceId: variables.serviceId })
+            });
+
+            if (response.ok) {
+              console.log('📱 [WHATSAPP AUTO] Obaveštenja poslata za servis:', variables.serviceId);
+              toast({
+                title: "📱 WhatsApp obaveštenja poslata",
+                description: "Svi učesnici su obavešteni o završetku servisa"
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [WHATSAPP AUTO] Greška pri obaveštenjima:', error);
+        }
+      }
     },
     onError: (error) => {
       console.error("Greška pri ažuriranju statusa:", error);
