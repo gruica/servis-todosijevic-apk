@@ -33,6 +33,9 @@ export interface SMSTemplateData {
   unavailableType?: string;
   reschedulingNotes?: string;
   unavailableReason?: string;
+  totalServices?: number;
+  totalClients?: number;
+  totalParts?: number;
 }
 
 export class SMSTemplates {
@@ -301,12 +304,12 @@ export class SMSTemplates {
   }
 
   // Servis Komerc - Završen Beko servis
-  private servisKomercCompleted(data: SMSTemplateData): string {
+  private static servisKomercCompleted(data: SMSTemplateData): string {
     return `Pozdrav ${data.clientName}! Vaš ${data.deviceType} servis #${data.serviceId} je završen. Serviser: ${data.technicianName}. Trošak: ${data.cost}€. Hvala! - FS Todosijević`;
   }
 
-  // Servis Komerc - Dnevni izveštaj
-  private servisKomercDaily(data: SMSTemplateData): string {
+  // Servis Komerc - Dnevni izveštaj  
+  private static servisKomercDaily(data: SMSTemplateData): string {
     return `Servis Komerc dnevni izveštaj: ${data.totalServices || 0} Beko servisa, ${data.totalClients || 0} klijenata, ${data.totalParts || 0} delova. - FS Todosijević`;
   }
 }
