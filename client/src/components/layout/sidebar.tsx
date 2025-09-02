@@ -51,6 +51,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
     { path: "/admin/user-verification", label: "Verifikuj korisnike", icon: AppIcons.system.userManagement, isProfessionalIcon: true },
     { path: "/admin/sms-mobile-api-config", label: "SMS Mobile API", icon: AppIcons.business.communication, highlight: true, isProfessionalIcon: true },
     { path: "/admin/sms-bulk", label: "Masovno SMS", icon: AppIcons.system.bulkSMS, highlight: true, isProfessionalIcon: true },
+    { path: "/admin/whatsapp-web", label: "WhatsApp Web", icon: AppIcons.business.communication, highlight: true, isProfessionalIcon: true },
     { path: "/email-settings", label: "Email postavke", icon: "mail" },
     { path: "/email-test", label: "Testiranje email-a", icon: "mail_outline" },
     { path: "/sql-admin", label: "SQL upravljač", icon: "storage" },
