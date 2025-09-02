@@ -297,6 +297,27 @@ export class SMSTemplates {
       case 'servis_zavrsen_beko': return this.servisKomercCompleted(data);
       case 'servis_komerc_dnevni': return this.servisKomercDaily(data);
       
+      // NOVI SMS PROTOKOL templates - automatsko slanje
+      case 'protocol_client_unavailable_to_client': return this.protocolClientUnavailableToClient(data);
+      case 'protocol_client_unavailable_to_admin': return this.protocolClientUnavailableToAdmin(data);
+      case 'protocol_client_unavailable_to_partner': return this.protocolClientUnavailableToPartner(data);
+      
+      case 'protocol_service_assigned_to_client': return this.protocolServiceAssignedToClient(data);
+      case 'protocol_service_assigned_to_admin': return this.protocolServiceAssignedToAdmin(data);
+      case 'protocol_service_assigned_to_partner': return this.protocolServiceAssignedToPartner(data);
+      
+      case 'protocol_parts_ordered_to_client': return this.protocolPartsOrderedToClient(data);
+      case 'protocol_parts_ordered_to_admin': return this.protocolPartsOrderedToAdmin(data);
+      case 'protocol_parts_ordered_to_partner': return this.protocolPartsOrderedToPartner(data);
+      
+      case 'protocol_repair_refused_to_client': return this.protocolRepairRefusedToClient(data);
+      case 'protocol_repair_refused_to_admin': return this.protocolRepairRefusedToAdmin(data);
+      case 'protocol_repair_refused_to_partner': return this.protocolRepairRefusedToPartner(data);
+      
+      case 'protocol_service_created_to_client': return this.protocolServiceCreatedToClient(data);
+      case 'protocol_service_created_to_admin': return this.protocolServiceCreatedToAdmin(data);
+      case 'protocol_service_created_to_partner': return this.protocolServiceCreatedToPartner(data);
+      
       default:
         console.error(`⚠️ Nepoznat SMS template tip: ${type}`);
         return `Obaveštenje o servisu #${data.serviceId}. Tel: 067051141`;
@@ -311,5 +332,97 @@ export class SMSTemplates {
   // Servis Komerc - Dnevni izveštaj  
   private static servisKomercDaily(data: SMSTemplateData): string {
     return `Servis Komerc dnevni izveštaj: ${data.totalServices || 0} Beko servisa, ${data.totalClients || 0} klijenata, ${data.totalParts || 0} delova. - FS Todosijević`;
+  }
+
+  // ========== NOVI SMS PROTOKOL TEMPLATES - AUTOMATSKO SLANJE ==========
+  
+  // PROTOKOL 1: Nedostupnost klijenta - Klijent template
+  static protocolClientUnavailableToClient(data: SMSTemplateData): string {
+    const message = `Pozdrav ${data.clientName}! Nismo Vas zatekli kod kuce za servis #${data.serviceId} (${data.deviceType}). Kontaktirajte 067051141 za novi termin. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_client_unavailable_to_client');
+  }
+
+  // PROTOKOL 1: Nedostupnost klijenta - Admin template
+  static protocolClientUnavailableToAdmin(data: SMSTemplateData): string {
+    const message = `NEDOSTUPAN KLIJENT - Servis #${data.serviceId}: ${data.clientName} (${data.clientPhone}), ${data.deviceType}, Tehnicar: ${data.technicianName}. Razlog: ${data.unavailableReason}`;
+    return this.validateSMSLength(message, 'protocol_client_unavailable_to_admin');
+  }
+
+  // PROTOKOL 1: Nedostupnost klijenta - Partner template  
+  static protocolClientUnavailableToPartner(data: SMSTemplateData): string {
+    const message = `Klijent ${data.clientName} nedostupan za servis #${data.serviceId} (${data.deviceType}). Tehnicar: ${data.technicianName}. Potrebno novo zakazivanje. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_client_unavailable_to_partner');
+  }
+
+  // PROTOKOL 2: Dodela servisa - Klijent template
+  static protocolServiceAssignedToClient(data: SMSTemplateData): string {
+    const message = `Pozdrav ${data.clientName}! Vas servis #${data.serviceId} (${data.deviceType}) je dodeljen tehnicaru ${data.technicianName} (${data.technicianPhone}). - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_service_assigned_to_client');
+  }
+
+  // PROTOKOL 2: Dodela servisa - Admin template
+  static protocolServiceAssignedToAdmin(data: SMSTemplateData): string {
+    const message = `DODELA - Servis #${data.serviceId} dodeljen: ${data.technicianName} za ${data.clientName} (${data.clientPhone}), ${data.deviceType}. Partner: ${data.businessPartnerName || 'N/A'}`;
+    return this.validateSMSLength(message, 'protocol_service_assigned_to_admin');
+  }
+
+  // PROTOKOL 2: Dodela servisa - Partner template
+  static protocolServiceAssignedToPartner(data: SMSTemplateData): string {
+    const message = `Vas zahtev #${data.serviceId} za ${data.clientName} (${data.deviceType}) je dodeljen tehnicaru ${data.technicianName}. Mozete pratiti napredak. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_service_assigned_to_partner');
+  }
+
+  // PROTOKOL 3: Rezervni delovi - Klijent template
+  static protocolPartsOrderedToClient(data: SMSTemplateData): string {
+    const message = `Pozdrav ${data.clientName}! Porucen je rezervni deo ${data.partName} za Vas servis #${data.serviceId} (${data.deviceType}). Pristice za ${data.estimatedDate || '5-7 dana'}. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_parts_ordered_to_client');
+  }
+
+  // PROTOKOL 3: Rezervni delovi - Admin template
+  static protocolPartsOrderedToAdmin(data: SMSTemplateData): string {
+    const message = `PORUCEN DEO - ${data.partName} za servis #${data.serviceId}: ${data.clientName}, ${data.deviceType}, Tehnicar: ${data.technicianName}, Partner: ${data.businessPartnerName || 'N/A'}`;
+    return this.validateSMSLength(message, 'protocol_parts_ordered_to_admin');
+  }
+
+  // PROTOKOL 3: Rezervni delovi - Partner template
+  static protocolPartsOrderedToPartner(data: SMSTemplateData): string {
+    const message = `Rezervni deo ${data.partName} je porucen za servis #${data.serviceId} (${data.clientName}, ${data.deviceType}). Pristice za ${data.estimatedDate || '5-7 dana'}. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_parts_ordered_to_partner');
+  }
+
+  // PROTOKOL 5: Odbijanje popravke - Klijent template
+  static protocolRepairRefusedToClient(data: SMSTemplateData): string {
+    const message = `Postovani ${data.clientName}, zabelezili smo da ne zelite popravku servisa #${data.serviceId} (${data.deviceType}). Kontakt: 067051141. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_repair_refused_to_client');
+  }
+
+  // PROTOKOL 5: Odbijanje popravke - Admin template
+  static protocolRepairRefusedToAdmin(data: SMSTemplateData): string {
+    const message = `ODBIO POPRAVKU - ${data.clientName} (${data.clientPhone}) odbio servis #${data.serviceId} (${data.deviceType}). Tehnicar: ${data.technicianName}`;
+    return this.validateSMSLength(message, 'protocol_repair_refused_to_admin');
+  }
+
+  // PROTOKOL 5: Odbijanje popravke - Partner template
+  static protocolRepairRefusedToPartner(data: SMSTemplateData): string {
+    const message = `Klijent ${data.clientName} je odbio popravku za servis #${data.serviceId} (${data.deviceType}). Servis zatvoren. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_repair_refused_to_partner');
+  }
+
+  // PROTOKOL 6: Kreiranje servisa - Klijent template  
+  static protocolServiceCreatedToClient(data: SMSTemplateData): string {
+    const message = `Pozdrav ${data.clientName}! Kreiran je servis #${data.serviceId} za Vas ${data.deviceType}. Kontakticemo Vas za termin. Tel: 067051141 - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_service_created_to_client');
+  }
+
+  // PROTOKOL 6: Kreiranje servisa - Admin template
+  static protocolServiceCreatedToAdmin(data: SMSTemplateData): string {
+    const message = `NOVI SERVIS #${data.serviceId} - ${data.clientName} (${data.clientPhone}), ${data.deviceType}, Kreirao: ${data.businessPartnerName || data.createdBy}`;
+    return this.validateSMSLength(message, 'protocol_service_created_to_admin');
+  }
+
+  // PROTOKOL 6: Kreiranje servisa - Partner template
+  static protocolServiceCreatedToPartner(data: SMSTemplateData): string {
+    const message = `Potvrda: Kreiran servis #${data.serviceId} za ${data.clientName} (${data.deviceType}). Dodelit cemo tehnicara uskoro. - Frigo Sistem`;
+    return this.validateSMSLength(message, 'protocol_service_created_to_partner');
   }
 }

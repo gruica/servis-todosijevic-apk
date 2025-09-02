@@ -1254,3 +1254,405 @@ export class SMSCommunicationService {
     }
   }
 }
+
+// Factory funkcija za kreiranje SMS servisa
+export function createSMSService(config: SMSConfig): SMSCommunicationService {
+  return new SMSCommunicationService(config);
+}
+
+// ========== NOVI SMS PROTOKOL SERVICE - AUTOMATSKO MULTIPLE SENDING ==========
+
+export interface ProtocolSMSData {
+  serviceId: number;
+  clientId: number;
+  clientName: string;
+  clientPhone: string;
+  deviceType: string;
+  deviceModel?: string;
+  manufacturerName?: string;
+  technicianId?: number;
+  technicianName?: string;
+  technicianPhone?: string;
+  businessPartnerId?: number;
+  businessPartnerName?: string;
+  partName?: string;
+  estimatedDate?: string;
+  cost?: string;
+  unavailableReason?: string;
+  createdBy?: string;
+}
+
+export interface ProtocolSMSResult {
+  success: boolean;
+  clientSMS?: SMSResult;
+  adminSMS?: SMSResult[];
+  partnerSMS?: SMSResult;
+  errors?: string[];
+}
+
+/**
+ * NOVI SMS PROTOKOL SERVICE - Automatsko slanje SMS poruka prema protokolu
+ * Šalje SMS klijentu, administratorima i poslovnom partneru prema definisanim scenarijima
+ */
+export class ProtocolSMSService {
+  private smsService: SMSCommunicationService;
+  private storage: any; // IStorage instance
+  
+  constructor(smsService: SMSCommunicationService, storage: any) {
+    this.smsService = smsService;
+    this.storage = storage;
+  }
+
+  /**
+   * PROTOKOL 1: Nedostupnost klijenta
+   * SMS → Klijent + Admin + Partner (ako partner uključen)
+   */
+  async sendClientUnavailableProtocol(data: ProtocolSMSData): Promise<ProtocolSMSResult> {
+    const results: ProtocolSMSResult = { success: true, errors: [] };
+
+    try {
+      // 1. SMS KLIJENTU o nedostupnosti
+      console.log(`📱 [PROTOKOL 1] Šaljem SMS klijentu o nedostupnosti: ${data.clientName}`);
+      results.clientSMS = await this.smsService.sendTemplatedSMS(
+        'protocol_client_unavailable_to_client',
+        { phone: data.clientPhone, name: data.clientName, role: 'client' },
+        {
+          clientName: data.clientName,
+          serviceId: data.serviceId.toString(),
+          deviceType: data.deviceType,
+          unavailableReason: data.unavailableReason
+        }
+      );
+
+      // 2. SMS ADMINISTRATORIMA
+      console.log(`📱 [PROTOKOL 1] Šaljem SMS administratorima o nedostupnosti`);
+      results.adminSMS = await this.sendToAdmins('protocol_client_unavailable_to_admin', {
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        serviceId: data.serviceId.toString(),
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        unavailableReason: data.unavailableReason
+      });
+
+      // 3. SMS POSLOVNOM PARTNERU (ako postoji)
+      if (data.businessPartnerId && data.businessPartnerName) {
+        console.log(`📱 [PROTOKOL 1] Šaljem SMS poslovnom partneru: ${data.businessPartnerName}`);
+        const partnerPhone = await this.getBusinessPartnerPhone(data.businessPartnerId);
+        if (partnerPhone) {
+          results.partnerSMS = await this.smsService.sendTemplatedSMS(
+            'protocol_client_unavailable_to_partner',
+            { phone: partnerPhone, name: data.businessPartnerName, role: 'business_partner' },
+            {
+              clientName: data.clientName,
+              serviceId: data.serviceId.toString(),
+              deviceType: data.deviceType,
+              technicianName: data.technicianName,
+              businessPartnerName: data.businessPartnerName
+            }
+          );
+        }
+      }
+
+      console.log(`✅ [PROTOKOL 1] SMS protokol za nedostupnost završen uspešno`);
+      return results;
+
+    } catch (error: any) {
+      console.error(`❌ [PROTOKOL 1] Greška pri slanju SMS protokola:`, error);
+      results.success = false;
+      results.errors?.push(error.message);
+      return results;
+    }
+  }
+
+  /**
+   * PROTOKOL 2: Dodela servisa serviseru  
+   * SMS → Klijent + Admin + Partner (ako partner kreirao servis)
+   */
+  async sendServiceAssignedProtocol(data: ProtocolSMSData): Promise<ProtocolSMSResult> {
+    const results: ProtocolSMSResult = { success: true, errors: [] };
+
+    try {
+      // 1. SMS KLIJENTU o dodeli
+      console.log(`📱 [PROTOKOL 2] Šaljem SMS klijentu o dodeli: ${data.clientName}`);
+      results.clientSMS = await this.smsService.sendTemplatedSMS(
+        'protocol_service_assigned_to_client',
+        { phone: data.clientPhone, name: data.clientName, role: 'client' },
+        {
+          clientName: data.clientName,
+          serviceId: data.serviceId.toString(),
+          deviceType: data.deviceType,
+          technicianName: data.technicianName,
+          technicianPhone: data.technicianPhone
+        }
+      );
+
+      // 2. SMS ADMINISTRATORIMA
+      console.log(`📱 [PROTOKOL 2] Šaljem SMS administratorima o dodeli`);
+      results.adminSMS = await this.sendToAdmins('protocol_service_assigned_to_admin', {
+        serviceId: data.serviceId.toString(),
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        businessPartnerName: data.businessPartnerName
+      });
+
+      // 3. SMS POSLOVNOM PARTNERU (ako je partner kreirao servis)
+      if (data.businessPartnerId && data.businessPartnerName) {
+        console.log(`📱 [PROTOKOL 2] Šaljem SMS poslovnom partneru: ${data.businessPartnerName}`);
+        const partnerPhone = await this.getBusinessPartnerPhone(data.businessPartnerId);
+        if (partnerPhone) {
+          results.partnerSMS = await this.smsService.sendTemplatedSMS(
+            'protocol_service_assigned_to_partner',
+            { phone: partnerPhone, name: data.businessPartnerName, role: 'business_partner' },
+            {
+              serviceId: data.serviceId.toString(),
+              clientName: data.clientName,
+              deviceType: data.deviceType,
+              technicianName: data.technicianName,
+              businessPartnerName: data.businessPartnerName
+            }
+          );
+        }
+      }
+
+      console.log(`✅ [PROTOKOL 2] SMS protokol za dodelu završen uspešno`);
+      return results;
+
+    } catch (error: any) {
+      console.error(`❌ [PROTOKOL 2] Greška pri slanju SMS protokola:`, error);
+      results.success = false;
+      results.errors?.push(error.message);
+      return results;
+    }
+  }
+
+  /**
+   * PROTOKOL 3: Poručivanje rezervnih delova
+   * SMS → Klijent + Admin + Partner
+   */
+  async sendPartsOrderedProtocol(data: ProtocolSMSData): Promise<ProtocolSMSResult> {
+    const results: ProtocolSMSResult = { success: true, errors: [] };
+
+    try {
+      // 1. SMS KLIJENTU o rezervnim delovima
+      console.log(`📱 [PROTOKOL 3] Šaljem SMS klijentu o delovima: ${data.clientName}`);
+      results.clientSMS = await this.smsService.sendTemplatedSMS(
+        'protocol_parts_ordered_to_client',
+        { phone: data.clientPhone, name: data.clientName, role: 'client' },
+        {
+          clientName: data.clientName,
+          serviceId: data.serviceId.toString(),
+          deviceType: data.deviceType,
+          partName: data.partName,
+          estimatedDate: data.estimatedDate
+        }
+      );
+
+      // 2. SMS ADMINISTRATORIMA  
+      console.log(`📱 [PROTOKOL 3] Šaljem SMS administratorima o delovima`);
+      results.adminSMS = await this.sendToAdmins('protocol_parts_ordered_to_admin', {
+        partName: data.partName,
+        serviceId: data.serviceId.toString(),
+        clientName: data.clientName,
+        deviceType: data.deviceType,
+        technicianName: data.technicianName,
+        businessPartnerName: data.businessPartnerName
+      });
+
+      // 3. SMS POSLOVNOM PARTNERU
+      if (data.businessPartnerId && data.businessPartnerName) {
+        console.log(`📱 [PROTOKOL 3] Šaljem SMS poslovnom partneru o delovima: ${data.businessPartnerName}`);
+        const partnerPhone = await this.getBusinessPartnerPhone(data.businessPartnerId);
+        if (partnerPhone) {
+          results.partnerSMS = await this.smsService.sendTemplatedSMS(
+            'protocol_parts_ordered_to_partner',
+            { phone: partnerPhone, name: data.businessPartnerName, role: 'business_partner' },
+            {
+              partName: data.partName,
+              serviceId: data.serviceId.toString(),
+              clientName: data.clientName,
+              deviceType: data.deviceType,
+              estimatedDate: data.estimatedDate
+            }
+          );
+        }
+      }
+
+      console.log(`✅ [PROTOKOL 3] SMS protokol za delove završen uspešno`);
+      return results;
+
+    } catch (error: any) {
+      console.error(`❌ [PROTOKOL 3] Greška pri slanju SMS protokola:`, error);
+      results.success = false;
+      results.errors?.push(error.message);
+      return results;
+    }
+  }
+
+  /**
+   * PROTOKOL 5: Odbijanje popravke od strane klijenta
+   * SMS → Klijent + Admin + Partner (ako je partner uključen)
+   */
+  async sendRepairRefusedProtocol(data: ProtocolSMSData): Promise<ProtocolSMSResult> {
+    const results: ProtocolSMSResult = { success: true, errors: [] };
+
+    try {
+      // 1. SMS KLIJENTU o odbijanju (potvrda)
+      console.log(`📱 [PROTOKOL 5] Šaljem SMS klijentu o odbijanju: ${data.clientName}`);
+      results.clientSMS = await this.smsService.sendTemplatedSMS(
+        'protocol_repair_refused_to_client',
+        { phone: data.clientPhone, name: data.clientName, role: 'client' },
+        {
+          clientName: data.clientName,
+          serviceId: data.serviceId.toString(),
+          deviceType: data.deviceType
+        }
+      );
+
+      // 2. SMS ADMINISTRATORIMA
+      console.log(`📱 [PROTOKOL 5] Šaljem SMS administratorima o odbijanju`);
+      results.adminSMS = await this.sendToAdmins('protocol_repair_refused_to_admin', {
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        serviceId: data.serviceId.toString(),
+        deviceType: data.deviceType,
+        technicianName: data.technicianName
+      });
+
+      // 3. SMS POSLOVNOM PARTNERU (ako je partner uključen)
+      if (data.businessPartnerId && data.businessPartnerName) {
+        console.log(`📱 [PROTOKOL 5] Šaljem SMS poslovnom partneru o odbijanju: ${data.businessPartnerName}`);
+        const partnerPhone = await this.getBusinessPartnerPhone(data.businessPartnerId);
+        if (partnerPhone) {
+          results.partnerSMS = await this.smsService.sendTemplatedSMS(
+            'protocol_repair_refused_to_partner',
+            { phone: partnerPhone, name: data.businessPartnerName, role: 'business_partner' },
+            {
+              clientName: data.clientName,
+              serviceId: data.serviceId.toString(),
+              deviceType: data.deviceType
+            }
+          );
+        }
+      }
+
+      console.log(`✅ [PROTOKOL 5] SMS protokol za odbijanje završen uspešno`);
+      return results;
+
+    } catch (error: any) {
+      console.error(`❌ [PROTOKOL 5] Greška pri slanju SMS protokola:`, error);
+      results.success = false;
+      results.errors?.push(error.message);
+      return results;
+    }
+  }
+
+  /**
+   * PROTOKOL 6: Kreiranje novog servisa
+   * SMS → Klijent + Admin + Partner (SAMO ako partner kreirao servis)
+   * NAPOMENA: Ne šalje SMS pri kreiranju samo novog korisnika
+   */
+  async sendServiceCreatedProtocol(data: ProtocolSMSData, createdByPartner: boolean = false): Promise<ProtocolSMSResult> {
+    const results: ProtocolSMSResult = { success: true, errors: [] };
+
+    try {
+      // PROVERAVA: Da li je kreiran servis (ne samo korisnik)
+      if (!data.serviceId) {
+        console.log(`📱 [PROTOKOL 6] Preskačem - kreiran je samo korisnik, ne servis`);
+        return results;
+      }
+
+      // 1. SMS KLIJENTU o novom servisu
+      console.log(`📱 [PROTOKOL 6] Šaljem SMS klijentu o novom servisu: ${data.clientName}`);
+      results.clientSMS = await this.smsService.sendTemplatedSMS(
+        'protocol_service_created_to_client',
+        { phone: data.clientPhone, name: data.clientName, role: 'client' },
+        {
+          clientName: data.clientName,
+          serviceId: data.serviceId.toString(),
+          deviceType: data.deviceType
+        }
+      );
+
+      // 2. SMS ADMINISTRATORIMA
+      console.log(`📱 [PROTOKOL 6] Šaljem SMS administratorima o novom servisu`);
+      results.adminSMS = await this.sendToAdmins('protocol_service_created_to_admin', {
+        serviceId: data.serviceId.toString(),
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        deviceType: data.deviceType,
+        businessPartnerName: data.businessPartnerName || data.createdBy
+      });
+
+      // 3. SMS POSLOVNOM PARTNERU (SAMO ako je partner kreirao servis)
+      if (createdByPartner && data.businessPartnerId && data.businessPartnerName) {
+        console.log(`📱 [PROTOKOL 6] Šaljem SMS poslovnom partneru koji je kreirao: ${data.businessPartnerName}`);
+        const partnerPhone = await this.getBusinessPartnerPhone(data.businessPartnerId);
+        if (partnerPhone) {
+          results.partnerSMS = await this.smsService.sendTemplatedSMS(
+            'protocol_service_created_to_partner',
+            { phone: partnerPhone, name: data.businessPartnerName, role: 'business_partner' },
+            {
+              serviceId: data.serviceId.toString(),
+              clientName: data.clientName,
+              deviceType: data.deviceType,
+              businessPartnerName: data.businessPartnerName
+            }
+          );
+        }
+      }
+
+      console.log(`✅ [PROTOKOL 6] SMS protokol za kreiranje servisa završen uspešno`);
+      return results;
+
+    } catch (error: any) {
+      console.error(`❌ [PROTOKOL 6] Greška pri slanju SMS protokola:`, error);
+      results.success = false;
+      results.errors?.push(error.message);
+      return results;
+    }
+  }
+
+  // Helper funkcija - Slanje SMS svim administratorima
+  private async sendToAdmins(templateType: string, templateData: any): Promise<SMSResult[]> {
+    try {
+      const admins = await this.storage.getAllUsers();
+      const adminUsers = admins.filter((user: any) => user.role === 'admin' && user.phone);
+      
+      const results: SMSResult[] = [];
+      
+      for (const admin of adminUsers) {
+        const result = await this.smsService.sendTemplatedSMS(
+          templateType,
+          { phone: admin.phone, name: admin.fullName, role: 'admin' },
+          templateData
+        );
+        results.push(result);
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('❌ Greška pri slanju SMS administratorima:', error);
+      return [];
+    }
+  }
+
+  // Helper funkcija - Dobijanje telefona poslovnog partnera
+  private async getBusinessPartnerPhone(businessPartnerId: number): Promise<string | null> {
+    try {
+      const partner = await this.storage.getUser(businessPartnerId);
+      return partner?.phone || null;
+    } catch (error) {
+      console.error('❌ Greška pri dobijanju telefona poslovnog partnera:', error);
+      return null;
+    }
+  }
+}
+
+// Factory funkcija za kreiranje Protocol SMS Service instance
+export function createProtocolSMSService(config: SMSConfig, storage: any): ProtocolSMSService {
+  const smsService = new SMSCommunicationService(config);
+  return new ProtocolSMSService(smsService, storage);
+}

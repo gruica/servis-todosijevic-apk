@@ -4812,6 +4812,103 @@ Frigo Sistem`;
     }
   });
 
+  // ========== NOVI SMS PROTOKOL TEST ENDPOINT ==========
+  
+  app.post('/api/protocol-sms/test', jwtAuth, requireRole(['admin']), async (req: any, res) => {
+    try {
+      console.log('📱 [PROTOKOL TEST] Zahtev za test protokol SMS sistema');
+      
+      const { protocolType, serviceId, mockData } = req.body;
+      
+      // Validacija osnovnih podataka
+      if (!protocolType) {
+        return res.status(400).json({ error: 'Nije definisan tip protokola' });
+      }
+
+      // Import Protocol SMS Service
+      const { createProtocolSMSService } = await import('./sms-communication-service.js');
+      
+      // Kreiranje Protocol SMS Service instance
+      const protocolSMS = createProtocolSMSService({
+        username: process.env.SMS_USERNAME || '',
+        password: process.env.SMS_PASSWORD || '',
+        baseUrl: 'http://api.smsmobile.rs/sendsms/'
+      }, storage);
+
+      // Mock podaci za testiranje različitih protokola
+      let testData = mockData || {
+        serviceId: serviceId || 12345,
+        clientId: 1,
+        clientName: 'Marko Petrović',
+        clientPhone: '0691234567',
+        deviceType: 'Frižider',
+        deviceModel: 'Samsung RB37',
+        manufacturerName: 'Samsung',
+        technicianId: 2,
+        technicianName: 'Milan Jovanović',
+        technicianPhone: '0657891234',
+        businessPartnerId: 3,
+        businessPartnerName: 'Tech Partner d.o.o.',
+        partName: 'Kompresor',
+        estimatedDate: '3-5 dana',
+        cost: '8500',
+        unavailableReason: 'Klijent nije bio kod kuće',
+        createdBy: 'Administrator'
+      };
+
+      console.log(`📱 [PROTOKOL TEST] Pokušavam protokol: ${protocolType} za servis #${testData.serviceId}`);
+
+      let result;
+
+      // Pozivanje odgovarajućeg protokola
+      switch (protocolType) {
+        case 'client_unavailable':
+          result = await protocolSMS.sendClientUnavailableProtocol(testData);
+          break;
+          
+        case 'service_assigned':
+          result = await protocolSMS.sendServiceAssignedProtocol(testData);
+          break;
+          
+        case 'parts_ordered':
+          result = await protocolSMS.sendPartsOrderedProtocol(testData);
+          break;
+          
+        case 'repair_refused':
+          result = await protocolSMS.sendRepairRefusedProtocol(testData);
+          break;
+          
+        case 'service_created':
+          const createdByPartner = req.body.createdByPartner || false;
+          result = await protocolSMS.sendServiceCreatedProtocol(testData, createdByPartner);
+          break;
+          
+        default:
+          return res.status(400).json({ 
+            error: 'Nepoznat tip protokola', 
+            supportedTypes: ['client_unavailable', 'service_assigned', 'parts_ordered', 'repair_refused', 'service_created']
+          });
+      }
+
+      console.log(`✅ [PROTOKOL TEST] Protokol ${protocolType} završen:`, result);
+
+      res.json({
+        success: true,
+        message: `SMS protokol ${protocolType} uspešno testiran`,
+        protocolType,
+        testData,
+        results: result
+      });
+
+    } catch (error: any) {
+      console.error('❌ [PROTOKOL TEST] Greška pri testiranju SMS protokola:', error);
+      res.status(500).json({ 
+        error: 'Greška pri testiranju SMS protokola',
+        details: error.message 
+      });
+    }
+  });
+
   return server;
 }
 
