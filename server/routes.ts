@@ -4487,6 +4487,168 @@ Frigo Sistem`;
   // SMS Mobile API Routes - WhatsApp komunikacija
   app.use('/api/sms-mobile-api', createSMSMobileAPIRoutes(storage));
 
+  // ===== WHATSAPP WEB INTEGRACIJA - NOVI DODACI BEZ MIJENJANJA POSTOJEĆE STRUKTURE =====
+  // Ovaj dio dodaje WhatsApp Web funkcionalnost kao proširenje postojećeg sistema
+  
+  // Import WhatsApp Web servisa - SAMO KADA JE POTREBAN
+  let whatsappWebService: any = null;
+  
+  const getWhatsAppWebService = async () => {
+    if (!whatsappWebService) {
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      whatsappWebService = service;
+    }
+    return whatsappWebService;
+  };
+
+  // GET /api/whatsapp-web/status - Provjeri status konekcije
+  app.get('/api/whatsapp-web/status', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu koristiti WhatsApp Web" });
+      }
+
+      const service = await getWhatsAppWebService();
+      const status = service.getConnectionStatus();
+      
+      console.log(`📱 [WHATSAPP WEB] Status provjera: connected=${status.isConnected}`);
+      res.json(status);
+    } catch (error) {
+      console.error('❌ [WHATSAPP WEB] Greška pri proveri statusa:', error);
+      res.status(500).json({ error: 'Greška pri proveri WhatsApp Web statusa' });
+    }
+  });
+
+  // POST /api/whatsapp-web/initialize - Pokreni WhatsApp Web klijent
+  app.post('/api/whatsapp-web/initialize', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pokrenuti WhatsApp Web" });
+      }
+
+      const service = await getWhatsAppWebService();
+      
+      // Setup message handler za automatsko čuvanje poruka u conversation sistem
+      service.onMessage(async (message: any) => {
+        try {
+          // Pokušaj da povezeš poruku sa klijentom/servisom
+          const messageData = {
+            serviceId: null, // Može biti null ako nema vezu sa servisom
+            senderType: 'client' as const,
+            senderName: message.contact.name || message.contact.number,
+            content: message.body,
+            whatsappMessageId: message.id,
+            whatsappFrom: message.from,
+            whatsappTimestamp: new Date(message.timestamp * 1000),
+            metadata: {
+              whatsappContact: message.contact,
+              isGroup: message.isGroup,
+              hasMedia: !!message.media
+            }
+          };
+
+          // Sačuvaj u conversation sistem koristeći postojeću strukturu
+          await storage.createConversationMessage(messageData);
+          console.log(`💬 [WHATSAPP WEB] Poruka automatski sačuvana u conversation sistem`);
+        } catch (error) {
+          console.error('❌ [WHATSAPP WEB] Greška pri čuvanju poruke:', error);
+        }
+      });
+
+      await service.initialize();
+      
+      console.log(`🚀 [WHATSAPP WEB] Admin ${req.user.username} pokrenuo WhatsApp Web klijent`);
+      res.json({ success: true, message: "WhatsApp Web klijent je pokrenut" });
+    } catch (error) {
+      console.error('❌ [WHATSAPP WEB] Greška pri pokretanju:', error);
+      res.status(500).json({ error: 'Greška pri pokretanju WhatsApp Web klijenta' });
+    }
+  });
+
+  // POST /api/whatsapp-web/send-message - Pošalji poruku preko WhatsApp Web
+  app.post('/api/whatsapp-web/send-message', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu slati WhatsApp Web poruke" });
+      }
+
+      const { phoneNumber, message, serviceId } = req.body;
+
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ error: "Broj telefona i poruka su obavezni" });
+      }
+
+      const service = await getWhatsAppWebService();
+      const success = await service.sendMessage(phoneNumber, message);
+
+      if (success) {
+        // Sačuvaj poslatu poruku u conversation sistem
+        try {
+          const messageData = {
+            serviceId: serviceId || null,
+            senderType: 'admin' as const,
+            senderName: req.user.fullName || req.user.username,
+            content: message,
+            whatsappTo: phoneNumber,
+            whatsappTimestamp: new Date(),
+            metadata: {
+              sentViaWhatsAppWeb: true,
+              sentBy: req.user.username
+            }
+          };
+
+          await storage.createConversationMessage(messageData);
+          console.log(`✅ [WHATSAPP WEB] Poruka poslata i sačuvana u conversation sistem`);
+        } catch (error) {
+          console.error('❌ [WHATSAPP WEB] Greška pri čuvanju poslate poruke:', error);
+        }
+
+        res.json({ success: true, message: "Poruka je uspešno poslata preko WhatsApp Web" });
+      } else {
+        res.status(500).json({ error: "Greška pri slanju poruke preko WhatsApp Web" });
+      }
+    } catch (error) {
+      console.error('❌ [WHATSAPP WEB] Greška pri slanju poruke:', error);
+      res.status(500).json({ error: 'Greška pri slanju WhatsApp Web poruke' });
+    }
+  });
+
+  // GET /api/whatsapp-web/contacts - Dohvati WhatsApp kontakte
+  app.get('/api/whatsapp-web/contacts', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pristupiti WhatsApp kontaktima" });
+      }
+
+      const service = await getWhatsAppWebService();
+      const contacts = await service.getContacts();
+      
+      console.log(`📞 [WHATSAPP WEB] Dohvaćeno ${contacts.length} kontakata`);
+      res.json(contacts);
+    } catch (error) {
+      console.error('❌ [WHATSAPP WEB] Greška pri dohvatanju kontakata:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju WhatsApp kontakata' });
+    }
+  });
+
+  // GET /api/whatsapp-web/chats - Dohvati WhatsApp chat-ove
+  app.get('/api/whatsapp-web/chats', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pristupiti WhatsApp chat-ovima" });
+      }
+
+      const service = await getWhatsAppWebService();
+      const chats = await service.getChats();
+      
+      console.log(`💬 [WHATSAPP WEB] Dohvaćeno ${chats.length} chat-ova`);
+      res.json(chats);
+    } catch (error) {
+      console.error('❌ [WHATSAPP WEB] Greška pri dohvatanju chat-ova:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju WhatsApp chat-ova' });
+    }
+  });
+
   return server;
 }
 
