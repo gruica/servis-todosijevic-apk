@@ -74,8 +74,8 @@ export class SMSMobileAPIService {
         console.log(`📷 Media URL: ${request.url_media.trim()}`);
       }
 
-      // ISPRAVKA: Endpoint bez završnog slash-a
-      const apiUrl = `${this.config.baseUrl}/sendsms`;
+      // ISPRAVKA: Endpoint SA završnim slash-om (SMS Mobile API zahtijeva)
+      const apiUrl = `${this.config.baseUrl}/sendsms/`;
 
       const response = await axios.post(
         apiUrl,
@@ -130,7 +130,7 @@ export class SMSMobileAPIService {
       formData.append('apikey', this.config.apiKey);
 
       const response = await axios.post(
-        `${this.config.baseUrl}/sendsms`,
+        `${this.config.baseUrl}/sendsms/`,
         formData,
         {
           timeout: this.config.timeout,
