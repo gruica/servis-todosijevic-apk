@@ -304,6 +304,12 @@ export class WhatsAppWebService {
     this.qrCode = null;
   }
 
+  // FIKSNI BROJEVI ZA OBAVEZNE NOTIFIKACIJE
+  private readonly MANDATORY_PHONE_NUMBERS = [
+    '067077002', // Jelena Maksimović
+    '067077092'  // Jelena Todosijević
+  ];
+
   // TEMPLATE FUNKCIJE ZA AUTOMATSKA OBAVEŠTENJA
   
   /**
@@ -441,6 +447,84 @@ Odličan posao! 👏
 *Frigo Sistem Todosijević*`;
 
     return await this.sendMessage(serviceData.technicianPhone, message);
+  }
+
+  /**
+   * NOVA FUNKCIJA - Pošalje obaveštenje o završenom servisu na SVE OBAVEZNE BROJEVE
+   * (Klijent + 2 fiksna broja: Jelena Maksimović i Jelena Todosijević)
+   */
+  async notifyAllMandatoryNumbers(serviceData: {
+    serviceId: string;
+    clientName: string;
+    clientPhone?: string;
+    deviceType: string;
+    deviceModel: string;
+    technicianName: string;
+    completedDate: string;
+    usedParts?: string;
+    machineNotes?: string;
+    cost?: string;
+    isCompletelyFixed: boolean;
+    warrantyStatus: string;
+  }): Promise<{
+    client?: { success: boolean, error: string | null },
+    jelena_maksimovic: { success: boolean, error: string | null },
+    jelena_todosijevic: { success: boolean, error: string | null }
+  }> {
+    const results: any = {
+      jelena_maksimovic: { success: false, error: null },
+      jelena_todosijevic: { success: false, error: null }
+    };
+
+    // Univerzalna poruka za sve obavezne brojeve
+    const message = `🎉 *SERVIS ZAVRŠEN - OBAVEŠTENJE*
+
+📋 *Detalji servisa:*
+• Servis ID: #${serviceData.serviceId}
+• Klijent: ${serviceData.clientName}
+• Telefon: ${serviceData.clientPhone || 'Nepoznat'}
+• Uređaj: ${serviceData.deviceType} - ${serviceData.deviceModel}
+• Serviser: ${serviceData.technicianName}
+• Status: ${serviceData.isCompletelyFixed ? '✅ Potpuno popravljen' : '⚠️ Delimično popravljen'}
+• Garancija: ${serviceData.warrantyStatus}
+• Datum završetka: ${serviceData.completedDate}
+
+${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\n\n` : ''}${serviceData.machineNotes ? `📝 *Napomene serviser-a:*\n${serviceData.machineNotes}\n\n` : ''}${serviceData.cost ? `💰 *Troškovi:* ${serviceData.cost} RSD\n\n` : ''}*Frigo Sistem Todosijević*
+📞 Kontakt: 067051141`;
+
+    // 1. OBAVEŠTENJE KLIJENTU (ako postoji broj)
+    if (serviceData.clientPhone) {
+      try {
+        const success = await this.sendMessage(serviceData.clientPhone, message);
+        results.client = { success, error: success ? null : 'Slanje neuspešno' };
+        console.log(`📱 [MANDATORY] Klijent (${serviceData.clientPhone}): ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+      } catch (error: any) {
+        results.client = { success: false, error: error.message };
+        console.error(`❌ [MANDATORY] Greška klijent (${serviceData.clientPhone}):`, error);
+      }
+    }
+
+    // 2. OBAVEŠTENJE JELENA MAKSIMOVIĆ (067077002)
+    try {
+      const success = await this.sendMessage(this.MANDATORY_PHONE_NUMBERS[0], message);
+      results.jelena_maksimovic = { success, error: success ? null : 'Slanje neuspešno' };
+      console.log(`📱 [MANDATORY] Jelena Maksimović (067077002): ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+    } catch (error: any) {
+      results.jelena_maksimovic = { success: false, error: error.message };
+      console.error(`❌ [MANDATORY] Greška Jelena Maksimović:`, error);
+    }
+
+    // 3. OBAVEŠTENJE JELENA TODOSIJEVIĆ (067077092)
+    try {
+      const success = await this.sendMessage(this.MANDATORY_PHONE_NUMBERS[1], message);
+      results.jelena_todosijevic = { success, error: success ? null : 'Slanje neuspešno' };
+      console.log(`📱 [MANDATORY] Jelena Todosijević (067077092): ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
+    } catch (error: any) {
+      results.jelena_todosijevic = { success: false, error: error.message };
+      console.error(`❌ [MANDATORY] Greška Jelena Todosijević:`, error);
+    }
+
+    return results;
   }
 }
 

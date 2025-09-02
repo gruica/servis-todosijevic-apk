@@ -4766,13 +4766,41 @@ Frigo Sistem`;
         }
       }
 
+      // 5. NOVA FUNKCIONALNOST - OBAVEZNA OBAVEŠTENJA NA FIKSNE BROJEVE + KLIJENT
+      let mandatoryResults;
+      try {
+        mandatoryResults = await whatsappService.notifyAllMandatoryNumbers({
+          serviceId: serviceData.serviceId,
+          clientName: serviceData.clientName,
+          clientPhone: client.phone || undefined,
+          deviceType: serviceData.deviceType,
+          deviceModel: serviceData.deviceModel,
+          technicianName: serviceData.technicianName,
+          completedDate: serviceData.completedDate,
+          usedParts: serviceData.usedParts,
+          machineNotes: serviceData.machineNotes,
+          cost: serviceData.cost,
+          isCompletelyFixed: serviceData.isCompletelyFixed,
+          warrantyStatus: serviceData.warrantyStatus
+        });
+        console.log(`📢 [MANDATORY] Obavezna obaveštenja poslata:`, mandatoryResults);
+      } catch (error: any) {
+        console.error(`❌ [MANDATORY] Greška pri obaveznim obaveštenjima:`, error);
+        mandatoryResults = {
+          client: { success: false, error: error.message },
+          jelena_maksimovic: { success: false, error: error.message },
+          jelena_todosijevic: { success: false, error: error.message }
+        };
+      }
+
       console.log(`📊 [WHATSAPP AUTO] Sažetak obaveštenja za servis #${serviceId}:`, notificationResults);
 
       res.json({
         success: true,
         message: 'Automatska WhatsApp obaveštenja pokrenuta',
         serviceId,
-        results: notificationResults
+        results: notificationResults,
+        mandatoryResults // Dodáváme nova obavezna obaveštenja u odgovor
       });
 
     } catch (error: any) {
