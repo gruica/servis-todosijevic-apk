@@ -1,4 +1,5 @@
-import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
+import WhatsAppWeb from 'whatsapp-web.js';
+const { Client, LocalAuth, MessageMedia } = WhatsAppWeb;
 import QRCode from 'qrcode';
 
 export interface WhatsAppWebMessage {
