@@ -4828,11 +4828,16 @@ Frigo Sistem`;
       // Import Protocol SMS Service
       const { createProtocolSMSService } = await import('./sms-communication-service.js');
       
-      // Kreiranje Protocol SMS Service instance
+      // Dobijamo SMS konfiguraciju iz baze
+      const settingsArray = await storage.getSystemSettings();
+      const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+      
+      // Kreiranje Protocol SMS Service instance sa ispravnom konfiguracijom
       const protocolSMS = createProtocolSMSService({
-        username: process.env.SMS_USERNAME || '',
-        password: process.env.SMS_PASSWORD || '',
-        baseUrl: 'http://api.smsmobile.rs/sendsms/'
+        apiKey: settingsMap.sms_mobile_api_key,
+        baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+        senderId: settingsMap.sms_mobile_sender_id || null,
+        enabled: settingsMap.sms_mobile_enabled === 'true'
       }, storage);
 
       // Mock podaci za testiranje različitih protokola
@@ -4921,11 +4926,16 @@ export async function testAllSMSProtocols(testPhone: string) {
     // Import Protocol SMS Service
     const { createProtocolSMSService } = await import('./sms-communication-service.js');
     
-    // Kreiranje Protocol SMS Service instance
+    // Dobijamo SMS konfiguraciju iz baze
+    const settingsArray = await storage.getSystemSettings();
+    const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+    
+    // Kreiranje Protocol SMS Service instance sa ispravnom konfiguracijom
     const protocolSMS = createProtocolSMSService({
-      username: process.env.SMS_USERNAME || '',
-      password: process.env.SMS_PASSWORD || '',
-      baseUrl: 'http://api.smsmobile.rs/sendsms/'
+      apiKey: settingsMap.sms_mobile_api_key,
+      baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+      senderId: settingsMap.sms_mobile_sender_id || null,
+      enabled: settingsMap.sms_mobile_enabled === 'true'
     }, storage);
 
     const results: any[] = [];
