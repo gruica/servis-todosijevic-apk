@@ -52,6 +52,7 @@ export class WhatsAppWebService {
       }),
       puppeteer: {
         headless: true,
+        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -59,8 +60,15 @@ export class WhatsAppWebService {
           '--disable-accelerated-2d-canvas',
           '--no-first-run',
           '--no-zygote',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--single-process',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
         ]
+      },
+      webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
       }
     });
 
