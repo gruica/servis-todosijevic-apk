@@ -4912,6 +4912,91 @@ Frigo Sistem`;
   return server;
 }
 
+// ========== DIREKTNA FUNKCIJA ZA TESTIRANJE SMS PROTOKOLA ==========
+
+export async function testAllSMSProtocols(testPhone: string) {
+  console.log(`📱 [DIREKTAN TEST] Počinje testiranje svih SMS protokola na broj: ${testPhone}`);
+  
+  try {
+    // Import Protocol SMS Service
+    const { createProtocolSMSService } = await import('./sms-communication-service.js');
+    
+    // Kreiranje Protocol SMS Service instance
+    const protocolSMS = createProtocolSMSService({
+      username: process.env.SMS_USERNAME || '',
+      password: process.env.SMS_PASSWORD || '',
+      baseUrl: 'http://api.smsmobile.rs/sendsms/'
+    }, storage);
+
+    const results: any[] = [];
+
+    // Test podaci - koristimo vaš broj za sve testove
+    const baseTestData = {
+      serviceId: Date.now(), // Jedinstveni ID za test
+      clientId: 1,
+      clientName: 'TEST KLIJENT',
+      clientPhone: testPhone, // VAŠ BROJ
+      deviceType: 'TEST UREĐAJ',
+      deviceModel: 'Test Model',
+      manufacturerName: 'Test Manufacturer',
+      technicianId: 2,
+      technicianName: 'TEST TEHNIČAR',
+      technicianPhone: '0651234567',
+      businessPartnerId: 3,
+      businessPartnerName: 'TEST PARTNER',
+      partName: 'TEST DEO',
+      estimatedDate: '3-5 dana',
+      cost: '5000',
+      unavailableReason: 'Test nedostupnost',
+      createdBy: 'Administrator'
+    };
+
+    // PROTOKOL 1: Nedostupnost klijenta
+    console.log(`📱 [TEST 1] Testiram Protokol 1: Nedostupnost klijenta`);
+    const result1 = await protocolSMS.sendClientUnavailableProtocol(baseTestData);
+    results.push({ protocol: 'Nedostupnost klijenta', result: result1 });
+
+    // Pauza između testova
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // PROTOKOL 2: Dodela servisa
+    console.log(`📱 [TEST 2] Testiram Protokol 2: Dodela servisa`);
+    const result2 = await protocolSMS.sendServiceAssignedProtocol(baseTestData);
+    results.push({ protocol: 'Dodela servisa', result: result2 });
+
+    // Pauza između testova
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // PROTOKOL 3: Poručivanje delova
+    console.log(`📱 [TEST 3] Testiram Protokol 3: Poručivanje delova`);
+    const result3 = await protocolSMS.sendPartsOrderedProtocol(baseTestData);
+    results.push({ protocol: 'Poručivanje delova', result: result3 });
+
+    // Pauza između testova
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // PROTOKOL 5: Odbijanje popravke  
+    console.log(`📱 [TEST 5] Testiram Protokol 5: Odbijanje popravke`);
+    const result5 = await protocolSMS.sendRepairRefusedProtocol(baseTestData);
+    results.push({ protocol: 'Odbijanje popravke', result: result5 });
+
+    // Pauza između testova
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // PROTOKOL 6: Kreiranje servisa
+    console.log(`📱 [TEST 6] Testiram Protokol 6: Kreiranje servisa`);
+    const result6 = await protocolSMS.sendServiceCreatedProtocol(baseTestData, true);
+    results.push({ protocol: 'Kreiranje servisa', result: result6 });
+
+    console.log(`✅ [DIREKTAN TEST] Svi protokoli testirani uspešno!`);
+    return results;
+
+  } catch (error: any) {
+    console.error(`❌ [DIREKTAN TEST] Greška pri testiranju protokola:`, error);
+    throw error;
+  }
+}
+
 
 async function sendCriticalPartsAlert(partId: number, currentQuantity: number) {
   console.log(`🚨 KRITIČNI NIVO REZERVNIH DELOVA - ID: ${partId}, Trenutna količina: ${currentQuantity}`);
