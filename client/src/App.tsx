@@ -87,8 +87,17 @@ const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predicti
 const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
-import TestDeletionPage from "./pages/test-deletion";
-const DataDeletionRequestPage = TestDeletionPage;
+// Inline test komponenta sa console.log
+const SimpleTestPage = () => {
+  console.log('🟢 SimpleTestPage rendering!');
+  return (
+    <div style={{padding: '50px', backgroundColor: 'lime', color: 'black', fontSize: '24px'}}>
+      <h1>ROUTING RADI!</h1>
+      <p>Ova stranica je uspešno učitana</p>
+      <p>Trenutni URL: {window.location.href}</p>
+    </div>
+  );
+};
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -117,9 +126,10 @@ function Router() {
       
       {/* Privacy Policy - javno dostupna stranica */}
       <Route path="/privacy/policy" component={PrivacyPolicyPage} />
+      <Route path="/data-deletion-request" component={SimpleTestPage} />
       
-      {/* Data Deletion Request - javno dostupna stranica za GDPR compliance */}  
-      <Route path="/data-deletion-request" component={TestDeletionPage} />
+      {/* Test da li radi na drugom mjestu */}
+      <Route path="/test-page" component={SimpleTestPage} />
       
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
