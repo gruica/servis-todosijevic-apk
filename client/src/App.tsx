@@ -87,7 +87,7 @@ const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predicti
 const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
-const DataDeletionRequestPage = lazy(() => import("@/pages/data-deletion-request"));
+const DataDeletionRequestPage = lazy(() => import("./pages/data-deletion-request"));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
