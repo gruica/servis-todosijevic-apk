@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FrigidgeIcon, WasherIcon, AirConditionerIcon, StoveIcon } from "@/components/icons";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon } from "lucide-react";
 
 export default function HomePage() {
@@ -184,7 +184,7 @@ export default function HomePage() {
           </div>
           <div className="mt-6 text-center text-blue-200">
             <p>&copy; {new Date().getFullYear()} Frigo Sistem Todosijević. Sva prava zadržana.</p>
-            <div className="mt-2">
+            <div className="mt-2 space-x-4">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -193,6 +193,15 @@ export default function HomePage() {
               >
                 Test Email Verifikacije
               </Button>
+              <Link href="/privacy/policy">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-blue-200 border-blue-200 hover:bg-blue-800"
+                >
+                  Privacy Policy
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
