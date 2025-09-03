@@ -614,7 +614,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
       const endpoint = endpointMap[action];
       return await apiRequest(endpoint, {
         method: 'PATCH',
-        body: data
+        body: data ? JSON.stringify(data) : undefined
       });
     },
     onSuccess: () => {
@@ -650,7 +650,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
             <p className="text-sm text-muted-foreground">
               Zahtev će biti prebačen u status "requested" i bit će spreman za poručivanje.
             </p>
-            <Button onClick={() => mutation.mutate({})} disabled={mutation.isPending} className="w-full">
+            <Button onClick={() => mutation.mutate(null)} disabled={mutation.isPending} className="w-full">
               {mutation.isPending ? 'Odobravam...' : 'Odobri zahtev'}
             </Button>
           </div>
