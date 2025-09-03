@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[useAuth] JWT User data received:', userData);
       return userData;
     },
+    enabled: !!localStorage.getItem('auth_token'),
     staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
     refetchOnWindowFocus: true,
     refetchOnMount: true,
