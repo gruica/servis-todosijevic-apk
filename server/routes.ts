@@ -5196,6 +5196,104 @@ Frigo Sistem`;
     }
   });
 
+  // ===== DATA DELETION REQUEST ENDPOINTS - GDPR COMPLIANCE =====
+  
+  // Public endpoint for data deletion requests
+  app.post("/api/data-deletion-request", async (req, res) => {
+    try {
+      const { insertDataDeletionRequestSchema, dataDeletionRequests } = await import("@shared/schema");
+      
+      const validatedData = insertDataDeletionRequestSchema.parse({
+        ...req.body,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      const [newRequest] = await db.insert(dataDeletionRequests).values(validatedData).returning();
+      
+      // Send notification email to admin
+      try {
+        await emailService.sendEmail({
+          to: 'gruica@frigosistemtodosijevic.com',
+          subject: '🔒 Novi zahtev za brisanje podataka - GDPR',
+          html: `
+            <h2>🔒 Novi zahtev za brisanje podataka</h2>
+            <p><strong>Email:</strong> ${validatedData.email}</p>
+            <p><strong>Ime i prezime:</strong> ${validatedData.fullName}</p>
+            <p><strong>Telefon:</strong> ${validatedData.phone || 'Nije naveden'}</p>
+            <p><strong>Razlog:</strong> ${validatedData.reason || 'Nije naveden'}</p>
+            <p><strong>Vreme zahteva:</strong> ${new Date().toLocaleString('sr-RS')}</p>
+            <p><strong>IP adresa:</strong> ${validatedData.ipAddress}</p>
+            <hr>
+            <p>Molimo da obradi zahtev u admin panelu aplikacije.</p>
+          `
+        });
+      } catch (emailError) {
+        console.error('Greška pri slanju email notifikacije za brisanje podataka:', emailError);
+      }
+      
+      res.status(201).json({ 
+        message: "Zahtev za brisanje podataka je uspešno poslat. Kontaktiraćemo vas u najkraćem roku.",
+        requestId: newRequest.id 
+      });
+    } catch (error) {
+      console.error('Greška pri kreiranju zahteva za brisanje podataka:', error);
+      res.status(400).json({ error: "Greška pri kreiranju zahteva" });
+    }
+  });
+
+  // Admin endpoint for listing data deletion requests
+  app.get("/api/admin/data-deletion-requests", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
+      }
+      
+      const { dataDeletionRequests } = await import("@shared/schema");
+      const requests = await db.select().from(dataDeletionRequests).orderBy(desc(dataDeletionRequests.requestedAt));
+      res.json(requests);
+    } catch (error) {
+      console.error('Greška pri preuzimanju zahteva za brisanje podataka:', error);
+      res.status(500).json({ error: "Greška servera" });
+    }
+  });
+
+  // Admin endpoint for updating request status
+  app.patch("/api/admin/data-deletion-requests/:id", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
+      }
+      
+      const { dataDeletionRequests } = await import("@shared/schema");
+      const { id } = req.params;
+      const { status, adminNotes } = req.body;
+      
+      if (!['pending', 'approved', 'rejected', 'completed'].includes(status)) {
+        return res.status(400).json({ error: "Nevaljan status" });
+      }
+      
+      const [updatedRequest] = await db.update(dataDeletionRequests)
+        .set({ 
+          status, 
+          adminNotes,
+          processedAt: new Date(),
+          processedBy: req.user.id 
+        })
+        .where(eq(dataDeletionRequests.id, parseInt(id)))
+        .returning();
+      
+      if (!updatedRequest) {
+        return res.status(404).json({ error: "Zahtev nije pronađen" });
+      }
+      
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error('Greška pri ažuriranju zahteva za brisanje podataka:', error);
+      res.status(500).json({ error: "Greška servera" });
+    }
+  });
+
   return server;
 }
 

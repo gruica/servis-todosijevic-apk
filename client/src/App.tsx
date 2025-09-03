@@ -116,6 +116,9 @@ function Router() {
       {/* Privacy Policy - javno dostupna stranica */}
       <Route path="/privacy/policy" component={PrivacyPolicyPage} />
       
+      {/* Data Deletion Request - javno dostupna stranica za GDPR compliance */}
+      <Route path="/data-deletion-request" component={React.lazy(() => import('@/pages/data-deletion-request'))} />
+      
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
       <Route path="/diagnostic-services" component={DiagnosticServicesPage} />

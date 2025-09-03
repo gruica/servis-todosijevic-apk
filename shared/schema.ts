@@ -1886,4 +1886,39 @@ export const conversationMessagesRelations = relations(conversationMessages, ({ 
   }),
 }));
 
+// Data deletion requests table - GDPR compliance
+export const dataDeletionRequests = pgTable("data_deletion_requests", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  reason: text("reason"),
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  status: text("status").default("pending").notNull(), // pending, approved, rejected, completed
+  processedAt: timestamp("processed_at"),
+  processedBy: integer("processed_by"), // admin user ID
+  adminNotes: text("admin_notes"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+});
+
+export const insertDataDeletionRequestSchema = createInsertSchema(dataDeletionRequests).pick({
+  email: true,
+  fullName: true,
+  phone: true,
+  reason: true,
+  ipAddress: true,
+  userAgent: true,
+}).extend({
+  email: z.string().email("Unesite validnu email adresu").min(1, "Email adresa je obavezna"),
+  fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime i prezime je predugačko"),
+  phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
+    .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-")
+    .or(z.literal("")).optional(),
+  reason: z.string().max(500, "Razlog je predugačak").optional(),
+});
+
+export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;
+export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
+
 
