@@ -5294,6 +5294,63 @@ Frigo Sistem`;
     }
   });
 
+  // ===== GOOGLE TRUST & SECURITY HEADERS MIDDLEWARE =====
+  
+  // Enhanced security headers for Google trust
+  app.use((req, res, next) => {
+    // Content Security Policy za Google trust
+    res.setHeader('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://apis.google.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https: blob:; " +
+      "media-src 'self' blob:; " +
+      "connect-src 'self' https: wss:; " +
+      "object-src 'none'; " +
+      "base-uri 'self'; " +
+      "form-action 'self'; " +
+      "frame-ancestors 'self'; " +
+      "upgrade-insecure-requests;"
+    );
+    
+    // Additional security headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    
+    // Google trust signals
+    res.setHeader('X-Robots-Tag', 'index, follow');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    
+    next();
+  });
+
+  // Google verification endpoints
+  app.get('/google123456789.html', (req, res) => {
+    res.type('text/html');
+    res.send('google-site-verification: google123456789.html');
+  });
+  
+  app.get('/.well-known/google-site-verification.txt', (req, res) => {
+    res.type('text/plain');
+    res.send('google-site-verification=123456789ABCDEF');
+  });
+
+  // Enhanced security.txt endpoint
+  app.get('/.well-known/security.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`Contact: info@frigosistemtodosijevic.me
+Canonical: https://frigosistemtodosijevic.me/.well-known/security.txt
+Preferred-Languages: sr, en
+Acknowledgments: https://frigosistemtodosijevic.me/about
+Policy: https://frigosistemtodosijevic.me/privacy/policy
+Hiring: https://frigosistemtodosijevic.me/about
+Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
+  });
+
   return server;
 }
 

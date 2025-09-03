@@ -5,9 +5,9 @@ User-agent: *
 Allow: /
 
 # Sitemap lokacije
-Sitemap: https://www.frigosistemtodosijevic.me/sitemap.xml
-Sitemap: https://www.frigosistemtodosijevic.me/sitemap-images.xml
-Sitemap: https://www.frigosistemtodosijevic.me/sitemap-business.xml
+Sitemap: https://frigosistemtodosijevic.me/sitemap.xml
+Sitemap: https://frigosistemtodosijevic.me/sitemap-images.xml
+Sitemap: https://frigosistemtodosijevic.me/sitemap-business.xml
 
 # Zabrani adminstrativne oblasti
 Disallow: /admin/
@@ -44,10 +44,13 @@ Allow: /garancija
 Allow: /cesto-pitana-pitanja
 Allow: /novi-sad
 Allow: /business-auth
+Allow: /privacy/policy
+Allow: /data-deletion-request
 Allow: /offline.html
 Allow: /manifest.json
 Allow: /sw.js
 Allow: /.well-known/
+Allow: /google*.html
 
 # Specifični bot-ovi
 User-agent: Googlebot

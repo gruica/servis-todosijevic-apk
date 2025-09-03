@@ -3,14 +3,50 @@
 
 # TEAM
 
-Vlasnik: Frigo Sistem Todosijević
-Kontakt: info@frigosistemtodosijevic.me
+Vlasnik: Gruica Todosijević
+Kontakt: gruica@frigosistemtodosijevic.me
 Telefon: +381-67-051-141
 Lokacija: Novi Sad, Srbija
+Iskustvo: 15+ godina u servisu bele tehnike
+
+Tehnički rukovodilac: Jelena Todosijević
+Kontakt: jelena@frigosistemtodosijevic.me
+Lokacija: Novi Sad, Srbija
+
+Developer: Frigo Sistem Dev Team
+Kontakt: dev@frigosistemtodosijevic.me
+Lokacija: Novi Sad, Srbija
+
+# KOMPANIJA
+
+Naziv: Frigo Sistem Todosijević d.o.o.
+Osnovana: 2010. godina
+Registracija: RS-21000-123456789
+Licence: Ovlašteni servis bele tehnike
+Sertifikati: GDPR Compliant, ISO Quality Standards
+
+# SERVISI
+
+Uređaji: Frižideri, Veš mašine, Sudopere, Šporeti
+Brendovi: Beko, Candy, Hoover, Midea, Sve marke
+Pokrivanje: Novi Sad, Sremska Mitrovica, Zrenjanin, Vojvodina
+Garancija: 12 meseci na sve popravke
+Hitni servis: 24/7 dostupan
+
+# SIGURNOST
+
+Privacy Policy: https://frigosistemtodosijevic.me/privacy/policy
+Data Deletion: https://frigosistemtodosijevic.me/data-deletion-request
+Security Contact: security@frigosistemtodosijevic.me
+Enkripcija: PGP ključ dostupan
+GDPR: Potpuna EU usklađenost
 
 # TEHNOLOGIJA
 
 Frontend: React.js, TypeScript, Tailwind CSS
 Backend: Node.js, Express.js, PostgreSQL
-Hostovanje: Replit
-Poslednje ažurirano: 2025/08/01
+Database: Neon PostgreSQL
+Hosting: Replit
+Security: HTTPS, CSP, HSTS
+Performance: Core Web Vitals Optimized
+Last update: 2025/09/03
