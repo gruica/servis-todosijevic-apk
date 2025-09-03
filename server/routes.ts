@@ -305,9 +305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "ordered", // Menjamo iz "admin_ordered" u "ordered" za kompatibilnost sa frontend-om
         supplierName,
         expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
-        adminNotes,
-        orderedBy: req.user.id,
-        orderedAt: new Date()
+        adminNotes: adminNotes ? `${adminNotes} (Poručio: ${req.user.fullName || req.user.username})` : `Poručio: ${req.user.fullName || req.user.username}`,
+        orderDate: new Date()
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
@@ -498,10 +497,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // DIREKTNO PREBACI U "ADMIN_ORDERED" UMESTO "REQUESTED"
       const updatedOrder = await storage.updateSparePartOrderStatus(orderId, {
         status: 'admin_ordered',
-        approvedBy: req.user.id,
-        approvedAt: new Date(),
-        orderedBy: req.user.id,
-        orderedAt: new Date()
+        adminNotes: existingOrder.adminNotes ? `${existingOrder.adminNotes} | Odobrio: ${req.user.fullName || req.user.username}` : `Odobrio: ${req.user.fullName || req.user.username}`,
+        orderDate: new Date()
       });
       
       if (!updatedOrder) {
