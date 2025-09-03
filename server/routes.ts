@@ -295,16 +295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { supplierName, estimatedDelivery, adminNotes, urgency = 'normal' } = req.body;
 
       // Dohvati kompletan order sa svim povezanim podacima
-      const existingOrder = await storage.getSparePartOrderById(orderId);
+      const existingOrder = await storage.getSparePartOrder(orderId);
       if (!existingOrder) {
         return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
       }
 
       // Ažuriraj status porudžbine
       const order = await storage.updateSparePartOrderStatus(orderId, {
-        status: "ordered", // Menjamo iz "admin_ordered" u "ordered" za kompatibilnost sa frontend-om
+        status: "ordered",
         supplierName,
-        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+        expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : undefined,
         adminNotes: adminNotes ? `${adminNotes} (Poručio: ${req.user.fullName || req.user.username})` : `Poručio: ${req.user.fullName || req.user.username}`,
         orderDate: new Date()
       });
@@ -320,13 +320,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let technicianData = null;
 
         if (existingOrder.serviceId) {
-          serviceData = await storage.getServiceById(existingOrder.serviceId);
+          serviceData = await storage.getService(existingOrder.serviceId);
           if (serviceData) {
             if (serviceData.clientId) {
-              clientData = await storage.getClientById(serviceData.clientId);
+              clientData = await storage.getClient(serviceData.clientId);
             }
             if (serviceData.applianceId) {
-              applianceData = await storage.getApplianceById(serviceData.applianceId);
+              applianceData = await storage.getAppliance(serviceData.applianceId);
             }
             if (serviceData.technicianId) {
               technicianData = await storage.getTechnician(serviceData.technicianId);
@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
-            technicianData?.name || 'N/A',
+            technicianData?.fullName || 'N/A',
             deviceType,
             manufacturerName,
             existingOrder.partName,
@@ -562,13 +562,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let technicianData = null;
 
         if (existingOrder.serviceId) {
-          serviceData = await storage.getServiceById(existingOrder.serviceId);
+          serviceData = await storage.getService(existingOrder.serviceId);
           if (serviceData) {
             if (serviceData.clientId) {
-              clientData = await storage.getClientById(serviceData.clientId);
+              clientData = await storage.getClient(serviceData.clientId);
             }
             if (serviceData.applianceId) {
-              applianceData = await storage.getApplianceById(serviceData.applianceId);
+              applianceData = await storage.getAppliance(serviceData.applianceId);
             }
             if (serviceData.technicianId) {
               technicianData = await storage.getTechnician(serviceData.technicianId);
@@ -589,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
-            technicianData?.name || 'N/A',
+            technicianData?.fullName || 'N/A',
             deviceType,
             manufacturerName,
             existingOrder.partName,
