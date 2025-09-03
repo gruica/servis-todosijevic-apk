@@ -3029,16 +3029,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 console.log(`[SERVICE COMPLETE] 📱 Šalje SMS: "${message}"`);
                 
-                // Pozivam SMS sa ispravnim parametrima
+                // 📱 POTPRAVKA SMS LOGIKE - Uključuju sve strane: klijent + partner + admin
+                const technician = serviceWithDetails.technician;
+                const appliance = serviceWithDetails.appliance;
+                const manufacturer = serviceWithDetails.manufacturer;
+                const businessPartner = serviceWithDetails.businessPartner;
+                const category = serviceWithDetails.category;
+                
+                console.log(`[SMS LOGIKA] 🔧 Pozivam SMS za sve strane:`);
+                console.log(`[SMS LOGIKA] 👤 Klijent: ${client.fullName} (${client.phone})`);
+                console.log(`[SMS LOGIKA] 🏢 Partner: ${businessPartner?.fullName || 'Nema'} (${businessPartner?.phone || 'Nema'})`);
+                console.log(`[SMS LOGIKA] 👷 Tehničar: ${technician?.fullName || 'Nema'}`);
+                
                 await smsService.notifyServiceStatusChange({
                   serviceId: serviceId.toString(),
                   clientPhone: client.phone,
                   clientName: client.fullName,
+                  technicianName: technician?.fullName || 'Serviser',
+                  deviceType: category?.name || appliance?.model || 'Uređaj',
+                  manufacturerName: manufacturer?.name,
+                  oldStatus: 'in_progress',
                   newStatus: 'completed',
                   statusDescription: 'Završen',
                   technicianNotes: `${workPerformed} | Cena: ${cost || 'Besplatno'} RSD`,
-                  businessPartnerPhone: null,
-                  businessPartnerName: null
+                  businessPartnerPhone: businessPartner?.phone || undefined,
+                  businessPartnerName: businessPartner?.fullName || undefined
                 });
                 
                 console.log(`[SERVICE COMPLETE] ✅ SMS poslat klijentu ${client.fullName} (${client.phone})`);
@@ -3342,13 +3357,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const appliance = await storage.getAppliance(service.applianceId);
                   const category = appliance ? await storage.getApplianceCategory(appliance.categoryId) : null;
                   
-                  const smsResult = await smsService.notifyServiceCompleted({
+                  // 📱 POPRAVKA: Koristi notifyServiceStatusChange umesto notifyServiceCompleted
+                  // Da šalje SMS klijentu + partneru + administratorima
+                  const businessPartner = service.businessPartnerId ? await storage.getUser(service.businessPartnerId) : null;
+                  const manufacturer = appliance?.manufacturerId ? await storage.getManufacturer(appliance.manufacturerId) : null;
+                  
+                  console.log(`[SMS AUTOMATSKI] 🔧 Pozivam SMS za sve strane (servis završen):`);
+                  console.log(`[SMS AUTOMATSKI] 👤 Klijent: ${client.fullName} (${client.phone})`);
+                  console.log(`[SMS AUTOMATSKI] 🏢 Partner: ${businessPartner?.fullName || 'Nema'} (${businessPartner?.phone || 'Nema'})`);
+                  console.log(`[SMS AUTOMATSKI] 👷 Tehničar: ${technicianName}`);
+                  
+                  const smsResults = await smsService.notifyServiceStatusChange({
+                    serviceId: serviceId.toString(),
                     clientPhone: client.phone,
                     clientName: client.fullName,
-                    serviceId: serviceId.toString(),
+                    technicianName: technicianName,
                     deviceType: category?.name || 'Uređaj',
-                    technicianName: technicianName
+                    manufacturerName: manufacturer?.name,
+                    oldStatus: 'in_progress',
+                    newStatus: 'completed',
+                    statusDescription: 'Završen',
+                    technicianNotes: req.body.technicianNotes,
+                    businessPartnerPhone: businessPartner?.phone || undefined,
+                    businessPartnerName: businessPartner?.fullName || undefined
                   });
+                  
+                  const smsResult = smsResults.clientSMS || { success: false, error: 'Klijent SMS neuspešan' };
                   
                   if (smsResult.success) {
                     console.log(`📱 Automatski SMS o završetku servisa poslat klijentu ${client.fullName} (${client.phone})`);
