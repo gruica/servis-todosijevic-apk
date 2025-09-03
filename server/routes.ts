@@ -475,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 4.5. NOVI ENDPOINT - Odobri pending zahtev (pending -> requested)
+  // 4.5. POBOLJŠAN ENDPOINT - Odobri pending zahtev (pending → admin_ordered + auto email/SMS)
   app.patch("/api/admin/spare-parts/:id/approve-pending", jwtAuth, async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
@@ -495,21 +495,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Samo zahtevi sa statusom 'pending' mogu biti odobreni" });
       }
       
-      // Prebaci status iz 'pending' u 'requested'
+      // DIREKTNO PREBACI U "ADMIN_ORDERED" UMESTO "REQUESTED"
       const updatedOrder = await storage.updateSparePartOrderStatus(orderId, {
-        status: 'requested',
-        requestedBy: req.user.id,
-        requestedAt: new Date().toISOString()
+        status: 'admin_ordered',
+        approvedBy: req.user.id,
+        approvedAt: new Date(),
+        orderedBy: req.user.id,
+        orderedAt: new Date()
       });
       
       if (!updatedOrder) {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa zahteva" });
       }
       
-      console.log(`✅ [APPROVE-PENDING] Zahtev ${orderId} uspešno prebačen iz pending u requested`);
+      console.log(`✅ [APPROVE-PENDING → ADMIN_ORDERED] Zahtev ${orderId} uspešno odobren i automatski poručen`);
+
+      // AUTOMATSKI EMAIL/SMS SISTEM (kopiran iz order endpoint-a)
+      try {
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
+
+        if (existingOrder.serviceId) {
+          serviceData = await storage.getServiceById(existingOrder.serviceId);
+          if (serviceData) {
+            if (serviceData.clientId) {
+              clientData = await storage.getClientById(serviceData.clientId);
+            }
+            if (serviceData.applianceId) {
+              applianceData = await storage.getApplianceById(serviceData.applianceId);
+            }
+            if (serviceData.technicianId) {
+              technicianData = await storage.getTechnician(serviceData.technicianId);
+            }
+          }
+        }
+
+        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        const isComPlus = isComplusBrand(manufacturerName);
+
+        console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
+
+        // 🎯 COMPLUS BREND - Automatski email na servis@complus.me
+        if (isComPlus) {
+          console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
+          
+          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          const complusEmailSent = await emailService.sendComplusSparePartOrder(
+            existingOrder.serviceId || 0,
+            clientData?.fullName || 'N/A',
+            technicianData?.name || 'N/A',
+            deviceType,
+            manufacturerName,
+            existingOrder.partName,
+            existingOrder.partNumber || 'N/A',
+            'normal', // urgency default
+            existingOrder.description
+          );
+
+          if (complusEmailSent) {
+            console.log(`🎯 [AUTO-COMPLUS EMAIL] ✅ ComPlus email uspešno poslat za odobreni deo: ${existingOrder.partName}`);
+          } else {
+            console.error(`🎯 [AUTO-COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
+          }
+        }
+      } catch (emailError) {
+        console.error("📧 [AUTO-EMAIL ERROR] Greška pri automatskom slanju email-a:", emailError);
+        // Email greška ne prekida workflow
+      }
+
       res.json({ 
         success: true, 
-        message: "Zahtev je uspešno odobren", 
+        message: "Zahtev je uspešno odobren i automatski poručen", 
         order: updatedOrder 
       });
       
