@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Ažuriraj status porudžbine
       const order = await storage.updateSparePartOrderStatus(orderId, {
-        status: "ordered",
+        status: "admin_ordered",
         supplierName,
         expectedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : undefined,
         adminNotes: adminNotes ? `${adminNotes} (Poručio: ${req.user.fullName || req.user.username})` : `Poručio: ${req.user.fullName || req.user.username}`,
