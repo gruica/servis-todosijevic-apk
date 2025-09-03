@@ -475,6 +475,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 4.5. NOVI ENDPOINT - Odobri pending zahtev (pending -> requested)
+  app.patch("/api/admin/spare-parts/:id/approve-pending", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu da odobravaju pending zahteve" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      console.log(`✅ [APPROVE-PENDING] Admin odobrava pending zahtev ID: ${orderId}`);
+      
+      // Proverava da li order postoji i da li je u pending statusu
+      const existingOrder = await storage.getSparePartOrder(orderId);
+      if (!existingOrder) {
+        return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
+      }
+      
+      if (existingOrder.status !== 'pending') {
+        return res.status(400).json({ error: "Samo zahtevi sa statusom 'pending' mogu biti odobreni" });
+      }
+      
+      // Prebaci status iz 'pending' u 'requested'
+      const updatedOrder = await storage.updateSparePartOrderStatus(orderId, {
+        status: 'requested',
+        requestedBy: req.user.id,
+        requestedAt: new Date().toISOString()
+      });
+      
+      if (!updatedOrder) {
+        return res.status(500).json({ error: "Greška pri ažuriranju statusa zahteva" });
+      }
+      
+      console.log(`✅ [APPROVE-PENDING] Zahtev ${orderId} uspešno prebačen iz pending u requested`);
+      res.json({ 
+        success: true, 
+        message: "Zahtev je uspešno odobren", 
+        order: updatedOrder 
+      });
+      
+    } catch (error) {
+      console.error('❌ [APPROVE-PENDING] Greška pri odobravanju pending zahteva:', error);
+      res.status(500).json({ error: "Greška pri odobravanju zahteva" });
+    }
+  });
+
   // 5. Serviser označava da je potrošio rezervni deo
   app.patch("/api/technician/spare-parts/:id/consume", jwtAuth, async (req, res) => {
     try {

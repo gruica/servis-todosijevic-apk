@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { SparePartsManagement } from "@/components/admin/SparePartsManagement";
 import SparePartsOrders from "@/components/admin/SparePartsOrders";
-import { SparePartsWorkflow } from "@/components/admin/SparePartsWorkflow";
+import { SparePartsWorkflowEnhanced } from "@/components/admin/SparePartsWorkflow";
 import { AvailablePartsManagement } from "@/components/admin/AvailablePartsManagement";
 import { PartsActivityLog } from "@/components/admin/PartsActivityLog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +27,7 @@ export default function AdminSparePartsPage() {
           </TabsList>
           
           <TabsContent value="workflow" className="space-y-4">
-            <SparePartsWorkflow />
+            <SparePartsWorkflowEnhanced />
           </TabsContent>
           
           <TabsContent value="orders" className="space-y-4">
