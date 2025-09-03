@@ -87,7 +87,8 @@ const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predicti
 const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
-const DataDeletionRequestPage = lazy(() => import("./pages/test-deletion"));
+import TestDeletionPage from "./pages/test-deletion";
+const DataDeletionRequestPage = TestDeletionPage;
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -118,7 +119,7 @@ function Router() {
       <Route path="/privacy/policy" component={PrivacyPolicyPage} />
       
       {/* Data Deletion Request - javno dostupna stranica za GDPR compliance */}  
-      <Route path="/data-deletion-request" component={DataDeletionRequestPage} />
+      <Route path="/data-deletion-request" component={TestDeletionPage} />
       
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
