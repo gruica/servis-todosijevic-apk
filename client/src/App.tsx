@@ -86,6 +86,7 @@ const ServisKomerc = lazy(() => import("@/pages/admin/servis-komerc"));
 const AIPredictiveMaintenancePage = lazy(() => import("@/pages/admin/ai-predictive-maintenance"));
 const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -111,6 +112,9 @@ function Router() {
       <Switch>
       {/* Public home page - novi javni homepage za sve korisnike */}
       <Route path="/" component={HomePage} />
+      
+      {/* Privacy Policy - javno dostupna stranica */}
+      <Route path="/privacy/policy" component={PrivacyPolicyPage} />
       
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
