@@ -8,7 +8,7 @@ export function RoleProtectedRoute({
   allowedRoles
 }: {
   path: string;
-  component: () => React.JSX.Element;
+  component: React.ComponentType<any>;
   allowedRoles: string[];
 }) {
   const { user, isLoading } = useAuth();
