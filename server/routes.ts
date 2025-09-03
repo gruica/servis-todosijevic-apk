@@ -406,6 +406,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Email greška ne prekida workflow - admin je svakako poručio deo
       }
 
+      // 📱 SMS PROTOKOL ZA PORUČIVANJE DELOVA
+      try {
+        const { createProtocolSMSService } = await import('./sms-communication-service.js');
+        
+        // Dobijamo SMS konfiguraciju iz baze
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        
+        // Kreiranje Protocol SMS Service instance
+        const protocolSMS = createProtocolSMSService({
+          apiKey: settingsMap.sms_mobile_api_key,
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        }, storage);
+
+        if (existingOrder.serviceId && clientData && technicianData) {
+          const smsData = {
+            serviceId: existingOrder.serviceId,
+            clientId: serviceData?.clientId || 0,
+            clientName: clientData.fullName,
+            clientPhone: clientData.phone,
+            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceModel: applianceData?.model || 'N/A',
+            manufacturerName: manufacturerName,
+            technicianId: technicianData.id,
+            technicianName: technicianData.name,
+            technicianPhone: technicianData.phone || '067123456',
+            partName: existingOrder.partName,
+            estimatedDate: estimatedDelivery || '3-5 dana',
+            createdBy: req.user.fullName || req.user.username
+          };
+
+          console.log(`📱 [ORDER-SMS-PROTOCOL] Šaljem SMS protokol za poručeni deo ID: ${orderId}`);
+          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
+          
+          if (smsResult.success) {
+            console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
+          } else {
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+          }
+        }
+      } catch (smsError) {
+        console.error("📱 [ORDER-SMS-PROTOCOL ERROR] Greška pri slanju SMS protokola:", smsError);
+        // SMS greška ne prekida workflow
+      }
+
       res.json({ 
         success: true, 
         message: "Rezervni deo je uspešno poručen", 
@@ -560,6 +607,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (emailError) {
         console.error("📧 [AUTO-EMAIL ERROR] Greška pri automatskom slanju email-a:", emailError);
         // Email greška ne prekida workflow
+      }
+
+      // 📱 AUTOMATSKI SMS PROTOKOL ZA PORUČIVANJE DELOVA
+      try {
+        const { createProtocolSMSService } = await import('./sms-communication-service.js');
+        
+        // Dobijamo SMS konfiguraciju iz baze
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        
+        // Kreiranje Protocol SMS Service instance
+        const protocolSMS = createProtocolSMSService({
+          apiKey: settingsMap.sms_mobile_api_key,
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        }, storage);
+
+        if (existingOrder.serviceId && clientData && technicianData) {
+          const smsData = {
+            serviceId: existingOrder.serviceId,
+            clientId: serviceData?.clientId || 0,
+            clientName: clientData.fullName,
+            clientPhone: clientData.phone,
+            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceModel: applianceData?.model || 'N/A',
+            manufacturerName: manufacturerName,
+            technicianId: technicianData.id,
+            technicianName: technicianData.name,
+            technicianPhone: technicianData.phone || '067123456',
+            partName: existingOrder.partName,
+            estimatedDate: '3-5 dana',
+            createdBy: req.user.fullName || req.user.username
+          };
+
+          console.log(`📱 [SMS-PARTS-ORDERED] Šaljem SMS protokol za poručene delove`);
+          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
+          
+          if (smsResult.success) {
+            console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
+          } else {
+            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+          }
+        }
+      } catch (smsError) {
+        console.error("📱 [SMS-PARTS-ORDERED ERROR] Greška pri slanju SMS protokola:", smsError);
+        // SMS greška ne prekida workflow
       }
 
       res.json({ 
