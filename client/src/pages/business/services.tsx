@@ -16,7 +16,8 @@ import {
   Tag,
   AlertTriangle,
   UserX,
-  PhoneOff
+  PhoneOff,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -80,6 +81,13 @@ interface ServiceItem {
     fullName: string;
     specialization: string;
   };
+  spareParts?: Array<{
+    partName: string;
+    quantity?: number;
+    status: string;
+    orderDate?: string;
+    estimatedDeliveryDate?: string;
+  }>;
 }
 
 
@@ -178,7 +186,7 @@ export default function BusinessServices() {
   });
 
   // Izvuci services iz API response - API vraća objekat sa services propertijem
-  const services: ServiceItem[] = businessData?.services || [];
+  const services: ServiceItem[] = (businessData as any)?.services || [];
 
 
 
@@ -292,6 +300,7 @@ export default function BusinessServices() {
                       <TableHead>Status</TableHead>
                       <TableHead>Kreiran</TableHead>
                       <TableHead>Serviser</TableHead>
+                      <TableHead>Djelovi</TableHead>
                       <TableHead className="text-right">Akcije</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -329,6 +338,9 @@ export default function BusinessServices() {
                         </TableCell>
                         <TableCell>
                           {service.technician?.fullName || "Nije dodeljen"}
+                        </TableCell>
+                        <TableCell>
+                          <SparePartsStatus service={service} />
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
@@ -606,5 +618,45 @@ export default function BusinessServices() {
         </DialogContent>
       </Dialog>
     </BusinessLayout>
+  );
+}
+
+// Component for displaying spare parts status
+function SparePartsStatus({ service }: { service: ServiceItem }) {
+  if (!service.spareParts || service.spareParts.length === 0) {
+    return (
+      <div className="flex items-center text-gray-400">
+        <Package className="h-4 w-4 mr-1" />
+        <span className="text-sm">Nema</span>
+      </div>
+    );
+  }
+
+  const totalParts = service.spareParts.length;
+  const receivedParts = service.spareParts.filter(part => part.status === 'received').length;
+  const orderedParts = service.spareParts.filter(part => part.status === 'ordered').length;
+
+  const getStatusColor = () => {
+    if (receivedParts === totalParts) return "text-green-600";
+    if (orderedParts > 0) return "text-blue-600";
+    return "text-gray-600";
+  };
+
+  const getStatusText = () => {
+    if (receivedParts === totalParts) return "Stigli";
+    if (orderedParts > 0) return "Naručeni";
+    return "Potrebni";
+  };
+
+  return (
+    <div className={`flex items-center ${getStatusColor()}`}>
+      <Package className="h-4 w-4 mr-1" />
+      <span className="text-sm font-medium">
+        {receivedParts}/{totalParts}
+      </span>
+      <span className="text-xs ml-1">
+        {getStatusText()}
+      </span>
+    </div>
   );
 }
