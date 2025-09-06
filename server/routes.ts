@@ -5351,6 +5351,151 @@ Hiring: https://frigosistemtodosijevic.me/about
 Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
   });
 
+  // ================================================================================================
+  // WHATSAPP BUSINESS API ENDPOINTS - DODANO PRE RETURN STATEMENT-A
+  // ================================================================================================
+
+  const { whatsappBusinessAPIService } = await import('./whatsapp-business-api-service.js');
+
+  /**
+   * WHATSAPP BUSINESS API - Konfiguracija servisa
+   */
+  app.post('/api/whatsapp-business/config', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { accessToken, phoneNumberId, apiVersion, baseUrl } = req.body;
+
+      if (!accessToken || !phoneNumberId) {
+        return res.status(400).json({ 
+          error: 'accessToken i phoneNumberId su obavezni'
+        });
+      }
+
+      // Ažurira konfiguraciju servisa
+      whatsappBusinessAPIService.updateConfig({
+        accessToken,
+        phoneNumberId,
+        apiVersion: apiVersion || 'v23.0',
+        baseUrl: baseUrl || 'https://graph.facebook.com'
+      });
+
+      // Sačuva konfiguraciju u bazu (osim access token-a iz bezbednosnih razloga)
+      await storage.setSystemSetting('whatsapp_business_phone_number_id', phoneNumberId);
+      await storage.setSystemSetting('whatsapp_business_api_version', apiVersion || 'v23.0');
+      if (baseUrl) {
+        await storage.setSystemSetting('whatsapp_business_base_url', baseUrl);
+      }
+
+      console.log('✅ [WHATSAPP BUSINESS API] Konfiguracija ažurirana uspešno');
+
+      res.json({
+        success: true,
+        message: 'WhatsApp Business API konfiguracija uspešno ažurirana',
+        config: whatsappBusinessAPIService.getCurrentConfig()
+      });
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri ažuriranju konfiguracije',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * WHATSAPP BUSINESS API - Dobija trenutnu konfiguraciju
+   */
+  app.get('/api/whatsapp-business/config', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Učitava konfiguraciju iz baze
+      const phoneNumberId = await storage.getSystemSetting('whatsapp_business_phone_number_id');
+      const apiVersion = await storage.getSystemSetting('whatsapp_business_api_version');
+      const baseUrl = await storage.getSystemSetting('whatsapp_business_base_url');
+
+      if (phoneNumberId) {
+        whatsappBusinessAPIService.updateConfig({
+          accessToken: '', // Ne učitavamo access token iz baze iz bezbednosnih razloga
+          phoneNumberId: phoneNumberId.value || '',
+          apiVersion: apiVersion?.value || 'v23.0',
+          baseUrl: baseUrl?.value || 'https://graph.facebook.com'
+        });
+      }
+
+      const config = whatsappBusinessAPIService.getCurrentConfig();
+      const status = whatsappBusinessAPIService.getConfigurationStatus();
+
+      res.json({
+        config,
+        status,
+        message: status.isConfigured ? 'Servis je konfigurisan' : `Nedostaju polja: ${status.missingFields.join(', ')}`
+      });
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri dobijanju konfiguracije',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * WHATSAPP BUSINESS API - Test konekcije
+   */
+  app.post('/api/whatsapp-business/test-connection', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('🔧 [WHATSAPP BUSINESS API] Testira konekciju...');
+      const testResult = await whatsappBusinessAPIService.testConnection();
+
+      res.json({
+        success: testResult.success,
+        message: testResult.message,
+        details: testResult.details,
+        config: whatsappBusinessAPIService.getCurrentConfig()
+      });
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri testiranju konekcije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri testiranju konekcije',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * WHATSAPP BUSINESS API - Šalje tekstualnu poruku
+   */
+  app.post('/api/whatsapp-business/send-text', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const { phoneNumber, message, previewUrl } = req.body;
+
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ 
+          error: 'phoneNumber i message su obavezni'
+        });
+      }
+
+      console.log(`📱 [WHATSAPP BUSINESS API] Šalje tekstualnu poruku na ${phoneNumber}: ${message.substring(0, 50)}...`);
+      const result = await whatsappBusinessAPIService.sendTextMessage(phoneNumber, message, previewUrl || false);
+
+      if (result.success) {
+        console.log(`✅ [WHATSAPP BUSINESS API] Poruka uspešno poslata. Message ID: ${result.messageId}`);
+      }
+
+      res.json(result);
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju poruke',
+        details: error.message
+      });
+    }
+  });
+
+  console.log('📱 [WHATSAPP BUSINESS API] Endpoint-i uspešno registrovani');
+
   return server;
 }
 
@@ -5473,336 +5618,3 @@ async function sendCriticalPartsAlert(partId: number, currentQuantity: number) {
   }
 }
 
-// ================================================================================================
-// WHATSAPP BUSINESS API ENDPOINTS - DODANO NA KRAJ POSTOJEĆEG KODA
-// ================================================================================================
-
-import { whatsappBusinessAPIService } from './whatsapp-business-api-service.js';
-
-/**
- * WHATSAPP BUSINESS API - Konfiguracija servisa
- */
-app.post('/api/whatsapp-business/config', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const { accessToken, phoneNumberId, apiVersion, baseUrl } = req.body;
-
-    if (!accessToken || !phoneNumberId) {
-      return res.status(400).json({ 
-        error: 'accessToken i phoneNumberId su obavezni'
-      });
-    }
-
-    // Ažurira konfiguraciju servisa
-    whatsappBusinessAPIService.updateConfig({
-      accessToken,
-      phoneNumberId,
-      apiVersion: apiVersion || 'v23.0',
-      baseUrl: baseUrl || 'https://graph.facebook.com'
-    });
-
-    // Sačuva konfiguraciju u bazu (osim access token-a iz bezbednosnih razloga)
-    await storage.setSystemSetting('whatsapp_business_phone_number_id', phoneNumberId);
-    await storage.setSystemSetting('whatsapp_business_api_version', apiVersion || 'v23.0');
-    if (baseUrl) {
-      await storage.setSystemSetting('whatsapp_business_base_url', baseUrl);
-    }
-
-    console.log('✅ [WHATSAPP BUSINESS API] Konfiguracija ažurirana uspešno');
-
-    res.json({
-      success: true,
-      message: 'WhatsApp Business API konfiguracija uspešno ažurirana',
-      config: whatsappBusinessAPIService.getCurrentConfig()
-    });
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
-    res.status(500).json({ 
-      error: 'Greška pri ažuriranju konfiguracije',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Dobija trenutnu konfiguraciju
- */
-app.get('/api/whatsapp-business/config', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    // Učitava konfiguraciju iz baze
-    const phoneNumberId = await storage.getSystemSetting('whatsapp_business_phone_number_id');
-    const apiVersion = await storage.getSystemSetting('whatsapp_business_api_version');
-    const baseUrl = await storage.getSystemSetting('whatsapp_business_base_url');
-
-    if (phoneNumberId) {
-      whatsappBusinessAPIService.updateConfig({
-        accessToken: '', // Ne učitavamo access token iz baze iz bezbednosnih razloga
-        phoneNumberId: phoneNumberId.value || '',
-        apiVersion: apiVersion?.value || 'v23.0',
-        baseUrl: baseUrl?.value || 'https://graph.facebook.com'
-      });
-    }
-
-    const config = whatsappBusinessAPIService.getCurrentConfig();
-    const status = whatsappBusinessAPIService.getConfigurationStatus();
-
-    res.json({
-      config,
-      status,
-      message: status.isConfigured ? 'Servis je konfigurisan' : `Nedostaju polja: ${status.missingFields.join(', ')}`
-    });
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
-    res.status(500).json({ 
-      error: 'Greška pri dobijanju konfiguracije',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Test konekcije
- */
-app.post('/api/whatsapp-business/test-connection', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    console.log('🔧 [WHATSAPP BUSINESS API] Testira konekciju...');
-    const testResult = await whatsappBusinessAPIService.testConnection();
-
-    res.json({
-      success: testResult.success,
-      message: testResult.message,
-      details: testResult.details,
-      config: whatsappBusinessAPIService.getCurrentConfig()
-    });
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri testiranju konekcije:', error);
-    res.status(500).json({ 
-      error: 'Greška pri testiranju konekcije',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Šalje tekstualnu poruku
- */
-app.post('/api/whatsapp-business/send-text', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const { phoneNumber, message, previewUrl } = req.body;
-
-    if (!phoneNumber || !message) {
-      return res.status(400).json({ 
-        error: 'phoneNumber i message su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Šalje tekstualnu poruku na ${phoneNumber}: ${message.substring(0, 50)}...`);
-    const result = await whatsappBusinessAPIService.sendTextMessage(phoneNumber, message, previewUrl || false);
-
-    if (result.success) {
-      // Dodaje u storage log - za potrebe praćenja
-      console.log(`✅ [WHATSAPP BUSINESS API] Poruka uspešno poslata. Message ID: ${result.messageId}`);
-    }
-
-    res.json(result);
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
-    res.status(500).json({ 
-      error: 'Greška pri slanju poruke',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Šalje template poruku
- */
-app.post('/api/whatsapp-business/send-template', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const { phoneNumber, templateName, languageCode, components } = req.body;
-
-    if (!phoneNumber || !templateName) {
-      return res.status(400).json({ 
-        error: 'phoneNumber i templateName su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Šalje template poruku na ${phoneNumber}: ${templateName}`);
-    const result = await whatsappBusinessAPIService.sendTemplateMessage(
-      phoneNumber, 
-      templateName, 
-      languageCode || 'en_US',
-      components
-    );
-
-    res.json(result);
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju template poruke:', error);
-    res.status(500).json({ 
-      error: 'Greška pri slanju template poruke',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Šalje sliku
- */
-app.post('/api/whatsapp-business/send-image', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const { phoneNumber, imageUrl, caption } = req.body;
-
-    if (!phoneNumber || !imageUrl) {
-      return res.status(400).json({ 
-        error: 'phoneNumber i imageUrl su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Šalje sliku na ${phoneNumber}: ${imageUrl}`);
-    const result = await whatsappBusinessAPIService.sendImageMessage(phoneNumber, imageUrl, caption);
-
-    res.json(result);
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju slike:', error);
-    res.status(500).json({ 
-      error: 'Greška pri slanju slike',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Bulk slanje poruka
- */
-app.post('/api/whatsapp-business/send-bulk', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const { phoneNumbers, message } = req.body;
-
-    if (!phoneNumbers || !Array.isArray(phoneNumbers) || !message) {
-      return res.status(400).json({ 
-        error: 'phoneNumbers (array) i message su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Bulk slanje poruka na ${phoneNumbers.length} brojeva`);
-    const results = await whatsappBusinessAPIService.sendBulkMessages(phoneNumbers, message);
-
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
-
-    res.json({
-      success: true,
-      message: `Bulk slanje završeno. ${successCount} uspešnih, ${failureCount} neuspešnih.`,
-      results,
-      summary: {
-        total: phoneNumbers.length,
-        successful: successCount,
-        failed: failureCount
-      }
-    });
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri bulk slanju:', error);
-    res.status(500).json({ 
-      error: 'Greška pri bulk slanju poruka',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Notifikacija o završenom servisu (integrisano sa postojećim sistemom)
- */
-app.post('/api/whatsapp-business/notify-service-completed', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const serviceData = req.body;
-
-    if (!serviceData.clientPhone || !serviceData.serviceId) {
-      return res.status(400).json({ 
-        error: 'clientPhone i serviceId su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Šalje obaveštenje o završenom servisu #${serviceData.serviceId}`);
-    const result = await whatsappBusinessAPIService.notifyServiceCompleted(serviceData);
-
-    res.json(result);
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju obaveštenja o servisu:', error);
-    res.status(500).json({ 
-      error: 'Greška pri slanju obaveštenja o servisu',
-      details: error.message
-    });
-  }
-});
-
-/**
- * WHATSAPP BUSINESS API - Admin obaveštenje o završenom servisu
- */
-app.post('/api/whatsapp-business/notify-admin-service-completed', requireAuth, async (req, res) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'technician') {
-      return res.status(403).json({ error: 'Nemate dozvolu za pristup' });
-    }
-
-    const serviceData = req.body;
-
-    if (!serviceData.adminPhone || !serviceData.serviceId) {
-      return res.status(400).json({ 
-        error: 'adminPhone i serviceId su obavezni'
-      });
-    }
-
-    console.log(`📱 [WHATSAPP BUSINESS API] Šalje admin obaveštenje o završenom servisu #${serviceData.serviceId}`);
-    const result = await whatsappBusinessAPIService.notifyAdminServiceCompleted(serviceData);
-
-    res.json(result);
-
-  } catch (error: any) {
-    console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju admin obaveštenja:', error);
-    res.status(500).json({ 
-      error: 'Greška pri slanju admin obaveštenja',
-      details: error.message
-    });
-  }
-});
-
-console.log('📱 [WHATSAPP BUSINESS API] Endpoint-i uspešno registrovani');

@@ -45,6 +45,7 @@ const ExcelImportExport = lazy(() => import("@/pages/excel-import-export"));
 const ExcelImport = lazy(() => import("@/pages/admin/excel-import"));
 const UserVerification = lazy(() => import("@/pages/admin/user-verification"));
 const AdminWhatsAppWeb = lazy(() => import("@/pages/admin/whatsapp-web"));
+const AdminWhatsAppBusinessAPI = lazy(() => import("@/pages/admin/whatsapp-business-api"));
 // SMS functionality has been completely removed from the application
 import { ProtectedRoute } from "./lib/protected-route";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
@@ -179,6 +180,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/excel-import" component={ExcelImport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/user-verification" component={UserVerification} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/whatsapp-web" component={AdminWhatsAppWeb} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/whatsapp-business-api" component={AdminWhatsAppBusinessAPI} allowedRoles={["admin"]} />
 
       <RoleProtectedRoute path="/admin/sms-mobile-api-config" component={SMSMobileAPIConfigPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/sms-bulk" component={SMSBulkPage} allowedRoles={["admin"]} />
