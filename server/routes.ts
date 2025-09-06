@@ -2422,6 +2422,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 problemDescription: service.description
               });
               console.log(`[SMS ADMIN] ✅ SMS o novom servisu poslat administratoru ${admin.fullName} (${admin.phone})`);
+              
+              // WHATSAPP BUSINESS API - Admin obaveštenje o novom servisu
+              try {
+                console.log(`[WHATSAPP BUSINESS API] Šalje obaveštenje administratoru ${admin.fullName} (${admin.phone}) o novom servisu #${service.id}`);
+                const adminWhatsappResult = await whatsappBusinessAPIService.notifyAdminNewService({
+                  adminPhone: admin.phone,
+                  adminName: admin.fullName,
+                  serviceId: service.id,
+                  clientName: client?.fullName || 'Nepoznat klijent',
+                  deviceType: deviceType,
+                  createdBy: createdBy,
+                  problemDescription: service.description
+                });
+                
+                if (adminWhatsappResult.success) {
+                  console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje administratoru ${admin.fullName}`);
+                } else {
+                  console.log(`[WHATSAPP BUSINESS API] ❌ Neuspešno slanje WhatsApp obaveštenja administratoru: ${adminWhatsappResult.error}`);
+                }
+              } catch (adminWhatsappError) {
+                console.error(`[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja administratoru ${admin.fullName}:`, adminWhatsappError);
+              }
+              
             } catch (adminSmsError) {
               console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
             }
@@ -2539,6 +2562,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 
                 if (clientEmailSent) {
                   console.log(`[EMAIL SISTEM] ✅ Uspešno poslato obaveštenje klijentu ${client.fullName}`);
+                  
+                  // WHATSAPP BUSINESS API - Obaveštenje klijentu o status ažuriranju
+                  try {
+                    if (client.phone) {
+                      console.log(`[WHATSAPP BUSINESS API] Šalje obaveštenje klijentu ${client.fullName} (${client.phone}) o ažuriranju servisa #${id}`);
+                      const whatsappResult = await whatsappBusinessAPIService.sendServiceStatusUpdateNotification({
+                        clientPhone: client.phone,
+                        clientName: client.fullName,
+                        serviceId: parseInt(id),
+                        newStatus: statusDescription,
+                        technicianName: technicianName,
+                        notes: clientEmailContent
+                      });
+                      
+                      if (whatsappResult.success) {
+                        console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje klijentu ${client.fullName}`);
+                      } else {
+                        console.log(`[WHATSAPP BUSINESS API] ❌ Neuspešno slanje WhatsApp obaveštenja klijentu: ${whatsappResult.error}`);
+                      }
+                    } else {
+                      console.log(`[WHATSAPP BUSINESS API] ℹ️ Klijent ${client.fullName} nema telefon broj, preskačem WhatsApp obaveštenje`);
+                    }
+                  } catch (whatsappError) {
+                    console.error(`[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja klijentu:`, whatsappError);
+                  }
                   emailInfo.emailSent = true;
                   
                   // BEKO GARANCISKI SERVISI - Dodatno obaveštenje
@@ -2575,6 +2623,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       }
                     } catch (bekoError) {
                       console.error(`[BEKO EMAIL] Greška pri proveri/slanju Beko obaveštenja:`, bekoError);
+                    }
+                  }
+                  
+                  // WHATSAPP BUSINESS API - Specijalne notifikacije za završen servis
+                  if (updatedService.status === "completed") {
+                    try {
+                      if (client.phone) {
+                        console.log(`[WHATSAPP BUSINESS API] Šalje obaveštenje o završenom servisu #${id} klijentu ${client.fullName}`);
+                        const completionResult = await whatsappBusinessAPIService.notifyServiceCompleted({
+                          clientPhone: client.phone,
+                          clientName: client.fullName,
+                          serviceId: parseInt(id),
+                          technicianName: technicianName,
+                          workPerformed: clientEmailContent,
+                          warrantyStatus: updatedService.warrantyStatus
+                        });
+                        
+                        if (completionResult.success) {
+                          console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje o završenom servisu klijentu ${client.fullName}`);
+                        }
+                      }
+                    } catch (whatsappCompletionError) {
+                      console.error(`[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja o završenom servisu:`, whatsappCompletionError);
                     }
                   }
                   
