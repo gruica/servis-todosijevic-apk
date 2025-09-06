@@ -513,6 +513,126 @@ ${serviceData.usedParts ? `• Delovi: ${serviceData.usedParts}` : ''}
       isConfigured: this.isConfigured
     };
   }
+
+  /**
+   * INTEGRACIJA SA POSTOJEĆIM NOTIFICATION SISTEMOM - DODANO
+   */
+
+  /**
+   * Šalje obaveštenje klijentu o ažuriranju statusa servisa (kompatibilno sa routes.ts)
+   */
+  async sendServiceStatusUpdateNotification(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: number;
+    newStatus: string;
+    technicianName?: string;
+    notes?: string;
+  }): Promise<{success: boolean, error?: string, messageId?: string}> {
+    if (!this.isConfigured) {
+      return { success: false, error: 'WhatsApp Business API nije konfigurisan' };
+    }
+
+    try {
+      const technicianPart = data.technicianName ? `\nServiser: ${data.technicianName}` : '';
+      const notesPart = data.notes ? `\n\nNapomene: ${data.notes}` : '';
+      
+      const message = `🔧 Ažuriranje servisa #${data.serviceId}
+
+Poštovani ${data.clientName},
+
+Status vašeg servisa je ažuriran na: *${data.newStatus}*${technicianPart}${notesPart}
+
+Za dodatne informacije, kontaktirajte nas.
+
+Frigo Sistem Todosijević
+📞 067051141`;
+
+      return await this.sendTextMessage(data.clientPhone, message);
+    } catch (error: any) {
+      console.error('[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja o statusu:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Obaveštava klijenta o završenom servisu (kompatibilno sa routes.ts)
+   */
+  async notifyServiceCompleted(data: {
+    clientPhone: string;
+    clientName: string;
+    serviceId: number;
+    technicianName?: string;
+    workPerformed?: string;
+    warrantyStatus?: string;
+  }): Promise<{success: boolean, error?: string, messageId?: string}> {
+    if (!this.isConfigured) {
+      return { success: false, error: 'WhatsApp Business API nije konfigurisan' };
+    }
+
+    try {
+      const technicianPart = data.technicianName ? `\nServiser: ${data.technicianName}` : '';
+      const workPart = data.workPerformed ? `\n\nOpis rada:\n${data.workPerformed}` : '';
+      const warrantyPart = data.warrantyStatus === 'in_warranty' ? '\n\n✅ Servis izvršen u okviru garancije' : 
+                          data.warrantyStatus === 'out_of_warranty' ? '\n\n💰 Servis naplaćen (van garancije)' : '';
+      
+      const message = `✅ Servis #${data.serviceId} ZAVRŠEN
+
+Poštovani ${data.clientName},
+
+Vaš servis je uspešno završen!${technicianPart}${workPart}${warrantyPart}
+
+Hvala vam na poverenju.
+
+Frigo Sistem Todosijević
+📞 067051141`;
+
+      return await this.sendTextMessage(data.clientPhone, message);
+    } catch (error: any) {
+      console.error('[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja o završenom servisu:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Obaveštava administratore o novom servisu (kompatibilno sa routes.ts)
+   */
+  async notifyAdminNewService(data: {
+    adminPhone: string;
+    adminName: string;
+    serviceId: number;
+    clientName: string;
+    deviceType: string;
+    createdBy: string;
+    problemDescription: string;
+  }): Promise<{success: boolean, error?: string, messageId?: string}> {
+    if (!this.isConfigured) {
+      return { success: false, error: 'WhatsApp Business API nije konfigurisan' };
+    }
+
+    try {
+      const message = `🆕 NOVI SERVIS #${data.serviceId}
+
+Poštovani ${data.adminName},
+
+Kreiran je novi servis:
+
+👤 Klijent: ${data.clientName}
+🔧 Uređaj: ${data.deviceType}
+👨‍💼 Kreirao: ${data.createdBy}
+
+📝 Problem:
+${data.problemDescription}
+
+Frigo Sistem Todosijević
+Admin Panel`;
+
+      return await this.sendTextMessage(data.adminPhone, message);
+    } catch (error: any) {
+      console.error('[WHATSAPP BUSINESS API] Greška pri slanju admin obaveštenja:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Singleton instanca za upotrebu kroz aplikaciju
