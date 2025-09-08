@@ -906,7 +906,7 @@ export default function WhatsAppBusinessAPI() {
                   <AlertDescription>
                     <strong>Webhook URL-ovi za Facebook Developer Console:</strong><br/>
                     <code className="bg-muted px-1 py-0.5 rounded text-sm">
-                      https://5000-manic-donkey-9yxqy86.replit.app/webhook/whatsapp
+                      https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/webhook/whatsapp
                     </code>
                   </AlertDescription>
                 </Alert>
@@ -933,7 +933,7 @@ export default function WhatsAppBusinessAPI() {
                   <ol className="text-sm space-y-1 list-decimal list-inside">
                     <li>Idite na Facebook Developer Console</li>
                     <li>Otvorite WhatsApp > Configuration</li>
-                    <li>Unesite Webhook URL: <code className="bg-muted px-1 rounded">https://5000-manic-donkey-9yxqy86.replit.app/webhook/whatsapp</code></li>
+                    <li>Unesite Webhook URL: <code className="bg-muted px-1 rounded">https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/webhook/whatsapp</code></li>
                     <li>Unesite Verify Token: <code className="bg-muted px-1 rounded">frigo_sistem_todosijevic_webhook_2024</code></li>
                     <li>Označite "messages" field</li>
                     <li>Kliknite "Verify and Save"</li>
