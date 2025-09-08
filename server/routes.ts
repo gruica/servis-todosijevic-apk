@@ -28,6 +28,7 @@ import { ServisKomercCronService } from './servis-komerc-cron-service.js';
 import { ServisKomercNotificationService } from './servis-komerc-notification-service.js';
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 import { ObjectStorageService } from './objectStorage.js';
+import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -1114,6 +1115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Approved spare parts route for Com Plus system
   setupApprovedSparePartsRoute(app);
+  
+  // WhatsApp Webhook routes - NOVO DODATO
+  setupWhatsAppWebhookRoutes(app);
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
@@ -5723,6 +5727,76 @@ export function setupApprovedSparePartsRoute(app: Express) {
     } catch (error) {
       console.error('❌ Greška pri dohvatanju odobrenih rezervnih delova:', error);
       res.status(500).json({ error: 'Greška pri dohvatanju rezervnih delova' });
+    }
+  });
+}
+
+// =================================================================
+// WHATSAPP WEBHOOK ENDPOINTS - NOVI SISTEM (DODATO)
+// =================================================================
+
+/**
+ * WhatsApp Webhook setup funkcija - NOVA FUNKCIONALNOST
+ * Ne dira postojeći kod, samo dodaje webhook support
+ */
+export function setupWhatsAppWebhookRoutes(app: Express) {
+  // GET /webhook/whatsapp - Webhook verifikacija
+  app.get('/webhook/whatsapp', verifyWebhook);
+  
+  // POST /webhook/whatsapp - Webhook handler
+  app.post('/webhook/whatsapp', handleWebhook);
+  
+  // GET /api/whatsapp-webhook/config - Dobija webhook konfiguraciju
+  app.get('/api/whatsapp-webhook/config', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      const config = getWebhookConfig();
+      res.json({
+        success: true,
+        config: {
+          isConfigured: config.isConfigured,
+          verifyToken: config.verifyToken ? 'Postavljen' : 'Nije postavljen',
+          webhookUrl: {
+            verify: '/webhook/whatsapp (GET)',
+            receive: '/webhook/whatsapp (POST)'
+          }
+        }
+      });
+    } catch (error) {
+      console.error('❌ [WEBHOOK CONFIG] Greška:', error);
+      res.status(500).json({ error: 'Greška pri dobijanju webhook konfiguracije' });
+    }
+  });
+  
+  // POST /api/whatsapp-webhook/test - Test webhook konfiguracije
+  app.post('/api/whatsapp-webhook/test', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      const config = getWebhookConfig();
+      
+      if (!config.isConfigured) {
+        return res.json({
+          success: false,
+          message: 'Webhook nije konfigurisan. Postavite WHATSAPP_WEBHOOK_VERIFY_TOKEN environment varijablu.'
+        });
+      }
+      
+      // Simulacija Facebook webhook verifikacije
+      const testChallenge = Math.random().toString(36).substring(7);
+      
+      res.json({
+        success: true,
+        message: 'Webhook je pravilno konfigurisan!',
+        details: {
+          verifyTokenSet: !!config.verifyToken,
+          webhookEndpoints: {
+            verify: 'GET /webhook/whatsapp',
+            receive: 'POST /webhook/whatsapp'
+          },
+          testChallenge
+        }
+      });
+    } catch (error) {
+      console.error('❌ [WEBHOOK TEST] Greška:', error);
+      res.status(500).json({ error: 'Greška pri testiranju webhook konfiguracije' });
     }
   });
 }

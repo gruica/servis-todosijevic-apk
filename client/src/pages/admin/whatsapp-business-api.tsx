@@ -69,6 +69,10 @@ export default function WhatsAppBusinessAPI() {
   // Bulk poruke form polja
   const [bulkPhones, setBulkPhones] = useState('');
   const [bulkMessage, setBulkMessage] = useState('');
+  
+  // Webhook konfiguracija - NOVO DODATO
+  const [webhookConfig, setWebhookConfig] = useState<any>(null);
+  const [webhookTesting, setWebhookTesting] = useState(false);
 
   useEffect(() => {
     loadConfiguration();
@@ -408,6 +412,75 @@ export default function WhatsAppBusinessAPI() {
     }
   };
 
+  // WEBHOOK FUNKCIJE - NOVO DODATO
+  const loadWebhookConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/whatsapp-webhook/config', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setWebhookConfig(data.config);
+      } else {
+        toast({
+          title: 'Greška',
+          description: 'Nije moguće učitati webhook konfiguraciju',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Greška pri učitavanju webhook konfiguracije:', error);
+      toast({
+        title: 'Greška',
+        description: 'Greška pri učitavanju webhook konfiguracije',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testWebhookConfig = async () => {
+    try {
+      setWebhookTesting(true);
+      const response = await fetch('/api/whatsapp-webhook/test', {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: 'Uspeh',
+          description: data.message
+        });
+      } else {
+        toast({
+          title: 'Greška',
+          description: data.message,
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Greška pri testiranju webhook konfiguracije:', error);
+      toast({
+        title: 'Greška',
+        description: 'Greška pri testiranju webhook konfiguracije',
+        variant: 'destructive'
+      });
+    } finally {
+      setWebhookTesting(false);
+    }
+  };
+
+  // Učitaj webhook config kada se komponenta mount-uje
+  useEffect(() => {
+    loadWebhookConfig();
+  }, []);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -476,7 +549,7 @@ export default function WhatsAppBusinessAPI() {
       )}
 
       <Tabs defaultValue="config" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="config" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Konfiguracija
@@ -496,6 +569,10 @@ export default function WhatsAppBusinessAPI() {
           <TabsTrigger value="bulk" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Bulk
+          </TabsTrigger>
+          <TabsTrigger value="webhook" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Webhook
           </TabsTrigger>
           <TabsTrigger value="test" className="flex items-center gap-2">
             <Phone className="h-4 w-4" />
@@ -785,6 +862,116 @@ export default function WhatsAppBusinessAPI() {
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
                 Pošalji bulk poruke
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Webhook tab - NOVO DODATO */}
+        <TabsContent value="webhook">
+          <Card>
+            <CardHeader>
+              <CardTitle>WhatsApp Webhook Konfiguracija</CardTitle>
+              <CardDescription>
+                Konfiguriši Facebook webhook za primanje poruka i status ažuriranja
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {webhookConfig && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="space-y-2">
+                    <Label>Webhook Status</Label>
+                    <div className="flex items-center gap-2">
+                      {webhookConfig.isConfigured ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="text-sm">
+                        {webhookConfig.isConfigured ? 'Konfigurisan' : 'Nije konfigurisan'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Verify Token</Label>
+                    <p className="text-sm font-mono bg-muted p-2 rounded">
+                      {webhookConfig.verifyToken}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Webhook URL-ovi za Facebook Developer Console:</strong><br/>
+                    <code className="bg-muted px-1 py-0.5 rounded text-sm">
+                      https://5000-manic-donkey-9yxqy86.replit.app/webhook/whatsapp
+                    </code>
+                  </AlertDescription>
+                </Alert>
+
+                {webhookConfig?.webhookUrl && (
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="space-y-2">
+                      <Label>Verify Endpoint (GET)</Label>
+                      <p className="text-sm font-mono bg-muted p-2 rounded">
+                        {webhookConfig.webhookUrl.verify}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Receive Endpoint (POST)</Label>
+                      <p className="text-sm font-mono bg-muted p-2 rounded">
+                        {webhookConfig.webhookUrl.receive}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <h4 className="font-semibold mb-2">🔧 Koraci za setup webhook-a:</h4>
+                  <ol className="text-sm space-y-1 list-decimal list-inside">
+                    <li>Idite na Facebook Developer Console</li>
+                    <li>Otvorite WhatsApp > Configuration</li>
+                    <li>Unesite Webhook URL: <code className="bg-muted px-1 rounded">https://5000-manic-donkey-9yxqy86.replit.app/webhook/whatsapp</code></li>
+                    <li>Unesite Verify Token: <code className="bg-muted px-1 rounded">frigo_sistem_todosijevic_webhook_2024</code></li>
+                    <li>Označite "messages" field</li>
+                    <li>Kliknite "Verify and Save"</li>
+                  </ol>
+                </div>
+
+                <Separator />
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={testWebhookConfig} 
+                    disabled={webhookTesting}
+                    className="flex items-center gap-2"
+                  >
+                    {webhookTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+                    Testiraj Webhook
+                  </Button>
+                  
+                  <Button 
+                    onClick={loadWebhookConfig} 
+                    disabled={loading}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
+                    Refresh Config
+                  </Button>
+                </div>
+
+                {!webhookConfig?.isConfigured && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Webhook nije konfigurisan. Environment varijabla WHATSAPP_WEBHOOK_VERIFY_TOKEN nije postavljena.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
