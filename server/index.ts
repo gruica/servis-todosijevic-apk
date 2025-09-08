@@ -209,4 +209,57 @@ app.use((req, res, next) => {
       }
     })();
   });
+
+  // PROFESSIONAL GRACEFUL SHUTDOWN HANDLER - DODANO NA KRAJ
+  // Replit best practices za čist restart aplikacije
+  let isShuttingDown = false;
+  
+  function gracefulShutdown(signal: string) {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    
+    console.log(`🔄 [SHUTDOWN] Received ${signal}. Gracefully shutting down server...`);
+    
+    server.close(() => {
+      console.log('✅ [SHUTDOWN] HTTP server closed');
+      
+      // Close database connections
+      (async () => {
+        try {
+          const { pool } = await import('./db.js');
+          await pool.end();
+          console.log('✅ [SHUTDOWN] Database connections closed');
+        } catch (error) {
+          console.error('❌ [SHUTDOWN] Error closing database:', error);
+        }
+        
+        // Exit gracefully
+        console.log('✅ [SHUTDOWN] Process terminated cleanly');
+        process.exit(0);
+      })();
+    });
+    
+    // Force shutdown after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+      console.error('❌ [SHUTDOWN] Forcing shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  }
+
+  // Register shutdown handlers for various signals
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // For Replit restarts
+  
+  // Handle uncaught exceptions and unhandled rejections
+  process.on('uncaughtException', (error) => {
+    console.error('❌ [UNCAUGHT EXCEPTION]:', error);
+    gracefulShutdown('UNCAUGHT_EXCEPTION');
+  });
+  
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ [UNHANDLED REJECTION] at:', promise, 'reason:', reason);
+    gracefulShutdown('UNHANDLED_REJECTION');
+  });
+
 })();
