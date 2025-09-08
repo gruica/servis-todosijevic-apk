@@ -225,7 +225,7 @@ function Router() {
       <RoleProtectedRoute path="/business/services/edit/:id" component={EditBusinessService} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/clients/new" component={NewBusinessClient} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/clients" component={BusinessClients} allowedRoles={["business_partner", "business"]} />
-      <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business"]} />
+      <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business", "admin"]} />
       
         <Route component={NotFound} />
       </Switch>
