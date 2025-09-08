@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { ArrowLeft, Settings, Plus, Package, User, Phone, Mail, MapPin } from "lucide-react";
+import { ArrowLeft, Settings, Plus, Package, User, Phone, Mail, MapPin, Wrench } from "lucide-react";
 
 // Com Plus brendovi
 const COM_PLUS_BRANDS = [
@@ -175,24 +175,34 @@ export default function BusinessComplus() {
     <BusinessLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate("/business")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Nazad
-          </Button>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Settings className="h-6 w-6 text-blue-600" />
-              Com Plus servisni zahtev
-            </h2>
-            <p className="text-muted-foreground">
-              Kreiranje servisa za Com Plus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate("/business")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Nazad
+            </Button>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <Settings className="h-6 w-6 text-blue-600" />
+                Com Plus servisni zahtev
+              </h2>
+              <p className="text-muted-foreground">
+                Kreiranje servisa za Com Plus brendove (Electrolux, Elica, Candy, Hoover, Turbo Air)
+              </p>
+            </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/business/spare-parts")}
+            className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+          >
+            <Wrench className="h-4 w-4 mr-2" />
+            Rezervni delovi
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

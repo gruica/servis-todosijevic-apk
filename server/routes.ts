@@ -1111,6 +1111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Registruj rute za poslovne partnere
   // Business partner routes registration
   registerBusinessPartnerRoutes(app);
+  
+  // Approved spare parts route for Com Plus system
+  setupApprovedSparePartsRoute(app);
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
@@ -5687,5 +5690,40 @@ async function sendCriticalPartsAlert(partId: number, currentQuantity: number) {
   } catch (error) {
     console.error('❌ Greška pri kreiranju kritične notifikacije:', error);
   }
+}
+
+// ENDPOINT: Odobreni rezervni delovi za business partnere (Com Plus)
+export function setupApprovedSparePartsRoute(app: Express) {
+  app.get("/api/business/approved-spare-parts", jwtAuthMiddleware, requireRole(['business_partner', 'business', 'admin']), async (req, res) => {
+    try {
+      // Dohvatanje odobrenih rezervnih delova iz availableParts tabele
+      const approvedParts = await db
+        .select({
+          id: availableParts.id,
+          partName: availableParts.partName,
+          partNumber: availableParts.partNumber,
+          quantity: availableParts.quantity,
+          description: availableParts.description,
+          supplierName: availableParts.supplierName,
+          unitCost: availableParts.unitCost,
+          location: availableParts.location,
+          warrantyStatus: availableParts.warrantyStatus,
+          addedDate: availableParts.addedDate,
+          serviceId: availableParts.serviceId,
+          clientName: availableParts.clientName,
+          clientPhone: availableParts.clientPhone,
+          applianceInfo: availableParts.applianceInfo,
+          serviceDescription: availableParts.serviceDescription,
+          status: sql`'approved'`.as('status') // Sve u availableParts su odobreni delovi
+        })
+        .from(availableParts)
+        .orderBy(desc(availableParts.addedDate));
+
+      res.json(approvedParts);
+    } catch (error) {
+      console.error('❌ Greška pri dohvatanju odobrenih rezervnih delova:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju rezervnih delova' });
+    }
+  });
 }
 

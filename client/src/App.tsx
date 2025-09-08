@@ -67,6 +67,7 @@ const EditBusinessService = lazy(() => import("@/pages/business/services/edit.ts
 const NewBusinessClient = lazy(() => import("@/pages/business/clients/new"));
 const BusinessClients = lazy(() => import("@/pages/business/clients/index-simple"));
 const BusinessComplus = lazy(() => import("@/pages/business/complus"));
+const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 
 // PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
@@ -226,6 +227,7 @@ function Router() {
       <RoleProtectedRoute path="/business/clients/new" component={NewBusinessClient} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/clients" component={BusinessClients} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business", "admin"]} />
+      <RoleProtectedRoute path="/business/spare-parts" component={BusinessSpareParts} allowedRoles={["business_partner", "business", "admin"]} />
       
         <Route component={NotFound} />
       </Switch>
