@@ -5083,6 +5083,129 @@ Frigo Sistem`;
     }
   });
 
+  // ========== NOVI WHATSAPP WEB OPTIMIZATION ENDPOINTS ==========
+
+  // GET /api/whatsapp-web/contacts/paginated - Dohvati kontakte sa pagination
+  app.get('/api/whatsapp-web/contacts/paginated', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pristupiti WhatsApp kontaktima" });
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 25;
+
+      console.log(`🔍 [WHATSAPP PAGINATION] Zahtev za kontakte - strana ${page}, limit ${limit}`);
+
+      const service = await getWhatsAppWebService();
+      const result = await service.getPaginatedContacts(page, limit);
+      
+      console.log(`✅ [WHATSAPP PAGINATION] Vraćam ${result.contacts.length}/${result.totalCount} kontakata`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP PAGINATION] Greška pri dohvatanju paginiranih kontakata:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju paginiranih kontakata' });
+    }
+  });
+
+  // GET /api/whatsapp-web/health - Provjeri health status
+  app.get('/api/whatsapp-web/health', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pristupiti health status-u" });
+      }
+
+      console.log('🏥 [WHATSAPP HEALTH] Zahtev za health check');
+
+      const service = await getWhatsAppWebService();
+      const healthStatus = service.getHealthStatus();
+      
+      console.log(`🏥 [WHATSAPP HEALTH] Status: ${healthStatus.isHealthy ? 'ZDRAVO' : 'UPOZORENJA'}`);
+      res.json(healthStatus);
+    } catch (error) {
+      console.error('❌ [WHATSAPP HEALTH] Greška pri health check-u:', error);
+      res.status(500).json({ 
+        error: 'Greška pri health proveri',
+        isHealthy: false,
+        metrics: null,
+        warnings: ['Greška pri dohvatanju health status-a']
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/optimize - Pokreni resource optimization
+  app.post('/api/whatsapp-web/optimize', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pokrenuti optimizaciju" });
+      }
+
+      console.log('🔧 [WHATSAPP OPTIMIZER] Zahtev za resource optimizaciju');
+
+      const service = await getWhatsAppWebService();
+      const result = await service.optimizeResources();
+      
+      console.log(`🔧 [WHATSAPP OPTIMIZER] Optimizacija: ${result.optimized ? 'USPEŠNA' : 'NEUSPEŠNA'}`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP OPTIMIZER] Greška pri optimizaciji:', error);
+      res.status(500).json({ 
+        error: 'Greška pri resource optimizaciji',
+        optimized: false,
+        details: 'Greška pri pokretanju optimizacije'
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/cleanup-sessions - Očisti stare session fajlove
+  app.post('/api/whatsapp-web/cleanup-sessions', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pokrenuti cleanup" });
+      }
+
+      console.log('🧹 [WHATSAPP CLEANUP] Zahtev za session cleanup');
+
+      const service = await getWhatsAppWebService();
+      const result = await service.cleanupOldSessions();
+      
+      console.log(`🧹 [WHATSAPP CLEANUP] Cleanup: ${result.cleaned ? 'USPEŠAN' : 'PRESKOČEN'}`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP CLEANUP] Greška pri cleanup-u:', error);
+      res.status(500).json({ 
+        error: 'Greška pri session cleanup-u',
+        cleaned: false,
+        details: 'Greška pri cleanup operaciji'
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/auto-recovery - Pokreni auto recovery
+  app.post('/api/whatsapp-web/auto-recovery', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: "Samo administratori mogu pokrenuti auto recovery" });
+      }
+
+      console.log('🔄 [WHATSAPP RECOVERY] Zahtev za auto recovery');
+
+      const service = await getWhatsAppWebService();
+      const result = await service.attemptAutoRecovery();
+      
+      console.log(`🔄 [WHATSAPP RECOVERY] Recovery pokušaj #${result.attempt}: ${result.recovered ? 'USPEŠAN' : 'NEUSPEŠAN'}`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP RECOVERY] Greška pri auto recovery:', error);
+      res.status(500).json({ 
+        error: 'Greška pri auto recovery',
+        recovered: false,
+        attempt: 0,
+        message: 'Greška pri pokretanju recovery operacije'
+      });
+    }
+  });
+
   // ========== NOVI SMS PROTOKOL TEST ENDPOINT ==========
   
   app.post('/api/protocol-sms/test', jwtAuth, requireRole(['admin']), async (req: any, res) => {
