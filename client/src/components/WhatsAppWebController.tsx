@@ -28,8 +28,12 @@ import {
   ChevronRight,
   Activity,
   AlertTriangle,
-  FileX
+  FileX,
+  TestTube,
+  Heart,
+  Beaker
 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
 interface WhatsAppWebStatus {
   isConnected: boolean;
@@ -766,6 +770,352 @@ export function WhatsAppWebController() {
     </Card>
   );
 
+  // =================================================================
+  // NOVI OPTIMIZATION TESTING PANEL - DODANO NAKNADNO
+  // =================================================================
+
+  const OptimizationTestingCard = () => {
+    const [testResults, setTestResults] = useState<any>(null);
+    const [testType, setTestType] = useState<string>('');
+    const [isTestRunning, setIsTestRunning] = useState(false);
+
+    // Test mutations
+    const paginationTestMutation = useMutation({
+      mutationFn: (totalContacts: number) => apiRequest(`/api/whatsapp-web/test/pagination`, {
+        method: 'POST',
+        body: JSON.stringify({ totalContacts })
+      }),
+      onMutate: () => {
+        setIsTestRunning(true);
+        setTestType('pagination');
+        setTestResults(null);
+      },
+      onSuccess: (data: any) => {
+        setTestResults(data);
+        setIsTestRunning(false);
+        toast({
+          title: data.success ? "✅ Pagination test uspešan" : "❌ Pagination test neuspešan",
+          description: data.details || "Test završen",
+          variant: data.success ? "default" : "destructive"
+        });
+      },
+      onError: (error: any) => {
+        setIsTestRunning(false);
+        toast({
+          title: "❌ Greška pri pagination testu",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
+
+    const healthTestMutation = useMutation({
+      mutationFn: () => apiRequest(`/api/whatsapp-web/test/health-monitoring`, {
+        method: 'POST'
+      }),
+      onMutate: () => {
+        setIsTestRunning(true);
+        setTestType('health');
+        setTestResults(null);
+      },
+      onSuccess: (data: any) => {
+        setTestResults(data);
+        setIsTestRunning(false);
+        toast({
+          title: data.success ? "✅ Health monitoring test uspešan" : "❌ Health test neuspešan",
+          description: data.details || "Test završen",
+          variant: data.success ? "default" : "destructive"
+        });
+      },
+      onError: (error: any) => {
+        setIsTestRunning(false);
+        toast({
+          title: "❌ Greška pri health testu",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
+
+    const recoveryTestMutation = useMutation({
+      mutationFn: () => apiRequest(`/api/whatsapp-web/test/auto-recovery`, {
+        method: 'POST'
+      }),
+      onMutate: () => {
+        setIsTestRunning(true);
+        setTestType('recovery');
+        setTestResults(null);
+      },
+      onSuccess: (data: any) => {
+        setTestResults(data);
+        setIsTestRunning(false);
+        toast({
+          title: data.success ? "✅ Auto recovery test uspešan" : "❌ Recovery test neuspešan",
+          description: data.details || "Test završen",
+          variant: data.success ? "default" : "destructive"
+        });
+      },
+      onError: (error: any) => {
+        setIsTestRunning(false);
+        toast({
+          title: "❌ Greška pri recovery testu",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
+
+    const comprehensiveTestMutation = useMutation({
+      mutationFn: () => apiRequest(`/api/whatsapp-web/test/comprehensive`, {
+        method: 'POST'
+      }),
+      onMutate: () => {
+        setIsTestRunning(true);
+        setTestType('comprehensive');
+        setTestResults(null);
+      },
+      onSuccess: (data: any) => {
+        setTestResults(data);
+        setIsTestRunning(false);
+        toast({
+          title: data.success ? "✅ Comprehensive test uspešan" : "❌ Comprehensive test neuspešan",
+          description: `Score: ${data.overallScore}/100 - ${data.recommendations?.length || 0} preporuka`,
+          variant: data.success ? "default" : "destructive"
+        });
+      },
+      onError: (error: any) => {
+        setIsTestRunning(false);
+        toast({
+          title: "❌ Greška pri comprehensive testu",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
+
+    const verifyExistingMutation = useMutation({
+      mutationFn: () => apiRequest(`/api/whatsapp-web/test/verify-existing`),
+      onMutate: () => {
+        setIsTestRunning(true);
+        setTestType('verify');
+        setTestResults(null);
+      },
+      onSuccess: (data: any) => {
+        setTestResults(data);
+        setIsTestRunning(false);
+        toast({
+          title: data.success ? "✅ Verifikacija uspešna" : "❌ Verifikacija neuspešna",
+          description: data.message || "Verifikacija završena",
+          variant: data.success ? "default" : "destructive"
+        });
+      },
+      onError: (error: any) => {
+        setIsTestRunning(false);
+        toast({
+          title: "❌ Greška pri verifikaciji",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    });
+
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TestTube className="h-5 w-5 text-purple-600" />
+            Testiranje optimizacija
+            {isTestRunning && (
+              <div className="flex items-center gap-1 text-sm text-purple-600">
+                <Clock className="h-4 w-4 animate-spin" />
+                Test u toku...
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Test dugmad */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Button 
+              onClick={() => paginationTestMutation.mutate(1000)}
+              disabled={isTestRunning}
+              variant="outline"
+              className="text-xs h-auto py-2 px-3"
+            >
+              <Activity className="h-3 w-3 mr-1" />
+              Pagination Test
+            </Button>
+
+            <Button 
+              onClick={() => healthTestMutation.mutate()}
+              disabled={isTestRunning}
+              variant="outline"
+              className="text-xs h-auto py-2 px-3"
+            >
+              <Heart className="h-3 w-3 mr-1" />
+              Health Test
+            </Button>
+
+            <Button 
+              onClick={() => recoveryTestMutation.mutate()}
+              disabled={isTestRunning}
+              variant="outline"
+              className="text-xs h-auto py-2 px-3"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Recovery Test
+            </Button>
+
+            <Button 
+              onClick={() => comprehensiveTestMutation.mutate()}
+              disabled={isTestRunning}
+              variant="outline"
+              className="text-xs h-auto py-2 px-3"
+            >
+              <Beaker className="h-3 w-3 mr-1" />
+              Full Suite
+            </Button>
+
+            <Button 
+              onClick={() => verifyExistingMutation.mutate()}
+              disabled={isTestRunning}
+              variant="outline"
+              className="text-xs h-auto py-2 px-3"
+            >
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Verify
+            </Button>
+          </div>
+
+          {/* Test rezultati */}
+          {testResults && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm">Rezultati testiranja:</h4>
+                <div className={`text-xs px-2 py-1 rounded ${
+                  testResults.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {testResults.success ? '✅ PROŠAO' : '❌ POŠAO'}
+                </div>
+              </div>
+
+              {testType === 'pagination' && testResults.performanceMetrics && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-blue-50 p-2 rounded">
+                    <div className="font-medium">Kontakti testirani</div>
+                    <div className="text-blue-600">{testResults.totalTested}</div>
+                  </div>
+                  <div className="bg-blue-50 p-2 rounded">
+                    <div className="font-medium">Avg load time</div>
+                    <div className="text-blue-600">{testResults.performanceMetrics.averageLoadTime}ms</div>
+                  </div>
+                  <div className="bg-blue-50 p-2 rounded">
+                    <div className="font-medium">Memory delta</div>
+                    <div className="text-blue-600">{testResults.performanceMetrics.memoryUsageIncrease}MB</div>
+                  </div>
+                </div>
+              )}
+
+              {testType === 'health' && testResults.iterations && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-green-50 p-2 rounded">
+                    <div className="font-medium">Iteracije</div>
+                    <div className="text-green-600">{testResults.iterations}</div>
+                  </div>
+                  <div className="bg-green-50 p-2 rounded">
+                    <div className="font-medium">Warnings</div>
+                    <div className="text-green-600">{testResults.warnings?.length || 0}</div>
+                  </div>
+                  <div className="bg-green-50 p-2 rounded">
+                    <div className="font-medium">Memory trend</div>
+                    <div className="text-green-600">{testResults.memoryTrend?.length || 0} points</div>
+                  </div>
+                </div>
+              )}
+
+              {testType === 'recovery' && testResults.recoveryResults && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-orange-50 p-2 rounded">
+                    <div className="font-medium">Scenarija</div>
+                    <div className="text-orange-600">{testResults.scenariosTested}</div>
+                  </div>
+                  <div className="bg-orange-50 p-2 rounded">
+                    <div className="font-medium">Avg recovery</div>
+                    <div className="text-orange-600">{testResults.avgRecoveryTime}ms</div>
+                  </div>
+                  <div className="bg-orange-50 p-2 rounded">
+                    <div className="font-medium">Uspešno</div>
+                    <div className="text-orange-600">{testResults.recoveryResults.filter((r: any) => r.success).length}</div>
+                  </div>
+                </div>
+              )}
+
+              {testType === 'comprehensive' && testResults.overallScore !== undefined && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className="bg-purple-50 p-2 rounded">
+                      <div className="font-medium">Overall Score</div>
+                      <div className="text-purple-600 font-bold">{testResults.overallScore}/100</div>
+                    </div>
+                    <div className="bg-purple-50 p-2 rounded">
+                      <div className="font-medium">Pagination</div>
+                      <div className="text-purple-600">{testResults.testResults?.pagination?.success ? '✅' : '❌'}</div>
+                    </div>
+                    <div className="bg-purple-50 p-2 rounded">
+                      <div className="font-medium">Health</div>
+                      <div className="text-purple-600">{testResults.testResults?.healthMonitoring?.success ? '✅' : '❌'}</div>
+                    </div>
+                    <div className="bg-purple-50 p-2 rounded">
+                      <div className="font-medium">Recovery</div>
+                      <div className="text-purple-600">{testResults.testResults?.autoRecovery?.success ? '✅' : '❌'}</div>
+                    </div>
+                  </div>
+                  
+                  {testResults.recommendations && testResults.recommendations.length > 0 && (
+                    <div className="bg-yellow-50 p-3 rounded text-xs">
+                      <div className="font-medium text-yellow-800 mb-1">📝 Preporuke:</div>
+                      <ul className="text-yellow-700 space-y-1">
+                        {testResults.recommendations.map((rec: string, index: number) => (
+                          <li key={index}>• {rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {testType === 'verify' && testResults.verificationResults && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {Object.entries(testResults.verificationResults).map(([key, value]) => (
+                    <div key={key} className="bg-gray-50 p-2 rounded">
+                      <div className="font-medium">{key}</div>
+                      <div className={typeof value === 'boolean' 
+                        ? (value ? 'text-green-600' : 'text-red-600') 
+                        : 'text-gray-600'
+                      }>
+                        {typeof value === 'boolean' ? (value ? '✅ Da' : '❌ Ne') : JSON.stringify(value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground bg-gray-50 p-2 rounded">
+                {testResults.details || 'Test završen uspešno'}
+              </div>
+            </div>
+          )}
+
+          <div className="text-xs text-muted-foreground bg-purple-50 p-3 rounded">
+            <TestTube className="h-4 w-4 inline mr-1" />
+            <strong>Info:</strong> Ovi testovi verifikuju stabilnost optimizacija - pagination (1000 kontakata), 
+            health monitoring (20 iteracija), auto recovery (3 scenarija) i comprehensive suite (sve zajedno).
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Status konekcije */}
@@ -779,6 +1129,9 @@ export function WhatsAppWebController() {
 
       {/* NOVA OPTIMIZACIJA PANEL */}
       <OptimizationPanel />
+
+      {/* NOVI OPTIMIZATION TESTING PANEL - DODANO NAKNADNO */}
+      <OptimizationTestingCard />
     </div>
   );
 }
