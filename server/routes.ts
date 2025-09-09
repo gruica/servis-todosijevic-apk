@@ -6048,5 +6048,81 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       });
     }
   });
+
+  // ========== NOVI WHATSAPP WEB TEST ENDPOINT ZA TRAJNU UPOTREBU ==========
+  
+  // POST /api/whatsapp-web/send-test-message - Pošalji test poruku bez autentifikacije (za trajnu upotrebu)
+  app.post('/api/whatsapp-web/send-test-message', async (req, res) => {
+    try {
+      const { phoneNumber, message } = req.body;
+      
+      // Validacija input-a
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ 
+          error: 'Potrebni su phoneNumber i message parametri',
+          success: false 
+        });
+      }
+
+      // Sigurnosno ograničenje - samo testni brojevi
+      const allowedTestNumbers = ['067077002', '067077092', '38167077002', '38167077092'];
+      const cleanNumber = phoneNumber.replace(/\+/g, '').replace(/^381/, '0');
+      
+      if (!allowedTestNumbers.includes(cleanNumber) && !allowedTestNumbers.includes(phoneNumber)) {
+        return res.status(403).json({ 
+          error: `Test endpoint dozvoljava slanje samo na testne brojeve: ${allowedTestNumbers.join(', ')}`,
+          success: false,
+          providedNumber: phoneNumber,
+          cleanedNumber: cleanNumber
+        });
+      }
+
+      console.log(`🧪 [TEST ENDPOINT] Zahtev za slanje test poruke na ${phoneNumber}`);
+
+      // Uvoz WhatsApp Web servisa
+      const { whatsappWebService } = await import('./whatsapp-web-service.js');
+      
+      // Proverava da li je servis povezan
+      if (!whatsappWebService.getConnectionStatus().isConnected) {
+        return res.status(503).json({ 
+          error: 'WhatsApp Web nije povezan. Molimo sačekajte povezivanje.',
+          success: false,
+          connectionStatus: whatsappWebService.getConnectionStatus()
+        });
+      }
+
+      // Dodaj TEST prefix poruki
+      const testMessage = `[TEST] ${message}\n\n⏰ Vreme: ${new Date().toLocaleString('sr-RS')}\n🔧 Poslato iz Frigo Sistem test endpoint-a`;
+
+      // Pošalji poruku
+      const sendResult = await whatsappWebService.sendMessage(phoneNumber, testMessage);
+      
+      if (sendResult) {
+        console.log(`✅ [TEST ENDPOINT] Test poruka uspešno poslata na ${phoneNumber}`);
+        res.json({ 
+          success: true, 
+          message: 'Test poruka uspešno poslata',
+          phoneNumber: phoneNumber,
+          sentMessage: testMessage,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.log(`❌ [TEST ENDPOINT] Neuspešno slanje test poruke na ${phoneNumber}`);
+        res.status(500).json({ 
+          success: false, 
+          error: 'Neuspešno slanje test poruke',
+          phoneNumber: phoneNumber
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ [TEST ENDPOINT] Greška pri slanju test poruke:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju test poruke',
+        success: false,
+        details: error.message
+      });
+    }
+  });
 }
 
