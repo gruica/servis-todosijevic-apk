@@ -19,7 +19,16 @@ import {
   Power,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Zap,
+  Monitor,
+  Trash2,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
+  AlertTriangle,
+  FileX
 } from 'lucide-react';
 
 interface WhatsAppWebStatus {
@@ -44,12 +53,58 @@ interface WhatsAppChat {
   unreadCount: number;
 }
 
+interface PaginatedContacts {
+  contacts: WhatsAppContact[];
+  totalCount: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+interface HealthStatus {
+  isHealthy: boolean;
+  metrics: {
+    isConnected: boolean;
+    memoryUsage: {
+      rss: number;
+      heapTotal: number;
+      heapUsed: number;
+      external: number;
+    };
+    uptime: number;
+    lastActivity: number;
+    puppeteerStatus: string;
+  };
+  warnings: string[];
+}
+
+interface OptimizationResult {
+  optimized: boolean;
+  details: string;
+}
+
+interface CleanupResult {
+  cleaned: boolean;
+  details: string;
+}
+
+interface RecoveryResult {
+  recovered: boolean;
+  attempt: number;
+  message: string;
+}
+
 export function WhatsAppWebController() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [messageText, setMessageText] = useState('');
   const [targetPhoneNumber, setTargetPhoneNumber] = useState('');
   const [selectedContact, setSelectedContact] = useState<WhatsAppContact | null>(null);
+  
+  // NOVA STANJA ZA OPTIMIZOVANE FUNKCIONALNOSTI
+  const [currentPage, setCurrentPage] = useState(1);
+  const [contactsLimit, setContactsLimit] = useState(25);
+  const [showOptimizationPanel, setShowOptimizationPanel] = useState(false);
 
   // Query za status WhatsApp Web konekcije
   const { data: status, refetch: refetchStatus } = useQuery<WhatsAppWebStatus>({
@@ -58,17 +113,35 @@ export function WhatsAppWebController() {
     retry: false
   });
 
-  // Query za kontakte - samo ako je povezan
-  const { data: contacts = [], refetch: refetchContacts } = useQuery<WhatsAppContact[]>({
-    queryKey: ['/api/whatsapp-web/contacts'],
+  // Query za paginated kontakte - samo ako je povezan  
+  const { data: paginatedContacts, refetch: refetchContacts } = useQuery<PaginatedContacts>({
+    queryKey: ['/api/whatsapp-web/contacts/paginated', currentPage, contactsLimit],
     enabled: status?.isConnected === true,
     retry: false
   });
+
+  // Fallback na stari contacts endpoint ako pagination ne radi
+  const { data: fallbackContacts = [] } = useQuery<WhatsAppContact[]>({
+    queryKey: ['/api/whatsapp-web/contacts'],
+    enabled: status?.isConnected === true && !paginatedContacts,
+    retry: false
+  });
+
+  // Compute final contacts list
+  const contacts = paginatedContacts?.contacts || fallbackContacts.slice(0, contactsLimit);
 
   // Query za chat-ove - samo ako je povezan
   const { data: chats = [], refetch: refetchChats } = useQuery<WhatsAppChat[]>({
     queryKey: ['/api/whatsapp-web/chats'],
     enabled: status?.isConnected === true,
+    retry: false
+  });
+
+  // NOVI QUERY ZA HEALTH STATUS - refetch svake 30 sekundi
+  const { data: healthStatus, refetch: refetchHealth } = useQuery<HealthStatus>({
+    queryKey: ['/api/whatsapp-web/health'],
+    enabled: status?.isConnected === true,
+    refetchInterval: 30000, // 30 sekundi
     retry: false
   });
 
@@ -143,6 +216,122 @@ export function WhatsAppWebController() {
       toast({
         title: "❌ Greška pri slanju",
         description: error.message || 'Greška pri slanju WhatsApp poruke',
+        variant: "destructive",
+      });
+    }
+  });
+
+  // NOVE MUTATION-E ZA OPTIMIZOVANE FUNKCIONALNOSTI
+
+  // Mutation za resource optimizaciju
+  const optimizeMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) throw new Error('No auth token found');
+
+      const response = await fetch('/api/whatsapp-web/optimize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Greška pri optimizaciji');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data: OptimizationResult) => {
+      toast({
+        title: data.optimized ? "✅ Optimizacija uspešna" : "⚠️ Optimizacija delimična",
+        description: data.details,
+      });
+      refetchHealth();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Greška pri optimizaciji",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation za session cleanup
+  const cleanupMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) throw new Error('No auth token found');
+
+      const response = await fetch('/api/whatsapp-web/cleanup-sessions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Greška pri cleanup-u');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data: CleanupResult) => {
+      toast({
+        title: data.cleaned ? "🧹 Cleanup uspešan" : "ℹ️ Cleanup preskočen",
+        description: data.details,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Greška pri cleanup-u",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation za auto recovery
+  const recoveryMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) throw new Error('No auth token found');
+
+      const response = await fetch('/api/whatsapp-web/auto-recovery', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Greška pri recovery');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data: RecoveryResult) => {
+      toast({
+        title: data.recovered ? "🔄 Recovery uspešan" : "❌ Recovery neuspešan",
+        description: data.message,
+        variant: data.recovered ? "default" : "destructive",
+      });
+      if (data.recovered) {
+        refetchStatus();
+        refetchHealth();
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Greška pri recovery",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -337,8 +526,13 @@ export function WhatsAppWebController() {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Users className="h-5 w-5" />
-          WhatsApp kontakti ({contacts.length})
+          WhatsApp kontakti ({paginatedContacts?.totalCount || contacts.length})
         </CardTitle>
+        {paginatedContacts && (
+          <div className="text-sm text-muted-foreground">
+            Strana {currentPage} od {Math.ceil(paginatedContacts.totalCount / contactsLimit)}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {!status?.isConnected ? (
@@ -351,8 +545,9 @@ export function WhatsAppWebController() {
             <p>Nema dostupnih kontakata</p>
           </div>
         ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {contacts.slice(0, 50).map((contact) => (
+          <>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {contacts.map((contact) => (
               <div 
                 key={contact.id}
                 className={`p-2 rounded cursor-pointer border transition-colors ${
@@ -385,7 +580,187 @@ export function WhatsAppWebController() {
                 </div>
               </div>
             ))}
+            </div>
+            
+            {/* PAGINATION KONTROLE */}
+            {paginatedContacts && (
+              <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                <div className="text-sm text-muted-foreground">
+                  {((currentPage - 1) * contactsLimit) + 1}-{Math.min(currentPage * contactsLimit, paginatedContacts.totalCount)} od {paginatedContacts.totalCount}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </Button>
+                  <div className="text-sm flex items-center px-3">
+                    {currentPage}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!paginatedContacts.hasMore}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // NOVA KOMPONENTA ZA OPTIMIZACIJU I MAINTENANCE
+  const OptimizationPanel = () => (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Monitor className="h-5 w-5" />
+          Optimizacija i održavanje
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!status?.isConnected ? (
+          <div className="text-center text-muted-foreground py-4">
+            <Monitor className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>Optimizacija dostupna nakon povezivanja</p>
           </div>
+        ) : (
+          <>
+            {/* HEALTH STATUS DISPLAY */}
+            {healthStatus && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Health Status
+                  </h4>
+                  <div className={`p-3 rounded-lg ${healthStatus.isHealthy ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {healthStatus.isHealthy ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      )}
+                      <span className={`font-medium ${healthStatus.isHealthy ? 'text-green-800' : 'text-amber-800'}`}>
+                        {healthStatus.isHealthy ? 'Sistem zdrav' : 'Upozorenja detektovana'}
+                      </span>
+                    </div>
+                    {healthStatus.warnings.length > 0 && (
+                      <div className="text-sm text-amber-700 space-y-1">
+                        {healthStatus.warnings.map((warning, index) => (
+                          <div key={index}>• {warning}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Memory Usage</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Heap Used:</span>
+                      <span className={healthStatus.metrics.memoryUsage.heapUsed > 200 ? 'text-red-600 font-medium' : ''}>
+                        {healthStatus.metrics.memoryUsage.heapUsed}MB
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>External:</span>
+                      <span className={healthStatus.metrics.memoryUsage.external > 100 ? 'text-red-600 font-medium' : ''}>
+                        {healthStatus.metrics.memoryUsage.external}MB
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Uptime:</span>
+                      <span>{Math.floor(healthStatus.metrics.uptime / 60)}min</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Puppeteer:</span>
+                      <span className={healthStatus.metrics.puppeteerStatus === 'active' ? 'text-green-600' : 'text-amber-600'}>
+                        {healthStatus.metrics.puppeteerStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* OPTIMIZATION CONTROLS */}
+            <div className="grid md:grid-cols-3 gap-3">
+              <Button 
+                onClick={() => optimizeMutation.mutate()}
+                disabled={optimizeMutation.isPending}
+                variant="outline"
+                className="w-full"
+              >
+                {optimizeMutation.isPending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Optimizuje...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Optimizuj resources
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                onClick={() => cleanupMutation.mutate()}
+                disabled={cleanupMutation.isPending}
+                variant="outline"
+                className="w-full"
+              >
+                {cleanupMutation.isPending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Čisti...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Očisti session
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                onClick={() => recoveryMutation.mutate()}
+                disabled={recoveryMutation.isPending}
+                variant="outline"
+                className="w-full"
+              >
+                {recoveryMutation.isPending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Recovery...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Auto Recovery
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded">
+              <FileX className="h-4 w-4 inline mr-1" />
+              <strong>Napomene:</strong> Optimizacija čisti cache i oslobađa memoriju. 
+              Session cleanup briše stare fajlove. Auto Recovery restarta konekciju.
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
@@ -399,8 +774,11 @@ export function WhatsAppWebController() {
       {/* Slanje poruka */}
       <MessageSenderCard />
 
-      {/* Lista kontakata */}
+      {/* Lista kontakata sa pagination */}
       <ContactsCard />
+
+      {/* NOVA OPTIMIZACIJA PANEL */}
+      <OptimizationPanel />
     </div>
   );
 }
