@@ -42,7 +42,11 @@ import {
   // Fotografije servisa
   servicePhotos,
   // Conversation messages
-  ConversationMessage, InsertConversationMessage, conversationMessages
+  ConversationMessage, InsertConversationMessage, conversationMessages,
+  // Sigurnosni sistem protiv brisanja servisa
+  ServiceAuditLog, InsertServiceAuditLog, serviceAuditLogs,
+  UserPermission, InsertUserPermission, userPermissions,
+  DeletedService, InsertDeletedService, deletedServices
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -343,6 +347,19 @@ export interface IStorage {
   createConversationMessage(message: InsertConversationMessage): Promise<ConversationMessage>;
   updateConversationMessageStatus(id: number, status: string): Promise<ConversationMessage | undefined>;
   getServiceConversationHistory(serviceId: number): Promise<ConversationMessage[]>;
+  
+  // Sigurnosni sistem protiv brisanja servisa - nove funkcije
+  createServiceAuditLog(log: InsertServiceAuditLog): Promise<ServiceAuditLog | undefined>;
+  getServiceAuditLogs(serviceId: number): Promise<ServiceAuditLog[]>;
+  getAllAuditLogs(limit?: number): Promise<ServiceAuditLog[]>;
+  createUserPermission(permission: InsertUserPermission): Promise<UserPermission | undefined>;
+  getUserPermissions(userId: number): Promise<UserPermission | undefined>;
+  updateUserPermissions(userId: number, updates: Partial<InsertUserPermission>): Promise<UserPermission | undefined>;
+  canUserDeleteServices(userId: number): Promise<boolean>;
+  softDeleteService(serviceId: number, deletedBy: number, deletedByUsername: string, deletedByRole: string, reason?: string, ipAddress?: string, userAgent?: string): Promise<boolean>;
+  restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean>;
+  getDeletedServices(): Promise<DeletedService[]>;
+  getDeletedService(serviceId: number): Promise<DeletedService | undefined>;
 }
 
 // @ts-ignore - MemStorage class is not used in production, only for testing
@@ -5531,6 +5548,250 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri dohvatanju conversation istorije:', error);
       return [];
+    }
+  }
+
+  // ===== SIGURNOSNI SISTEM PROTIV BRISANJA SERVISA - NOVE FUNKCIJE =====
+
+  // Service Audit Log funkcije
+  async createServiceAuditLog(log: InsertServiceAuditLog): Promise<ServiceAuditLog | undefined> {
+    try {
+      const [auditLog] = await db
+        .insert(serviceAuditLogs)
+        .values(log)
+        .returning();
+      console.log(`🔒 [AUDIT LOG] ${log.action} servis ${log.serviceId} od strane ${log.performedByUsername} (${log.performedByRole})`);
+      return auditLog;
+    } catch (error) {
+      console.error('Greška pri kreiranju audit log-a:', error);
+      return undefined;
+    }
+  }
+
+  async getServiceAuditLogs(serviceId: number): Promise<ServiceAuditLog[]> {
+    try {
+      return await db.select()
+        .from(serviceAuditLogs)
+        .where(eq(serviceAuditLogs.serviceId, serviceId))
+        .orderBy(desc(serviceAuditLogs.timestamp));
+    } catch (error) {
+      console.error('Greška pri dohvatanju audit log-ova:', error);
+      return [];
+    }
+  }
+
+  async getAllAuditLogs(limit?: number): Promise<ServiceAuditLog[]> {
+    try {
+      let query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
+      if (limit && limit > 0) {
+        query = query.limit(limit) as any;
+      }
+      return await query;
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih audit log-ova:', error);
+      return [];
+    }
+  }
+
+  // User Permissions funkcije
+  async createUserPermission(permission: InsertUserPermission): Promise<UserPermission | undefined> {
+    try {
+      const [userPermission] = await db
+        .insert(userPermissions)
+        .values(permission)
+        .returning();
+      console.log(`🛡️ [PERMISSIONS] Dodeljene privilegije korisniku ${permission.userId}`);
+      return userPermission;
+    } catch (error) {
+      console.error('Greška pri kreiranju user permissions:', error);
+      return undefined;
+    }
+  }
+
+  async getUserPermissions(userId: number): Promise<UserPermission | undefined> {
+    try {
+      const [permission] = await db.select()
+        .from(userPermissions)
+        .where(eq(userPermissions.userId, userId))
+        .limit(1);
+      return permission;
+    } catch (error) {
+      console.error('Greška pri dohvatanju user permissions:', error);
+      return undefined;
+    }
+  }
+
+  async updateUserPermissions(userId: number, updates: Partial<InsertUserPermission>): Promise<UserPermission | undefined> {
+    try {
+      const [updatedPermission] = await db
+        .update(userPermissions)
+        .set(updates)
+        .where(eq(userPermissions.userId, userId))
+        .returning();
+      console.log(`🛡️ [PERMISSIONS] Ažurirane privilegije za korisnika ${userId}`);
+      return updatedPermission;
+    } catch (error) {
+      console.error('Greška pri ažuriranju user permissions:', error);
+      return undefined;
+    }
+  }
+
+  // Funkcije za proveru privilegija
+  async canUserDeleteServices(userId: number): Promise<boolean> {
+    try {
+      const permissions = await this.getUserPermissions(userId);
+      if (!permissions) {
+        // Ako nema unos u permissions tabeli, proveravaj da li je admin
+        const user = await this.getUser(userId);
+        return user?.role === 'admin'; // Samo admin može brisati servise ako nema eksplicitnih privilegija
+      }
+      return permissions.canDeleteServices;
+    } catch (error) {
+      console.error('Greška pri proveri privilegija za brisanje servisa:', error);
+      return false; // Default na sigurnost - ne dozvoli brisanje
+    }
+  }
+
+  // Deleted Services funkcije (Soft Delete)
+  async softDeleteService(serviceId: number, deletedBy: number, deletedByUsername: string, deletedByRole: string, reason?: string, ipAddress?: string, userAgent?: string): Promise<boolean> {
+    try {
+      console.log(`🗑️ [SOFT DELETE] Početak soft delete za servis ${serviceId} od strane ${deletedByUsername}`);
+      
+      // 1. Prvo dohvati kompletne podatke servisa
+      const service = await this.getService(serviceId);
+      if (!service) {
+        console.log(`🗑️ [SOFT DELETE] Servis ${serviceId} ne postoji`);
+        return false;
+      }
+
+      // 2. Sačuvaj kompletne podatke servisa kao JSON
+      const originalServiceData = JSON.stringify(service);
+
+      // 3. Unesi u deleted_services tabelu
+      const deletedServiceData: InsertDeletedService = {
+        serviceId: serviceId,
+        originalServiceData: originalServiceData,
+        deletedBy: deletedBy,
+        deletedByUsername: deletedByUsername,
+        deletedByRole: deletedByRole,
+        deleteReason: reason || null,
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        canBeRestored: true
+      };
+
+      const [deletedService] = await db
+        .insert(deletedServices)
+        .values(deletedServiceData)
+        .returning();
+
+      // 4. Kreiraj audit log
+      await this.createServiceAuditLog({
+        serviceId: serviceId,
+        action: 'soft_deleted',
+        performedBy: deletedBy,
+        performedByUsername: deletedByUsername,
+        performedByRole: deletedByRole,
+        oldValues: originalServiceData,
+        newValues: JSON.stringify({ status: 'soft_deleted' }),
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        notes: reason || 'Servis soft-obrisan (čuva se za mogućnost vraćanja)'
+      });
+
+      // 5. Fizički obriši servis iz glavne tabele
+      const deleteResult = await db.delete(services)
+        .where(eq(services.id, serviceId));
+
+      console.log(`🗑️ [SOFT DELETE] ✅ Servis ${serviceId} uspešno soft-obrisan`);
+      return true;
+    } catch (error) {
+      console.error(`🗑️ [SOFT DELETE] ❌ Greška pri soft delete servisa ${serviceId}:`, error);
+      return false;
+    }
+  }
+
+  async restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean> {
+    try {
+      console.log(`🔄 [RESTORE] Početak vraćanja servisa ${serviceId} od strane ${restoredByUsername}`);
+
+      // 1. Dohvati podatke obrisanog servisa
+      const [deletedService] = await db.select()
+        .from(deletedServices)
+        .where(and(
+          eq(deletedServices.serviceId, serviceId),
+          eq(deletedServices.canBeRestored, true),
+          isNull(deletedServices.restoredAt)
+        ))
+        .limit(1);
+
+      if (!deletedService) {
+        console.log(`🔄 [RESTORE] Servis ${serviceId} nije pronađen u obrisanima ili se ne može vratiti`);
+        return false;
+      }
+
+      // 2. Parsiraj originalne podatke servisa
+      const originalService = JSON.parse(deletedService.originalServiceData);
+
+      // 3. Vrati servis u glavnu tabelu (bez ID jer se regeneriše)
+      const serviceToRestore = { ...originalService };
+      delete serviceToRestore.id; // Ukloni ID da bude automatski generisan
+
+      const [restoredService] = await db
+        .insert(services)
+        .values(serviceToRestore)
+        .returning();
+
+      // 4. Označi kao vraćen u deleted_services
+      await db.update(deletedServices)
+        .set({
+          restoredBy: restoredBy,
+          restoredAt: new Date(),
+        })
+        .where(eq(deletedServices.serviceId, serviceId));
+
+      // 5. Kreiraj audit log
+      await this.createServiceAuditLog({
+        serviceId: restoredService.id,
+        action: 'restored',
+        performedBy: restoredBy,
+        performedByUsername: restoredByUsername,
+        performedByRole: restoredByRole,
+        oldValues: JSON.stringify({ status: 'soft_deleted' }),
+        newValues: JSON.stringify(restoredService),
+        notes: `Servis vraćen iz soft delete (originalni ID: ${serviceId}, novi ID: ${restoredService.id})`
+      });
+
+      console.log(`🔄 [RESTORE] ✅ Servis ${serviceId} uspešno vraćen kao novi servis ${restoredService.id}`);
+      return true;
+    } catch (error) {
+      console.error(`🔄 [RESTORE] ❌ Greška pri vraćanju servisa ${serviceId}:`, error);
+      return false;
+    }
+  }
+
+  async getDeletedServices(): Promise<DeletedService[]> {
+    try {
+      return await db.select()
+        .from(deletedServices)
+        .where(isNull(deletedServices.restoredAt))
+        .orderBy(desc(deletedServices.deletedAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju obrisanih servisa:', error);
+      return [];
+    }
+  }
+
+  async getDeletedService(serviceId: number): Promise<DeletedService | undefined> {
+    try {
+      const [deletedService] = await db.select()
+        .from(deletedServices)
+        .where(eq(deletedServices.serviceId, serviceId))
+        .limit(1);
+      return deletedService;
+    } catch (error) {
+      console.error('Greška pri dohvatanju obrisanog servisa:', error);
+      return undefined;
     }
   }
 
