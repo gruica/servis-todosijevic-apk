@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
+import { registerRoutes, setupSecurityEndpoints } from "./routes";
 
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
@@ -131,6 +131,9 @@ app.use((req, res, next) => {
   // Mobile SMS Service has been completely removed
   
   const server = await registerRoutes(app);
+  
+  // Registruj sigurnosne endpoint-e za audit i soft delete
+  setupSecurityEndpoints(app, storage);
   
 
 

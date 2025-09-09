@@ -1,11 +1,12 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, type IStorage } from "./storage";
 import { setupAuth, comparePassword } from "./auth";
 import { registerBusinessPartnerRoutes } from "./business-partner-routes";
 import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
+const authenticateJWT = jwtAuthMiddleware;
 import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
@@ -6293,6 +6294,227 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
     } catch (error) {
       console.error("[ENHANCED CLIENT ANALYSIS] Greška:", error);
       res.status(500).json({ error: "Greška pri kreiranju poboljšane analize klijenta" });
+    }
+  });
+}
+
+// ===== SIGURNOSNI SISTEM PROTIV BRISANJA SERVISA - NOVI ENDPOINT-I =====
+
+export function setupSecurityEndpoints(app: Express, storage: IStorage) {
+  
+  // Audit Log endpoint-i
+  app.get('/api/admin/audit-logs', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može pristupiti audit log-ovima' });
+      }
+      
+      const limit = parseInt(req.query.limit as string) || 100;
+      const auditLogs = await storage.getAllAuditLogs(limit);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error('Greška pri dohvatanju audit log-ova:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju audit log-ova' });
+    }
+  });
+  
+  app.get('/api/admin/audit-logs/service/:serviceId', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može pristupiti audit log-ovima' });
+      }
+      
+      const serviceId = parseInt(req.params.serviceId);
+      const auditLogs = await storage.getServiceAuditLogs(serviceId);
+      res.json(auditLogs);
+    } catch (error) {
+      console.error('Greška pri dohvatanju audit log-ova za servis:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju audit log-ova za servis' });
+    }
+  });
+  
+  // User permissions endpoint-i
+  app.get('/api/admin/user-permissions/:userId', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može upravljati privilegijama' });
+      }
+      
+      const userId = parseInt(req.params.userId);
+      const permissions = await storage.getUserPermissions(userId);
+      
+      if (!permissions) {
+        // Ako nema permissions, kreiranje default-e na osnovu role
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ error: 'Korisnik ne postoji' });
+        }
+        
+        const defaultPermissions = {
+          userId: userId,
+          canDeleteServices: user.role === 'admin',
+          canDeleteClients: user.role === 'admin',
+          canDeleteAppliances: user.role === 'admin',
+          canViewAllServices: user.role === 'admin',
+          canManageUsers: user.role === 'admin',
+          grantedBy: req.user!.id,
+          notes: 'Default privilegije na osnovu role'
+        };
+        
+        const newPermissions = await storage.createUserPermission(defaultPermissions);
+        return res.json(newPermissions);
+      }
+      
+      res.json(permissions);
+    } catch (error) {
+      console.error('Greška pri dohvatanju user permissions:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju user permissions' });
+    }
+  });
+  
+  app.post('/api/admin/user-permissions/:userId', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može upravljati privilegijama' });
+      }
+      
+      const userId = parseInt(req.params.userId);
+      const updates = {
+        ...req.body,
+        grantedBy: req.user!.id
+      };
+      
+      const updatedPermissions = await storage.updateUserPermissions(userId, updates);
+      
+      // Audit log za promenu privilegija
+      await storage.createServiceAuditLog({
+        serviceId: 0, // placeholder za system audit
+        action: 'user_permissions_updated',
+        performedBy: req.user!.id,
+        performedByUsername: req.user!.username,
+        performedByRole: req.user!.role,
+        oldValues: null,
+        newValues: JSON.stringify(updates),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        notes: `Privilegije ažurirane za korisnika ${userId}`
+      });
+      
+      res.json(updatedPermissions);
+    } catch (error) {
+      console.error('Greška pri ažuriranju user permissions:', error);
+      res.status(500).json({ error: 'Greška pri ažuriranju user permissions' });
+    }
+  });
+  
+  // Soft delete endpoint-i
+  app.delete('/api/admin/services/:id/safe', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      const serviceId = parseInt(req.params.id);
+      const deleteReason = req.body.reason;
+      
+      // Proveri privilegije
+      const canDelete = await storage.canUserDeleteServices(req.user!.id);
+      if (!canDelete) {
+        return res.status(403).json({ 
+          error: 'Nemate privilegije za brisanje servisa. Kontaktirajte administratora.' 
+        });
+      }
+      
+      console.log(`🗑️ [SAFE DELETE] Admin ${req.user!.username} pokušava da obriše servis ${serviceId}`);
+      
+      const success = await storage.softDeleteService(
+        serviceId,
+        req.user!.id,
+        req.user!.username,
+        req.user!.role,
+        deleteReason,
+        req.ip,
+        req.get('User-Agent')
+      );
+      
+      if (success) {
+        console.log(`🗑️ [SAFE DELETE] ✅ Servis ${serviceId} uspešno safe-obrisan`);
+        res.json({ 
+          success: true, 
+          message: 'Servis je sigurno obrisan i može biti vraćen ako je potrebno' 
+        });
+      } else {
+        console.log(`🗑️ [SAFE DELETE] ❌ Neuspešno brisanje servisa ${serviceId}`);
+        res.status(400).json({ 
+          error: 'Greška pri brisanju servisa. Servis možda ne postoji.' 
+        });
+      }
+      
+    } catch (error) {
+      console.error('🗑️ [SAFE DELETE] Greška pri sigurnom brisanju servisa:', error);
+      res.status(500).json({ error: 'Greška pri sigurnom brisanju servisa' });
+    }
+  });
+  
+  app.get('/api/admin/deleted-services', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može videti obrisane servise' });
+      }
+      
+      const deletedServices = await storage.getDeletedServices();
+      res.json(deletedServices);
+    } catch (error) {
+      console.error('Greška pri dohvatanju obrisanih servisa:', error);
+      res.status(500).json({ error: 'Greška pri dohvatanju obrisanih servisa' });
+    }
+  });
+  
+  app.post('/api/admin/deleted-services/:serviceId/restore', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ error: 'Samo admin može vraćati obrisane servise' });
+      }
+      
+      const serviceId = parseInt(req.params.serviceId);
+      console.log(`🔄 [RESTORE] Admin ${req.user!.username} pokušava da vrati servis ${serviceId}`);
+      
+      const success = await storage.restoreDeletedService(
+        serviceId,
+        req.user!.id,
+        req.user!.username,
+        req.user!.role
+      );
+      
+      if (success) {
+        console.log(`🔄 [RESTORE] ✅ Servis ${serviceId} uspešno vraćen`);
+        res.json({ 
+          success: true, 
+          message: 'Servis je uspešno vraćen u sistem sa novim ID-jem' 
+        });
+      } else {
+        console.log(`🔄 [RESTORE] ❌ Neuspešno vraćanje servisa ${serviceId}`);
+        res.status(400).json({ 
+          error: 'Greška pri vraćanju servisa. Servis možda ne može biti vraćen.' 
+        });
+      }
+      
+    } catch (error) {
+      console.error('🔄 [RESTORE] Greška pri vraćanju servisa:', error);
+      res.status(500).json({ error: 'Greška pri vraćanju servisa' });
+    }
+  });
+  
+  // Endpoint za proveru privilegija
+  app.get('/api/user/permissions/check', authenticateJWT, async (req: Request, res: Response) => {
+    try {
+      const canDeleteServices = await storage.canUserDeleteServices(req.user!.id);
+      const permissions = await storage.getUserPermissions(req.user!.id);
+      
+      res.json({
+        canDeleteServices: canDeleteServices,
+        permissions: permissions,
+        userRole: req.user!.role
+      });
+    } catch (error) {
+      console.error('Greška pri proveri privilegija:', error);
+      res.status(500).json({ error: 'Greška pri proveri privilegija' });
     }
   });
 }
