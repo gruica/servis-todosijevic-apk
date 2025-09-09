@@ -1,0 +1,15 @@
+2025/09/09-11:17:15.413 1639 Reusing MANIFEST /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/09/09-11:17:15.416 1639 Recovering log #457
+2025/09/09-11:17:15.471 1639 Reusing old log /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000457.log 
+2025/09/09-11:17:17.369 1639 Level-0 table #463: started
+2025/09/09-11:17:17.378 1639 Level-0 table #463: 166198 bytes OK
+2025/09/09-11:17:17.389 1639 Delete type=0 #457
+2025/09/09-11:17:17.390 1637 Manual compaction at level-0 from '\x00k\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00l\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/09/09-11:17:21.019 1639 Compacting 1@1 + 2@2 files
+2025/09/09-11:17:21.212 1639 Generated table #464@1: 44313 keys, 2205345 bytes
+2025/09/09-11:17:21.338 1639 Generated table #465@1: 22216 keys, 918302 bytes
+2025/09/09-11:17:21.339 1639 Compacted 1@1 + 2@2 files => 3123647 bytes
+2025/09/09-11:17:21.343 1639 compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/09/09-11:17:21.344 1639 Delete type=2 #459
+2025/09/09-11:17:21.344 1639 Delete type=2 #460
+2025/09/09-11:17:21.344 1639 Delete type=2 #463
