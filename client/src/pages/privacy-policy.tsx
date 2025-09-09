@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Privacy Policy for Frigo Sistem Todosijević</CardTitle>
-            <p className="text-center text-gray-600">Last Updated: 03. October 2023.</p>
+            <p className="text-center text-gray-600">Last Updated: 09. January 2025.</p>
           </CardHeader>
           
           <CardContent className="prose prose-gray max-w-none space-y-6">
@@ -76,8 +76,60 @@ export default function PrivacyPolicyPage() {
               <p>We do not sell, trade, or rent your personal information to third parties. We may share information in the following situations:</p>
               <ul className="list-disc ml-6 space-y-1">
                 <li><strong>Service Providers:</strong> We may share your information with third-party vendors and service providers who perform services on our behalf (e.g., cloud hosting, data analysis). These parties are obligated to keep your information confidential.</li>
-                <li><strong>Legal Requirements:</strong> We may disclose your information if required to do so by law or in response to valid requests by public authorities (e.g., a court or a government agency).</li>
+                <li><strong>Legal Requirements:</strong> We may disclose your information if required to do so by law or in response to valid requests by public authorities, subject to our Government Data Request Policy outlined below.</li>
               </ul>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">5.1. Government Data Request Policy</h2>
+              <p>We have established comprehensive policies for handling requests for personal data from government agencies and public authorities:</p>
+              
+              <div className="ml-4 space-y-4">
+                <div>
+                  <h3 className="font-semibold">Mandatory Legal Review:</h3>
+                  <p>Every government data request undergoes mandatory legal review to verify its lawfulness, proper authorization, and compliance with applicable data protection laws including GDPR and local legislation.</p>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold">Challenge Procedures:</h3>
+                  <p>We maintain formal procedures for challenging government data requests that we determine to be:</p>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>Legally insufficient or improperly authorized</li>
+                    <li>Overly broad or not proportionate to the stated purpose</li>
+                    <li>In violation of user privacy rights or applicable data protection laws</li>
+                    <li>Lacking proper legal basis or justification</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold">Data Minimization Policy:</h3>
+                  <p>When legally compelled to respond to valid government requests, we apply strict data minimization principles:</p>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>We disclose only the minimum data necessary to satisfy the legal requirement</li>
+                    <li>We provide the narrowest possible scope of information relevant to the specific investigation</li>
+                    <li>We exclude unrelated personal data not specifically requested or legally required</li>
+                    <li>We seek to provide aggregated or anonymized data when possible instead of individual records</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold">Request Documentation and Reporting:</h3>
+                  <p>We maintain comprehensive documentation of all government data requests, including:</p>
+                  <ul className="list-disc ml-6 space-y-1">
+                    <li>Details of the requesting authority and legal basis for the request</li>
+                    <li>Scope and type of data requested vs. data actually provided</li>
+                    <li>Legal analysis and justification for our response</li>
+                    <li>Any challenges or objections raised and their outcomes</li>
+                    <li>Timeline of all communications and actions taken</li>
+                  </ul>
+                  <p className="mt-2">This documentation is retained for audit purposes and to ensure accountability in our data disclosure practices.</p>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold">User Notification:</h3>
+                  <p>Where legally permitted, we will notify affected users about government data requests concerning their personal information, unless such notification is prohibited by law or court order.</p>
+                </div>
+              </div>
             </section>
 
             <section>
