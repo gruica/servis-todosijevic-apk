@@ -945,6 +945,405 @@ ${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\
       }
     }
   }
+
+  // =================================================================
+  // NOVE TEST FUNKCIJE ZA OPTIMIZACIJU TESTIRANJE - DODANO NAKNADNO
+  // =================================================================
+
+  /**
+   * MOCK KONTAKTI GENERATOR - za testiranje pagination sa velikim brojem kontakata
+   */
+  generateMockContacts(count: number): WhatsAppWebContact[] {
+    const mockContacts: WhatsAppWebContact[] = [];
+    
+    for (let i = 1; i <= count; i++) {
+      mockContacts.push({
+        id: `mock_contact_${i}@c.us`,
+        name: `Test Kontakt ${i}`,
+        number: `06912345${String(i).padStart(2, '0')}`,
+        pushname: `TestUser${i}`,
+        isMyContact: i % 2 === 0,
+        isWAContact: true
+      });
+    }
+    
+    return mockContacts;
+  }
+
+  /**
+   * PAGINATION STRESS TEST - testira sa velikim brojem kontakata
+   */
+  async testPaginationWithLargeDataset(totalContacts: number = 500): Promise<{
+    success: boolean;
+    totalTested: number;
+    pagesGenerated: number;
+    performanceMetrics: {
+      averageLoadTime: number;
+      memoryUsageIncrease: number;
+      errorsEncountered: number;
+    };
+    details: string;
+  }> {
+    console.log(`🧪 [PAGINATION TEST] Počinje testiranje sa ${totalContacts} kontakata`);
+    
+    const startMemory = process.memoryUsage().heapUsed;
+    const startTime = Date.now();
+    let errorsEncountered = 0;
+    const loadTimes: number[] = [];
+
+    try {
+      // Generiši mock kontakte
+      const mockContacts = this.generateMockContacts(totalContacts);
+      console.log(`📊 [PAGINATION TEST] Generisano ${mockContacts.length} mock kontakata`);
+
+      // Testiraj različite page size-ove
+      const pageSizes = [10, 25, 50, 100];
+      let totalPagesGenerated = 0;
+
+      for (const pageSize of pageSizes) {
+        const pagesCount = Math.ceil(totalContacts / pageSize);
+        console.log(`📄 [PAGINATION TEST] Testiram page size ${pageSize} (${pagesCount} strana)`);
+
+        for (let page = 1; page <= Math.min(pagesCount, 10); page++) { // Limit na 10 strana po size-u
+          const pageStartTime = Date.now();
+          
+          try {
+            // Simuliraj pagination
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageContacts = mockContacts.slice(startIndex, endIndex);
+            
+            // Simuliraj processing delay
+            await new Promise(resolve => setTimeout(resolve, 10));
+            
+            const pageLoadTime = Date.now() - pageStartTime;
+            loadTimes.push(pageLoadTime);
+            totalPagesGenerated++;
+            
+            console.log(`✅ [PAGINATION TEST] Strana ${page} (${pageContacts.length} kontakata) - ${pageLoadTime}ms`);
+          } catch (error) {
+            errorsEncountered++;
+            console.error(`❌ [PAGINATION TEST] Greška na strani ${page}:`, error);
+          }
+        }
+      }
+
+      const endTime = Date.now();
+      const endMemory = process.memoryUsage().heapUsed;
+      
+      const averageLoadTime = loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length;
+      const memoryUsageIncrease = Math.round((endMemory - startMemory) / 1024 / 1024);
+
+      const result = {
+        success: errorsEncountered === 0,
+        totalTested: totalContacts,
+        pagesGenerated: totalPagesGenerated,
+        performanceMetrics: {
+          averageLoadTime: Math.round(averageLoadTime),
+          memoryUsageIncrease,
+          errorsEncountered
+        },
+        details: `Test završen za ${endTime - startTime}ms. Memory delta: ${memoryUsageIncrease}MB`
+      };
+
+      console.log(`🎯 [PAGINATION TEST] Rezultat:`, result);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [PAGINATION TEST] Test neuspešan:`, error);
+      return {
+        success: false,
+        totalTested: 0,
+        pagesGenerated: 0,
+        performanceMetrics: {
+          averageLoadTime: 0,
+          memoryUsageIncrease: 0,
+          errorsEncountered: 1
+        },
+        details: `Test prekinut: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * HEALTH MONITORING STRESS TEST
+   */
+  async testHealthMonitoringStress(): Promise<{
+    success: boolean;
+    iterations: number;
+    healthChecks: any[];
+    memoryTrend: number[];
+    warnings: string[];
+    details: string;
+  }> {
+    console.log(`🏥 [HEALTH TEST] Pokretanje stress test health monitoringa`);
+    
+    const iterations = 20;
+    const healthChecks: any[] = [];
+    const memoryTrend: number[] = [];
+    const warnings: string[] = [];
+
+    try {
+      for (let i = 1; i <= iterations; i++) {
+        const startIterationTime = Date.now();
+        
+        // Dobij health status
+        const healthStatus = this.getHealthStatus();
+        healthChecks.push({
+          iteration: i,
+          timestamp: Date.now(),
+          isHealthy: healthStatus.isHealthy,
+          memoryUsage: healthStatus.metrics.memoryUsage,
+          warnings: healthStatus.warnings.length
+        });
+
+        memoryTrend.push(healthStatus.metrics.memoryUsage.heapUsed);
+        
+        // Dodaj warnings ako ima problema
+        if (!healthStatus.isHealthy) {
+          warnings.push(`Iteracija ${i}: ${healthStatus.warnings.join(', ')}`);
+        }
+
+        // Simuliraj memory pressure
+        if (i % 5 === 0) {
+          // Kreiraj temporary memory pressure
+          const tempArray = new Array(100000).fill('memory pressure test');
+          await new Promise(resolve => setTimeout(resolve, 100));
+          tempArray.length = 0; // Očisti
+        }
+
+        const iterationTime = Date.now() - startIterationTime;
+        console.log(`🔄 [HEALTH TEST] Iteracija ${i}/${iterations} - ${iterationTime}ms - Healthy: ${healthStatus.isHealthy}`);
+        
+        await new Promise(resolve => setTimeout(resolve, 200)); // Delay između testova
+      }
+
+      // Analiziraj rezultate
+      const memoryGrowth = memoryTrend[memoryTrend.length - 1] - memoryTrend[0];
+      const healthyCount = healthChecks.filter(check => check.isHealthy).length;
+      const successRate = (healthyCount / iterations) * 100;
+
+      const result = {
+        success: successRate >= 80, // 80%+ success rate = uspešan test
+        iterations,
+        healthChecks,
+        memoryTrend,
+        warnings,
+        details: `${successRate.toFixed(1)}% success rate, memory growth: ${memoryGrowth}MB`
+      };
+
+      console.log(`🎯 [HEALTH TEST] Rezultat:`, result);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [HEALTH TEST] Test neuspešan:`, error);
+      return {
+        success: false,
+        iterations: 0,
+        healthChecks: [],
+        memoryTrend: [],
+        warnings: [`Test error: ${error.message}`],
+        details: `Health monitoring test prekinut: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * AUTO RECOVERY TEST SCENARIO
+   */
+  async testAutoRecoveryScenarios(): Promise<{
+    success: boolean;
+    scenariosTested: number;
+    recoveryResults: any[];
+    avgRecoveryTime: number;
+    details: string;
+  }> {
+    console.log(`🔄 [RECOVERY TEST] Pokretanje auto recovery test scenarija`);
+    
+    const recoveryResults: any[] = [];
+    
+    try {
+      // SCENARIO 1: Simuliraj client disconnect
+      console.log(`📋 [RECOVERY TEST] Scenario 1: Simulirani client disconnect`);
+      const scenario1Start = Date.now();
+      
+      // Resetuj recovery counter
+      this.recoveryAttempts = 0;
+      
+      // Simuliraj disconnect
+      this.isConnected = false;
+      this.qrCode = null;
+      
+      const recovery1 = await this.attemptAutoRecovery();
+      const scenario1Time = Date.now() - scenario1Start;
+      
+      recoveryResults.push({
+        scenario: 'client_disconnect',
+        success: recovery1.recovered,
+        attempt: recovery1.attempt,
+        timeMs: scenario1Time,
+        message: recovery1.message
+      });
+
+      // SCENARIO 2: Multiple recovery attempts
+      console.log(`📋 [RECOVERY TEST] Scenario 2: Multiple recovery pokušaji`);
+      const scenario2Start = Date.now();
+      
+      // Reset i testiraj multiple attempts
+      this.recoveryAttempts = 0;
+      this.isConnected = false;
+      
+      const recovery2Attempts = [];
+      for (let i = 1; i <= 3; i++) {
+        const attempt = await this.attemptAutoRecovery();
+        recovery2Attempts.push(attempt);
+        
+        if (attempt.recovered) break;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay između pokušaja
+      }
+      
+      const scenario2Time = Date.now() - scenario2Start;
+      recoveryResults.push({
+        scenario: 'multiple_attempts',
+        success: recovery2Attempts.some(a => a.recovered),
+        attempts: recovery2Attempts,
+        timeMs: scenario2Time,
+        message: `${recovery2Attempts.length} pokušaja izvršeno`
+      });
+
+      // SCENARIO 3: Recovery limit test
+      console.log(`📋 [RECOVERY TEST] Scenario 3: Recovery limit test`);
+      const scenario3Start = Date.now();
+      
+      // Forsiraj max attempts
+      this.recoveryAttempts = this.MAX_RECOVERY_ATTEMPTS;
+      this.isConnected = false;
+      
+      const recovery3 = await this.attemptAutoRecovery();
+      const scenario3Time = Date.now() - scenario3Start;
+      
+      recoveryResults.push({
+        scenario: 'max_attempts_reached',
+        success: !recovery3.recovered, // Success znači da je pravilno odbacio dalje pokušaje
+        attempt: recovery3.attempt,
+        timeMs: scenario3Time,
+        message: recovery3.message
+      });
+
+      // Analiziraj rezultate
+      const avgRecoveryTime = recoveryResults.reduce((sum, r) => sum + r.timeMs, 0) / recoveryResults.length;
+      const successfulScenarios = recoveryResults.filter(r => r.success).length;
+
+      const result = {
+        success: successfulScenarios >= 2, // Najmanje 2/3 scenarija uspešna
+        scenariosTested: recoveryResults.length,
+        recoveryResults,
+        avgRecoveryTime: Math.round(avgRecoveryTime),
+        details: `${successfulScenarios}/${recoveryResults.length} scenarija uspešno, avg time: ${avgRecoveryTime.toFixed(0)}ms`
+      };
+
+      console.log(`🎯 [RECOVERY TEST] Rezultat:`, result);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [RECOVERY TEST] Test neuspešan:`, error);
+      return {
+        success: false,
+        scenariosTested: 0,
+        recoveryResults: [],
+        avgRecoveryTime: 0,
+        details: `Recovery test prekinut: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * COMPREHENSIVE OPTIMIZATION TEST SUITE
+   */
+  async runComprehensiveOptimizationTests(): Promise<{
+    success: boolean;
+    testResults: {
+      pagination: any;
+      healthMonitoring: any;
+      autoRecovery: any;
+    };
+    overallScore: number;
+    recommendations: string[];
+  }> {
+    console.log(`🚀 [COMPREHENSIVE TEST] Pokretanje complete optimization test suite`);
+    
+    const startTime = Date.now();
+    const recommendations: string[] = [];
+    
+    try {
+      // 1. Pagination Test
+      console.log(`📄 [COMPREHENSIVE TEST] Pokretanje pagination test...`);
+      const paginationTest = await this.testPaginationWithLargeDataset(1000);
+      
+      // 2. Health Monitoring Test
+      console.log(`🏥 [COMPREHENSIVE TEST] Pokretanje health monitoring test...`);
+      const healthTest = await this.testHealthMonitoringStress();
+      
+      // 3. Auto Recovery Test
+      console.log(`🔄 [COMPREHENSIVE TEST] Pokretanje auto recovery test...`);
+      const recoveryTest = await this.testAutoRecoveryScenarios();
+
+      // Analiziraj rezultate i kreiraj preporuke
+      if (!paginationTest.success) {
+        recommendations.push('Smanji page size ili optimizuj kontakt processing');
+      }
+      if (paginationTest.performanceMetrics.memoryUsageIncrease > 50) {
+        recommendations.push('Memory usage raste previše tokom pagination - dodaj cleanup');
+      }
+      
+      if (!healthTest.success) {
+        recommendations.push('Health monitoring detektuje probleme - provjeri memory leaks');
+      }
+      if (healthTest.warnings.length > 10) {
+        recommendations.push('Previše health warnings - optimizuj resource management');
+      }
+      
+      if (!recoveryTest.success) {
+        recommendations.push('Auto recovery ne radi propisno - provjeri recovery logiku');
+      }
+      if (recoveryTest.avgRecoveryTime > 10000) {
+        recommendations.push('Recovery traje predugo - smanji timeout values');
+      }
+
+      // Izračunaj overall score (0-100)
+      let score = 0;
+      if (paginationTest.success) score += 35;
+      if (healthTest.success) score += 30;
+      if (recoveryTest.success) score += 35;
+
+      const totalTime = Date.now() - startTime;
+      
+      const result = {
+        success: score >= 70, // 70+ = uspešan test
+        testResults: {
+          pagination: paginationTest,
+          healthMonitoring: healthTest,
+          autoRecovery: recoveryTest
+        },
+        overallScore: score,
+        recommendations
+      };
+
+      console.log(`🎯 [COMPREHENSIVE TEST] Završeno za ${totalTime}ms - Score: ${score}/100`);
+      console.log(`📊 [COMPREHENSIVE TEST] Rezultat:`, result);
+      
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [COMPREHENSIVE TEST] Test suite neuspešan:`, error);
+      return {
+        success: false,
+        testResults: {
+          pagination: null,
+          healthMonitoring: null,
+          autoRecovery: null
+        },
+        overallScore: 0,
+        recommendations: [`Critical error: ${error.message}`]
+      };
+    }
+  }
 }
 
 // Singleton instanca

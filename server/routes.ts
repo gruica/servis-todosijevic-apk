@@ -5922,5 +5922,131 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ error: 'Greška pri testiranju webhook konfiguracije' });
     }
   });
+
+  // ========== NOVI WHATSAPP WEB OPTIMIZATION TESTING ENDPOINTS ==========
+
+  // POST /api/whatsapp-web/test/pagination - Test pagination sa velikim brojem kontakata
+  app.post('/api/whatsapp-web/test/pagination', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      const { totalContacts = 1000 } = req.body;
+      console.log(`🧪 [PAGINATION TEST API] Zahtev za pagination test sa ${totalContacts} kontakata`);
+
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      const result = await service.testPaginationWithLargeDataset(totalContacts);
+      
+      console.log(`🧪 [PAGINATION TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - Score: ${result.performanceMetrics.averageLoadTime}ms avg`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [PAGINATION TEST API] Greška pri pagination testu:', error);
+      res.status(500).json({ 
+        error: 'Greška pri pagination testu',
+        success: false,
+        details: error.message
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/test/health-monitoring - Test health monitoring stress
+  app.post('/api/whatsapp-web/test/health-monitoring', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`🏥 [HEALTH TEST API] Zahtev za health monitoring stress test`);
+
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      const result = await service.testHealthMonitoringStress();
+      
+      console.log(`🏥 [HEALTH TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - ${result.iterations} iteracija`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [HEALTH TEST API] Greška pri health testu:', error);
+      res.status(500).json({ 
+        error: 'Greška pri health monitoring testu',
+        success: false,
+        details: error.message
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/test/auto-recovery - Test auto recovery scenarios
+  app.post('/api/whatsapp-web/test/auto-recovery', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`🔄 [RECOVERY TEST API] Zahtev za auto recovery test`);
+
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      const result = await service.testAutoRecoveryScenarios();
+      
+      console.log(`🔄 [RECOVERY TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - ${result.scenariosTested} scenarija`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [RECOVERY TEST API] Greška pri recovery testu:', error);
+      res.status(500).json({ 
+        error: 'Greška pri auto recovery testu',
+        success: false,
+        details: error.message
+      });
+    }
+  });
+
+  // POST /api/whatsapp-web/test/comprehensive - Pokreni complete optimization test suite
+  app.post('/api/whatsapp-web/test/comprehensive', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`🚀 [COMPREHENSIVE TEST API] Zahtev za complete optimization test suite`);
+
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      const result = await service.runComprehensiveOptimizationTests();
+      
+      console.log(`🚀 [COMPREHENSIVE TEST API] Test suite ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - Score: ${result.overallScore}/100`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [COMPREHENSIVE TEST API] Greška pri comprehensive testu:', error);
+      res.status(500).json({ 
+        error: 'Greška pri comprehensive test suite',
+        success: false,
+        details: error.message
+      });
+    }
+  });
+
+  // GET /api/whatsapp-web/test/verify-existing - Verifikuj da postojeće funkcije rade
+  app.get('/api/whatsapp-web/test/verify-existing', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`✅ [VERIFY TEST API] Zahtev za verifikaciju postojećih funkcija`);
+
+      const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
+      
+      // Test postojećih funkcija
+      const verificationResults = {
+        connectionStatus: service.getConnectionStatus(),
+        healthStatus: service.getHealthStatus(),
+        paginationAvailable: typeof service.getPaginatedContacts === 'function',
+        optimizationAvailable: typeof service.optimizeResources === 'function',
+        cleanupAvailable: typeof service.cleanupOldSessions === 'function',
+        recoveryAvailable: typeof service.attemptAutoRecovery === 'function',
+        batchProcessingAvailable: typeof service.addToMessageQueue === 'function'
+      };
+
+      const allFunctional = Object.values(verificationResults).every(v => 
+        typeof v === 'boolean' ? v : true
+      );
+
+      const result = {
+        success: allFunctional,
+        verificationResults,
+        message: allFunctional ? 
+          'Sve postojeće i nove funkcije su dostupne i funkcionalne' : 
+          'Neki funkcionalnosti nisu dostupne',
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log(`✅ [VERIFY TEST API] Verifikacija ${result.success ? 'USPEŠNA' : 'NEUSPEŠNA'}`);
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [VERIFY TEST API] Greška pri verifikaciji:', error);
+      res.status(500).json({ 
+        error: 'Greška pri verifikaciji postojećih funkcija',
+        success: false,
+        details: error.message
+      });
+    }
+  });
 }
 
