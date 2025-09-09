@@ -535,6 +535,443 @@ ${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\
 
     return results;
   }
+
+  // =================================================================
+  // NOVE FUNKCIJE ZA STABILNOST I OPTIMIZACIJU - DODANO NAKNADNO
+  // =================================================================
+
+  /**
+   * PAGINATED KONTAKTI - sprečava memory overflow sa velikim brojem kontakata
+   */
+  async getPaginatedContacts(page: number = 1, limit: number = 25): Promise<{
+    contacts: WhatsAppWebContact[];
+    totalCount: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  }> {
+    if (!this.client || !this.isConnected) {
+      return {
+        contacts: [],
+        totalCount: 0,
+        page,
+        limit,
+        hasMore: false
+      };
+    }
+
+    try {
+      console.log(`🔍 [PAGINATION] Dobijanje kontakata - strana ${page}, limit ${limit}`);
+      
+      const allContacts = await this.client.getContacts();
+      const totalCount = allContacts.length;
+      
+      // Filtriraj samo validne WhatsApp kontakte za bolju performansu
+      const validContacts = allContacts.filter(contact => 
+        contact.isWAContact && contact.number && !contact.id._serialized.includes('@g.us')
+      );
+
+      // Paginacija
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedContacts = validContacts.slice(startIndex, endIndex);
+
+      const contacts: WhatsAppWebContact[] = paginatedContacts.map(contact => ({
+        id: contact.id._serialized,
+        name: contact.name || '',
+        number: contact.number,
+        pushname: contact.pushname || '',
+        isMyContact: contact.isMyContact,
+        isWAContact: contact.isWAContact
+      }));
+
+      const hasMore = endIndex < validContacts.length;
+
+      console.log(`✅ [PAGINATION] Vraćam ${contacts.length}/${validContacts.length} kontakata (strana ${page})`);
+      
+      return {
+        contacts,
+        totalCount: validContacts.length,
+        page,
+        limit,
+        hasMore
+      };
+    } catch (error) {
+      console.error('❌ [PAGINATION] Greška pri dobijanju paginiranih kontakata:', error);
+      return {
+        contacts: [],
+        totalCount: 0,
+        page,
+        limit,
+        hasMore: false
+      };
+    }
+  }
+
+  /**
+   * OPTIMIZED MEDIA HANDLING - kontroliše veličinu i tip media fajlova
+   */
+  private readonly MAX_MEDIA_SIZE = 10 * 1024 * 1024; // 10MB limit
+  private readonly ALLOWED_MEDIA_TYPES = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'text/plain',
+    'audio/mpeg', 'audio/ogg',
+    'video/mp4'
+  ];
+
+  async processOptimizedMedia(message: any): Promise<{
+    media?: { mimetype: string; data: string; filename: string; size: number };
+    error?: string;
+  }> {
+    if (!message.hasMedia) {
+      return {};
+    }
+
+    try {
+      // Dobij osnovne media info bez download-a
+      const mediaInfo = message.mediaKey ? await message.getMediaInfo() : null;
+      
+      if (mediaInfo && mediaInfo.size > this.MAX_MEDIA_SIZE) {
+        console.warn(`⚠️ [MEDIA] Fajl preslik (${mediaInfo.size} bytes > ${this.MAX_MEDIA_SIZE})`);
+        return { error: 'Fajl je prevelik za procesiranje' };
+      }
+
+      // Download media sa timeout-om
+      const mediaDownloadPromise = message.downloadMedia();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Media download timeout')), 30000)
+      );
+
+      const media = await Promise.race([mediaDownloadPromise, timeoutPromise]);
+
+      // Proveri tip fajla
+      if (!this.ALLOWED_MEDIA_TYPES.includes(media.mimetype)) {
+        console.warn(`⚠️ [MEDIA] Neподржan tip fajla: ${media.mimetype}`);
+        return { error: 'Tip fajla nije podržan' };
+      }
+
+      // Proveri stvarnu veličinu dopo download-a
+      const actualSize = Buffer.from(media.data, 'base64').length;
+      if (actualSize > this.MAX_MEDIA_SIZE) {
+        console.warn(`⚠️ [MEDIA] Fajl stvarno prevelik (${actualSize} bytes)`);
+        return { error: 'Fajl je prevelik' };
+      }
+
+      console.log(`✅ [MEDIA] Uspešno procesiran ${media.mimetype} fajl (${actualSize} bytes)`);
+      
+      return {
+        media: {
+          mimetype: media.mimetype,
+          data: media.data,
+          filename: media.filename || 'file',
+          size: actualSize
+        }
+      };
+    } catch (error: any) {
+      console.error('❌ [MEDIA] Greška pri procesiranju media:', error);
+      return { error: error.message || 'Greška pri procesiranju media' };
+    }
+  }
+
+  /**
+   * SESSION CLEANUP - periodično čisti stare session fajlove
+   */
+  async cleanupOldSessions(): Promise<{ cleaned: boolean; details: string }> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      const sessionPath = './whatsapp-session';
+      
+      try {
+        const stats = await fs.stat(sessionPath);
+        
+        // Čisti session folder-e starije od 7 dana
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        
+        if (stats.mtimeMs < sevenDaysAgo) {
+          console.log('🧹 [SESSION CLEANUP] Čistim stari session folder...');
+          
+          // Ostavi samo osnovne folder-e, obriši temp fajlove
+          const items = await fs.readdir(sessionPath);
+          let cleanedCount = 0;
+          
+          for (const item of items) {
+            const itemPath = path.join(sessionPath, item);
+            const itemStats = await fs.stat(itemPath);
+            
+            // Briši fajlove starije od 3 dana
+            if (itemStats.isFile() && itemStats.mtimeMs < (Date.now() - 3 * 24 * 60 * 60 * 1000)) {
+              await fs.unlink(itemPath);
+              cleanedCount++;
+            }
+          }
+          
+          console.log(`✅ [SESSION CLEANUP] Obrisano ${cleanedCount} starih fajlova`);
+          return { cleaned: true, details: `Obrisano ${cleanedCount} starih session fajlova` };
+        }
+        
+        return { cleaned: false, details: 'Session fajlovi nisu dovoljno stari za brisanje' };
+      } catch (error) {
+        return { cleaned: false, details: 'Session folder ne postoji ili nema pristup' };
+      }
+    } catch (error: any) {
+      console.error('❌ [SESSION CLEANUP] Greška:', error);
+      return { cleaned: false, details: error.message };
+    }
+  }
+
+  /**
+   * HEALTH MONITORING - prati resource usage i performance
+   */
+  getHealthStatus(): {
+    isHealthy: boolean;
+    metrics: {
+      isConnected: boolean;
+      memoryUsage: any;
+      uptime: number;
+      lastActivity: number;
+      puppeteerStatus: string;
+    };
+    warnings: string[];
+  } {
+    const warnings: string[] = [];
+    
+    // Memory usage check
+    const memUsage = process.memoryUsage();
+    const memUsageMB = {
+      rss: Math.round(memUsage.rss / 1024 / 1024),
+      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+      external: Math.round(memUsage.external / 1024 / 1024)
+    };
+
+    // Memory warnings
+    if (memUsageMB.heapUsed > 200) {
+      warnings.push(`Visoka heap memory upotreba: ${memUsageMB.heapUsed}MB`);
+    }
+    if (memUsageMB.external > 100) {
+      warnings.push(`Visoka external memory upotreba: ${memUsageMB.external}MB`);
+    }
+
+    // Connection health
+    if (!this.isConnected) {
+      warnings.push('WhatsApp Web nije povezan');
+    }
+
+    // Puppeteer status check
+    let puppeteerStatus = 'unknown';
+    try {
+      if (this.client && (this.client as any).pupPage) {
+        puppeteerStatus = this.isConnected ? 'active' : 'disconnected';
+      } else {
+        puppeteerStatus = 'not_initialized';
+      }
+    } catch (error) {
+      puppeteerStatus = 'error';
+      warnings.push('Greška u Puppeteer status proveri');
+    }
+
+    const isHealthy = warnings.length === 0 && this.isConnected;
+
+    return {
+      isHealthy,
+      metrics: {
+        isConnected: this.isConnected,
+        memoryUsage: memUsageMB,
+        uptime: Math.round(process.uptime()),
+        lastActivity: Date.now(),
+        puppeteerStatus
+      },
+      warnings
+    };
+  }
+
+  /**
+   * RESOURCE OPTIMIZER - optimizuje browser performance
+   */
+  async optimizeResources(): Promise<{ optimized: boolean; details: string }> {
+    if (!this.client) {
+      return { optimized: false, details: 'Client nije inicijalizovan' };
+    }
+
+    try {
+      console.log('🔧 [OPTIMIZER] Pokretanje resource optimizacije...');
+      
+      // Force garbage collection ako je dostupno
+      if (global.gc) {
+        global.gc();
+        console.log('✅ [OPTIMIZER] Pokrenut garbage collection');
+      }
+
+      // Postavi browser optimizacije ako je client aktivan
+      try {
+        const pupPage = (this.client as any).pupPage;
+        if (pupPage) {
+          // Očisti cache
+          await pupPage.evaluate(() => {
+            // Clear localStorage and sessionStorage
+            if (typeof window !== 'undefined') {
+              try {
+                window.localStorage.clear();
+                window.sessionStorage.clear();
+              } catch (e) {
+                console.log('Cache clear warning:', e);
+              }
+            }
+          });
+          
+          console.log('✅ [OPTIMIZER] Browser cache očišćen');
+        }
+      } catch (browserError) {
+        console.warn('⚠️ [OPTIMIZER] Browser optimizacija nije dostupna:', browserError);
+      }
+
+      return { optimized: true, details: 'Resource optimizacija završena uspešno' };
+    } catch (error: any) {
+      console.error('❌ [OPTIMIZER] Greška pri optimizaciji:', error);
+      return { optimized: false, details: error.message };
+    }
+  }
+
+  /**
+   * AUTO RECOVERY - automatski recovery mechanizam  
+   */
+  private recoveryAttempts = 0;
+  private readonly MAX_RECOVERY_ATTEMPTS = 3;
+
+  async attemptAutoRecovery(): Promise<{ recovered: boolean; attempt: number; message: string }> {
+    this.recoveryAttempts++;
+    
+    if (this.recoveryAttempts > this.MAX_RECOVERY_ATTEMPTS) {
+      return {
+        recovered: false,
+        attempt: this.recoveryAttempts,
+        message: 'Maksimalni broj recovery pokušaja dostignut'
+      };
+    }
+
+    try {
+      console.log(`🔄 [RECOVERY] Pokušaj oporavka #${this.recoveryAttempts}`);
+      
+      // 1. Očisti postojeći client
+      if (this.client) {
+        try {
+          await this.client.destroy();
+          console.log('🔄 [RECOVERY] Stari client uništen');
+        } catch (destroyError) {
+          console.warn('⚠️ [RECOVERY] Greška pri uništavanju starog client-a:', destroyError);
+        }
+      }
+
+      // 2. Delay pre re-init
+      await new Promise(resolve => setTimeout(resolve, 2000 * this.recoveryAttempts));
+      
+      // 3. Resetuj state
+      this.client = null;
+      this.isConnected = false;
+      this.qrCode = null;
+
+      // 4. Reinicijalizuj
+      this.initializeClient();
+      await this.initialize();
+
+      // Reset recovery counter na uspeh
+      this.recoveryAttempts = 0;
+      
+      return {
+        recovered: true,
+        attempt: this.recoveryAttempts,
+        message: 'Auto recovery uspešan'
+      };
+    } catch (error: any) {
+      console.error(`❌ [RECOVERY] Pokušaj #${this.recoveryAttempts} neuspešan:`, error);
+      
+      return {
+        recovered: false,
+        attempt: this.recoveryAttempts,
+        message: `Recovery pokušaj ${this.recoveryAttempts} neuspešan: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * BATCH MESSAGE HANDLER - optimizovano procesiranje više poruka odjednom
+   */
+  private messageQueue: any[] = [];
+  private processingBatch = false;
+
+  async addToMessageQueue(message: any): Promise<void> {
+    this.messageQueue.push(message);
+    
+    // Ako nije već u procesu, pokreni batch processing
+    if (!this.processingBatch) {
+      this.processBatchMessages();
+    }
+  }
+
+  private async processBatchMessages(): Promise<void> {
+    if (this.processingBatch || this.messageQueue.length === 0) {
+      return;
+    }
+
+    this.processingBatch = true;
+    console.log(`🔄 [BATCH] Procesiranje ${this.messageQueue.length} poruka u batch-u`);
+
+    try {
+      const currentBatch = [...this.messageQueue];
+      this.messageQueue = [];
+
+      for (const message of currentBatch) {
+        try {
+          // Optimizovano procesiranje poruke
+          const contact = await message.getContact();
+          const chat = await message.getChat();
+
+          const whatsappMessage: WhatsAppWebMessage = {
+            id: message.id._serialized,
+            from: message.from,
+            to: message.to || '',
+            body: message.body,
+            type: message.type,
+            timestamp: message.timestamp,
+            isGroup: chat.isGroup,
+            contact: {
+              id: contact.id._serialized,
+              name: contact.name || contact.pushname || '',
+              number: contact.number,
+              pushname: contact.pushname || ''
+            }
+          };
+
+          // Optimized media handling
+          if (message.hasMedia) {
+            const mediaResult = await this.processOptimizedMedia(message);
+            if (mediaResult.media) {
+              whatsappMessage.media = mediaResult.media;
+            } else if (mediaResult.error) {
+              console.warn(`⚠️ [BATCH] Media greška za poruku ${message.id._serialized}: ${mediaResult.error}`);
+            }
+          }
+
+          this.notifyMessageHandlers(whatsappMessage);
+        } catch (messageError) {
+          console.error(`❌ [BATCH] Greška pri procesiranju poruke:`, messageError);
+        }
+      }
+
+      console.log(`✅ [BATCH] Uspešno procesurano ${currentBatch.length} poruka`);
+    } catch (error) {
+      console.error('❌ [BATCH] Greška u batch procesiranju:', error);
+    } finally {
+      this.processingBatch = false;
+      
+      // Ako ima novih poruka u queue, pokreni ponovo
+      if (this.messageQueue.length > 0) {
+        setTimeout(() => this.processBatchMessages(), 1000);
+      }
+    }
+  }
 }
 
 // Singleton instanca
