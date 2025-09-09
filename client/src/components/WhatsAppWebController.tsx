@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -110,6 +110,11 @@ export function WhatsAppWebController() {
   const [contactsLimit, setContactsLimit] = useState(25);
   const [showOptimizationPanel, setShowOptimizationPanel] = useState(false);
 
+  // NOVA FUNKCIONALNOST ZA FOCUS PRESERVATION - DODANO NA KRAJ
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastFocusedElement = useRef<string | null>(null);
+
   // Query za status WhatsApp Web konekcije
   const { data: status, refetch: refetchStatus } = useQuery<WhatsAppWebStatus>({
     queryKey: ['/api/whatsapp-web/status'],
@@ -148,6 +153,15 @@ export function WhatsAppWebController() {
     refetchInterval: 30000, // 30 sekundi
     retry: false
   });
+
+  // USEEFFECT ZA FOCUS PRESERVATION - DODANO NA KRAJ
+  useEffect(() => {
+    if (lastFocusedElement.current === 'phone' && phoneInputRef.current) {
+      phoneInputRef.current.focus();
+    } else if (lastFocusedElement.current === 'message' && messageTextareaRef.current) {
+      messageTextareaRef.current.focus();
+    }
+  }, [status?.isConnected]); // Re-run kad se status promeni
 
   // Mutation za pokretanje WhatsApp Web klijenta
   const initializeMutation = useMutation({
@@ -469,8 +483,10 @@ export function WhatsAppWebController() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Broj telefona:</label>
               <Input
+                ref={phoneInputRef}
                 value={targetPhoneNumber}
                 onChange={(e) => setTargetPhoneNumber(e.target.value)}
+                onFocus={() => lastFocusedElement.current = 'phone'}
                 placeholder="npr. 0691234567"
                 disabled={!!selectedContact}
               />
@@ -491,8 +507,10 @@ export function WhatsAppWebController() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Poruka:</label>
               <Textarea
+                ref={messageTextareaRef}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
+                onFocus={() => lastFocusedElement.current = 'message'}
                 placeholder="Unesite poruku..."
                 className="min-h-[100px]"
                 maxLength={1000}
