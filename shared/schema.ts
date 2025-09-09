@@ -1921,4 +1921,98 @@ export const insertDataDeletionRequestSchema = createInsertSchema(dataDeletionRe
 export type InsertDataDeletionRequest = z.infer<typeof insertDataDeletionRequestSchema>;
 export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
 
+// ===== SIGURNOSNI SISTEM PROTIV BRISANJA SERVISA - NOVE TABELE =====
+
+// Service Audit Logs - loguje sve operacije nad servisima
+export const serviceAuditLogs = pgTable("service_audit_logs", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  action: text("action").notNull(), // created, updated, deleted, undeleted, assigned_technician
+  performedBy: integer("performed_by").notNull(), // user ID koji je izvršio akciju
+  performedByUsername: text("performed_by_username").notNull(), // username za lakše čitanje
+  performedByRole: text("performed_by_role").notNull(), // admin, technician, business_partner
+  oldValues: text("old_values"), // JSON string prethodnih vrednosti
+  newValues: text("new_values"), // JSON string novih vrednosti  
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  notes: text("notes"), // dodatne napomene o akciji
+});
+
+export const insertServiceAuditLogSchema = createInsertSchema(serviceAuditLogs).pick({
+  serviceId: true,
+  action: true,
+  performedBy: true,
+  performedByUsername: true,
+  performedByRole: true,
+  oldValues: true,
+  newValues: true,
+  ipAddress: true,
+  userAgent: true,
+  notes: true,
+});
+
+export type InsertServiceAuditLog = z.infer<typeof insertServiceAuditLogSchema>;
+export type ServiceAuditLog = typeof serviceAuditLogs.$inferSelect;
+
+// User Permissions - za upravljanje privilegijama korisnika
+export const userPermissions = pgTable("user_permissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  canDeleteServices: boolean("can_delete_services").default(false).notNull(),
+  canDeleteClients: boolean("can_delete_clients").default(false).notNull(),
+  canDeleteAppliances: boolean("can_delete_appliances").default(false).notNull(),
+  canViewAllServices: boolean("can_view_all_services").default(true).notNull(),
+  canManageUsers: boolean("can_manage_users").default(false).notNull(),
+  grantedBy: integer("granted_by"), // admin koji je dao privilegije
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
+  notes: text("notes"), // napomene o privilegijama
+});
+
+export const insertUserPermissionSchema = createInsertSchema(userPermissions).pick({
+  userId: true,
+  canDeleteServices: true,
+  canDeleteClients: true,
+  canDeleteAppliances: true,
+  canViewAllServices: true,
+  canManageUsers: true,
+  grantedBy: true,
+  notes: true,
+});
+
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+export type UserPermission = typeof userPermissions.$inferSelect;
+
+// Deleted Services - soft delete tabela za obrisane servise
+export const deletedServices = pgTable("deleted_services", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull().unique(), // originalni ID servisa
+  originalServiceData: text("original_service_data").notNull(), // JSON string kompletnih podataka servisa
+  deletedBy: integer("deleted_by").notNull(), // user ID koji je obrisao
+  deletedByUsername: text("deleted_by_username").notNull(),
+  deletedByRole: text("deleted_by_role").notNull(),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+  deleteReason: text("delete_reason"), // razlog brisanja
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  canBeRestored: boolean("can_be_restored").default(true).notNull(), // da li se može vratiti
+  restoredBy: integer("restored_by"), // user ID koji je vratio servis
+  restoredAt: timestamp("restored_at"), // kada je vraćen
+});
+
+export const insertDeletedServiceSchema = createInsertSchema(deletedServices).pick({
+  serviceId: true,
+  originalServiceData: true,
+  deletedBy: true,
+  deletedByUsername: true,
+  deletedByRole: true,
+  deleteReason: true,
+  ipAddress: true,
+  userAgent: true,
+  canBeRestored: true,
+});
+
+export type InsertDeletedService = z.infer<typeof insertDeletedServiceSchema>;
+export type DeletedService = typeof deletedServices.$inferSelect;
+
 
