@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 // ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
   // Specificno dozvoljavamo origin za Replit
-  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://5000-manic-donkey-9yxqy86.replit.app';
+  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
   res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
