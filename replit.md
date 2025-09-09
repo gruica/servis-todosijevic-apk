@@ -40,7 +40,7 @@
 ---
 
 ## Overview
-This is a comprehensive service management application for Frigo Sistem Todosijević, an appliance repair company. Its purpose is to streamline service operations, improve technician efficiency, and enhance customer communication. The application manages clients, services, technicians, and maintenance schedules for white goods appliances, offering both web and mobile (Android) interfaces for field technicians. The core API and user management are fully functional, with active email and mobile photo systems, and excellent server performance.
+This is a comprehensive service management application for Frigo Sistem Todosijević, an appliance repair company operating in Montenegro (Crna Gora). Its purpose is to streamline service operations, improve technician efficiency, and enhance customer communication. The application manages clients, services, technicians, and maintenance schedules for white goods appliances, offering both web and mobile (Android) interfaces for field technicians. The core API and user management are fully functional, with active email and mobile photo systems, and excellent server performance.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
