@@ -154,14 +154,18 @@ export function WhatsAppWebController() {
     retry: false
   });
 
-  // USEEFFECT ZA FOCUS PRESERVATION - DODANO NA KRAJ
+  // USEEFFECT ZA FOCUS PRESERVATION - DODANO NA KRAJ - ALTERNATIVNI PRISTUP
   useEffect(() => {
-    if (lastFocusedElement.current === 'phone' && phoneInputRef.current) {
-      phoneInputRef.current.focus();
-    } else if (lastFocusedElement.current === 'message' && messageTextareaRef.current) {
-      messageTextareaRef.current.focus();
-    }
-  }, [status?.isConnected]); // Re-run kad se status promeni
+    const interval = setInterval(() => {
+      if (lastFocusedElement.current === 'phone' && phoneInputRef.current && document.activeElement !== phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      } else if (lastFocusedElement.current === 'message' && messageTextareaRef.current && document.activeElement !== messageTextareaRef.current) {
+        messageTextareaRef.current.focus();
+      }
+    }, 100); // Proverava svake 100ms
+    
+    return () => clearInterval(interval);
+  }, [status?.isConnected]); // Samo kad se status promeni
 
   // Mutation za pokretanje WhatsApp Web klijenta
   const initializeMutation = useMutation({
