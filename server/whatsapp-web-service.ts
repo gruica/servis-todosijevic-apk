@@ -105,44 +105,17 @@ export class WhatsAppWebService {
       this.notifyConnectionHandlers('disconnected');
     });
 
-    // Nova poruka primljena
+    // Nova poruka primljena - OPTIMIZOVANO SA BATCH PROCESSING
     this.client.on('message', async (message) => {
       if (message.fromMe) return; // Ignorisi poruke koje sam ja poslao
 
       try {
-        const contact = await message.getContact();
-        const chat = await message.getChat();
-
-        const whatsappMessage: WhatsAppWebMessage = {
-          id: message.id._serialized,
-          from: message.from,
-          to: message.to || '',
-          body: message.body,
-          type: message.type,
-          timestamp: message.timestamp,
-          isGroup: chat.isGroup,
-          contact: {
-            id: contact.id._serialized,
-            name: contact.name || contact.pushname || '',
-            number: contact.number,
-            pushname: contact.pushname || ''
-          }
-        };
-
-        // Ako je media poruka, dodaj media podatke
-        if (message.hasMedia) {
-          const media = await message.downloadMedia();
-          whatsappMessage.media = {
-            mimetype: media.mimetype,
-            data: media.data,
-            filename: media.filename || 'file'
-          };
-        }
-
-        console.log(`📨 [WHATSAPP WEB] Nova poruka od ${contact.name || contact.number}: ${message.body}`);
-        this.notifyMessageHandlers(whatsappMessage);
+        console.log(`📨 [WHATSAPP WEB] Nova poruka pristigla - dodajem u batch queue`);
+        
+        // Dodaj poruku u batch queue umesto direktno procesiranja
+        await this.addToMessageQueue(message);
       } catch (error) {
-        console.error('❌ [WHATSAPP WEB] Greška pri obradi poruke:', error);
+        console.error('❌ [WHATSAPP WEB] Greška pri dodavanju poruke u queue:', error);
       }
     });
 
