@@ -1,15 +1,15 @@
-2025/09/09-14:51:57.460 24b Reusing MANIFEST /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/09/09-14:51:57.460 24b Recovering log #471
-2025/09/09-14:51:57.841 24b Reusing old log /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000471.log 
-2025/09/09-14:51:58.939 294 Level-0 table #477: started
-2025/09/09-14:51:59.091 294 Level-0 table #477: 853985 bytes OK
-2025/09/09-14:51:59.123 294 Delete type=0 #471
-2025/09/09-14:51:59.124 24b Manual compaction at level-0 from '\x00m\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00n\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/09/09-14:52:01.667 24a Compacting 1@1 + 2@2 files
-2025/09/09-14:52:02.319 24a Generated table #478@1: 48823 keys, 2209060 bytes
-2025/09/09-14:52:02.661 24a Generated table #479@1: 25885 keys, 1254578 bytes
-2025/09/09-14:52:02.662 24a Compacted 1@1 + 2@2 files => 3463638 bytes
-2025/09/09-14:52:02.686 24a compacted to: files[ 0 0 2 0 0 0 0 ]
-2025/09/09-14:52:02.687 24a Delete type=2 #473
-2025/09/09-14:52:02.687 24a Delete type=2 #474
-2025/09/09-14:52:02.687 24a Delete type=2 #477
+2025/09/09-19:20:19.349 27d5 Reusing MANIFEST /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/09/09-19:20:19.354 27d5 Recovering log #476
+2025/09/09-19:20:19.480 27d5 Reusing old log /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000476.log 
+2025/09/09-19:20:21.448 27d7 Level-0 table #482: started
+2025/09/09-19:20:21.508 27d7 Level-0 table #482: 241571 bytes OK
+2025/09/09-19:20:21.523 27d7 Delete type=0 #476
+2025/09/09-19:20:21.523 27d7 Manual compaction at level-0 from '\x00n\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00o\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/09/09-19:20:21.567 27fb Compacting 1@1 + 2@2 files
+2025/09/09-19:20:21.819 27fb Generated table #483@1: 49400 keys, 2209790 bytes
+2025/09/09-19:20:21.967 27fb Generated table #484@1: 26888 keys, 1316494 bytes
+2025/09/09-19:20:21.967 27fb Compacted 1@1 + 2@2 files => 3526284 bytes
+2025/09/09-19:20:21.977 27fb compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/09/09-19:20:21.978 27fb Delete type=2 #478
+2025/09/09-19:20:21.978 27fb Delete type=2 #479
+2025/09/09-19:20:21.978 27fb Delete type=2 #482
