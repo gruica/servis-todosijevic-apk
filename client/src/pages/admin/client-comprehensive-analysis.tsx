@@ -152,15 +152,15 @@ const AdminClientComprehensiveAnalysis = memo(function AdminClientComprehensiveA
   const clientId = params?.id ? parseInt(params.id) : null;
   const [selectedService, setSelectedService] = useState<any>(null);
 
-  // Query za kompletnu analizu klijenta sa custom fetch funkcijom
+  // Query za kompletnu analizu klijenta sa enhanced endpoint-om (rešava JavaScript greške)
   const { data: analysis, isLoading, error } = useQuery<ClientAnalysis>({
-    queryKey: [`/api/admin/clients/${clientId}/comprehensive-analysis`],
+    queryKey: [`/api/admin/clients/${clientId}/comprehensive-analysis-enhanced`],
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
       console.log('🔑 Token exists:', !!token);
       console.log('🔑 Token length:', token?.length || 0);
       
-      const response = await fetch(`/api/admin/clients/${clientId}/comprehensive-analysis`, {
+      const response = await fetch(`/api/admin/clients/${clientId}/comprehensive-analysis-enhanced`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
