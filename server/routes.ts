@@ -6124,5 +6124,176 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       });
     }
   });
+
+  // ===== ENHANCED CLIENT COMPREHENSIVE ANALYSIS - FIXES JAVASCRIPT ERRORS =====
+  // Novi endpoint koji rešava probleme sa strukturom podataka na frontend-u
+  app.get("/api/admin/clients/:id/comprehensive-analysis-enhanced", jwtAuth, requireRole(['admin']), async (req, res) => {
+    console.log(`🔥 [ENHANCED CLIENT ANALYSIS] POZVAN SA clientId: ${req.params.id}`);
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClient(clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+
+      // Get client's appliances
+      const clientAppliances = await storage.getAppliancesByClient(clientId);
+      
+      // Get client's services
+      const clientServices = await storage.getServicesByClient(clientId);
+      
+      // Get spare parts for all services
+      const serviceIds = clientServices.map(s => s.id);
+      let allSpareParts = [];
+      
+      try {
+        for (const serviceId of serviceIds) {
+          const serviceParts = await storage.getSparePartsByService(serviceId) || [];
+          allSpareParts = allSpareParts.concat(serviceParts.map(part => ({
+            ...part,
+            serviceId: serviceId
+          })));
+        }
+      } catch (sparePartsError) {
+        console.log('[ENHANCED CLIENT ANALYSIS] Spare parts nisu dostupni:', sparePartsError.message);
+        allSpareParts = [];
+      }
+      
+      // Enhance services with spare parts data
+      const enhancedServices = clientServices.map(service => {
+        const serviceParts = allSpareParts
+          .filter(part => part.serviceId === service.id)
+          .map(part => ({
+            partName: part.partName || 'Nepoznat deo',
+            status: part.status || 'unknown',
+            cost: part.cost ? part.cost.toString() : undefined
+          }));
+        
+        return {
+          ...service,
+          spareParts: serviceParts || [], // Osiguraj da spareParts uvek postoji
+          cost: service.cost ? service.cost.toString() : undefined,
+          warrantyStatus: service.warrantyStatus || 'nepoznato',
+          applianceModel: service.applianceModel || '',
+          manufacturerName: service.manufacturerName || '',
+          technicianName: service.technicianName || ''
+        };
+      });
+      
+      // Calculate service statistics
+      const completedServices = enhancedServices.filter(s => s.status === 'completed').length;
+      const activeServices = enhancedServices.filter(s => s.status === 'in_progress').length;
+      const warrantyServices = enhancedServices.filter(s => s.warrantyStatus === 'u garanciji').length;
+      const totalCost = enhancedServices.reduce((sum, service) => {
+        const cost = parseFloat(service.cost || '0');
+        return sum + (isNaN(cost) ? 0 : cost);
+      }, 0);
+      
+      // Calculate average service time
+      const completedServicesWithDates = enhancedServices.filter(s => 
+        s.status === 'completed' && s.createdAt && s.completedDate
+      );
+      
+      let averageServiceTimeInDays = 0;
+      if (completedServicesWithDates.length > 0) {
+        const totalDays = completedServicesWithDates.reduce((sum, service) => {
+          const startDate = new Date(service.createdAt);
+          const endDate = new Date(service.completedDate);
+          const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+          return sum + Math.max(1, daysDiff); // Minimum 1 day
+        }, 0);
+        averageServiceTimeInDays = Math.round(totalDays / completedServicesWithDates.length);
+      }
+      
+      // Enhanced appliances data with proper structure
+      const enhancedAppliances = clientAppliances.map(appliance => ({
+        id: appliance.id || 0,
+        categoryName: appliance.categoryName || 'Nepoznata kategorija',
+        manufacturerName: appliance.manufacturerName || 'Nepoznat proizvođač',
+        model: appliance.model || 'Nepoznat model',
+        serialNumber: appliance.serialNumber || '',
+        purchaseDate: appliance.purchaseDate || undefined,
+        serviceCount: enhancedServices.filter(s => s.applianceId === appliance.id).length,
+        lastServiceDate: (() => {
+          const applianceServices = enhancedServices
+            .filter(s => s.applianceId === appliance.id && s.createdAt)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          return applianceServices.length > 0 ? applianceServices[0].createdAt : null;
+        })()
+      }));
+      
+      const response = {
+        reportMetadata: {
+          generatedAt: new Date().toISOString(),
+          reportId: `CLIENT_ANALYSIS_ENHANCED_${clientId}_${Date.now()}`,
+          clientId: clientId,
+          reportType: "comprehensive_client_analysis_enhanced"
+        },
+        clientInfo: {
+          id: client.id,
+          fullName: client.fullName || 'Nepoznato ime',
+          email: client.email || '',
+          phone: client.phone || '',
+          address: client.address || '',
+          city: client.city || '',
+          totalAppliances: enhancedAppliances.length,
+          registrationDate: client.createdAt || new Date().toISOString()
+        },
+        serviceStatistics: {
+          totalServices: enhancedServices.length,
+          completedServices: completedServices,
+          activeServices: activeServices,
+          warrantyServices: warrantyServices,
+          totalCost: totalCost,
+          averageServiceTimeInDays: averageServiceTimeInDays,
+          completionRate: enhancedServices.length > 0 ? Math.round((completedServices / enhancedServices.length) * 100) : 0,
+          warrantyRate: enhancedServices.length > 0 ? Math.round((warrantyServices / enhancedServices.length) * 100) : 0
+        },
+        appliances: enhancedAppliances,
+        services: enhancedServices,
+        analytics: { 
+          applianceStats: {}, 
+          technicianStats: {}, 
+          monthlyServiceHistory: {}, 
+          problematicAppliances: [] 
+        },
+        spareParts: allSpareParts.map(part => ({
+          partName: part.partName || 'Nepoznat deo',
+          status: part.status || 'unknown',
+          urgency: part.urgency || 'normal',
+          cost: part.cost ? part.cost.toString() : undefined,
+          orderDate: part.createdAt || new Date().toISOString()
+        })),
+        recommendations: { 
+          maintenanceAlerts: enhancedServices.length > 5 ? 
+            'Klijent ima veliki broj servisa - preporučuje se redovno održavanje' : 
+            'Nema aktivnih upozorenja za održavanje', 
+          costOptimization: totalCost > 50000 ? 
+            'Visoki troškovi servisa - razmotriti preventivno održavanje' : 
+            'Troškovi servisa su u normalnom opsegu', 
+          technicianPreference: (() => {
+            const technicianCounts = {};
+            enhancedServices.forEach(service => {
+              if (service.technicianName) {
+                technicianCounts[service.technicianName] = (technicianCounts[service.technicianName] || 0) + 1;
+              }
+            });
+            const mostFrequentTechnician = Object.entries(technicianCounts)
+              .sort(([,a], [,b]) => b - a)[0];
+            return mostFrequentTechnician ? 
+              `Najčešći serviser: ${mostFrequentTechnician[0]} (${mostFrequentTechnician[1]} servisa)` : 
+              'Nema dovoljno podataka o serviserima';
+          })()
+        }
+      };
+      
+      console.log(`[ENHANCED CLIENT ANALYSIS] Kompletna poboljšana analiza klijenta ${clientId} kreirana uspešno`);
+      console.log(`[ENHANCED CLIENT ANALYSIS] Servisi: ${enhancedServices.length}, Rezervni delovi: ${allSpareParts.length}`);
+      res.json(response);
+    } catch (error) {
+      console.error("[ENHANCED CLIENT ANALYSIS] Greška:", error);
+      res.status(500).json({ error: "Greška pri kreiranju poboljšane analize klijenta" });
+    }
+  });
 }
 
