@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'wouter';
 import { ArrowLeft, Shield, Trash2, Clock, Mail, Phone, FileText, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function DataDeletion() {
@@ -14,6 +14,32 @@ export default function DataDeletion() {
   const [specificData, setSpecificData] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // SEO/Facebook Meta tags
+  useEffect(() => {
+    document.title = 'Brisanje podataka - Frigo Sistem Todosijević';
+    
+    const metaDescription = document.querySelector('meta[name="description"]') || document.createElement('meta');
+    metaDescription.setAttribute('name', 'description');
+    metaDescription.setAttribute('content', 'GDPR compliant stranica za zahtev brisanja ličnih podataka iz sistema Frigo Sistem Todosijević. Funkcionalan formular za podношenje zahteva.');
+    if (!document.querySelector('meta[name="description"]')) {
+      document.head.appendChild(metaDescription);
+    }
+
+    const ogTitle = document.querySelector('meta[property="og:title"]') || document.createElement('meta');
+    ogTitle.setAttribute('property', 'og:title');
+    ogTitle.setAttribute('content', 'Brisanje podataka - Frigo Sistem Todosijević');
+    if (!document.querySelector('meta[property="og:title"]')) {
+      document.head.appendChild(ogTitle);
+    }
+
+    const ogDescription = document.querySelector('meta[property="og:description"]') || document.createElement('meta');
+    ogDescription.setAttribute('property', 'og:description');
+    ogDescription.setAttribute('content', 'GDPR compliant stranica za zahtev brisanja ličnih podataka iz sistema Frigo Sistem Todosijević.');
+    if (!document.querySelector('meta[property="og:description"]')) {
+      document.head.appendChild(ogDescription);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,19 +55,35 @@ export default function DataDeletion() {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call - in real implementation, this would call your backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Zahtev poslat",
-        description: "Vaš zahtev za brisanje podataka je uspešno poslat. Odgovoriće vam u roku od 72 sata.",
+      const response = await fetch('/api/data-deletion-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          phone,
+          reason,
+          specificData
+        })
       });
+
+      const data = await response.json();
       
-      // Reset form
-      setEmail('');
-      setPhone('');
-      setReason('');
-      setSpecificData('');
+      if (data.success) {
+        toast({
+          title: "Zahtev poslat",
+          description: data.message || "Vaš zahtev za brisanje podataka je uspešno poslat. Odgovoriće vam u roku od 72 sata.",
+        });
+        
+        // Reset form
+        setEmail('');
+        setPhone('');
+        setReason('');
+        setSpecificData('');
+      } else {
+        throw new Error(data.error || 'Neočekivana greška');
+      }
       
     } catch (error) {
       toast({

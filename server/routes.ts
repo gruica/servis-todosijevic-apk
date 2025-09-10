@@ -6681,5 +6681,56 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // Data deletion endpoint za Facebook compliance - NOVO DODANO ZA LIVE MOD
+  app.post('/api/data-deletion-request', async (req, res) => {
+    try {
+      const { email, phone, reason, specificData } = req.body;
+      
+      console.log('📧 [DATA DELETION] Nova zahtev za brisanje podataka:', {
+        email: email || 'Nije naveden',
+        phone: phone || 'Nije naveden', 
+        reason: reason || 'Nije naveden',
+        specificData: specificData || 'Nije naveden',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Pošaljemo email administratoru
+      try {
+        const { sendNotificationEmail } = await import('./email-service.js');
+        await sendNotificationEmail(
+          'privacy@frigosistemtodosijevic.me',
+          'Zahtev za brisanje podataka - GDPR',
+          `
+            Novi zahtev za brisanje podataka:
+            
+            Email: ${email || 'Nije naveden'}
+            Telefon: ${phone || 'Nije naveden'}
+            Razlog: ${reason || 'Nije naveden'}
+            Specifični podaci: ${specificData || 'Nije naveden'}
+            
+            Vreme: ${new Date().toLocaleString('sr-RS')}
+            
+            Molimo obradi zahtev u roku od 72 sata.
+          `
+        );
+      } catch (emailError) {
+        console.error('Greška pri slanju email notifikacije:', emailError);
+      }
+      
+      res.json({
+        success: true,
+        message: 'Zahtev za brisanje podataka je uspešno poslat. Odgovoriće vam u roku od 72 sata.',
+        requestId: Date.now().toString()
+      });
+      
+    } catch (error) {
+      console.error('❌ [DATA DELETION] Greška pri obradi zahteva:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Greška pri obradi zahteva za brisanje podataka'
+      });
+    }
+  });
 }
 
