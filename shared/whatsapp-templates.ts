@@ -133,6 +133,59 @@ Odgovorite sa DA ili NE.
 
 *FRIGO SISTEM TODOSIJEVIĆ*`,
     variables: ['CLIENT_NAME', 'APPLIANCE_TYPE', 'DIAGNOSIS', 'PARTS_LIST', 'PARTS_COST', 'LABOR_COST', 'TOTAL_COST', 'DELIVERY_TIME']
+  },
+
+  // Klijent odbija popravku
+  SERVICE_REFUSED: {
+    id: 'service_refused',
+    name: 'Klijent odbija popravku',
+    message: `❌ *POPRAVKA OTKAZANA*
+
+Poštovani/a {{CLIENT_NAME}},
+
+Razumemo Vašu odluku da ne nastavite sa popravkom.
+
+📋 *Detalji:*
+• Uređaj: {{APPLIANCE_TYPE}}
+• Dijagnoza: {{DIAGNOSIS}}
+• Razlog otkazivanja: {{REFUSAL_REASON}}
+
+💰 *Naplaćujemo samo:*
+• Izlazak i dijagnostiku: {{DIAGNOSTIC_FEE}} EUR
+
+💳 *Način plaćanja:* {{PAYMENT_METHOD}}
+
+📝 *Napomene:*
+• Uređaj ostaje u istom stanju
+• Dijagnoza važi 30 dana
+• Možete se predomisliti u roku od 7 dana
+
+Hvala Vam na razumevanju.
+
+*FRIGO SISTEM TODOSIJEVIĆ*
+📞 +382 67 051 141`,
+    variables: ['CLIENT_NAME', 'APPLIANCE_TYPE', 'DIAGNOSIS', 'REFUSAL_REASON', 'DIAGNOSTIC_FEE', 'PAYMENT_METHOD']
+  },
+
+  // Upload fotografija
+  PHOTOS_UPLOADED: {
+    id: 'photos_uploaded',
+    name: 'Fotografije uploaded',
+    message: `📸 *FOTOGRAFIJE POSLATE*
+
+Poštovani/a {{CLIENT_NAME}},
+
+Naš tehničar {{TECHNICIAN_NAME}} je poslao fotografije Vašeg {{APPLIANCE_TYPE}}:
+
+🔍 *Status:* {{REPAIR_STATUS}}
+📷 *Broj fotografija:* {{PHOTO_COUNT}}
+
+Možete pogledati fotografije na linku koji će biti poslat putem email-a.
+
+{{ADDITIONAL_MESSAGE}}
+
+*FRIGO SISTEM TODOSIJEVIĆ*`,
+    variables: ['CLIENT_NAME', 'TECHNICIAN_NAME', 'APPLIANCE_TYPE', 'REPAIR_STATUS', 'PHOTO_COUNT', 'ADDITIONAL_MESSAGE']
   }
 };
 
