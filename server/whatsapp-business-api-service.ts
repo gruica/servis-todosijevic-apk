@@ -595,6 +595,151 @@ Frigo Sistem Todosijević
   }
 
   /**
+   * Čuva WhatsApp poruku u bazu podataka
+   */
+  private async saveMessageToDatabase(messageData: {
+    serviceId?: number;
+    senderId: number;
+    recipientPhone: string;
+    messageContent: string;
+    mediaUrl?: string;
+    messageDirection: 'outgoing' | 'incoming';
+    messageId?: string;
+  }): Promise<void> {
+    try {
+      const { storage } = await import('./storage.js');
+      
+      await storage.createConversationMessage({
+        serviceId: messageData.serviceId || 0, // Default ako nema serviceId
+        senderId: messageData.senderId,
+        recipientPhone: messageData.recipientPhone,
+        messageType: 'whatsapp',
+        messageContent: messageData.messageContent,
+        mediaUrl: messageData.mediaUrl || null,
+        messageDirection: messageData.messageDirection,
+        deliveryStatus: 'sent',
+        messageId: messageData.messageId || null,
+        relatedUserId: null
+      });
+
+      console.log(`📝 [WHATSAPP DATABASE] Poruka čuvana u bazu: ${messageData.messageContent.substring(0, 50)}...`);
+    } catch (error) {
+      console.error('❌ [WHATSAPP DATABASE] Greška pri čuvanju poruke u bazu:', error);
+    }
+  }
+
+  /**
+   * Šalje tekstualnu poruku i čuva je u bazu (proširena verzija)
+   */
+  async sendTextMessageWithSave(
+    phoneNumber: string, 
+    message: string, 
+    senderId: number,
+    serviceId?: number,
+    previewUrl: boolean = false
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Prvo pošaljemo poruku
+      const result = await this.sendTextMessage(phoneNumber, message, previewUrl);
+      
+      // Ako je uspešno poslata, čuvamo u bazu
+      if (result.success) {
+        await this.saveMessageToDatabase({
+          serviceId,
+          senderId,
+          recipientPhone: phoneNumber,
+          messageContent: message,
+          messageDirection: 'outgoing',
+          messageId: result.messageId
+        });
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju poruke sa čuvanjem:', error);
+      return {
+        success: false,
+        error: error.message || 'Greška pri slanju poruke'
+      };
+    }
+  }
+
+  /**
+   * Šalje template poruku i čuva je u bazu
+   */
+  async sendTemplateMessageWithSave(
+    phoneNumber: string,
+    templateName: string,
+    templateMessage: string,
+    senderId: number,
+    serviceId?: number,
+    languageCode: string = 'en_US',
+    components?: any[]
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Šaljemo template poruku koristeći postojeću metodu
+      const result = await this.sendTemplateMessage(phoneNumber, templateName, languageCode, components);
+      
+      // Ako je uspešno poslata, čuvamo u bazu
+      if (result.success) {
+        await this.saveMessageToDatabase({
+          serviceId,
+          senderId,
+          recipientPhone: phoneNumber,
+          messageContent: templateMessage, // Čuvamo kompletnu poruku
+          messageDirection: 'outgoing',
+          messageId: result.messageId
+        });
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju template poruke sa čuvanjem:', error);
+      return {
+        success: false,
+        error: error.message || 'Greška pri slanju template poruke'
+      };
+    }
+  }
+
+  /**
+   * Šalje sliku sa porukom i čuva u bazu
+   */
+  async sendImageMessageWithSave(
+    phoneNumber: string,
+    imageUrl: string,
+    caption: string,
+    senderId: number,
+    serviceId?: number
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Šaljemo sliku
+      const result = await this.sendImageMessage(phoneNumber, imageUrl, caption);
+      
+      // Ako je uspešno poslata, čuvamo u bazu
+      if (result.success) {
+        await this.saveMessageToDatabase({
+          serviceId,
+          senderId,
+          recipientPhone: phoneNumber,
+          messageContent: caption || 'Slika poslata',
+          mediaUrl: imageUrl,
+          messageDirection: 'outgoing',
+          messageId: result.messageId
+        });
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju slike sa čuvanjem:', error);
+      return {
+        success: false,
+        error: error.message || 'Greška pri slanju slike'
+      };
+    }
+  }
+
+  /**
    * Obaveštava administratore o novom servisu (kompatibilno sa routes.ts)
    */
   async notifyAdminNewService(data: {
