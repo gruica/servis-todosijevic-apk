@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { whatsappBusinessAPIService } from './whatsapp-business-api-service';
+import { findAutoReply, AUTO_REPLIES, EMERGENCY_TEMPLATES, MONTENEGRO_FORMATTING } from '../shared/whatsapp-templates';
 
 /**
  * WhatsApp Webhook Handler - NOVI SISTEM
