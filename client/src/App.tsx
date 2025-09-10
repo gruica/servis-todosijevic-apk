@@ -73,6 +73,10 @@ const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 import HomePage from "@/pages/home-page";
 import ComplusAuthPage from "@/pages/complus-auth";
 const DiagnosticsPage = lazy(() => import("@/pages/diagnostics"));
+
+// Legal pages for Facebook App Review compliance - DODANO ZA LIVE MOD
+const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
+const DataDeletion = lazy(() => import("@/pages/data-deletion"));
 const DiagnosticServicesPage = lazy(() => import("@/pages/diagnostic-services"));
 const SystemDiagnostics = lazy(() => import("@/pages/system-diagnostics"));
 const EmailVerificationDemo = lazy(() => import("@/pages/email-verification-demo"));
@@ -129,6 +133,10 @@ function Router() {
       {/* Privacy Policy - javno dostupna stranica */}
       <Route path="/privacy/policy" component={PrivacyPolicyPage} />
       <Route path="/data-deletion-request" component={SimpleTestPage} />
+      
+      {/* Legal pages for Facebook App Review compliance - JAVNO DOSTUPNE */}
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/data-deletion" component={DataDeletion} />
       
       {/* Test da li radi na drugom mjestu */}
       <Route path="/test-page" component={SimpleTestPage} />
