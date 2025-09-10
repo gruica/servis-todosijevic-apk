@@ -556,9 +556,9 @@ Frigo Sistem Todosijević
   }
 
   /**
-   * Obaveštava klijenta o završenom servisu (kompatibilno sa routes.ts)
+   * Obaveštava klijenta o završenom servisu (verzija 2 - proširena)
    */
-  async notifyServiceCompleted(data: {
+  async notifyServiceCompletedV2(data: {
     clientPhone: string;
     clientName: string;
     serviceId: number;

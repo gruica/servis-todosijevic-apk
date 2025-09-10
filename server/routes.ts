@@ -6517,5 +6517,90 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       res.status(500).json({ error: 'Greška pri proveri privilegija' });
     }
   });
+
+  // ===== WHATSAPP BUSINESS API ENDPOINTS - NOVI SISTEM =====
+  
+  // GET /api/whatsapp-business/config - Dobij trenutnu konfiguraciju
+  app.get('/api/whatsapp-business/config', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { whatsappBusinessAPIService } = await import('./whatsapp-business-api-service.js');
+      const config = whatsappBusinessAPIService.getCurrentConfig();
+      const status = whatsappBusinessAPIService.getConfigurationStatus();
+      
+      res.json({
+        success: true,
+        config,
+        status
+      });
+    } catch (error) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri dobijanju konfiguracije',
+        success: false 
+      });
+    }
+  });
+
+  // POST /api/whatsapp-business/config - Ažuriraj konfiguraciju
+  app.post('/api/whatsapp-business/config', jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { accessToken, phoneNumberId, apiVersion, baseUrl } = req.body;
+      
+      if (!accessToken || !phoneNumberId) {
+        return res.status(400).json({ 
+          error: 'accessToken i phoneNumberId su obavezni',
+          success: false 
+        });
+      }
+
+      const { whatsappBusinessAPIService } = await import('./whatsapp-business-api-service.js');
+      
+      whatsappBusinessAPIService.updateConfig({
+        accessToken,
+        phoneNumberId,
+        apiVersion: apiVersion || 'v23.0',
+        baseUrl: baseUrl || 'https://graph.facebook.com'
+      });
+
+      const status = whatsappBusinessAPIService.getConfigurationStatus();
+      
+      res.json({
+        success: true,
+        message: 'Konfiguracija uspešno ažurirana',
+        status
+      });
+    } catch (error) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
+      res.status(500).json({ 
+        error: 'Greška pri ažuriranju konfiguracije',
+        success: false 
+      });
+    }
+  });
+
+  // POST /api/whatsapp-business/send-text - Pošalji tekstualnu poruku
+  app.post('/api/whatsapp-business/send-text', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const { phoneNumber, message, previewUrl } = req.body;
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ 
+          error: 'phoneNumber i message su obavezni',
+          success: false 
+        });
+      }
+
+      const { whatsappBusinessAPIService } = await import('./whatsapp-business-api-service.js');
+      const result = await whatsappBusinessAPIService.sendTextMessage(phoneNumber, message, previewUrl);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju tekstualne poruke',
+        success: false 
+      });
+    }
+  });
 }
 
