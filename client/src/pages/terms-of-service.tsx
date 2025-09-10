@@ -52,7 +52,7 @@ export default function TermsOfService() {
             <CardContent>
               <div className="space-y-2">
                 <p><strong>Naziv:</strong> Frigo Sistem Todosijević</p>
-                <p><strong>Adresa:</strong> Lastav grbaljska 85317 Kotor, Crna Gora</p>
+                <p><strong>Adresa:</strong> Lastva grbaljska 85317 Kotor, Crna Gora</p>
                 <p><strong>Telefon:</strong> +382 67 051 141</p>
                 <p><strong>Email:</strong> info@frigosistemtodosijevic.me</p>
                 <p><strong>Website:</strong> www.frigosistemtodosijevic.me</p>
