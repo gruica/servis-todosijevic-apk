@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="sr-RS">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brisanje podataka - Frigo Sistem Todosijević</title>
+    <meta name="description" content="GDPR compliant stranica za zahtev brisanja ličnih podataka iz sistema Frigo Sistem Todosijević. Funkcionalan formular za podnošenje zahteva.">
+    <meta property="og:title" content="Brisanje podataka - Frigo Sistem Todosijević">
+    <meta property="og:description" content="GDPR compliant stranica za zahtev brisanja ličnih podataka iz sistema Frigo Sistem Todosijević.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/data-deletion.html">
+    <link rel="canonical" href="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/data-deletion.html">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #dc2626; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+        h2 { color: #374151; margin-top: 30px; }
+        .warning { background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .process-step { background: #eff6ff; padding: 15px; margin: 10px 0; border-left: 4px solid #3b82f6; }
+        .contact-info { background: #ecfdf5; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .form-container { background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        ul { padding-left: 20px; }
+        li { margin: 8px 0; }
+        .button { background: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; display: inline-block; text-decoration: none; text-align: center; }
+        .button:hover { background: #2563eb; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        .required { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Brisanje podataka</h1>
+        <p><strong>Prava korisnika na brisanje ličnih podataka (GDPR)</strong></p>
+
+        <h2>Vaša prava na brisanje podataka</h2>
+        <p>U skladu sa GDPR regulativom i našom politikom privatnosti, imate pravo da zatražite brisanje svojih ličnih podataka iz naših sistema. Ova stranica objašnjava proces brisanja podataka i omogućava vam da podnesete zahtev.</p>
+
+        <div class="warning">
+            <h3>⚠️ Važne napomene</h3>
+            <ul>
+                <li>Brisanje podataka je <strong>nepovratno</strong></li>
+                <li>Nećete moći da pristupite istoriji servisa</li>
+                <li>Garancijski dokumenti mogu biti obrisani</li>
+                <li>WhatsApp komunikacija će biti prekinuta</li>
+            </ul>
+        </div>
+
+        <h2>Koji podaci se mogu obrisati</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+            <div>
+                <h4>Kontakt informacije:</h4>
+                <ul>
+                    <li>• Ime i prezime</li>
+                    <li>• Broj telefona</li>
+                    <li>• Email adresa</li>
+                    <li>• Adresa stanovanja</li>
+                </ul>
+            </div>
+            <div>
+                <h4>Servisni podaci:</h4>
+                <ul>
+                    <li>• Istorija servisa</li>
+                    <li>• Fotografije uređaja</li>
+                    <li>• WhatsApp poruke</li>
+                    <li>• Tehnički izveštaji</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Proces brisanja podataka</h2>
+        <div class="process-step">
+            <strong>1. Podnošenje zahteva</strong><br>
+            Popunite formular ispod ili nas kontaktirajte direktno
+        </div>
+        <div class="process-step">
+            <strong>2. Verifikacija identiteta</strong><br>
+            Proverićemo vaš identitet iz sigurnosnih razloga
+        </div>
+        <div class="process-step">
+            <strong>3. Obrada zahteva</strong><br>
+            Obradićemo zahtev u roku od 72 sata
+        </div>
+        <div class="process-step">
+            <strong>4. Potvrda brisanja</strong><br>
+            Poslećemo potvrdu da su podaci obrisani
+        </div>
+
+        <div class="form-container">
+            <h2>📝 Zahtev za brisanje podataka</h2>
+            <form action="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/data-deletion-request" method="POST">
+                <label for="email">Email adresa</label>
+                <input type="email" id="email" name="email" placeholder="vaš@email.com">
+
+                <label for="phone">Broj telefona <span class="required">*</span></label>
+                <input type="tel" id="phone" name="phone" placeholder="+382 67 XXX XXX" required>
+
+                <label for="reason">Razlog brisanja</label>
+                <textarea id="reason" name="reason" rows="3" placeholder="Opcionalno - navedite razlog za brisanje podataka..."></textarea>
+
+                <label for="specificData">Specifični podaci za brisanje (opcionalno)</label>
+                <textarea id="specificData" name="specificData" rows="3" placeholder="Ako želite da se obrišu samo određeni podaci, molimo navedite koje..."></textarea>
+
+                <input type="submit" value="Pošalji zahtev za brisanje" class="button" style="margin-top: 20px; width: auto;">
+            </form>
+        </div>
+
+        <div class="contact-info">
+            <h2>📞 Alternativni načini kontakta</h2>
+            <p>Možete takođe da nas kontaktirate direktno za zahtev za brisanje podataka:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <strong>📧 Email</strong><br>
+                    privacy@frigosistemtodosijevic.me
+                </div>
+                <div>
+                    <strong>📞 Telefon</strong><br>
+                    +382 67 051 141
+                </div>
+            </div>
+        </div>
+
+        <h2>Retenção podataka</h2>
+        <p>Neki podaci mogu biti zadržani u sledećim slučajevima:</p>
+        <ul>
+            <li>Zakonska obaveza čuvanja (računovodstveni dokumenti)</li>
+            <li>Aktivni sporovi ili žalbe</li>
+            <li>Potraživanja ili dugovanja</li>
+            <li>Garancijski zahtevi u toku</li>
+        </ul>
+
+        <div style="text-align: center; margin-top: 40px; color: #6b7280; font-style: italic;">
+            <p>© 2025 Frigo Sistem Todosijević</p>
+            <p>Poslednja izmena: 10. septembar 2025.</p>
+            <p><strong>Kompanija:</strong> Lastav grbaljska 85317 Kotor, Crna Gora</p>
+        </div>
+    </div>
+
+    <script>
+        // Enhance form with basic validation and feedback
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            
+            if (!phone && !email) {
+                alert('Molimo unesite email ili telefon za identifikaciju.');
+                return;
+            }
+            
+            // Submit form data
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    reason: formData.get('reason'),
+                    specificData: formData.get('specificData')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Zahtev je uspešno poslat! Odgovoriće vam u roku od 72 sata.');
+                    this.reset();
+                } else {
+                    alert('Greška pri slanju zahteva. Molimo kontaktirajte nas direktno.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Greška pri slanju zahteva. Molimo kontaktirajte nas direktno na privacy@frigosistemtodosijevic.me');
+            });
+        });
+    </script>
+</body>
+</html>

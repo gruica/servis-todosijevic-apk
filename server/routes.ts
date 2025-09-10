@@ -6732,5 +6732,32 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // Static redirects za Facebook compliance - DODANO ZA LIVE MOD
+  app.get('/privacy/policy', (req, res) => {
+    res.redirect(301, '/privacy-policy.html');
+  });
+
+  app.get('/data-deletion', (req, res) => {
+    res.redirect(301, '/data-deletion.html');
+  });
+
+  // Direct access to static pages
+  app.get('/privacy-policy.html', (req, res) => {
+    res.sendFile('privacy-policy.html', { root: './public' });
+  });
+
+  app.get('/data-deletion.html', (req, res) => {
+    res.sendFile('data-deletion.html', { root: './public' });
+  });
+
+  // Health check endpoint za Facebook
+  app.get('/healthz', (req, res) => {
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      service: 'Frigo Sistem Todosijevic WhatsApp Business API'
+    });
+  });
 }
 

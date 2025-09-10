@@ -1,0 +1,32 @@
+App rejected - Fails to follow Privacy Policy terms
+Meta Platform Terms 4.a - Privacy policy
+
+During our review, we found that your app's privacy policy doesn't follow our Platform Terms. To use Facebook's Platform Data, you are required to provide and comply with a privacy policy available and accessible to the public.
+To resolve this issue, please make sure the privacy policy page in your app is available to the public and re-submit your app for review.
+To edit the privacy policy URL you provided for this app, visit My Apps, select your app, and go to Settings.
+For more information, please visit our App Review Rejection Guides.
+Notes from your reviewer:
+Hi,
+While reviewing we found that the PP is leading to and error page.To comply, please ensure that your App Name, Site URL, and Privacy Policy are consistent and accurately reflect the purpose and function of your app or website and resubmit it for further review.
+whatsapp_business_messaging feedback
+Unable to Verify Use Case Experience in App
+Developer Policy 1.6 - Build a trustworthy product
+We were unable to verify the use case outlined in your notes and screencast when we logged in to review your app.
+To help resolve this issue, please consider the following recommendations.
+Check that your app is fully developed and has correctly integrated the requested permission before re-submitting for review.
+Provide correct test credentials to access your app in a test environment or development mode. Development mode allows your app to access permission/feature with limited test data for App Review.
+If your app is in live mode/published, you must create a test app for your live/published app to create an App Review submission without compromising the functionality of the cloned parent app.
+Please provide a correct test URL in your submission notes. This will enable us to access the testing environment of your app. For web-based platforms, please use our debugger to verify that our reviewers can access the URL.
+Please make sure that app asks the permissions from the user before accessing user's data.
+For more information, you can also view our App Review introduction video and App Review Rejection Guide.
+whatsapp_business_management feedback
+Unable to Verify Use Case Experience in App
+Developer Policy 1.6 - Build a trustworthy product
+We were unable to verify the use case outlined in your notes and screencast when we logged in to review your app.
+To help resolve this issue, please consider the following recommendations.
+Check that your app is fully developed and has correctly integrated the requested permission before re-submitting for review.
+Provide correct test credentials to access your app in a test environment or development mode. Development mode allows your app to access permission/feature with limited test data for App Review.
+If your app is in live mode/published, you must create a test app for your live/published app to create an App Review submission without compromising the functionality of the cloned parent app.
+Please provide a correct test URL in your submission notes. This will enable us to access the testing environment of your app. For web-based platforms, please use our debugger to verify that our reviewers can access the URL.
+Please make sure that app asks the permissions from the user before accessing user's data.
+For more information, you can also view our App Review introduction video and App Review Rejection Guide.
