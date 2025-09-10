@@ -6602,5 +6602,84 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ===== WHATSAPP NOTIFICATION ENDPOINTS - AUTOMATSKE PORUKE =====
+
+  // POST /api/whatsapp-notifications/service-confirmed - Potvrda zahteva za servis
+  app.post('/api/whatsapp-notifications/service-confirmed', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const { 
+        serviceId, recipientPhone, recipientName, 
+        applianceType, brand, issueDescription, address 
+      } = req.body;
+
+      if (!recipientPhone || !recipientName || !applianceType) {
+        return res.status(400).json({ 
+          error: 'recipientPhone, recipientName i applianceType su obavezni',
+          success: false 
+        });
+      }
+
+      const { whatsappNotificationService } = await import('./whatsapp-notification-service.js');
+
+      const result = await whatsappNotificationService.notifyServiceRequestConfirmed({
+        serviceId,
+        senderId: req.user!.id,
+        recipientPhone,
+        recipientName,
+        applianceType,
+        brand: brand || 'Nepoznato',
+        issueDescription: issueDescription || 'Generalni servis',
+        address: address || 'Nepoznata adresa'
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP NOTIFICATION] Greška pri slanju potvrde zahteva:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju potvrde zahteva',
+        success: false 
+      });
+    }
+  });
+
+  // POST /api/whatsapp-notifications/service-refused - Klijent odbija popravku
+  app.post('/api/whatsapp-notifications/service-refused', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const { 
+        serviceId, recipientPhone, recipientName, 
+        applianceType, diagnosis, refusalReason, diagnosticFee, paymentMethod 
+      } = req.body;
+
+      if (!recipientPhone || !recipientName || !applianceType || !refusalReason) {
+        return res.status(400).json({ 
+          error: 'Osnovni podaci su obavezni',
+          success: false 
+        });
+      }
+
+      const { whatsappNotificationService } = await import('./whatsapp-notification-service.js');
+
+      const result = await whatsappNotificationService.notifyServiceRefused({
+        serviceId,
+        senderId: req.user!.id,
+        recipientPhone,
+        recipientName,
+        applianceType,
+        diagnosis: diagnosis || 'Dijagnoza u toku',
+        refusalReason,
+        diagnosticFee: diagnosticFee || '15',
+        paymentMethod: paymentMethod || 'Nespecifikovan'
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('❌ [WHATSAPP NOTIFICATION] Greška pri slanju potvrde odbijanja:', error);
+      res.status(500).json({ 
+        error: 'Greška pri slanju potvrde odbijanja',
+        success: false 
+      });
+    }
+  });
 }
 
