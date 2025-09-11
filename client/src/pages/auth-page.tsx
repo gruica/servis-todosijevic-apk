@@ -51,7 +51,7 @@ export default function AuthPage() {
     if (user) {
       const redirectPath = user.role === "technician" ? "/tech" :
                          user.role === "customer" ? "/customer" :
-                         user.role === "admin" ? (user.companyName === "Com Plus" ? "/complus" : "/admin") :
+                         user.role === "admin" ? (user.companyName === "Com Plus" ? "/complus" : "/admin/whatsapp-business-api") :
                          (user.role === "business_partner" || user.role === "business") ? "/business" : "/";
       navigate(redirectPath);
     }

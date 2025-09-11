@@ -430,6 +430,9 @@ export default function WhatsAppBusinessAPI() {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Nema auth token-a');
+      }
       const response = await fetch('/api/whatsapp-webhook/config', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -462,6 +465,9 @@ export default function WhatsAppBusinessAPI() {
     try {
       setWebhookTesting(true);
       const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Nema auth token-a');
+      }
       const response = await fetch('/api/whatsapp-webhook/test', {
         method: 'POST',
         headers: {
@@ -500,6 +506,9 @@ export default function WhatsAppBusinessAPI() {
     try {
       setTemplatesLoading(true);
       const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Nema auth token-a');
+      }
       const response = await fetch('/api/whatsapp-business/templates', {
         headers: {
           'Authorization': `Bearer ${token}`
