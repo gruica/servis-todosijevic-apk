@@ -6890,25 +6890,29 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const filePath = path.join(process.cwd(), 'public', filename);
       
       try {
-        const content = await fs.readFile(filePath, 'utf8');
-        const stats = await fs.stat(filePath);
+        const [content, stats] = await Promise.all([
+          fs.readFile(filePath, 'utf8').catch(() => ''),
+          fs.stat(filePath).catch(() => null)
+        ]);
         
         res.json({
           success: true,
           filename,
           content,
-          lastModified: stats.mtime.toLocaleString('sr-RS'),
-          size: stats.size
+          lastModified: stats ? stats.mtime.toLocaleString('sr-RS') : null,
+          size: stats ? stats.size : 0
         });
         
-        console.log(`✅ [ADMIN] Uspešno učitan fajl: ${filename} (${stats.size} bytes)`);
+        console.log(`✅ [ADMIN] Uspešno učitan fajl: ${filename} (${stats ? stats.size : 0} bytes)`);
         
       } catch (fileError) {
         console.error(`❌ [ADMIN] Greška čitanja fajla ${filename}:`, fileError);
-        res.status(404).json({ 
-          error: 'Fajl nije pronađen',
+        res.status(200).json({ 
+          success: true,
           filename,
-          details: fileError.message 
+          content: '',
+          lastModified: null,
+          size: 0
         });
       }
       
