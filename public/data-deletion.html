@@ -89,6 +89,9 @@
         <div class="form-container">
             <h2>📝 Zahtev za brisanje podataka</h2>
             <form action="https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/data-deletion-request" method="POST">
+                <label for="fullName">Ime i prezime <span class="required">*</span></label>
+                <input type="text" id="fullName" name="fullName" placeholder="Vaše puno ime" required>
+
                 <label for="email">Email adresa</label>
                 <input type="email" id="email" name="email" placeholder="vaš@email.com">
 
@@ -141,8 +144,14 @@
         document.querySelector('form').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const fullName = document.getElementById('fullName').value;
             const phone = document.getElementById('phone').value;
             const email = document.getElementById('email').value;
+            
+            if (!fullName) {
+                alert('Molimo unesite vaše ime i prezime.');
+                return;
+            }
             
             if (!phone && !email) {
                 alert('Molimo unesite email ili telefon za identifikaciju.');
@@ -158,6 +167,7 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    fullName: formData.get('fullName'),
                     email: formData.get('email'),
                     phone: formData.get('phone'),
                     reason: formData.get('reason'),
