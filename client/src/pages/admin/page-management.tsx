@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, Save, RefreshCw, FileText, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
 
 interface StaticPage {
   name: string;
@@ -53,11 +54,15 @@ export default function PageManagement() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSaved, setLastSaved] = useState<string>('');
   const { toast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
 
-  // Load page content when selected page changes
+  // Load page content when selected page changes - but wait for auth to load
   useEffect(() => {
+    if (authLoading || !user) {
+      return; // Wait for auth to load
+    }
     loadPageContent();
-  }, [selectedPage]);
+  }, [selectedPage, user, authLoading]);
 
   const loadPageContent = async () => {
     setIsLoading(true);
@@ -66,8 +71,19 @@ export default function PageManagement() {
       const data = await response.json();
       setPageContent(data.content || '');
       setLastSaved(data.lastModified || '');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading page content:', error);
+      
+      // Check if it's a 401 error (unauthorized)
+      if (error.message && error.message.includes('401')) {
+        toast({
+          title: "Sesija istekla",
+          description: "Molimo prijavite se ponovo",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       toast({
         title: "Greška",
         description: "Ne mogu da učitam sadržaj stranice",
