@@ -81,8 +81,11 @@ export default function WhatsAppBusinessAPI() {
   const loadConfiguration = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/config', {
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (response.ok) {
@@ -121,12 +124,13 @@ export default function WhatsAppBusinessAPI() {
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/config', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           accessToken,
           phoneNumberId,
@@ -163,9 +167,12 @@ export default function WhatsAppBusinessAPI() {
   const testConnection = async () => {
     try {
       setTesting(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/test-connection', {
         method: 'POST',
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       const data = await response.json();
@@ -206,12 +213,13 @@ export default function WhatsAppBusinessAPI() {
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/send-text', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           phoneNumber: testPhone,
           message: testMessage,
@@ -258,12 +266,13 @@ export default function WhatsAppBusinessAPI() {
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/send-template', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           phoneNumber: templatePhone,
           templateName,
@@ -310,12 +319,13 @@ export default function WhatsAppBusinessAPI() {
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/send-image', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           phoneNumber: imagePhone,
           imageUrl,
@@ -373,12 +383,13 @@ export default function WhatsAppBusinessAPI() {
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-business/send-bulk', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include',
         body: JSON.stringify({
           phoneNumbers: phoneList,
           message: bulkMessage
@@ -416,8 +427,11 @@ export default function WhatsAppBusinessAPI() {
   const loadWebhookConfig = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-webhook/config', {
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (response.ok) {
@@ -445,9 +459,12 @@ export default function WhatsAppBusinessAPI() {
   const testWebhookConfig = async () => {
     try {
       setWebhookTesting(true);
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/whatsapp-webhook/test', {
         method: 'POST',
-        credentials: 'include'
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       const data = await response.json();
