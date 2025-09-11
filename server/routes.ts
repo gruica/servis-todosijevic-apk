@@ -6861,5 +6861,142 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       ]
     });
   });
+
+  // Static Pages Management Endpoints - DODANO ZA ADMIN UPRAVLJANJE STRANICAMA
+  app.get('/api/admin/static-pages/:filename', async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // Provjeri admin dozvolu
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin dozvola potrebna' });
+      }
+      
+      // Dozvoljeni fajlovi za uređivanje
+      const allowedFiles = [
+        'privacy-policy.html',
+        'data-deletion.html', 
+        'reviewer-instructions.html',
+        'facebook-resubmission-guide.html',
+        'screencast-guide.html'
+      ];
+      
+      if (!allowedFiles.includes(filename)) {
+        return res.status(400).json({ error: 'Fajl nije dozvoljen za uređivanje' });
+      }
+      
+      console.log(`📄 [ADMIN] Čitam statičku stranicu: ${filename}`);
+      
+      const fs = require('fs').promises;
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'public', filename);
+      
+      try {
+        const content = await fs.readFile(filePath, 'utf8');
+        const stats = await fs.stat(filePath);
+        
+        res.json({
+          success: true,
+          filename,
+          content,
+          lastModified: stats.mtime.toLocaleString('sr-RS'),
+          size: stats.size
+        });
+        
+        console.log(`✅ [ADMIN] Uspešno učitan fajl: ${filename} (${stats.size} bytes)`);
+        
+      } catch (fileError) {
+        console.error(`❌ [ADMIN] Greška čitanja fajla ${filename}:`, fileError);
+        res.status(404).json({ 
+          error: 'Fajl nije pronađen',
+          filename,
+          details: fileError.message 
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ [ADMIN] Greška pri čitanju statičke stranice:', error);
+      res.status(500).json({ 
+        error: 'Server greška pri čitanju stranice',
+        details: error.message 
+      });
+    }
+  });
+
+  app.put('/api/admin/static-pages/:filename', async (req, res) => {
+    try {
+      const { filename } = req.params;
+      const { content } = req.body;
+      
+      // Provjeri admin dozvolu
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin dozvola potrebna' });
+      }
+      
+      // Dozvoljeni fajlovi za uređivanje
+      const allowedFiles = [
+        'privacy-policy.html',
+        'data-deletion.html',
+        'reviewer-instructions.html', 
+        'facebook-resubmission-guide.html',
+        'screencast-guide.html'
+      ];
+      
+      if (!allowedFiles.includes(filename)) {
+        return res.status(400).json({ error: 'Fajl nije dozvoljen za uređivanje' });
+      }
+      
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ error: 'Sadržaj stranice je obavezan' });
+      }
+      
+      console.log(`📄 [ADMIN] Ažuriram statičku stranicu: ${filename} (${content.length} karaktera)`);
+      
+      const fs = require('fs').promises;
+      const path = require('path');
+      const filePath = path.join(process.cwd(), 'public', filename);
+      
+      // Napravi backup postojećeg fajla
+      try {
+        const existingContent = await fs.readFile(filePath, 'utf8');
+        const backupPath = path.join(process.cwd(), 'public', `${filename}.backup.${Date.now()}`);
+        await fs.writeFile(backupPath, existingContent, 'utf8');
+        console.log(`💾 [ADMIN] Kreiran backup: ${backupPath}`);
+      } catch (backupError) {
+        console.log(`⚠️ [ADMIN] Ne mogu kreirati backup za ${filename}:`, backupError.message);
+      }
+      
+      // Sačuvaj novi sadržaj
+      try {
+        await fs.writeFile(filePath, content, 'utf8');
+        const stats = await fs.stat(filePath);
+        
+        res.json({
+          success: true,
+          message: 'Stranica je uspešno ažurirana',
+          filename,
+          size: stats.size,
+          lastModified: stats.mtime.toLocaleString('sr-RS')
+        });
+        
+        console.log(`✅ [ADMIN] Uspešno ažuriran fajl: ${filename} (${stats.size} bytes)`);
+        
+      } catch (writeError) {
+        console.error(`❌ [ADMIN] Greška pisanja fajla ${filename}:`, writeError);
+        res.status(500).json({ 
+          error: 'Ne mogu sačuvati fajl',
+          filename,
+          details: writeError.message 
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ [ADMIN] Greška pri ažuriranju statičke stranice:', error);
+      res.status(500).json({ 
+        error: 'Server greška pri ažuriranju stranice',
+        details: error.message 
+      });
+    }
+  });
 }
 
