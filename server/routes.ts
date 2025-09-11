@@ -6998,5 +6998,166 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ============================================================================
+  // 🛡️ DODATNA ZAŠTIĆENA BRISANJA - SAFE DELETE ENDPOINTS
+  // ============================================================================
+  // Ovi endpoint-i zahtevaju da korisnik unese tačno ime/naziv da bi potvrdio brisanje
+  
+  // 🔒 Zaštićeno brisanje klijenta - traži identično ime i prezime
+  app.delete("/api/admin/clients/:id/safe-delete", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`🛡️ [SAFE DELETE CLIENT] Admin ${req.user?.username} pokušava zaštićeno brisanje klijenta ${req.params.id}`);
+      
+      const clientId = parseInt(req.params.id);
+      const { fullName } = req.body;
+      
+      if (isNaN(clientId)) {
+        return res.status(400).json({ error: "Neispravan ID klijenta" });
+      }
+      
+      if (!fullName || typeof fullName !== 'string') {
+        return res.status(400).json({ 
+          error: "Potrebno je uneti ime i prezime klijenta", 
+          hint: "Unesite tačno ime i prezime kao što je zapisano u bazi podataka" 
+        });
+      }
+      
+      // Dohvati podatke klijenta
+      const client = await storage.getClient(clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Klijent nije pronađen" });
+      }
+      
+      // KRITIČNA PROVJERA: Ime mora biti IDENTIČNO
+      const trimmedInputName = fullName.trim();
+      const trimmedClientName = client.fullName.trim();
+      
+      if (trimmedInputName !== trimmedClientName) {
+        console.log(`🚫 [SAFE DELETE CLIENT] Nepodudarnost imena:`);
+        console.log(`   Uneto: "${trimmedInputName}"`);
+        console.log(`   U bazi: "${trimmedClientName}"`);
+        
+        return res.status(400).json({ 
+          error: "Uneto ime i prezime se ne slaže sa podacima u bazi", 
+          hint: `Tačno ime u bazi: "${trimmedClientName}"`,
+          inputReceived: trimmedInputName 
+        });
+      }
+      
+      // Proveri da li klijent ima servise
+      const clientServices = await storage.getServicesByClient(clientId);
+      if (clientServices.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima aktivne servise", 
+          message: "Prvo obriši sve servise povezane sa ovim klijentom",
+          activeServicesCount: clientServices.length
+        });
+      }
+
+      // Proveri da li klijent ima uređaje
+      const clientAppliances = await storage.getAppliancesByClient(clientId);
+      if (clientAppliances.length > 0) {
+        return res.status(400).json({ 
+          error: "Klijent ima registrovane uređaje", 
+          message: "Prvo obriši sve uređaje povezane sa ovim klijentom",
+          activeAppliancesCount: clientAppliances.length
+        });
+      }
+
+      // SIGURNO BRISANJE - ime se slaže!
+      console.log(`🛡️ [SAFE DELETE CLIENT] ✅ Ime potvrđeno - brišem klijenta ${clientId} (${trimmedClientName})`);
+      const success = await storage.deleteClient(clientId);
+      
+      if (success) {
+        console.log(`🛡️ [SAFE DELETE CLIENT] ✅ Klijent ${clientId} uspešno obrisan`);
+        res.json({ 
+          success: true, 
+          message: `Klijent "${trimmedClientName}" je uspešno obrisan`,
+          deletedClient: {
+            id: clientId,
+            fullName: trimmedClientName
+          }
+        });
+      } else {
+        res.status(500).json({ error: "Greška pri brisanju klijenta" });
+      }
+      
+    } catch (error) {
+      console.error("🛡️ [SAFE DELETE CLIENT] ❌ Greška:", error);
+      res.status(500).json({ 
+        error: "Greška pri zaštićenom brisanju klijenta", 
+        message: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // 🔒 Zaštićeno brisanje servisa - traži identičnu deskripciju servisa
+  app.delete("/api/admin/services/:id/safe-delete", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`🛡️ [SAFE DELETE SERVICE] Admin ${req.user?.username} pokušava zaštićeno brisanje servisa ${req.params.id}`);
+      
+      const serviceId = parseInt(req.params.id);
+      const { description } = req.body;
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ error: "Neispravan ID servisa" });
+      }
+      
+      if (!description || typeof description !== 'string') {
+        return res.status(400).json({ 
+          error: "Potrebno je uneti opis servisa", 
+          hint: "Unesite tačan opis servisa kao što je zapisan u bazi podataka" 
+        });
+      }
+      
+      // Dohvati podatke servisa
+      const service = await storage.getServiceById(serviceId);
+      if (!service) {
+        return res.status(404).json({ error: "Servis nije pronađen" });
+      }
+      
+      // KRITIČNA PROVJERA: Opis mora biti IDENTIČAN
+      const trimmedInputDescription = description.trim();
+      const trimmedServiceDescription = service.description.trim();
+      
+      if (trimmedInputDescription !== trimmedServiceDescription) {
+        console.log(`🚫 [SAFE DELETE SERVICE] Nepodudarnost opisa:`);
+        console.log(`   Uneto: "${trimmedInputDescription}"`);
+        console.log(`   U bazi: "${trimmedServiceDescription}"`);
+        
+        return res.status(400).json({ 
+          error: "Uneti opis servisa se ne slaže sa podacima u bazi", 
+          hint: `Tačan opis u bazi: "${trimmedServiceDescription}"`,
+          inputReceived: trimmedInputDescription 
+        });
+      }
+      
+      // SIGURNO BRISANJE - opis se slaže!
+      console.log(`🛡️ [SAFE DELETE SERVICE] ✅ Opis potvrđen - brišem servis ${serviceId} (${trimmedServiceDescription})`);
+      const success = await storage.deleteAdminService(serviceId);
+      
+      if (success) {
+        console.log(`🛡️ [SAFE DELETE SERVICE] ✅ Servis ${serviceId} uspešno obrisan`);
+        res.json({ 
+          success: true, 
+          message: `Servis "${trimmedServiceDescription}" je uspešno obrisan`,
+          deletedService: {
+            id: serviceId,
+            description: trimmedServiceDescription
+          }
+        });
+      } else {
+        res.status(500).json({ error: "Servis nije pronađen ili nije mogao biti obrisan" });
+      }
+      
+    } catch (error) {
+      console.error("🛡️ [SAFE DELETE SERVICE] ❌ Greška:", error);
+      res.status(500).json({ 
+        error: "Greška pri zaštićenom brisanju servisa", 
+        message: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
 }
 
