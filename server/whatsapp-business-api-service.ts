@@ -782,3 +782,18 @@ Admin Panel`;
 
 // Singleton instanca za upotrebu kroz aplikaciju
 export const whatsappBusinessAPIService = new WhatsAppBusinessAPIService();
+
+// ===== AUTOMATSKA INICIJALIZACIJA SA ENVIRONMENT VARIJABLAMA =====
+// Inicijalizuj servis sa environment varijablama na startup-u
+if (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+  console.log('🚀 [WHATSAPP BUSINESS API] Automatska inicijalizacija sa environment varijablama...');
+  whatsappBusinessAPIService.updateConfig({
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    apiVersion: 'v23.0',
+    baseUrl: 'https://graph.facebook.com'
+  });
+  console.log('✅ [WHATSAPP BUSINESS API] Servis uspešno inicijalizovan!');
+} else {
+  console.log('⚠️ [WHATSAPP BUSINESS API] Environment varijable nisu pronađene. Konfigurišite kroz admin panel.');
+}
