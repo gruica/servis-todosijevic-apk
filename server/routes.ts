@@ -6863,7 +6863,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   });
 
   // Static Pages Management Endpoints - DODANO ZA ADMIN UPRAVLJANJE STRANICAMA
-  app.get('/api/admin/static-pages/:filename', async (req, res) => {
+  app.get('/api/admin/static-pages/:filename', jwtAuth, async (req, res) => {
     try {
       const { filename } = req.params;
       
@@ -6923,7 +6923,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
-  app.put('/api/admin/static-pages/:filename', async (req, res) => {
+  app.put('/api/admin/static-pages/:filename', jwtAuth, async (req, res) => {
     try {
       const { filename } = req.params;
       const { content } = req.body;

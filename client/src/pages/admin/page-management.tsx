@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, Save, RefreshCw, FileText, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/admin-layout';
+import { apiRequest } from '@/lib/queryClient';
 
 interface StaticPage {
   name: string;
@@ -61,23 +62,15 @@ export default function PageManagement() {
   const loadPageContent = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/static-pages/${selectedPage}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPageContent(data.content || '');
-        setLastSaved(data.lastModified || '');
-      } else {
-        toast({
-          title: "Greška",
-          description: "Ne mogu da učitam sadržaj stranice",
-          variant: "destructive"
-        });
-      }
+      const response = await apiRequest(`/api/admin/static-pages/${selectedPage}`);
+      const data = await response.json();
+      setPageContent(data.content || '');
+      setLastSaved(data.lastModified || '');
     } catch (error) {
       console.error('Error loading page content:', error);
       toast({
         title: "Greška",
-        description: "Greška pri učitavanju sadržaja stranice",
+        description: "Ne mogu da učitam sadržaj stranice",
         variant: "destructive"
       });
     } finally {
@@ -88,28 +81,17 @@ export default function PageManagement() {
   const savePageContent = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/static-pages/${selectedPage}`, {
+      const response = await apiRequest(`/api/admin/static-pages/${selectedPage}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ content: pageContent }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setLastSaved(new Date().toLocaleString('sr-RS'));
-        toast({
-          title: "Uspešno",
-          description: "Stranica je uspešno sačuvana",
-        });
-      } else {
-        toast({
-          title: "Greška",
-          description: "Ne mogu da sačuvam stranicu",
-          variant: "destructive"
-        });
-      }
+      const data = await response.json();
+      setLastSaved(new Date().toLocaleString('sr-RS'));
+      toast({
+        title: "Uspešno",
+        description: "Stranica je uspešno sačuvana",
+      });
     } catch (error) {
       console.error('Error saving page content:', error);
       toast({
