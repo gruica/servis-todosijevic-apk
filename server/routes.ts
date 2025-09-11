@@ -6887,8 +6887,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       
       console.log(`📄 [ADMIN] Čitam statičku stranicu: ${filename}`);
       
-      const fs = require('fs').promises;
-      const path = require('path');
       const filePath = path.join(process.cwd(), 'public', filename);
       
       try {
@@ -6952,8 +6950,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       
       console.log(`📄 [ADMIN] Ažuriram statičku stranicu: ${filename} (${content.length} karaktera)`);
       
-      const fs = require('fs').promises;
-      const path = require('path');
       const filePath = path.join(process.cwd(), 'public', filename);
       
       // Napravi backup postojećeg fajla
