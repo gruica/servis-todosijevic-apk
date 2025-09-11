@@ -5871,7 +5871,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
   app.post('/webhook/whatsapp', handleWebhook);
   
   // GET /api/whatsapp-webhook/config - Dobija webhook konfiguraciju
-  app.get('/api/whatsapp-webhook/config', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+  app.get('/api/whatsapp-webhook/config', jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const config = getWebhookConfig();
       res.json({
@@ -5892,7 +5892,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
   });
   
   // POST /api/whatsapp-webhook/test - Test webhook konfiguracije
-  app.post('/api/whatsapp-webhook/test', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+  app.post('/api/whatsapp-webhook/test', jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const config = getWebhookConfig();
       
