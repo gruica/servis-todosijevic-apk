@@ -38,7 +38,8 @@ import {
   Building,
   Calendar,
   FileText,
-  BarChart3
+  BarChart3,
+  Shield
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -93,6 +94,11 @@ const AdminClientsPage = memo(function AdminClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  
+  // 🛡️ NOVI STATE ZA ZAŠTIĆENO BRISANJE - Dodato na kraj postojećeg
+  const [safeDeleteClient, setSafeDeleteClient] = useState<Client | null>(null);
+  const [safeDeleteName, setSafeDeleteName] = useState("");
+  const [safeDeleteError, setSafeDeleteError] = useState("");
 
   // Query za sve klijente
   const { data: clients = [], isLoading, error, refetch } = useQuery<Client[]>({
@@ -241,6 +247,44 @@ const AdminClientsPage = memo(function AdminClientsPage() {
     },
   });
 
+  // 🛡️ NOVA MUTACIJA ZA ZAŠTIĆENO BRISANJE KLIJENTA - Dodato na kraj postojećeg
+  const safeDeleteClientMutation = useMutation({
+    mutationFn: async (data: { id: number; fullName: string }) => {
+      const response = await fetch(`/api/admin/clients/${data.id}/safe-delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fullName: data.fullName }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Greška pri zaštićenom brisanju klijenta');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({
+        title: "Klijent bezbjedno obrisan",
+        description: `Klijent "${data.deletedClient?.fullName}" je uspešno obrisan uz zaštićenu verifikaciju.`,
+      });
+      setSafeDeleteClient(null);
+      setSafeDeleteName("");
+      setSafeDeleteError("");
+    },
+    onError: (error: Error) => {
+      setSafeDeleteError(error.message);
+      toast({
+        title: "Zaštićeno brisanje nije uspelo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Filtrirani klijenti
   const filteredClients = useMemo(() => {
     if (!searchQuery.trim()) return clients;
@@ -280,6 +324,33 @@ const AdminClientsPage = memo(function AdminClientsPage() {
   // Funkcija za submitovanje add forme
   const onAddSubmit = (values: NewClientFormValues) => {
     addClientMutation.mutate(values);
+  };
+
+  // 🛡️ NOVA FUNKCIJA ZA SAFE DELETE - Dodato na kraj postojećeg
+  const handleSafeDeleteClient = (client: Client) => {
+    setSafeDeleteClient(client);
+    setSafeDeleteName("");
+    setSafeDeleteError("");
+  };
+
+  const handleSafeDeleteConfirm = () => {
+    if (!safeDeleteClient) return;
+    
+    if (!safeDeleteName.trim()) {
+      setSafeDeleteError("Morate uneti ime i prezime klijenta");
+      return;
+    }
+
+    safeDeleteClientMutation.mutate({
+      id: safeDeleteClient.id,
+      fullName: safeDeleteName.trim()
+    });
+  };
+
+  const handleSafeDeleteCancel = () => {
+    setSafeDeleteClient(null);
+    setSafeDeleteName("");
+    setSafeDeleteError("");
   };
 
   // Loading state
@@ -486,6 +557,17 @@ const AdminClientsPage = memo(function AdminClientsPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  
+                  {/* 🛡️ NOVO DUGME ZA ZAŠTIĆENO BRISANJE - Dodato pored postojećeg */}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-yellow-600 hover:text-yellow-700"
+                    onClick={() => handleSafeDeleteClient(client)}
+                    title="Zaštićeno brisanje - traži potvrdu imena"
+                  >
+                    <Shield className="h-3 w-3" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -884,6 +966,76 @@ const AdminClientsPage = memo(function AdminClientsPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* 🛡️ NOVA SAFE DELETE DIALOG KOMPONENTA - Dodato na kraj postojećeg */}
+      <AlertDialog open={!!safeDeleteClient} onOpenChange={(open) => !open && handleSafeDeleteCancel()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
+              <Shield className="h-5 w-5" />
+              Zaštićeno brisanje klijenta
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Bezbednosna potvrda: Da biste obrisali klijenta "{safeDeleteClient?.fullName}", 
+              morate uneti TAČNO isto ime i prezime kao što je zapisano u sistemu.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-lg">
+              <p><strong>Klijent za brisanje:</strong> {safeDeleteClient?.fullName}</p>
+              <p><strong>ID:</strong> {safeDeleteClient?.id}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Unesite ime i prezime klijenta *
+              </label>
+              <Input
+                value={safeDeleteName}
+                onChange={(e) => {
+                  setSafeDeleteName(e.target.value);
+                  setSafeDeleteError("");
+                }}
+                placeholder="Ime i prezime mora biti identično..."
+                className="border-yellow-300 focus:border-yellow-500"
+                disabled={safeDeleteClientMutation.isPending}
+              />
+              {safeDeleteError && (
+                <p className="text-sm text-destructive mt-1">
+                  {safeDeleteError}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={handleSafeDeleteCancel}
+              disabled={safeDeleteClientMutation.isPending}
+            >
+              Otkaži
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSafeDeleteConfirm}
+              className="bg-yellow-600 text-white hover:bg-yellow-700"
+              disabled={safeDeleteClientMutation.isPending || !safeDeleteName.trim()}
+            >
+              {safeDeleteClientMutation.isPending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Brišem sigurno...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Potvrdi sigurno brisanje
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
