@@ -63,6 +63,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
     { path: "/admin/complus-billing", label: "Complus fakturisanje", icon: "euro", highlight: true },
     { path: "/admin/beko-billing", label: "Beko fakturisanje", icon: "euro", highlight: true },
     { path: "/admin/servis-komerc", label: "Servis Komerc", icon: "local_shipping", highlight: true },
+    { path: "/admin/page-management", label: "Upravljanje stranicama", icon: "web", highlight: true },
     { path: "/profile", label: "Moj profil", icon: "account_circle" },
   ];
   
