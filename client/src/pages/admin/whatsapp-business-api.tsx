@@ -73,6 +73,8 @@ export default function WhatsAppBusinessAPI() {
   // Webhook konfiguracija - NOVO DODATO
   const [webhookConfig, setWebhookConfig] = useState<any>(null);
   const [webhookTesting, setWebhookTesting] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
   useEffect(() => {
     loadConfiguration();
@@ -493,9 +495,46 @@ export default function WhatsAppBusinessAPI() {
     }
   };
 
-  // Učitaj webhook config kada se komponenta mount-uje
+  // Učitaj template-e
+  const loadTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/whatsapp-business/templates', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableTemplates(data.templates || []);
+        console.log('✅ Template-i učitani:', data.templates);
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Greška pri učitavanju template-a:', errorData);
+        toast({
+          title: 'Greška',
+          description: 'Greška pri učitavanju template-a',
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Greška pri učitavanju template-a:', error);
+      toast({
+        title: 'Greška',
+        description: 'Greška pri učitavanju template-a',
+        variant: 'destructive'
+      });
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  // Učitaj webhook config i template-e kada se komponenta mount-uje
   useEffect(() => {
     loadWebhookConfig();
+    loadTemplates();
   }, []);
 
   return (
@@ -747,12 +786,42 @@ export default function WhatsAppBusinessAPI() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="templateName">Naziv template-a</Label>
-                  <Input
-                    id="templateName"
-                    placeholder="hello_world"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                  />
+                  {templatesLoading ? (
+                    <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Učitavam template-e...
+                    </div>
+                  ) : availableTemplates.length > 0 ? (
+                    <>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                      >
+                        <option value="">-- Izaberi template --</option>
+                        {availableTemplates.map((template) => (
+                          <option key={template.id} value={template.name}>
+                            {template.name} ({template.status})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="text-xs text-muted-foreground">
+                        Dostupno {availableTemplates.length} odobrenih template-a
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        id="templateName"
+                        placeholder="hello_world"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                      />
+                      <div className="text-xs text-orange-600">
+                        ⚠️ Nema dostupnih template-a ili nisu još odobreni
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-2">

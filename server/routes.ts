@@ -6578,6 +6578,31 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
+  // GET /api/whatsapp-business/templates - Dobij listu dostupnih template-a
+  app.get('/api/whatsapp-business/templates', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
+    try {
+      const result = await whatsAppBusinessService.getMessageTemplates();
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          templates: result.templates
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: result.error
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP API] Greška pri dohvatanju template-a:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Greška pri dohvatanju template-a'
+      });
+    }
+  });
+
   // POST /api/whatsapp-business/send-text - Pošalji tekstualnu poruku
   app.post('/api/whatsapp-business/send-text', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
     try {

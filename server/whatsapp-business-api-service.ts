@@ -227,6 +227,47 @@ export class WhatsAppBusinessAPIService {
   }
 
   /**
+   * Dohvata listu dostupnih template-a
+   */
+  async getMessageTemplates(): Promise<{ success: boolean; templates?: any[]; error?: string }> {
+    try {
+      if (!this.isConfigured) {
+        return { success: false, error: 'WhatsApp Business API nije konfigurisan' };
+      }
+
+      const url = `https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/message_templates`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log(`✅ [WHATSAPP BUSINESS API] Uspešno dohvaćeno ${data.data?.length || 0} template-a`);
+        return {
+          success: true,
+          templates: data.data || []
+        };
+      }
+
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dohvatanju template-a:', data);
+      return { success: false, error: data.error?.message || 'Greška pri dohvatanju template-a' };
+
+    } catch (error: any) {
+      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dohvatanju template-a:', error);
+      return {
+        success: false,
+        error: error.message || 'Greška pri dohvatanju template-a'
+      };
+    }
+  }
+
+  /**
    * Šalje sliku sa porukom
    */
   async sendImageMessage(
