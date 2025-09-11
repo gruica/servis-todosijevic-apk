@@ -204,6 +204,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/beko-billing" component={BekoBillingPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/ai-predictive-maintenance" component={AIPredictiveMaintenancePage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/page-management" component={lazy(() => import('./pages/admin/page-management'))} allowedRoles={["admin"]} />
       
       {/* Com Plus nezavisan administrativni panel */}
       <RoleProtectedRoute path="/complus" component={ComplusDashboard} allowedRoles={["admin"]} />
