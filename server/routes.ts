@@ -6810,5 +6810,52 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // Test credentials endpoint za Facebook reviewere - SAMO ZA DEMO SVRHE
+  app.get('/api/reviewer/credentials', (req, res) => {
+    res.json({
+      message: 'Test credentials for Facebook App Review',
+      environment: 'Demo/Test Environment',
+      access: {
+        admin: {
+          username: 'facebook_reviewer_admin',
+          password: 'FB_Review_2025_Demo',
+          role: 'Admin',
+          permissions: ['view_all', 'test_whatsapp', 'view_logs']
+        },
+        technician: {
+          username: 'facebook_reviewer_tech',
+          password: 'FB_Tech_Demo_2025',
+          role: 'Technician',
+          permissions: ['view_services', 'test_mobile']
+        },
+        business_partner: {
+          username: 'facebook_reviewer_partner',
+          password: 'FB_Partner_Demo_2025',
+          role: 'Business Partner',
+          permissions: ['submit_services', 'view_status']
+        }
+      },
+      test_urls: {
+        main_app: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/',
+        reviewer_demo: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/reviewer',
+        privacy_policy: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/privacy-policy.html',
+        data_deletion: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/data-deletion.html'
+      },
+      whatsapp_test: {
+        phone_number: '+1 555 123 4567',
+        template_names: ['service_confirmation', 'appointment_reminder', 'completion_notice'],
+        webhook_url: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev/api/webhook/whatsapp',
+        verify_token: 'frigo_sistem_todosijevic_webhook_2024'
+      },
+      instructions: [
+        '1. Visit the reviewer demo page for live WhatsApp testing',
+        '2. Use test credentials above to access different user roles',
+        '3. Test phone number +1 555 123 4567 is Meta approved for testing',
+        '4. All data in this environment is for demonstration only',
+        '5. Real business data is isolated and protected'
+      ]
+    });
+  });
 }
 
