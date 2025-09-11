@@ -89,7 +89,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
   return (
     <div 
       className={cn(
-        "bg-white shadow-lg w-64 h-full overflow-y-auto flex-shrink-0 transition-all duration-300 transform",
+        "bg-white shadow-lg w-64 h-full flex-shrink-0 transition-all duration-300 transform",
         "flex flex-col",
         isMobileOpen 
           ? "fixed inset-y-0 left-0 z-50" 
@@ -99,7 +99,7 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
         <h1 className="text-xl font-medium text-primary">Frigo Sistem Todosijević</h1>
       </div>
-      <div className="py-4 flex-1">
+      <div className="py-4 flex-1 overflow-y-auto">
         <div className="px-4 mb-6">
           {user && (
             <div className="flex items-center space-x-3">
