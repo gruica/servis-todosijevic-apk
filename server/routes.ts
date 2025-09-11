@@ -6751,6 +6751,10 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     res.sendFile('data-deletion.html', { root: './public' });
   });
 
+  app.get('/reviewer-instructions.html', (req, res) => {
+    res.sendFile('reviewer-instructions.html', { root: './public' });
+  });
+
   // Health check endpoint za Facebook
   app.get('/healthz', (req, res) => {
     res.json({ 
