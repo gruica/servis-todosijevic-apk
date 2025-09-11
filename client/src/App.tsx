@@ -138,6 +138,9 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/data-deletion" component={DataDeletion} />
       
+      {/* Facebook Reviewer Demo Page - JAVNO DOSTUPNA */}
+      <Route path="/reviewer" component={React.lazy(() => import("@/pages/reviewer").then(m => ({ default: m.default })))} />
+      
       {/* Test da li radi na drugom mjestu */}
       <Route path="/test-page" component={SimpleTestPage} />
       

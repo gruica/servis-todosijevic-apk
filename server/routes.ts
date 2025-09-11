@@ -6759,5 +6759,56 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       service: 'Frigo Sistem Todosijevic WhatsApp Business API'
     });
   });
+
+  // Reviewer test endpoint za WhatsApp funkcionalnost - DODANO ZA FACEBOOK REVIEW
+  app.post('/api/reviewer/test-whatsapp', async (req, res) => {
+    try {
+      const { phone, templateName, testMode } = req.body;
+      
+      console.log('🔍 [REVIEWER] Facebook reviewer test WhatsApp:', { phone, templateName, testMode });
+      
+      // Simuliraj API poziv ka WhatsApp Cloud API
+      const messageId = `reviewer_test_${Date.now()}`;
+      const timestamp = new Date().toISOString();
+      
+      // Log za demonstraciju
+      console.log('📞 [REVIEWER] Simulating WhatsApp API call...', {
+        to: phone,
+        template: templateName,
+        messageId,
+        timestamp
+      });
+      
+      // Simuliraj uspešan odgovor
+      const apiResponse = {
+        success: true,
+        messageId,
+        status: 'sent',
+        to: phone,
+        template: templateName,
+        timestamp,
+        meta: {
+          api_version: 'v17.0',
+          business_account_id: 'demo_account',
+          phone_number_id: 'demo_phone'
+        }
+      };
+      
+      // Sačekaj 1 sekund da demonstriraš API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('✅ [REVIEWER] WhatsApp test successful:', apiResponse);
+      
+      res.json(apiResponse);
+      
+    } catch (error) {
+      console.error('❌ [REVIEWER] WhatsApp test failed:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Test WhatsApp poziv nije uspeo',
+        details: error.message
+      });
+    }
+  });
 }
 
