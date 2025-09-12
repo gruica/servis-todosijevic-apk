@@ -337,7 +337,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        // Get manufacturer name from manufacturerId
+        let manufacturerName = '';
+        if (applianceData?.manufacturerId) {
+          const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
+          manufacturerName = manufacturer?.name || '';
+        }
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -346,7 +351,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
-          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          // Get category name from categoryId
+          let deviceType = 'Uređaj';
+          if (applianceData?.categoryId) {
+            const category = await storage.getApplianceCategory(applianceData.categoryId);
+            deviceType = category?.name || 'Uređaj';
+          }
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
@@ -425,6 +435,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled: settingsMap.sms_mobile_enabled === 'true'
         }, storage);
 
+        // Define missing variables for SMS
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let manufacturerName = '';
+        let technicianData = null;
+
+        if (existingOrder.serviceId) {
+          serviceData = await storage.getService(existingOrder.serviceId);
+          if (serviceData) {
+            if (serviceData.clientId) {
+              clientData = await storage.getClient(serviceData.clientId);
+            }
+            if (serviceData.applianceId) {
+              applianceData = await storage.getAppliance(serviceData.applianceId);
+              if (applianceData?.manufacturerId) {
+                const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
+                manufacturerName = manufacturer?.name || '';
+              }
+            }
+            if (serviceData.technicianId) {
+              technicianData = await storage.getTechnician(serviceData.technicianId);
+            }
+          }
+        }
+
         if (existingOrder.serviceId && clientData && technicianData) {
           const smsData = {
             serviceId: existingOrder.serviceId,
@@ -435,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.name,
+            technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: estimatedDelivery || '3-5 dana',
@@ -448,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors || smsResult.message);
           }
         }
       } catch (smsError) {
@@ -480,9 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "waiting_delivery",
         actualCost,
-        adminNotes: adminNotes || null,
-        receivedBy: req.user.id,
-        receivedAt: new Date()
+        adminNotes: adminNotes || null
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} potvrdio prijem rezervnog dela ID: ${orderId}`);
@@ -507,9 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
-        status: "available",
-        madeAvailableBy: req.user.id,
-        madeAvailableAt: new Date()
+        status: "available"
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} prebacio deo u dostupno: ID ${orderId}`);
@@ -579,7 +611,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        // Get manufacturer name from manufacturerId
+        let manufacturerName = '';
+        if (applianceData?.manufacturerId) {
+          const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
+          manufacturerName = manufacturer?.name || '';
+        }
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -588,7 +625,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
           
-          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          // Get category name from categoryId
+          let deviceType = 'Uređaj';
+          if (applianceData?.categoryId) {
+            const category = await storage.getApplianceCategory(applianceData.categoryId);
+            deviceType = category?.name || 'Uređaj';
+          }
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
@@ -628,6 +670,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled: settingsMap.sms_mobile_enabled === 'true'
         }, storage);
 
+        // Define missing variables for SMS
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let manufacturerName = '';
+        let technicianData = null;
+
+        if (existingOrder.serviceId) {
+          serviceData = await storage.getService(existingOrder.serviceId);
+          if (serviceData) {
+            if (serviceData.clientId) {
+              clientData = await storage.getClient(serviceData.clientId);
+            }
+            if (serviceData.applianceId) {
+              applianceData = await storage.getAppliance(serviceData.applianceId);
+              if (applianceData?.manufacturerId) {
+                const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
+                manufacturerName = manufacturer?.name || '';
+              }
+            }
+            if (serviceData.technicianId) {
+              technicianData = await storage.getTechnician(serviceData.technicianId);
+            }
+          }
+        }
+
         if (existingOrder.serviceId && clientData && technicianData) {
           const smsData = {
             serviceId: existingOrder.serviceId,
@@ -638,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.name,
+            technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: '3-5 dana',
