@@ -605,6 +605,11 @@ const AdminServices = memo(function AdminServices() {
     dispatchDialog({ type: 'OPEN_DETAILS', payload: service });
   }, []);
 
+  // Handle service report
+  const handleViewReport = useCallback((service: AdminService) => {
+    setLocation(`/admin/services/${service.id}/report`);
+  }, [setLocation]);
+
   // Handle edit service
   const handleEditService = (service: AdminService) => {
     dispatchDialog({ type: 'OPEN_EDIT', payload: service });
@@ -898,13 +903,23 @@ const AdminServices = memo(function AdminServices() {
                             className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                             onClick={() => handleViewDetails(service)}
                             title="Pogledaj detalje"
+                            data-testid={`button-view-details-${service.id}`}
                           >
                             <Eye className="h-3 w-3" />
+                          </button>
+                          <button
+                            className="p-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                            onClick={() => handleViewReport(service)}
+                            title="Izvještaj sa servisa"
+                            data-testid={`button-view-report-${service.id}`}
+                          >
+                            <FileText className="h-3 w-3" />
                           </button>
                           <button
                             className="p-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                             onClick={() => handleEditService(service)}
                             title="Uredi servis"
+                            data-testid={`button-edit-service-${service.id}`}
                           >
                             <Edit className="h-3 w-3" />
                           </button>

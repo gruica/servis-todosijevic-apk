@@ -2015,4 +2015,109 @@ export const insertDeletedServiceSchema = createInsertSchema(deletedServices).pi
 export type InsertDeletedService = z.infer<typeof insertDeletedServiceSchema>;
 export type DeletedService = typeof deletedServices.$inferSelect;
 
+// ===== SERVICE REPORT DTO =====
+export interface ServiceReportDTO {
+  // Kompanija informacije
+  companyInfo: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    pib: string;
+    pdv: string;
+    website: string;
+  };
+  
+  // Osnovne informacije servisa
+  service: {
+    id: number;
+    orderNumber: string;
+    createdAt: string;
+    status: string;
+    priority: string;
+    description: string;
+    isWarranty: boolean;
+    warrantyType?: string;
+    isCompletelyFixed: boolean;
+    deviceLocation?: string;
+  };
+  
+  // Klijent
+  client: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    address: string;
+    pib?: string;
+    pdv?: string;
+  };
+  
+  // Uređaj
+  appliance: {
+    category: string;
+    manufacturer: string;
+    model?: string;
+    serialNumber?: string;
+    purchaseDate?: string;
+  };
+  
+  // Tehnčar
+  technician?: {
+    fullName: string;
+    phone: string;
+    email: string;
+  };
+  
+  // Datumi
+  dates: {
+    orderDate: string;
+    scheduledDate?: string;
+    startDate?: string;
+    completionDate?: string;
+    customerNotifiedAt?: string;
+  };
+  
+  // Tehnčki izvještaj
+  techReport: {
+    initialDiagnosis?: string;
+    workPerformed?: string;
+    machineNotes?: string;
+    finalNotes?: string;
+    clientUnavailableReason?: string;
+    reschedulingNotes?: string;
+    devicePickupNotes?: string;
+    repairFailureDetails?: string;
+    warrantyClaimDetails?: string;
+  };
+  
+  // Uklonjeni delovi
+  removedParts: Array<{
+    partName: string;
+    partDescription?: string;
+    removalDate: string;
+    removalReason: string;
+    currentLocation: string;
+    partStatus: string;
+    isReinstalled: boolean;
+    repairCost?: string;
+  }>;
+  
+  // Troškovi
+  costs: Array<{
+    description: string;
+    isWarranty: boolean;
+    quantity: number;
+    unitPrice: number;
+    discount: number;
+    total: number;
+  }>;
+  
+  // Totali
+  totals: {
+    subtotal: number;
+    tax: number;
+    total: number;
+  };
+}
+
 
