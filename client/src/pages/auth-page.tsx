@@ -62,6 +62,7 @@ export default function AuthPage() {
     const logoutRequested = localStorage.getItem("logoutRequested");
     if (logoutRequested === "true") {
       localStorage.removeItem("logoutRequested");
+      localStorage.removeItem("auth_token"); // Clear JWT token
       queryClient.setQueryData(["/api/user"], null);
       fetch("/api/logout", { method: "POST", credentials: "include" });
     }

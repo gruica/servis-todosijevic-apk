@@ -30,6 +30,7 @@ import { ServisKomercNotificationService } from './servis-komerc-notification-se
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
+import { whatsappBusinessAPIService } from './whatsapp-business-api-service.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -6581,7 +6582,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   // GET /api/whatsapp-business/templates - Dobij listu dostupnih template-a
   app.get('/api/whatsapp-business/templates', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
     try {
-      const result = await whatsAppBusinessService.getMessageTemplates();
+      const result = await whatsappBusinessAPIService.getMessageTemplates();
       
       if (result.success) {
         res.json({
