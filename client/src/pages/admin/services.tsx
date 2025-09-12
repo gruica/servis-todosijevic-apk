@@ -40,7 +40,8 @@ import {
   Pause,
   Filter,
   Building,
-  Info
+  Info,
+  Download
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
@@ -686,6 +687,7 @@ const AdminServices = memo(function AdminServices() {
             </p>
           </div>
           <div className="flex gap-3">
+            <GroupPDFButtons />
             <AdminSparePartsOrderingSimple />
             <Button 
               onClick={() => window.location.href = '/admin/create-service'} 
@@ -1271,6 +1273,9 @@ const AdminServices = memo(function AdminServices() {
                       </Button>
                     </div>
                   </div>
+
+                  {/* PDF Izvještaj dugme */}
+                  <ServicePDFButtons service={selectedService} />
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
@@ -1764,6 +1769,184 @@ const RemovedPartsSection = memo(({ serviceId }: { serviceId: number }) => {
           </div>
         ))}
       </div>
+    </div>
+  );
+});
+
+// ===== PDF BUTTON COMPONENTS - Added at the end =====
+
+// ServicePDFButtons component for individual services
+const ServicePDFButtons = memo(function ServicePDFButtons({ service }: { service: AdminService }) {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGenerating(true);
+      
+      const response = await apiRequest(`/api/admin/services/${service.id}/report-pdf`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error('Greška pri generisanju PDF izvještaja');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `servis-izvjestaj-${service.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF uspješno generisan",
+        description: `Izvještaj za servis #${service.id} je downloadovan.`,
+      });
+    } catch (error: any) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: "Greška",
+        description: error.message || "Greška pri generisanju PDF izvještaja.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="pt-4 border-t border-gray-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label className="text-sm font-medium">PDF izvještaj</Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Generiši detaljni PDF izvještaj za ovaj servis
+          </p>
+        </div>
+        <Button
+          onClick={handleDownloadPDF}
+          disabled={isGenerating}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md"
+          size="sm"
+          data-testid={`button-pdf-report-${service.id}`}
+        >
+          {isGenerating ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Generiše...
+            </>
+          ) : (
+            <>
+              <FileText className="h-4 w-4 mr-2" />
+              PDF Izvještaj
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+// GroupPDFButtons component for group reports
+const GroupPDFButtons = memo(function GroupPDFButtons() {
+  const { toast } = useToast();
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const setLoading = (type: string, loading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [type]: loading }));
+  };
+
+  const handleGroupPDF = async (type: 'completed' | 'pending' | 'problematic', endpoint: string, filename: string) => {
+    try {
+      setLoading(type, true);
+      
+      const response = await apiRequest(endpoint, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Greška pri generisanju ${type} PDF izvještaja`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF uspješno generisan",
+        description: `${filename} izvještaj je downloadovan.`,
+      });
+    } catch (error: any) {
+      console.error(`${type} PDF generation error:`, error);
+      toast({
+        title: "Greška",
+        description: error.message || `Greška pri generisanju ${type} PDF izvještaja.`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(type, false);
+    }
+  };
+
+  return (
+    <div className="flex gap-2 flex-wrap">
+      <Button
+        onClick={() => handleGroupPDF('completed', '/api/admin/services/completed/reports-pdf', 'zavseni-servisi')}
+        disabled={loadingStates.completed}
+        variant="outline"
+        size="sm"
+        className="bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-green-200 text-green-700"
+        data-testid="button-pdf-completed-services"
+      >
+        {loadingStates.completed ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+        ) : (
+          <Download className="h-4 w-4 mr-1" />
+        )}
+        PDF Završeni
+      </Button>
+      
+      <Button
+        onClick={() => handleGroupPDF('pending', '/api/admin/services/pending/reports-pdf', 'servisi-na-cekanju')}
+        disabled={loadingStates.pending}
+        variant="outline"
+        size="sm"
+        className="bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200 text-blue-700"
+        data-testid="button-pdf-pending-services"
+      >
+        {loadingStates.pending ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+        ) : (
+          <Clock className="h-4 w-4 mr-1" />
+        )}
+        PDF Na čekanju
+      </Button>
+      
+      <Button
+        onClick={() => handleGroupPDF('problematic', '/api/admin/services/problematic/reports-pdf', 'problematicni-servisi')}
+        disabled={loadingStates.problematic}
+        variant="outline" 
+        size="sm"
+        className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-200 text-red-700"
+        data-testid="button-pdf-problematic-services"
+      >
+        {loadingStates.problematic ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
+        ) : (
+          <AlertCircle className="h-4 w-4 mr-1" />
+        )}
+        PDF Problematični
+      </Button>
     </div>
   );
 });
