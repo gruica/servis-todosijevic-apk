@@ -54,6 +54,7 @@ interface AdminService {
   createdAt: string;
   updatedAt: string;
   scheduledDate: string | null;
+  completedDate?: string | null;
   technicianId: number | null;
   clientId: number;
   applianceId: number;
@@ -70,6 +71,17 @@ interface AdminService {
   pickupDate?: string | null;
   pickupNotes?: string | null;
   isWarrantyService?: boolean;
+  warrantyStatus?: string;
+  // Dodatne informacije od servisera
+  clientUnavailableReason?: string | null;
+  needsRescheduling?: boolean;
+  reschedulingNotes?: string | null;
+  customerRefusesRepair?: boolean;
+  customerRefusalReason?: string | null;
+  repairFailed?: boolean;
+  repairFailureReason?: string | null;
+  replacedPartsBeforeFailure?: string | null;
+  repairFailureDate?: string | null;
   client: {
     id: number;
     fullName: string;
@@ -1127,7 +1139,98 @@ const AdminServices = memo(function AdminServices() {
                       <p className="mt-1 text-sm">{selectedService.isCompletelyFixed ? "Da" : "Ne"}</p>
                     </div>
                   </div>
-                  
+
+                  {/* Datumi servisa */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Datumi servisa
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Kreiran</Label>
+                        <p className="mt-1 text-sm">{formatDate(selectedService.createdAt)}</p>
+                      </div>
+                      {selectedService.scheduledDate && (
+                        <div>
+                          <Label className="text-sm font-medium">Zakazan</Label>
+                          <p className="mt-1 text-sm">{formatDate(selectedService.scheduledDate)}</p>
+                        </div>
+                      )}
+                      {selectedService.completedDate && (
+                        <div>
+                          <Label className="text-sm font-medium">Završen</Label>
+                          <p className="mt-1 text-sm">{formatDate(selectedService.completedDate)}</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {selectedService.warrantyStatus && (
+                      <div className="mt-3">
+                        <Label className="text-sm font-medium">Status garancije</Label>
+                        <p className="mt-1 text-sm">{selectedService.warrantyStatus}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Serviserove napomene i zapažanja */}
+                  {(selectedService.clientUnavailableReason || selectedService.reschedulingNotes || selectedService.pickupNotes || selectedService.customerRefusalReason || selectedService.repairFailureReason) && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Serviserove napomene i zapažanja
+                      </h3>
+                      
+                      {selectedService.clientUnavailableReason && (
+                        <div className="mb-3">
+                          <Label className="text-sm font-medium text-orange-700">Razlog nedostupnosti klijenta</Label>
+                          <p className="mt-1 text-sm bg-orange-50 p-2 rounded-md border border-orange-200">{selectedService.clientUnavailableReason}</p>
+                        </div>
+                      )}
+                      
+                      {selectedService.needsRescheduling && selectedService.reschedulingNotes && (
+                        <div className="mb-3">
+                          <Label className="text-sm font-medium text-yellow-700">Napomene za ponovno zakazivanje</Label>
+                          <p className="mt-1 text-sm bg-yellow-50 p-2 rounded-md border border-yellow-200">{selectedService.reschedulingNotes}</p>
+                        </div>
+                      )}
+                      
+                      {selectedService.devicePickedUp && selectedService.pickupNotes && (
+                        <div className="mb-3">
+                          <Label className="text-sm font-medium text-blue-700">Napomene o preuzimanju uređaja</Label>
+                          <p className="mt-1 text-sm bg-blue-50 p-2 rounded-md border border-blue-200">{selectedService.pickupNotes}</p>
+                          {selectedService.pickupDate && (
+                            <p className="text-xs text-blue-600 mt-1">Datum preuzimanja: {formatDate(selectedService.pickupDate)}</p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {selectedService.customerRefusesRepair && selectedService.customerRefusalReason && (
+                        <div className="mb-3">
+                          <Label className="text-sm font-medium text-red-700">Razlog odbijanja popravke od strane kupca</Label>
+                          <p className="mt-1 text-sm bg-red-50 p-2 rounded-md border border-red-200">{selectedService.customerRefusalReason}</p>
+                        </div>
+                      )}
+                      
+                      {selectedService.repairFailed && (
+                        <div className="mb-3">
+                          <Label className="text-sm font-medium text-red-700">Neuspešna popravka</Label>
+                          <div className="mt-1 bg-red-50 p-3 rounded-md border border-red-200">
+                            {selectedService.repairFailureReason && (
+                              <p className="text-sm mb-2">{selectedService.repairFailureReason}</p>
+                            )}
+                            {selectedService.replacedPartsBeforeFailure && (
+                              <p className="text-sm mb-2"><strong>Zamenjeni delovi pre neuspeha:</strong> {selectedService.replacedPartsBeforeFailure}</p>
+                            )}
+                            {selectedService.repairFailureDate && (
+                              <p className="text-xs text-red-600">Datum konstatovanja neuspeha: {formatDate(selectedService.repairFailureDate)}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Dugme za poručivanje rezervnih delova */}
                   <div className="pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-between">
