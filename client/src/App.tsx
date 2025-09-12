@@ -14,7 +14,6 @@ const SimplifiedServices = lazy(() => import("@/pages/simplified-services"));
 const BasicServicesPage = lazy(() => import("@/pages/basic/services"));
 const EnhancedServices = lazy(() => import("@/pages/enhanced-services"));
 const AdminServices = lazy(() => import("@/pages/admin/services"));
-const AdminServiceReport = lazy(() => import("@/pages/admin/service-report"));
 const CreateService = lazy(() => import("@/pages/admin/create-service"));
 const AdminClients = lazy(() => import("@/pages/admin/clients"));
 const AdminClientComprehensiveAnalysis = lazy(() => import("@/pages/admin/client-comprehensive-analysis"));
@@ -162,7 +161,6 @@ function Router() {
       <RoleProtectedRoute path="/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
       {/* Admin verzija servisa - zaštićena */}
       <RoleProtectedRoute path="/admin/services" component={AdminServices} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/services/:id/report" component={AdminServiceReport} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/create-service" component={CreateService} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/clients" component={AdminClients} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/clients/:id" component={ClientDetails} allowedRoles={["admin"]} />
