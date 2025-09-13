@@ -1094,73 +1094,92 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="technical" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Kategorija uređaja</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance?.category?.name || "Nije specificiran"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Proizvođač</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance?.manufacturer?.name || "Nije specificiran"}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Model</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance?.model || "Nije specificiran"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Serijski broj</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance?.serialNumber || "Nije specificiran"}</p>
-                    </div>
-                  </div>
-                  
-                  {selectedService.usedParts && (
-                    <div>
-                      <Label className="text-sm font-medium">Iskorišćeni delovi</Label>
-                      <p className="mt-1 text-sm">{selectedService.usedParts}</p>
-                    </div>
-                  )}
-                  
-                  {selectedService.machineNotes && (
-                    <div>
-                      <Label className="text-sm font-medium">Napomene o uređaju</Label>
-                      <p className="mt-1 text-sm">{selectedService.machineNotes}</p>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Cena</Label>
-                      <p className="mt-1 text-sm">{selectedService.cost ? `${selectedService.cost} €` : "Nije specificirana"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Potpuno ispravljen</Label>
-                      <p className="mt-1 text-sm">{selectedService.isCompletelyFixed ? "Da" : "Ne"}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Dugme za poručivanje rezervnih delova */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
+                  {selectedService ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Kategorija uređaja</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.appliance?.category?.name || "Nije specificiran"}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Proizvođač</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.appliance?.manufacturer?.name || "Nije specificiran"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Model</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.appliance?.model || "Nije specificiran"}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Serijski broj</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.appliance?.serialNumber || "Nije specificiran"}
+                          </p>
+                        </div>
+                      </div>
+                      
                       <div>
-                        <Label className="text-sm font-medium">Rezervni delovi</Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Poručite rezervne delove direktno za ovaj servis
+                        <Label className="text-sm font-medium">Iskorišćeni delovi</Label>
+                        <p className="mt-1 text-sm">
+                          {selectedService?.usedParts || "Nije specificiran"}
                         </p>
                       </div>
-                      <Button
-                        onClick={() => dispatchDialog({ type: 'OPEN_SPARE_PARTS', payload: selectedService })}
-                        variant="outline"
-                        size="sm"
-                        className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-                      >
-                        <Package className="h-4 w-4 mr-2" />
-                        Poruči delove
-                      </Button>
+                      
+                      <div>
+                        <Label className="text-sm font-medium">Napomene o uređaju</Label>
+                        <p className="mt-1 text-sm">
+                          {selectedService?.machineNotes || "Nije specificirano"}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Cena</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.cost ? `${selectedService.cost} €` : "Nije specificirana"}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">Potpuno ispravljen</Label>
+                          <p className="mt-1 text-sm">
+                            {selectedService?.isCompletelyFixed ? "Da" : "Ne"}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <Label className="text-sm font-medium">Rezervni delovi</Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Poručite rezervne delove direktno za ovaj servis
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => selectedService && dispatchDialog({ type: 'OPEN_SPARE_PARTS', payload: selectedService })}
+                            variant="outline"
+                            size="sm"
+                            className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                          >
+                            <Package className="h-4 w-4 mr-2" />
+                            Poruči delove
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Tehnički podaci nisu dostupni</p>
                     </div>
-                  </div>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
@@ -1449,10 +1468,10 @@ const AdminServices = memo(function AdminServices() {
                       <span className="font-medium">Telefon:</span> {selectedService.client.phone}
                     </div>
                     <div>
-                      <span className="font-medium">Uređaj:</span> {selectedService.appliance?.category?.name || "Nije specificiran"}
+                      <span className="font-medium">Uređaj:</span> {selectedService?.appliance?.category?.name || "Nije specificiran"}
                     </div>
                     <div>
-                      <span className="font-medium">Proizvođač:</span> {selectedService.appliance?.manufacturer?.name || "Nije specificiran"}
+                      <span className="font-medium">Proizvođač:</span> {selectedService?.appliance?.manufacturer?.name || "Nije specificiran"}
                     </div>
                     {selectedService.appliance?.model && (
                       <div>
