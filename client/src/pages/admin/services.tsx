@@ -1183,27 +1183,41 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-4">
-                  <SimpleServicePhotos 
-                    serviceId={selectedService.id}
-                    readOnly={false}
-                    showUpload={true}
-                  />
+                  {selectedService ? (
+                    <SimpleServicePhotos 
+                      serviceId={selectedService.id}
+                      readOnly={false}
+                      showUpload={true}
+                    />
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Fotografije nisu dostupne</p>
+                    </div>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="conversations" className="space-y-4">
-                  {/* WhatsApp Messenger - Slanje poruka */}
-                  <WhatsAppMessenger 
-                    serviceId={selectedService.id}
-                    clientPhone={selectedService.client.phone}
-                    clientName={selectedService.client.fullName}
-                    readOnly={false}
-                  />
-                  
-                  {/* Conversation History - Pregled poruka */}
-                  <ConversationHistory 
-                    serviceId={selectedService.id}
-                    readOnly={false}
-                  />
+                  {selectedService ? (
+                    <>
+                      {/* WhatsApp Messenger - Slanje poruka */}
+                      <WhatsAppMessenger 
+                        serviceId={selectedService.id}
+                        clientPhone={selectedService?.client?.phone || ""}
+                        clientName={selectedService?.client?.fullName || ""}
+                        readOnly={false}
+                      />
+                      
+                      {/* Conversation History - Pregled poruka */}
+                      <ConversationHistory 
+                        serviceId={selectedService.id}
+                        readOnly={false}
+                      />
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Konverzacija nije dostupna</p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             )}
@@ -1462,10 +1476,10 @@ const AdminServices = memo(function AdminServices() {
                   <h4 className="font-medium text-blue-900 mb-2">Informacije o servisu</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Klijent:</span> {selectedService.client.fullName}
+                      <span className="font-medium">Klijent:</span> {selectedService?.client?.fullName || "Nije specificiran"}
                     </div>
                     <div>
-                      <span className="font-medium">Telefon:</span> {selectedService.client.phone}
+                      <span className="font-medium">Telefon:</span> {selectedService?.client?.phone || "Nije specificiran"}
                     </div>
                     <div>
                       <span className="font-medium">Uređaj:</span> {selectedService?.appliance?.category?.name || "Nije specificiran"}
