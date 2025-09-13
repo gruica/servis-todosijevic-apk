@@ -338,7 +338,7 @@ export default function EnhancedServiceDialog({
           )}
 
           {/* Uklonjeni delovi */}
-          {service.removedParts && service.removedParts.length > 0 && (
+          {Array.isArray(service.removedParts) && service.removedParts.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">

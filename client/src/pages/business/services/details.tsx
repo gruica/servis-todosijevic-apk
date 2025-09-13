@@ -587,7 +587,7 @@ export default function ServiceDetails() {
             )}
 
             {/* Uklonjeni delovi sa uređaja */}
-            {service.removedParts && service.removedParts.length > 0 && (
+            {Array.isArray(service.removedParts) && service.removedParts.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
