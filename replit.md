@@ -12,6 +12,7 @@
 5. **SAMO DODAVANJE NOVIH FUNKCIJA** - Na kraj postojećih fajlova
 6. **SVE PROMJENE MORAJU BITI EKSPLICITNO ODOBRENE** - Objasniš plan, čekaš dozvolu
 7. **TESTIRAŠ DA POSTOJEĆE FUNKCIJE RADE** - Prije i nakon implementacije
+8. **NIKADA NE ODUGOVLAČIŠ POPRAVKU STRANICA** - Odmah implementiraš rešenja bez objašnjavanja
 
 ### OBAVEZNI WORKFLOW:
 1. **ČITAJ** postojeći kod da vidiš šta NIJE smješ dirati

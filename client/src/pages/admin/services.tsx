@@ -1084,22 +1084,22 @@ const AdminServices = memo(function AdminServices() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium">Kategorija uređaja</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance.category.name}</p>
+                      <p className="mt-1 text-sm">{selectedService.appliance?.category?.name || "Nije specificiran"}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Proizvođač</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance.manufacturer.name}</p>
+                      <p className="mt-1 text-sm">{selectedService.appliance?.manufacturer?.name || "Nije specificiran"}</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium">Model</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance.model || "Nije specificiran"}</p>
+                      <p className="mt-1 text-sm">{selectedService.appliance?.model || "Nije specificiran"}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Serijski broj</Label>
-                      <p className="mt-1 text-sm">{selectedService.appliance.serialNumber || "Nije specificiran"}</p>
+                      <p className="mt-1 text-sm">{selectedService.appliance?.serialNumber || "Nije specificiran"}</p>
                     </div>
                   </div>
                   
@@ -1436,19 +1436,19 @@ const AdminServices = memo(function AdminServices() {
                       <span className="font-medium">Telefon:</span> {selectedService.client.phone}
                     </div>
                     <div>
-                      <span className="font-medium">Uređaj:</span> {selectedService.appliance.category.name}
+                      <span className="font-medium">Uređaj:</span> {selectedService.appliance?.category?.name || "Nije specificiran"}
                     </div>
                     <div>
-                      <span className="font-medium">Proizvođač:</span> {selectedService.appliance.manufacturer.name}
+                      <span className="font-medium">Proizvođač:</span> {selectedService.appliance?.manufacturer?.name || "Nije specificiran"}
                     </div>
-                    {selectedService.appliance.model && (
+                    {selectedService.appliance?.model && (
                       <div>
-                        <span className="font-medium">Model:</span> {selectedService.appliance.model}
+                        <span className="font-medium">Model:</span> {selectedService.appliance?.model}
                       </div>
                     )}
-                    {selectedService.appliance.serialNumber && (
+                    {selectedService.appliance?.serialNumber && (
                       <div>
-                        <span className="font-medium">Serijski broj:</span> {selectedService.appliance.serialNumber}
+                        <span className="font-medium">Serijski broj:</span> {selectedService.appliance?.serialNumber}
                       </div>
                     )}
                   </div>
