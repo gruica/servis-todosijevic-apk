@@ -1610,7 +1610,12 @@ const AdminServices = memo(function AdminServices() {
 // ===== KOMPONENTA ZA PRIKAZ UKLONJENIH DELOVA =====
 const RemovedPartsSection = memo(({ serviceId }: { serviceId: number }) => {
   const { data: removedParts = [], isLoading, error } = useQuery<RemovedPart[]>({
-    queryKey: [`/api/admin/services/${serviceId}/removed-parts`]
+    queryKey: [`/api/admin/services/${serviceId}/removed-parts`],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/admin/services/${serviceId}/removed-parts`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    }
   });
 
   if (isLoading) {
