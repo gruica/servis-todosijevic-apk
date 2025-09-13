@@ -39,8 +39,7 @@ import {
   Play,
   Pause,
   Filter,
-  Building,
-  Info
+  Building
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
@@ -55,7 +54,6 @@ interface AdminService {
   createdAt: string;
   updatedAt: string;
   scheduledDate: string | null;
-  completedDate?: string | null;
   technicianId: number | null;
   clientId: number;
   applianceId: number;
@@ -72,17 +70,6 @@ interface AdminService {
   pickupDate?: string | null;
   pickupNotes?: string | null;
   isWarrantyService?: boolean;
-  warrantyStatus?: string;
-  // Dodatne informacije od servisera
-  clientUnavailableReason?: string | null;
-  needsRescheduling?: boolean;
-  reschedulingNotes?: string | null;
-  customerRefusesRepair?: boolean;
-  customerRefusalReason?: string | null;
-  repairFailed?: boolean;
-  repairFailureReason?: string | null;
-  replacedPartsBeforeFailure?: string | null;
-  repairFailureDate?: string | null;
   client: {
     id: number;
     fullName: string;
@@ -121,22 +108,6 @@ interface Technician {
   email: string;
   phone: string;
   specialization: string;
-}
-
-interface RemovedPart {
-  id: number;
-  partName: string;
-  partDescription: string | null;
-  removalDate: string;
-  removalReason: string;
-  currentLocation: string;
-  expectedReturnDate: string | null;
-  actualReturnDate: string | null;
-  partStatus: string;
-  technicianNotes: string | null;
-  repairCost: string | null;
-  isReinstalled: boolean;
-  createdBy: number;
 }
 
 // Service folder system - organizovan po kategorijama
@@ -1156,101 +1127,7 @@ const AdminServices = memo(function AdminServices() {
                       <p className="mt-1 text-sm">{selectedService.isCompletelyFixed ? "Da" : "Ne"}</p>
                     </div>
                   </div>
-
-                  {/* Datumi servisa */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Datumi servisa
-                    </h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Kreiran</Label>
-                        <p className="mt-1 text-sm">{formatDate(selectedService.createdAt)}</p>
-                      </div>
-                      {selectedService.scheduledDate && (
-                        <div>
-                          <Label className="text-sm font-medium">Zakazan</Label>
-                          <p className="mt-1 text-sm">{formatDate(selectedService.scheduledDate)}</p>
-                        </div>
-                      )}
-                      {selectedService.completedDate && (
-                        <div>
-                          <Label className="text-sm font-medium">Završen</Label>
-                          <p className="mt-1 text-sm">{formatDate(selectedService.completedDate)}</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {selectedService.warrantyStatus && (
-                      <div className="mt-3">
-                        <Label className="text-sm font-medium">Status garancije</Label>
-                        <p className="mt-1 text-sm">{selectedService.warrantyStatus}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Serviserove napomene i zapažanja */}
-                  {(selectedService.clientUnavailableReason || selectedService.reschedulingNotes || selectedService.pickupNotes || selectedService.customerRefusalReason || selectedService.repairFailureReason) && (
-                    <div className="pt-4 border-t border-gray-200">
-                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Serviserove napomene i zapažanja
-                      </h3>
-                      
-                      {selectedService.clientUnavailableReason && (
-                        <div className="mb-3">
-                          <Label className="text-sm font-medium text-orange-700">Razlog nedostupnosti klijenta</Label>
-                          <p className="mt-1 text-sm bg-orange-50 p-2 rounded-md border border-orange-200">{selectedService.clientUnavailableReason}</p>
-                        </div>
-                      )}
-                      
-                      {selectedService.needsRescheduling && selectedService.reschedulingNotes && (
-                        <div className="mb-3">
-                          <Label className="text-sm font-medium text-yellow-700">Napomene za ponovno zakazivanje</Label>
-                          <p className="mt-1 text-sm bg-yellow-50 p-2 rounded-md border border-yellow-200">{selectedService.reschedulingNotes}</p>
-                        </div>
-                      )}
-                      
-                      {selectedService.devicePickedUp && selectedService.pickupNotes && (
-                        <div className="mb-3">
-                          <Label className="text-sm font-medium text-blue-700">Napomene o preuzimanju uređaja</Label>
-                          <p className="mt-1 text-sm bg-blue-50 p-2 rounded-md border border-blue-200">{selectedService.pickupNotes}</p>
-                          {selectedService.pickupDate && (
-                            <p className="text-xs text-blue-600 mt-1">Datum preuzimanja: {formatDate(selectedService.pickupDate)}</p>
-                          )}
-                        </div>
-                      )}
-                      
-                      {selectedService.customerRefusesRepair && selectedService.customerRefusalReason && (
-                        <div className="mb-3">
-                          <Label className="text-sm font-medium text-red-700">Razlog odbijanja popravke od strane kupca</Label>
-                          <p className="mt-1 text-sm bg-red-50 p-2 rounded-md border border-red-200">{selectedService.customerRefusalReason}</p>
-                        </div>
-                      )}
-                      
-                      {selectedService.repairFailed && (
-                        <div className="mb-3">
-                          <Label className="text-sm font-medium text-red-700">Neuspešna popravka</Label>
-                          <div className="mt-1 bg-red-50 p-3 rounded-md border border-red-200">
-                            {selectedService.repairFailureReason && (
-                              <p className="text-sm mb-2">{selectedService.repairFailureReason}</p>
-                            )}
-                            {selectedService.replacedPartsBeforeFailure && (
-                              <p className="text-sm mb-2"><strong>Zamenjeni delovi pre neuspeha:</strong> {selectedService.replacedPartsBeforeFailure}</p>
-                            )}
-                            {selectedService.repairFailureDate && (
-                              <p className="text-xs text-red-600">Datum konstatovanja neuspeha: {formatDate(selectedService.repairFailureDate)}</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Uklonjeni delovi sa uređaja - novi sekcija */}
-                  <RemovedPartsSection serviceId={selectedService.id} />
-
+                  
                   {/* Dugme za poručivanje rezervnih delova */}
                   <div className="pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-between">
@@ -1600,171 +1477,6 @@ const AdminServices = memo(function AdminServices() {
         </Dialog>
       </div>
     </AdminLayout>
-  );
-});
-
-// ===== KOMPONENTA ZA PRIKAZ UKLONJENIH DELOVA =====
-const RemovedPartsSection = memo(({ serviceId }: { serviceId: number }) => {
-  const { data: removedParts, isLoading, error } = useQuery<RemovedPart[]>({
-    queryKey: ['removedParts', serviceId],
-    queryFn: () => apiRequest(`/api/admin/services/${serviceId}/removed-parts`)
-  });
-
-  if (isLoading) {
-    return (
-      <div className="pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2 mb-3">
-          <Wrench className="h-4 w-4" />
-          <h3 className="text-sm font-medium">Uklonjeni delovi sa uređaja</h3>
-        </div>
-        <div className="text-sm text-muted-foreground">Učitava se...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2 mb-3">
-          <Wrench className="h-4 w-4" />
-          <h3 className="text-sm font-medium">Uklonjeni delovi sa uređaja</h3>
-        </div>
-        <div className="text-sm text-red-600">Greška pri učitavanju uklonjenih delova</div>
-      </div>
-    );
-  }
-
-  if (!removedParts || removedParts.length === 0) {
-    return (
-      <div className="pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2 mb-3">
-          <Wrench className="h-4 w-4" />
-          <h3 className="text-sm font-medium">Uklonjeni delovi sa uređaja</h3>
-        </div>
-        <div className="text-sm text-muted-foreground">Nema uklonjenih delova sa uređaja</div>
-      </div>
-    );
-  }
-
-  // Helper funkcije za status badge-ove
-  const getLocationBadge = (location: string) => {
-    const colors: Record<string, string> = {
-      workshop: "bg-blue-100 text-blue-800 border-blue-200",
-      external_repair: "bg-orange-100 text-orange-800 border-orange-200", 
-      returned: "bg-green-100 text-green-800 border-green-200",
-      discarded: "bg-gray-100 text-gray-800 border-gray-200"
-    };
-    
-    const labels: Record<string, string> = {
-      workshop: "Radionica",
-      external_repair: "Spoljnji servis",
-      returned: "Vraćeno",
-      discarded: "Odbačeno"
-    };
-
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${colors[location] || colors.workshop}`}>
-        <MapPin className="h-3 w-3 mr-1" />
-        {labels[location] || location}
-      </span>
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      removed: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      in_repair: "bg-blue-100 text-blue-800 border-blue-200",
-      repaired: "bg-green-100 text-green-800 border-green-200", 
-      returned: "bg-green-100 text-green-800 border-green-200",
-      replaced: "bg-purple-100 text-purple-800 border-purple-200"
-    };
-
-    const labels: Record<string, string> = {
-      removed: "Uklonjeno",
-      in_repair: "U popravci", 
-      repaired: "Popravljeno",
-      returned: "Vraćeno",
-      replaced: "Zamenjeno"
-    };
-
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${colors[status] || colors.removed}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
-
-  return (
-    <div className="pt-4 border-t border-gray-200">
-      <div className="flex items-center gap-2 mb-3">
-        <Wrench className="h-4 w-4" />
-        <h3 className="text-sm font-medium">Uklonjeni delovi sa uređaja ({removedParts.length})</h3>
-      </div>
-      
-      <div className="space-y-3">
-        {removedParts.map((part) => (
-          <div key={part.id} className="bg-gray-50 p-3 rounded-md border border-gray-200">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h4 className="font-medium text-sm">{part.partName}</h4>
-                {part.partDescription && (
-                  <p className="text-xs text-gray-600 mt-1">{part.partDescription}</p>
-                )}
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {getLocationBadge(part.currentLocation)}
-                {getStatusBadge(part.partStatus)}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="font-medium text-gray-700">Uklonjeno:</span>
-                <p className="text-gray-600">{formatDate(part.removalDate)}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-700">Razlog:</span>
-                <p className="text-gray-600">{part.removalReason}</p>
-              </div>
-              
-              {part.expectedReturnDate && (
-                <div>
-                  <span className="font-medium text-gray-700">Očekivani povratak:</span>
-                  <p className="text-gray-600">{formatDate(part.expectedReturnDate)}</p>
-                </div>
-              )}
-              
-              {part.actualReturnDate && (
-                <div>
-                  <span className="font-medium text-gray-700">Stvarni povratak:</span>
-                  <p className="text-gray-600">{formatDate(part.actualReturnDate)}</p>
-                </div>
-              )}
-              
-              {part.repairCost && (
-                <div>
-                  <span className="font-medium text-gray-700">Cena popravke:</span>
-                  <p className="text-gray-600">{part.repairCost} €</p>
-                </div>
-              )}
-              
-              {part.isReinstalled && (
-                <div>
-                  <span className="font-medium text-green-700">✓ Vraćeno u uređaj</span>
-                </div>
-              )}
-            </div>
-            
-            {part.technicianNotes && (
-              <div className="mt-2 pt-2 border-t border-gray-300">
-                <span className="font-medium text-gray-700 text-xs">Napomene servisera:</span>
-                <p className="text-xs text-gray-600 mt-1">{part.technicianNotes}</p>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
   );
 });
 

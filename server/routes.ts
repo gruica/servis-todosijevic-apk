@@ -7185,49 +7185,5 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
-
-  // ===== ADMIN ENDPOINT ZA UKLONJENE DELOVE =====
-  // GET /api/admin/services/:id/removed-parts - Dohvata uklonjene delove za servis
-  app.get("/api/admin/services/:id/removed-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.id);
-      
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Nevažeći ID servisa" });
-      }
-      
-      console.log(`[ADMIN REMOVED PARTS] Dohvatanje uklonjenih delova za servis ${serviceId}`);
-      
-      // Dohvati uklonjene delove sa uređaja
-      const removedParts = await storage.getRemovedPartsByService(serviceId);
-      
-      // Formatiran odgovor sa svim detaljima
-      const formattedParts = removedParts.map(part => ({
-        id: part.id,
-        partName: part.partName,
-        partDescription: part.partDescription || null,
-        removalDate: part.removalDate,
-        removalReason: part.removalReason,
-        currentLocation: part.currentLocation,
-        expectedReturnDate: part.expectedReturnDate || null,
-        actualReturnDate: part.actualReturnDate || null,
-        partStatus: part.partStatus,
-        technicianNotes: part.technicianNotes || null,
-        repairCost: part.repairCost || null,
-        isReinstalled: part.isReinstalled || false,
-        createdBy: part.createdBy
-      }));
-      
-      console.log(`[ADMIN REMOVED PARTS] Vraćam ${formattedParts.length} uklonjenih delova za servis ${serviceId}`);
-      res.json(formattedParts);
-      
-    } catch (error) {
-      console.error("Greška pri dohvatanju uklonjenih delova:", error);
-      res.status(500).json({ 
-        error: "Greška pri dohvatanju uklonjenih delova", 
-        message: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
 }
 
