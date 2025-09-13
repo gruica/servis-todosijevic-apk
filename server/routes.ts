@@ -31,7 +31,6 @@ import { aiPredictiveMaintenanceService } from './services/ai-predictive-mainten
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import { whatsappBusinessAPIService } from './whatsapp-business-api-service.js';
-import { generateServiceReportPDF, generateCompletedServicesReportPDF, generatePendingServicesReportPDF, generateProblematicServicesReportPDF } from './pdf-report-generator.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -338,12 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Get manufacturer name from manufacturerId
-        let manufacturerName = '';
-        if (applianceData?.manufacturerId) {
-          const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
-          manufacturerName = manufacturer?.name || '';
-        }
+        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -352,12 +346,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
-          // Get category name from categoryId
-          let deviceType = 'Uređaj';
-          if (applianceData?.categoryId) {
-            const category = await storage.getApplianceCategory(applianceData.categoryId);
-            deviceType = category?.name || 'Uređaj';
-          }
+          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
@@ -436,32 +425,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled: settingsMap.sms_mobile_enabled === 'true'
         }, storage);
 
-        // Define missing variables for SMS
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let manufacturerName = '';
-        let technicianData = null;
-
-        if (existingOrder.serviceId) {
-          serviceData = await storage.getService(existingOrder.serviceId);
-          if (serviceData) {
-            if (serviceData.clientId) {
-              clientData = await storage.getClient(serviceData.clientId);
-            }
-            if (serviceData.applianceId) {
-              applianceData = await storage.getAppliance(serviceData.applianceId);
-              if (applianceData?.manufacturerId) {
-                const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
-                manufacturerName = manufacturer?.name || '';
-              }
-            }
-            if (serviceData.technicianId) {
-              technicianData = await storage.getTechnician(serviceData.technicianId);
-            }
-          }
-        }
-
         if (existingOrder.serviceId && clientData && technicianData) {
           const smsData = {
             serviceId: existingOrder.serviceId,
@@ -472,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
+            technicianName: technicianData.name,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: estimatedDelivery || '3-5 dana',
@@ -485,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors || smsResult.message);
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
           }
         }
       } catch (smsError) {
@@ -517,7 +480,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "waiting_delivery",
         actualCost,
-        adminNotes: adminNotes || null
+        adminNotes: adminNotes || null,
+        receivedBy: req.user.id,
+        receivedAt: new Date()
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} potvrdio prijem rezervnog dela ID: ${orderId}`);
@@ -542,7 +507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
-        status: "available"
+        status: "available",
+        madeAvailableBy: req.user.id,
+        madeAvailableAt: new Date()
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} prebacio deo u dostupno: ID ${orderId}`);
@@ -612,12 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Get manufacturer name from manufacturerId
-        let manufacturerName = '';
-        if (applianceData?.manufacturerId) {
-          const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
-          manufacturerName = manufacturer?.name || '';
-        }
+        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -626,12 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
           
-          // Get category name from categoryId
-          let deviceType = 'Uređaj';
-          if (applianceData?.categoryId) {
-            const category = await storage.getApplianceCategory(applianceData.categoryId);
-            deviceType = category?.name || 'Uređaj';
-          }
+          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
@@ -671,32 +628,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled: settingsMap.sms_mobile_enabled === 'true'
         }, storage);
 
-        // Define missing variables for SMS
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let manufacturerName = '';
-        let technicianData = null;
-
-        if (existingOrder.serviceId) {
-          serviceData = await storage.getService(existingOrder.serviceId);
-          if (serviceData) {
-            if (serviceData.clientId) {
-              clientData = await storage.getClient(serviceData.clientId);
-            }
-            if (serviceData.applianceId) {
-              applianceData = await storage.getAppliance(serviceData.applianceId);
-              if (applianceData?.manufacturerId) {
-                const manufacturer = await storage.getManufacturer(applianceData.manufacturerId);
-                manufacturerName = manufacturer?.name || '';
-              }
-            }
-            if (serviceData.technicianId) {
-              technicianData = await storage.getTechnician(serviceData.technicianId);
-            }
-          }
-        }
-
         if (existingOrder.serviceId && clientData && technicianData) {
           const smsData = {
             serviceId: existingOrder.serviceId,
@@ -707,7 +638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
+            technicianName: technicianData.name,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: '3-5 dana',
@@ -7294,164 +7225,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.error("Greška pri dohvatanju uklonjenih delova:", error);
       res.status(500).json({ 
         error: "Greška pri dohvatanju uklonjenih delova", 
-        message: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-
-  // ===== PDF REPORT ENDPOINTS =====
-  
-  // GET /api/admin/services/:id/report-pdf - Individual PDF report
-  app.get("/api/admin/services/:id/report-pdf", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const serviceId = parseInt(req.params.id);
-      
-      if (isNaN(serviceId)) {
-        return res.status(400).json({ error: "Nevažeći ID servisa" });
-      }
-
-      console.log(`[PDF REPORT] Kreiranje PDF izvještaja za servis ${serviceId}`);
-      
-      // Dohvati servis podatke sa svim detaljima
-      const serviceData = await storage.getServiceWithDetails(serviceId);
-      
-      if (!serviceData) {
-        return res.status(404).json({ error: "Servis nije pronađen" });
-      }
-
-      // Generiraj PDF
-      const pdfBuffer = await generateServiceReportPDF(serviceData);
-
-      // Postavi headers za PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="servis-${serviceId}-izvestaj.pdf"`);
-      
-      console.log(`[PDF REPORT] ✅ PDF izvještaj kreiran za servis ${serviceId}`);
-      res.send(pdfBuffer);
-      
-    } catch (error) {
-      console.error("Greška pri kreiranju PDF izvještaja:", error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju PDF izvještaja", 
-        message: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-
-  // GET /api/admin/services/completed/reports-pdf - Group PDF for completed services
-  app.get("/api/admin/services/completed/reports-pdf", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[PDF REPORTS] Kreiranje grupnog PDF izvještaja za završene servise`);
-      
-      // Dohvati sve servise
-      const allServices = await storage.getAllServices();
-      
-      // Filtriraj samo završene servise
-      const completedServices = allServices.filter(service => 
-        service.status === 'completed' || service.status === 'delivered'
-      );
-
-      if (completedServices.length === 0) {
-        return res.status(404).json({ error: "Nema završenih servisa za izvještaj" });
-      }
-
-      // Generiraj PDF
-      const pdfBuffer = await generateCompletedServicesReportPDF(completedServices);
-
-      // Postavi headers za PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="zavrseni-servisi-izvestaj.pdf"`);
-      
-      console.log(`[PDF REPORTS] ✅ Grupni PDF izvještaj kreiran za ${completedServices.length} završenih servisa`);
-      res.send(pdfBuffer);
-      
-    } catch (error) {
-      console.error("Greška pri kreiranju grupnog PDF izvještaja za završene servise:", error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju grupnog PDF izvještaja", 
-        message: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-
-  // GET /api/admin/services/pending/reports-pdf - PDF for pending services
-  app.get("/api/admin/services/pending/reports-pdf", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[PDF REPORTS] Kreiranje PDF izvještaja za servise na čekanju`);
-      
-      // Dohvati sve servise
-      const allServices = await storage.getAllServices();
-      
-      // Filtriraj servise na čekanju
-      const pendingServices = allServices.filter(service => 
-        service.status === 'pending' || 
-        service.status === 'scheduled' || 
-        service.status === 'in_progress' ||
-        service.status === 'waiting_parts'
-      );
-
-      if (pendingServices.length === 0) {
-        return res.status(404).json({ error: "Nema servisa na čekanju za izvještaj" });
-      }
-
-      // Generiraj PDF
-      const pdfBuffer = await generatePendingServicesReportPDF(pendingServices);
-
-      // Postavi headers za PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="servisi-na-cekanju-izvestaj.pdf"`);
-      
-      console.log(`[PDF REPORTS] ✅ PDF izvještaj kreiran za ${pendingServices.length} servisa na čekanju`);
-      res.send(pdfBuffer);
-      
-    } catch (error) {
-      console.error("Greška pri kreiranju PDF izvještaja za servise na čekanju:", error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju PDF izvještaja", 
-        message: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-
-  // GET /api/admin/services/problematic/reports-pdf - PDF for problematic services
-  app.get("/api/admin/services/problematic/reports-pdf", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[PDF REPORTS] Kreiranje PDF izvještaja za problematične servise`);
-      
-      // Dohvati sve servise
-      const allServices = await storage.getAllServices();
-      
-      // Filtriraj problematične servise
-      const problematicServices = allServices.filter(service => 
-        service.status === 'cancelled' || 
-        service.status === 'client_not_home' ||
-        service.status === 'client_not_answering' ||
-        service.status === 'customer_refuses_repair' ||
-        service.status === 'customer_refused_repair' ||
-        service.status === 'repair_failed' ||
-        service.needsRescheduling ||
-        service.customerRefusesRepair ||
-        service.repairFailed
-      );
-
-      if (problematicServices.length === 0) {
-        return res.status(404).json({ error: "Nema problematičnih servisa za izvještaj" });
-      }
-
-      // Generiraj PDF
-      const pdfBuffer = await generateProblematicServicesReportPDF(problematicServices);
-
-      // Postavi headers za PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="problematicni-servisi-izvestaj.pdf"`);
-      
-      console.log(`[PDF REPORTS] ✅ PDF izvještaj kreiran za ${problematicServices.length} problematičnih servisa`);
-      res.send(pdfBuffer);
-      
-    } catch (error) {
-      console.error("Greška pri kreiranju PDF izvještaja za problematične servise:", error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju PDF izvještaja", 
         message: error instanceof Error ? error.message : String(error) 
       });
     }
