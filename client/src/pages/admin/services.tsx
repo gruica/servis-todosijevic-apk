@@ -310,31 +310,35 @@ const AdminServices = memo(function AdminServices() {
 
   // Transform flat API response to nested AdminService structure
   const transformApiService = (apiService: any): AdminService => {
+    if (!apiService) {
+      return null as any;
+    }
+    
     return {
-      id: apiService.id,
-      status: apiService.status,
-      description: apiService.description,
-      createdAt: apiService.createdAt,
-      updatedAt: apiService.updatedAt || apiService.createdAt,
-      scheduledDate: apiService.scheduledDate,
-      technicianId: apiService.technicianId,
-      clientId: apiService.clientId,
-      applianceId: apiService.applianceId,
+      id: apiService.id || 0,
+      status: apiService.status || 'pending',
+      description: apiService.description || '',
+      createdAt: apiService.createdAt || new Date().toISOString(),
+      updatedAt: apiService.updatedAt || apiService.createdAt || new Date().toISOString(),
+      scheduledDate: apiService.scheduledDate || null,
+      technicianId: apiService.technicianId || null,
+      clientId: apiService.clientId || 0,
+      applianceId: apiService.applianceId || 0,
       priority: apiService.priority || 'normal',
-      notes: apiService.notes,
-      technicianNotes: apiService.technicianNotes,
-      usedParts: apiService.usedParts,
-      machineNotes: apiService.machineNotes,
-      cost: apiService.cost,
-      isCompletelyFixed: apiService.isCompletelyFixed,
-      businessPartnerId: apiService.businessPartnerId,
-      partnerCompanyName: apiService.partnerCompanyName,
-      devicePickedUp: apiService.devicePickedUp,
-      pickupDate: apiService.pickupDate,
-      pickupNotes: apiService.pickupNotes,
-      isWarrantyService: apiService.isWarrantyService,
+      notes: apiService.notes || null,
+      technicianNotes: apiService.technicianNotes || null,
+      usedParts: apiService.usedParts || null,
+      machineNotes: apiService.machineNotes || null,
+      cost: apiService.cost || null,
+      isCompletelyFixed: !!apiService.isCompletelyFixed,
+      businessPartnerId: apiService.businessPartnerId || null,
+      partnerCompanyName: apiService.partnerCompanyName || null,
+      devicePickedUp: !!apiService.devicePickedUp,
+      pickupDate: apiService.pickupDate || null,
+      pickupNotes: apiService.pickupNotes || null,
+      isWarrantyService: !!apiService.isWarrantyService,
       client: {
-        id: apiService.clientId,
+        id: apiService.clientId || 0,
         fullName: apiService.clientName || 'Nepoznat klijent',
         phone: apiService.clientPhone || '',
         email: apiService.clientEmail || null,
@@ -342,19 +346,25 @@ const AdminServices = memo(function AdminServices() {
         city: apiService.clientCity || null,
         companyName: apiService.clientCompanyName || null
       },
-      appliance: {
-        id: apiService.applianceId,
+      appliance: apiService ? {
+        id: apiService.applianceId || 0,
         model: apiService.applianceName || null,
         serialNumber: apiService.applianceSerialNumber || null,
         category: {
-          id: 0, // API ne vraća category ID
-          name: apiService?.categoryName || 'Nepoznat uređaj',
+          id: 0,
+          name: apiService.categoryName || 'Nepoznat uređaj',
           icon: 'device'
         },
         manufacturer: {
-          id: 0, // API ne vraća manufacturer ID
-          name: apiService?.manufacturerName || 'Nepoznat proizvođač'
+          id: 0,
+          name: apiService.manufacturerName || 'Nepoznat proizvođač'
         }
+      } : {
+        id: 0,
+        model: null,
+        serialNumber: null,
+        category: { id: 0, name: 'Nepoznat uređaj', icon: 'device' },
+        manufacturer: { id: 0, name: 'Nepoznat proizvođač' }
       },
       technician: apiService.technicianId ? {
         id: apiService.technicianId,
@@ -374,7 +384,7 @@ const AdminServices = memo(function AdminServices() {
   });
 
   // Transform raw API data to AdminService format
-  const services: AdminService[] = rawServices.map(transformApiService);
+  const services: AdminService[] = rawServices.filter(service => service).map(transformApiService).filter(service => service);
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
