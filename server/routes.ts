@@ -320,6 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let clientData = null;
         let applianceData = null;
         let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
@@ -329,6 +331,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             if (serviceData.applianceId) {
               applianceData = await storage.getAppliance(serviceData.applianceId);
+              // Properly get manufacturer and category data
+              if (applianceData?.manufacturerId) {
+                manufacturerData = await storage.getManufacturer(applianceData.manufacturerId);
+              }
+              if (applianceData?.categoryId) {
+                categoryData = await storage.getApplianceCategory(applianceData.categoryId);
+              }
             }
             if (serviceData.technicianId) {
               technicianData = await storage.getTechnician(serviceData.technicianId);
@@ -336,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        const manufacturerName = manufacturerData?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -345,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
-          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          const deviceType = categoryData?.name || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
@@ -562,6 +571,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let clientData = null;
         let applianceData = null;
         let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
@@ -571,6 +582,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             if (serviceData.applianceId) {
               applianceData = await storage.getAppliance(serviceData.applianceId);
+              // Properly get manufacturer and category data
+              if (applianceData?.manufacturerId) {
+                manufacturerData = await storage.getManufacturer(applianceData.manufacturerId);
+              }
+              if (applianceData?.categoryId) {
+                categoryData = await storage.getApplianceCategory(applianceData.categoryId);
+              }
             }
             if (serviceData.technicianId) {
               technicianData = await storage.getTechnician(serviceData.technicianId);
@@ -578,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        const manufacturerName = applianceData?.manufacturerName || serviceData?.manufacturerName || '';
+        const manufacturerName = manufacturerData?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -587,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
           
-          const deviceType = applianceData?.categoryName || serviceData?.categoryName || 'Uređaj';
+          const deviceType = categoryData?.name || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
             clientData?.fullName || 'N/A',
