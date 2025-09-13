@@ -1094,28 +1094,19 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="technical" className="space-y-4">
-                  {(() => {
-                    console.log("🔍 Technical Tab Debug:", {
-                      selectedService: selectedService ? "exists" : "null",
-                      appliance: selectedService?.appliance ? "exists" : "missing",
-                      category: selectedService?.appliance?.category ? "exists" : "missing",
-                      manufacturer: selectedService?.appliance?.manufacturer ? "exists" : "missing"
-                    });
-                    return null;
-                  })()}
                   {selectedService ? (
                     <>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm font-medium">Kategorija uređaja</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.appliance?.category?.name || "Nije specificiran"}
+                            {(selectedService && selectedService.appliance && selectedService.appliance.category && selectedService.appliance.category.name) || "Nije specificiran"}
                           </p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium">Proizvođač</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.appliance?.manufacturer?.name || "Nije specificiran"}
+                            {(selectedService && selectedService.appliance && selectedService.appliance.manufacturer && selectedService.appliance.manufacturer.name) || "Nije specificiran"}
                           </p>
                         </div>
                       </div>
@@ -1124,13 +1115,13 @@ const AdminServices = memo(function AdminServices() {
                         <div>
                           <Label className="text-sm font-medium">Model</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.appliance?.model || "Nije specificiran"}
+                            {(selectedService && selectedService.appliance && selectedService.appliance.model) || "Nije specificiran"}
                           </p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium">Serijski broj</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.appliance?.serialNumber || "Nije specificiran"}
+                            {(selectedService && selectedService.appliance && selectedService.appliance.serialNumber) || "Nije specificiran"}
                           </p>
                         </div>
                       </div>
@@ -1138,14 +1129,14 @@ const AdminServices = memo(function AdminServices() {
                       <div>
                         <Label className="text-sm font-medium">Iskorišćeni delovi</Label>
                         <p className="mt-1 text-sm">
-                          {selectedService?.usedParts || "Nije specificiran"}
+                          {(selectedService && selectedService.usedParts) || "Nije specificiran"}
                         </p>
                       </div>
                       
                       <div>
                         <Label className="text-sm font-medium">Napomene o uređaju</Label>
                         <p className="mt-1 text-sm">
-                          {selectedService?.machineNotes || "Nije specificirano"}
+                          {(selectedService && selectedService.machineNotes) || "Nije specificirano"}
                         </p>
                       </div>
                       
@@ -1153,13 +1144,13 @@ const AdminServices = memo(function AdminServices() {
                         <div>
                           <Label className="text-sm font-medium">Cena</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.cost ? `${selectedService.cost} €` : "Nije specificirana"}
+                            {(selectedService && selectedService.cost) ? `${selectedService.cost} €` : "Nije specificirana"}
                           </p>
                         </div>
                         <div>
                           <Label className="text-sm font-medium">Potpuno ispravljen</Label>
                           <p className="mt-1 text-sm">
-                            {selectedService?.isCompletelyFixed ? "Da" : "Ne"}
+                            {(selectedService && selectedService.isCompletelyFixed) ? "Da" : "Ne"}
                           </p>
                         </div>
                       </div>
