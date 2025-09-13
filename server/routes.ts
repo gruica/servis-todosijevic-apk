@@ -7185,5 +7185,28 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
+  // JavaScript error tracking endpoints
+  app.post("/api/errors/javascript", (req, res) => {
+    console.error("💥 [BROWSER JS ERROR]:", {
+      message: req.body.message,
+      filename: req.body.filename,
+      lineno: req.body.lineno,
+      colno: req.body.colno,
+      stack: req.body.stack,
+      url: req.body.url,
+      timestamp: req.body.timestamp
+    });
+    res.json({ success: true });
+  });
+
+  app.post("/api/errors/promise", (req, res) => {
+    console.error("💥 [BROWSER PROMISE ERROR]:", {
+      reason: req.body.reason,
+      stack: req.body.stack,
+      url: req.body.url,
+      timestamp: req.body.timestamp
+    });
+    res.json({ success: true });
+  });
 }
 
