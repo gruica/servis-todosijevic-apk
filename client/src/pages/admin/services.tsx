@@ -1609,9 +1609,8 @@ const AdminServices = memo(function AdminServices() {
 
 // ===== KOMPONENTA ZA PRIKAZ UKLONJENIH DELOVA =====
 const RemovedPartsSection = memo(({ serviceId }: { serviceId: number }) => {
-  const { data: removedParts, isLoading, error } = useQuery<RemovedPart[]>({
-    queryKey: ['removedParts', serviceId],
-    queryFn: () => apiRequest(`/api/admin/services/${serviceId}/removed-parts`)
+  const { data: removedParts = [], isLoading, error } = useQuery<RemovedPart[]>({
+    queryKey: ['/api/admin/services', serviceId, 'removed-parts']
   });
 
   if (isLoading) {
