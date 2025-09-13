@@ -1895,7 +1895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const spareParts = await storage.getSparePartsByService(service.id);
         
         // Dohvati uklonjene delove sa uređaja
-        const removedParts = await storage.getRemovedPartsByService(service.id);
+        const removedParts = await storage.getRemovedPartsByService(service.id) || [];
         
         // Dohvati technicianove napomene i rad
         const technician = service.technicianId ? await storage.getTechnician(Number(service.technicianId)) : null;
@@ -1921,7 +1921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
             actualDeliveryDate: (part as any).actualDeliveryDate || null
           })),
-          removedParts: removedParts.map(part => ({
+          removedParts: (Array.isArray(removedParts) ? removedParts : []).map(part => ({
             partName: part.partName,
             removalReason: part.removalReason,
             currentLocation: part.currentLocation,
@@ -1940,7 +1940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isCompleted: service.status === 'completed',
           totalCost: service.cost || 0,
           partsCount: spareParts.length,
-          removedPartsCount: removedParts.length
+          removedPartsCount: Array.isArray(removedParts) ? removedParts.length : 0
         };
         
         return workSummary;
@@ -1982,7 +1982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spareParts = await storage.getSparePartsByService(serviceId);
       
       // Dohvati uklonjene delove sa uređaja
-      const removedParts = await storage.getRemovedPartsByService(serviceId);
+      const removedParts = await storage.getRemovedPartsByService(serviceId) || [];
       
       // Dohvati osnovne podatke sa detaljima
       const serviceDetails = await storage.getServiceWithDetails(serviceId);
@@ -2014,7 +2014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
           actualDeliveryDate: (part as any).actualDeliveryDate || null
         })),
-        removedParts: removedParts.map(part => ({
+        removedParts: (Array.isArray(removedParts) ? removedParts : []).map(part => ({
           partName: part.partName,
           removalReason: part.removalReason,
           currentLocation: part.currentLocation,
@@ -2035,7 +2035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Prošireni detalji servisa ${serviceId}:`, {
         spareParts: spareParts.length,
-        removedParts: removedParts.length,
+        removedParts: Array.isArray(removedParts) ? removedParts.length : 0,
         statusHistory: statusHistory.length,
         hasUsedParts: !!service.usedParts,
         hasMachineNotes: !!service.machineNotes
