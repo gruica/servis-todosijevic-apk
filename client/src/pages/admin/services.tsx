@@ -309,9 +309,9 @@ const AdminServices = memo(function AdminServices() {
   const { toast } = useToast();
 
   // Transform flat API response to nested AdminService structure
-  const transformApiService = (apiService: any): AdminService => {
+  const transformApiService = (apiService: any): AdminService | null => {
     if (!apiService) {
-      return null as any;
+      return null;
     }
     
     return {
@@ -384,7 +384,10 @@ const AdminServices = memo(function AdminServices() {
   });
 
   // Transform raw API data to AdminService format
-  const services: AdminService[] = rawServices.filter(service => service).map(transformApiService).filter(service => service);
+  const services: AdminService[] = rawServices
+    .filter(service => service)
+    .map(transformApiService)
+    .filter((service): service is AdminService => service !== null);
 
   // Automatski otvara detalje servisa kada se dolazi sa notifikacije
   useEffect(() => {
