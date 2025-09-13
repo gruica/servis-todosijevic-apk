@@ -51,7 +51,7 @@ export default function AuthPage() {
     if (user) {
       const redirectPath = user.role === "technician" ? "/tech" :
                          user.role === "customer" ? "/customer" :
-                         user.role === "admin" ? (user.companyName === "Com Plus" ? "/complus" : "/admin/whatsapp-business-api") :
+                         user.role === "admin" ? (user.companyName === "Com Plus" ? "/complus" : "/admin") :
                          (user.role === "business_partner" || user.role === "business") ? "/business" : "/";
       navigate(redirectPath);
     }
@@ -62,7 +62,6 @@ export default function AuthPage() {
     const logoutRequested = localStorage.getItem("logoutRequested");
     if (logoutRequested === "true") {
       localStorage.removeItem("logoutRequested");
-      localStorage.removeItem("auth_token"); // Clear JWT token
       queryClient.setQueryData(["/api/user"], null);
       fetch("/api/logout", { method: "POST", credentials: "include" });
     }
