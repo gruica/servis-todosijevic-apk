@@ -1094,6 +1094,15 @@ const AdminServices = memo(function AdminServices() {
                 </TabsContent>
                 
                 <TabsContent value="technical" className="space-y-4">
+                  {(() => {
+                    console.log("🔍 Technical Tab Debug:", {
+                      selectedService: selectedService ? "exists" : "null",
+                      appliance: selectedService?.appliance ? "exists" : "missing",
+                      category: selectedService?.appliance?.category ? "exists" : "missing",
+                      manufacturer: selectedService?.appliance?.manufacturer ? "exists" : "missing"
+                    });
+                    return null;
+                  })()}
                   {selectedService ? (
                     <>
                       <div className="grid grid-cols-2 gap-4">
