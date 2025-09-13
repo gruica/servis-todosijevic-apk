@@ -348,12 +348,12 @@ const AdminServices = memo(function AdminServices() {
         serialNumber: apiService.applianceSerialNumber || null,
         category: {
           id: 0, // API ne vraća category ID
-          name: apiService.categoryName || 'Nepoznat uređaj',
+          name: apiService?.categoryName || 'Nepoznat uređaj',
           icon: 'device'
         },
         manufacturer: {
           id: 0, // API ne vraća manufacturer ID
-          name: apiService.manufacturerName || 'Nepoznat proizvođač'
+          name: apiService?.manufacturerName || 'Nepoznat proizvođač'
         }
       },
       technician: apiService.technicianId ? {
