@@ -5533,13 +5533,12 @@ Frigo Sistem`;
       "object-src 'none'; " +
       "base-uri 'self'; " +
       "form-action 'self'; " +
-      "frame-ancestors 'self'; " +
+      "frame-ancestors 'self' https://*.replit.dev https://*.repl.co https://*.id.repl.co https://*.riker.replit.dev http://127.0.0.1:5000; " +
       "upgrade-insecure-requests;"
     );
     
     // Additional security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
