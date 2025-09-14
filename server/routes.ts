@@ -7499,5 +7499,50 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     });
     res.json({ success: true });
   });
+
+  // ========== PDF SERVISNI IZVJEŠTAJI ENDPOINT ==========
+  
+  // GET /api/admin/service-report-pdf/:serviceId - Generiraj PDF izvještaj za servis
+  app.get('/api/admin/service-report-pdf/:serviceId', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      
+      if (isNaN(serviceId)) {
+        return res.status(400).json({ 
+          error: 'Nevaljan ID servisa' 
+        });
+      }
+
+      console.log(`📄 [PDF API] Zahtev za PDF izvještaj servisa ${serviceId} od korisnika ${(req as any).user?.id}`);
+
+      // Importuj PDF service
+      const { pdfService } = await import('./pdf-service.js');
+      
+      console.log(`📄 [PDF API] PDF service učitan, generisanje PDF-a...`);
+      
+      // Generiraj PDF
+      const pdfBuffer = await pdfService.generateServiceReportPDF(serviceId);
+      
+      console.log(`📄 [PDF API] ✅ PDF uspešno generisan (${pdfBuffer.length} bytes)`);
+
+      // Postavi headers za PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="servis-izvještaj-${serviceId}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      // Pošalji PDF
+      res.send(pdfBuffer);
+      
+      console.log(`📄 [PDF API] ✅ PDF izvještaj za servis ${serviceId} uspešno poslat`);
+      
+    } catch (error) {
+      console.error('📄 [PDF API] ❌ Greška pri generisanju PDF izvještaja:', error);
+      res.status(500).json({ 
+        error: 'Greška pri generisanju PDF izvještaja',
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 }
 

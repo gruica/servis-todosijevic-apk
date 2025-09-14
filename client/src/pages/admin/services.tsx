@@ -34,6 +34,7 @@ import {
   Package,
   Wrench,
   FileText,
+  Download,
   DollarSign,
   CheckSquare,
   Play,
@@ -604,6 +605,59 @@ const AdminServices = memo(function AdminServices() {
     dispatchDialog({ type: 'OPEN_RETURN', payload: service });
   };
 
+  // Handle PDF report generation
+  const handlePdfReport = async (service: AdminService) => {
+    try {
+      console.log(`📄 Generisanje PDF izvještaja za servis ${service.id}`);
+      
+      // Pozovi PDF endpoint
+      const response = await fetch(`/api/admin/service-report-pdf/${service.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Nepoznata greška' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      console.log(`📄 PDF uspešno dobijen od servera`);
+
+      // Kreiranje blob-a za download
+      const pdfBlob = await response.blob();
+      const url = window.URL.createObjectURL(pdfBlob);
+      
+      // Kreiranje linka za download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `servis-izvještaj-${service.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log(`📄 PDF izvještaj uspešno preuzet`);
+      
+      toast({
+        title: "PDF izvještaj",
+        description: `Izvještaj za servis #${service.id} je uspešno generisan i preuzet.`
+      });
+
+    } catch (error) {
+      console.error('📄 Greška pri generisanju PDF izvještaja:', error);
+      toast({
+        title: "Greška",
+        description: error instanceof Error ? error.message : "Greška pri generisanju PDF izvještaja",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle assign technician
   const handleAssignTechnician = (serviceId: number, technicianId: number) => {
     // Don't assign if placeholder value is selected
@@ -891,6 +945,13 @@ const AdminServices = memo(function AdminServices() {
                             title="Uredi servis"
                           >
                             <Edit className="h-3 w-3" />
+                          </button>
+                          <button
+                            className="p-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                            onClick={() => handlePdfReport(service)}
+                            title="Generiši PDF izvještaj"
+                          >
+                            <FileText className="h-3 w-3" />
                           </button>
                           <button
                             className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
