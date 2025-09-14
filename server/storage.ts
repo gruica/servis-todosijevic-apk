@@ -5095,42 +5095,42 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getServiceCompletionReport(serviceId: number): Promise<ServiceCompletionReport | null> {
+  async getServiceCompletionReport(serviceId: number): Promise<ServiceCompletionReport | undefined> {
     try {
       const [result] = await db.select()
         .from(serviceCompletionReports)
         .where(eq(serviceCompletionReports.serviceId, serviceId))
         .limit(1);
-      return result || null;
+      return result || undefined;
     } catch (error) {
       console.error('Greška pri dohvatanju izveštaja o završetku servisa:', error);
-      return null;
+      return undefined;
     }
   }
 
-  async getServiceCompletionReportById(id: number): Promise<ServiceCompletionReport | null> {
+  async getServiceCompletionReportById(id: number): Promise<ServiceCompletionReport | undefined> {
     try {
       const [result] = await db.select()
         .from(serviceCompletionReports)
         .where(eq(serviceCompletionReports.id, id))
         .limit(1);
-      return result || null;
+      return result || undefined;
     } catch (error) {
       console.error('Greška pri dohvatanju izveštaja po ID-u:', error);
-      return null;
+      return undefined;
     }
   }
 
-  async updateServiceCompletionReport(id: number, data: Partial<ServiceCompletionReport>): Promise<ServiceCompletionReport | null> {
+  async updateServiceCompletionReport(id: number, data: Partial<ServiceCompletionReport>): Promise<ServiceCompletionReport | undefined> {
     try {
       const [result] = await db.update(serviceCompletionReports)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(serviceCompletionReports.id, id))
         .returning();
-      return result || null;
+      return result || undefined;
     } catch (error) {
       console.error('Greška pri ažuriranju izveštaja o završetku servisa:', error);
-      return null;
+      return undefined;
     }
   }
 
@@ -5823,6 +5823,480 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri dohvatanju obrisanog servisa:', error);
       return undefined;
+    }
+  }
+
+  // Service Completion Report methods (missing implementations)
+  async getServiceCompletionReportsByService(serviceId: number): Promise<ServiceCompletionReport[]> {
+    try {
+      return await db.select()
+        .from(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.serviceId, serviceId))
+        .orderBy(desc(serviceCompletionReports.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju izvještaja o završenim servisima po servisu:', error);
+      return [];
+    }
+  }
+
+  async getServiceCompletionReportsByTechnician(technicianId: number): Promise<ServiceCompletionReport[]> {
+    try {
+      return await db.select()
+        .from(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.technicianId, technicianId))
+        .orderBy(desc(serviceCompletionReports.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju izvještaja o završenim servisima po tehničaru:', error);
+      return [];
+    }
+  }
+
+  async deleteServiceCompletionReport(id: number): Promise<boolean> {
+    try {
+      await db.delete(serviceCompletionReports)
+        .where(eq(serviceCompletionReports.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju izvještaja o završenom servisu:', error);
+      return false;
+    }
+  }
+
+  // AI Maintenance Pattern methods
+  async getAllMaintenancePatterns(): Promise<MaintenancePatterns[]> {
+    try {
+      return await db.select()
+        .from(maintenancePatterns)
+        .orderBy(desc(maintenancePatterns.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih pattern-a održavanja:', error);
+      return [];
+    }
+  }
+
+  async getMaintenancePattern(id: number): Promise<MaintenancePatterns | undefined> {
+    try {
+      const [pattern] = await db.select()
+        .from(maintenancePatterns)
+        .where(eq(maintenancePatterns.id, id))
+        .limit(1);
+      return pattern;
+    } catch (error) {
+      console.error('Greška pri dohvatanju pattern-a održavanja:', error);
+      return undefined;
+    }
+  }
+
+  async getMaintenancePatternsByCategory(categoryId: number): Promise<MaintenancePatterns[]> {
+    try {
+      return await db.select()
+        .from(maintenancePatterns)
+        .where(eq(maintenancePatterns.categoryId, categoryId))
+        .orderBy(desc(maintenancePatterns.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju pattern-a održavanja po kategoriji:', error);
+      return [];
+    }
+  }
+
+  async getMaintenancePatternsByManufacturer(manufacturerId: number): Promise<MaintenancePatterns[]> {
+    try {
+      return await db.select()
+        .from(maintenancePatterns)
+        .where(eq(maintenancePatterns.manufacturerId, manufacturerId))
+        .orderBy(desc(maintenancePatterns.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju pattern-a održavanja po proizvođaču:', error);
+      return [];
+    }
+  }
+
+  async createMaintenancePattern(pattern: InsertMaintenancePatterns): Promise<MaintenancePatterns> {
+    try {
+      const [newPattern] = await db.insert(maintenancePatterns)
+        .values({
+          ...pattern,
+          createdAt: new Date()
+        })
+        .returning();
+      return newPattern;
+    } catch (error) {
+      console.error('Greška pri kreiranju pattern-a održavanja:', error);
+      throw error;
+    }
+  }
+
+  async updateMaintenancePattern(id: number, pattern: Partial<MaintenancePatterns>): Promise<MaintenancePatterns | undefined> {
+    try {
+      const [updatedPattern] = await db.update(maintenancePatterns)
+        .set(pattern)
+        .where(eq(maintenancePatterns.id, id))
+        .returning();
+      return updatedPattern;
+    } catch (error) {
+      console.error('Greška pri ažuriranju pattern-a održavanja:', error);
+      return undefined;
+    }
+  }
+
+  async deleteMaintenancePattern(id: number): Promise<boolean> {
+    try {
+      await db.delete(maintenancePatterns)
+        .where(eq(maintenancePatterns.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju pattern-a održavanja:', error);
+      return false;
+    }
+  }
+
+  // Predictive Insights methods
+  async getAllPredictiveInsights(): Promise<PredictiveInsights[]> {
+    try {
+      return await db.select()
+        .from(predictiveInsights)
+        .orderBy(desc(predictiveInsights.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih prediktivnih uvida:', error);
+      return [];
+    }
+  }
+
+  async getPredictiveInsight(id: number): Promise<PredictiveInsights | undefined> {
+    try {
+      const [insight] = await db.select()
+        .from(predictiveInsights)
+        .where(eq(predictiveInsights.id, id))
+        .limit(1);
+      return insight;
+    } catch (error) {
+      console.error('Greška pri dohvatanju prediktivnog uvida:', error);
+      return undefined;
+    }
+  }
+
+  async getPredictiveInsightsByAppliance(applianceId: number): Promise<PredictiveInsights[]> {
+    try {
+      return await db.select()
+        .from(predictiveInsights)
+        .where(eq(predictiveInsights.applianceId, applianceId))
+        .orderBy(desc(predictiveInsights.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju prediktivnih uvida po aparatu:', error);
+      return [];
+    }
+  }
+
+  async getPredictiveInsightsByClient(clientId: number): Promise<PredictiveInsights[]> {
+    try {
+      return await db.select()
+        .from(predictiveInsights)
+        .where(eq(predictiveInsights.clientId, clientId))
+        .orderBy(desc(predictiveInsights.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju prediktivnih uvida po klijentu:', error);
+      return [];
+    }
+  }
+
+  async getActivePredictiveInsights(): Promise<PredictiveInsights[]> {
+    try {
+      return await db.select()
+        .from(predictiveInsights)
+        .where(eq(predictiveInsights.isActive, true))
+        .orderBy(desc(predictiveInsights.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju aktivnih prediktivnih uvida:', error);
+      return [];
+    }
+  }
+
+  async getCriticalRiskInsights(): Promise<PredictiveInsights[]> {
+    try {
+      return await db.select()
+        .from(predictiveInsights)
+        .where(and(
+          eq(predictiveInsights.isActive, true),
+          or(
+            eq(predictiveInsights.riskLevel, 'critical'),
+            eq(predictiveInsights.riskLevel, 'high')
+          )
+        ))
+        .orderBy(desc(predictiveInsights.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju kritičnih rizičnih uvida:', error);
+      return [];
+    }
+  }
+
+  async createPredictiveInsight(insight: InsertPredictiveInsights): Promise<PredictiveInsights> {
+    try {
+      const [newInsight] = await db.insert(predictiveInsights)
+        .values({
+          ...insight,
+          createdAt: new Date()
+        })
+        .returning();
+      return newInsight;
+    } catch (error) {
+      console.error('Greška pri kreiranju prediktivnog uvida:', error);
+      throw error;
+    }
+  }
+
+  async updatePredictiveInsight(id: number, insight: Partial<PredictiveInsights>): Promise<PredictiveInsights | undefined> {
+    try {
+      const [updatedInsight] = await db.update(predictiveInsights)
+        .set(insight)
+        .where(eq(predictiveInsights.id, id))
+        .returning();
+      return updatedInsight;
+    } catch (error) {
+      console.error('Greška pri ažuriranju prediktivnog uvida:', error);
+      return undefined;
+    }
+  }
+
+  async deletePredictiveInsight(id: number): Promise<boolean> {
+    try {
+      await db.delete(predictiveInsights)
+        .where(eq(predictiveInsights.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju prediktivnog uvida:', error);
+      return false;
+    }
+  }
+
+  // AI Analysis Results methods
+  async getAllAiAnalysisResults(): Promise<AiAnalysisResults[]> {
+    try {
+      return await db.select()
+        .from(aiAnalysisResults)
+        .orderBy(desc(aiAnalysisResults.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih AI analiza:', error);
+      return [];
+    }
+  }
+
+  async getAiAnalysisResult(id: number): Promise<AiAnalysisResults | undefined> {
+    try {
+      const [result] = await db.select()
+        .from(aiAnalysisResults)
+        .where(eq(aiAnalysisResults.id, id))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error('Greška pri dohvatanju AI analize:', error);
+      return undefined;
+    }
+  }
+
+  async getAiAnalysisResultsByAppliance(applianceId: number): Promise<AiAnalysisResults[]> {
+    try {
+      return await db.select()
+        .from(aiAnalysisResults)
+        .where(eq(aiAnalysisResults.applianceId, applianceId))
+        .orderBy(desc(aiAnalysisResults.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju AI analiza po aparatu:', error);
+      return [];
+    }
+  }
+
+  async getAiAnalysisResultsByType(analysisType: string): Promise<AiAnalysisResults[]> {
+    try {
+      return await db.select()
+        .from(aiAnalysisResults)
+        .where(eq(aiAnalysisResults.analysisType, analysisType))
+        .orderBy(desc(aiAnalysisResults.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju AI analiza po tipu:', error);
+      return [];
+    }
+  }
+
+  async getSuccessfulAiAnalysisResults(): Promise<AiAnalysisResults[]> {
+    try {
+      return await db.select()
+        .from(aiAnalysisResults)
+        .where(eq(aiAnalysisResults.success, true))
+        .orderBy(desc(aiAnalysisResults.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju uspešnih AI analiza:', error);
+      return [];
+    }
+  }
+
+  async createAiAnalysisResult(result: InsertAiAnalysisResults): Promise<AiAnalysisResults> {
+    try {
+      const [newResult] = await db.insert(aiAnalysisResults)
+        .values({
+          ...result,
+          createdAt: new Date()
+        })
+        .returning();
+      return newResult;
+    } catch (error) {
+      console.error('Greška pri kreiranju AI analize:', error);
+      throw error;
+    }
+  }
+
+  async updateAiAnalysisResult(id: number, result: Partial<AiAnalysisResults>): Promise<AiAnalysisResults | undefined> {
+    try {
+      const [updatedResult] = await db.update(aiAnalysisResults)
+        .set(result)
+        .where(eq(aiAnalysisResults.id, id))
+        .returning();
+      return updatedResult;
+    } catch (error) {
+      console.error('Greška pri ažuriranju AI analize:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAiAnalysisResult(id: number): Promise<boolean> {
+    try {
+      await db.delete(aiAnalysisResults)
+        .where(eq(aiAnalysisResults.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju AI analize:', error);
+      return false;
+    }
+  }
+
+  // Notification methods
+  async getAllNotifications(userId?: number): Promise<Notification[]> {
+    try {
+      if (userId) {
+        return await db.select()
+          .from(notifications)
+          .where(eq(notifications.userId, userId))
+          .orderBy(desc(notifications.createdAt));
+      } else {
+        return await db.select()
+          .from(notifications)
+          .orderBy(desc(notifications.createdAt));
+      }
+    } catch (error) {
+      console.error('Greška pri dohvatanju svih notifikacija:', error);
+      return [];
+    }
+  }
+
+  async getNotification(id: number): Promise<Notification | undefined> {
+    try {
+      const [notification] = await db.select()
+        .from(notifications)
+        .where(eq(notifications.id, id))
+        .limit(1);
+      return notification;
+    } catch (error) {
+      console.error('Greška pri dohvatanju notifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    try {
+      return await db.select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju notifikacija korisnika:', error);
+      return [];
+    }
+  }
+
+  async getUnreadNotifications(userId: number): Promise<Notification[]> {
+    try {
+      return await db.select()
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        ))
+        .orderBy(desc(notifications.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju nepročitanih notifikacija:', error);
+      return [];
+    }
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    try {
+      const [newNotification] = await db.insert(notifications)
+        .values({
+          ...notification,
+          createdAt: new Date(),
+          isRead: false
+        })
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error('Greška pri kreiranju notifikacije:', error);
+      throw error;
+    }
+  }
+
+  async updateNotification(id: number, notification: Partial<Notification>): Promise<Notification | undefined> {
+    try {
+      const [updatedNotification] = await db.update(notifications)
+        .set(notification)
+        .where(eq(notifications.id, id))
+        .returning();
+      return updatedNotification;
+    } catch (error) {
+      console.error('Greška pri ažuriranju notifikacije:', error);
+      return undefined;
+    }
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    try {
+      const [updatedNotification] = await db.update(notifications)
+        .set({ 
+          isRead: true,
+          readAt: new Date()
+        })
+        .where(eq(notifications.id, id))
+        .returning();
+      return updatedNotification;
+    } catch (error) {
+      console.error('Greška pri označavanju notifikacije kao pročitane:', error);
+      return undefined;
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
+    try {
+      await db.update(notifications)
+        .set({ 
+          isRead: true,
+          readAt: new Date()
+        })
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        ));
+    } catch (error) {
+      console.error('Greška pri označavanju svih notifikacija kao pročitane:', error);
+      throw error;
+    }
+  }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(notifications)
+        .where(eq(notifications.id, id));
+      return true;
+    } catch (error) {
+      console.error('Greška pri brisanju notifikacije:', error);
+      return false;
     }
   }
 
