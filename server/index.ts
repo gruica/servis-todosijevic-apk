@@ -19,6 +19,13 @@ const app = express();
 // Omogući trust proxy za Replit
 app.set('trust proxy', 1);
 
+// GLOBALNI CSP MIDDLEWARE - MORA BITI PRE VITE SETUP-A
+app.use((req, res, next) => {
+  // Postavi CSP frame-ancestors header za sve Replit domene
+  res.header('Content-Security-Policy', 'frame-ancestors \'self\' https://replit.com https://*.replit.com https://*.replit.dev https://*.repl.co https://*.id.repl.co https://*.riker.replit.dev http://127.0.0.1:5000');
+  next();
+});
+
 // PRVO postavi JSON body parser middleware sa povećanim limitom za Base64 fotografije
 app.use(express.json({ limit: '10mb' })); // Povećano sa default 1mb na 10mb za Base64 fotografije
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -148,12 +155,6 @@ app.use((req, res, next) => {
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
-    
-    // NAKON VITE SETUP-A, POSTAVITI CSP HEADERS ZA IFRAME EMBEDDING
-    app.use((req, res, next) => {
-      res.header('Content-Security-Policy', 'frame-ancestors \'self\' https://replit.com https://*.replit.com https://*.replit.dev https://*.repl.co https://*.id.repl.co https://*.riker.replit.dev http://127.0.0.1:5000');
-      next();
-    });
   } else {
     serveStatic(app);
   }
