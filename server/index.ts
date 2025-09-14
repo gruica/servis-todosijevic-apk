@@ -31,9 +31,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  // Header za iframe embedding - MORA BITI POSLE VITE HEADERS
-  res.header('X-Frame-Options', 'ALLOWALL'); 
-  // Ne dodajem CSP ovde jer ga Vite override-uje - dodaću nakon Vite setup-a
+  // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
   
   // Only log CORS in development mode to improve production performance
   if (process.env.NODE_ENV !== 'production') {
@@ -151,10 +149,9 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
     
-    // NAKON VITE SETUP-A, POSTAVITI HEADERS ZA IFRAME EMBEDDING
+    // NAKON VITE SETUP-A, POSTAVITI CSP HEADERS ZA IFRAME EMBEDDING
     app.use((req, res, next) => {
-      res.header('X-Frame-Options', 'ALLOWALL');
-      res.header('Content-Security-Policy', 'default-src \'self\'; script-src \'self\' \'unsafe-inline\' \'unsafe-eval\' https://fonts.googleapis.com https://fonts.gstatic.com https://apis.google.com; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com https://fonts.gstatic.com; font-src \'self\' https://fonts.gstatic.com; img-src \'self\' data: https: blob:; media-src \'self\' blob:; connect-src \'self\' https: wss:; object-src \'none\'; base-uri \'self\'; form-action \'self\'; frame-ancestors \'self\' https://*.replit.dev https://*.replit.co; upgrade-insecure-requests;');
+      res.header('Content-Security-Policy', 'frame-ancestors \'self\' https://replit.com https://*.replit.com https://*.replit.dev https://*.repl.co https://*.id.repl.co https://*.riker.replit.dev http://127.0.0.1:5000');
       next();
     });
   } else {
