@@ -421,7 +421,7 @@ export const insertServicePhotoSchema = createInsertSchema(servicePhotos).pick({
   description: z.string().max(500, "Opis ne može biti duži od 500 karaktera").optional(),
   uploadedBy: z.number().int().positive("ID korisnika mora biti pozitivan broj"),
   isBeforeRepair: z.boolean().default(true),
-  category: z.enum(["general", "parts", "damage", "repair_progress"]).default("general"),
+  category: z.enum(["before", "after", "parts", "damage", "documentation", "other"]).default("other"),
 });
 
 export type InsertServicePhoto = z.infer<typeof insertServicePhotoSchema>;

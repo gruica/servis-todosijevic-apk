@@ -145,6 +145,7 @@ export interface IStorage {
   
   // Service Photo methods
   getServicePhotos(serviceId: number): Promise<ServicePhoto[]>;
+  getServicePhoto(id: number): Promise<ServicePhoto | null>;
   createServicePhoto(photo: InsertServicePhoto): Promise<ServicePhoto>;
   updateServicePhoto(id: number, photo: Partial<ServicePhoto>): Promise<ServicePhoto | undefined>;
   deleteServicePhoto(id: number): Promise<void>;
@@ -4397,6 +4398,36 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('❌ Greška pri dohvatanju fotografija servisa:', error);
       throw new Error('Neuspešno dohvatanje fotografija servisa');
+    }
+  }
+
+  async getServicePhoto(id: number): Promise<ServicePhoto | null> {
+    console.log(`📸 DatabaseStorage: dohvatanje fotografije sa ID ${id}`);
+    
+    try {
+      const [photo] = await db
+        .select()
+        .from(servicePhotos)
+        .where(eq(servicePhotos.id, id))
+        .limit(1);
+      
+      if (!photo) {
+        console.log(`📸 Fotografija sa ID ${id} nije pronađena`);
+        return null;
+      }
+      
+      // MAPIRANJE BACKEND → FRONTEND
+      const mappedPhoto = {
+        ...photo,
+        photoUrl: photo.photoPath, // KLJUČNO MAPIRANJE za frontend
+        photoCategory: photo.category
+      };
+      
+      console.log(`📸 Pronađena fotografija sa ID ${id} za servis ${photo.serviceId}`);
+      return mappedPhoto;
+    } catch (error) {
+      console.error('❌ Greška pri dohvatanju fotografije:', error);
+      throw new Error('Neuspešno dohvatanje fotografije');
     }
   }
 

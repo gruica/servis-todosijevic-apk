@@ -5716,6 +5716,277 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
 
   console.log('📱 [WHATSAPP BUSINESS API] Endpoint-i uspešno registrovani');
 
+  // ========== SERVICE PHOTOS ENDPOINTS ==========
+  
+  // Helper function to check service access authorization
+  async function checkServicePhotoAccess(userId: number, userRole: string, serviceId: number): Promise<{ hasAccess: boolean, service?: any }> {
+    try {
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return { hasAccess: false };
+      }
+
+      // Admin has access to all services
+      if (userRole === 'admin') {
+        return { hasAccess: true, service };
+      }
+
+      // Assigned technician has access
+      if (userRole === 'technician' && service.technicianId === userId) {
+        return { hasAccess: true, service };
+      }
+
+      // Business partner has access to their services
+      if (userRole === 'business_partner' && service.businessPartnerId === userId) {
+        return { hasAccess: true, service };
+      }
+
+      // Client owner has access to their own service
+      if ((userRole === 'customer' || userRole === 'client') && service.clientId === userId) {
+        return { hasAccess: true, service };
+      }
+
+      return { hasAccess: false, service };
+    } catch (error) {
+      console.error("Error checking service photo access:", error);
+      return { hasAccess: false };
+    }
+  }
+
+  // Get service photos
+  app.get("/api/service-photos", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.query.serviceId as string);
+      if (!serviceId || isNaN(serviceId)) {
+        return res.status(400).json({ error: "Valjan serviceId je potreban" });
+      }
+
+      // Check authorization
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, serviceId);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama ovog servisa" });
+      }
+
+      const photos = await storage.getServicePhotos(serviceId);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching service photos:", error);
+      res.status(500).json({ error: "Neuspešno dohvatanje fotografija servisa" });
+    }
+  });
+
+  // Create service photo
+  app.post("/api/service-photos", jwtAuth, async (req, res) => {
+    try {
+      const { ObjectStorageService } = await import("./objectStorage");
+      const { insertServicePhotoSchema } = await import("@shared/schema");
+      
+      // Map frontend field names to backend schema
+      const mappedBody = {
+        ...req.body,
+        // Map photoUrl to photoPath and photoCategory to category
+        photoPath: req.body.photoUrl || req.body.photoPath,
+        category: req.body.photoCategory || req.body.category,
+        uploadedBy: req.user.id
+      };
+
+      // Remove unmapped fields to avoid validation issues
+      delete mappedBody.photoUrl;
+      delete mappedBody.photoCategory;
+
+      // Validate service ID first
+      const serviceId = mappedBody.serviceId;
+      if (!serviceId || isNaN(parseInt(serviceId))) {
+        return res.status(400).json({ error: "Valjan serviceId je potreban" });
+      }
+
+      // Check authorization
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, parseInt(serviceId));
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: "Nemate dozvolu za dodavanje fotografija ovom servisu" });
+      }
+
+      const validatedData = insertServicePhotoSchema.parse(mappedBody);
+
+      // Kreiranje fotografije u bazi
+      const newPhoto = await storage.createServicePhoto(validatedData);
+
+      // Postavljanje ACL policy-a za fotografiju
+      if (validatedData.photoPath.startsWith("https://storage.googleapis.com/")) {
+        const objectStorageService = new ObjectStorageService();
+        const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+          validatedData.photoPath,
+          {
+            owner: req.user.id.toString(),
+            visibility: "private", // Privatne fotografije servisa
+          },
+        );
+        
+        // Ažuriranje putanje u bazi sa normalizovanom putanjom
+        if (newPhoto.id) {
+          await storage.updateServicePhoto?.(newPhoto.id, { photoPath: objectPath });
+        }
+      }
+
+      res.status(201).json(newPhoto);
+    } catch (error) {
+      console.error("Error creating service photo:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Neispravni podaci", details: error.errors });
+      }
+      res.status(500).json({ error: "Neuspešno kreiranje fotografije servisa" });
+    }
+  });
+
+  // Delete service photo
+  app.delete("/api/service-photos/:id", jwtAuth, async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      if (!photoId || isNaN(photoId)) {
+        return res.status(400).json({ error: "Valjan ID fotografije je potreban" });
+      }
+
+      // Get photo details before deletion for authorization and cleanup
+      const photo = await storage.getServicePhoto(photoId);
+      if (!photo) {
+        return res.status(404).json({ error: "Fotografija nije pronađena" });
+      }
+
+      // Check authorization
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, photo.serviceId);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: "Nemate dozvolu za brisanje ove fotografije" });
+      }
+
+      // Delete from object storage if it's a cloud URL
+      if (photo.photoPath.startsWith("https://storage.googleapis.com/")) {
+        try {
+          const { ObjectStorageService } = await import("./objectStorage");
+          const objectStorageService = new ObjectStorageService();
+          await objectStorageService.deleteObject(photo.photoPath);
+          console.log(`🗑️ [PHOTOS] Deleted object from storage: ${photo.photoPath}`);
+        } catch (storageError) {
+          console.error("Error deleting from object storage:", storageError);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+
+      // Delete from database
+      await storage.deleteServicePhoto(photoId);
+      console.log(`🗑️ [PHOTOS] Deleted photo record ${photoId} from database`);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting service photo:", error);
+      res.status(500).json({ error: "Neuspešno brisanje fotografije servisa" });
+    }
+  });
+
+  // Get service photos by category
+  app.get("/api/service-photos/:serviceId/category/:category", jwtAuth, async (req, res) => {
+    try {
+      const serviceId = parseInt(req.params.serviceId);
+      const category = req.params.category;
+      
+      if (!serviceId || isNaN(serviceId)) {
+        return res.status(400).json({ error: "Valjan serviceId je potreban" });
+      }
+
+      // Validate category
+      const validCategories = ["before", "after", "parts", "damage", "documentation", "other"];
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ error: "Nevalidna kategorija fotografije" });
+      }
+
+      // Check authorization
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, serviceId);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama ovog servisa" });
+      }
+
+      const photos = await storage.getServicePhotosByCategory(serviceId, category);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching service photos by category:", error);
+      res.status(500).json({ error: "Neuspešno dohvatanje fotografija po kategoriji" });
+    }
+  });
+
+  // Service photo proxy for displaying images
+  app.get("/api/service-photo-proxy/:id", jwtAuth, async (req, res) => {
+    try {
+      const photoId = parseInt(req.params.id);
+      if (!photoId || isNaN(photoId)) {
+        return res.status(400).json({ error: "Valjan ID fotografije je potreban" });
+      }
+
+      const photo = await storage.getServicePhoto(photoId);
+      if (!photo) {
+        return res.status(404).json({ error: "Fotografija nije pronađena" });
+      }
+
+      // Check authorization
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, photo.serviceId);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovoj fotografiji" });
+      }
+
+      // Domain validation to prevent SSRF attacks
+      const allowedDomains = [
+        'storage.googleapis.com',
+        'replit.com',
+        'replit.dev',
+        'localhost'
+      ];
+
+      if (photo.photoPath.startsWith("http")) {
+        try {
+          const url = new URL(photo.photoPath);
+          const isAllowedDomain = allowedDomains.some(domain => 
+            url.hostname === domain || url.hostname.endsWith('.' + domain)
+          );
+          
+          if (!isAllowedDomain) {
+            console.warn(`🚨 [SECURITY] Blocked SSRF attempt to: ${url.hostname}`);
+            return res.status(403).json({ error: "Nedozvoljen domen za fotografiju" });
+          }
+
+          // External URL - redirect to validated URL
+          return res.redirect(photo.photoPath);
+        } catch (urlError) {
+          console.error("Invalid URL in photo path:", urlError);
+          return res.status(400).json({ error: "Nevaljan URL fotografije" });
+        }
+      } else {
+        // Local file - serve directly with path validation
+        const path = require('path');
+        const fs = require('fs');
+        
+        // Prevent path traversal attacks
+        const sanitizedPath = path.normalize(photo.photoPath).replace(/^(\.\.[\/\\])+/, '');
+        const filePath = path.join(process.cwd(), 'uploads', sanitizedPath);
+        
+        // Ensure file is within uploads directory
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        if (!filePath.startsWith(uploadsDir)) {
+          console.warn(`🚨 [SECURITY] Blocked path traversal attempt: ${photo.photoPath}`);
+          return res.status(403).json({ error: "Nedozvoljeno putanja datoteke" });
+        }
+        
+        if (fs.existsSync(filePath)) {
+          return res.sendFile(filePath);
+        } else {
+          return res.status(404).json({ error: "Fajl fotografije nije pronađen" });
+        }
+      }
+    } catch (error) {
+      console.error("Error serving service photo:", error);
+      res.status(500).json({ error: "Greška pri učitavanju fotografije" });
+    }
+  });
+
+  console.log('📸 [SERVICE PHOTOS] Endpoint-i uspešno registrovani');
+
   return server;
 }
 
