@@ -34,7 +34,6 @@ import {
   Package,
   Wrench,
   FileText,
-  Download,
   DollarSign,
   CheckSquare,
   Play,
