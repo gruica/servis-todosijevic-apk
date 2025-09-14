@@ -1,6 +1,0 @@
-2025/09/09-14:51:54.831 24a Reusing MANIFEST /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/Local Storage/leveldb/MANIFEST-000001
-2025/09/09-14:51:54.953 24a Recovering log #3
-2025/09/09-14:51:54.962 24a Reusing old log /home/runner/workspace/whatsapp-session/session-frigo-sistem-todosijevic/Default/Local Storage/leveldb/000003.log 
-2025/09/09-14:52:57.543 24b Level-0 table #5: started
-2025/09/09-14:52:57.559 24b Level-0 table #5: 17863 bytes OK
-2025/09/09-14:52:57.567 24b Delete type=0 #3

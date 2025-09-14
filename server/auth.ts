@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
@@ -46,37 +47,53 @@ export async function comparePassword(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Prepoznaj da li je produkcija (Replit ima HTTPS)
+  // Detect production environment 
   const isProduction = process.env.REPLIT_ENVIRONMENT === 'production' || 
                        !!process.env.REPLIT_DEV_DOMAIN || 
                        process.env.NODE_ENV === 'production';
   
-  console.log("🔧 Session config:", {
-    isProduction,
-    REPLIT_ENVIRONMENT: process.env.REPLIT_ENVIRONMENT,
-    REPLIT_DEV_DOMAIN: !!process.env.REPLIT_DEV_DOMAIN,
-    NODE_ENV: process.env.NODE_ENV,
-    willUseSecure: false, // DEBUGGING - temporarily disable
-    willUseSameSite: "lax",
-    willUseDomain: undefined,
-    willUseHttpOnly: true
-  });
+  // MANDATORY SESSION_SECRET validation - fail-fast for production security
+  if (!process.env.SESSION_SECRET) {
+    const errorMessage = "🚨 CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is required for secure session management.";
+    console.error(errorMessage);
+    
+    if (isProduction) {
+      throw new Error(`${errorMessage} Application cannot start in production without secure session secret.`);
+    }
+    
+    // Development warning
+    console.warn("⚠️  DEVELOPMENT WARNING: Using insecure fallback session secret. Set SESSION_SECRET environment variable.");
+  }
   
+  const sessionSecret = process.env.SESSION_SECRET || "dev-fallback-never-use-in-production";
+  
+  // Initialize persistent session store using connect-pg-simple
+  const PgStore = connectPgSimple(session);
+  const sessionStore = new PgStore({
+    pool: storage.db, // Use existing database connection pool
+    tableName: 'user_sessions', // Table for storing sessions
+    createTableIfMissing: true, // Automatically create session table
+    pruneSessionInterval: 60 * 15, // Clean expired sessions every 15 minutes
+    errorLog: (error: Error) => {
+      console.error('🚨 [SESSION STORE ERROR]:', error);
+    }
+  });
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "supabaza-appliance-service-secret",
+    store: sessionStore, // Use persistent PostgreSQL session store
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: undefined, // Koristimo default MemoryStore za debugging
     name: 'connect.sid',
     cookie: {
-      secure: false, // Temporary disable secure for debugging
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dana
+      secure: isProduction, // Enable secure cookies in production (HTTPS)
+      httpOnly: true, // Prevent XSS attacks
+      sameSite: isProduction ? "strict" : "lax", // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours (reduced from 30 days for security)
       domain: undefined,
       path: '/'
     },
-    proxy: isProduction // Potrebno za trust proxy kada je secure = true
+    proxy: isProduction // Trust proxy in production for HTTPS termination
   };
 
   // Trust proxy je već postavljen u index.ts
@@ -292,34 +309,11 @@ export function setupAuth(app: Express) {
           return next(loginErr);
         }
         
-        // Uspješna prijava - logiram sesiju
-        console.log(`Login successful, session established for user ${user.username} (ID: ${user.id}), session ID: ${req.sessionID}`);
-        console.log(`Session after login:`, req.session);
-        console.log(`Session.passport after login:`, (req.session as any)?.passport);
-        console.log(`User is authenticated after login:`, req.isAuthenticated());
+        // Successful login - log securely
+        console.log(`Login successful for user ${user.username} (ID: ${user.id})`);
         
-        // Debug cookie informacije
-        console.log(`🍪 Cookie config:`, {
-          secure: req.session.cookie.secure,
-          httpOnly: req.session.cookie.httpOnly,
-          sameSite: req.session.cookie.sameSite,
-          maxAge: req.session.cookie.maxAge,
-          path: req.session.cookie.path,
-          domain: req.session.cookie.domain
-        });
-        
-        // Dodatni debug posle odgovora
-        res.on('finish', () => {
-          console.log(`🍪 FINALNI Response headers:`, res.getHeaders());
-          console.log(`🍪 Set-Cookie header:`, res.getHeaders()['set-cookie'] || 'MISSING!');
-        });
-        
-        console.log(`🍪 Trenutni request headers:`, {
-          host: req.headers.host,
-          origin: req.headers.origin,
-          'user-agent': req.headers['user-agent'],
-          cookie: req.headers.cookie || 'NO COOKIES'
-        });
+        // Security audit log for login
+        console.log(`[SECURITY AUDIT] User login: ${user.username}, role: ${user.role}, IP: ${req.ip}, UserAgent: ${req.get('User-Agent')?.substring(0, 100)}`);
         
         // Remove password from the response
         const { password, ...userWithoutPassword } = user as SelectUser;

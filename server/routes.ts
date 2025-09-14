@@ -135,8 +135,11 @@ const catalogUpload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
-  app.get("/api/admin/spare-parts", async (req, res) => {
+  app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
+      // Security audit log
+      console.log(`[SECURITY AUDIT] Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
+      
       const orders = await storage.getAllSparePartOrders();
       res.json(orders);
     } catch (error) {
@@ -145,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/spare-parts/pending", async (req, res) => {
+  app.get("/api/admin/spare-parts/pending", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const orders = await storage.getPendingSparePartOrders();
       res.json(orders);
@@ -155,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/spare-parts/all-requests", async (req, res) => {
+  app.get("/api/admin/spare-parts/all-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       console.log("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
       const orders = await storage.getAllRequestsSparePartOrders();
@@ -287,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 2. Admin označi deo kao poručen + automatski pošalji email dobavljaču
-  app.patch("/api/admin/spare-parts/:id/order", jwtAuth, async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/order", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da poručuju rezervne delove" });
@@ -476,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 3. Admin potvrdi prijem rezervnog dela
-  app.patch("/api/admin/spare-parts/:id/receive", jwtAuth, async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/receive", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da potvrđuju prijem rezervnih delova" });
@@ -506,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 4. Admin prebaci deo u dostupno stanje
-  app.patch("/api/admin/spare-parts/:id/make-available", jwtAuth, async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/make-available", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da prebacuju delove u dostupno stanje" });
@@ -533,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 4.5. POBOLJŠAN ENDPOINT - Odobri pending zahtev (pending → admin_ordered + auto email/SMS)
-  app.patch("/api/admin/spare-parts/:id/approve-pending", jwtAuth, async (req, res) => {
+  app.patch("/api/admin/spare-parts/:id/approve-pending", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Samo administratori mogu da odobravaju pending zahteve" });
@@ -718,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 6. Dohvati rezervne delove po statusu (za admin interface)
-  app.get("/api/admin/spare-parts/status/:status", async (req, res) => {
+  app.get("/api/admin/spare-parts/status/:status", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
 
       const status = req.params.status;
@@ -4027,7 +4030,7 @@ Frigo Sistem`;
   });
 
   // Get all admin services - Admin only
-  app.get("/api/admin/services", jwtAuth, async (req, res) => {
+  app.get("/api/admin/services", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Check if user is admin
       const userRole = (req.user as any)?.role;
@@ -4047,7 +4050,7 @@ Frigo Sistem`;
   });
 
   // Get services by technicians - Admin only
-  app.get("/api/admin/services-by-technicians", jwtAuth, async (req, res) => {
+  app.get("/api/admin/services-by-technicians", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Check if user is admin
       const userRole = (req.user as any)?.role;
@@ -4145,7 +4148,7 @@ Frigo Sistem`;
   });
 
   // Delete service - Admin only
-  app.delete("/api/admin/services/:id", jwtAuth, async (req, res) => {
+  app.delete("/api/admin/services/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Check if user is admin
       const userRole = (req.user as any)?.role;
@@ -5463,7 +5466,7 @@ Frigo Sistem`;
   });
 
   // Admin endpoint for listing data deletion requests
-  app.get("/api/admin/data-deletion-requests", jwtAuth, async (req, res) => {
+  app.get("/api/admin/data-deletion-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
@@ -5479,7 +5482,7 @@ Frigo Sistem`;
   });
 
   // Admin endpoint for updating request status
-  app.patch("/api/admin/data-deletion-requests/:id", jwtAuth, async (req, res) => {
+  app.patch("/api/admin/data-deletion-requests/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       if (req.user?.role !== 'admin') {
         return res.status(403).json({ error: "Nemate dozvolu za ovu akciju" });
@@ -7177,7 +7180,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   });
 
   // Static Pages Management Endpoints - DODANO ZA ADMIN UPRAVLJANJE STRANICAMA
-  app.get('/api/admin/static-pages/:filename', jwtAuth, async (req, res) => {
+  app.get('/api/admin/static-pages/:filename', jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { filename } = req.params;
       
@@ -7239,7 +7242,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
-  app.put('/api/admin/static-pages/:filename', jwtAuth, async (req, res) => {
+  app.put('/api/admin/static-pages/:filename', jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { filename } = req.params;
       const { content } = req.body;

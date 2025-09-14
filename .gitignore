@@ -4,3 +4,10 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Security - Sensitive session and authentication data
+whatsapp-session/
+session-data/
+*.session
+.env.local
+.env.production
