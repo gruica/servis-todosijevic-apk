@@ -76,24 +76,22 @@ export default function ComplusBillingReport() {
   ];
 
   // Fetch warranty services for all Complus brands in selected period
-  const { data: billingData, isLoading } = useQuery({
-    queryKey: [enhancedMode ? '/api/admin/billing/complus/enhanced' : '/api/admin/billing/complus', selectedMonth, selectedYear, enhancedMode],
+  const { data: billingData, isLoading, error } = useQuery({
+    queryKey: [
+      enhancedMode ? '/api/admin/billing/complus/enhanced' : '/api/admin/billing/complus',
+      { month: selectedMonth, year: selectedYear, enhancedMode }
+    ],
     enabled: !!selectedMonth && !!selectedYear,
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        month: selectedMonth,
-        year: selectedYear.toString()
+    queryFn: async ({ queryKey }) => {
+      const [endpoint, params] = queryKey;
+      const urlParams = new URLSearchParams({
+        month: (params as any).month,
+        year: (params as any).year.toString()
       });
       
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('Nema autentifikacije');
-      
-      const endpoint = enhancedMode ? '/api/admin/billing/complus/enhanced' : '/api/admin/billing/complus';
-      const response = await fetch(`${endpoint}?${params}`, {
+      const response = await fetch(`${endpoint}?${urlParams}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         }
       });
       
