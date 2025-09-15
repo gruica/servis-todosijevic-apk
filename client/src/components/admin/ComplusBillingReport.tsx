@@ -299,11 +299,11 @@ export default function ComplusBillingReport() {
           </div>
 
           {/* Enhanced Mode Alert */}
-          {enhancedMode && billingData?.autoDetectedCount > 0 && (
+          {enhancedMode && billingData?.autoDetectedCount && billingData.autoDetectedCount > 0 && (
             <Alert className="mb-4 border-orange-200 bg-orange-50">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                <strong>Auto-detektovano {billingData.autoDetectedCount} servisa</strong> koji nemaju completedDate 
+                <strong>Auto-detektovano {billingData?.autoDetectedCount || 0} servisa</strong> koji nemaju completedDate 
                 (korišten createdAt kao fallback). Ovo rešava problem sa servisima od "Gruica Todosijević".
               </AlertDescription>
             </Alert>
@@ -364,11 +364,20 @@ export default function ComplusBillingReport() {
             </div>
           </div>
 
+          {isLoading && (
+            <div className="space-y-4">
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Učitavam ComPlus fakturisanje...</p>
+              </div>
+            </div>
+          )}
+
           {billingData && (
             <div className="space-y-4">
               {/* Brand Breakdown Cards */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                {billingData.brandBreakdown.map(brand => (
+                {(billingData.brandBreakdown || []).map(brand => (
                   <Card key={brand.brand}>
                     <CardContent className="pt-4">
                       <div className="text-center">
@@ -429,7 +438,16 @@ export default function ComplusBillingReport() {
                   Detaljni pregled servisa - {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
                 </h3>
                 
-                {billingData.services.map(service => (
+                {(!billingData.services || billingData.services.length === 0) ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-600 mb-2">Nema servisa</h3>
+                    <p className="text-gray-500">
+                      Nije pronađen nijedan ComPlus servis za {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
+                    </p>
+                  </div>
+                ) : (
+                  (billingData.services || []).map(service => (
                   <Card key={service.id} className={`border-l-4 ${service.isAutoDetected ? 'border-l-orange-500 bg-orange-50' : 'border-l-blue-500'}`}>
                     <CardContent className="p-6">
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -555,7 +573,8 @@ export default function ComplusBillingReport() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
