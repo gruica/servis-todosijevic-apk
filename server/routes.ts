@@ -3068,7 +3068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientId: service.clientId,
         applianceId: service.applianceId,
         description: service.description,
-        warrantyStatus: service.warrantyStatus,
+        warrantyStatus: service.warrantyStatus === 'nepoznato' ? 'van garancije' as const : service.warrantyStatus as 'u garanciji' | 'van garancije',
         createdAt: service.createdAt,
         
         // Update these fields
@@ -3822,6 +3822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update service with repair failure data
       const updatedService = await storage.updateService(serviceId, {
         ...service,
+        warrantyStatus: service.warrantyStatus === 'nepoznato' ? 'van garancije' as const : service.warrantyStatus as 'u garanciji' | 'van garancije',
         status: 'repair_failed' as any,
         repairFailed: true,
         repairFailureReason: repairFailureReason.trim(),
@@ -3955,6 +3956,13 @@ Frigo Sistem`;
       
       // Update service status and notes
       await storage.updateService(serviceId, {
+        // Required fields for the schema
+        clientId: service.clientId,
+        applianceId: service.applianceId,
+        description: service.description,
+        warrantyStatus: service.warrantyStatus === 'nepoznato' ? 'van garancije' as const : service.warrantyStatus as 'u garanciji' | 'van garancije',
+        createdAt: service.createdAt,
+        // Updated fields
         status: 'pending',
         technicianId: null,
         technicianNotes: notes ? `VRAĆEN OD SERVISERA: ${reason}\nBeleške: ${notes}\n\n${service.technicianNotes || ''}` : service.technicianNotes
@@ -3991,6 +3999,13 @@ Frigo Sistem`;
       
       // Update service with assigned technician
       await storage.updateService(serviceId, {
+        // Required fields for the schema
+        clientId: service.clientId,
+        applianceId: service.applianceId,
+        description: service.description,
+        warrantyStatus: service.warrantyStatus === 'nepoznato' ? 'van garancije' as const : service.warrantyStatus as 'u garanciji' | 'van garancije',
+        createdAt: service.createdAt,
+        // Updated fields
         technicianId: technicianId,
         status: 'assigned' as any
       });
@@ -4328,7 +4343,7 @@ Frigo Sistem`;
           applianceId: appliance.id,
           description: description.trim(),
           status: "pending" as const,
-          warrantyStatus: "van garancije" as const, // Default za business partners - van garancije zbog sigurnosti
+          warrantyStatus: "van garancije" as const, // Default za business partners - assume out of warranty unless specified
           createdAt: new Date().toISOString().split('T')[0],
           technicianId: null, // Biće dodeljen kasnije
           scheduledDate: null,
@@ -4605,7 +4620,17 @@ Frigo Sistem`;
           `${currentNotes}\n\n[DOPUNA GENERALI] ${validData.supplementNotes}` :
           `[DOPUNA GENERALI] ${validData.supplementNotes}`;
         
-        await storage.updateService(serviceId, { technicianNotes: updatedNotes });
+        await storage.updateService(serviceId, { 
+          // Required fields for the schema
+          clientId: service.clientId,
+          applianceId: service.applianceId,
+          description: service.description,
+          warrantyStatus: service.warrantyStatus === 'nepoznato' ? 'van garancije' as const : service.warrantyStatus as 'u garanciji' | 'van garancije',
+          createdAt: service.createdAt,
+          status: service.status,
+          // Updated field
+          technicianNotes: updatedNotes 
+        });
         console.log(`[GENERALI DOPUNA] ✅ Napomene dodane`);
       }
 
@@ -4678,8 +4703,9 @@ Frigo Sistem`;
         quantity: req.body.quantity || 1,
         description: req.body.description || '',
         urgency: req.body.urgency || 'normal',
+        warrantyStatus: 'van garancije' as const, // Default warranty status for mobile requests
         serviceId: serviceId,
-        status: "pending", // Koristi pending status koji admin očekuje
+        status: "pending" as const, // Koristi pending status koji admin očekuje
         technicianId: req.user.technicianId || req.user.id,
         requesterType: "technician",
         requesterUserId: req.user.technicianId || req.user.id,
@@ -4989,7 +5015,7 @@ Frigo Sistem`;
         machineNotes: service.machineNotes || undefined,
         cost: service.cost ? service.cost.toString() : undefined,
         isCompletelyFixed: service.isCompletelyFixed || false,
-        warrantyStatus: service.warrantyStatus || 'nepoznato'
+        warrantyStatus: service.warrantyStatus || 'van garancije'
       };
 
       // 1. OBAVEŠTENJE KLIJENTU (ako ima telefon)
@@ -6465,7 +6491,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
           ...service,
           spareParts: serviceParts || [], // Osiguraj da spareParts uvek postoji
           cost: service.cost ? service.cost.toString() : undefined,
-          warrantyStatus: service.warrantyStatus || 'nepoznato',
+          warrantyStatus: service.warrantyStatus || 'van garancije',
           applianceModel: service.applianceModel || '',
           manufacturerName: service.manufacturerName || '',
           technicianName: service.technicianName || ''

@@ -216,9 +216,20 @@ export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 export const warrantyStatusEnum = z.enum([
   "u garanciji", // u garanciji
   "van garancije", // van garancije
+  "nepoznato", // nepoznato - mora se later ažurirati
 ]);
 
 export type WarrantyStatus = z.infer<typeof warrantyStatusEnum>;
+
+// ===== WARRANTY STATUS STRICT ENUM FOR NEW SERVICES =====
+// This enum has only 2 options for new service creation to avoid UI complexity
+// Keep existing warrantyStatusEnum with 'nepoznato' for legacy data compatibility
+export const warrantyStatusStrictEnum = z.enum([
+  "u garanciji", // under warranty
+  "van garancije", // out of warranty
+]);
+
+export type WarrantyStatusStrict = z.infer<typeof warrantyStatusStrictEnum>;
 
 // Services
 export const services = pgTable("services", {
@@ -309,7 +320,7 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").nullable().optional(),
   description: z.string().min(5, "Opis problema mora biti detaljniji (min. 5 karaktera)").max(1000, "Opis je predugačak"),
   status: serviceStatusEnum.default("pending"),
-  warrantyStatus: warrantyStatusEnum,
+  warrantyStatus: warrantyStatusStrictEnum,
   createdAt: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
     .refine(val => {
