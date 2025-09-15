@@ -55,11 +55,24 @@ interface MonthlyReport {
 
 export default function ComplusBillingReport() {
   const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState<string>(String(currentDate.getMonth() + 1).padStart(2, '0'));
-  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
-  const [enhancedMode, setEnhancedMode] = useState<boolean>(true); // Defaultno koristi enhanced mode
+  
+  // Pokušaj učitati sačuvane vrijednosti iz localStorage
+  const savedMonth = localStorage.getItem('complus_billing_month');
+  const savedYear = localStorage.getItem('complus_billing_year');
+  const savedEnhanced = localStorage.getItem('complus_billing_enhanced');
+  
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    savedMonth || String(currentDate.getMonth() + 1).padStart(2, '0')
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    savedYear ? parseInt(savedYear) : currentDate.getFullYear()
+  );
+  const [enhancedMode, setEnhancedMode] = useState<boolean>(
+    savedEnhanced ? savedEnhanced === 'true' : true
+  );
 
   console.log('[COMPLUS BILLING] Component mounted - Month:', selectedMonth, 'Year:', selectedYear, 'Enhanced:', enhancedMode);
+  console.log('[COMPLUS BILLING] Loaded from localStorage:', { savedMonth, savedYear, savedEnhanced });
 
   const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
   const months = [
@@ -77,6 +90,14 @@ export default function ComplusBillingReport() {
     { value: '12', label: 'Decembar' }
   ];
 
+  // Sačuvaj promjene u localStorage
+  useEffect(() => {
+    localStorage.setItem('complus_billing_month', selectedMonth);
+    localStorage.setItem('complus_billing_year', String(selectedYear));
+    localStorage.setItem('complus_billing_enhanced', String(enhancedMode));
+    console.log('[COMPLUS BILLING] Saved to localStorage:', { selectedMonth, selectedYear, enhancedMode });
+  }, [selectedMonth, selectedYear, enhancedMode]);
+  
   console.log('[COMPLUS BILLING] Enabled check:', {
     selectedMonth,
     selectedYear,
