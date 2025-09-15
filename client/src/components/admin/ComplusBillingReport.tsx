@@ -59,6 +59,8 @@ export default function ComplusBillingReport() {
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [enhancedMode, setEnhancedMode] = useState<boolean>(true); // Defaultno koristi enhanced mode
 
+  console.log('[COMPLUS BILLING] Component mounted - Month:', selectedMonth, 'Year:', selectedYear, 'Enhanced:', enhancedMode);
+
   const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
   const months = [
     { value: '01', label: 'Januar' },
@@ -74,6 +76,12 @@ export default function ComplusBillingReport() {
     { value: '11', label: 'Novembar' },
     { value: '12', label: 'Decembar' }
   ];
+
+  console.log('[COMPLUS BILLING] Enabled check:', {
+    selectedMonth,
+    selectedYear,
+    enabled: !!selectedMonth && !!selectedYear
+  });
 
   // Fetch warranty services for all Complus brands in selected period
   const { data: billingData, isLoading, error } = useQuery({
