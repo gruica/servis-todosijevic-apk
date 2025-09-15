@@ -7567,7 +7567,9 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
       // Kreiraj date range za mesec - za TEXT polja u bazi
       const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDateStr = `${year}-${String(month).padStart(2, '0')}-31`;
+      // Koristi poslednji dan meseca (28/29/30/31 ovisno o mesecu)
+      const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
@@ -7728,7 +7730,9 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
       // Kreiraj date range za mesec - za TEXT polja u bazi
       const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDateStr = `${year}-${String(month).padStart(2, '0')}-31`;
+      // Koristi poslednji dan meseca (28/29/30/31 ovisno o mesecu)
+      const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
 
       console.log(`[REGULAR COMPLUS BILLING] Standardno hvatanje završenih servisa za ${month}/${year}`);
       console.log(`[REGULAR COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
