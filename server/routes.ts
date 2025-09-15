@@ -7876,5 +7876,245 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ============================================================================
+  // NOVA FUNKCIJA: AUTO-DETEKCIJA COMPLUS GARANCIJSKIH SERVISA
+  // ============================================================================
+  // Dodano prema pravilima aplikacije - samo dodavanje, bez menjanja postojećeg koda
+  
+  app.get('/api/admin/billing/complus/smart', jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
+
+      const { month, year } = req.query;
+      
+      if (!month || !year) {
+        return res.status(400).json({ 
+          error: "Parametri month i year su obavezni" 
+        });
+      }
+
+      const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
+
+      // Kreiraj date range za mesec
+      const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+
+      console.log(`[SMART COMPLUS BILLING] 🧠 Pametna auto-detekcija garancijskih servisa za ${month}/${year}`);
+      console.log(`[SMART COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
+      console.log(`[SMART COMPLUS BILLING] Date range: ${startDateStr} do ${endDateStr}`);
+
+      // SMART LOGIKA: Hvata SVE završene ComPlus servise i automatski detektuje garancijski status
+      const services = await db
+        .select({
+          serviceId: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          completedDate: schema.services.completedDate,
+          createdAt: schema.services.createdAt,
+          cost: schema.services.cost,
+          clientName: schema.clients.fullName,
+          clientPhone: schema.clients.phone,
+          clientAddress: schema.clients.address,
+          clientCity: schema.clients.city,
+          applianceCategory: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          applianceModel: schema.appliances.model,
+          serialNumber: schema.appliances.serialNumber,
+          purchaseDate: schema.appliances.purchaseDate, // KLJUČNO za auto-detekciju
+          technicianName: schema.technicians.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .where(
+          and(
+            eq(schema.services.status, 'completed'),
+            // UKLONJEN warranty_status filter - hvata SVE završene ComPlus servise!
+            or(
+              eq(schema.manufacturers.name, 'Electrolux'),
+              eq(schema.manufacturers.name, 'Elica'),
+              eq(schema.manufacturers.name, 'Candy'),
+              eq(schema.manufacturers.name, 'Hoover'),
+              eq(schema.manufacturers.name, 'Turbo Air')
+            ),
+            or(
+              // Prioritetno: servisi sa completedDate u periodu
+              and(
+                isNotNull(schema.services.completedDate),
+                gte(schema.services.completedDate, startDateStr),
+                lte(schema.services.completedDate, endDateStr)
+              ),
+              // Backup: servisi bez completedDate sa createdAt u periodu
+              and(
+                isNull(schema.services.completedDate),
+                gte(schema.services.createdAt, startDateStr),
+                lte(schema.services.createdAt, endDateStr)
+              )
+            )
+          )
+        )
+        .orderBy(
+          desc(schema.services.completedDate),
+          desc(schema.services.createdAt)
+        );
+
+      let autoDetectedWarrantyCount = 0;
+      let overriddenCount = 0;
+
+      // SMART ALGORITAM: Auto-detekcija garancijskog statusa
+      const billingServices = services
+        .map(service => {
+          const hasCompletedDate = service.completedDate && service.completedDate.trim() !== '';
+          const displayDate = hasCompletedDate ? service.completedDate : service.createdAt;
+          const originalWarrantyStatus = service.warrantyStatus;
+          
+          // SMART LOGIKA za detekciju garancijskog statusa
+          let isSmartWarranty = false;
+          let detectionReason = '';
+          
+          // Slučaj 1: Već označen kao "u garanciji" - prihvata
+          if (originalWarrantyStatus === 'u garanciji') {
+            isSmartWarranty = true;
+            detectionReason = 'original_warranty_status';
+          }
+          // Slučaj 2: Auto-detekcija na osnovu datuma kupovine
+          else if (service.purchaseDate && displayDate) {
+            try {
+              const purchaseDate = new Date(service.purchaseDate);
+              const serviceDate = new Date(displayDate);
+              const monthsDiff = (serviceDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+              
+              // ComPlus garantni rok je obično 24 meseca
+              if (monthsDiff <= 24 && monthsDiff >= 0) {
+                isSmartWarranty = true;
+                detectionReason = 'purchase_date_calculation';
+                autoDetectedWarrantyCount++;
+                
+                if (originalWarrantyStatus !== 'u garanciji') {
+                  overriddenCount++;
+                }
+              }
+            } catch (error) {
+              console.error(`[SMART COMPLUS] Greška pri računanju datuma za servis ${service.serviceId}:`, error);
+            }
+          }
+          // Slučaj 3: ComPlus brendovi imaju posebne uslove - ako je označen kao "nepoznato" i noviji je
+          else if (originalWarrantyStatus === 'nepoznato') {
+            try {
+              const serviceDate = new Date(displayDate);
+              const now = new Date();
+              const daysDiff = (now.getTime() - serviceDate.getTime()) / (1000 * 60 * 60 * 24);
+              
+              // Ako je servis noviji od 365 dana i nema jasnu oznaku, verovatno je garancijski
+              if (daysDiff <= 365) {
+                isSmartWarranty = true;
+                detectionReason = 'recent_unknown_status';
+                autoDetectedWarrantyCount++;
+                overriddenCount++;
+              }
+            } catch (error) {
+              console.error(`[SMART COMPLUS] Greška pri računanju recency za servis ${service.serviceId}:`, error);
+            }
+          }
+          
+          return {
+            service,
+            isSmartWarranty,
+            detectionReason,
+            originalWarrantyStatus,
+            displayDate
+          };
+        })
+        .filter(item => item.isSmartWarranty) // Filtrira samo garancijske servise
+        .map(item => ({
+          id: item.service.serviceId,
+          serviceNumber: item.service.serviceId.toString(),
+          clientName: item.service.clientName || 'Nepoznat klijent',
+          clientPhone: item.service.clientPhone || '',
+          clientAddress: item.service.clientAddress || '',
+          clientCity: item.service.clientCity || '',
+          applianceCategory: item.service.applianceCategory || '',
+          manufacturerName: item.service.manufacturerName || '',
+          applianceModel: item.service.applianceModel || '',
+          serialNumber: item.service.serialNumber || '',
+          technicianName: item.service.technicianName || 'Nepoznat serviser',
+          completedDate: item.displayDate,
+          originalCompletedDate: item.service.completedDate,
+          cost: item.service.cost || 0,
+          description: item.service.description || '',
+          warrantyStatus: 'u garanciji', // SMART override
+          originalWarrantyStatus: item.originalWarrantyStatus,
+          isAutoDetected: item.detectionReason !== 'original_warranty_status',
+          detectionMethod: item.detectionReason,
+          purchaseDate: item.service.purchaseDate
+        }));
+
+      // Grupiši servise po brendu za statistiku
+      const servicesByBrand = billingServices.reduce((groups, service) => {
+        const brand = service.manufacturerName;
+        if (!groups[brand]) {
+          groups[brand] = [];
+        }
+        groups[brand].push(service);
+        return groups;
+      }, {} as Record<string, typeof billingServices>);
+
+      // Kreiraj brand breakdown
+      const brandBreakdown = Object.entries(servicesByBrand).map(([brand, services]) => ({
+        brand,
+        count: services.length,
+        cost: services.reduce((sum, s) => sum + (s.cost || 0), 0)
+      }));
+
+      const months = [
+        { value: '01', label: 'Januar' }, { value: '02', label: 'Februar' }, { value: '03', label: 'Mart' },
+        { value: '04', label: 'April' }, { value: '05', label: 'Maj' }, { value: '06', label: 'Jun' },
+        { value: '07', label: 'Jul' }, { value: '08', label: 'Avgust' }, { value: '09', label: 'Septembar' },
+        { value: '10', label: 'Oktobar' }, { value: '11', label: 'Novembar' }, { value: '12', label: 'Decembar' }
+      ];
+
+      const response = {
+        month: months.find(m => m.value === String(month).padStart(2, '0'))?.label || String(month),
+        year: parseInt(year as string),
+        brandGroup: 'ComPlus Smart',
+        complusBrands: complusBrands,
+        services: billingServices,
+        servicesByBrand,
+        totalServices: billingServices.length,
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
+        autoDetectedCount: autoDetectedWarrantyCount,
+        overriddenCount: overriddenCount,
+        detectionSummary: {
+          withOriginalWarrantyStatus: billingServices.filter(s => !s.isAutoDetected).length,
+          autoDetectedByPurchaseDate: billingServices.filter(s => s.detectionMethod === 'purchase_date_calculation').length,
+          autoDetectedByRecency: billingServices.filter(s => s.detectionMethod === 'recent_unknown_status').length
+        },
+        brandBreakdown
+      };
+
+      console.log(`[SMART COMPLUS BILLING] 🧠 Pronađeno ${billingServices.length} SMART garancijskih servisa (${autoDetectedWarrantyCount} auto-detektovanih, ${overriddenCount} prepisanih)`);
+      console.log(`[SMART COMPLUS BILLING] Brendovi u rezultatima:`, Object.keys(servicesByBrand));
+
+      res.json(response);
+
+    } catch (error) {
+      console.error('[SMART COMPLUS BILLING] ❌ Greška:', error);
+      res.status(500).json({ 
+        error: 'Greška pri pametnoj detekciji ComPlus servisa',
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
 }
 
