@@ -13,7 +13,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq, and, desc, gte, lte, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, lt, ne, isNull, isNotNull, like, count, sql, sum, or, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { SMSCommunicationService } from "./sms-communication-service.js";
 const { availableParts, appliances, applianceCategories, manufacturers, services, users, technicians, sparePartOrders, servicePhotos } = schema;
@@ -7597,8 +7597,10 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
       const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
       
-      // ISPRAVKA: Dodaj timestamp na kraj dana za pravilno poređenje sa timestampovima
+      // ISPRAVKA: Za poređenje sa mešanim formatima (datum i timestamp)
+      // Moramo da poredimo i sa datum-only formatom i sa timestamp formatom
       const endDateWithTimestamp = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}T23:59:59.999Z`;
+      const nextMonthStr = `${year}-${String(parseInt(month as string) + 1).padStart(2, '0')}-01`;
 
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
@@ -7646,16 +7648,25 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
             ),
             or(
               // Prioritetno: servisi sa completedDate u periodu
+              // Pokrij oba formata: datum-only (2025-08-28) i timestamp (2025-08-11T17:54:14.183Z)
               and(
                 isNotNull(schema.services.completedDate),
                 gte(schema.services.completedDate, startDateStr),
-                lte(schema.services.completedDate, endDateWithTimestamp)
+                // Za datum-only format poređenje sa '2025-09-01' će raditi
+                // Za timestamp format poređenje sa '2025-08-31T23:59:59.999Z' će raditi
+                or(
+                  lt(schema.services.completedDate, nextMonthStr), // Za datum-only format
+                  lte(schema.services.completedDate, endDateWithTimestamp) // Za timestamp format
+                )
               ),
               // Backup: servisi bez completedDate sa createdAt u periodu (Gruica Todosijević slučajevi)
               and(
                 isNull(schema.services.completedDate),
                 gte(schema.services.createdAt, startDateStr),
-                lte(schema.services.createdAt, endDateWithTimestamp)
+                or(
+                  lt(schema.services.createdAt, nextMonthStr),
+                  lte(schema.services.createdAt, endDateWithTimestamp)
+                )
               )
             )
           )
