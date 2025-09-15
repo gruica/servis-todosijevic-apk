@@ -7718,31 +7718,28 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         return groups;
       }, {} as Record<string, typeof billingServices>);
 
-      // Statistike
-      const stats = {
-        totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
-        servicesByBrand: Object.keys(servicesByBrand).map(brand => ({
-          brand,
-          count: servicesByBrand[brand].length,
-          totalCost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
-        })),
-        autoDetectedCount: billingServices.filter(s => s.isAutoDetected).length
-      };
-
       console.log(`[ENHANCED COMPLUS BILLING] ✅ Pronađeno ${billingServices.length} servisa za period ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi u rezultatima:`, Object.keys(servicesByBrand));
 
       res.json({
-        success: true,
-        services: billingServices,
-        statistics: stats,
         month: parseInt(month as string),
         year: parseInt(year as string),
-        dateRange: {
-          from: startDateStr,
-          to: endDateStr
-        }
+        brandGroup: 'ComPlus',
+        complusBrands: complusBrands,
+        services: billingServices,
+        servicesByBrand: servicesByBrand,
+        totalServices: billingServices.length,
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
+        autoDetectedCount: billingServices.filter(s => s.isAutoDetected).length,
+        detectionSummary: {
+          withCompletedDate: billingServices.filter(s => !s.isAutoDetected).length,
+          withUpdatedDateFallback: billingServices.filter(s => s.isAutoDetected).length
+        },
+        brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
+          brand,
+          count: servicesByBrand[brand].length,
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
+        }))
       });
 
     } catch (error) {
