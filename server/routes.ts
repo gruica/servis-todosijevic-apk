@@ -6015,6 +6015,347 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
 
   console.log('📸 [SERVICE PHOTOS] Endpoint-i uspešno registrovani');
 
+  // ============================================================================
+  // BEKO BILLING ENDPOINTS - Primena Enhanced Mode principa kao za ComPlus
+  // ============================================================================
+  
+  // ENHANCED BEKO BILLING - Automatsko hvatanje svih završenih servisa
+  app.get("/api/admin/billing/beko/enhanced", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
+
+      const { month, year } = req.query;
+      
+      if (!month || !year) {
+        return res.status(400).json({ 
+          error: "Parametri month i year su obavezni" 
+        });
+      }
+
+      // Definišemo SVE Beko brendove koji se fakturišu zajedno
+      const bekoBrands = ['Beko', 'Grundig', 'Blomberg'];
+
+      // Kreiraj date range za mesec - sa pravilnim timestamp poređenjem
+      const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      // Koristi poslednji dan meseca (28/29/30/31 ovisno o mesecu)
+      const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+      
+      // ISPRAVKA: Za poređenje sa mešanim formatima (datum i timestamp)
+      const endDateWithTimestamp = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}T23:59:59.999Z`;
+      // Računaj sledeći mesec pravilno (uključujući prelazak na sledeću godinu)
+      const nextMonth = parseInt(month as string) + 1;
+      const nextMonthYear = nextMonth > 12 ? parseInt(year as string) + 1 : parseInt(year as string);
+      const nextMonthNum = nextMonth > 12 ? 1 : nextMonth;
+      const nextMonthStr = `${nextMonthYear}-${String(nextMonthNum).padStart(2, '0')}-01`;
+
+      console.log(`[ENHANCED BEKO BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
+      console.log(`[ENHANCED BEKO BILLING] Brendovi: ${bekoBrands.join(', ')}`);
+      console.log(`[ENHANCED BEKO BILLING] Date range: ${startDateStr} do ${endDateWithTimestamp}`);
+
+      // ENHANCED LOGIKA: Hvata sve završene servise za Beko brendove
+      const services = await db
+        .select({
+          serviceId: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          completedDate: schema.services.completedDate,
+          createdAt: schema.services.createdAt,
+          cost: schema.services.cost,
+          clientName: schema.clients.fullName,
+          clientPhone: schema.clients.phone,
+          clientAddress: schema.clients.address,
+          clientCity: schema.clients.city,
+          applianceCategory: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          applianceModel: schema.appliances.model,
+          serialNumber: schema.appliances.serialNumber,
+          technicianName: schema.technicians.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .where(
+          and(
+            eq(schema.services.status, 'completed'),
+            eq(schema.services.warrantyStatus, 'u garanciji'), // Samo garancijski servisi
+            or(
+              eq(schema.manufacturers.name, 'Beko'),
+              eq(schema.manufacturers.name, 'Grundig'),
+              eq(schema.manufacturers.name, 'Blomberg')
+            ),
+            or(
+              // Prioritetno: servisi sa completedDate u periodu
+              and(
+                isNotNull(schema.services.completedDate),
+                gte(schema.services.completedDate, startDateStr),
+                or(
+                  lt(schema.services.completedDate, nextMonthStr), // Za datum-only format
+                  lte(schema.services.completedDate, endDateWithTimestamp) // Za timestamp format
+                )
+              ),
+              // Backup: servisi bez completedDate sa createdAt u periodu
+              and(
+                isNull(schema.services.completedDate),
+                gte(schema.services.createdAt, startDateStr),
+                or(
+                  lt(schema.services.createdAt, nextMonthStr),
+                  lte(schema.services.createdAt, endDateWithTimestamp)
+                )
+              )
+            )
+          )
+        )
+        .orderBy(
+          desc(schema.services.completedDate),
+          desc(schema.services.createdAt)
+        );
+
+      // Formatiraj rezultate sa enhanced informacijama
+      const billingServices = services.map(service => {
+        const hasCompletedDate = service.completedDate && service.completedDate.trim() !== '';
+        const displayDate = hasCompletedDate ? service.completedDate : service.createdAt;
+        
+        return {
+          id: service.serviceId,
+          serviceNumber: service.serviceId.toString(),
+          clientName: service.clientName || 'Nepoznat klijent',
+          clientPhone: service.clientPhone || '',
+          clientAddress: service.clientAddress || '',
+          clientCity: service.clientCity || '',
+          applianceCategory: service.applianceCategory || '',
+          manufacturerName: service.manufacturerName || '',
+          applianceModel: service.applianceModel || '',
+          serialNumber: service.serialNumber || '',
+          technicianName: service.technicianName || 'Nepoznat serviser',
+          completedDate: displayDate,
+          originalCompletedDate: service.completedDate,
+          cost: service.cost || 0,
+          description: service.description || '',
+          warrantyStatus: service.warrantyStatus || 'Nedefinirano',
+          isWarrantyService: true, // Svi su garancijski jer filtriramo po warrantyStatus
+          isAutoDetected: !hasCompletedDate, // Flag samo za servise koji stvarno nemaju completedDate
+          detectionMethod: hasCompletedDate ? 'completed_date' : 'created_at_fallback'
+        };
+      });
+
+      // Grupiši servise po brendu za statistiku
+      const servicesByBrand = billingServices.reduce((groups, service) => {
+        const brand = service.manufacturerName;
+        if (!groups[brand]) {
+          groups[brand] = [];
+        }
+        groups[brand].push(service);
+        return groups;
+      }, {} as Record<string, typeof billingServices>);
+
+      console.log(`[ENHANCED BEKO BILLING] ✅ Pronađeno ${billingServices.length} servisa za period ${month}/${year}`);
+      console.log(`[ENHANCED BEKO BILLING] Brendovi u rezultatima:`, Object.keys(servicesByBrand));
+
+      res.json({
+        month: parseInt(month as string),
+        year: parseInt(year as string),
+        brandGroup: 'Beko',
+        bekoBrands: bekoBrands,
+        services: billingServices,
+        servicesByBrand: servicesByBrand,
+        totalServices: billingServices.length,
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
+        autoDetectedCount: billingServices.filter(s => s.isAutoDetected).length,
+        detectionSummary: {
+          withCompletedDate: billingServices.filter(s => !s.isAutoDetected).length,
+          withUpdatedDateFallback: billingServices.filter(s => s.isAutoDetected).length
+        },
+        brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
+          brand,
+          count: servicesByBrand[brand].length,
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
+        }))
+      });
+
+    } catch (error) {
+      console.error('[ENHANCED BEKO BILLING] ❌ Greška:', error);
+      res.status(500).json({ 
+        error: 'Greška pri hvatanju Beko servisa',
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // REGULAR BEKO BILLING - Samo servisi sa completedDate
+  app.get("/api/admin/billing/beko", jwtAuth, async (req, res) => {
+    try {
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ error: "Admin privilegije potrebne" });
+      }
+
+      const { month, year } = req.query;
+      
+      if (!month || !year) {
+        return res.status(400).json({ 
+          error: "Parametri month i year su obavezni" 
+        });
+      }
+
+      // Definišemo SVE Beko brendove koji se fakturišu zajedno
+      const bekoBrands = ['Beko', 'Grundig', 'Blomberg'];
+
+      // Kreiraj date range za mesec - za TEXT polja u bazi
+      const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+
+      console.log(`[REGULAR BEKO BILLING] Standardno hvatanje završenih servisa za ${month}/${year}`);
+      console.log(`[REGULAR BEKO BILLING] Brendovi: ${bekoBrands.join(', ')}`);
+      console.log(`[REGULAR BEKO BILLING] Date range: ${startDateStr} do ${endDateStr}`);
+
+      // REGULAR LOGIKA: Hvata samo servise sa completedDate (tradicionalno)
+      const services = await db
+        .select({
+          serviceId: schema.services.id,
+          clientId: schema.services.clientId,
+          applianceId: schema.services.applianceId,
+          technicianId: schema.services.technicianId,
+          description: schema.services.description,
+          status: schema.services.status,
+          warrantyStatus: schema.services.warrantyStatus,
+          completedDate: schema.services.completedDate,
+          createdAt: schema.services.createdAt,
+          cost: schema.services.cost,
+          clientName: schema.clients.fullName,
+          clientPhone: schema.clients.phone,
+          clientAddress: schema.clients.address,
+          clientCity: schema.clients.city,
+          applianceCategory: schema.applianceCategories.name,
+          manufacturerName: schema.manufacturers.name,
+          applianceModel: schema.appliances.model,
+          serialNumber: schema.appliances.serialNumber,
+          technicianName: schema.technicians.fullName
+        })
+        .from(schema.services)
+        .leftJoin(schema.clients, eq(schema.services.clientId, schema.clients.id))
+        .leftJoin(schema.appliances, eq(schema.services.applianceId, schema.appliances.id))
+        .leftJoin(schema.applianceCategories, eq(schema.appliances.categoryId, schema.applianceCategories.id))
+        .leftJoin(schema.manufacturers, eq(schema.appliances.manufacturerId, schema.manufacturers.id))
+        .leftJoin(schema.technicians, eq(schema.services.technicianId, schema.technicians.id))
+        .where(
+          and(
+            eq(schema.services.status, 'completed'),
+            eq(schema.services.warrantyStatus, 'u garanciji'), // Samo garancijski servisi
+            or(
+              eq(schema.manufacturers.name, 'Beko'),
+              eq(schema.manufacturers.name, 'Grundig'),
+              eq(schema.manufacturers.name, 'Blomberg')
+            ),
+            // SAMO servisi sa completedDate u periodu (tradicionalno)
+            and(
+              isNotNull(schema.services.completedDate),
+              gte(schema.services.completedDate, startDateStr),
+              lte(schema.services.completedDate, endDateStr)
+            )
+          )
+        )
+        .orderBy(
+          desc(schema.services.completedDate)
+        );
+
+      // Formatiraj rezultate (svi su regularni servisi sa completedDate)
+      const billingServices = services.map(service => ({
+        id: service.serviceId,
+        serviceNumber: service.serviceId.toString(),
+        clientName: service.clientName || 'Nepoznat klijent',
+        clientPhone: service.clientPhone || '',
+        clientAddress: service.clientAddress || '',
+        clientCity: service.clientCity || '',
+        applianceCategory: service.applianceCategory || '',
+        manufacturerName: service.manufacturerName || '',
+        applianceModel: service.applianceModel || '',
+        serialNumber: service.serialNumber || '',
+        technicianName: service.technicianName || 'Nepoznat serviser',
+        completedDate: service.completedDate,
+        originalCompletedDate: service.completedDate,
+        cost: service.cost || 0,
+        description: service.description || '',
+        warrantyStatus: service.warrantyStatus || 'Nedefinirano',
+        isWarrantyService: true, // Svi su garancijski jer filtriramo po warrantyStatus
+        isAutoDetected: false, // Nijedan nije auto-detektovan
+        detectionMethod: 'completed_date'
+      }));
+
+      // Grupiši servise po brendu za statistiku
+      const servicesByBrand = billingServices.reduce((groups, service) => {
+        const brand = service.manufacturerName;
+        if (!groups[brand]) {
+          groups[brand] = [];
+        }
+        groups[brand].push(service);
+        return groups;
+      }, {} as Record<string, typeof billingServices>);
+
+      // Kreiranje brand breakdown statistika
+      const brandBreakdown = Object.keys(servicesByBrand).map(brand => ({
+        brand,
+        count: servicesByBrand[brand].length,
+        cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
+      }));
+
+      // Kreiranje months array - dodano jer je potrebno za response
+      const months = [
+        { value: '01', label: 'Januar' },
+        { value: '02', label: 'Februar' },
+        { value: '03', label: 'Mart' },
+        { value: '04', label: 'April' },
+        { value: '05', label: 'Maj' },
+        { value: '06', label: 'Jun' },
+        { value: '07', label: 'Jul' },
+        { value: '08', label: 'Avgust' },
+        { value: '09', label: 'Septembar' },
+        { value: '10', label: 'Oktobar' },
+        { value: '11', label: 'Novembar' },
+        { value: '12', label: 'Decembar' }
+      ];
+
+      // Formatiraj response u skladu sa BekoMonthlyReport interfejsom
+      const response = {
+        month: months.find(m => m.value === String(month).padStart(2, '0'))?.label || String(month),
+        year: parseInt(year as string),
+        brandGroup: 'Beko',
+        bekoBrands: bekoBrands,
+        services: billingServices,
+        servicesByBrand,
+        totalServices: billingServices.length,
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
+        autoDetectedCount: 0, // Regular mod nikad nema auto-detektovanih
+        detectionSummary: {
+          withCompletedDate: billingServices.length,
+          withUpdatedDateFallback: 0
+        },
+        brandBreakdown
+      };
+
+      console.log(`[REGULAR BEKO BILLING] ✅ Pronađeno ${billingServices.length} servisa za period ${month}/${year}`);
+      console.log(`[REGULAR BEKO BILLING] Brendovi u rezultatima:`, Object.keys(servicesByBrand));
+
+      res.json(response);
+
+    } catch (error) {
+      console.error('[REGULAR BEKO BILLING] ❌ Greška:', error);
+      res.status(500).json({ 
+        error: 'Greška pri hvatanju Beko servisa',
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
   return server;
 }
 
