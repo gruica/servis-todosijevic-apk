@@ -89,17 +89,24 @@ export default function ComplusBillingReport() {
         year: (params as any).year.toString()
       });
       
+      console.log('[COMPLUS BILLING] Pozivam API:', `${endpoint}?${urlParams}`, 'Token:', !!localStorage.getItem('auth_token'));
+      
       const response = await fetch(`${endpoint}?${urlParams}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         }
       });
       
+      console.log('[COMPLUS BILLING] Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('[COMPLUS BILLING] Error response:', errorText);
         throw new Error(`Greška pri dohvatanju podataka: ${errorText}`);
       }
-      return await response.json() as MonthlyReport;
+      const result = await response.json() as MonthlyReport;
+      console.log('[COMPLUS BILLING] Uspešno dohvaćeni podaci:', result);
+      return result;
     }
   });
 
