@@ -7605,6 +7605,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         .where(
           and(
             eq(schema.services.status, 'completed'),
+            eq(schema.services.warrantyStatus, 'u garanciji'), // Samo garancijski servisi
             or(
               eq(schema.manufacturers.name, 'Electrolux'),
               eq(schema.manufacturers.name, 'Elica'),
