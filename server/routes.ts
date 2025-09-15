@@ -7527,7 +7527,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
       // Postavi headers za PDF download
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="servis-izvještaj-${serviceId}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="service-report-${serviceId}.pdf"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.setHeader('Cache-Control', 'no-cache');
       

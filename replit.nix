@@ -1,5 +1,8 @@
 {pkgs}: {
   deps = [
+    pkgs.pango
+    pkgs.cairo
+    pkgs.glib
     pkgs.android-tools
     pkgs.openjdk17
     pkgs.gradle
