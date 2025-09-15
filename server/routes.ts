@@ -7600,7 +7600,11 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       // ISPRAVKA: Za poređenje sa mešanim formatima (datum i timestamp)
       // Moramo da poredimo i sa datum-only formatom i sa timestamp formatom
       const endDateWithTimestamp = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}T23:59:59.999Z`;
-      const nextMonthStr = `${year}-${String(parseInt(month as string) + 1).padStart(2, '0')}-01`;
+      // Računaj sledeći mesec pravilno (uključujući prelazak na sledeću godinu)
+      const nextMonth = parseInt(month as string) + 1;
+      const nextMonthYear = nextMonth > 12 ? parseInt(year as string) + 1 : parseInt(year as string);
+      const nextMonthNum = nextMonth > 12 ? 1 : nextMonth;
+      const nextMonthStr = `${nextMonthYear}-${String(nextMonthNum).padStart(2, '0')}-01`;
 
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
