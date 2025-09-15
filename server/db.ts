@@ -41,6 +41,9 @@ pool.on('error', (err: any) => {
   } else if (err.code === '08006' || err.code === '08001' || err.code === '08004') {
     console.error('Baza: Greška konekcije. Provjerite mrežnu vezu i postavke baze.');
   }
+  
+  // Prevent the error from causing uncaught exceptions
+  // This is particularly important for Neon serverless connection issues
 });
 
 export const db = drizzle({ 

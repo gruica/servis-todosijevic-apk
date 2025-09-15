@@ -265,6 +265,18 @@ app.use((req, res, next) => {
   // Handle uncaught exceptions and unhandled rejections
   process.on('uncaughtException', (error) => {
     console.error('❌ [UNCAUGHT EXCEPTION]:', error);
+    
+    // Don't shutdown on Neon database errors - they're usually temporary
+    const errorMessage = error.message || '';
+    const errorStack = error.stack || '';
+    
+    if (errorMessage.includes('Cannot set property message') && 
+        errorStack.includes('@neondatabase/serverless')) {
+      console.log('🔧 [DATABASE] Ignoring known Neon database error - continuing operation');
+      return;
+    }
+    
+    // Only shutdown on severe errors that are not database-related
     gracefulShutdown('UNCAUGHT_EXCEPTION');
   });
   
