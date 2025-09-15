@@ -4328,7 +4328,7 @@ Frigo Sistem`;
           applianceId: appliance.id,
           description: description.trim(),
           status: "pending" as const,
-          warrantyStatus: "nepoznato" as const, // Default za business partners
+          warrantyStatus: "van garancije" as const, // Default za business partners - van garancije zbog sigurnosti
           createdAt: new Date().toISOString().split('T')[0],
           technicianId: null, // Biće dodeljen kasnije
           scheduledDate: null,

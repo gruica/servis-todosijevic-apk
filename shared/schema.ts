@@ -216,7 +216,6 @@ export type ServiceStatus = z.infer<typeof serviceStatusEnum>;
 export const warrantyStatusEnum = z.enum([
   "u garanciji", // u garanciji
   "van garancije", // van garancije
-  "nepoznato", // nepoznato - mora se later ažurirati
 ]);
 
 export type WarrantyStatus = z.infer<typeof warrantyStatusEnum>;
