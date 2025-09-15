@@ -7591,15 +7591,18 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       // Definišemo SVE Complus brendove koji se fakturišu zajedno
       const complusBrands = ['Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'];
 
-      // Kreiraj date range za mesec - za TEXT polja u bazi
+      // Kreiraj date range za mesec - sa pravilnim timestamp poređenjem
       const startDateStr = `${year}-${String(month).padStart(2, '0')}-01`;
       // Koristi poslednji dan meseca (28/29/30/31 ovisno o mesecu)
       const lastDayOfMonth = new Date(parseInt(year as string), parseInt(month as string), 0).getDate();
       const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+      
+      // ISPRAVKA: Dodaj timestamp na kraj dana za pravilno poređenje sa timestampovima
+      const endDateWithTimestamp = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}T23:59:59.999Z`;
 
       console.log(`[ENHANCED COMPLUS BILLING] Automatsko hvatanje SVIH završenih servisa za ${month}/${year}`);
       console.log(`[ENHANCED COMPLUS BILLING] Brendovi: ${complusBrands.join(', ')}`);
-      console.log(`[ENHANCED COMPLUS BILLING] Date range: ${startDateStr} do ${endDateStr}`);
+      console.log(`[ENHANCED COMPLUS BILLING] Date range: ${startDateStr} do ${endDateWithTimestamp}`);
 
       // ENHANCED LOGIKA: Hvata sve završene servise za ComPlus brendove
       const services = await db
@@ -7646,13 +7649,13 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
               and(
                 isNotNull(schema.services.completedDate),
                 gte(schema.services.completedDate, startDateStr),
-                lte(schema.services.completedDate, endDateStr)
+                lte(schema.services.completedDate, endDateWithTimestamp)
               ),
               // Backup: servisi bez completedDate sa createdAt u periodu (Gruica Todosijević slučajevi)
               and(
                 isNull(schema.services.completedDate),
                 gte(schema.services.createdAt, startDateStr),
-                lte(schema.services.createdAt, endDateStr)
+                lte(schema.services.createdAt, endDateWithTimestamp)
               )
             )
           )
