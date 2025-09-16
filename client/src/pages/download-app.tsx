@@ -145,7 +145,7 @@ export default function DownloadAppPage() {
       // Create download link
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'FrigoSistem-v2025.1.0.apk';
+      link.download = 'FrigoSistem-v1.0.apk';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -519,7 +519,7 @@ export default function DownloadAppPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Verzija:</span>
-                  <span className="font-medium">v2025.1.0</span>
+                  <span className="font-medium">v1.0</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Platforma:</span>
