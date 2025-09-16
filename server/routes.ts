@@ -141,6 +141,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Security audit log
       console.log(`[SECURITY AUDIT] Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
       
+      // Prevent caching to ensure fresh data with new enriched structure
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const orders = await storage.getAllSparePartOrders();
       res.json(orders);
     } catch (error) {

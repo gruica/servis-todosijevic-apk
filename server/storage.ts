@@ -3372,9 +3372,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllSparePartOrders(): Promise<any[]> {
     try {
-      // RAW SQL pristup da zaobiđe Drizzle ORM greške
+      // RAW SQL pristup da zaobiđe Drizzle ORM greške - KOMPLETNI SELECT SA SVIM POLJIMA
       const result = await pool.query(`
-        SELECT id, part_name, quantity, status, urgency, created_at,
+        SELECT id, part_name, part_number, quantity, status, urgency, 
+               created_at, updated_at, supplier_name, estimated_cost, 
+               actual_cost, admin_notes, description,
                service_id AS "serviceId", technician_id AS "technicianId",
                'technician' as requester_type,
                technician_id as requester_user_id,
@@ -3421,6 +3423,25 @@ export class DatabaseStorage implements IStorage {
 
           return {
             ...order,
+            // Mapuj snake_case iz baze u camelCase za frontend
+            id: order.id,
+            partName: order.part_name,
+            partNumber: order.part_number,
+            quantity: order.quantity,
+            status: order.status,
+            urgency: order.urgency,
+            createdAt: order.created_at,
+            updatedAt: order.updated_at,
+            supplierName: order.supplier_name,
+            estimatedCost: order.estimated_cost,
+            actualCost: order.actual_cost,
+            adminNotes: order.admin_notes,
+            description: order.description,
+            serviceId: order.serviceId,
+            technicianId: order.technicianId,
+            requesterType: order.requester_type,
+            requesterUserId: order.requester_user_id,
+            requesterName: order.requester_name,
             service: serviceData,
             technician: technicianData
           };
