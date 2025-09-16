@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Security audit log
-      console.log(`[SECURITY AUDIT] Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
+      console.log(`📦 [MAIN SPARE-PARTS] Admin ${req.user?.username} traži GLAVNU listu rezervnih delova - SA ENRICHED PODACIMA!`);
       
       // Prevent caching to ensure fresh data with new enriched structure
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -147,6 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Expires', '0');
       
       const orders = await storage.getAllSparePartOrders();
+      console.log(`📦 [MAIN SPARE-PARTS] Vraćam ${orders.length} order-a sa enriched podacima`);
+      
       res.json(orders);
     } catch (error) {
       console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
