@@ -168,8 +168,10 @@ const SparePartsOrders = memo(function SparePartsOrders() {
 
   // Debug logging for TanStack Query v5
   useEffect(() => {
+    console.log('🎯 [TABLE-COMPONENT] SparePartsOrders komponenta se renderuje!');
     if (orders && orders.length > 0) {
       console.log('✅ Spare parts data received:', orders.length, 'orders');
+      console.log('🔄 [TABLE-RENDERING] Prikazujem tabelu sa', orders.length, 'redova');
     }
     if (error) {
       console.error('❌ Spare parts query error:', error);
