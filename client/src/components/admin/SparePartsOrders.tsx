@@ -152,6 +152,13 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   // Fetch all spare part orders
   const { data: orders = [], isLoading, error } = useQuery<SparePartOrder[]>({
     queryKey: ['/api/admin/spare-parts'],
+    queryFn: async () => {
+      console.log('🔄 [SPARE-PARTS] Pozivam glavni endpoint /api/admin/spare-parts');
+      const response = await apiRequest('/api/admin/spare-parts');
+      const data = await response.json();
+      console.log('✅ [SPARE-PARTS] Dobio podatke:', data.length, 'orders');
+      return data;
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
