@@ -54,8 +54,9 @@ const newServiceSchema = z.object({
   serialNumber: z.string().optional().or(z.literal("")),
   purchaseDate: z.string().optional().or(z.literal("")),
   
-  // Podaci o servisu - samo opis je obavezan
+  // Podaci o servisu
   description: z.string().min(1, "Opis problema je obavezan"),
+  warrantyStatus: z.string().min(1, "Status garancije je obavezan - molimo odaberite opciju"),
   saveClientData: z.boolean().default(true),
 });
 
@@ -71,7 +72,8 @@ export default function NewBusinessServiceRequest() {
   const [expandedSections, setExpandedSections] = useState({
     client: true,
     appliance: true,
-    description: true
+    description: true,
+    warranty: true
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -123,6 +125,7 @@ export default function NewBusinessServiceRequest() {
       serialNumber: "",
       purchaseDate: "",
       description: "",
+      warrantyStatus: "",
       saveClientData: true,
     },
   });
@@ -153,7 +156,10 @@ export default function NewBusinessServiceRequest() {
             serialNumber: data.serialNumber?.trim() || "",
             
             // Opis servisa
-            description: data.description.trim()
+            description: data.description.trim(),
+            
+            // OBAVEZNO - Status garancije
+            warrantyStatus: data.warrantyStatus
           })
         });
         
@@ -466,6 +472,57 @@ export default function NewBusinessServiceRequest() {
                   )}
                 </Card>
 
+                {/* Warranty Status Section */}
+                <Card>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleSection('warranty')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg text-red-600">Status garancije *</CardTitle>
+                      {expandedSections.warranty ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </CardHeader>
+                  {expandedSections.warranty && (
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="warrantyStatus"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-red-600 font-semibold">Status garancije *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className={!field.value ? "border-red-300" : ""}>
+                                  <SelectValue placeholder="OBAVEZAN IZBOR - odaberite status garancije" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="u garanciji">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span>U garanciji</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="van garancije">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                    <span>Van garancije</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            <FormDescription className="text-red-600 text-sm">
+                              * OBAVEZNO POLJE - Molimo odaberite da li je uređaj u garanciji ili van garancije
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  )}
+                </Card>
+
                 {/* Description Section */}
                 <Card>
                   <CardHeader 
@@ -607,7 +664,7 @@ export default function NewBusinessServiceRequest() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    setExpandedSections({ client: true, appliance: true, description: true });
+                    setExpandedSections({ client: true, appliance: true, description: true, warranty: true });
                   }}
                 >
                   Otvori sve sekcije
@@ -617,7 +674,7 @@ export default function NewBusinessServiceRequest() {
                   variant="outline" 
                   size="sm"
                   onClick={() => {
-                    setExpandedSections({ client: false, appliance: false, description: true });
+                    setExpandedSections({ client: false, appliance: false, description: true, warranty: true });
                   }}
                 >
                   Zatvori sve sekcije
