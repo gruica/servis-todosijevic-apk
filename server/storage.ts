@@ -3585,7 +3585,7 @@ export class DatabaseStorage implements IStorage {
       const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
-               service_id, technician_id,
+               service_id AS "serviceId", technician_id AS "technicianId",
                'technician' as requester_type,
                technician_id as requester_user_id,
                'Serviser' as requester_name
