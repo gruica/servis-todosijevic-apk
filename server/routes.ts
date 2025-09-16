@@ -162,6 +162,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/spare-parts/all-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       console.log("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
+      
+      // Prevent caching to ensure fresh data with new enriched structure
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const orders = await storage.getAllRequestsSparePartOrders();
       res.json(orders);
     } catch (error) {

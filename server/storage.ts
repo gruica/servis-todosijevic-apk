@@ -3595,28 +3595,71 @@ export class DatabaseStorage implements IStorage {
       `);
       
       console.log(`📋 [ALL-REQUESTS] Pronađeno ${result.rows.length} zahteva (pending + requested)`);
-      
-      // Mapuj snake_case iz baze u camelCase za frontend
-      return result.rows.map(row => ({
-        id: row.id,
-        partName: row.part_name,
-        partNumber: row.part_number,
-        quantity: row.quantity,
-        status: row.status,
-        urgency: row.urgency,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        supplierName: row.supplier_name,
-        estimatedCost: row.estimated_cost,
-        actualCost: row.actual_cost,
-        adminNotes: row.admin_notes,
-        description: row.description,
-        serviceId: row.service_id,
-        technicianId: row.technician_id,
-        requesterType: row.requester_type,
-        requesterUserId: row.requester_user_id,
-        requesterName: row.requester_name
-      }));
+      const orders = result.rows;
+
+      // Zatim dodaj povezane podatke za svaki order (ista logika kao getAllSparePartOrders)
+      const enrichedOrders = await Promise.all(
+        orders.map(async (order) => {
+          let serviceData = undefined;
+          let technicianData = undefined;
+
+          // Dodaj service podatke ako postoji serviceId
+          if (order.serviceId) {
+            try {
+              const service = await this.getAdminServiceById(order.serviceId);
+              if (service) {
+                serviceData = service;
+              }
+            } catch (error) {
+              console.log(`Servis ${order.serviceId} nije pronađen:`, error);
+            }
+          }
+
+          // Dodaj technician podatke ako postoji technicianId  
+          if (order.technicianId) {
+            try {
+              const technician = await this.getTechnician(order.technicianId);
+              if (technician) {
+                technicianData = {
+                  name: technician.name,
+                  phone: technician.phone || '',
+                  email: technician.email || '',
+                  specialization: technician.specialization || ''
+                };
+              }
+            } catch (error) {
+              console.log(`Serviser ${order.technicianId} nije pronađen:`, error);
+            }
+          }
+
+          return {
+            ...order,
+            // Mapuj snake_case iz baze u camelCase za frontend
+            id: order.id,
+            partName: order.part_name,
+            partNumber: order.part_number,
+            quantity: order.quantity,
+            status: order.status,
+            urgency: order.urgency,
+            createdAt: order.created_at,
+            updatedAt: order.updated_at,
+            supplierName: order.supplier_name,
+            estimatedCost: order.estimated_cost,
+            actualCost: order.actual_cost,
+            adminNotes: order.admin_notes,
+            description: order.description,
+            serviceId: order.serviceId,
+            technicianId: order.technicianId,
+            requesterType: order.requester_type,
+            requesterUserId: order.requester_user_id,
+            requesterName: order.requester_name,
+            service: serviceData,
+            technician: technicianData
+          };
+        })
+      );
+
+      return enrichedOrders;
     } catch (error) {
       console.error('❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:', error);
       throw error;
