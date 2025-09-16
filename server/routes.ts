@@ -1015,6 +1015,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download source ZIP endpoint for developers
+  app.get("/api/downloads/source-zip", async (req, res) => {
+    try {
+      const zipPath = path.join(process.cwd(), 'android/app/src/main/assets/public/ServisAplikacija-MacNodeJS.zip');
+      
+      // Check if ZIP exists
+      await fs.access(zipPath);
+      
+      const stat = await fs.stat(zipPath);
+      
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Length', stat.size.toString());
+      res.setHeader('Content-Disposition', 'attachment; filename="ServisAplikacija-MacNodeJS.zip"');
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      // Send file
+      res.sendFile(zipPath);
+      
+      console.log(`📦 ZIP source preuzet - veličina: ${(stat.size / (1024 * 1024)).toFixed(1)}MB`);
+      
+    } catch (error) {
+      console.error('ZIP download error:', error);
+      res.status(404).json({ 
+        error: "ZIP fajl nije pronađen",
+        message: "Molimo kontaktirajte administratora."
+      });
+    }
+  });
+
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
 
