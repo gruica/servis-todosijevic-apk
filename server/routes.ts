@@ -30,6 +30,7 @@ import { ServisKomercNotificationService } from './servis-komerc-notification-se
 import { aiPredictiveMaintenanceService } from './services/ai-predictive-maintenance.js';
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
+import QRCode from 'qrcode';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -797,6 +798,220 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(`❌ [DELETE] Greška pri brisanju spare parts order-a:`, error);
       res.status(500).json({ error: "Greška pri brisanju porudžbine rezervnog dela" });
+    }
+  });
+
+  // ===== APK DOWNLOAD SYSTEM =====
+  // Download statistics interface
+  interface DownloadHistoryEntry {
+    timestamp: string;
+    device: 'android' | 'ios' | 'desktop' | 'unknown';
+    userAgent: string;
+    ip: string;
+  }
+
+  interface DownloadStats {
+    total: number;
+    byDevice: {
+      android: number;
+      ios: number;
+      desktop: number;
+      unknown: number;
+    };
+    history: DownloadHistoryEntry[];
+  }
+
+  // In-memory statistics tracking
+  const downloadStats: DownloadStats = {
+    total: 0,
+    byDevice: {
+      android: 0,
+      ios: 0,
+      desktop: 0,
+      unknown: 0
+    },
+    history: []
+  };
+
+  // Device detection helper
+  function detectDevice(userAgent: string): 'android' | 'ios' | 'desktop' | 'unknown' {
+    const ua = userAgent.toLowerCase();
+    if (ua.includes('android')) return 'android';
+    if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ios')) return 'ios';
+    if (ua.includes('windows') || ua.includes('macintosh') || ua.includes('linux')) return 'desktop';
+    return 'unknown';
+  }
+
+  // APK Landing Page - Let React Router handle this route
+  // Note: This will be handled by the SPA fallback in the main server setup
+
+  // APK Download endpoint with device detection and statistics
+  app.get("/api/downloads/apk", async (req, res) => {
+    try {
+      const apkPath = path.join(process.cwd(), 'android/app/build/outputs/apk/release/app-release.apk');
+      
+      // Check if APK exists
+      await fs.access(apkPath);
+      
+      const userAgent = req.get('User-Agent') || '';
+      const device = detectDevice(userAgent);
+      
+      // Update statistics
+      downloadStats.total++;
+      downloadStats.byDevice[device as keyof typeof downloadStats.byDevice]++;
+      downloadStats.history.push({
+        timestamp: new Date().toISOString(),
+        device,
+        userAgent,
+        ip: req.ip || 'unknown'
+      });
+
+      // Keep only last 1000 entries in history
+      if (downloadStats.history.length > 1000) {
+        downloadStats.history = downloadStats.history.slice(-1000);
+      }
+
+      console.log(`📱 [APK DOWNLOAD] Device: ${device}, Total downloads: ${downloadStats.total}`);
+
+      // Set proper headers for APK download
+      res.set({
+        'Content-Type': 'application/vnd.android.package-archive',
+        'Content-Disposition': 'attachment; filename="FrigoSistem-v2025.1.0.apk"',
+        'Content-Security-Policy': 'default-src \'none\'',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      });
+
+      // Stream the APK file
+      const stat = await fs.stat(apkPath);
+      res.set('Content-Length', stat.size.toString());
+      
+      const { createReadStream } = await import('fs');
+      const readStream = createReadStream(apkPath);
+      readStream.pipe(res);
+
+    } catch (error) {
+      console.error('❌ [APK DOWNLOAD] Error:', error);
+      
+      if ((error as any)?.code === 'ENOENT') {
+        return res.status(404).json({ 
+          error: 'APK file not found',
+          message: 'The APK file is not currently available. Please try again later.'
+        });
+      }
+
+      res.status(500).json({ 
+        error: 'Download failed',
+        message: 'Unable to download APK file. Please try again later.'
+      });
+    }
+  });
+
+  // Download statistics endpoint
+  app.get("/api/downloads/stats", (req, res) => {
+    const stats = {
+      total: downloadStats.total,
+      byDevice: { ...downloadStats.byDevice },
+      lastUpdated: new Date().toISOString(),
+      recentDownloads: downloadStats.history.slice(-10).map(entry => ({
+        timestamp: entry.timestamp,
+        device: entry.device,
+        // Don't expose full user agent and IP for privacy
+        hasUserAgent: !!entry.userAgent
+      }))
+    };
+
+    res.json(stats);
+  });
+
+  // Rate limiting for QR generation (per IP)
+  const qrRateLimit = new Map<string, { count: number; resetTime: number }>();
+
+  function isValidUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      // Only allow http and https protocols
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return false;
+      }
+      // Max URL length 2KB to prevent abuse
+      if (url.length > 2048) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function checkQRRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const limit = qrRateLimit.get(ip);
+    
+    if (!limit || now > limit.resetTime) {
+      // Reset every 5 minutes, allow 10 requests per window
+      qrRateLimit.set(ip, { count: 1, resetTime: now + 300000 });
+      return true;
+    }
+    
+    if (limit.count >= 10) {
+      return false;
+    }
+    
+    limit.count++;
+    return true;
+  }
+
+  // Generate QR code for download link
+  app.get("/api/downloads/qr", async (req, res) => {
+    try {
+      const { url, size = '200' } = req.query;
+      const clientIP = req.ip || 'unknown';
+      
+      // Rate limiting check
+      if (!checkQRRateLimit(clientIP)) {
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded',
+          message: 'Too many QR code requests. Please try again later.' 
+        });
+      }
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL parameter is required' });
+      }
+
+      // URL validation
+      if (!isValidUrl(url)) {
+        return res.status(400).json({ 
+          error: 'Invalid URL',
+          message: 'URL must be a valid http/https URL under 2KB' 
+        });
+      }
+
+      // Size validation: clamp between 100-512px
+      const qrSize = Math.min(512, Math.max(100, parseInt(size as string) || 200));
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(url, {
+        width: qrSize,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+
+      // Return as base64 image
+      res.set('Content-Type', 'image/png');
+      res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.set('X-Content-Type-Options', 'nosniff');
+      
+      const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '');
+      res.send(Buffer.from(base64Data, 'base64'));
+
+    } catch (error) {
+      console.error('❌ [QR CODE] Error:', error);
+      res.status(500).json({ error: 'Failed to generate QR code' });
     }
   });
 
