@@ -269,9 +269,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const requestData = {
         ...req.body,
-        status: "requested",
+        status: "requested" as "requested",
         technicianId: req.user.technicianId || req.user.id,
-        requesterType: "technician",
+        requesterType: "technician" as "technician",
         requesterUserId: req.user.technicianId || req.user.id,
         requesterName: req.user.fullName || req.user.username
       };
@@ -385,18 +385,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Pripremi podatke za opšti email template
             const orderData = {
               partName: existingOrder.partName,
-              partNumber: existingOrder.partNumber,
+              partNumber: existingOrder.partNumber ?? undefined,
               quantity: existingOrder.quantity,
               urgency: urgency,
-              description: existingOrder.description,
-              serviceId: existingOrder.serviceId,
+              description: existingOrder.description ?? undefined,
+              serviceId: existingOrder.serviceId ?? undefined,
               clientName: clientData?.fullName,
               clientPhone: clientData?.phone,
               applianceModel: applianceData?.model,
               applianceSerialNumber: applianceData?.serialNumber,
               manufacturerName: manufacturerName,
-              categoryName: applianceData?.categoryName || serviceData?.categoryName,
-              technicianName: technicianData?.name,
+              categoryName: categoryData?.name || 'Uređaj',
+              technicianName: technicianData?.fullName,
               orderDate: new Date(),
               adminNotes: adminNotes
             };
@@ -431,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key,
+          apiKey: settingsMap.sms_mobile_api_key || '',
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -443,11 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientId: serviceData?.clientId || 0,
             clientName: clientData.fullName,
             clientPhone: clientData.phone,
-            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceType: categoryData?.name || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.name,
+            technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: estimatedDelivery || '3-5 dana',
@@ -619,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingOrder.partName,
             existingOrder.partNumber || 'N/A',
             'normal', // urgency default
-            existingOrder.description
+            existingOrder.description ?? undefined
           );
 
           if (complusEmailSent) {
@@ -643,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key,
+          apiKey: settingsMap.sms_mobile_api_key || '',
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -655,11 +655,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientId: serviceData?.clientId || 0,
             clientName: clientData.fullName,
             clientPhone: clientData.phone,
-            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceType: categoryData?.name || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
             manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.name,
+            technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: '3-5 dana',
@@ -1323,9 +1323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: parseFloat(totalValue) || 0,
         clientName: clientName || "",
         applianceModel: applianceModel || "",
-        status: "pending",
+        status: "pending" as "pending",
         createdAt: new Date().toISOString(),
-        requesterType: "admin",
+        requesterType: "admin" as "admin",
         requesterUserId: reqUser.id,
         requesterName: reqUser.fullName || reqUser.username
       };
@@ -4939,9 +4939,9 @@ Frigo Sistem`;
         urgency: req.body.urgency || 'normal',
         warrantyStatus: 'van garancije' as const, // Default warranty status for mobile requests
         serviceId: serviceId,
-        status: "pending" as const, // Koristi pending status koji admin očekuje
+        status: "pending" as "pending", // Koristi pending status koji admin očekuje
         technicianId: req.user.technicianId || req.user.id,
-        requesterType: "technician",
+        requesterType: "technician" as "technician",
         requesterUserId: req.user.technicianId || req.user.id,
         requesterName: req.user.fullName || req.user.username
       };

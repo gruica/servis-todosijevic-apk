@@ -952,6 +952,16 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   expectedDelivery: timestamp("expected_delivery"),
   receivedDate: timestamp("received_date"),
   adminNotes: text("admin_notes"), // Napomene administratora
+  requesterType: text("requester_type"), // admin, technician - ko je kreirao zahtev
+  requesterUserId: integer("requester_user_id"), // ID korisnika koji je kreirao zahtev
+  requesterName: text("requester_name"), // Ime korisnika koji je kreirao zahtev
+  receivedBy: integer("received_by"), // ID administratora koji je potvrdio prijem
+  receivedAt: timestamp("received_at"), // Datum potvrde prijema
+  madeAvailableBy: integer("made_available_by"), // ID administratora koji je prebacio u dostupno
+  madeAvailableAt: timestamp("made_available_at"), // Datum prebacivanja u dostupno
+  consumedBy: integer("consumed_by"), // ID servisera koji je potrošio deo
+  consumedAt: timestamp("consumed_at"), // Datum potrošnje
+  consumedForServiceId: integer("consumed_for_service_id"), // Za koji servis je potrošen
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1048,7 +1058,6 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: true,
   urgency: true,
   status: true,
-  warrantyStatus: true,
   estimatedCost: true,
   actualCost: true,
   supplierName: true,
@@ -1069,11 +1078,11 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
   urgency: sparePartUrgencyEnum.default("normal"),
   status: sparePartStatusEnum.default("pending"),
-  warrantyStatus: sparePartWarrantyStatusEnum,
   estimatedCost: z.string().max(50, "Procenjena cena je predugačka").or(z.literal("")).optional(),
   actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
   supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
   adminNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+  warrantyStatus: sparePartWarrantyStatusEnum,
   isDelivered: z.boolean().default(false).optional(),
   deliveryConfirmedBy: z.number().int().positive().optional(),
   autoRemoveAfterDelivery: z.boolean().default(true).optional(),

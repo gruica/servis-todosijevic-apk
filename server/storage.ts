@@ -361,6 +361,11 @@ export interface IStorage {
   restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean>;
   getDeletedServices(): Promise<DeletedService[]>;
   getDeletedService(serviceId: number): Promise<DeletedService | undefined>;
+  
+  // Missing methods for routes compatibility
+  getCategory(id: number): Promise<ApplianceCategory | undefined>;
+  setSystemSetting(key: string, value: string): Promise<SystemSetting | undefined>;
+  getBusinessPartner(id: number): Promise<User | undefined>;
 }
 
 // @ts-ignore - MemStorage class is not used in production, only for testing
@@ -2218,27 +2223,7 @@ export class DatabaseStorage implements IStorage {
         return transformed;
       });
       
-      return transformedResult.map(service => ({
-        ...service,
-        devicePickedUp: service.devicePickedUp || false,
-        pickupDate: service.pickupDate || null,
-        pickupNotes: service.pickupNotes || null,
-        isWarrantyService: service.isWarrantyService || false,
-        clientRating: service.clientRating || null,
-        clientFeedback: service.clientFeedback || null,
-        feedbackDate: service.feedbackDate || null,
-        feedbackNotes: service.feedbackNotes || null,
-        hasApplianceDefect: service.hasApplianceDefect || false,
-        defectDescription: service.defectDescription || null,
-        defectDetectionDate: service.defectDetectionDate || null,
-        warrantyStatus: service.warrantyStatus || 'out_of_warranty',
-        warrantyExpirationDate: service.warrantyExpirationDate || null,
-        partsNeeded: service.partsNeeded || false,
-        estimatedCost: service.estimatedCost || null,
-        repairPossible: service.repairPossible || true,
-        repairFailureReason: service.repairFailureReason || null,
-        repairFailureDate: service.repairFailureDate || null
-      })) as Service[];
+      return transformedResult as Service[];
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije
@@ -2356,20 +2341,7 @@ export class DatabaseStorage implements IStorage {
       const result = await query;
       console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId} sa kompletnim podacima`);
       
-      // Mapiranje rezultata u istu strukturu kao getAllServices
-      return result.map(service => ({
-        ...service,
-        priority: service.priority || 'normal',
-        specialInstructions: service.specialInstructions || null,
-        customerRequestDetails: service.customerRequestDetails || null,
-        estimatedCompletionDate: service.estimatedCompletionDate || null,
-        totalEstimatedCost: service.totalEstimatedCost || null,
-        repairFailed: service.repairFailed || false,
-        replacedPartsBeforeFailure: service.replacedPartsBeforeFailure || null,
-        repairPossible: service.repairPossible || true,
-        repairFailureReason: service.repairFailureReason || null,
-        repairFailureDate: service.repairFailureDate || null
-      })) as Service[];
+      return result as Service[];
     } catch (error) {
       console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
       throw error;
@@ -2480,50 +2452,6 @@ export class DatabaseStorage implements IStorage {
       businessPartnerId: row.businessPartnerId,
       partnerCompanyName: row.partnerCompanyName,
       warrantyStatus: row.warrantyStatus,
-      // Додајемо сва недостајућа поља
-      devicePickedUp: false,
-      pickupDate: null,
-      pickupNotes: null,
-      isWarrantyService: false,
-      clientRating: null,
-      clientFeedback: null,
-      feedbackDate: null,
-      feedbackNotes: null,
-      hasApplianceDefect: false,
-      defectDescription: null,
-      defectDetectionDate: null,
-      warrantyExpirationDate: null,
-      partsNeeded: false,
-      estimatedCost: null,
-      repairPossible: true,
-      repairFailureReason: null,
-      repairFailureDate: null,
-      priority: 'medium' as const,
-      notes: null,
-      // Nested client object
-      client: row.clientFullName ? {
-        id: row.clientId,
-        fullName: row.clientFullName,
-        phone: row.clientPhone,
-        email: row.clientEmail,
-        address: row.clientAddress,
-        city: row.clientCity,
-        companyName: null
-      } : undefined,
-      // Nested appliance object with category
-      appliance: row.applianceModel || row.categoryName ? {
-        id: row.applianceId,
-        model: row.applianceModel,
-        serialNumber: row.applianceSerialNumber,
-        category: row.categoryName ? {
-          id: row.applianceId, // This will be overridden by actual category ID if needed
-          name: row.categoryName,
-          icon: row.categoryIcon
-        } : undefined,
-        manufacturer: row.manufacturerName ? {
-          name: row.manufacturerName
-        } : undefined
-      } : undefined
     })) as Service[];
   }
   
@@ -6298,6 +6226,31 @@ export class DatabaseStorage implements IStorage {
       console.error('Greška pri brisanju notifikacije:', error);
       return false;
     }
+  }
+
+  // Missing methods for routes compatibility
+  async getCategory(id: number): Promise<ApplianceCategory | undefined> {
+    return this.getApplianceCategory(id);
+  }
+
+  async setSystemSetting(key: string, value: string): Promise<SystemSetting | undefined> {
+    try {
+      // Try to update existing setting first
+      const existing = await this.getSystemSetting(key);
+      if (existing) {
+        return this.updateSystemSetting(key, { value });
+      } else {
+        // Create new setting
+        return this.createSystemSetting({ key, value, category: 'general', description: '' });
+      }
+    } catch (error) {
+      console.error('Greška pri postavljanju system setting-a:', error);
+      return undefined;
+    }
+  }
+
+  async getBusinessPartner(id: number): Promise<User | undefined> {
+    return this.getUser(id);
   }
 
 }
