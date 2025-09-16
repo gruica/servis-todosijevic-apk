@@ -3375,7 +3375,7 @@ export class DatabaseStorage implements IStorage {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške
       const result = await pool.query(`
         SELECT id, part_name, quantity, status, urgency, created_at,
-               service_id, technician_id,
+               service_id AS "serviceId", technician_id AS "technicianId",
                'technician' as requester_type,
                technician_id as requester_user_id,
                'Serviser' as requester_name
