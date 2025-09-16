@@ -7,7 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 const authenticateJWT = jwtAuthMiddleware;
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -4220,7 +4220,8 @@ Frigo Sistem`;
         manufacturerId,
         model,
         serialNumber,
-        description
+        description,
+        warrantyStatus
       } = req.body;
       
       // Validacija obaveznih polja
@@ -4263,6 +4264,24 @@ Frigo Sistem`;
         return res.status(400).json({ 
           error: "Opis problema je obavezan", 
           message: "Opis problema mora biti detaljniji (minimum 5 karaktera)."
+        });
+      }
+      
+      // KRITIČNA VALIDACIJA: warrantyStatus je OBAVEZNO polje
+      const trimmedWarrantyStatus = warrantyStatus?.trim();
+      if (!trimmedWarrantyStatus) {
+        return res.status(400).json({ 
+          error: "Status garancije je obavezan", 
+          message: "Molimo odaberite status garancije: 'u garanciji' ili 'van garancije'."
+        });
+      }
+      
+      // Validacija warranty status enum vrednosti koristeći shared schema
+      const warrantyValidation = warrantyStatusStrictEnum.safeParse(trimmedWarrantyStatus);
+      if (!warrantyValidation.success) {
+        return res.status(400).json({ 
+          error: "Nevažeći status garancije", 
+          message: "Status garancije mora biti: 'u garanciji' ili 'van garancije'."
         });
       }
 
@@ -4343,7 +4362,7 @@ Frigo Sistem`;
           applianceId: appliance.id,
           description: description.trim(),
           status: "pending" as const,
-          warrantyStatus: "van garancije" as const, // Default za business partners - assume out of warranty unless specified
+          warrantyStatus: warrantyStatus, // Warranty status iz forme - obavezno polje
           createdAt: new Date().toISOString().split('T')[0],
           technicianId: null, // Biće dodeljen kasnije
           scheduledDate: null,

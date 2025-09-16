@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { warrantyStatusStrictEnum } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import BusinessLayout from "@/components/layout/business-layout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,7 +57,7 @@ const newServiceSchema = z.object({
   
   // Podaci o servisu
   description: z.string().min(1, "Opis problema je obavezan"),
-  warrantyStatus: z.string().min(1, "Status garancije je obavezan - molimo odaberite opciju"),
+  warrantyStatus: warrantyStatusStrictEnum,
   saveClientData: z.boolean().default(true),
 });
 
@@ -125,7 +126,7 @@ export default function NewBusinessServiceRequest() {
       serialNumber: "",
       purchaseDate: "",
       description: "",
-      warrantyStatus: "",
+      warrantyStatus: undefined,
       saveClientData: true,
     },
   });
@@ -159,7 +160,7 @@ export default function NewBusinessServiceRequest() {
             description: data.description.trim(),
             
             // OBAVEZNO - Status garancije
-            warrantyStatus: data.warrantyStatus
+            warrantyStatus: data.warrantyStatus.trim()
           })
         });
         
@@ -184,6 +185,9 @@ export default function NewBusinessServiceRequest() {
     },
     onSuccess: () => {
       setSubmitSuccess(true);
+      // Invalidate services cache to refresh the services list
+      queryClient.invalidateQueries({ queryKey: ["/api/business/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/business/services-jwt"] });
       toast({
         title: "Zahtev uspešno kreiran",
         description: "Vaš zahtev za servis je uspešno kreiran i biće uskoro obrađen.",
@@ -493,18 +497,21 @@ export default function NewBusinessServiceRequest() {
                             <FormLabel className="text-red-600 font-semibold">Status garancije *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className={!field.value ? "border-red-300" : ""}>
+                                <SelectTrigger 
+                                  className={!field.value ? "border-red-300" : ""}
+                                  data-testid="select-warranty-status"
+                                >
                                   <SelectValue placeholder="OBAVEZAN IZBOR - odaberite status garancije" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="u garanciji">
+                                <SelectItem value="u garanciji" data-testid="option-warranty-in">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                     <span>U garanciji</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="van garancije">
+                                <SelectItem value="van garancije" data-testid="option-warranty-out">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                                     <span>Van garancije</span>
