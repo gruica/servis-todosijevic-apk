@@ -16,10 +16,23 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    
+    
+    signingConfigs {
+        release {
+            keyAlias 'servis-todosijevic'
+            keyPassword 'ServesTodo2025!'
+            storeFile file('servis-todosijevic-release.keystore')
+            storePassword 'ServesTodo2025!'
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            debuggable false
         }
     }
 }
@@ -43,6 +56,14 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+// Override Capacitor's Java 21 setting with Java 17 for compatibility
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')
