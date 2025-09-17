@@ -46,6 +46,7 @@ import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePart
 import { SimpleServicePhotos } from "@/components/SimpleServicePhotos";
 import { ConversationHistory } from "@/components/ConversationHistory";
 import { WhatsAppMessenger } from "@/components/WhatsAppMessenger";
+import { QuickServiceEntry } from "@/components/quick-service-entry";
 
 interface AdminService {
   id: number;
@@ -223,6 +224,9 @@ const AdminServices = memo(function AdminServices() {
     returnReason: "",
     returnNotes: ""
   });
+
+  // QuickServiceEntry test state
+  const [isQuickServiceOpen, setIsQuickServiceOpen] = useState(false);
 
   // Destructure state for easier access
   const { searchQuery, activeFolder } = filterState;
@@ -724,6 +728,14 @@ const AdminServices = memo(function AdminServices() {
           </div>
           <div className="flex gap-3">
             <AdminSparePartsOrderingSimple />
+            <Button 
+              onClick={() => setIsQuickServiceOpen(true)} 
+              variant="outline"
+              className="border-green-500 text-green-700 hover:bg-green-50"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Quick servis (TEST)
+            </Button>
             <Button 
               onClick={() => window.location.href = '/admin/create-service'} 
               className="bg-primary hover:bg-primary/90"
@@ -1581,6 +1593,18 @@ const AdminServices = memo(function AdminServices() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* QuickServiceEntry Test Component */}
+        <QuickServiceEntry
+          isOpen={isQuickServiceOpen}
+          onClose={() => setIsQuickServiceOpen(false)}
+          mode="admin"
+          onServiceCreated={(serviceId) => {
+            console.log("Service created with ID:", serviceId);
+            // Refresh services list
+            refetch();
+          }}
+        />
       </div>
     </AdminLayout>
   );

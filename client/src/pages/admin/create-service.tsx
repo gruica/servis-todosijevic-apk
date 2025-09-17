@@ -12,6 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { warrantyStatusStrictEnum } from "@shared/schema";
 import { ArrowLeft, Plus, User, Settings, Calendar, FileText, Search, Phone, MapPin, Mail } from "lucide-react";
 import { useLocation } from "wouter";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -24,7 +25,7 @@ const createServiceSchema = z.object({
   applianceId: z.string().min(1, "Uređaj je obavezan"),
   description: z.string().min(1, "Opis problema je obavezan"),
   status: z.string().default("pending"),
-  warrantyStatus: z.string().min(1, "Status garancije je obavezan - odaberite 'u garanciji', 'van garancije' ili 'nepoznato'"),
+  warrantyStatus: warrantyStatusStrictEnum,
   technicianId: z.string().optional(),
   scheduledDate: z.string().optional(),
   priority: z.string().default("medium"),
@@ -88,7 +89,7 @@ export default function CreateService() {
       applianceId: "",
       description: "",
       status: "pending",
-      warrantyStatus: "",
+      warrantyStatus: undefined,
       priority: "medium",
       technicianId: "",
       scheduledDate: "",
@@ -426,8 +427,8 @@ export default function CreateService() {
                     Status garancije *
                   </Label>
                   <Select
-                    value={watch("warrantyStatus") || ""}
-                    onValueChange={(value) => setValue("warrantyStatus", value)}
+                    value={watch("warrantyStatus") || undefined}
+                    onValueChange={(value) => setValue("warrantyStatus", value as "u garanciji" | "van garancije")}
                   >
                     <SelectTrigger className="border-red-300 focus:border-red-500">
                       <SelectValue placeholder="OBAVEZAN IZBOR - odaberite status garancije" />
@@ -443,12 +444,6 @@ export default function CreateService() {
                         <div className="flex items-center space-x-2">
                           <span className="text-red-600">✗</span>
                           <span>Van garancije</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="nepoznato">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-500">?</span>
-                          <span>Nepoznato</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
