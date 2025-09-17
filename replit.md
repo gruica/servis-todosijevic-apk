@@ -94,6 +94,7 @@ Creating new functions instead of changing existing ones is mandatory.
 - **Device Return Functionality**: "Vrati aparat klijentu" feature in technician mobile interface.
 - **Comprehensive Client Analysis**: Real-time data analysis of client history.
 - **Folder System for Services**: Organized service management with folder tabs (Active, Business Partners, Finished, Canceled/Problematic, All Services).
+- **Unified Service Creation**: QuickServiceEntry floating component replaces all service creation forms across admin and business partner interfaces with strict warranty validation (only "u garanciji" or "van garancije").
 
 ### Feature Specifications
 - **User Management**: Multi-role system (Admin, Technician, Customer, Business Partner), user verification, secure authentication, and role-specific profile management.
