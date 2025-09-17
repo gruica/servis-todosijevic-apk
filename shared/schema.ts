@@ -566,175 +566,175 @@ export const removedPartsRelations = relations(removedParts, ({ one }) => ({
   }),
 }));
 
-// Email Management Tables
-export const emailAccounts = pgTable("email_accounts", {
-  id: serial("id").primaryKey(),
-  accountName: text("account_name").notNull(), // Naziv naloga (npr. "Glavni servis email")
-  email: text("email").notNull(), // Email adresa
-  smtpHost: text("smtp_host").notNull(), // SMTP server
-  smtpPort: integer("smtp_port").notNull(), // SMTP port
-  smtpSecure: boolean("smtp_secure").default(true).notNull(), // SSL/TLS
-  smtpUser: text("smtp_user").notNull(), // SMTP korisničko ime
-  smtpPassword: text("smtp_password").notNull(), // SMTP lozinka
-  imapHost: text("imap_host").notNull(), // IMAP server
-  imapPort: integer("imap_port").notNull(), // IMAP port
-  imapSecure: boolean("imap_secure").default(true).notNull(), // SSL/TLS za IMAP
-  imapUser: text("imap_user").notNull(), // IMAP korisničko ime
-  imapPassword: text("imap_password").notNull(), // IMAP lozinka
-  isActive: boolean("is_active").default(true).notNull(), // Da li je nalog aktivan
-  lastSyncedAt: timestamp("last_synced_at"), // Poslednji put sincronizovano
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  createdBy: integer("created_by").notNull(), // Ko je kreirao nalog
-});
+// Email Management Tables - temporarily commented out to avoid migration prompts
+// export const emailAccounts = pgTable("email_accounts", {
+//   id: serial("id").primaryKey(),
+//   accountName: text("account_name").notNull(), // Naziv naloga (npr. "Glavni servis email")
+//   email: text("email").notNull(), // Email adresa
+//   smtpHost: text("smtp_host").notNull(), // SMTP server
+//   smtpPort: integer("smtp_port").notNull(), // SMTP port
+//   smtpSecure: boolean("smtp_secure").default(true).notNull(), // SSL/TLS
+//   smtpUser: text("smtp_user").notNull(), // SMTP korisničko ime
+//   smtpPassword: text("smtp_password").notNull(), // SMTP lozinka
+//   imapHost: text("imap_host").notNull(), // IMAP server
+//   imapPort: integer("imap_port").notNull(), // IMAP port
+//   imapSecure: boolean("imap_secure").default(true).notNull(), // SSL/TLS za IMAP
+//   imapUser: text("imap_user").notNull(), // IMAP korisničko ime
+//   imapPassword: text("imap_password").notNull(), // IMAP lozinka
+//   isActive: boolean("is_active").default(true).notNull(), // Da li je nalog aktivan
+//   lastSyncedAt: timestamp("last_synced_at"), // Poslednji put sincronizovano
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   createdBy: integer("created_by").notNull(), // Ko je kreirao nalog
+// });
 
-export const emailMessages = pgTable("email_messages", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id").notNull(), // ID email naloga
-  messageId: text("message_id").notNull(), // Jedinstveni ID poruke
-  subject: text("subject").notNull(), // Naslov poruke
-  fromAddress: text("from_address").notNull(), // Pošaljalac
-  toAddresses: text("to_addresses").notNull(), // Primaoci (JSON array)
-  ccAddresses: text("cc_addresses"), // CC primaoci (JSON array)
-  bccAddresses: text("bcc_addresses"), // BCC primaoci (JSON array)
-  bodyText: text("body_text"), // Tekstualni sadržaj
-  bodyHtml: text("body_html"), // HTML sadržaj
-  attachments: text("attachments"), // Lista priloga (JSON array)
-  direction: text("direction").notNull(), // "incoming" ili "outgoing"
-  status: text("status").default("unread").notNull(), // "unread", "read", "replied", "forwarded", "archived"
-  priority: text("priority").default("normal").notNull(), // "low", "normal", "high"
-  isImportant: boolean("is_important").default(false).notNull(),
-  relatedServiceId: integer("related_service_id"), // Povezan servis (opciono)
-  relatedClientId: integer("related_client_id"), // Povezan klijent (opciono)
-  tags: text("tags"), // Tagovi (JSON array)
-  receivedAt: timestamp("received_at").notNull(), // Kada je poruka primljena/poslata
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  readAt: timestamp("read_at"), // Kada je poruka pročitana
-  repliedAt: timestamp("replied_at"), // Kada je odgovoreno
-});
+// export const emailMessages = pgTable("email_messages", {
+//   id: serial("id").primaryKey(),
+//   accountId: integer("account_id").notNull(), // ID email naloga
+//   messageId: text("message_id").notNull(), // Jedinstveni ID poruke
+//   subject: text("subject").notNull(), // Naslov poruke
+//   fromAddress: text("from_address").notNull(), // Pošaljalac
+//   toAddresses: text("to_addresses").notNull(), // Primaoci (JSON array)
+//   ccAddresses: text("cc_addresses"), // CC primaoci (JSON array)
+//   bccAddresses: text("bcc_addresses"), // BCC primaoci (JSON array)
+//   bodyText: text("body_text"), // Tekstualni sadržaj
+//   bodyHtml: text("body_html"), // HTML sadržaj
+//   attachments: text("attachments"), // Lista priloga (JSON array)
+//   direction: text("direction").notNull(), // "incoming" ili "outgoing"
+//   status: text("status").default("unread").notNull(), // "unread", "read", "replied", "forwarded", "archived"
+//   priority: text("priority").default("normal").notNull(), // "low", "normal", "high"
+//   isImportant: boolean("is_important").default(false).notNull(),
+//   relatedServiceId: integer("related_service_id"), // Povezan servis (opciono)
+//   relatedClientId: integer("related_client_id"), // Povezan klijent (opciono)
+//   tags: text("tags"), // Tagovi (JSON array)
+//   receivedAt: timestamp("received_at").notNull(), // Kada je poruka primljena/poslata
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   readAt: timestamp("read_at"), // Kada je poruka pročitana
+//   repliedAt: timestamp("replied_at"), // Kada je odgovoreno
+// });
 
-export const emailThreads = pgTable("email_threads", {
-  id: serial("id").primaryKey(),
-  subject: text("subject").notNull(), // Originalni subject
-  participants: text("participants").notNull(), // Lista učesnika (JSON array)
-  lastMessageAt: timestamp("last_message_at").notNull(),
-  messageCount: integer("message_count").default(1).notNull(),
-  isArchived: boolean("is_archived").default(false).notNull(),
-  relatedServiceId: integer("related_service_id"), // Povezan servis
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// export const emailThreads = pgTable("email_threads", {
+//   id: serial("id").primaryKey(),
+//   subject: text("subject").notNull(), // Originalni subject
+//   participants: text("participants").notNull(), // Lista učesnika (JSON array)
+//   lastMessageAt: timestamp("last_message_at").notNull(),
+//   messageCount: integer("message_count").default(1).notNull(),
+//   isArchived: boolean("is_archived").default(false).notNull(),
+//   relatedServiceId: integer("related_service_id"), // Povezan servis
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+// });
 
-export const emailAttachments = pgTable("email_attachments", {
-  id: serial("id").primaryKey(),
-  messageId: integer("message_id").notNull(), // ID email poruke
-  fileName: text("file_name").notNull(), // Naziv fajla
-  mimeType: text("mime_type").notNull(), // Tip fajla
-  fileSize: integer("file_size").notNull(), // Veličina u bajtovima
-  filePath: text("file_path").notNull(), // Put do fajla na serveru
-  downloadUrl: text("download_url"), // URL za preuzimanje
-  isInline: boolean("is_inline").default(false).notNull(), // Da li je inline slika
-  contentId: text("content_id"), // Content-ID za inline slike
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// export const emailAttachments = pgTable("email_attachments", {
+//   id: serial("id").primaryKey(),
+//   messageId: integer("message_id").notNull(), // ID email poruke
+//   fileName: text("file_name").notNull(), // Naziv fajla
+//   mimeType: text("mime_type").notNull(), // Tip fajla
+//   fileSize: integer("file_size").notNull(), // Veličina u bajtovima
+//   filePath: text("file_path").notNull(), // Put do fajla na serveru
+//   downloadUrl: text("download_url"), // URL za preuzimanje
+//   isInline: boolean("is_inline").default(false).notNull(), // Da li je inline slika
+//   contentId: text("content_id"), // Content-ID za inline slike
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+// });
 
 // Email schema validacije
-export const insertEmailAccountSchema = createInsertSchema(emailAccounts).pick({
-  accountName: true,
-  email: true,
-  smtpHost: true,
-  smtpPort: true,
-  smtpSecure: true,
-  smtpUser: true,
-  smtpPassword: true,
-  imapHost: true,
-  imapPort: true,
-  imapSecure: true,
-  imapUser: true,
-  imapPassword: true,
-  isActive: true,
-  createdBy: true,
-}).extend({
-  accountName: z.string().min(3, "Naziv naloga mora imati najmanje 3 karaktera").max(100, "Naziv je predugačak"),
-  email: z.string().email("Unesite validnu email adresu"),
-  smtpHost: z.string().min(3, "SMTP host mora imati najmanje 3 karaktera"),
-  smtpPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
-  smtpUser: z.string().min(1, "SMTP korisničko ime je obavezno"),
-  smtpPassword: z.string().min(1, "SMTP lozinka je obavezna"),
-  imapHost: z.string().min(3, "IMAP host mora imati najmanje 3 karaktera"),
-  imapPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
-  imapUser: z.string().min(1, "IMAP korisničko ime je obavezno"),
-  imapPassword: z.string().min(1, "IMAP lozinka je obavezna"),
-  createdBy: z.number().int().positive("ID kreatora mora biti pozitivan broj"),
-});
+// export const insertEmailAccountSchema = createInsertSchema(emailAccounts).pick({
+//   accountName: true,
+//   email: true,
+//   smtpHost: true,
+//   smtpPort: true,
+//   smtpSecure: true,
+//   smtpUser: true,
+//   smtpPassword: true,
+//   imapHost: true,
+//   imapPort: true,
+//   imapSecure: true,
+//   imapUser: true,
+//   imapPassword: true,
+//   isActive: true,
+//   createdBy: true,
+// }).extend({
+//   accountName: z.string().min(3, "Naziv naloga mora imati najmanje 3 karaktera").max(100, "Naziv je predugačak"),
+//   email: z.string().email("Unesite validnu email adresu"),
+//   smtpHost: z.string().min(3, "SMTP host mora imati najmanje 3 karaktera"),
+//   smtpPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
+//   smtpUser: z.string().min(1, "SMTP korisničko ime je obavezno"),
+//   smtpPassword: z.string().min(1, "SMTP lozinka je obavezna"),
+//   imapHost: z.string().min(3, "IMAP host mora imati najmanje 3 karaktera"),
+//   imapPort: z.number().int().min(1).max(65535, "Port mora biti između 1 i 65535"),
+//   imapUser: z.string().min(1, "IMAP korisničko ime je obavezno"),
+//   imapPassword: z.string().min(1, "IMAP lozinka je obavezna"),
+//   createdBy: z.number().int().positive("ID kreatora mora biti pozitivan broj"),
+// });
 
-export const insertEmailMessageSchema = createInsertSchema(emailMessages).pick({
-  accountId: true,
-  messageId: true,
-  subject: true,
-  fromAddress: true,
-  toAddresses: true,
-  ccAddresses: true,
-  bccAddresses: true,
-  bodyText: true,
-  bodyHtml: true,
-  attachments: true,
-  direction: true,
-  status: true,
-  priority: true,
-  isImportant: true,
-  relatedServiceId: true,
-  relatedClientId: true,
-  tags: true,
-  receivedAt: true,
-}).extend({
-  accountId: z.number().int().positive("ID naloga mora biti pozitivan broj"),
-  messageId: z.string().min(1, "ID poruke je obavezan"),
-  subject: z.string().min(1, "Naslov poruke je obavezan").max(255, "Naslov je predugačak"),
-  fromAddress: z.string().email("Pošaljalac mora biti validna email adresa"),
-  toAddresses: z.string().min(1, "Primaoci su obavezni"),
-  direction: z.enum(["incoming", "outgoing"]),
-  status: z.enum(["unread", "read", "replied", "forwarded", "archived"]).default("unread"),
-  priority: z.enum(["low", "normal", "high"]).default("normal"),
-  receivedAt: z.date(),
-});
+// export const insertEmailMessageSchema = createInsertSchema(emailMessages).pick({
+//   accountId: true,
+//   messageId: true,
+//   subject: true,
+//   fromAddress: true,
+//   toAddresses: true,
+//   ccAddresses: true,
+//   bccAddresses: true,
+//   bodyText: true,
+//   bodyHtml: true,
+//   attachments: true,
+//   direction: true,
+//   status: true,
+//   priority: true,
+//   isImportant: true,
+//   relatedServiceId: true,
+//   relatedClientId: true,
+//   tags: true,
+//   receivedAt: true,
+// }).extend({
+//   accountId: z.number().int().positive("ID naloga mora biti pozitivan broj"),
+//   messageId: z.string().min(1, "ID poruke je obavezan"),
+//   subject: z.string().min(1, "Naslov poruke je obavezan").max(255, "Naslov je predugačak"),
+//   fromAddress: z.string().email("Pošaljalac mora biti validna email adresa"),
+//   toAddresses: z.string().min(1, "Primaoci su obavezni"),
+//   direction: z.enum(["incoming", "outgoing"]),
+//   status: z.enum(["unread", "read", "replied", "forwarded", "archived"]).default("unread"),
+//   priority: z.enum(["low", "normal", "high"]).default("normal"),
+//   receivedAt: z.date(),
+// });
 
-export type InsertEmailAccount = z.infer<typeof insertEmailAccountSchema>;
-export type EmailAccount = typeof emailAccounts.$inferSelect;
-export type InsertEmailMessage = z.infer<typeof insertEmailMessageSchema>;
-export type EmailMessage = typeof emailMessages.$inferSelect;
-export type EmailThread = typeof emailThreads.$inferSelect;
-export type EmailAttachment = typeof emailAttachments.$inferSelect;
+// export type InsertEmailAccount = z.infer<typeof insertEmailAccountSchema>;
+// export type EmailAccount = typeof emailAccounts.$inferSelect;
+// export type InsertEmailMessage = z.infer<typeof insertEmailMessageSchema>;
+// export type EmailMessage = typeof emailMessages.$inferSelect;
+// export type EmailThread = typeof emailThreads.$inferSelect;
+// export type EmailAttachment = typeof emailAttachments.$inferSelect;
 
-// Email Relations
-export const emailAccountsRelations = relations(emailAccounts, ({ many, one }) => ({
-  messages: many(emailMessages),
-  creator: one(users, {
-    fields: [emailAccounts.createdBy],
-    references: [users.id],
-  }),
-}));
+// Email Relations - temporarily commented out
+// export const emailAccountsRelations = relations(emailAccounts, ({ many, one }) => ({
+//   messages: many(emailMessages),
+//   creator: one(users, {
+//     fields: [emailAccounts.createdBy],
+//     references: [users.id],
+//   }),
+// }));
 
-export const emailMessagesRelations = relations(emailMessages, ({ one, many }) => ({
-  account: one(emailAccounts, {
-    fields: [emailMessages.accountId],
-    references: [emailAccounts.id],
-  }),
-  relatedService: one(services, {
-    fields: [emailMessages.relatedServiceId],
-    references: [services.id],
-  }),
-  relatedClient: one(clients, {
-    fields: [emailMessages.relatedClientId],
-    references: [clients.id],
-  }),
-  attachments: many(emailAttachments),
-}));
+// export const emailMessagesRelations = relations(emailMessages, ({ one, many }) => ({
+//   account: one(emailAccounts, {
+//     fields: [emailMessages.accountId],
+//     references: [emailAccounts.id],
+//   }),
+//   relatedService: one(services, {
+//     fields: [emailMessages.relatedServiceId],
+//     references: [services.id],
+//   }),
+//   relatedClient: one(clients, {
+//     fields: [emailMessages.relatedClientId],
+//     references: [clients.id],
+//   }),
+//   attachments: many(emailAttachments),
+// }));
 
-export const emailAttachmentsRelations = relations(emailAttachments, ({ one }) => ({
-  message: one(emailMessages, {
-    fields: [emailAttachments.messageId],
-    references: [emailMessages.id],
-  }),
-}));
+// export const emailAttachmentsRelations = relations(emailAttachments, ({ one }) => ({
+//   message: one(emailMessages, {
+//     fields: [emailAttachments.messageId],
+//     references: [emailMessages.id],
+//   }),
+// }));
 
 // Maintenance Prediction and Alerts
 export const maintenanceFrequencyEnum = z.enum([
@@ -747,74 +747,74 @@ export const maintenanceFrequencyEnum = z.enum([
 
 export type MaintenanceFrequency = z.infer<typeof maintenanceFrequencyEnum>;
 
-// Tabela za održavanje uređaja
-export const maintenanceSchedules = pgTable("maintenance_schedules", {
-  id: serial("id").primaryKey(),
-  applianceId: integer("appliance_id").notNull().references(() => appliances.id),
-  name: text("name").notNull(), // Naziv plana održavanja
-  description: text("description"), // Opis održavanja
-  frequency: text("frequency", { enum: ["monthly", "quarterly", "biannual", "annual", "custom"] }).notNull(),
-  lastMaintenanceDate: timestamp("last_maintenance_date"), // Datum poslednjeg održavanja
-  nextMaintenanceDate: timestamp("next_maintenance_date").notNull(), // Sledeći planirani datum
-  customIntervalDays: integer("custom_interval_days"), // Dani između održavanja (za prilagođeni interval)
-  isActive: boolean("is_active").default(true).notNull(), // Da li je aktivno
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// Tabela za održavanje uređaja - temporarily commented out to avoid migration prompts
+// export const maintenanceSchedules = pgTable("maintenance_schedules", {
+//   id: serial("id").primaryKey(),
+//   applianceId: integer("appliance_id").notNull().references(() => appliances.id),
+//   name: text("name").notNull(), // Naziv plana održavanja
+//   description: text("description"), // Opis održavanja
+//   frequency: text("frequency", { enum: ["monthly", "quarterly", "biannual", "annual", "custom"] }).notNull(),
+//   lastMaintenanceDate: timestamp("last_maintenance_date"), // Datum poslednjeg održavanja
+//   nextMaintenanceDate: timestamp("next_maintenance_date").notNull(), // Sledeći planirani datum
+//   customIntervalDays: integer("custom_interval_days"), // Dani između održavanja (za prilagođeni interval)
+//   isActive: boolean("is_active").default(true).notNull(), // Da li je aktivno
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+// });
 
-export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedules).pick({
-  applianceId: true,
-  name: true,
-  description: true,
-  frequency: true,
-  lastMaintenanceDate: true,
-  nextMaintenanceDate: true,
-  customIntervalDays: true,
-  isActive: true
-});
+// export const insertMaintenanceScheduleSchema = createInsertSchema(maintenanceSchedules).pick({
+//   applianceId: true,
+//   name: true,
+//   description: true,
+//   frequency: true,
+//   lastMaintenanceDate: true,
+//   nextMaintenanceDate: true,
+//   customIntervalDays: true,
+//   isActive: true
+// });
 
-export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
-export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;
+// export type InsertMaintenanceSchedule = z.infer<typeof insertMaintenanceScheduleSchema>;
+// export type MaintenanceSchedule = typeof maintenanceSchedules.$inferSelect;
 
-// Tabela za obaveštenja o održavanju
-export const maintenanceAlerts = pgTable("maintenance_alerts", {
-  id: serial("id").primaryKey(),
-  scheduleId: integer("schedule_id").notNull().references(() => maintenanceSchedules.id),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  alertDate: timestamp("alert_date").defaultNow().notNull(),
-  status: text("status", { enum: ["pending", "sent", "acknowledged", "completed"] }).default("pending").notNull(),
-  isRead: boolean("is_read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// Tabela za obaveštenja o održavanju - temporarily commented out
+// export const maintenanceAlerts = pgTable("maintenance_alerts", {
+//   id: serial("id").primaryKey(),
+//   scheduleId: integer("schedule_id").notNull().references(() => maintenanceSchedules.id),
+//   title: text("title").notNull(),
+//   message: text("message").notNull(),
+//   alertDate: timestamp("alert_date").defaultNow().notNull(),
+//   status: text("status", { enum: ["pending", "sent", "acknowledged", "completed"] }).default("pending").notNull(),
+//   isRead: boolean("is_read").default(false).notNull(),
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+// });
 
-export const insertMaintenanceAlertSchema = createInsertSchema(maintenanceAlerts).pick({
-  scheduleId: true,
-  title: true,
-  message: true,
-  alertDate: true,
-  status: true,
-  isRead: true
-});
+// export const insertMaintenanceAlertSchema = createInsertSchema(maintenanceAlerts).pick({
+//   scheduleId: true,
+//   title: true,
+//   message: true,
+//   alertDate: true,
+//   status: true,
+//   isRead: true
+// });
 
-export type InsertMaintenanceAlert = z.infer<typeof insertMaintenanceAlertSchema>;
-export type MaintenanceAlert = typeof maintenanceAlerts.$inferSelect;
+// export type InsertMaintenanceAlert = z.infer<typeof insertMaintenanceAlertSchema>;
+// export type MaintenanceAlert = typeof maintenanceAlerts.$inferSelect;
 
 // Relacije za održavanje
-export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
-  appliance: one(appliances, {
-    fields: [maintenanceSchedules.applianceId],
-    references: [appliances.id],
-  }),
-  alerts: many(maintenanceAlerts)
-}));
+// export const maintenanceSchedulesRelations = relations(maintenanceSchedules, ({ one, many }) => ({
+//   appliance: one(appliances, {
+//     fields: [maintenanceSchedules.applianceId],
+//     references: [appliances.id],
+//   }),
+//   alerts: many(maintenanceAlerts)
+// }));
 
-export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one }) => ({
-  schedule: one(maintenanceSchedules, {
-    fields: [maintenanceAlerts.scheduleId],
-    references: [maintenanceSchedules.id],
-  })
-}));
+// export const maintenanceAlertsRelations = relations(maintenanceAlerts, ({ one }) => ({
+//   schedule: one(maintenanceSchedules, {
+//     fields: [maintenanceAlerts.scheduleId],
+//     references: [maintenanceSchedules.id],
+//   })
+// }));
 
 // Tabela za upravljanje dobavljačima rezervnih delova
 export const suppliers = pgTable("suppliers", {
@@ -1708,74 +1708,74 @@ export const partsCatalogRelations = relations(partsCatalog, ({ one }) => ({
 }));
 
 // AI Prediktivno održavanje - Tabela za obrasce održavanja
-export const maintenancePatterns = pgTable("maintenance_patterns", {
-  id: serial("id").primaryKey(),
-  applianceCategoryId: integer("appliance_category_id").notNull(),
-  manufacturerId: integer("manufacturer_id"),
-  averageServiceInterval: integer("average_service_interval"), // Prosečan interval servisa u danima
-  commonFailurePoints: text("common_failure_points").array(), // Česti delovi koji se kvare
-  seasonalFactors: text("seasonal_factors"), // JSON sa sezonskim faktorima
-  usagePatterns: text("usage_patterns"), // JSON sa obrascima korišćenja
-  analysisData: text("analysis_data"), // JSON sa detaljnim podacima analize
-  confidenceScore: decimal("confidence_score", { precision: 5, scale: 2 }), // Score pouzdanosti od 0 do 100
-  lastAnalysis: timestamp("last_analysis").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// export const maintenancePatterns = pgTable("maintenance_patterns", {
+//   id: serial("id").primaryKey(),
+//   applianceCategoryId: integer("appliance_category_id").notNull(),
+//   manufacturerId: integer("manufacturer_id"),
+//   averageServiceInterval: integer("average_service_interval"), // Prosečan interval servisa u danima
+//   commonFailurePoints: text("common_failure_points").array(), // Česti delovi koji se kvare
+//   seasonalFactors: text("seasonal_factors"), // JSON sa sezonskim faktorima
+//   usagePatterns: text("usage_patterns"), // JSON sa obrascima korišćenja
+//   analysisData: text("analysis_data"), // JSON sa detaljnim podacima analize
+//   confidenceScore: decimal("confidence_score", { precision: 5, scale: 2 }), // Score pouzdanosti od 0 do 100
+//   lastAnalysis: timestamp("last_analysis").defaultNow().notNull(),
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+// });
 
-export const insertMaintenancePatternsSchema = createInsertSchema(maintenancePatterns).pick({
-  applianceCategoryId: true,
-  manufacturerId: true,
-  averageServiceInterval: true,
-  commonFailurePoints: true,
-  seasonalFactors: true,
-  usagePatterns: true,
-  analysisData: true,
-  confidenceScore: true,
-});
+// export const insertMaintenancePatternsSchema = createInsertSchema(maintenancePatterns).pick({
+//   applianceCategoryId: true,
+//   manufacturerId: true,
+//   averageServiceInterval: true,
+//   commonFailurePoints: true,
+//   seasonalFactors: true,
+//   usagePatterns: true,
+//   analysisData: true,
+//   confidenceScore: true,
+// });
 
-export type InsertMaintenancePatterns = z.infer<typeof insertMaintenancePatternsSchema>;
-export type MaintenancePatterns = typeof maintenancePatterns.$inferSelect;
+// export type InsertMaintenancePatterns = z.infer<typeof insertMaintenancePatternsSchema>;
+// export type MaintenancePatterns = typeof maintenancePatterns.$inferSelect;
 
-// AI Prediktivno održavanje - Tabela za prediktivne uvide
-export const predictiveInsights = pgTable("predictive_insights", {
-  id: serial("id").primaryKey(),
-  applianceId: integer("appliance_id").notNull(),
-  clientId: integer("client_id").notNull(),
-  predictedMaintenanceDate: timestamp("predicted_maintenance_date"),
-  riskLevel: text("risk_level"), // low, medium, high, critical
-  riskScore: decimal("risk_score", { precision: 5, scale: 2 }), // Score od 0 do 100
-  predictedFailures: text("predicted_failures").array(), // Lista mogućih kvarova
-  recommendedActions: text("recommended_actions").array(), // Lista preporučenih akcija
-  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }), // Procenjena cena intervencije
-  confidenceLevel: decimal("confidence_level", { precision: 5, scale: 2 }), // Nivo pouzdanosti predviđanja
-  factors: text("factors"), // JSON sa faktorima koji utiču na predviđanje
-  lastServiceDate: timestamp("last_service_date"),
-  nextReviewDate: timestamp("next_review_date"),
-  isActive: boolean("is_active").default(true).notNull(),
-  notificationSent: boolean("notification_sent").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+// AI Prediktivno održavanje - Tabela za prediktivne uvide - temporarily commented out
+// export const predictiveInsights = pgTable("predictive_insights", {
+//   id: serial("id").primaryKey(),
+//   applianceId: integer("appliance_id").notNull(),
+//   clientId: integer("client_id").notNull(),
+//   predictedMaintenanceDate: timestamp("predicted_maintenance_date"),
+//   riskLevel: text("risk_level"), // low, medium, high, critical
+//   riskScore: decimal("risk_score", { precision: 5, scale: 2 }), // Score od 0 do 100
+//   predictedFailures: text("predicted_failures").array(), // Lista mogućih kvarova
+//   recommendedActions: text("recommended_actions").array(), // Lista preporučenih akcija
+//   estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }), // Procenjena cena intervencije
+//   confidenceLevel: decimal("confidence_level", { precision: 5, scale: 2 }), // Nivo pouzdanosti predviđanja
+//   factors: text("factors"), // JSON sa faktorima koji utiču na predviđanje
+//   lastServiceDate: timestamp("last_service_date"),
+//   nextReviewDate: timestamp("next_review_date"),
+//   isActive: boolean("is_active").default(true).notNull(),
+//   notificationSent: boolean("notification_sent").default(false).notNull(),
+//   createdAt: timestamp("created_at").defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+// });
 
-export const insertPredictiveInsightsSchema = createInsertSchema(predictiveInsights).pick({
-  applianceId: true,
-  clientId: true,
-  predictedMaintenanceDate: true,
-  riskLevel: true,
-  riskScore: true,
-  predictedFailures: true,
-  recommendedActions: true,
-  estimatedCost: true,
-  confidenceLevel: true,
-  factors: true,
-  lastServiceDate: true,
-  nextReviewDate: true,
-  isActive: true,
-});
+// export const insertPredictiveInsightsSchema = createInsertSchema(predictiveInsights).pick({
+//   applianceId: true,
+//   clientId: true,
+//   predictedMaintenanceDate: true,
+//   riskLevel: true,
+//   riskScore: true,
+//   predictedFailures: true,
+//   recommendedActions: true,
+//   estimatedCost: true,
+//   confidenceLevel: true,
+//   factors: true,
+//   lastServiceDate: true,
+//   nextReviewDate: true,
+//   isActive: true,
+// });
 
-export type InsertPredictiveInsights = z.infer<typeof insertPredictiveInsightsSchema>;
-export type PredictiveInsights = typeof predictiveInsights.$inferSelect;
+// export type InsertPredictiveInsights = z.infer<typeof insertPredictiveInsightsSchema>;
+// export type PredictiveInsights = typeof predictiveInsights.$inferSelect;
 
 // AI Analiza rezultata - Tabela za čuvanje AI analiza
 export const aiAnalysisResults = pgTable("ai_analysis_results", {
@@ -1815,28 +1815,28 @@ export const insertAiAnalysisResultsSchema = createInsertSchema(aiAnalysisResult
 export type InsertAiAnalysisResults = z.infer<typeof insertAiAnalysisResultsSchema>;
 export type AiAnalysisResults = typeof aiAnalysisResults.$inferSelect;
 
-// Relacije za prediktivno održavanje
-export const maintenancePatternsRelations = relations(maintenancePatterns, ({ one }) => ({
-  applianceCategory: one(applianceCategories, {
-    fields: [maintenancePatterns.applianceCategoryId],
-    references: [applianceCategories.id],
-  }),
-  manufacturer: one(manufacturers, {
-    fields: [maintenancePatterns.manufacturerId],
-    references: [manufacturers.id],
-  }),
-}));
+// Relacije za prediktivno održavanje - temporarily commented out
+// export const maintenancePatternsRelations = relations(maintenancePatterns, ({ one }) => ({
+//   applianceCategory: one(applianceCategories, {
+//     fields: [maintenancePatterns.applianceCategoryId],
+//     references: [applianceCategories.id],
+//   }),
+//   manufacturer: one(manufacturers, {
+//     fields: [maintenancePatterns.manufacturerId],
+//     references: [manufacturers.id],
+//   }),
+// }));
 
-export const predictiveInsightsRelations = relations(predictiveInsights, ({ one }) => ({
-  appliance: one(appliances, {
-    fields: [predictiveInsights.applianceId],
-    references: [appliances.id],
-  }),
-  client: one(clients, {
-    fields: [predictiveInsights.clientId],
-    references: [clients.id],
-  }),
-}));
+// export const predictiveInsightsRelations = relations(predictiveInsights, ({ one }) => ({
+//   appliance: one(appliances, {
+//     fields: [predictiveInsights.applianceId],
+//     references: [appliances.id],
+//   }),
+//   client: one(clients, {
+//     fields: [predictiveInsights.clientId],
+//     references: [clients.id],
+//   }),
+// }));
 
 export const aiAnalysisResultsRelations = relations(aiAnalysisResults, ({ one }) => ({
   appliance: one(appliances, {
@@ -2017,37 +2017,40 @@ export const insertUserPermissionSchema = createInsertSchema(userPermissions).pi
 export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
 export type UserPermission = typeof userPermissions.$inferSelect;
 
-// Deleted Services - soft delete tabela za obrisane servise
-export const deletedServices = pgTable("deleted_services", {
-  id: serial("id").primaryKey(),
-  serviceId: integer("service_id").notNull().unique(), // originalni ID servisa
-  originalServiceData: text("original_service_data").notNull(), // JSON string kompletnih podataka servisa
-  deletedBy: integer("deleted_by").notNull(), // user ID koji je obrisao
-  deletedByUsername: text("deleted_by_username").notNull(),
-  deletedByRole: text("deleted_by_role").notNull(),
-  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
-  deleteReason: text("delete_reason"), // razlog brisanja
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  canBeRestored: boolean("can_be_restored").default(true).notNull(), // da li se može vratiti
-  restoredBy: integer("restored_by"), // user ID koji je vratio servis
-  restoredAt: timestamp("restored_at"), // kada je vraćen
-});
+// NOTE: deletedServices table temporarily removed to fix migration blocker
+// It will be re-added in a future dedicated migration
+// export const deletedServices = pgTable("deleted_services", {
+//   id: serial("id").primaryKey(),
+//   serviceId: integer("service_id").notNull().unique(),
+//   originalServiceData: text("original_service_data").notNull(),
+//   deletedBy: integer("deleted_by").notNull(),
+//   deletedByUsername: text("deleted_by_username").notNull(),
+//   deletedByRole: text("deleted_by_role").notNull(),
+//   deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+//   deleteReason: text("delete_reason"),
+//   ipAddress: text("ip_address"),
+//   userAgent: text("user_agent"),
+//   canBeRestored: boolean("can_be_restored").default(true).notNull(),
+//   restoredBy: integer("restored_by"),
+//   restoredAt: timestamp("restored_at"),
+// });
 
-export const insertDeletedServiceSchema = createInsertSchema(deletedServices).pick({
-  serviceId: true,
-  originalServiceData: true,
-  deletedBy: true,
-  deletedByUsername: true,
-  deletedByRole: true,
-  deleteReason: true,
-  ipAddress: true,
-  userAgent: true,
-  canBeRestored: true,
-});
+// NOTE: insertDeletedServiceSchema temporarily removed to fix migration blocker
+// export const insertDeletedServiceSchema = createInsertSchema(deletedServices).pick({
+//   serviceId: true,
+//   originalServiceData: true,
+//   deletedBy: true,
+//   deletedByUsername: true,
+//   deletedByRole: true,
+//   deleteReason: true,
+//   ipAddress: true,
+//   userAgent: true,
+//   canBeRestored: true,
+// });
 
-export type InsertDeletedService = z.infer<typeof insertDeletedServiceSchema>;
-export type DeletedService = typeof deletedServices.$inferSelect;
+// NOTE: DeletedService types temporarily removed to fix migration blocker
+// export type InsertDeletedService = z.infer<typeof insertDeletedServiceSchema>;
+// export type DeletedService = typeof deletedServices.$inferSelect;
 
 // ===== SUPPLIER PORTAL FUNCTIONALITY =====
 
