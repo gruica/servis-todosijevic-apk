@@ -5,6 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
+import { UserRole, isSupplierRole, hasAdminAccess, hasTechnicianAccess, hasSupplierAccess, hasBusinessPartnerAccess } from "@shared/types";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,6 +21,10 @@ type AuthContextType = {
   isTechnician: boolean; // Provera da li je korisnik serviser
   isBusinessPartner: boolean; // Provera da li je korisnik poslovni partner
   isClient: boolean; // Provera da li je korisnik klijent
+  // Supplier role convenience methods
+  isSupplier: boolean; // Da li je korisnik dobavljač (bilo koji tip)
+  isSupplierComplus: boolean; // Da li je ComPlus dobavljač
+  isSupplierBeko: boolean; // Da li je Beko dobavljač
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -177,6 +182,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTechnician = user?.role === "technician";
   const isBusinessPartner = user?.role === "business_partner";
   const isClient = user?.role === "client";
+  
+  // Supplier role checks
+  const isSupplier = user ? isSupplierRole(user.role) : false;
+  const isSupplierComplus = user?.role === "supplier_complus";
+  const isSupplierBeko = user?.role === "supplier_beko";
 
   return (
     <AuthContext.Provider
@@ -193,6 +203,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isTechnician: isTechnician || false,
         isBusinessPartner: isBusinessPartner || false,
         isClient: isClient || false,
+        // Supplier role methods
+        isSupplier: isSupplier || false,
+        isSupplierComplus: isSupplierComplus || false,
+        isSupplierBeko: isSupplierBeko || false,
       }}
     >
       {children}

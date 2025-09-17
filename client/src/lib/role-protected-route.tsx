@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import { UserRole } from "@shared/types";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
@@ -9,7 +10,7 @@ export function RoleProtectedRoute({
 }: {
   path: string;
   component: React.ComponentType<any>;
-  allowedRoles: string[];
+  allowedRoles: UserRole[];
 }) {
   const { user, isLoading } = useAuth();
 
@@ -33,7 +34,7 @@ export function RoleProtectedRoute({
   }
 
   // Check if user has one of the allowed roles
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(user.role as UserRole)) {
     // Redirect based on user role
     let redirectPath = "/";
     
@@ -51,8 +52,11 @@ export function RoleProtectedRoute({
         localStorage.removeItem("complus_login");
         return <Route path={path} component={Component} />;
       }
-    } else if (user.role === "business" || user.role === "partner") {
+    } else if (user.role === "business_partner") {
       redirectPath = "/business";
+    } else if (user.role === "supplier_complus" || user.role === "supplier_beko") {
+      // Supplier roles redirect to supplier dashboard
+      redirectPath = "/suppliers/dashboard";
     }
     
     return (

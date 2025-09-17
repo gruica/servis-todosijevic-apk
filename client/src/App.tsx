@@ -69,6 +69,10 @@ const BusinessClients = lazy(() => import("@/pages/business/clients/index-simple
 const BusinessComplus = lazy(() => import("@/pages/business/complus"));
 const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 
+// PERFORMANCE BOOST: Lazy load supplier pages
+const SupplierLogin = lazy(() => import("@/pages/suppliers/supplier-login"));
+const SupplierDashboard = lazy(() => import("@/pages/suppliers/dashboard"));
+
 // PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
 import ComplusAuthPage from "@/pages/complus-auth";
@@ -158,6 +162,10 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       <Route path="/complus-auth" component={ComplusAuthPage} />
+      <Route path="/suppliers/login" component={SupplierLogin} />
+      
+      {/* Supplier routes */}
+      <RoleProtectedRoute path="/suppliers/dashboard" component={SupplierDashboard} allowedRoles={["supplier_complus", "supplier_beko"]} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
