@@ -24,6 +24,7 @@ import {
   ServiceCompletionReport, InsertServiceCompletionReport,
   Supplier, InsertSupplier,
   SupplierOrder, InsertSupplierOrder,
+  SupplierOrderEvent, InsertSupplierOrderEvent,
   PartsCatalog, InsertPartsCatalog,
   // AI Prediktivno održavanje
   /* MaintenancePatterns, InsertMaintenancePatterns,
@@ -36,7 +37,7 @@ import {
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
   sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
   webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports,
-  suppliers, supplierOrders, partsCatalog,
+  suppliers, supplierOrders, supplierOrderEvents, partsCatalog,
   // AI Prediktivno održavanje tabele
   /* maintenancePatterns, predictiveInsights, aiAnalysisResults, */
   // Fotografije servisa
@@ -366,6 +367,15 @@ export interface IStorage {
   getCategory(id: number): Promise<ApplianceCategory | undefined>;
   setSystemSetting(key: string, value: string): Promise<SystemSetting | undefined>;
   getBusinessPartner(id: number): Promise<User | undefined>;
+
+  // Supplier Portal methods (Task 2)
+  getSuppliersByPartnerType(partnerType: 'complus' | 'beko'): Promise<Supplier[]>;
+  createSupplierPortalUser(userData: InsertUser, supplierId: number): Promise<User>;
+  getSupplierPortalUsers(supplierId: number): Promise<User[]>;
+  
+  // Supplier Order Event methods
+  createSupplierOrderEvent(event: InsertSupplierOrderEvent): Promise<SupplierOrderEvent>;
+  getSupplierOrderEvents(orderId: number): Promise<SupplierOrderEvent[]>;
 }
 
 // @ts-ignore - MemStorage class is not used in production, only for testing
@@ -5533,6 +5543,121 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine dobavljača:', error);
       return false;
+    }
+  }
+
+  // ===== SUPPLIER PORTAL METHODS =====
+
+  async getSuppliersByPartnerType(partnerType: 'complus' | 'beko'): Promise<Supplier[]> {
+    try {
+      return await db.select()
+        .from(suppliers)
+        .where(and(
+          eq(suppliers.partnerType, partnerType),
+          eq(suppliers.isActive, true),
+          eq(suppliers.portalEnabled, true)
+        ))
+        .orderBy(desc(suppliers.priority), suppliers.name);
+    } catch (error) {
+      console.error('Greška pri dohvatanju dobavljača po tipu partnera:', error);
+      return [];
+    }
+  }
+
+  async createSupplierPortalUser(userData: InsertUser, supplierId: number): Promise<User> {
+    try {
+      // CRITICAL FIX 1: Validate supplier exists and has portalEnabled=true
+      const [supplier] = await db.select()
+        .from(suppliers)
+        .where(and(
+          eq(suppliers.id, supplierId),
+          eq(suppliers.isActive, true),
+          eq(suppliers.portalEnabled, true)
+        ));
+      
+      if (!supplier) {
+        throw new Error(`Supplier with ID ${supplierId} not found or portal not enabled`);
+      }
+
+      // CRITICAL FIX 2: Hash password properly using scrypt (SECURITY BUG FIX)
+      let hashedPassword = userData.password;
+      const parts = hashedPassword.split('.');
+      if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
+        // Password is not properly hashed, hash it using scrypt
+        hashedPassword = await this.hashPassword(userData.password);
+      }
+
+      // CRITICAL FIX 3: Assign correct role based on supplier's partnerType (FUNCTIONAL BUG FIX)
+      let role: string;
+      switch (supplier.partnerType?.toLowerCase()) {
+        case 'complus':
+          role = 'supplier_complus';
+          break;
+        case 'beko':
+          role = 'supplier_beko';
+          break;
+        default:
+          // Fallback to complus if partnerType is not set or invalid
+          role = 'supplier_complus';
+      }
+
+      // Set supplier-specific data with properly hashed password and correct role
+      const supplierUserData: InsertUser = {
+        ...userData,
+        password: hashedPassword, // Use hashed password
+        supplierId: supplierId,
+        role: role, // Use role based on supplier's partnerType
+        isVerified: true // Supplier users are pre-verified
+      };
+
+      // Create the user with secure data
+      const [newUser] = await db.insert(users).values(supplierUserData).returning();
+      
+      console.log(`🔐 [SECURITY] Created supplier portal user with role '${role}' for supplier '${supplier.name}' (${supplier.partnerType})`);
+      return newUser;
+    } catch (error) {
+      console.error('Greška pri kreiranju korisnika supplier portala:', error);
+      throw error;
+    }
+  }
+
+  async getSupplierPortalUsers(supplierId: number): Promise<User[]> {
+    try {
+      return await db.select()
+        .from(users)
+        .where(and(
+          eq(users.supplierId, supplierId),
+          or(
+            eq(users.role, 'supplier_complus'),
+            eq(users.role, 'supplier_beko')
+          )
+        ))
+        .orderBy(users.fullName);
+    } catch (error) {
+      console.error('Greška pri dohvatanju korisnika supplier portala:', error);
+      return [];
+    }
+  }
+
+  async createSupplierOrderEvent(event: InsertSupplierOrderEvent): Promise<SupplierOrderEvent> {
+    try {
+      const [newEvent] = await db.insert(supplierOrderEvents).values(event).returning();
+      return newEvent;
+    } catch (error) {
+      console.error('Greška pri kreiranju supplier order event-a:', error);
+      throw error;
+    }
+  }
+
+  async getSupplierOrderEvents(orderId: number): Promise<SupplierOrderEvent[]> {
+    try {
+      return await db.select()
+        .from(supplierOrderEvents)
+        .where(eq(supplierOrderEvents.supplierOrderId, orderId))
+        .orderBy(desc(supplierOrderEvents.createdAt));
+    } catch (error) {
+      console.error('Greška pri dohvatanju supplier order events:', error);
+      return [];
     }
   }
 
