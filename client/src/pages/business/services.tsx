@@ -57,6 +57,7 @@ interface ServiceItem {
   isCompletelyFixed: boolean | null;
   businessPartnerId: number | null;
   partnerCompanyName: string | null;
+  warrantyStatus?: string; // DODATO: warranty status field
   client?: {
     fullName: string;
     email: string;
@@ -146,6 +147,34 @@ function StatusBadge({ status }: { status: string }) {
     <Badge variant={variant} className="flex items-center gap-1 font-normal">
       <Icon className="h-3 w-3" />
       {statusText}
+    </Badge>
+  );
+}
+
+// NOVA KOMPONENTA za prikaz warranty status bedža  
+function WarrantyBadge({ warrantyStatus }: { warrantyStatus?: string }) {
+  if (!warrantyStatus) {
+    return (
+      <Badge variant="outline" className="flex items-center gap-1 font-normal bg-gray-50 text-gray-500">
+        <AlertTriangle className="h-3 w-3" />
+        Nepoznato
+      </Badge>
+    );
+  }
+  
+  const isInWarranty = warrantyStatus === "u garanciji" || warrantyStatus === "u_garanciji";
+  
+  return (
+    <Badge 
+      variant={isInWarranty ? "default" : "secondary"} 
+      className={`flex items-center gap-1 font-normal ${
+        isInWarranty 
+          ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
+          : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
+      }`}
+    >
+      <CheckCircle className={`h-3 w-3 ${isInWarranty ? 'text-green-600' : 'text-red-600'}`} />
+      {isInWarranty ? "U garanciji" : "Van garancije"}
     </Badge>
   );
 }
@@ -297,6 +326,7 @@ export default function BusinessServices() {
                       <TableHead className="w-[60px]">ID</TableHead>
                       <TableHead>Klijent</TableHead>
                       <TableHead>Uređaj</TableHead>
+                      <TableHead>Garancija</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Kreiran</TableHead>
                       <TableHead>Serviser</TableHead>
@@ -329,6 +359,9 @@ export default function BusinessServices() {
                               {service.category?.name}
                             </span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <WarrantyBadge warrantyStatus={service.warrantyStatus} />
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={service.status} />
@@ -430,6 +463,9 @@ export default function BusinessServices() {
                       {service.appliance?.serialNumber && (
                         <div className="text-xs text-gray-500">SN: {service.appliance.serialNumber}</div>
                       )}
+                      <div className="mt-2">
+                        <WarrantyBadge warrantyStatus={service.warrantyStatus} />
+                      </div>
                     </div>
                     
                     <div className="border-t pt-2">
@@ -537,6 +573,10 @@ export default function BusinessServices() {
                   <p className="text-sm text-gray-500">
                     SN: {selectedService.appliance?.serialNumber || "Nije unet"}
                   </p>
+                  <div className="mt-2">
+                    <span className="text-sm text-gray-500">Garancija: </span>
+                    <WarrantyBadge warrantyStatus={selectedService.warrantyStatus} />
+                  </div>
                 </div>
                 
                 <div>
