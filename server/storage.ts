@@ -2224,7 +2224,7 @@ export class DatabaseStorage implements IStorage {
         return transformed;
       });
       
-      // Map to proper Service[] format
+      // Map to proper Service[] format with client and appliance data
       return transformedResult.map(service => ({
         id: service.id,
         clientId: service.clientId,
@@ -2243,6 +2243,20 @@ export class DatabaseStorage implements IStorage {
         isCompletelyFixed: service.isCompletelyFixed,
         businessPartnerId: service.businessPartnerId,
         partnerCompanyName: service.partnerCompanyName,
+        // FIXED: Add client data for frontend display
+        clientName: service.clientName,
+        clientCity: service.clientCity,
+        clientAddress: service.clientAddress,
+        clientPhone: service.clientPhone,
+        clientEmail: service.clientEmail,
+        // FIXED: Add appliance data for frontend display
+        applianceName: service.applianceName,
+        applianceSerialNumber: service.applianceSerialNumber,
+        // FIXED: Add category and manufacturer data
+        categoryName: service.categoryName,
+        manufacturerName: service.manufacturerName,
+        // FIXED: Add technician data
+        technicianName: service.technicianName,
         clientUnavailableReason: service.clientUnavailableReason || null,
         needsRescheduling: service.needsRescheduling || false,
         reschedulingNotes: service.reschedulingNotes || null,
