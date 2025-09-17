@@ -78,7 +78,8 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
     technicianId: user.technicianId,
     fullName: user.fullName,
     email: user.email,
-    companyName: user.companyName
+    companyName: user.companyName,
+    supplierId: user.supplierId // CRITICAL: Add supplierId for supplier authorization
   };
   
   next();

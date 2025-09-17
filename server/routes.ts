@@ -8977,8 +8977,12 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         return res.status(401).json({ error: "Neispravni podaci za prijavu" });
       }
 
-      // Generate JWT token with userId property
-      const token = generateToken({ ...user, userId: user.id });
+      // Generate JWT token with only necessary claims (NO PASSWORD HASH!)
+      const token = generateToken({
+        userId: user.id,
+        username: user.username,
+        role: user.role
+      });
       
       console.log(`🔐 [SUPPLIER-LOGIN] Dobavljač ${user.username} (${user.role}) se prijavio`);
 
