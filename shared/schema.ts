@@ -9,8 +9,9 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").default("customer").notNull(), // Promenjen default na customer
+  role: text("role").default("customer").notNull(), // Promenjen default na customer - supports: customer, admin, technician, business_partner, supplier_complus, supplier_beko
   technicianId: integer("technician_id"), // Reference to technician if user is a technician
+  supplierId: integer("supplier_id"), // Reference to supplier if user is a supplier portal user
   email: text("email"), // Email adresa korisnika
   phone: text("phone"), // Broj telefona korisnika
   address: text("address"), // Adresa korisnika
@@ -29,6 +30,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   fullName: true,
   role: true,
   technicianId: true,
+  supplierId: true,
   email: true,
   phone: true,
   address: true,
@@ -44,6 +46,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
     .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-")
     .or(z.literal("")).optional(),
+  supplierId: z.number().int().positive("ID dobavljača mora biti pozitivan broj").optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -501,6 +504,10 @@ export const usersRelations = relations(users, ({ one }) => ({
     fields: [users.technicianId],
     references: [technicians.id],
   }),
+  supplier: one(suppliers, {
+    fields: [users.supplierId],
+    references: [suppliers.id],
+  }),
 }));
 
 export const techniciansRelations = relations(technicians, ({ many }) => ({
@@ -831,6 +838,10 @@ export const suppliers = pgTable("suppliers", {
   priority: integer("priority").default(5).notNull(), // 1-10, veći broj = viši prioritet
   averageDeliveryDays: integer("average_delivery_days").default(7),
   notes: text("notes"),
+  partnerType: text("partner_type", {
+    enum: ["complus", "beko"]
+  }), // Tip partnera za supplier portal
+  portalEnabled: boolean("portal_enabled").default(false).notNull(), // Da li je supplier portal omogućen
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1448,6 +1459,8 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   priority: true,
   averageDeliveryDays: true,
   notes: true,
+  partnerType: true,
+  portalEnabled: true,
 }).extend({
   name: z.string().min(2, "Naziv mora imati najmanje 2 karaktera").max(100),
   companyName: z.string().min(2, "Naziv kompanije mora imati najmanje 2 karaktera").max(200),
@@ -1457,6 +1470,8 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   integrationMethod: z.enum(["email", "api", "fax", "manual"]).default("email"),
   priority: z.number().int().min(1).max(10).default(5),
   averageDeliveryDays: z.number().int().min(1).max(365).default(7),
+  partnerType: z.enum(["complus", "beko"]).optional(),
+  portalEnabled: z.boolean().default(false),
 });
 
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
@@ -2033,5 +2048,122 @@ export const insertDeletedServiceSchema = createInsertSchema(deletedServices).pi
 
 export type InsertDeletedService = z.infer<typeof insertDeletedServiceSchema>;
 export type DeletedService = typeof deletedServices.$inferSelect;
+
+// ===== SUPPLIER PORTAL FUNCTIONALITY =====
+
+// User role enum including supplier roles
+export const userRoleEnum = z.enum([
+  "customer",
+  "admin",
+  "technician", 
+  "business_partner",
+  "supplier_complus",
+  "supplier_beko",
+]);
+
+export type UserRole = z.infer<typeof userRoleEnum>;
+
+// Partner type enum for suppliers
+export const partnerTypeEnum = z.enum([
+  "complus",
+  "beko",
+]);
+
+export type PartnerType = z.infer<typeof partnerTypeEnum>;
+
+// Supplier Order Events - for tracking order status changes, notes, and updates
+export const supplierOrderEvents = pgTable("supplier_order_events", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(), // Reference to order (could be sparePartOrders.id or supplierOrders.id)
+  eventType: text("event_type").notNull(), // "status_change", "note_added", "update", "communication", "delivery_update"
+  eventStatus: text("event_status"), // New status if this is a status change event
+  eventDescription: text("event_description").notNull(), // Description of what happened
+  eventNotes: text("event_notes"), // Additional notes about the event
+  performedBy: integer("performed_by").notNull(), // User ID who performed the action
+  performedByRole: text("performed_by_role").notNull(), // Role of user who performed action
+  performedByName: text("performed_by_name").notNull(), // Name of user for easier tracking
+  supplierId: integer("supplier_id"), // Related supplier if applicable
+  supplierName: text("supplier_name"), // Supplier name for easier tracking
+  relatedServiceId: integer("related_service_id"), // Related service if applicable
+  orderReference: text("order_reference"), // External order reference number
+  deliveryInfo: text("delivery_info"), // Delivery information updates
+  trackingNumber: text("tracking_number"), // Package tracking number
+  estimatedDeliveryDate: text("estimated_delivery_date"), // Expected delivery date (YYYY-MM-DD format)
+  actualDeliveryDate: text("actual_delivery_date"), // Actual delivery date (YYYY-MM-DD format)
+  priority: text("priority").default("normal").notNull(), // "low", "normal", "high", "urgent"
+  isSystemGenerated: boolean("is_system_generated").default(false).notNull(), // Auto-generated by system vs manual entry
+  attachments: text("attachments"), // JSON array of attachment URLs/paths
+  communicationChannel: text("communication_channel"), // "email", "phone", "portal", "system"
+  ipAddress: text("ip_address"), // IP address of user who created event
+  userAgent: text("user_agent"), // Browser/app info
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Schema for creating supplier order events
+export const insertSupplierOrderEventSchema = createInsertSchema(supplierOrderEvents).pick({
+  orderId: true,
+  eventType: true,
+  eventStatus: true,
+  eventDescription: true,
+  eventNotes: true,
+  performedBy: true,
+  performedByRole: true,
+  performedByName: true,
+  supplierId: true,
+  supplierName: true,
+  relatedServiceId: true,
+  orderReference: true,
+  deliveryInfo: true,
+  trackingNumber: true,
+  estimatedDeliveryDate: true,
+  actualDeliveryDate: true,
+  priority: true,
+  isSystemGenerated: true,
+  attachments: true,
+  communicationChannel: true,
+  ipAddress: true,
+  userAgent: true,
+}).extend({
+  orderId: z.number().int().positive("ID porudžbine mora biti pozitivan broj"),
+  eventType: z.enum(["status_change", "note_added", "update", "communication", "delivery_update"]),
+  eventStatus: z.string().max(100, "Status je predugačak").optional(),
+  eventDescription: z.string().min(5, "Opis mora biti detaljniji (min 5 karaktera)").max(1000, "Opis je predugačak"),
+  eventNotes: z.string().max(2000, "Napomene su predugačke").optional(),
+  performedBy: z.number().int().positive("ID korisnika mora biti pozitivan broj"),
+  performedByRole: userRoleEnum,
+  performedByName: z.string().min(2, "Ime mora imati najmanje 2 karaktera").max(100, "Ime je predugačko"),
+  supplierId: z.number().int().positive("ID dobavljača mora biti pozitivan broj").optional(),
+  supplierName: z.string().max(100, "Naziv dobavljača je predugačak").optional(),
+  relatedServiceId: z.number().int().positive("ID servisa mora biti pozitivan broj").optional(),
+  orderReference: z.string().max(100, "Referentni broj je predugačak").optional(),
+  deliveryInfo: z.string().max(500, "Informacije o dostavi su predugačke").optional(),
+  trackingNumber: z.string().max(100, "Broj za praćenje je predugačak").optional(),
+  estimatedDeliveryDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, "Nevažeći datum"),
+  actualDeliveryDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Datum mora biti u formatu YYYY-MM-DD")
+    .optional()
+    .refine(val => {
+      if (!val) return true;
+      const date = new Date(val);
+      return !isNaN(date.getTime()) && date <= new Date();
+    }, "Datum dostave ne može biti u budućnosti"),
+  priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+  isSystemGenerated: z.boolean().default(false),
+  attachments: z.string().max(2000, "Lista priloga je predugačka").optional(),
+  communicationChannel: z.enum(["email", "phone", "portal", "system"]).optional(),
+  ipAddress: z.string().max(45, "IP adresa je predugačka").optional(), // IPv6 max length
+  userAgent: z.string().max(500, "User agent je predugačak").optional(),
+});
+
+export type InsertSupplierOrderEvent = z.infer<typeof insertSupplierOrderEventSchema>;
+export type SupplierOrderEvent = typeof supplierOrderEvents.$inferSelect;
 
 
