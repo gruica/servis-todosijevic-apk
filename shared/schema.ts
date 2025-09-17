@@ -2169,4 +2169,36 @@ export const insertSupplierOrderEventSchema = createInsertSchema(supplierOrderEv
 export type InsertSupplierOrderEvent = z.infer<typeof insertSupplierOrderEventSchema>;
 export type SupplierOrderEvent = typeof supplierOrderEvents.$inferSelect;
 
+// ===== PROCUREMENT REQUEST SCHEMAS =====
+// Schema for procurement request creation
+export const procurementRequestSchema = z.object({
+  partName: z.string().min(2, "Naziv dela mora imati najmanje 2 karaktera").max(200, "Naziv dela je predugačak"),
+  partNumber: z.string().max(100, "Broj dela je predugačak").optional(),
+  quantity: z.number().int().min(1, "Količina mora biti pozitivna").max(1000, "Maksimalna količina je 1000"),
+  description: z.string().max(1000, "Opis je predugačak").optional(),
+  urgency: z.enum(["normal", "high", "urgent"], {
+    errorMap: () => ({ message: "Odaberite nivo hitnosti" })
+  }),
+  expectedDelivery: z.string().optional(),
+  notes: z.string().max(500, "Napomene su predugačke").optional(),
+});
+
+export type ProcurementRequest = z.infer<typeof procurementRequestSchema>;
+
+// Schema for supplier portal user creation
+export const supplierPortalUserSchema = insertUserSchema.extend({
+  username: z.string().min(3, "Korisničko ime mora imati najmanje 3 karaktera").max(50, "Korisničko ime je predugačko"),
+  fullName: z.string().min(2, "Ime i prezime mora imati najmanje 2 karaktera").max(100, "Ime i prezime je predugačko"),
+  email: z.string().email("Unesite validnu email adresu"),
+  password: z.string().min(6, "Lozinka mora imati najmanje 6 karaktera"),
+  role: z.enum(["supplier_complus", "supplier_beko"], {
+    errorMap: () => ({ message: "Odaberite tip portala" })
+  }),
+  phone: z.string().min(6, "Broj telefona mora imati najmanje 6 brojeva")
+    .regex(/^[+]?[\d\s()-]{6,20}$/, "Broj telefona mora sadržati samo brojeve, razmake i znakove +()-")
+    .optional(),
+});
+
+export type SupplierPortalUser = z.infer<typeof supplierPortalUserSchema>;
+
 
