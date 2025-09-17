@@ -2166,6 +2166,20 @@ export class DatabaseStorage implements IStorage {
         isCompletelyFixed: services.isCompletelyFixed,
         businessPartnerId: services.businessPartnerId,
         partnerCompanyName: services.partnerCompanyName,
+        // Add missing service fields
+        clientUnavailableReason: services.clientUnavailableReason,
+        needsRescheduling: services.needsRescheduling,
+        reschedulingNotes: services.reschedulingNotes,
+        devicePickedUp: services.devicePickedUp,
+        pickupDate: services.pickupDate,
+        pickupNotes: services.pickupNotes,
+        customerRefusesRepair: services.customerRefusesRepair,
+        customerRefusalReason: services.customerRefusalReason,
+        repairFailed: services.repairFailed,
+        repairFailureReason: services.repairFailureReason,
+        replacedPartsBeforeFailure: services.replacedPartsBeforeFailure,
+        repairFailureDate: services.repairFailureDate,
+        isWarrantyService: services.isWarrantyService,
         // Dodajemo podatke o klijentu za prikaz u tabeli
         clientName: clients.fullName,
         clientCity: clients.city,
@@ -2189,12 +2203,8 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(technicians, eq(services.technicianId, technicians.id))
       .orderBy(desc(services.createdAt));
       
-      // Apply limit if specified for optimization
-      if (limit && limit > 0) {
-        query = query.limit(limit);
-      }
-      
-      const result = await query;
+      // Apply limit and get result
+      const result = await (limit && limit > 0 ? query.limit(limit) : query);
       
       // Vodimo zapisnik o ključevima prvog rezultata za debug
       if (result.length > 0) {
@@ -2319,12 +2329,8 @@ export class DatabaseStorage implements IStorage {
   async getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]> {
     let query = db.select().from(services).where(eq(services.status, status));
     
-    // Apply limit if specified for optimization
-    if (limit && limit > 0) {
-      query = query.limit(limit);
-    }
-    
-    return await query;
+    // Apply limit and return
+    return await (limit && limit > 0 ? query.limit(limit) : query);
   }
 
   async getServicesByStatusDetailed(status: ServiceStatus): Promise<Service[]> {
@@ -2353,12 +2359,8 @@ export class DatabaseStorage implements IStorage {
         .where(eq(services.technicianId, technicianId))
         .orderBy(desc(services.createdAt));
         
-      // Apply limit if specified
-      if (limit && limit > 0) {
-        query = query.limit(limit);
-      }
-      
-      const result = await query;
+      // Apply limit and get result
+      const result = await (limit && limit > 0 ? query.limit(limit) : query);
       console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId}`);
       
       return result;
@@ -2382,12 +2384,8 @@ export class DatabaseStorage implements IStorage {
         ))
         .orderBy(desc(services.createdAt));
         
-      // Apply limit if specified
-      if (limit && limit > 0) {
-        query = query.limit(limit);
-      }
-      
-      const results = await query;
+      // Apply limit and get results
+      const results = await (limit && limit > 0 ? query.limit(limit) : query);
       console.log(`Pronađeno ${results.length} servisa za tehničara ${technicianId} sa statusom '${status}'`);
       return results;
     } catch (error) {
@@ -3155,7 +3153,6 @@ export class DatabaseStorage implements IStorage {
             email: client.email,
             address: client.address,
             city: client.city,
-            companyName: client.companyName || null,
           } : null,
           appliance: appliance ? {
             id: appliance.id,
@@ -3258,7 +3255,6 @@ export class DatabaseStorage implements IStorage {
           email: client.email,
           address: client.address,
           city: client.city,
-          companyName: client.companyName || null,
         } : null,
         appliance: appliance ? {
           id: appliance.id,
@@ -4279,11 +4275,11 @@ export class DatabaseStorage implements IStorage {
       if (technicianId) {
         conditions.push(eq(partsAllocations.technicianId, technicianId));
       }
-      if (conditions.length > 0) {
-        query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-      }
+      const finalQuery = conditions.length > 0 
+        ? query.where(conditions.length === 1 ? conditions[0] : and(...conditions))
+        : query;
 
-      return await query.orderBy(desc(partsAllocations.allocatedDate));
+      return await finalQuery.orderBy(desc(partsAllocations.allocatedDate));
     } catch (error) {
       console.error('Greška pri dohvatanju dodela delova:', error);
       return [];
@@ -4665,11 +4661,11 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(availableParts, eq(partsActivityLog.partId, availableParts.id))
         .orderBy(desc(partsActivityLog.timestamp));
 
-      if (partId) {
-        query = query.where(eq(partsActivityLog.partId, partId));
-      }
+      const finalQuery = partId 
+        ? query.where(eq(partsActivityLog.partId, partId))
+        : query;
 
-      const activities = await query.limit(limit);
+      const activities = await finalQuery.limit(limit);
       return activities;
     } catch (error) {
       console.error('Greška pri dohvatanju log aktivnosti:', error);
@@ -5015,11 +5011,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(webScrapingLogs.createdAt))
         .limit(100);
       
-      if (sourceId) {
-        query = query.where(eq(webScrapingLogs.sourceId, sourceId));
-      }
+      const finalQuery = sourceId 
+        ? query.where(eq(webScrapingLogs.sourceId, sourceId))
+        : query;
       
-      const logs = await query;
+      const logs = await finalQuery;
       return logs;
     } catch (error) {
       console.error('Greška pri dohvatanju scraping logova:', error);
@@ -5099,7 +5095,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const reportData = {
         ...data,
-        technicianId: data.technicianId || await this.getTechnicianIdFromService(data.serviceId),
+        technicianId: await this.getTechnicianIdFromService(data.serviceId),
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -5409,26 +5405,27 @@ export class DatabaseStorage implements IStorage {
 
   async searchPartsInCatalog(query: string, category?: string, manufacturerId?: number): Promise<PartsCatalog[]> {
     try {
-      let searchQuery = db.select()
-        .from(partsCatalog)
-        .where(
-          and(
-            eq(partsCatalog.isActive, true),
-            or(
-              ilike(partsCatalog.partName, `%${query}%`),
-              ilike(partsCatalog.partNumber, `%${query}%`),
-              ilike(partsCatalog.description, `%${query}%`)
-            )
-          )
-        );
+      // Build conditions array
+      const conditions = [
+        eq(partsCatalog.isActive, true),
+        or(
+          ilike(partsCatalog.partName, `%${query}%`),
+          ilike(partsCatalog.partNumber, `%${query}%`),
+          ilike(partsCatalog.description, `%${query}%`)
+        )
+      ];
 
       if (category) {
-        searchQuery = searchQuery.where(eq(partsCatalog.category, category));
+        conditions.push(eq(partsCatalog.category, category));
       }
 
       if (manufacturerId) {
-        searchQuery = searchQuery.where(eq(partsCatalog.manufacturerId, manufacturerId));
+        conditions.push(eq(partsCatalog.manufacturerId, manufacturerId));
       }
+
+      const searchQuery = db.select()
+        .from(partsCatalog)
+        .where(and(...conditions));
 
       return await searchQuery.orderBy(desc(partsCatalog.lastUpdated));
     } catch (error) {
@@ -5632,11 +5629,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAllAuditLogs(limit?: number): Promise<ServiceAuditLog[]> {
     try {
-      let query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
-      if (limit && limit > 0) {
-        query = query.limit(limit);
-      }
-      return await query;
+      const query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
+      return await (limit && limit > 0 ? query.limit(limit) : query);
     } catch (error) {
       console.error('Greška pri dohvatanju svih audit log-ova:', error);
       return [];
@@ -5910,7 +5904,7 @@ export class DatabaseStorage implements IStorage {
     try {
       return await db.select()
         .from(maintenancePatterns)
-        .where(eq(maintenancePatterns.categoryId, categoryId))
+        .where(eq(maintenancePatterns.applianceCategoryId, categoryId))
         .orderBy(desc(maintenancePatterns.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju pattern-a održavanja po kategoriji:', error);
@@ -6140,7 +6134,7 @@ export class DatabaseStorage implements IStorage {
     try {
       return await db.select()
         .from(aiAnalysisResults)
-        .where(eq(aiAnalysisResults.success, true))
+        .where(eq(aiAnalysisResults.isSuccessful, true))
         .orderBy(desc(aiAnalysisResults.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju uspešnih AI analiza:', error);
