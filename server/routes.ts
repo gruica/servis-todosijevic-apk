@@ -9372,6 +9372,250 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
+  // ===== ADMIN PROCUREMENT FUNCTIONALITY =====
+
+  // Zod schema for procurement request validation
+  const procurementRequestSchema = z.object({
+    supplierId: z.number().int().positive("ID dobavljača mora biti pozitivan broj"),
+    partNumbers: z.array(z.string().min(1, "Broj dela ne može biti prazan")).min(1, "Mora biti unesen najmanje jedan broj dela"),
+    quantities: z.array(z.number().int().positive("Količina mora biti pozitivna")).min(1, "Mora biti unesena najmanje jedna količina"),
+    priority: z.enum(['urgent', 'normal', 'low']).default('normal'),
+    description: z.string().min(5, "Opis mora imati najmanje 5 karaktera").max(1000, "Opis je predugačak"),
+    serviceId: z.number().int().positive().optional(),
+    deadline: z.string().datetime().optional()
+  }).refine(
+    data => data.partNumbers.length === data.quantities.length,
+    { message: "Broj delova i količina moraju biti jednaki", path: ["quantities"] }
+  );
+
+  // POST /api/admin/procurement/requests - Send procurement requests to suppliers
+  app.post("/api/admin/procurement/requests", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const user = req.user!;
+      console.log(`🛒 [PROCUREMENT] Admin ${user.username} šalje zahtev za nabavku dobavljaču`);
+      
+      // Validate request data
+      const validatedData = procurementRequestSchema.parse(req.body);
+      const { supplierId, partNumbers, quantities, priority, description, serviceId, deadline } = validatedData;
+      
+      console.log(`🛒 [PROCUREMENT] Validacija prošla - Dobavljač ID: ${supplierId}, Delovi: ${partNumbers.length}, Prioritet: ${priority}`);
+      
+      // Check if supplier exists and is active
+      const supplier = await storage.getSupplier(supplierId);
+      if (!supplier) {
+        console.log(`❌ [PROCUREMENT] Dobavljač sa ID ${supplierId} ne postoji`);
+        return res.status(404).json({ error: "Dobavljač nije pronađen" });
+      }
+      
+      if (!supplier.isActive) {
+        console.log(`❌ [PROCUREMENT] Dobavljač ${supplier.name} nije aktivan`);
+        return res.status(400).json({ error: "Dobavljač nije aktivan" });
+      }
+      
+      console.log(`✅ [PROCUREMENT] Dobavljač ${supplier.name} (${supplier.partnerType}) je valjan i aktivan`);
+      
+      // Validate service if provided
+      let relatedService = null;
+      if (serviceId) {
+        relatedService = await storage.getService(serviceId);
+        if (!relatedService) {
+          return res.status(404).json({ error: "Povezani servis nije pronađen" });
+        }
+        console.log(`🔗 [PROCUREMENT] Povezan sa servisom #${serviceId}`);
+      }
+      
+      // Create supplier order - use existing spare part order as template
+      const supplierOrderData = {
+        supplierId: supplierId,
+        sparePartOrderId: null, // This is a direct procurement request, not tied to existing spare part order
+        status: 'pending' as const,
+        priority: priority,
+        requestDate: new Date(),
+        expectedDeliveryDate: deadline ? new Date(deadline) : null,
+        notes: description,
+        adminRequestedBy: user.id,
+        totalCost: null // Will be updated when supplier responds
+      };
+      
+      console.log(`📝 [PROCUREMENT] Kreiram supplier order sa podacima:`, {
+        supplierId: supplierOrderData.supplierId,
+        status: supplierOrderData.status,
+        priority: supplierOrderData.priority,
+        adminRequestedBy: supplierOrderData.adminRequestedBy
+      });
+      
+      // Create the supplier order
+      const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
+      console.log(`✅ [PROCUREMENT] Kreiran supplier order ID: ${supplierOrder.id}`);
+      
+      // Generate tracking number for the request
+      const trackingNumber = `PROC-${supplierOrder.id}-${Date.now().toString().slice(-6)}`;
+      
+      // Create detailed parts list for the event description
+      const partsDetails = partNumbers.map((partNumber, index) => 
+        `${partNumber} (količina: ${quantities[index]})`
+      ).join(', ');
+      
+      // Create supplier order event for audit and tracking
+      const eventData = {
+        orderId: supplierOrder.id,
+        orderType: 'supplier_order' as const,
+        eventType: 'procurement_request_created' as const,
+        description: `Admin ${user.fullName} poslao zahtev za nabavku: ${partsDetails}. ${description}`,
+        userId: user.id,
+        userName: user.fullName,
+        supplierId: supplierId,
+        supplierName: supplier.name,
+        metadata: JSON.stringify({
+          partNumbers: partNumbers,
+          quantities: quantities,
+          priority: priority,
+          serviceId: serviceId,
+          deadline: deadline,
+          trackingNumber: trackingNumber
+        })
+      };
+      
+      const event = await storage.createSupplierOrderEvent(eventData);
+      console.log(`✅ [PROCUREMENT] Kreiran event ID: ${event.id} za tracking`);
+      
+      // Prepare notification data
+      const notificationData = {
+        supplierName: supplier.name,
+        partNumbers: partNumbers,
+        quantities: quantities,
+        priority: priority,
+        description: description,
+        adminName: user.fullName,
+        trackingNumber: trackingNumber,
+        deadline: deadline ? new Date(deadline).toLocaleDateString('sr-RS') : 'Nije specificiran',
+        serviceInfo: relatedService ? `Servis #${relatedService.id}` : 'Direktan zahtev'
+      };
+      
+      // Send notifications based on supplier preferences and configuration
+      let notificationSent = false;
+      
+      try {
+        // Email notification if supplier has email
+        if (supplier.email) {
+          console.log(`📧 [PROCUREMENT] Šaljem email notifikaciju na ${supplier.email}`);
+          
+          const emailSubject = `Novi zahtev za nabavku - ${trackingNumber}`;
+          const emailBody = `
+Poštovani,
+
+Primili ste novi zahtev za nabavku rezervnih delova:
+
+📋 DETALJI ZAHTEVA:
+• Tracking broj: ${trackingNumber}
+• Prioritet: ${priority.toUpperCase()}
+• Admin: ${user.fullName}
+• ${relatedService ? `Povezan servis: #${relatedService.id}` : 'Direktan zahtev'}
+
+🔧 REZERVNI DELOVI:
+${partNumbers.map((part, index) => `• ${part} - Količina: ${quantities[index]}`).join('\n')}
+
+📝 OPIS: ${description}
+
+⏰ DEADLINE: ${deadline ? new Date(deadline).toLocaleDateString('sr-RS') : 'Nije specificiran'}
+
+Za odgovor na zahtev, prijavite se na supplier portal ili kontaktirajte naš tim.
+
+Srdačan pozdrav,
+Frigo Sistem Todosijević
+          `.trim();
+          
+          await emailService.sendEmail(supplier.email, emailSubject, emailBody);
+          notificationSent = true;
+          console.log(`✅ [PROCUREMENT] Email uspešno poslat`);
+        }
+        
+        // SMS notification if supplier has phone and SMS is enabled
+        if (supplier.phone && supplier.smsNotifications) {
+          console.log(`📱 [PROCUREMENT] Šaljem SMS notifikaciju na ${supplier.phone}`);
+          
+          const smsMessage = `FRIGO SISTEM: Novi zahtev za nabavku ${trackingNumber}. ${partNumbers.length} deo(va). Prioritet: ${priority}. Proverite email ili portal.`;
+          
+          const sms = new SMSCommunicationService();
+          await sms.sendSMS(supplier.phone, smsMessage);
+          notificationSent = true;
+          console.log(`✅ [PROCUREMENT] SMS uspešno poslat`);
+        }
+        
+        // WhatsApp notification if configured
+        if (supplier.whatsappNumber) {
+          console.log(`💬 [PROCUREMENT] Pripremam WhatsApp notifikaciju za ${supplier.whatsappNumber}`);
+          // WhatsApp notification would go here if implemented
+        }
+        
+      } catch (notificationError) {
+        console.error(`⚠️ [PROCUREMENT] Greška pri slanju notifikacija:`, notificationError);
+        // Don't fail the whole request if notification fails
+      }
+      
+      // Calculate estimated response time based on supplier type and priority
+      let estimatedResponseHours = 24; // Default 24 hours
+      if (priority === 'urgent') {
+        estimatedResponseHours = supplier.partnerType === 'complus' ? 2 : 4;
+      } else if (priority === 'normal') {
+        estimatedResponseHours = supplier.partnerType === 'complus' ? 8 : 12;
+      } else {
+        estimatedResponseHours = 48;
+      }
+      
+      const estimatedResponseDate = new Date();
+      estimatedResponseDate.setHours(estimatedResponseDate.getHours() + estimatedResponseHours);
+      
+      // Prepare response data
+      const response = {
+        success: true,
+        requestId: supplierOrder.id,
+        supplierId: supplierId,
+        supplierName: supplier.name,
+        partnerType: supplier.partnerType,
+        status: 'pending',
+        trackingNumber: trackingNumber,
+        estimatedResponse: estimatedResponseDate.toISOString(),
+        partNumbers: partNumbers,
+        quantities: quantities,
+        priority: priority,
+        description: description,
+        notificationSent: notificationSent,
+        serviceId: serviceId,
+        deadline: deadline
+      };
+      
+      console.log(`✅ [PROCUREMENT] Zahtev uspešno kreiran i poslat:`, {
+        requestId: response.requestId,
+        trackingNumber: response.trackingNumber,
+        supplierName: response.supplierName,
+        partNumbers: response.partNumbers.length,
+        notificationSent: response.notificationSent
+      });
+      
+      res.status(201).json(response);
+      
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error(`❌ [PROCUREMENT] Validation error:`, error.errors);
+        return res.status(400).json({ 
+          error: "Neispravni podaci u zahtevu", 
+          details: error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message
+          }))
+        });
+      }
+      
+      console.error(`❌ [PROCUREMENT] Neočekivana greška:`, error);
+      res.status(500).json({ 
+        error: "Greška pri kreiranju zahteva za nabavku",
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
+
+  console.log("✅ [PROCUREMENT] Admin procurement endpoint je registrovan");
   console.log("✅ [SUPPLIER-PORTAL] Svi supplier portal API endpoint-i su registrovani");
 
 }
