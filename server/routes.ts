@@ -8774,5 +8774,179 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ===============================
+  // 🏪 SUPPLIER MANAGEMENT ROUTES
+  // ===============================
+
+  // Get all suppliers
+  app.get("/api/admin/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži listu svih dobavljača`);
+      const suppliers = await storage.getAllSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      console.error("[SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
+    }
+  });
+
+  // Get active suppliers only
+  app.get("/api/admin/suppliers/active", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži aktivne dobavljače`);
+      const suppliers = await storage.getActiveSuppliers();
+      res.json(suppliers);
+    } catch (error) {
+      console.error("[SUPPLIERS] Greška pri dohvatanju aktivnih dobavljača:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju aktivnih dobavljača" });
+    }
+  });
+
+  // Get supplier by ID
+  app.get("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži dobavljača sa ID: ${id}`);
+      
+      const supplier = await storage.getSupplier(id);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: "Dobavljač nije pronađen" });
+      }
+      
+      res.json(supplier);
+    } catch (error) {
+      console.error("[SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
+    }
+  });
+
+  // Create new supplier
+  app.post("/api/admin/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} kreira novog dobavljača`);
+      
+      const validatedData = schema.insertSupplierSchema.parse(req.body);
+      const supplier = await storage.createSupplier(validatedData);
+      
+      console.log(`[SUPPLIERS] Kreiran novi dobavljač: ${supplier.name}`);
+      res.status(201).json(supplier);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Neispravni podaci", 
+          details: error.errors 
+        });
+      }
+      console.error("[SUPPLIERS] Greška pri kreiranju dobavljača:", error);
+      res.status(500).json({ error: "Greška pri kreiranju dobavljača" });
+    }
+  });
+
+  // Update supplier
+  app.put("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} ažurira dobavljača sa ID: ${id}`);
+      
+      const updates = schema.insertSupplierSchema.partial().parse(req.body);
+      const supplier = await storage.updateSupplier(id, updates);
+      
+      if (!supplier) {
+        return res.status(404).json({ error: "Dobavljač nije pronađen" });
+      }
+      
+      console.log(`[SUPPLIERS] Ažuriran dobavljač: ${supplier.name}`);
+      res.json(supplier);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Neispravni podaci", 
+          details: error.errors 
+        });
+      }
+      console.error("[SUPPLIERS] Greška pri ažuriranju dobavljača:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju dobavljača" });
+    }
+  });
+
+  // Delete supplier
+  app.delete("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} briše dobavljača sa ID: ${id}`);
+      
+      await storage.deleteSupplier(id);
+      
+      console.log(`[SUPPLIERS] Obrisan dobavljač sa ID: ${id}`);
+      res.json({ message: "Dobavljač je uspešno obrisan" });
+    } catch (error) {
+      console.error("[SUPPLIERS] Greška pri brisanju dobavljača:", error);
+      res.status(500).json({ error: "Greška pri brisanju dobavljača" });
+    }
+  });
+
+  // Get all supplier orders
+  app.get("/api/admin/supplier-orders", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`[SUPPLIER-ORDERS] Admin ${req.user?.username} traži sve porudžbine dobavljača`);
+      const orders = await storage.getAllSupplierOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("[SUPPLIER-ORDERS] Greška pri dohvatanju porudžbina:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju porudžbina dobavljača" });
+    }
+  });
+
+  // Update supplier order
+  app.put("/api/admin/supplier-orders/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`[SUPPLIER-ORDERS] Admin ${req.user?.username} ažurira porudžbinu sa ID: ${id}`);
+      
+      const updates = schema.insertSupplierOrderSchema.partial().parse(req.body);
+      const order = await storage.updateSupplierOrder(id, updates);
+      
+      if (!order) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+      
+      console.log(`[SUPPLIER-ORDERS] Ažurirana porudžbina sa ID: ${id}`);
+      res.json(order);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Neispravni podaci", 
+          details: error.errors 
+        });
+      }
+      console.error("[SUPPLIER-ORDERS] Greška pri ažuriranju porudžbine:", error);
+      res.status(500).json({ error: "Greška pri ažuriranju porudžbine" });
+    }
+  });
+
+  // Get supplier statistics
+  app.get("/api/admin/suppliers/stats", jwtAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži statistike dobavljača`);
+      
+      const suppliers = await storage.getAllSuppliers();
+      const orders = await storage.getAllSupplierOrders();
+      
+      const stats = {
+        totalSuppliers: suppliers.length,
+        activeSuppliers: suppliers.filter(s => s.isActive).length,
+        pendingOrders: orders.filter(o => o.status === 'pending').length,
+        emailIntegrations: suppliers.filter(s => s.integrationMethod === 'email').length
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("[SUPPLIERS] Greška pri dohvatanju statistika:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju statistika dobavljača" });
+    }
+  });
+
 }
 
