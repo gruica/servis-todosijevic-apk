@@ -23,6 +23,7 @@ const AdminSparePartsCatalogPage = lazy(() => import("@/pages/admin/spare-parts-
 const AdminWebScrapingPage = lazy(() => import("@/pages/admin/web-scraping"));
 const AdminServicePhotosTest = lazy(() => import("@/pages/admin/service-photos-test"));
 const SuppliersPage = lazy(() => import("@/pages/admin/suppliers"));
+const AdminProcurement = lazy(() => import("@/pages/admin/procurement"));
 const PartsCatalogPage = lazy(() => import("@/pages/admin/parts-catalog"));
 const Appliances = lazy(() => import("@/pages/appliances"));
 const Users = lazy(() => import("@/pages/users"));
@@ -187,6 +188,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/service-photos-test" component={AdminServicePhotosTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/technician-services" component={TechnicianServicesAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/suppliers" component={SuppliersPage} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/procurement" component={AdminProcurement} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/parts-catalog" component={PartsCatalogPage} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
       <Route path="/services" component={EnhancedServices} />
