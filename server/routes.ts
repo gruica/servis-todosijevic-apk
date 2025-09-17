@@ -330,15 +330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
+      // Dohvati dodatne podatke za email - deklaracija u širem scope-u
+      let serviceData = null;
+      let clientData = null;
+      let applianceData = null;
+      let technicianData = null;
+      let manufacturerData = null;
+      let categoryData = null;
+
       // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
       try {
-        // Dohvati dodatne podatke za email
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let technicianData = null;
-        let manufacturerData = null;
-        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);

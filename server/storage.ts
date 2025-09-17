@@ -2189,9 +2189,9 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(technicians, eq(services.technicianId, technicians.id))
       .orderBy(desc(services.createdAt));
       
-      // Dodamo limit ako je specificiran za optimizaciju
+      // Apply limit if specified for optimization
       if (limit && limit > 0) {
-        query = query.limit(limit) as any;
+        query = query.limit(limit);
       }
       
       const result = await query;
@@ -2210,20 +2210,53 @@ export class DatabaseStorage implements IStorage {
       const transformedResult = result.map(service => {
         const transformed = { ...service };
         
-        // Ako je slučajno createdAt transformirano iz created_at nazad u snake_case od strane orm-a
-        if (!transformed.createdAt && (transformed as any).created_at) {
+        // Handle potential field name transformations if needed
+        if (!transformed.createdAt && 'created_at' in transformed) {
           transformed.createdAt = (transformed as any).created_at;
+          delete (transformed as any).created_at;
         }
         
-        // Ako je slučajno completedDate transformirano iz completed_date nazad u snake_case od strane orm-a
-        if (!transformed.completedDate && (transformed as any).completed_date) {
+        if (!transformed.completedDate && 'completed_date' in transformed) {
           transformed.completedDate = (transformed as any).completed_date;
+          delete (transformed as any).completed_date;
         }
         
         return transformed;
       });
       
-      return transformedResult as Service[];
+      // Map to proper Service[] format
+      return transformedResult.map(service => ({
+        id: service.id,
+        clientId: service.clientId,
+        applianceId: service.applianceId,
+        technicianId: service.technicianId,
+        description: service.description,
+        status: service.status,
+        warrantyStatus: service.warrantyStatus,
+        createdAt: service.createdAt,
+        scheduledDate: service.scheduledDate,
+        completedDate: service.completedDate,
+        technicianNotes: service.technicianNotes,
+        cost: service.cost,
+        usedParts: service.usedParts,
+        machineNotes: service.machineNotes,
+        isCompletelyFixed: service.isCompletelyFixed,
+        businessPartnerId: service.businessPartnerId,
+        partnerCompanyName: service.partnerCompanyName,
+        clientUnavailableReason: service.clientUnavailableReason || null,
+        needsRescheduling: service.needsRescheduling || false,
+        reschedulingNotes: service.reschedulingNotes || null,
+        devicePickedUp: service.devicePickedUp || false,
+        pickupDate: service.pickupDate || null,
+        pickupNotes: service.pickupNotes || null,
+        customerRefusesRepair: service.customerRefusesRepair || false,
+        customerRefusalReason: service.customerRefusalReason || null,
+        repairFailed: service.repairFailed || false,
+        repairFailureReason: service.repairFailureReason || null,
+        replacedPartsBeforeFailure: service.replacedPartsBeforeFailure || null,
+        repairFailureDate: service.repairFailureDate || null,
+        isWarrantyService: service.isWarrantyService || false
+      } as Service));
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije
@@ -2272,76 +2305,49 @@ export class DatabaseStorage implements IStorage {
   async getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]> {
     let query = db.select().from(services).where(eq(services.status, status));
     
-    // Dodamo limit ako je specificiran za optimizaciju
+    // Apply limit if specified for optimization
     if (limit && limit > 0) {
-      query = query.limit(limit) as any;
+      query = query.limit(limit);
     }
     
     return await query;
   }
 
-  async getServicesByStatusDetailed(status: ServiceStatus): Promise<any[]> {
-    // Temporary: Return empty array while debugging Drizzle ORM issues
-    console.log(`getServicesByStatusDetailed called with status: ${status}`);
-    return [];
+  async getServicesByStatusDetailed(status: ServiceStatus): Promise<Service[]> {
+    try {
+      console.log(`getServicesByStatusDetailed called with status: ${status}`);
+      
+      const result = await db.select()
+        .from(services)
+        .where(eq(services.status, status))
+        .orderBy(desc(services.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error(`Greška pri dohvatanju servisa po statusu ${status}:`, error);
+      throw error;
+    }
   }
 
   async getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]> {
     try {
-      console.log(`Dohvatam servise za tehničara ${technicianId} sa JOIN podacima`);
+      console.log(`Dohvatam servise za tehničara ${technicianId}`);
       
-      // Koristimo istu logiku kao getAllServices sa JOIN-ovima za kompletne podatke
-      let query = db.select({
-        id: services.id,
-        clientId: services.clientId,
-        applianceId: services.applianceId,
-        technicianId: services.technicianId,
-        description: services.description,
-        status: services.status,
-        warrantyStatus: services.warrantyStatus,
-        createdAt: services.createdAt,
-        scheduledDate: services.scheduledDate,
-        completedDate: services.completedDate,
-        technicianNotes: services.technicianNotes,
-        cost: services.cost,
-        usedParts: services.usedParts,
-        machineNotes: services.machineNotes,
-        isCompletelyFixed: services.isCompletelyFixed,
-        businessPartnerId: services.businessPartnerId,
-        partnerCompanyName: services.partnerCompanyName,
-        // Podaci o klijentu za prikaz
-        clientName: clients.fullName,
-        clientCity: clients.city,
-        clientAddress: clients.address,
-        clientPhone: clients.phone,
-        clientEmail: clients.email,
-        // Podaci o uređaju za prikaz
-        applianceName: appliances.model,
-        applianceSerialNumber: appliances.serialNumber,
-        // Kategorija i proizvođač
-        categoryName: applianceCategories.name,
-        manufacturerName: manufacturers.name,
-        // Ime servisera
-        technicianName: technicians.fullName
-      })
-      .from(services)
-      .innerJoin(clients, eq(services.clientId, clients.id))
-      .innerJoin(appliances, eq(services.applianceId, appliances.id))
-      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-      .leftJoin(technicians, eq(services.technicianId, technicians.id))
-      .where(eq(services.technicianId, technicianId))
-      .orderBy(desc(services.createdAt));
+      // Return proper Service[] without extended fields to match interface
+      let query = db.select()
+        .from(services)
+        .where(eq(services.technicianId, technicianId))
+        .orderBy(desc(services.createdAt));
         
-      // Dodamo limit ako je specificiran
+      // Apply limit if specified
       if (limit && limit > 0) {
-        query = query.limit(limit) as any;
+        query = query.limit(limit);
       }
       
       const result = await query;
-      console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId} sa kompletnim podacima`);
+      console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId}`);
       
-      return result as Service[];
+      return result;
     } catch (error) {
       console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
       throw error;
@@ -2362,9 +2368,9 @@ export class DatabaseStorage implements IStorage {
         ))
         .orderBy(desc(services.createdAt));
         
-      // Dodamo limit ako je specificiran
+      // Apply limit if specified
       if (limit && limit > 0) {
-        query = query.limit(limit) as any;
+        query = query.limit(limit);
       }
       
       const results = await query;
@@ -2456,7 +2462,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Business Partner methods
-  async getServicesByPartner(partnerId: number): Promise<any[]> {
+  async getServicesByPartner(partnerId: number): Promise<Service[]> {
     const startTime = Date.now();
     
     try {
@@ -3135,7 +3141,7 @@ export class DatabaseStorage implements IStorage {
             email: client.email,
             address: client.address,
             city: client.city,
-            companyName: (client as any).companyName || null,
+            companyName: client.companyName || null,
           } : null,
           appliance: appliance ? {
             id: appliance.id,
@@ -3238,7 +3244,7 @@ export class DatabaseStorage implements IStorage {
           email: client.email,
           address: client.address,
           city: client.city,
-          companyName: client.companyName,
+          companyName: client.companyName || null,
         } : null,
         appliance: appliance ? {
           id: appliance.id,
@@ -3410,7 +3416,7 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(order.technicianId);
               if (technician) {
                 technicianData = {
-                  name: technician.name,
+                  name: technician.fullName || 'Nepoznat',
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
@@ -3642,7 +3648,7 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(order.technicianId);
               if (technician) {
                 technicianData = {
-                  name: technician.name,
+                  name: technician.fullName || 'Nepoznat',
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
@@ -3783,7 +3789,8 @@ export class DatabaseStorage implements IStorage {
         clientName: null as string | null,
         clientPhone: null as string | null,
         applianceInfo: null as string | null,
-        serviceDescription: null as string | null
+        serviceDescription: null as string | null,
+        warrantyStatus: null as string | null
       };
 
       if (order.serviceId) {
@@ -3792,6 +3799,7 @@ export class DatabaseStorage implements IStorage {
           if (service) {
             serviceInfo.serviceId = service.id;
             serviceInfo.serviceDescription = service.description;
+            serviceInfo.warrantyStatus = service.warrantyStatus;
 
             // Get client info
             if (service.clientId) {
@@ -3826,13 +3834,13 @@ export class DatabaseStorage implements IStorage {
       // Create available part from the order
       const availablePartData = {
         partName: order.partName,
-        partNumber: order.partNumber || null,
+        partNumber: order.partNumber || undefined,
         quantity: order.quantity,
-        description: order.description || null,
-        supplierName: order.supplierName || null,
+        description: order.description || undefined,
+        supplierName: order.supplierName || undefined,
         unitCost: receivedData.actualCost || order.estimatedCost || null,
         location: receivedData.location || 'Glavno skladište',
-        warrantyStatus: order.warrantyStatus as "u garanciji" | "van garancije",
+        warrantyStatus: (serviceInfo.warrantyStatus || "van garancije") as "u garanciji" | "van garancije",
         categoryId: null, // Could be extracted from appliance if needed
         manufacturerId: null, // Could be extracted from appliance if needed
         originalOrderId: orderId,
@@ -3892,8 +3900,7 @@ export class DatabaseStorage implements IStorage {
         availablePartId: partId,
         serviceId,
         technicianId,
-        quantity,
-        allocatedDate: new Date(),
+        allocatedQuantity: quantity,
         allocatedBy,
         status: 'allocated' as const
       };
@@ -4251,11 +4258,15 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(availableParts, eq(partsAllocations.availablePartId, availableParts.id))
         .leftJoin(users, eq(partsAllocations.technicianId, users.id));
 
+      const conditions = [];
       if (serviceId) {
-        query = query.where(eq(partsAllocations.serviceId, serviceId));
+        conditions.push(eq(partsAllocations.serviceId, serviceId));
       }
       if (technicianId) {
-        query = query.where(eq(partsAllocations.technicianId, technicianId));
+        conditions.push(eq(partsAllocations.technicianId, technicianId));
+      }
+      if (conditions.length > 0) {
+        query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
       }
 
       return await query.orderBy(desc(partsAllocations.allocatedDate));
@@ -4497,7 +4508,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Metoda za dohvatanje svih fotografija određene kategorije (globalno)
-  async getServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
+  async getAllServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
     console.log(`📸 DatabaseStorage: dohvatanje svih fotografija kategorije "${category}"`);
     
     try {
@@ -4574,10 +4585,12 @@ export class DatabaseStorage implements IStorage {
         .from(servicePhotos)
         .groupBy(servicePhotos.category);
       
-      const categoryStats = result.map(row => ({
-        category: row.category,
-        count: row.count
-      }));
+      const categoryStats = result
+        .filter(row => row.category !== null)
+        .map(row => ({
+          category: row.category as string,
+          count: row.count
+        }));
       
       console.log('📊 Statistike po kategorijama:', categoryStats);
       return categoryStats;
@@ -5607,7 +5620,7 @@ export class DatabaseStorage implements IStorage {
     try {
       let query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
       if (limit && limit > 0) {
-        query = query.limit(limit) as any;
+        query = query.limit(limit);
       }
       return await query;
     } catch (error) {
