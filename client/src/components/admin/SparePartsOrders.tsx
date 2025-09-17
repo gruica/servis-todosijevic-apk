@@ -524,405 +524,424 @@ const SparePartsOrders = memo(function SparePartsOrders() {
             </div>
           ) : (
             <TooltipProvider>
-              <div className="w-full overflow-x-auto rounded-md border">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow>
-                      <TableHead className="min-w-[80px] whitespace-nowrap">#ID</TableHead>
-                      <TableHead className="min-w-[180px]">Rezervni deo</TableHead>
-                      <TableHead className="min-w-[60px] whitespace-nowrap">Kol.</TableHead>
-                      <TableHead className="min-w-[100px] whitespace-nowrap">Status</TableHead>
-                      <TableHead className="min-w-[80px] whitespace-nowrap">Urgentnost</TableHead>
-                      <TableHead className="min-w-[150px]">Klijent</TableHead>
-                      <TableHead className="min-w-[150px]">Uređaj</TableHead>
-                      <TableHead className="min-w-[120px]">Serviser</TableHead>
-                      <TableHead className="min-w-[100px] whitespace-nowrap">Kreiran</TableHead>
-                      <TableHead className="min-w-[200px]">Akcije</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrders.map((order) => (
-                      <TableRow key={order.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium whitespace-nowrap" data-testid={`text-order-id-${order.id}`}>
-                          #{order.id}
-                        </TableCell>
-                        
-                        <TableCell className="min-w-0">
-                          <div className="space-y-1">
-                            <TruncatedText 
-                              text={order.partName} 
-                              maxLength={25} 
-                              className="font-medium" 
-                            />
-                            {order.partNumber && (
-                              <div className="text-xs text-muted-foreground">
-                                <TruncatedText text={order.partNumber} maxLength={20} />
-                              </div>
-                            )}
+              <div className="space-y-4">
+                {filteredOrders.map((order) => (
+                  <Card key={order.id} className="hover:shadow-md transition-shadow">
+                    {/* Card Header sa ID, Status i Urgentnost */}
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg flex items-center gap-2" data-testid={`text-order-id-${order.id}`}>
+                          <Package className="h-4 w-4" />
+                          Porudžbina #{order.id}
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <div data-testid={`text-status-${order.id}`}>
+                            {getStatusBadge(order.status)}
                           </div>
-                        </TableCell>
-                        
-                        <TableCell className="whitespace-nowrap" data-testid={`text-quantity-${order.id}`}>
-                          {order.quantity}
-                        </TableCell>
-                        
-                        <TableCell className="whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div data-testid={`text-status-${order.id}`}>
-                              {getStatusBadge(order.status)}
-                            </div>
-                            <div className="text-xs">
-                              <Badge variant="outline" className="text-[10px] px-1 py-0.5" data-testid={`text-warranty-${order.id}`}>
-                                {order.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </TableCell>
-                        
-                        <TableCell className="whitespace-nowrap">
                           <div data-testid={`text-urgency-${order.id}`}>
                             {getUrgencyBadge(order.urgency)}
                           </div>
-                        </TableCell>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    {/* Card Content - Horizontalni layout sa logičkim kolonama */}
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 text-sm">
                         
-                        <TableCell className="min-w-0">
+                        {/* Kolona 1: KLIJENT */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            Klijent
+                          </h4>
                           {order.service?.client ? (
                             <div className="space-y-1">
-                              <TruncatedText 
-                                text={order.service.client.fullName} 
-                                maxLength={15} 
-                                className="font-medium text-sm" 
-                              />
+                              <p className="font-medium">{order.service.client.fullName}</p>
                               <div className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Phone className="h-3 w-3" />
-                                <TruncatedText 
-                                  text={order.service.client.phone} 
-                                  maxLength={12} 
-                                />
+                                {order.service.client.phone}
                               </div>
+                              {order.service.client.city && (
+                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {order.service.client.city}
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <Badge variant="outline" className="text-xs">
                               Admin porudžbina
                             </Badge>
                           )}
-                        </TableCell>
+                        </div>
                         
-                        <TableCell className="min-w-0">
+                        {/* Kolona 2: UREĐAJ */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <Settings className="h-3 w-3" />
+                            Uređaj
+                          </h4>
                           {order.service?.appliance ? (
                             <div className="space-y-1">
-                              <TruncatedText 
-                                text={`${order.service.appliance.manufacturer?.name || ''} ${order.service.appliance.model || ''}`} 
-                                maxLength={20} 
-                                className="text-sm font-medium" 
-                              />
-                              <div className="text-xs text-muted-foreground">
-                                <TruncatedText 
-                                  text={order.service.appliance.category?.name || ''} 
-                                  maxLength={15} 
-                                />
-                              </div>
+                              <p className="font-medium">
+                                {order.service.appliance.manufacturer?.name || 'N/A'}
+                              </p>
+                              <p className="text-xs font-medium">
+                                {order.service.appliance.model || 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {order.service.appliance.category?.name || 'N/A'}
+                              </p>
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground">N/A</span>
                           )}
-                        </TableCell>
+                        </div>
                         
-                        <TableCell className="min-w-0">
+                        {/* Kolona 3: REZERVNI DEO */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <Package className="h-3 w-3" />
+                            Rezervni deo
+                          </h4>
+                          <div className="space-y-1">
+                            <p className="font-medium">{order.partName}</p>
+                            {order.partNumber && (
+                              <p className="text-xs text-muted-foreground">Kat. br: {order.partNumber}</p>
+                            )}
+                            <p className="text-xs font-medium" data-testid={`text-quantity-${order.id}`}>
+                              Količina: {order.quantity}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Kolona 4: SERVISER */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <Wrench className="h-3 w-3" />
+                            Serviser
+                          </h4>
                           {order.technician ? (
                             <div className="space-y-1">
-                              <TruncatedText 
-                                text={order.technician.name} 
-                                maxLength={15} 
-                                className="text-sm font-medium" 
-                              />
+                              <p className="font-medium">{order.technician.name}</p>
                               <div className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Phone className="h-3 w-3" />
-                                <TruncatedText 
-                                  text={order.technician.phone} 
-                                  maxLength={12} 
-                                />
+                                {order.technician.phone}
                               </div>
+                              <p className="text-xs text-muted-foreground">{order.technician.specialization}</p>
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground">Nedodeljen</span>
                           )}
-                        </TableCell>
+                        </div>
                         
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap" data-testid={`text-created-${order.id}`}>
-                          {formatDate(order.createdAt)}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1 min-w-0">
-                            <Sheet>
-                              <SheetTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  data-testid={`button-details-${order.id}`}
-                                  onClick={() => setSelectedOrder(order)}
-                                >
-                                  Detalji
-                                </Button>
-                              </SheetTrigger>
-                              <SheetContent className="min-w-[400px] sm:min-w-[540px]">
-                                <SheetHeader>
-                                  <SheetTitle>Detalji porudžbine #{order.id}</SheetTitle>
-                                  <SheetDescription>
-                                    Kompletne informacije o porudžbini rezervnog dela
-                                  </SheetDescription>
-                                </SheetHeader>
-                                <ScrollArea className="h-[calc(100vh-120px)] mt-4">
-                                  <div className="space-y-6">
-                                    {/* Basic Info Section */}
-                                    <div className="space-y-3">
-                                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                        <Package className="h-4 w-4" />
-                                        Osnovni podaci
-                                      </h4>
-                                      <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                          <span className="text-muted-foreground">Rezervni deo:</span>
-                                          <p className="font-medium break-words">{order.partName}</p>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Količina:</span>
-                                          <p className="font-medium">{order.quantity}</p>
-                                        </div>
-                                        {order.partNumber && (
-                                          <div>
-                                            <span className="text-muted-foreground">Kataloški broj:</span>
-                                            <p className="font-medium break-words">{order.partNumber}</p>
-                                          </div>
-                                        )}
-                                        {order.supplierName && (
-                                          <div>
-                                            <span className="text-muted-foreground">Dobavljač:</span>
-                                            <p className="font-medium break-words">{order.supplierName}</p>
-                                          </div>
-                                        )}
-                                        <div>
-                                          <span className="text-muted-foreground">Status:</span>
-                                          <div className="mt-1">{getStatusBadge(order.status)}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Urgentnost:</span>
-                                          <div className="mt-1">{getUrgencyBadge(order.urgency)}</div>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Garancija:</span>
-                                          <div className="mt-1">
-                                            <Badge variant="outline">
-                                              {order.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'} {order.warrantyStatus}
-                                            </Badge>
-                                          </div>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground">Kreiran:</span>
-                                          <p className="font-medium">{formatDate(order.createdAt)}</p>
-                                        </div>
-                                        {order.estimatedCost && (
-                                          <div>
-                                            <span className="text-muted-foreground">Procenjena cena:</span>
-                                            <p className="font-medium text-blue-600">{order.estimatedCost}€</p>
-                                          </div>
-                                        )}
-                                        {order.actualCost && (
-                                          <div>
-                                            <span className="text-muted-foreground">Stvarna cena:</span>
-                                            <p className="font-medium text-green-600">{order.actualCost}€</p>
-                                          </div>
-                                        )}
+                        {/* Kolona 5: DODATNO */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Dodatno
+                          </h4>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground" data-testid={`text-created-${order.id}`}>
+                              {formatDate(order.createdAt)}
+                            </p>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0.5" data-testid={`text-warranty-${order.id}`}>
+                              {order.warrantyStatus === 'u garanciji' ? '🛡️ Garancija' : '💰 Van garancije'}
+                            </Badge>
+                            {order.estimatedCost && (
+                              <p className="text-xs text-blue-600 font-medium">
+                                ~{order.estimatedCost}€
+                              </p>
+                            )}
+                            {order.actualCost && (
+                              <p className="text-xs text-green-600 font-medium">
+                                {order.actualCost}€
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Opis (ako postoji) */}
+                      {order.description && (
+                        <div className="pt-3 border-t">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Opis</h4>
+                          <p className="text-sm text-muted-foreground">{order.description}</p>
+                        </div>
+                      )}
+                      
+                      {/* Akcije na dnu kartice */}
+                      <div className="pt-4 border-t">
+                        <div className="flex flex-wrap gap-2">
+                          <Sheet>
+                            <SheetTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                data-testid={`button-details-${order.id}`}
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                Detalji
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent className="min-w-[400px] sm:min-w-[540px]">
+                              <SheetHeader>
+                                <SheetTitle>Detalji porudžbine #{order.id}</SheetTitle>
+                                <SheetDescription>
+                                  Kompletne informacije o porudžbini rezervnog dela
+                                </SheetDescription>
+                              </SheetHeader>
+                              <ScrollArea className="h-[calc(100vh-120px)] mt-4">
+                                <div className="space-y-6">
+                                  {/* Basic Info Section */}
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                      <Package className="h-4 w-4" />
+                                      Osnovni podaci
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Rezervni deo:</span>
+                                        <p className="font-medium break-words">{order.partName}</p>
                                       </div>
-                                      {order.description && (
+                                      <div>
+                                        <span className="text-muted-foreground">Količina:</span>
+                                        <p className="font-medium">{order.quantity}</p>
+                                      </div>
+                                      {order.partNumber && (
                                         <div>
-                                          <span className="text-muted-foreground">Opis:</span>
-                                          <p className="text-sm mt-1 break-words">{order.description}</p>
+                                          <span className="text-muted-foreground">Kataloški broj:</span>
+                                          <p className="font-medium break-words">{order.partNumber}</p>
+                                        </div>
+                                      )}
+                                      {order.supplierName && (
+                                        <div>
+                                          <span className="text-muted-foreground">Dobavljač:</span>
+                                          <p className="font-medium break-words">{order.supplierName}</p>
+                                        </div>
+                                      )}
+                                      <div>
+                                        <span className="text-muted-foreground">Status:</span>
+                                        <div className="mt-1">{getStatusBadge(order.status)}</div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Urgentnost:</span>
+                                        <div className="mt-1">{getUrgencyBadge(order.urgency)}</div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Garancija:</span>
+                                        <div className="mt-1">
+                                          <Badge variant="outline">
+                                            {order.warrantyStatus === 'u garanciji' ? '🛡️' : '💰'} {order.warrantyStatus}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Kreiran:</span>
+                                        <p className="font-medium">{formatDate(order.createdAt)}</p>
+                                      </div>
+                                      {order.estimatedCost && (
+                                        <div>
+                                          <span className="text-muted-foreground">Procenjena cena:</span>
+                                          <p className="font-medium text-blue-600">{order.estimatedCost}€</p>
+                                        </div>
+                                      )}
+                                      {order.actualCost && (
+                                        <div>
+                                          <span className="text-muted-foreground">Stvarna cena:</span>
+                                          <p className="font-medium text-green-600">{order.actualCost}€</p>
                                         </div>
                                       )}
                                     </div>
-
-                                    {/* Client & Service Section */}
-                                    {order.service && (
-                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                          <User className="h-4 w-4" />
-                                          Klijent i servis
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3 text-sm">
-                                          <div>
-                                            <span className="text-muted-foreground">Servis ID:</span>
-                                            <p className="font-medium">#{order.service.id}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Ime klijenta:</span>
-                                            <p className="font-medium break-words">{order.service.client?.fullName || 'N/A'}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Telefon:</span>
-                                            <p className="font-medium">{order.service.client?.phone || 'N/A'}</p>
-                                          </div>
-                                          {order.service.client?.email && (
-                                            <div>
-                                              <span className="text-muted-foreground">Email:</span>
-                                              <p className="font-medium break-words">{order.service.client.email}</p>
-                                            </div>
-                                          )}
-                                          <div>
-                                            <span className="text-muted-foreground">Grad:</span>
-                                            <p className="font-medium">{order.service.client?.city || 'N/A'}</p>
-                                          </div>
-                                          {order.service.client?.address && (
-                                            <div>
-                                              <span className="text-muted-foreground">Adresa:</span>
-                                              <p className="font-medium break-words">{order.service.client.address}</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Device Section */}
-                                    {order.service?.appliance && (
-                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                          <Settings className="h-4 w-4" />
-                                          Uređaj
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3 text-sm">
-                                          <div>
-                                            <span className="text-muted-foreground">Proizvođač:</span>
-                                            <p className="font-medium">{order.service.appliance.manufacturer?.name || 'N/A'}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Model:</span>
-                                            <p className="font-medium break-words">{order.service.appliance.model || 'N/A'}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Kategorija:</span>
-                                            <p className="font-medium">{order.service.appliance.category?.name || 'N/A'}</p>
-                                          </div>
-                                          {order.service.appliance.serialNumber && (
-                                            <div>
-                                              <span className="text-muted-foreground">Serijski broj:</span>
-                                              <p className="font-medium break-words">{order.service.appliance.serialNumber}</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Technician Section */}
-                                    {order.technician && (
-                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                          <Wrench className="h-4 w-4" />
-                                          Serviser
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3 text-sm">
-                                          <div>
-                                            <span className="text-muted-foreground">Ime:</span>
-                                            <p className="font-medium break-words">{order.technician.name}</p>
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">Telefon:</span>
-                                            <p className="font-medium">{order.technician.phone}</p>
-                                          </div>
-                                          {order.technician.email && (
-                                            <div>
-                                              <span className="text-muted-foreground">Email:</span>
-                                              <p className="font-medium break-words">{order.technician.email}</p>
-                                            </div>
-                                          )}
-                                          <div>
-                                            <span className="text-muted-foreground">Specijalizacija:</span>
-                                            <p className="font-medium break-words">{order.technician.specialization}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Admin Notes */}
-                                    {order.adminNotes && (
-                                      <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-foreground">Napomene administratora</h4>
-                                        <p className="text-sm break-words bg-muted/50 p-3 rounded-md">{order.adminNotes}</p>
+                                    {order.description && (
+                                      <div>
+                                        <span className="text-muted-foreground">Opis:</span>
+                                        <p className="text-sm mt-1 break-words">{order.description}</p>
                                       </div>
                                     )}
                                   </div>
-                                </ScrollArea>
-                              </SheetContent>
-                            </Sheet>
-                        {order.status === 'pending' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDirectOrder(order)}
-                              className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 text-xs"
-                              data-testid={`button-direct-order-${order.id}`}
-                            >
-                              <ShoppingCart className="h-3 w-3 mr-1" />
-                              Poruči
-                            </Button>
+
+                                  {/* Client & Service Section */}
+                                  {order.service && (
+                                    <div className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Klijent i servis
+                                      </h4>
+                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <span className="text-muted-foreground">Servis ID:</span>
+                                          <p className="font-medium">#{order.service.id}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Ime klijenta:</span>
+                                          <p className="font-medium break-words">{order.service.client?.fullName || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Telefon:</span>
+                                          <p className="font-medium">{order.service.client?.phone || 'N/A'}</p>
+                                        </div>
+                                        {order.service.client?.email && (
+                                          <div>
+                                            <span className="text-muted-foreground">Email:</span>
+                                            <p className="font-medium break-words">{order.service.client.email}</p>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <span className="text-muted-foreground">Grad:</span>
+                                          <p className="font-medium">{order.service.client?.city || 'N/A'}</p>
+                                        </div>
+                                        {order.service.client?.address && (
+                                          <div>
+                                            <span className="text-muted-foreground">Adresa:</span>
+                                            <p className="font-medium break-words">{order.service.client.address}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Device Section */}
+                                  {order.service?.appliance && (
+                                    <div className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        <Settings className="h-4 w-4" />
+                                        Uređaj
+                                      </h4>
+                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <span className="text-muted-foreground">Proizvođač:</span>
+                                          <p className="font-medium">{order.service.appliance.manufacturer?.name || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Model:</span>
+                                          <p className="font-medium break-words">{order.service.appliance.model || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Kategorija:</span>
+                                          <p className="font-medium">{order.service.appliance.category?.name || 'N/A'}</p>
+                                        </div>
+                                        {order.service.appliance.serialNumber && (
+                                          <div>
+                                            <span className="text-muted-foreground">Serijski broj:</span>
+                                            <p className="font-medium break-words">{order.service.appliance.serialNumber}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Technician Section */}
+                                  {order.technician && (
+                                    <div className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        <Wrench className="h-4 w-4" />
+                                        Serviser
+                                      </h4>
+                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <span className="text-muted-foreground">Ime:</span>
+                                          <p className="font-medium break-words">{order.technician.name}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Telefon:</span>
+                                          <p className="font-medium">{order.technician.phone}</p>
+                                        </div>
+                                        {order.technician.email && (
+                                          <div>
+                                            <span className="text-muted-foreground">Email:</span>
+                                            <p className="font-medium break-words">{order.technician.email}</p>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <span className="text-muted-foreground">Specijalizacija:</span>
+                                          <p className="font-medium break-words">{order.technician.specialization}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Admin Notes */}
+                                  {order.adminNotes && (
+                                    <div className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-foreground">Napomene administratora</h4>
+                                      <p className="text-sm break-words bg-muted/50 p-3 rounded-md">{order.adminNotes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            </SheetContent>
+                          </Sheet>
+                          
+                          {order.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDirectOrder(order)}
+                                className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                data-testid={`button-direct-order-${order.id}`}
+                              >
+                                <ShoppingCart className="h-3 w-3 mr-1" />
+                                Poruči
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleMarkReceived(order)}
+                                className="bg-green-600 hover:bg-green-700"
+                                data-testid={`button-mark-received-${order.id}`}
+                              >
+                                <Check className="h-3 w-3 mr-1" />
+                                Stigao
+                              </Button>
+                            </>
+                          )}
+                          
+                          {order.status === 'received' && !order.isDelivered && (
                             <Button
                               variant="default"
                               size="sm"
-                              onClick={() => handleMarkReceived(order)}
-                              className="bg-green-600 hover:bg-green-700 text-xs"
-                              data-testid={`button-mark-received-${order.id}`}
+                              onClick={() => handleConfirmDelivery(order)}
+                              disabled={confirmDeliveryMutation.isPending}
+                              className="bg-purple-600 hover:bg-purple-700"
+                              data-testid={`button-confirm-delivery-${order.id}`}
                             >
-                              <Check className="h-3 w-3 mr-1" />
-                              Stigao
+                              {confirmDeliveryMutation.isPending ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              ) : (
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                              )}
+                              Potvrdi
                             </Button>
-                          </>
-                        )}
-                        
-                        {/* NOVO DUGME: Potvrdi isporuku za status 'received' */}
-                        {order.status === 'received' && !order.isDelivered && (
+                          )}
+                          
                           <Button
-                            variant="default"
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleConfirmDelivery(order)}
-                            disabled={confirmDeliveryMutation.isPending}
-                            className="bg-purple-600 hover:bg-purple-700 text-xs"
-                            data-testid={`button-confirm-delivery-${order.id}`}
+                            onClick={() => handleEditOrder(order)}
+                            data-testid={`button-edit-${order.id}`}
                           >
-                            {confirmDeliveryMutation.isPending ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                            ) : (
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                            )}
-                            Potvrdi
+                            <Edit className="h-3 w-3 mr-1" />
+                            Uredi
                           </Button>
-                        )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditOrder(order)}
-                              data-testid={`button-edit-${order.id}`}
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Uredi
-                            </Button>
-                            
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteOrder(order)}
-                              disabled={deleteOrderMutation.isPending}
-                              data-testid={`button-delete-${order.id}`}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Obriši
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteOrder(order)}
+                            disabled={deleteOrderMutation.isPending}
+                            data-testid={`button-delete-${order.id}`}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Obriši
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </TooltipProvider>
           )}
