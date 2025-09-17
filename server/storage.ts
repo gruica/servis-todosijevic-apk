@@ -54,7 +54,7 @@ import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
-import { pool, db } from "./db";
+import { db, sql as sqlClient } from "./db";
 import { eq, and, desc, gte, lte, ne, isNull, like, ilike, count, sum, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
@@ -1665,7 +1665,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Hotfix: Add missing columns and tables idempotently
       console.log("Applying database schema hotfixes...");
-      await pool.query(`
+      await sqlClient(`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS supplier_id integer;
         ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS partner_type text;
         ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS portal_enabled boolean DEFAULT false;
@@ -3572,7 +3572,7 @@ export class DatabaseStorage implements IStorage {
   async getAllSparePartOrders(): Promise<any[]> {
     try {
       // RAW SQL pristup da zaobiđe Drizzle ORM greške - KOMPLETNI SELECT SA SVIM POLJIMA
-      const result = await pool.query(`
+      const orders = await sqlClient(`
         SELECT id, part_name, part_number, quantity, status, urgency, 
                created_at, updated_at, supplier_name, estimated_cost, 
                actual_cost, admin_notes, description,
@@ -3583,7 +3583,6 @@ export class DatabaseStorage implements IStorage {
         FROM spare_part_orders 
         ORDER BY created_at DESC
       `);
-      const orders = result.rows;
 
       // Zatim dodaj povezane podatke za svaki order
       const enrichedOrders = await Promise.all(
@@ -3718,7 +3717,7 @@ export class DatabaseStorage implements IStorage {
   async getSparePartOrdersByStatus(status: SparePartStatus): Promise<any[]> {
     try {
       // RAW SQL pristup sa postojećim kolonama - dodeli default vrednosti za requester polja
-      const result = await pool.query(`
+      const result = await sqlClient(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
                service_id, technician_id,
@@ -3731,7 +3730,7 @@ export class DatabaseStorage implements IStorage {
       `, [status]);
       
       // Mapuj snake_case iz baze u camelCase za frontend
-      return result.rows.map(row => ({
+      return result.map(row => ({
         id: row.id,
         partName: row.part_name,
         partNumber: row.part_number,
@@ -3760,7 +3759,7 @@ export class DatabaseStorage implements IStorage {
   async getPendingSparePartOrders(): Promise<SparePartOrder[]> {
     try {
       // Jednostavan pristup - koristi samo postojeće kolone, dodeli default vrednosti za requester
-      const result = await pool.query(`
+      const result = await sqlClient(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
                service_id, technician_id,
@@ -3773,7 +3772,7 @@ export class DatabaseStorage implements IStorage {
       `);
       
       // Mapuj snake_case iz baze u camelCase za frontend
-      return result.rows.map(row => ({
+      return result.map(row => ({
         id: row.id,
         partName: row.part_name,
         partNumber: row.part_number,
@@ -3802,7 +3801,7 @@ export class DatabaseStorage implements IStorage {
   async getAllRequestsSparePartOrders(): Promise<SparePartOrder[]> {
     try {
       // Dohvati sve zahteve: i "pending" i "requested" statuse
-      const result = await pool.query(`
+      const orders = await sqlClient(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
                service_id AS "serviceId", technician_id AS "technicianId",
@@ -3814,8 +3813,7 @@ export class DatabaseStorage implements IStorage {
         ORDER BY created_at DESC
       `);
       
-      console.log(`📋 [ALL-REQUESTS] Pronađeno ${result.rows.length} zahteva (pending + requested)`);
-      const orders = result.rows;
+      console.log(`📋 [ALL-REQUESTS] Pronađeno ${orders.length} zahteva (pending + requested)`);
 
       // Zatim dodaj povezane podatke za svaki order (ista logika kao getAllSparePartOrders)
       const enrichedOrders = await Promise.all(
@@ -3943,7 +3941,7 @@ export class DatabaseStorage implements IStorage {
   async deleteSparePartOrder(id: number): Promise<boolean> {
     try {
       // First delete any related notifications using RAW SQL to avoid schema issues
-      await pool.query('DELETE FROM notifications WHERE related_spare_part_id = $1', [id]);
+      await sqlClient('DELETE FROM notifications WHERE related_spare_part_id = $1', [id]);
       
       // Then delete the spare part order
       const result = await db
