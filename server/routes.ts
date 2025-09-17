@@ -9210,6 +9210,41 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
+  // Get specific order details for current supplier
+  app.get("/api/suppliers/orders/:id", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      console.log(`📦 [SUPPLIER-ORDER-DETAIL] Dobavljač ${user.username} traži detalje porudžbine ID: ${orderId}`);
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: "Neispravni ID porudžbine" });
+      }
+
+      if (!user.supplierId) {
+        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
+      }
+
+      // Get order with detailed information
+      const order = await storage.getSupplierOrderWithDetails(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+
+      // Verify order belongs to supplier
+      if (order.supplierId !== user.supplierId!) {
+        return res.status(403).json({ error: "Nemate dozvolu da pristupite ovoj porudžbini" });
+      }
+      
+      console.log(`✅ [SUPPLIER-ORDER-DETAIL] Vraćam detalje porudžbine ID: ${orderId} za dobavljača: ${user.username}`);
+      res.json(order);
+    } catch (error) {
+      console.error("❌ [SUPPLIER-ORDER-DETAIL] Greška pri dohvatanju detalja porudžbine:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju detalja porudžbine" });
+    }
+  });
+
   // Update order status/response
   app.put("/api/suppliers/orders/:id", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
     try {

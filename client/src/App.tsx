@@ -72,6 +72,7 @@ const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 // PERFORMANCE BOOST: Lazy load supplier pages
 const SupplierLogin = lazy(() => import("@/pages/suppliers/supplier-login"));
 const SupplierDashboard = lazy(() => import("@/pages/suppliers/dashboard"));
+const SupplierOrderDetail = lazy(() => import("@/pages/suppliers/order-detail"));
 
 // PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
@@ -166,6 +167,7 @@ function Router() {
       
       {/* Supplier routes */}
       <RoleProtectedRoute path="/suppliers/dashboard" component={SupplierDashboard} allowedRoles={["supplier_complus", "supplier_beko"]} />
+      <RoleProtectedRoute path="/suppliers/orders/:id" component={SupplierOrderDetail} allowedRoles={["supplier_complus", "supplier_beko"]} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />

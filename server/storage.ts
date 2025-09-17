@@ -291,6 +291,7 @@ export interface IStorage {
   // Supplier Order methods
   getAllSupplierOrders(): Promise<SupplierOrder[]>;
   getSupplierOrder(id: number): Promise<SupplierOrder | undefined>;
+  getSupplierOrderWithDetails(id: number): Promise<any>;
   getSupplierOrdersBySupplier(supplierId: number): Promise<SupplierOrder[]>;
   getSupplierOrdersBySparePartOrder(sparePartOrderId: number): Promise<SupplierOrder[]>;
   getActiveSupplierOrders(): Promise<SupplierOrder[]>;
@@ -5454,6 +5455,102 @@ export class DatabaseStorage implements IStorage {
       return order;
     } catch (error) {
       console.error('Greška pri dohvatanju porudžbine dobavljača:', error);
+      return undefined;
+    }
+  }
+
+  async getSupplierOrderWithDetails(id: number): Promise<any> {
+    try {
+      // Get the supplier order with joined data
+      const [order] = await db.select({
+        // Supplier order fields
+        id: supplierOrders.id,
+        supplierId: supplierOrders.supplierId,
+        sparePartOrderId: supplierOrders.sparePartOrderId,
+        orderNumber: supplierOrders.orderNumber,
+        status: supplierOrders.status,
+        trackingNumber: supplierOrders.trackingNumber,
+        totalCost: supplierOrders.totalCost,
+        currency: supplierOrders.currency,
+        estimatedDelivery: supplierOrders.estimatedDelivery,
+        emailContent: supplierOrders.emailContent,
+        supplierResponse: supplierOrders.supplierResponse,
+        createdAt: supplierOrders.createdAt,
+        updatedAt: supplierOrders.updatedAt,
+        // Supplier details
+        supplierName: suppliers.name,
+        supplierCompanyName: suppliers.companyName,
+        supplierEmail: suppliers.email,
+        supplierPhone: suppliers.phone,
+        supplierPartnerType: suppliers.partnerType,
+        // Spare part order details
+        sparePartOrderPartName: sparePartOrders.partName,
+        sparePartOrderPartNumber: sparePartOrders.partNumber,
+        sparePartOrderQuantity: sparePartOrders.quantity,
+        sparePartOrderDescription: sparePartOrders.description,
+        sparePartOrderUrgency: sparePartOrders.urgency,
+        sparePartOrderServiceId: sparePartOrders.serviceId,
+        // Client details from services
+        clientName: clients.fullName,
+        clientPhone: clients.phone,
+        clientAddress: clients.address,
+        // Appliance details
+        applianceModel: appliances.model,
+        applianceManufacturer: manufacturers.name
+      })
+      .from(supplierOrders)
+      .leftJoin(suppliers, eq(supplierOrders.supplierId, suppliers.id))
+      .leftJoin(sparePartOrders, eq(supplierOrders.sparePartOrderId, sparePartOrders.id))
+      .leftJoin(services, eq(sparePartOrders.serviceId, services.id))
+      .leftJoin(clients, eq(services.clientId, clients.id))
+      .leftJoin(appliances, eq(services.applianceId, appliances.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+      .where(eq(supplierOrders.id, id));
+
+      if (!order) {
+        return undefined;
+      }
+
+      // Transform the flat result into a nested structure
+      return {
+        id: order.id,
+        supplierId: order.supplierId,
+        sparePartOrderId: order.sparePartOrderId,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        trackingNumber: order.trackingNumber,
+        totalCost: order.totalCost,
+        currency: order.currency,
+        estimatedDelivery: order.estimatedDelivery,
+        emailContent: order.emailContent,
+        supplierResponse: order.supplierResponse,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        supplier: order.supplierName ? {
+          id: order.supplierId,
+          name: order.supplierName,
+          companyName: order.supplierCompanyName,
+          email: order.supplierEmail,
+          phone: order.supplierPhone,
+          partnerType: order.supplierPartnerType
+        } : undefined,
+        sparePartOrder: order.sparePartOrderPartName ? {
+          id: order.sparePartOrderId,
+          partName: order.sparePartOrderPartName,
+          partNumber: order.sparePartOrderPartNumber,
+          quantity: order.sparePartOrderQuantity,
+          description: order.sparePartOrderDescription,
+          urgency: order.sparePartOrderUrgency,
+          serviceId: order.sparePartOrderServiceId,
+          applianceModel: order.applianceModel,
+          applianceManufacturer: order.applianceManufacturer,
+          clientName: order.clientName,
+          clientPhone: order.clientPhone,
+          address: order.clientAddress
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Greška pri dohvatanju detaljnih podataka porudžbine dobavljača:', error);
       return undefined;
     }
   }
