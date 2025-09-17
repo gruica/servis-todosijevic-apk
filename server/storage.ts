@@ -2353,9 +2353,39 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Dohvatam servise za tehničara ${technicianId}`);
       
-      // Return proper Service[] without extended fields to match interface
-      let query = db.select()
+      // SELECT with LEFT JOINs to include client and appliance data
+      let query = db.select({
+        // Service base columns
+        id: services.id,
+        clientId: services.clientId,
+        applianceId: services.applianceId,
+        technicianId: services.technicianId,
+        description: services.description,
+        status: services.status,
+        warrantyStatus: services.warrantyStatus,
+        createdAt: services.createdAt,
+        scheduledDate: services.scheduledDate,
+        completedDate: services.completedDate,
+        cost: services.cost,
+        technicianNotes: services.technicianNotes,
+        businessPartnerId: services.businessPartnerId,
+        // Flat client fields expected by mobile UI
+        clientName: clients.fullName,
+        clientPhone: clients.phone,
+        clientAddress: clients.address,
+        clientCity: clients.city,
+        clientEmail: clients.email,
+        // Appliance enrichment
+        applianceName: appliances.model,
+        applianceSerialNumber: appliances.serialNumber,
+        categoryName: applianceCategories.name,
+        manufacturerName: manufacturers.name,
+      })
         .from(services)
+        .leftJoin(clients, eq(services.clientId, clients.id))
+        .leftJoin(appliances, eq(services.applianceId, appliances.id))
+        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
         .where(eq(services.technicianId, technicianId))
         .orderBy(desc(services.createdAt));
         
@@ -2363,7 +2393,7 @@ export class DatabaseStorage implements IStorage {
       const result = await (limit && limit > 0 ? query.limit(limit) : query);
       console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId}`);
       
-      return result;
+      return result as Service[];
     } catch (error) {
       console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
       throw error;
