@@ -7516,7 +7516,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   // GET /api/whatsapp-business/templates - Dobij listu dostupnih template-a
   app.get('/api/whatsapp-business/templates', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
     try {
-      const result = await whatsAppBusinessService.getMessageTemplates();
+      const result = await whatsappBusinessAPIService.getMessageTemplates();
       
       if (result.success) {
         res.json({
