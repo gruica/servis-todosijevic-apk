@@ -52,7 +52,6 @@ type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 
 export default function NewServicePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [clientSearchQuery, setClientSearchQuery] = useState("");
   const [clientComboOpen, setClientComboOpen] = useState(false);
   const [, setLocation] = useLocation();
@@ -63,43 +62,21 @@ export default function NewServicePage() {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   
   // Data queries
-  const { data: clients } = useQuery<Client[]>({
+  const { data: clients, isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
   
-  const { data: appliances } = useQuery<Appliance[]>({
+  const { data: appliances, isLoading: appliancesLoading } = useQuery<Appliance[]>({
     queryKey: ["/api/appliances"],
   });
   
-  const { data: technicians } = useQuery<Technician[]>({
+  const { data: technicians, isLoading: techniciansLoading } = useQuery<Technician[]>({
     queryKey: ["/api/technicians"],
   });
   
-  const { data: categories } = useQuery<ApplianceCategory[]>({
+  const { data: categories, isLoading: categoriesLoading } = useQuery<ApplianceCategory[]>({
     queryKey: ["/api/categories"],
   });
-  
-  // Filter appliances by selected client
-  const filteredAppliances = appliances?.filter(appliance => 
-    !selectedClient || appliance.clientId === selectedClient
-  );
-  
-  // Filtered clients for the form combo box
-  const filteredClientsForForm = useMemo(() => {
-    if (!clients) return [];
-    if (!clientSearchQuery) return clients.filter(client => client.id && client.id > 0);
-    
-    const query = clientSearchQuery.toLowerCase();
-    return clients.filter(client => {
-      if (!client.id || client.id <= 0) return false;
-      
-      const fullNameMatch = client.fullName?.toLowerCase().includes(query);
-      const phoneMatch = client.phone?.toLowerCase().includes(query);
-      const addressMatch = client.address?.toLowerCase().includes(query);
-      
-      return fullNameMatch || phoneMatch || addressMatch;
-    });
-  }, [clients, clientSearchQuery]);
   
   // Service form
   const form = useForm<ServiceFormValues>({
@@ -120,6 +97,39 @@ export default function NewServicePage() {
       partnerCompanyName: null,
     },
   });
+  
+  // Watch clientId from form for filtering appliances
+  const clientId = form.watch('clientId');
+  const applianceId = form.watch('applianceId');
+  const description = form.watch('description');
+  
+  // Filter appliances by selected client from form
+  const filteredAppliances = appliances?.filter(appliance => 
+    !clientId || clientId === 0 || appliance.clientId === clientId
+  );
+  
+  // Check if form is valid for submission
+  const isFormValid = clientId && clientId > 0 && applianceId && applianceId > 0 && description && description.length > 0;
+  
+  // Check if any data is loading
+  const isLoading = clientsLoading || appliancesLoading || techniciansLoading || categoriesLoading;
+  
+  // Filtered clients for the form combo box
+  const filteredClientsForForm = useMemo(() => {
+    if (!clients) return [];
+    if (!clientSearchQuery) return clients.filter(client => client.id && client.id > 0);
+    
+    const query = clientSearchQuery.toLowerCase();
+    return clients.filter(client => {
+      if (!client.id || client.id <= 0) return false;
+      
+      const fullNameMatch = client.fullName?.toLowerCase().includes(query);
+      const phoneMatch = client.phone?.toLowerCase().includes(query);
+      const addressMatch = client.address?.toLowerCase().includes(query);
+      
+      return fullNameMatch || phoneMatch || addressMatch;
+    });
+  }, [clients, clientSearchQuery]);
   
   // Create service mutation
   const serviceMutation = useMutation({
@@ -188,9 +198,8 @@ export default function NewServicePage() {
   };
 
   // Handle client selection
-  const handleClientSelect = (clientId: number) => {
-    setSelectedClient(clientId);
-    form.setValue("clientId", clientId);
+  const handleClientSelect = (selectedClientId: number) => {
+    form.setValue("clientId", selectedClientId);
     setClientComboOpen(false);
     
     // Reset appliance selection when client changes
@@ -198,7 +207,7 @@ export default function NewServicePage() {
   };
 
   // Get selected client for display
-  const selectedClientData = clients?.find(c => c.id === selectedClient);
+  const selectedClientData = clients?.find(c => c.id === clientId);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -253,7 +262,7 @@ export default function NewServicePage() {
                                   role="combobox"
                                   className={cn(
                                     "w-full justify-between",
-                                    !selectedClient && "text-muted-foreground"
+                                    (!clientId || clientId === 0) && "text-muted-foreground"
                                   )}
                                   data-testid="button-client-select"
                                 >
@@ -284,7 +293,7 @@ export default function NewServicePage() {
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          selectedClient === client.id
+                                          clientId === client.id
                                             ? "opacity-100"
                                             : "opacity-0"
                                         )}
@@ -317,11 +326,14 @@ export default function NewServicePage() {
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             defaultValue={field.value?.toString()}
-                            disabled={!selectedClient}
+                            disabled={!clientId || clientId === 0 || appliancesLoading || categoriesLoading}
                           >
                             <FormControl>
                               <SelectTrigger data-testid="select-appliance">
-                                <SelectValue placeholder={!selectedClient ? "Prvo odaberite klijenta" : "Odaberite uređaj"} />
+                                <SelectValue placeholder={
+                                  appliancesLoading || categoriesLoading ? "Učitavanje..." :
+                                  (!clientId || clientId === 0) ? "Prvo odaberite klijenta" : "Odaberite uređaj"
+                                } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -376,12 +388,29 @@ export default function NewServicePage() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="pending">Na čekanju</SelectItem>
-                                <SelectItem value="scheduled">Zakazano</SelectItem>
-                                <SelectItem value="in_progress">U procesu</SelectItem>
-                                <SelectItem value="waiting_parts">Čeka delove</SelectItem>
-                                <SelectItem value="completed">Završeno</SelectItem>
-                                <SelectItem value="cancelled">Otkazano</SelectItem>
+                                {serviceStatusEnum.options.map((status) => {
+                                  const statusLabels: Record<string, string> = {
+                                    "pending": "Na čekanju",
+                                    "scheduled": "Zakazano", 
+                                    "in_progress": "U procesu",
+                                    "waiting_parts": "Čeka delove",
+                                    "device_parts_removed": "Delovi uklonjeni sa uređaja",
+                                    "completed": "Završeno",
+                                    "delivered": "Isporučen aparat klijentu", 
+                                    "device_returned": "Aparat vraćen",
+                                    "cancelled": "Otkazano",
+                                    "client_not_home": "Klijent nije kući",
+                                    "client_not_answering": "Klijent se ne javlja", 
+                                    "customer_refuses_repair": "Kupac odbija popravku",
+                                    "customer_refused_repair": "Kupac je odbio popravku",
+                                    "repair_failed": "Servis neuspešan"
+                                  };
+                                  return (
+                                    <SelectItem key={status} value={status}>
+                                      {statusLabels[status] || status}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -444,7 +473,7 @@ export default function NewServicePage() {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {/* Scheduled Date */}
                       <FormField
                         control={form.control}
@@ -458,6 +487,26 @@ export default function NewServicePage() {
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-scheduled-date"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Completed Date */}
+                      <FormField
+                        control={form.control}
+                        name="completedDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Datum završetka</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                value={field.value || ""}
+                                data-testid="input-completed-date"
                               />
                             </FormControl>
                             <FormMessage />
@@ -520,7 +569,7 @@ export default function NewServicePage() {
                       </Button>
                       <Button
                         type="submit"
-                        disabled={serviceMutation.isPending}
+                        disabled={serviceMutation.isPending || !isFormValid || isLoading}
                         className="flex items-center gap-2"
                         data-testid="button-submit"
                       >

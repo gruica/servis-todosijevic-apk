@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -116,6 +117,7 @@ export default function Services() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  const [, setLocation] = useLocation();
   
   // State za pretragu klijenata u formi
   const [clientSearchQuery, setClientSearchQuery] = useState("");
@@ -312,39 +314,6 @@ export default function Services() {
     },
   });
   
-  // Open dialog for adding new service
-  const handleAddService = () => {
-    console.log("Otvaranje dijaloga za dodavanje servisa");
-    setSelectedService(null);
-    setSelectedClient(null);
-    
-    // Reset client search state
-    setClientSearchQuery("");
-    setClientComboOpen(false);
-    
-    const defaultValues = {
-      clientId: 0,
-      applianceId: 0,
-      description: "",
-      status: "pending",
-      warrantyStatus: "nepoznato" as const, // OBAVEZNA default vrednost
-      technicianId: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      scheduledDate: null,
-      completedDate: null,
-      technicianNotes: null,
-      cost: null,
-      // Početne vrednosti za poslovno partnerstvo
-      businessPartnerId: null,
-      partnerCompanyName: null,
-    };
-    
-    form.reset(defaultValues);
-    console.log("Forma resetovana sa:", defaultValues);
-    
-    setIsDialogOpen(true);
-    console.log("Dialog otvoren:", isDialogOpen);
-  };
   
   // Open dialog for editing service
   const handleEditService = (service: Service) => {
@@ -416,9 +385,12 @@ export default function Services() {
                 <h2 className="text-2xl font-medium text-gray-800">Servisi</h2>
                 <p className="text-gray-600">Upravljanje servisnim intervencijama</p>
               </div>
-              <Button onClick={handleAddService}>
+              <Button 
+                onClick={() => setLocation("/services/new")}
+                data-testid="button-new-service"
+              >
                 <Plus className="mr-2 h-4 w-4" />
-                Dodaj servis
+                Novi servis
               </Button>
             </div>
             
