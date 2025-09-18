@@ -1256,7 +1256,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role,
         email: user.email,
         phone: user.phone,
-        technicianId: user.technicianId
+        technicianId: user.technicianId,
+        supplierId: user.supplierId // CRITICAL FIX: Add supplierId for supplier users
       });
     } catch (error) {
       console.error("JWT User info error:", error);
