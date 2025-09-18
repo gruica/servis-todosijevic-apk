@@ -222,8 +222,22 @@ interface ServiceCardProps {
 }
 
 function ServiceCard({ icon, title, description, onClick, primaryColor, textColor, role, isSpecial }: ServiceCardProps) {
+  const handleClick = () => {
+    console.log(`🟢 CLICKED: ${title} (role: ${role})`);
+    console.log(`🟢 onClick function:`, onClick);
+    try {
+      onClick();
+      console.log(`✅ onClick executed successfully for ${title}`);
+    } catch (error) {
+      console.error(`❌ Error in onClick for ${title}:`, error);
+    }
+  };
+
   return (
-    <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''}`} onClick={onClick}>
+    <Card 
+      className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''} cursor-pointer`} 
+      onClick={handleClick}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-center space-x-2 mb-2">
           {icon}
@@ -240,7 +254,6 @@ function ServiceCard({ icon, title, description, onClick, primaryColor, textColo
         <Button 
           variant="outline" 
           className={`w-full text-white bg-blue-600 hover:bg-blue-700 border-blue-600`}
-          onClick={onClick}
         >
           Prijavi se kao {role === 'complus' ? 'Com Plus Admin' : role}
         </Button>
