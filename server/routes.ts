@@ -1239,6 +1239,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // JEDNOSTAVAN LOGOUT - automatski briše token i redirect
+  app.get("/api/simple-logout", (req, res) => {
+    res.send(`
+      <script>
+        localStorage.removeItem('auth_token');
+        localStorage.clear();
+        sessionStorage.clear();
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        alert('✅ LOGOUT USPEŠAN! Idemo na homepage...');
+        window.location.href = '/';
+      </script>
+    `);
+  });
+
   // LOGOUT ENDPOINT - direktno briše JWT token
   app.get("/api/logout", (req, res) => {
     res.send(`
