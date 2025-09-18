@@ -9006,6 +9006,70 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
   // ===== ENHANCED SUPPLIER MANAGEMENT (Admin Only) =====
 
+  // ===== SUPPLIER PORTAL ENDPOINTS (MUST BE BEFORE ADMIN /api/suppliers) =====
+  
+  // List orders for current supplier
+  app.get("/api/suppliers/orders", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
+    try {
+      const { status, limit = 100 } = req.query;
+      const user = req.user!;
+      
+      console.log(`📦 [SUPPLIER-ORDERS] Dobavljač ${user.username} (${user.role}) traži porudžbine - status: ${status}`);
+      
+      if (!user.supplierId) {
+        console.error(`❌ [SUPPLIER-ORDERS] User ${user.username} (${user.role}) missing supplierId. User object:`, user);
+        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
+      }
+
+      const parsedLimit = Math.min(parseInt(limit as string) || 100, 500);
+      let orders = await storage.getSupplierOrdersBySupplier(user.supplierId!);
+      
+      if (status) {
+        orders = orders.filter(order => order.status === status);
+      }
+      
+      orders = orders.slice(0, parsedLimit);
+      
+      console.log(`📦 [SUPPLIER-ORDERS] Vraćam ${orders.length} porudžbina za dobavljača ID: ${user.supplierId!}`);
+      res.json(orders);
+    } catch (error) {
+      console.error("❌ [SUPPLIER-ORDERS] Greška pri dohvatanju porudžbina:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju porudžbina" });
+    }
+  });
+
+  // Get supplier dashboard stats
+  app.get("/api/suppliers/dashboard", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
+    try {
+      const user = req.user!;
+      console.log(`📊 [SUPPLIER-DASHBOARD] Dobavljač ${user.username} traži dashboard podatke`);
+
+      if (!user.supplierId) {
+        console.error(`❌ [SUPPLIER-DASHBOARD] User ${user.username} (${user.role}) missing supplierId. User object:`, user);
+        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
+      }
+
+      const orders = await storage.getSupplierOrdersBySupplier(user.supplierId);
+      const supplier = await storage.getSupplier(user.supplierId);
+      
+      const stats = {
+        totalOrders: orders.length,
+        pendingOrders: orders.filter(o => o.status === 'pending').length,
+        completedOrders: orders.filter(o => o.status === 'delivered').length,
+        inProgressOrders: orders.filter(o => o.status === 'pending').length,
+        supplierName: supplier?.name || 'N/A',
+        recentOrders: orders.slice(0, 5)
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("❌ [SUPPLIER-DASHBOARD] Greška pri dohvatanju dashboard podataka:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju dashboard podataka" });
+    }
+  });
+
+  // ===== ADMIN SUPPLIER MANAGEMENT =====
+  
   // Get all suppliers with filtering
   app.get("/api/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
@@ -9180,40 +9244,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
-  // ===== SUPPLIER ORDERS (Role-Based Access) =====
-
-  // List orders for current supplier
-  app.get("/api/suppliers/orders", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
-    try {
-      const { status, limit = 100 } = req.query;
-      const user = req.user!;
-      
-      console.log(`📦 [SUPPLIER-ORDERS] Dobavljač ${user.username} (${user.role}) traži porudžbine - status: ${status}`);
-
-      if (!user.supplierId) {
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      // Parse limit with validation
-      const parsedLimit = Math.min(parseInt(limit as string) || 100, 500); // Max 500 orders
-      
-      let orders = await storage.getSupplierOrdersBySupplier(user.supplierId!);
-      
-      // Apply filters if specified
-      if (status) {
-        orders = orders.filter(order => order.status === status);
-      }
-      
-      // Apply limit
-      orders = orders.slice(0, parsedLimit);
-      
-      console.log(`📦 [SUPPLIER-ORDERS] Vraćam ${orders.length} porudžbina za dobavljača ID: ${user.supplierId!}`);
-      res.json(orders);
-    } catch (error) {
-      console.error("❌ [SUPPLIER-ORDERS] Greška pri dohvatanju porudžbina:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju porudžbina" });
-    }
-  });
 
   // Get specific order details for current supplier
   app.get("/api/suppliers/orders/:id", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
@@ -9380,37 +9410,68 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
-  // ===== SUPPLIER PORTAL DASHBOARD ENDPOINTS =====
-
-  // Get supplier dashboard stats
-  app.get("/api/suppliers/dashboard", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
+  // ===== DEBUGGING ENDPOINT FOR SUPPLIER AUTH TROUBLESHOOTING =====
+  
+  // TEMPORARY: Debug endpoint to see what JWT middleware is seeing
+  app.get("/api/debug/supplier-auth", jwtAuth, async (req, res) => {
     try {
       const user = req.user!;
-      console.log(`📊 [SUPPLIER-DASHBOARD] Dobavljač ${user.username} traži dashboard podatke`);
-
-      if (!user.supplierId) {
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      // Get supplier orders and calculate stats
-      const orders = await storage.getSupplierOrdersBySupplier(user.supplierId);
-      const supplier = await storage.getSupplier(user.supplierId);
       
-      const stats = {
-        totalOrders: orders.length,
-        pendingOrders: orders.filter(o => o.status === 'pending').length,
-        completedOrders: orders.filter(o => o.status === 'delivered').length,
-        inProgressOrders: orders.filter(o => o.status === 'pending').length,
-        supplierName: supplier?.name || 'N/A',
-        recentOrders: orders.slice(0, 5) // Last 5 orders
-      };
+      console.log(`🔍 [DEBUG-SUPPLIER-AUTH] Debug endpoint hit by user:`, {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        supplierId: user.supplierId,
+        technicianId: user.technicianId,
+        fullName: user.fullName,
+        email: user.email,
+        companyName: user.companyName,
+        hasSupplierRole: user.role?.startsWith('supplier_'),
+        supplierRoleCheck: ['supplier_complus', 'supplier_beko'].includes(user.role || ''),
+        supplierIdType: typeof user.supplierId,
+        supplierIdValue: user.supplierId
+      });
       
-      res.json(stats);
+      // Also test database fetch directly
+      const dbUser = await storage.getUser(user.id);
+      console.log(`🔍 [DEBUG-SUPPLIER-AUTH] Same user from database direct fetch:`, {
+        id: dbUser?.id,
+        username: dbUser?.username,
+        role: dbUser?.role,
+        supplierId: dbUser?.supplierId,
+        supplierIdType: typeof dbUser?.supplierId,
+        supplierIdValue: dbUser?.supplierId
+      });
+      
+      res.json({
+        message: "Debug info logged to console",
+        middleware_user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          supplierId: user.supplierId,
+          supplierIdType: typeof user.supplierId
+        },
+        database_user: {
+          id: dbUser?.id,
+          username: dbUser?.username,
+          role: dbUser?.role,
+          supplierId: dbUser?.supplierId,
+          supplierIdType: typeof dbUser?.supplierId
+        },
+        role_checks: {
+          hasSupplierRole: user.role?.startsWith('supplier_'),
+          supplierRoleAllowed: ['supplier_complus', 'supplier_beko'].includes(user.role || ''),
+          supplierIdExists: !!user.supplierId,
+          supplierIdTruthy: user.supplierId ? true : false
+        }
+      });
     } catch (error) {
-      console.error("❌ [SUPPLIER-DASHBOARD] Greška pri dohvatanju dashboard podataka:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dashboard podataka" });
+      console.error("❌ [DEBUG-SUPPLIER-AUTH] Error in debug endpoint:", error);
+      res.status(500).json({ error: "Debug endpoint error", details: error.message });
     }
   });
+
 
   // ===== ADMIN PROCUREMENT FUNCTIONALITY =====
 
