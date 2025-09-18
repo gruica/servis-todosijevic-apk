@@ -111,7 +111,7 @@ const AVAILABILITY_OPTIONS = [
 
 export default function PartsCatalogPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingPart, setEditingPart] = useState<PartsCatalog | null>(null);
   const [viewingPart, setViewingPart] = useState<PartsCatalog | null>(null);
@@ -252,7 +252,7 @@ export default function PartsCatalogPage() {
       part.partNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       part.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = !selectedCategory || part.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || part.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -342,7 +342,7 @@ export default function PartsCatalogPage() {
             <SelectValue placeholder="Sve kategorije" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Sve kategorije</SelectItem>
+            <SelectItem value="all">Sve kategorije</SelectItem>
             {CATEGORIES.map((category) => (
               <SelectItem key={category.value} value={category.value}>
                 {category.label}

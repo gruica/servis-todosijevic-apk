@@ -300,7 +300,7 @@ export function QuickServiceEntry({
           description: data.description,
           status: "pending",
           warrantyStatus: data.warrantyStatus,
-          technicianId: data.technicianId && data.technicianId !== "" ? parseInt(data.technicianId) : null,
+          technicianId: data.technicianId && data.technicianId !== "" && data.technicianId !== "none" ? parseInt(data.technicianId) : null,
           scheduledDate: data.scheduledDate || null,
           priority: data.priority || "medium",
           notes: data.notes || null,
@@ -941,7 +941,7 @@ export function QuickServiceEntry({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent data-testid="technician-options">
-                            <SelectItem value="" data-testid="technician-option-none">
+                            <SelectItem value="none" data-testid="technician-option-none">
                               Bez dodele
                             </SelectItem>
                             {technicians.filter(t => t.active).map((technician) => (
