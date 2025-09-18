@@ -153,6 +153,7 @@ function Router() {
       
       {/* Test da li radi na drugom mjestu */}
       <Route path="/test-page" component={SimpleTestPage} />
+      <Route path="/test-click" component={React.lazy(() => import("./test-click").then(m => ({ default: m.default })))} />
       
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />

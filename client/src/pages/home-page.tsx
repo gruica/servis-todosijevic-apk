@@ -6,7 +6,10 @@ import { useLocation, Link } from "wouter";
 import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon } from "lucide-react";
 
 export default function HomePage() {
+  console.log("🟢 HOMEPAGE IS LOADING!");
   const [, navigate] = useLocation();
+  
+  console.log("🟢 navigate function:", navigate);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white">
