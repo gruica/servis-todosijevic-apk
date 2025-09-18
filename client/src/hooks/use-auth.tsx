@@ -64,9 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return userData;
     },
     enabled: !!localStorage.getItem('auth_token'),
-    staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 10 * 60 * 1000, // PERFORMANCE OPTIMIZATION: 10 minutes (from 2 minutes)
+    refetchOnWindowFocus: false, // Disable focus refetching for better performance
+    refetchOnMount: false, // Only refetch if data is stale
+    retry: (failureCount, error: any) => {
+      // Don't retry auth errors (401)
+      if (error?.status === 401 || error?.response?.status === 401) {
+        return false;
+      }
+      // Max 2 retries for other errors
+      return failureCount < 2;
+    },
   });
   
 
@@ -87,9 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: { user: SelectUser; token: string }) => {
+      // Store token first
       localStorage.setItem('auth_token', response.token);
+      
+      // PRELOAD STRATEGY: Cache user data immediately to avoid DB hit
       queryClient.setQueryData(["/api/jwt-user"], response.user);
-      refetch();
+      console.log('🚀 [LOGIN-PRELOAD] User data cached immediately on login');
+      
+      // Don't call refetch since we already have fresh data
       toast({
         title: "Uspešna prijava",
         description: `Dobrodošli, ${response.user.fullName}!`,
@@ -155,13 +168,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Send server-side cache invalidation request if user exists
+      if (user?.id) {
+        try {
+          await fetch('/api/jwt-user/invalidate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            },
+            body: JSON.stringify({ userId: user.id })
+          });
+          console.log('🗑️ [LOGOUT-INVALIDATION] Server-side cache invalidated');
+        } catch (error) {
+          console.warn('⚠️ [LOGOUT-INVALIDATION] Failed to invalidate server cache:', error);
+          // Don't fail logout if cache invalidation fails
+        }
+      }
+      
       localStorage.removeItem('auth_token');
       localStorage.removeItem("lastAuthRedirect");
       return Promise.resolve();
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/jwt-user"], null);
-      queryClient.clear();
+      // SMART CACHE INVALIDATION: Only remove JWT user query, not all queries
+      queryClient.removeQueries({ queryKey: ["/api/jwt-user"] });
+      console.log('🧹 [LOGOUT-CACHE] Client-side JWT cache cleared');
       
       toast({
         title: "Uspešno ste se odjavili",

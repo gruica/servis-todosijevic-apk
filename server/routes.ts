@@ -109,6 +109,35 @@ function generateStatusUpdateMessage(serviceId: number, newStatus: string, techn
   return `Servis #${serviceId}: ${statusDescription}.${technicianPart} Frigo Sistem Todosijević`;
 }
 
+// ===== JWT USER CACHE SYSTEM =====
+// JWT User cache system for performance optimization
+const jwtUserCache = new Map();
+const JWT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// Cache invalidation helper function
+function invalidateUserCache(userId: number) {
+  const cacheKey = `jwt-user-${userId}`;
+  jwtUserCache.delete(cacheKey);
+  console.log(`🗑️ [JWT-CACHE] Invalidated cache for user ID: ${userId}`);
+}
+
+// Auto-cleanup expired cache entries (runs every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  let cleanedCount = 0;
+  
+  for (const [key, value] of jwtUserCache.entries()) {
+    if ((now - value.timestamp) >= JWT_CACHE_TTL) {
+      jwtUserCache.delete(key);
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`🧹 [JWT-CACHE] Auto-cleanup: Removed ${cleanedCount} expired cache entries`);
+  }
+}, 5 * 60 * 1000); // Run every 5 minutes
+
 // Email postavke schema
 const emailSettingsSchema = z.object({
   host: z.string().min(1),
@@ -1324,17 +1353,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     `);
   });
 
-  // JWT User info endpoint
-  app.get("/api/jwt-user", jwtAuthMiddleware, async (req, res) => {
+  // JWT User info endpoint - OPTIMIZED WITH CACHING
+  app.get("/api/jwt-user", jwtAuth, async (req, res) => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user?.id;
+      const cacheKey = `jwt-user-${userId}`;
+      const now = Date.now();
+      
+      // Check cache first
+      const cached = jwtUserCache.get(cacheKey);
+      if (cached && (now - cached.timestamp) < JWT_CACHE_TTL) {
+        console.log(`⚡ [JWT-CACHE] Cache hit for user ID: ${userId} (saved DB query)`);
+        return res.json(cached.data);
+      }
+      
+      // Only hit DB when cache miss or expired
+      console.log(`🔄 [JWT-CACHE] Cache miss for user ID: ${userId} - fetching from DB`);
       const user = await storage.getUser(userId);
       
       if (!user) {
-        return res.status(404).json({ error: "Korisnik nije pronađen" });
+        return res.status(401).json({ error: "Korisnik nije pronađen" });
       }
       
-      res.json({
+      const userData = {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
@@ -1342,11 +1383,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         phone: user.phone,
         technicianId: user.technicianId,
-        supplierId: user.supplierId // CRITICAL FIX: Add supplierId for supplier users
+        supplierId: user.supplierId
+      };
+      
+      // Cache the result
+      jwtUserCache.set(cacheKey, {
+        data: userData,
+        timestamp: now
       });
+      
+      console.log(`💾 [JWT-CACHE] Cached user data for ID: ${userId}`);
+      res.json(userData);
     } catch (error) {
-      console.error("JWT User info error:", error);
-      res.status(500).json({ error: "Greška pri dobijanju korisničkih podataka" });
+      console.error("❌ [JWT-USER] Greška:", error);
+      res.status(500).json({ error: "Greška pri dohvatanju korisničkih podataka" });
+    }
+  });
+
+  // JWT User cache invalidation endpoint
+  app.post("/api/jwt-user/invalidate", jwtAuth, async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const requestUserId = req.user?.id;
+      
+      // Security check: users can only invalidate their own cache
+      if (userId !== requestUserId) {
+        return res.status(403).json({ error: "Možete invalidirati samo svoj cache" });
+      }
+      
+      invalidateUserCache(userId);
+      res.json({ success: true, message: "Cache uspešno invalidiran" });
+    } catch (error) {
+      console.error("❌ [JWT-CACHE-INVALIDATE] Greška:", error);
+      res.status(500).json({ error: "Greška pri invalidaciji cache-a" });
     }
   });
 
