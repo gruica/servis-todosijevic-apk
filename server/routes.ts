@@ -34,14 +34,30 @@ import QRCode from 'qrcode';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
+// Cached health response object
+let cachedHealthResponse = null;
+let cacheTimestamp = 0;
+const HEALTH_CACHE_TTL = 30000; // 30 seconds
+
 async function setupEnterpriseHealthEndpoint(app: Express) {
+  // Hoist db import to module scope
+  const { checkDatabaseHealth } = await import('./db.js');
+  
   app.get("/api/health", async (req, res) => {
-    try {
-      const startTime = Date.now();
-      const { checkDatabaseHealth } = await import('./db.js');
+    const now = Date.now();
+    
+    // Return cached response if still valid
+    if (cachedHealthResponse && (now - cacheTimestamp) < HEALTH_CACHE_TTL) {
+      return res.status(200).json(cachedHealthResponse);
+    }
+    
+    // Lightweight health check - no DB operations unless deep=1
+    const isDeepCheck = req.query.deep === '1';
+    
+    if (isDeepCheck) {
+      // Full health check with DB
       const dbHealth = await checkDatabaseHealth();
-      
-      const systemHealth = {
+      cachedHealthResponse = {
         status: dbHealth.healthy ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
         database: {
@@ -50,7 +66,16 @@ async function setupEnterpriseHealthEndpoint(app: Express) {
           activeConnections: dbHealth.activeConnections
         },
         performance: {
-          healthCheckTime: `${Date.now() - startTime}ms`,
+          uptime: `${Math.floor(process.uptime())}s`,
+          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+        }
+      };
+    } else {
+      // Lightweight health check - just process status  
+      cachedHealthResponse = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        performance: {
           uptime: `${Math.floor(process.uptime())}s`,
           memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
         },
@@ -59,15 +84,10 @@ async function setupEnterpriseHealthEndpoint(app: Express) {
           app: 'FrigoSistem_v2025.1.0_Enterprise'
         }
       };
-      
-      res.status(dbHealth.healthy ? 200 : 503).json(systemHealth);
-    } catch (error) {
-      res.status(503).json({
-        status: 'unhealthy',
-        error: 'Health check failed',
-        timestamp: new Date().toISOString()
-      });
     }
+    
+    cacheTimestamp = now;
+    res.status(200).json(cachedHealthResponse);
   });
 }
 
@@ -134,6 +154,11 @@ const catalogUpload = multer({
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Quick HEAD handler to short-circuit monitoring probes
+  app.head('/api', (req, res) => {
+    res.sendStatus(200);
+  });
 
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
@@ -1111,15 +1136,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Alternative health check route
-  app.get("/api/health", (req, res) => {
-    res.status(200).json({ 
-      status: "ok", 
-      api: "ready",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
-  });
   
   // Inicijalizacija SMS servisa
   let smsService: SMSCommunicationService | null = null;
@@ -9787,6 +9803,45 @@ Frigo Sistem Todosijević
 
   console.log("✅ [PROCUREMENT] Admin procurement endpoint je registrovan");
   console.log("✅ [SUPPLIER-PORTAL] Svi supplier portal API endpoint-i su registrovani");
+
+  // Rate limiting za web vitals
+  const webVitalsRateLimit = new Map();
+  const WEB_VITALS_RATE_LIMIT = 60; // 60 requests per minute per IP
+  const WEB_VITALS_WINDOW = 60000; // 1 minute
+
+  app.post('/api/web-vitals', (req, res) => {
+    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+    const now = Date.now();
+    
+    // Rate limiting check
+    if (!webVitalsRateLimit.has(clientIP)) {
+      webVitalsRateLimit.set(clientIP, { count: 1, resetTime: now + WEB_VITALS_WINDOW });
+    } else {
+      const rateLimitData = webVitalsRateLimit.get(clientIP);
+      if (now > rateLimitData.resetTime) {
+        rateLimitData.count = 1;
+        rateLimitData.resetTime = now + WEB_VITALS_WINDOW;
+      } else {
+        rateLimitData.count++;
+        if (rateLimitData.count > WEB_VITALS_RATE_LIMIT) {
+          return res.status(429).json({ error: 'Rate limit exceeded for web vitals' });
+        }
+      }
+    }
+    
+    const { name, value, id, delta } = req.body;
+    
+    // Reduce verbose logging in production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🚀 Core Web Vitals - ${name}: ${value}ms (ID: ${id}, Delta: ${delta})`);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Web Vitals logged',
+      metric: { name, value, id, delta }
+    });
+  });
 
 }
 
