@@ -1466,7 +1466,24 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   companyName: z.string().min(2, "Naziv kompanije mora imati najmanje 2 karaktera").max(200),
   email: z.string().email("Neispravna email adresa"),
   phone: z.string().max(50).optional(),
-  website: z.string().url("Neispravna URL adresa").optional(),
+  website: z.string().max(255, "URL je predugačak").refine((val) => {
+    if (!val || val === '') return true; // Dozvoli prazno polje
+    try {
+      new URL(val);
+      return true;
+    } catch {
+      // Ako URL nije valjan, proveravaj da li možda nedostaje protokol
+      if (val.includes('.') && !val.startsWith('http')) {
+        try {
+          new URL('https://' + val);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    }
+  }, "Unesite validnu URL adresu (npr. https://example.com ili example.com)").optional(),
   integrationMethod: z.enum(["email", "api", "fax", "manual"]).default("email"),
   priority: z.number().int().min(1).max(10).default(5),
   averageDeliveryDays: z.number().int().min(1).max(365).default(7),
