@@ -616,7 +616,7 @@ export default function Services() {
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[400px] p-0" align="start">
-                          <Command>
+                          <Command shouldFilter={false}>
                             <CommandInput 
                               placeholder="Pretražite klijenta po imenu, telefonu..." 
                               value={clientSearchQuery}
@@ -632,7 +632,7 @@ export default function Services() {
                               {filteredClientsForForm.map((client) => (
                                 <CommandItem
                                   key={client.id}
-                                  value={`${client.fullName} ${client.phone || ""} ${client.address || ""}`}
+                                  value={client.id.toString()}
                                   onSelect={() => {
                                     const newValue = client.id.toString();
                                     field.onChange(newValue);
