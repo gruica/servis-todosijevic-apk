@@ -632,7 +632,7 @@ export default function Services() {
                               {filteredClientsForForm.map((client) => (
                                 <CommandItem
                                   key={client.id}
-                                  value={client.id.toString()}
+                                  value={`${client.fullName} ${client.phone || ""} ${client.address || ""}`}
                                   onSelect={() => {
                                     const newValue = client.id.toString();
                                     field.onChange(newValue);
