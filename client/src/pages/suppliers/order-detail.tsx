@@ -272,7 +272,7 @@ export default function SupplierOrderDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/suppliers/login")} data-testid="button-login">
+            <Button onClick={() => navigate("/supplier-auth")} data-testid="button-login">
               Prijavite se
             </Button>
           </CardContent>
@@ -396,7 +396,7 @@ export default function SupplierOrderDetail() {
                       {order.orderNumber && (
                         <>Broj: {order.orderNumber} • </>
                       )}
-                      Kreirana {formatRelativeTime(order.createdAt)}
+                      Kreirana {formatRelativeTime(order.createdAt.toString())}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -448,14 +448,14 @@ export default function SupplierOrderDetail() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium text-gray-700">Kreirana:</span>
-                      <span className="text-sm text-gray-900">{formatDate(order.createdAt)}</span>
+                      <span className="text-sm text-gray-900">{formatDate(order.createdAt.toString())}</span>
                     </div>
                     
                     {order.estimatedDelivery && (
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-700">Očekivana dostava:</span>
-                        <span className="text-sm text-gray-900">{formatDate(order.estimatedDelivery)}</span>
+                        <span className="text-sm text-gray-900">{formatDate(order.estimatedDelivery.toString())}</span>
                       </div>
                     )}
                     
@@ -498,7 +498,7 @@ export default function SupplierOrderDetail() {
                         
                         <div>
                           <Label className="text-sm font-medium text-gray-700">Hitnost</Label>
-                          <Badge className={urgencyColors[order.sparePartOrder.urgency]} size="sm">
+                          <Badge className={urgencyColors[order.sparePartOrder.urgency]}>
                             {order.sparePartOrder.urgency}
                           </Badge>
                         </div>
@@ -624,7 +624,7 @@ export default function SupplierOrderDetail() {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
-                                    {formatRelativeTime(event.createdAt)}
+                                    {formatRelativeTime(event.createdAt.toString())}
                                   </div>
                                   {event.communicationChannel && (
                                     <div className="flex items-center gap-1">

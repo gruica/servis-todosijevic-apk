@@ -221,7 +221,7 @@ export default function SupplierDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = "/suppliers/login"}>
+            <Button onClick={() => window.location.href = "/supplier-auth"}>
               Prijavite se
             </Button>
           </CardContent>

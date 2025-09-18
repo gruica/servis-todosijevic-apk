@@ -71,6 +71,7 @@ const BusinessComplus = lazy(() => import("@/pages/business/complus"));
 const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 
 // PERFORMANCE BOOST: Lazy load supplier pages
+const SupplierAuth = lazy(() => import("@/pages/supplier-auth"));
 const SupplierLogin = lazy(() => import("@/pages/suppliers/supplier-login"));
 const SupplierDashboard = lazy(() => import("@/pages/suppliers/dashboard"));
 const SupplierOrderDetail = lazy(() => import("@/pages/suppliers/order-detail"));
@@ -165,6 +166,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       <Route path="/complus-auth" component={ComplusAuthPage} />
+      <Route path="/supplier-auth" component={SupplierAuth} />
       <Route path="/suppliers/login" component={SupplierLogin} />
       
       {/* Supplier routes */}
