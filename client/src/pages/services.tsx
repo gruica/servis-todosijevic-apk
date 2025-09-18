@@ -357,7 +357,7 @@ export default function Services() {
       applianceId: service.applianceId,
       description: service.description,
       status: service.status,
-      warrantyStatus: ((service as any).warrantyStatus || "nepoznato") as const, // Dodaj warranty status ili default
+      warrantyStatus: (service as any).warrantyStatus || "nepoznato", // Dodaj warranty status ili default
       technicianId: service.technicianId || 0,
       createdAt: service.createdAt,
       scheduledDate: service.scheduledDate || null,
