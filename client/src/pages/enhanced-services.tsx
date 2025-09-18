@@ -1173,7 +1173,7 @@ export default function EnhancedServices() {
                           <SelectItem value="new_client" className="text-blue-600 font-medium">
                             + Dodaj novog klijenta
                           </SelectItem>
-                          {clients?.map((client) => (
+                          {clients?.filter(client => client.id && client.id > 0).map((client) => (
                             <SelectItem key={client.id} value={client.id.toString()}>
                               {client.fullName} {client.phone && `(${client.phone})`}
                             </SelectItem>
@@ -1206,7 +1206,7 @@ export default function EnhancedServices() {
                               + Dodaj novi uređaj
                             </SelectItem>
                           )}
-                          {filteredAppliances?.map((appliance) => {
+                          {filteredAppliances?.filter(appliance => appliance.id && appliance.id > 0).map((appliance) => {
                             const category = categories?.find(c => c.id === appliance.categoryId);
                             return (
                               <SelectItem key={appliance.id} value={appliance.id.toString()}>
@@ -1346,7 +1346,7 @@ export default function EnhancedServices() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="0">Nedodeljen</SelectItem>
-                            {technicians?.map((tech) => (
+                            {technicians?.filter(tech => tech.id && tech.id > 0).map((tech) => (
                               <SelectItem key={tech.id} value={tech.id.toString()}>
                                 {tech.fullName}
                                 {tech.specialization && ` (${tech.specialization})`}

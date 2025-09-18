@@ -836,7 +836,9 @@ export function QuickServiceEntry({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent data-testid="appliance-options">
-                              {appliances.map((appliance) => (
+                              {appliances
+                                .filter(appliance => appliance.id && appliance.id > 0)
+                                .map((appliance) => (
                                 <SelectItem 
                                   key={appliance.id} 
                                   value={appliance.id.toString()}
@@ -944,7 +946,9 @@ export function QuickServiceEntry({
                             <SelectItem value="none" data-testid="technician-option-none">
                               Bez dodele
                             </SelectItem>
-                            {technicians.filter(t => t.active).map((technician) => (
+                            {technicians
+                              .filter(t => t.active && t.id && t.id > 0)
+                              .map((technician) => (
                               <SelectItem 
                                 key={technician.id} 
                                 value={technician.id.toString()}

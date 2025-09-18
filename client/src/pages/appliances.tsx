@@ -339,7 +339,7 @@ export default function Appliances() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {clients?.map(client => (
+                        {clients?.filter(client => client.id && client.id > 0).map(client => (
                           <SelectItem key={client.id} value={client.id.toString()}>
                             {client.fullName}
                           </SelectItem>
@@ -368,7 +368,7 @@ export default function Appliances() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories?.map(category => (
+                          {categories?.filter(category => category.id && category.id > 0).map(category => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
                             </SelectItem>

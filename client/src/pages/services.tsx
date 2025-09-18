@@ -579,7 +579,7 @@ export default function Services() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {clients?.map(client => (
+                          {clients?.filter(client => client.id && client.id > 0).map(client => (
                             <SelectItem key={client.id} value={client.id.toString()}>
                               {client.fullName}
                             </SelectItem>
@@ -610,7 +610,7 @@ export default function Services() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {filteredAppliances?.map(appliance => {
+                          {filteredAppliances?.filter(appliance => appliance.id && appliance.id > 0).map(appliance => {
                             const category = categories?.find(c => c.id === appliance.categoryId);
                             return (
                               <SelectItem key={appliance.id} value={appliance.id.toString()}>
