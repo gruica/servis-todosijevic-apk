@@ -203,14 +203,18 @@ export function QuickServiceEntry({
     enabled: isAdminMode,
   });
 
-  // Filter clients for search
+  // Filter clients for search - show all when no query
   const filteredClients = useMemo(() => {
-    if (!clientSearchQuery.trim()) return clients;
+    // Always show all clients initially
+    if (!clientSearchQuery || !clientSearchQuery.trim()) {
+      return clients.slice(0, 100); // Show first 100 clients to avoid performance issues
+    }
     const query = clientSearchQuery.toLowerCase().trim();
     return clients.filter(client => 
       client.fullName.toLowerCase().includes(query) ||
       client.phone.includes(query) ||
-      (client.email && client.email.toLowerCase().includes(query))
+      (client.email && client.email.toLowerCase().includes(query)) ||
+      (client.city && client.city.toLowerCase().includes(query))
     );
   }, [clients, clientSearchQuery]);
 
@@ -381,7 +385,7 @@ export function QuickServiceEntry({
             <h1 className="text-xl font-semibold">Servis kreiran</h1>
             <Button variant="outline" onClick={onClose}>
               <X className="h-4 w-4 mr-2" />
-              Zatovri
+              Zatvori
             </Button>
           </div>
           <div 
@@ -429,17 +433,19 @@ export function QuickServiceEntry({
   const title = isBusinessMode ? "Novi servis - Poslovni partner" : "Novi servis - Admin";
 
   if (isAdminMode) {
-    // Full screen layout for admin mode
+    // Full screen layout for admin mode - fixed position to prevent floating
     return (
-      <div className="fixed inset-0 z-50 bg-background overflow-auto">
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-background z-10">
-          <h1 className="text-xl font-semibold">{title}</h1>
-          <Button variant="outline" onClick={onClose}>
-            <X className="h-4 w-4 mr-2" />
-            Zatovri
-          </Button>
-        </div>
-        <div className="max-w-4xl mx-auto p-6">
+      <div className="fixed inset-0 z-50 bg-background">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4 border-b bg-background">
+            <h1 className="text-xl font-semibold">{title}</h1>
+            <Button variant="outline" onClick={onClose}>
+              <X className="h-4 w-4 mr-2" />
+              Zatvori
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <div className="max-w-4xl mx-auto p-6">
           <div className="space-y-6" data-testid="quick-service-form">
         
         {/* Mode indicator */}
@@ -812,10 +818,10 @@ export function QuickServiceEntry({
                                 data-testid="client-search-input"
                               />
                               <CommandEmpty data-testid="no-clients-found">
-                                Nema rezultata.
+                                {clientsLoading ? "Učitavanje..." : "Nema rezultata za pretragu."}
                               </CommandEmpty>
                               <CommandGroup>
-                                <ScrollArea className="h-[200px]">
+                                <ScrollArea className="h-[300px]">
                                   {filteredClients.map((client) => (
                                     <CommandItem
                                       key={client.id}
@@ -1084,6 +1090,7 @@ export function QuickServiceEntry({
             </form>
           </Form>
         )}
+            </div>
           </div>
         </div>
       </div>
