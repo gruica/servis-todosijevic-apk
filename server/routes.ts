@@ -33,63 +33,11 @@ import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webho
 import QRCode from 'qrcode';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
-// ENTERPRISE MONITORING & HEALTH CHECK
-// Cached health response object
-let cachedHealthResponse = null;
+// CONSOLIDATED ENTERPRISE MONITORING & HEALTH CHECK SYSTEM
+// Cached health response object for performance optimization
+let cachedHealthResponse: any = null;
 let cacheTimestamp = 0;
-const HEALTH_CACHE_TTL = 30000; // 30 seconds
-
-async function setupEnterpriseHealthEndpoint(app: Express) {
-  // Hoist db import to module scope
-  const { checkDatabaseHealth } = await import('./db.js');
-  
-  app.get("/api/health", async (req, res) => {
-    const now = Date.now();
-    
-    // Return cached response if still valid
-    if (cachedHealthResponse && (now - cacheTimestamp) < HEALTH_CACHE_TTL) {
-      return res.status(200).json(cachedHealthResponse);
-    }
-    
-    // Lightweight health check - no DB operations unless deep=1
-    const isDeepCheck = req.query.deep === '1';
-    
-    if (isDeepCheck) {
-      // Full health check with DB
-      const dbHealth = await checkDatabaseHealth();
-      cachedHealthResponse = {
-        status: dbHealth.healthy ? 'healthy' : 'unhealthy',
-        timestamp: new Date().toISOString(),
-        database: {
-          healthy: dbHealth.healthy,
-          responseTime: `${dbHealth.responseTime}ms`,
-          activeConnections: dbHealth.activeConnections
-        },
-        performance: {
-          uptime: `${Math.floor(process.uptime())}s`,
-          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
-        }
-      };
-    } else {
-      // Lightweight health check - just process status  
-      cachedHealthResponse = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        performance: {
-          uptime: `${Math.floor(process.uptime())}s`,
-          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
-        },
-        version: {
-          node: process.version,
-          app: 'FrigoSistem_v2025.1.0_Enterprise'
-        }
-      };
-    }
-    
-    cacheTimestamp = now;
-    res.status(200).json(cachedHealthResponse);
-  });
-}
+const HEALTH_CACHE_TTL = 30000; // 30 seconds cache TTL
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -184,9 +132,82 @@ const catalogUpload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // Quick HEAD handler to short-circuit monitoring probes
+  // ===== CONSOLIDATED HEALTH & MONITORING SYSTEM =====
+  
+  // Lightweight HEAD handler for external monitoring systems
   app.head('/api', (req, res) => {
-    res.sendStatus(200);
+    res.status(200).end();
+  });
+  
+  // Main health endpoint with caching and optional DB check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const startTime = Date.now();
+      const now = Date.now();
+      
+      // Return cached response if still valid
+      if (cachedHealthResponse && (now - cacheTimestamp) < HEALTH_CACHE_TTL) {
+        return res.status(200).json(cachedHealthResponse);
+      }
+      
+      // Basic health status
+      const health: any = {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: `${Math.floor(process.uptime())}s`,
+        version: "2025.1.0",
+        responseTime: `${Date.now() - startTime}ms`
+      };
+
+      // Optional DB health check (only if db=true parameter)
+      if (req.query.db === 'true') {
+        try {
+          const { checkDatabaseHealth } = await import('./db.js');
+          const dbHealth = await checkDatabaseHealth();
+          health.database = {
+            status: dbHealth.healthy ? "connected" : "error",
+            responseTime: `${dbHealth.responseTime}ms`,
+            activeConnections: dbHealth.activeConnections
+          };
+          if (!dbHealth.healthy) {
+            health.status = "degraded";
+          }
+        } catch (error) {
+          health.database = { status: "error", error: "Connection failed" };
+          health.status = "degraded";
+        }
+      }
+
+      // Memory usage metrics
+      const memUsage = process.memoryUsage();
+      health.memory = {
+        used: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        total: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+        percentage: `${Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)}%`
+      };
+      
+      // Update response time
+      health.responseTime = `${Date.now() - startTime}ms`;
+      
+      // Cache the response
+      cachedHealthResponse = health;
+      cacheTimestamp = now;
+      
+      res.status(200).json(health);
+    } catch (error) {
+      console.error("❌ [HEALTH] Health check error:", error);
+      res.status(503).json({
+        status: "error",
+        timestamp: new Date().toISOString(),
+        error: "Health check failed",
+        message: (error as Error).message || "Unknown error"
+      });
+    }
+  });
+  
+  // Status endpoint alias - redirects to main health endpoint
+  app.get("/api/status", (req, res) => {
+    res.redirect(301, "/api/health");
   });
 
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
@@ -1156,14 +1177,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/health", (req, res) => {
-    res.status(200).json({ 
-      status: "healthy", 
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: "1.0.0"
-    });
-  });
   
   
   // Inicijalizacija SMS servisa
