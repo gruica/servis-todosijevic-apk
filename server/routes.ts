@@ -9809,6 +9809,7 @@ Frigo Sistem Todosijević
   const WEB_VITALS_RATE_LIMIT = 60; // 60 requests per minute per IP
   const WEB_VITALS_WINDOW = 60000; // 1 minute
 
+  // Original single metric endpoint (preserved for backward compatibility)
   app.post('/api/web-vitals', (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
     const now = Date.now();
@@ -9839,6 +9840,68 @@ Frigo Sistem Todosijević
     res.json({ 
       success: true, 
       message: 'Web Vitals logged',
+      metric: { name, value, id, delta }
+    });
+  });
+
+  // New batch analytics endpoint for optimized web vitals throttling
+  app.post('/api/analytics/web-vitals', (req, res) => {
+    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
+    const now = Date.now();
+    const isBatchRequest = req.headers['x-web-vitals-batch'] === 'true';
+    
+    // Enhanced rate limiting for batch requests
+    const batchRateLimit = isBatchRequest ? Math.floor(WEB_VITALS_RATE_LIMIT / 10) : WEB_VITALS_RATE_LIMIT;
+    
+    if (!webVitalsRateLimit.has(clientIP)) {
+      webVitalsRateLimit.set(clientIP, { count: 1, resetTime: now + WEB_VITALS_WINDOW });
+    } else {
+      const rateLimitData = webVitalsRateLimit.get(clientIP);
+      if (now > rateLimitData.resetTime) {
+        rateLimitData.count = 1;
+        rateLimitData.resetTime = now + WEB_VITALS_WINDOW;
+      } else {
+        rateLimitData.count++;
+        if (rateLimitData.count > batchRateLimit) {
+          return res.status(429).json({ error: 'Rate limit exceeded for web vitals analytics' });
+        }
+      }
+    }
+
+    // Handle batch format from throttler
+    if (isBatchRequest && req.body.metrics && Array.isArray(req.body.metrics)) {
+      const { metrics, timestamp, userAgent, url, sessionId } = req.body;
+      
+      // Process batch metrics with reduced logging
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`📊 Web Vitals Batch [${sessionId?.substring(0, 8)}]: ${metrics.length} metrike`, {
+          url: url || 'unknown',
+          timestamp: new Date(timestamp).toISOString(),
+          metrics: metrics.map((m: any) => `${m.name}:${Math.round(m.value)}ms`).join(', ')
+        });
+      } else {
+        // Production: samo kratki log
+        console.log(`📊 WV Batch: ${metrics.length}m, ${url}`);
+      }
+
+      return res.json({
+        success: true,
+        message: 'Web Vitals batch processed',
+        processed: metrics.length,
+        sessionId
+      });
+    }
+
+    // Handle single metric (fallback)
+    const { name, value, id, delta } = req.body;
+    
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📈 Web Vitals Single - ${name}: ${value}ms (ID: ${id}, Delta: ${delta})`);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Web Vitals metric logged',
       metric: { name, value, id, delta }
     });
   });
