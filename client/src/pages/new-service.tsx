@@ -34,7 +34,7 @@ const serviceFormSchema = insertServiceSchema.extend({
   clientId: z.coerce.number().min(1, "Obavezno polje"),
   applianceId: z.coerce.number().min(1, "Obavezno polje"),
   description: z.string().min(1, "Obavezno polje"),
-  status: z.string(),
+  status: serviceStatusEnum,
   warrantyStatus: warrantyStatusEnum.refine(val => val, {
     message: "Status garancije je obavezan - odaberite 'u garanciji', 'van garancije' ili 'nepoznato'"
   }),
@@ -183,6 +183,9 @@ export default function NewServicePage() {
     },
   });
   
+  // Unified busy state for all loading scenarios
+  const isBusy = isLoading || serviceMutation.isPending;
+  
   // Handle form submission
   const onSubmit = (data: ServiceFormValues) => {
     // Convert numeric values
@@ -260,6 +263,7 @@ export default function NewServicePage() {
                                 <Button
                                   variant="outline"
                                   role="combobox"
+                                  disabled={isBusy}
                                   className={cn(
                                     "w-full justify-between",
                                     (!clientId || clientId === 0) && "text-muted-foreground"
@@ -276,9 +280,10 @@ export default function NewServicePage() {
                             <PopoverContent className="w-[400px] p-0">
                               <Command shouldFilter={false}>
                                 <CommandInput
-                                  placeholder="Pretražite klijente..."
+                                  placeholder={isLoading ? "Učitavanje..." : "Pretražite klijente..."}
                                   value={clientSearchQuery}
                                   onValueChange={setClientSearchQuery}
+                                  disabled={isBusy}
                                   data-testid="input-client-search"
                                 />
                                 <CommandEmpty>Nema rezultata.</CommandEmpty>
@@ -326,7 +331,7 @@ export default function NewServicePage() {
                           <Select 
                             onValueChange={(value) => field.onChange(parseInt(value))} 
                             defaultValue={field.value?.toString()}
-                            disabled={!clientId || clientId === 0 || appliancesLoading || categoriesLoading}
+                            disabled={!clientId || clientId === 0 || appliancesLoading || categoriesLoading || isBusy}
                           >
                             <FormControl>
                               <SelectTrigger data-testid="select-appliance">
@@ -361,9 +366,10 @@ export default function NewServicePage() {
                           <FormLabel>Opis problema *</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Opišite problem koji treba da bude rešen..."
+                              placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Opišite problem koji treba da bude rešen..."}
                               className="resize-none"
                               rows={4}
+                              disabled={isLoading || isMutationLoading}
                               {...field}
                               data-testid="textarea-description"
                             />
@@ -381,10 +387,10 @@ export default function NewServicePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || isMutationLoading}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-status">
-                                  <SelectValue />
+                                  <SelectValue placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Odaberite status"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -425,10 +431,10 @@ export default function NewServicePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status garancije *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || isMutationLoading}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-warranty-status">
-                                  <SelectValue />
+                                  <SelectValue placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Odaberite status garancije"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -453,10 +459,11 @@ export default function NewServicePage() {
                           <Select 
                             onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
                             defaultValue={field.value?.toString()}
+                            disabled={isLoading || isMutationLoading || techniciansLoading}
                           >
                             <FormControl>
                               <SelectTrigger data-testid="select-technician">
-                                <SelectValue placeholder="Odaberite servisera (opciono)" />
+                                <SelectValue placeholder={isLoading || isMutationLoading || techniciansLoading ? "Učitavanje..." : "Odaberite servisera (opciono)"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -484,6 +491,7 @@ export default function NewServicePage() {
                             <FormControl>
                               <Input
                                 type="date"
+                                disabled={isLoading || isMutationLoading}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-scheduled-date"
@@ -504,6 +512,7 @@ export default function NewServicePage() {
                             <FormControl>
                               <Input
                                 type="date"
+                                disabled={isLoading || isMutationLoading}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-completed-date"
@@ -523,7 +532,8 @@ export default function NewServicePage() {
                             <FormLabel>Troškovi</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="0.00"
+                                placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "0.00"}
+                                disabled={isLoading || isMutationLoading}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-cost"
@@ -544,9 +554,10 @@ export default function NewServicePage() {
                           <FormLabel>Napomene servisera</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Dodatne napomene..."
+                              placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Dodatne napomene..."}
                               className="resize-none"
                               rows={3}
+                              disabled={isLoading || isMutationLoading}
                               {...field}
                               value={field.value || ""}
                               data-testid="textarea-technician-notes"
