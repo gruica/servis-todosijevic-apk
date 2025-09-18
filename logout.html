@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logout - Frigo Sistem</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 50px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        button { 
+            padding: 15px 30px; 
+            font-size: 18px; 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #c0392b; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .status { margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.2); border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 Logout iz sistema</h1>
+        
+        <div class="status" id="status">
+            Status: <span id="auth-status">Proverava se...</span>
+        </div>
+        
+        <button onclick="logout()" id="logout-btn">
+            🚪 IZLOGUJ SE (supplier_beko)
+        </button>
+        
+        <button onclick="goToHomepage()" style="background: #3498db;">
+            🏠 IDI NA HOMEPAGE
+        </button>
+        
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+    
+    <script>
+        function checkAuthStatus() {
+            const token = localStorage.getItem('auth_token');
+            const statusEl = document.getElementById('auth-status');
+            
+            if (token) {
+                statusEl.innerHTML = '<span style="color: #e74c3c;">PRIJAVLJEN</span> (supplier_beko)';
+            } else {
+                statusEl.innerHTML = '<span style="color: #2ecc71;">ODJAVLJEN</span>';
+                document.getElementById('logout-btn').disabled = true;
+                document.getElementById('logout-btn').innerHTML = '✅ VEĆ SI ODJAVLJEN';
+            }
+        }
+        
+        function logout() {
+            const resultEl = document.getElementById('result');
+            resultEl.innerHTML = '<p>⏳ Izvršavam logout...</p>';
+            
+            // Clear localStorage
+            localStorage.removeItem('auth_token');
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear cookies
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            resultEl.innerHTML = '<p class="success">✅ USPEŠNO SI SE ODJAVIL!</p><p>Sada možeš pristupiti login formama na homepage-u.</p>';
+            
+            setTimeout(() => {
+                checkAuthStatus();
+            }, 500);
+        }
+        
+        function goToHomepage() {
+            window.location.href = '/';
+        }
+        
+        // Check auth status on page load
+        checkAuthStatus();
+    </script>
+</body>
+</html>
