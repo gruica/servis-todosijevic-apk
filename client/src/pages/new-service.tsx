@@ -366,10 +366,10 @@ export default function NewServicePage() {
                           <FormLabel>Opis problema *</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Opišite problem koji treba da bude rešen..."}
+                              placeholder={isLoading || serviceMutation.isPending ? "Učitavanje..." : "Opišite problem koji treba da bude rešen..."}
                               className="resize-none"
                               rows={4}
-                              disabled={isLoading || isMutationLoading}
+                              disabled={isLoading || serviceMutation.isPending}
                               {...field}
                               data-testid="textarea-description"
                             />
@@ -387,10 +387,10 @@ export default function NewServicePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || isMutationLoading}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || serviceMutation.isPending}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-status">
-                                  <SelectValue placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Odaberite status"} />
+                                  <SelectValue placeholder={isLoading || serviceMutation.isPending ? "Učitavanje..." : "Odaberite status"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -431,10 +431,10 @@ export default function NewServicePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status garancije *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || isMutationLoading}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading || serviceMutation.isPending}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-warranty-status">
-                                  <SelectValue placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Odaberite status garancije"} />
+                                  <SelectValue placeholder={isLoading || serviceMutation.isPending ? "Učitavanje..." : "Odaberite status garancije"} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -459,11 +459,11 @@ export default function NewServicePage() {
                           <Select 
                             onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
                             defaultValue={field.value?.toString()}
-                            disabled={isLoading || isMutationLoading || techniciansLoading}
+                            disabled={isLoading || serviceMutation.isPending || techniciansLoading}
                           >
                             <FormControl>
                               <SelectTrigger data-testid="select-technician">
-                                <SelectValue placeholder={isLoading || isMutationLoading || techniciansLoading ? "Učitavanje..." : "Odaberite servisera (opciono)"} />
+                                <SelectValue placeholder={isLoading || serviceMutation.isPending || techniciansLoading ? "Učitavanje..." : "Odaberite servisera (opciono)"} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -491,7 +491,7 @@ export default function NewServicePage() {
                             <FormControl>
                               <Input
                                 type="date"
-                                disabled={isLoading || isMutationLoading}
+                                disabled={isLoading || serviceMutation.isPending}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-scheduled-date"
@@ -512,7 +512,7 @@ export default function NewServicePage() {
                             <FormControl>
                               <Input
                                 type="date"
-                                disabled={isLoading || isMutationLoading}
+                                disabled={isLoading || serviceMutation.isPending}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-completed-date"
@@ -532,8 +532,8 @@ export default function NewServicePage() {
                             <FormLabel>Troškovi</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "0.00"}
-                                disabled={isLoading || isMutationLoading}
+                                placeholder={isLoading || serviceMutation.isPending ? "Učitavanje..." : "0.00"}
+                                disabled={isLoading || serviceMutation.isPending}
                                 {...field}
                                 value={field.value || ""}
                                 data-testid="input-cost"
@@ -554,10 +554,10 @@ export default function NewServicePage() {
                           <FormLabel>Napomene servisera</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder={isLoading || isMutationLoading ? "Učitavanje..." : "Dodatne napomene..."}
+                              placeholder={isLoading || serviceMutation.isPending ? "Učitavanje..." : "Dodatne napomene..."}
                               className="resize-none"
                               rows={3}
-                              disabled={isLoading || isMutationLoading}
+                              disabled={isLoading || serviceMutation.isPending}
                               {...field}
                               value={field.value || ""}
                               data-testid="textarea-technician-notes"

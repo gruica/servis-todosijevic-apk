@@ -191,22 +191,27 @@ export class AdvancedReportsService {
       const partsUsed: any[] = [];
       servicesWithUsedParts.forEach(service => {
         try {
-          if (service.usedPartsJson) {
+          if (service.usedPartsJson && service.usedPartsJson.trim() !== "" && service.usedPartsJson !== "{}") {
             const parts = JSON.parse(service.usedPartsJson);
-            if (Array.isArray(parts)) {
+            if (Array.isArray(parts) && parts.length > 0) {
               parts.forEach((part: any) => {
-                partsUsed.push({
-                  ...part,
-                  serviceId: service.serviceId,
-                  usedAt: service.completedAt,
-                  clientName: service.clientName,
-                  applianceBrand: service.applianceBrand
-                });
+                if (part && typeof part === 'object') {
+                  partsUsed.push({
+                    ...part,
+                    serviceId: service.serviceId,
+                    usedAt: service.completedAt,
+                    clientName: service.clientName,
+                    applianceBrand: service.applianceBrand
+                  });
+                }
               });
             }
           }
         } catch (e) {
-          console.warn(`[ADVANCED REPORTS] Invalid JSON u usedParts za servis ${service.serviceId}:`, e);
+          // Silent handling of invalid JSON - many services have empty or malformed usedParts
+          if (service.usedPartsJson && service.usedPartsJson.trim() !== "" && service.usedPartsJson !== "{}") {
+            console.warn(`Nevalidan JSON za usedParts u servisu #${service.serviceId}:`, service.usedPartsJson);
+          }
         }
       });
 
