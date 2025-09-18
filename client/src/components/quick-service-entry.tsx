@@ -423,11 +423,321 @@ export function QuickServiceEntry({
           )}
         </div>
 
-        <Form {...(isBusinessMode ? businessForm : adminForm)}>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }} className="space-y-6" data-testid="service-form">
+        {/* Business Mode Form */}
+        {isBusinessMode && (
+          <Form {...businessForm}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }} className="space-y-6" data-testid="service-form">
+              {/* Business Mode Content */}
+              {/* Client Creation */}
+              <Card data-testid="client-creation-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" data-testid="client-creation-title">
+                    <User className="h-4 w-4" />
+                    Podaci o klijentu
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={businessForm.control}
+                      name="clientFullName"
+                      render={({ field }) => (
+                        <FormItem data-testid="client-fullname-field">
+                          <FormLabel data-testid="client-fullname-label">Ime i prezime *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Marko Petrović" 
+                              {...field} 
+                              data-testid="client-fullname-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="client-fullname-error" />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={businessForm.control}
+                      name="clientPhone"
+                      render={({ field }) => (
+                        <FormItem data-testid="client-phone-field">
+                          <FormLabel data-testid="client-phone-label">Telefon *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="063 123 456" 
+                              {...field} 
+                              data-testid="client-phone-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="client-phone-error" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={businessForm.control}
+                      name="clientEmail"
+                      render={({ field }) => (
+                        <FormItem data-testid="client-email-field">
+                          <FormLabel data-testid="client-email-label">Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email"
+                              placeholder="marko@example.com" 
+                              {...field} 
+                              data-testid="client-email-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="client-email-error" />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={businessForm.control}
+                      name="clientCity"
+                      render={({ field }) => (
+                        <FormItem data-testid="client-city-field">
+                          <FormLabel data-testid="client-city-label">Grad</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Beograd" 
+                              {...field} 
+                              data-testid="client-city-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="client-city-error" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={businessForm.control}
+                    name="clientAddress"
+                    render={({ field }) => (
+                      <FormItem data-testid="client-address-field">
+                        <FormLabel data-testid="client-address-label">Adresa</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Kneza Miloša 10" 
+                            {...field} 
+                            data-testid="client-address-input"
+                          />
+                        </FormControl>
+                        <FormMessage data-testid="client-address-error" />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Appliance Creation */}
+              <Card data-testid="appliance-creation-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" data-testid="appliance-creation-title">
+                    <Package className="h-4 w-4" />
+                    Podaci o uređaju
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={businessForm.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem data-testid="category-field">
+                          <FormLabel data-testid="category-label">Kategorija *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="category-selector">
+                                <SelectValue placeholder="Odaberite kategoriju..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent data-testid="category-options">
+                              {categories.map((category) => (
+                                <SelectItem 
+                                  key={category.id} 
+                                  value={category.id.toString()}
+                                  data-testid={`category-option-${category.id}`}
+                                >
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage data-testid="category-error" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={businessForm.control}
+                      name="manufacturerId"
+                      render={({ field }) => (
+                        <FormItem data-testid="manufacturer-field">
+                          <FormLabel data-testid="manufacturer-label">Proizvođač *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="manufacturer-selector">
+                                <SelectValue placeholder="Odaberite proizvođača..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent data-testid="manufacturer-options">
+                              {manufacturers.map((manufacturer) => (
+                                <SelectItem 
+                                  key={manufacturer.id} 
+                                  value={manufacturer.id.toString()}
+                                  data-testid={`manufacturer-option-${manufacturer.id}`}
+                                >
+                                  {manufacturer.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage data-testid="manufacturer-error" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={businessForm.control}
+                      name="model"
+                      render={({ field }) => (
+                        <FormItem data-testid="model-field">
+                          <FormLabel data-testid="model-label">Model *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="ABC-123" 
+                              {...field} 
+                              data-testid="model-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="model-error" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={businessForm.control}
+                      name="serialNumber"
+                      render={({ field }) => (
+                        <FormItem data-testid="serial-field">
+                          <FormLabel data-testid="serial-label">Serijski broj</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="123456789" 
+                              {...field} 
+                              data-testid="serial-input"
+                            />
+                          </FormControl>
+                          <FormMessage data-testid="serial-error" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Service Details - Business Mode */}
+              <Card data-testid="service-details-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" data-testid="service-details-title">
+                    <FileText className="h-4 w-4" />
+                    Podaci o servisu
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={businessForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem data-testid="description-field">
+                        <FormLabel data-testid="description-label">Opis problema *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Detaljno opišite problem sa uređajem..."
+                            className="min-h-[80px]"
+                            {...field}
+                            data-testid="description-input"
+                          />
+                        </FormControl>
+                        <FormMessage data-testid="description-error" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={businessForm.control}
+                    name="warrantyStatus"
+                    render={({ field }) => (
+                      <FormItem data-testid="warranty-field">
+                        <FormLabel data-testid="warranty-label">Status garancije *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="warranty-selector">
+                              <SelectValue placeholder="Odaberite status garancije..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent data-testid="warranty-options">
+                            <SelectItem value="u garanciji" data-testid="warranty-option-in">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                U garanciji
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="van garancije" data-testid="warranty-option-out">
+                              <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                                Van garancije
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage data-testid="warranty-error" />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Submit Button - Business Mode */}
+              <div className="flex justify-end gap-3" data-testid="form-actions">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                  data-testid="cancel-button"
+                >
+                  Otkaži
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  data-testid="submit-button"
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Kreiraj servis
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+
+        {/* Admin Mode Form */}
+        {isAdminMode && (
+          <Form {...adminForm}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }} className="space-y-6" data-testid="service-form">
             
             {/* Admin Mode - Client Selection */}
             {isAdminMode && (
@@ -557,226 +867,7 @@ export function QuickServiceEntry({
               </Card>
             )}
 
-            {/* Business Mode - Client Creation */}
-            {isBusinessMode && (
-              <Card data-testid="client-creation-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" data-testid="client-creation-title">
-                    <User className="h-4 w-4" />
-                    Podaci o klijentu
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={businessForm.control}
-                      name="clientFullName"
-                      render={({ field }) => (
-                        <FormItem data-testid="client-fullname-field">
-                          <FormLabel data-testid="client-fullname-label">Ime i prezime *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Marko Petrović" 
-                              {...field} 
-                              data-testid="client-fullname-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="client-fullname-error" />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={businessForm.control}
-                      name="clientPhone"
-                      render={({ field }) => (
-                        <FormItem data-testid="client-phone-field">
-                          <FormLabel data-testid="client-phone-label">Telefon *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="063 123 456" 
-                              {...field} 
-                              data-testid="client-phone-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="client-phone-error" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={businessForm.control}
-                      name="clientEmail"
-                      render={({ field }) => (
-                        <FormItem data-testid="client-email-field">
-                          <FormLabel data-testid="client-email-label">Email</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="email"
-                              placeholder="marko@example.com" 
-                              {...field} 
-                              data-testid="client-email-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="client-email-error" />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={businessForm.control}
-                      name="clientCity"
-                      render={({ field }) => (
-                        <FormItem data-testid="client-city-field">
-                          <FormLabel data-testid="client-city-label">Grad</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Beograd" 
-                              {...field} 
-                              data-testid="client-city-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="client-city-error" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={businessForm.control}
-                    name="clientAddress"
-                    render={({ field }) => (
-                      <FormItem data-testid="client-address-field">
-                        <FormLabel data-testid="client-address-label">Adresa</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Kneza Miloša 10" 
-                            {...field} 
-                            data-testid="client-address-input"
-                          />
-                        </FormControl>
-                        <FormMessage data-testid="client-address-error" />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Business Mode - Appliance Creation */}
-            {isBusinessMode && (
-              <Card data-testid="appliance-creation-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2" data-testid="appliance-creation-title">
-                    <Package className="h-4 w-4" />
-                    Podaci o uređaju
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={businessForm.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem data-testid="category-field">
-                          <FormLabel data-testid="category-label">Kategorija *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="category-selector">
-                                <SelectValue placeholder="Odaberite kategoriju..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent data-testid="category-options">
-                              {categories.map((category) => (
-                                <SelectItem 
-                                  key={category.id} 
-                                  value={category.id.toString()}
-                                  data-testid={`category-option-${category.id}`}
-                                >
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage data-testid="category-error" />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={businessForm.control}
-                      name="manufacturerId"
-                      render={({ field }) => (
-                        <FormItem data-testid="manufacturer-field">
-                          <FormLabel data-testid="manufacturer-label">Proizvođač *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="manufacturer-selector">
-                                <SelectValue placeholder="Odaberite proizvođača..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent data-testid="manufacturer-options">
-                              {manufacturers.map((manufacturer) => (
-                                <SelectItem 
-                                  key={manufacturer.id} 
-                                  value={manufacturer.id.toString()}
-                                  data-testid={`manufacturer-option-${manufacturer.id}`}
-                                >
-                                  {manufacturer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage data-testid="manufacturer-error" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={businessForm.control}
-                      name="model"
-                      render={({ field }) => (
-                        <FormItem data-testid="model-field">
-                          <FormLabel data-testid="model-label">Model *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="ERB3004AOW" 
-                              {...field} 
-                              data-testid="model-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="model-error" />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={businessForm.control}
-                      name="serialNumber"
-                      render={({ field }) => (
-                        <FormItem data-testid="serial-field">
-                          <FormLabel data-testid="serial-label">Serijski broj</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="123456789" 
-                              {...field} 
-                              data-testid="serial-input"
-                            />
-                          </FormControl>
-                          <FormMessage data-testid="serial-error" />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Service Details - Both modes */}
+            {/* Service Details - Admin Mode */}
             <Card data-testid="service-details-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2" data-testid="service-details-title">
@@ -786,8 +877,8 @@ export function QuickServiceEntry({
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
-                  control={isBusinessMode ? businessForm.control : adminForm.control}
-                  name={"description" as any}
+                  control={adminForm.control}
+                  name="description"
                   render={({ field }) => (
                     <FormItem data-testid="description-field">
                       <FormLabel data-testid="description-label">Opis problema *</FormLabel>
@@ -805,8 +896,8 @@ export function QuickServiceEntry({
                 />
 
                 <FormField
-                  control={isBusinessMode ? businessForm.control : adminForm.control}
-                  name={"warrantyStatus" as any}
+                  control={adminForm.control}
+                  name="warrantyStatus"
                   render={({ field }) => (
                     <FormItem data-testid="warranty-field">
                       <FormLabel data-testid="warranty-label">Status garancije *</FormLabel>
@@ -836,114 +927,108 @@ export function QuickServiceEntry({
                   )}
                 />
 
-                {/* Admin mode additional fields */}
-                {isAdminMode && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={adminForm.control}
-                        name="technicianId"
-                        render={({ field }) => (
-                          <FormItem data-testid="technician-field">
-                            <FormLabel data-testid="technician-label">Serviser</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="technician-selector">
-                                  <SelectValue placeholder="Dodeliti serviseru..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent data-testid="technician-options">
-                                <SelectItem value="" data-testid="technician-option-none">
-                                  Bez dodele
-                                </SelectItem>
-                                {technicians.filter(t => t.active).map((technician) => (
-                                  <SelectItem 
-                                    key={technician.id} 
-                                    value={technician.id.toString()}
-                                    data-testid={`technician-option-${technician.id}`}
-                                  >
-                                    {technician.fullName}
-                                    {technician.specialization && (
-                                      <span className="text-xs text-muted-foreground ml-2">
-                                        ({technician.specialization})
-                                      </span>
-                                    )}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage data-testid="technician-error" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={adminForm.control}
-                        name="priority"
-                        render={({ field }) => (
-                          <FormItem data-testid="priority-field">
-                            <FormLabel data-testid="priority-label">Prioritet</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="priority-selector">
-                                  <SelectValue placeholder="Odaberite prioritet..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent data-testid="priority-options">
-                                <SelectItem value="low" data-testid="priority-option-low">Nizak</SelectItem>
-                                <SelectItem value="medium" data-testid="priority-option-medium">Srednji</SelectItem>
-                                <SelectItem value="high" data-testid="priority-option-high">Visok</SelectItem>
-                                <SelectItem value="urgent" data-testid="priority-option-urgent">Hitan</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage data-testid="priority-error" />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={adminForm.control}
-                      name="scheduledDate"
-                      render={({ field }) => (
-                        <FormItem data-testid="scheduled-date-field">
-                          <FormLabel data-testid="scheduled-date-label">Zakazan datum</FormLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={adminForm.control}
+                    name="technicianId"
+                    render={({ field }) => (
+                      <FormItem data-testid="technician-field">
+                        <FormLabel data-testid="technician-label">Serviser</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <Input 
-                              type="date" 
-                              {...field} 
-                              data-testid="scheduled-date-input"
-                            />
+                            <SelectTrigger data-testid="technician-selector">
+                              <SelectValue placeholder="Dodeliti serviseru..." />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage data-testid="scheduled-date-error" />
-                        </FormItem>
-                      )}
-                    />
+                          <SelectContent data-testid="technician-options">
+                            <SelectItem value="" data-testid="technician-option-none">
+                              Bez dodele
+                            </SelectItem>
+                            {technicians.filter(t => t.active).map((technician) => (
+                              <SelectItem 
+                                key={technician.id} 
+                                value={technician.id.toString()}
+                                data-testid={`technician-option-${technician.id}`}
+                              >
+                                {technician.fullName}
+                                {technician.specialization && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    ({technician.specialization})
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage data-testid="technician-error" />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={adminForm.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem data-testid="notes-field">
-                          <FormLabel data-testid="notes-label">Dodatne napomene</FormLabel>
+                  <FormField
+                    control={adminForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem data-testid="priority-field">
+                        <FormLabel data-testid="priority-label">Prioritet</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <Textarea
-                              placeholder="Dodatne napomene o servisu..."
-                              {...field}
-                              data-testid="notes-input"
-                            />
+                            <SelectTrigger data-testid="priority-selector">
+                              <SelectValue placeholder="Odaberite prioritet..." />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage data-testid="notes-error" />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+                          <SelectContent data-testid="priority-options">
+                            <SelectItem value="low" data-testid="priority-option-low">Nizak</SelectItem>
+                            <SelectItem value="medium" data-testid="priority-option-medium">Srednji</SelectItem>
+                            <SelectItem value="high" data-testid="priority-option-high">Visok</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage data-testid="priority-error" />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={adminForm.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem data-testid="scheduled-date-field">
+                      <FormLabel data-testid="scheduled-date-label">Planirani datum</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="datetime-local"
+                          {...field}
+                          data-testid="scheduled-date-input"
+                        />
+                      </FormControl>
+                      <FormMessage data-testid="scheduled-date-error" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={adminForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem data-testid="notes-field">
+                      <FormLabel data-testid="notes-label">Dodatne napomene</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Dodatne napomene o servisu..."
+                          {...field}
+                          data-testid="notes-input"
+                        />
+                      </FormControl>
+                      <FormMessage data-testid="notes-error" />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 
-            {/* Submit Button */}
-            <div className="flex justify-end gap-3 pt-4 border-t" data-testid="form-actions">
+            {/* Submit Button - Admin Mode */}
+            <div className="flex justify-end gap-3" data-testid="form-actions">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -958,11 +1043,12 @@ export function QuickServiceEntry({
                 data-testid="submit-button"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? "Kreiranje..." : "Kreiraj servis"}
+                Kreiraj servis
               </Button>
             </div>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        )}
       </div>
     </FloatingSheet>
   );
