@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -12,6 +12,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
@@ -112,6 +116,11 @@ export default function Services() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  
+  // State za pretragu klijenata u formi
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [clientComboOpen, setClientComboOpen] = useState(false);
+  
   const { toast } = useToast();
   
   const { data: services, isLoading } = useQuery<Service[]>({
@@ -138,6 +147,23 @@ export default function Services() {
   const filteredAppliances = appliances?.filter(appliance => 
     !selectedClient || appliance.clientId === selectedClient
   );
+  
+  // Filtered clients for the form combo box
+  const filteredClientsForForm = useMemo(() => {
+    if (!clients) return [];
+    if (!clientSearchQuery) return clients.filter(client => client.id && client.id > 0);
+    
+    const query = clientSearchQuery.toLowerCase();
+    return clients.filter(client => {
+      if (!client.id || client.id <= 0) return false;
+      
+      const fullNameMatch = client.fullName?.toLowerCase().includes(query);
+      const phoneMatch = client.phone?.toLowerCase().includes(query);
+      const addressMatch = client.address?.toLowerCase().includes(query);
+      
+      return fullNameMatch || phoneMatch || addressMatch;
+    });
+  }, [clients, clientSearchQuery]);
   
   // Enrich services with client and appliance data
   const enrichedServices = services?.map(service => {
@@ -291,6 +317,10 @@ export default function Services() {
     console.log("Otvaranje dijaloga za dodavanje servisa");
     setSelectedService(null);
     setSelectedClient(null);
+    
+    // Reset client search state
+    setClientSearchQuery("");
+    setClientComboOpen(false);
     
     const defaultValues = {
       clientId: 0,
@@ -566,26 +596,69 @@ export default function Services() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Klijent</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          handleClientChange(value);
-                        }}
-                        value={field.value ? String(field.value) : "0"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Izaberite klijenta" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clients?.filter(client => client.id && client.id > 0).map(client => (
-                            <SelectItem key={client.id} value={client.id.toString()}>
-                              {client.fullName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={clientComboOpen} onOpenChange={setClientComboOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={clientComboOpen}
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value && field.value > 0
+                                ? clients?.find(client => client.id === Number(field.value))?.fullName
+                                : "Pretražite i izaberite klijenta..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Pretražite klijenta po imenu, telefonu..." 
+                              value={clientSearchQuery}
+                              onValueChange={setClientSearchQuery}
+                            />
+                            <CommandEmpty>
+                              {clientSearchQuery ? 
+                                `Nema rezultata za "${clientSearchQuery}"` : 
+                                "Nema klijenata za prikaz"
+                              }
+                            </CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-y-auto">
+                              {filteredClientsForForm.map((client) => (
+                                <CommandItem
+                                  key={client.id}
+                                  value={client.id.toString()}
+                                  onSelect={() => {
+                                    const newValue = client.id.toString();
+                                    field.onChange(newValue);
+                                    handleClientChange(newValue);
+                                    setClientComboOpen(false);
+                                    setClientSearchQuery("");
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      Number(field.value) === client.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{client.fullName}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {client.phone} • {client.city || client.address || "Nepoznata adresa"}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
