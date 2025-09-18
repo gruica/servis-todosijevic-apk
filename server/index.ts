@@ -234,20 +234,16 @@ app.use((req, res, next) => {
     server.close(() => {
       console.log('✅ [SHUTDOWN] HTTP server closed');
       
-      // Close database connections
-      (async () => {
-        try {
-          const { pool } = await import('./db.js');
-          await pool.end();
-          console.log('✅ [SHUTDOWN] Database connections closed');
-        } catch (error) {
-          console.error('❌ [SHUTDOWN] Error closing database:', error);
-        }
-        
-        // Exit gracefully
-        console.log('✅ [SHUTDOWN] Process terminated cleanly');
-        process.exit(0);
-      })();
+      // Close database connections (HTTP-based Neon connections don't need explicit closing)
+      try {
+        console.log('✅ [SHUTDOWN] Database connections are HTTP-based, no explicit closing needed');
+      } catch (error) {
+        console.error('❌ [SHUTDOWN] Error during database cleanup:', error);
+      }
+      
+      // Exit gracefully
+      console.log('✅ [SHUTDOWN] Process terminated cleanly');
+      process.exit(0);
     });
     
     // Force shutdown after 10 seconds if graceful shutdown fails
