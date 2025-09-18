@@ -1491,14 +1491,16 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // Privremeno koristimo memory store za debugging
-    console.log("Inicijalizujem Memory session store za debugging...");
+    // Koristimo PostgreSQL session store za produkciju
+    console.log("Inicijalizujem PostgreSQL session store...");
     
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 sata
+    this.sessionStore = new PostgresSessionStore({
+      conString: process.env.DATABASE_URL,
+      tableName: 'user_sessions',
+      createTableIfMissing: true
     });
     
-    console.log("Memory session store inicijalizovan uspešno");
+    console.log("PostgreSQL session store inicijalizovan uspešno");
     
     // Inicijalno podešavanje baze
     this.initializeDatabaseIfEmpty();
