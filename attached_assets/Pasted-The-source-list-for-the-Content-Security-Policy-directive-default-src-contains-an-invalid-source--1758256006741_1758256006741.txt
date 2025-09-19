@@ -1,0 +1,355 @@
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+~:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+~:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+~:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+_app-0ca3e0d0bb71f44c.js:28 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-0ca3e0d0bb71f44c.js:28 [LaunchDarkly] LaunchDarkly client initialized
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+k @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+N @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+e @ _app-0ca3e0d0bb71f44c.js:4
+t.subscribe @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+e @ _app-0ca3e0d0bb71f44c.js:4
+t.subscribe @ _app-0ca3e0d0bb71f44c.js:4
+e.try @ _app-0ca3e0d0bb71f44c.js:4
+e.start @ _app-0ca3e0d0bb71f44c.js:4
+t.request @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:30
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:30
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:30
+e.execute @ _app-0ca3e0d0bb71f44c.js:30
+e.getObservableFromLink @ _app-0ca3e0d0bb71f44c.js:4
+c @ _app-0ca3e0d0bb71f44c.js:4
+e.startGraphQLSubscription @ _app-0ca3e0d0bb71f44c.js:4
+e.subscribe @ _app-0ca3e0d0bb71f44c.js:4
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:30
+l_ @ framework-7f2c8ab1a6e80f5e.js:1
+t.useState @ framework-7f2c8ab1a6e80f5e.js:1
+s @ _app-0ca3e0d0bb71f44c.js:30
+h @ 7580-c2bc85d4e21cba55.js:1
+ng @ 7580-c2bc85d4e21cba55.js:1
+ld @ framework-7f2c8ab1a6e80f5e.js:1
+i @ framework-7f2c8ab1a6e80f5e.js:1
+uI @ framework-7f2c8ab1a6e80f5e.js:1
+uM @ framework-7f2c8ab1a6e80f5e.js:1
+uS @ framework-7f2c8ab1a6e80f5e.js:1
+C @ framework-7f2c8ab1a6e80f5e.js:1
+z @ framework-7f2c8ab1a6e80f5e.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiJub25lLTM5OTM2OTc3IiwibWVtYmVyc2hpcCI6ImNvcmUiLCJpc3N1ZXIiOiJodHRwczovL3JlcGxpdC13ZWItcHJvZC5wLnJlcGxpdC5jb20iLCJyb2xlcyI6WyJpbnRlbnRfYnVzaW5lc3MiLCJvbmJvYXJkaW5nX2pvYl9wbSIsIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyIl0sImNhbldyaXRlIjpmYWxzZSwiaGFzUmVwbGl0QWlQcm8iOnRydWUsImZsYWdnaW5nQ29udGV4dCI6IntcImtleVwiOlwidXNlcjozOTkzNjk3N1wiL...mJvYXJkaW5nX2pvYl9wbVwiLFwib25ib2FyZGluZ19yb2xlX21hbmFnZXJcIl0sXCJpc190ZWFtXCI6ZmFsc2UsXCJtZW1iZXJzaGlwXCI6XCJjb3JlXCJ9IiwiaWF0IjoxNzU4MjU1Nzc3LCJleHAiOjE3NTgyNTkzNzd9.lw7RaygYYWB6Pk7Kjb2--kMFtNYWedoKF0vKPPXecQKXucp4Q5lV4odaQWWweuhRUZDE-COt185fsEyk72jRhzGTY1sy_Uvj_n9nsNzQkLhHwQiullzqjCr_RaaIIaXrBU_HOZ_MmgqWpD46sai8yp_wAfjON4WeOvzxTKyxeRav-vJfH-AbiT4OiIygsw9Jv4mLRc9phpnf7w-ivLMtnHJo2Ute3ZaZ05Wr09kBVU4LabPZvO52V7QMK6ElOb8i8p13I4ksgeNF7c_4epYF6S_sNer049tj-H0-pYzNEHL1ATn0-TseBmaI3Cr7Nd3wKz-v_Fi3FwbhAzianUiHUg' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiJub25lLTM5OTM2OTc3IiwibWVtYmVyc2hpcCI6ImNvcmUiLCJpc3N1ZXIiOiJodHRwczovL3JlcGxpdC13ZWItcHJvZC5wLnJlcGxpdC5jb20iLCJyb2xlcyI6WyJpbnRlbnRfYnVzaW5lc3MiLCJvbmJvYXJkaW5nX2pvYl9wbSIsIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyIl0sImNhbldyaXRlIjpmYWxzZSwiaGFzUmVwbGl0QWlQcm8iOnRydWUsImZsYWdnaW5nQ29udGV4dCI6IntcImtleVwiOlwidXNlcjozOTkzNjk3N1wiL...mJvYXJkaW5nX2pvYl9wbVwiLFwib25ib2FyZGluZ19yb2xlX21hbmFnZXJcIl0sXCJpc190ZWFtXCI6ZmFsc2UsXCJtZW1iZXJzaGlwXCI6XCJjb3JlXCJ9IiwiaWF0IjoxNzU4MjU1Nzc3LCJleHAiOjE3NTgyNTkzNzd9.lw7RaygYYWB6Pk7Kjb2--kMFtNYWedoKF0vKPPXecQKXucp4Q5lV4odaQWWweuhRUZDE-COt185fsEyk72jRhzGTY1sy_Uvj_n9nsNzQkLhHwQiullzqjCr_RaaIIaXrBU_HOZ_MmgqWpD46sai8yp_wAfjON4WeOvzxTKyxeRav-vJfH-AbiT4OiIygsw9Jv4mLRc9phpnf7w-ivLMtnHJo2Ute3ZaZ05Wr09kBVU4LabPZvO52V7QMK6ElOb8i8p13I4ksgeNF7c_4epYF6S_sNer049tj-H0-pYzNEHL1ATn0-TseBmaI3Cr7Nd3wKz-v_Fi3FwbhAzianUiHUg' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiJub25lLTM5OTM2OTc3IiwibWVtYmVyc2hpcCI6ImNvcmUiLCJpc3N1ZXIiOiJodHRwczovL3JlcGxpdC13ZWItcHJvZC5wLnJlcGxpdC5jb20iLCJyb2xlcyI6WyJpbnRlbnRfYnVzaW5lc3MiLCJvbmJvYXJkaW5nX2pvYl9wbSIsIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyIl0sImNhbldyaXRlIjpmYWxzZSwiaGFzUmVwbGl0QWlQcm8iOnRydWUsImZsYWdnaW5nQ29udGV4dCI6IntcImtleVwiOlwidXNlcjozOTkzNjk3N1wiL...mJvYXJkaW5nX2pvYl9wbVwiLFwib25ib2FyZGluZ19yb2xlX21hbmFnZXJcIl0sXCJpc190ZWFtXCI6ZmFsc2UsXCJtZW1iZXJzaGlwXCI6XCJjb3JlXCJ9IiwiaWF0IjoxNzU4MjU1Nzc3LCJleHAiOjE3NTgyNTkzNzd9.lw7RaygYYWB6Pk7Kjb2--kMFtNYWedoKF0vKPPXecQKXucp4Q5lV4odaQWWweuhRUZDE-COt185fsEyk72jRhzGTY1sy_Uvj_n9nsNzQkLhHwQiullzqjCr_RaaIIaXrBU_HOZ_MmgqWpD46sai8yp_wAfjON4WeOvzxTKyxeRav-vJfH-AbiT4OiIygsw9Jv4mLRc9phpnf7w-ivLMtnHJo2Ute3ZaZ05Wr09kBVU4LabPZvO52V7QMK6ElOb8i8p13I4ksgeNF7c_4epYF6S_sNer049tj-H0-pYzNEHL1ATn0-TseBmaI3Cr7Nd3wKz-v_Fi3FwbhAzianUiHUg' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiJub25lLTM5OTM2OTc3IiwibWVtYmVyc2hpcCI6ImNvcmUiLCJpc3N1ZXIiOiJodHRwczovL3JlcGxpdC13ZWItcHJvZC5wLnJlcGxpdC5jb20iLCJyb2xlcyI6WyJpbnRlbnRfYnVzaW5lc3MiLCJvbmJvYXJkaW5nX2pvYl9wbSIsIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyIl0sImNhbldyaXRlIjpmYWxzZSwiaGFzUmVwbGl0QWlQcm8iOnRydWUsImZsYWdnaW5nQ29udGV4dCI6IntcImtleVwiOlwidXNlcjozOTkzNjk3N1wiL...mJvYXJkaW5nX2pvYl9wbVwiLFwib25ib2FyZGluZ19yb2xlX21hbmFnZXJcIl0sXCJpc190ZWFtXCI6ZmFsc2UsXCJtZW1iZXJzaGlwXCI6XCJjb3JlXCJ9IiwiaWF0IjoxNzU4MjU1Nzc3LCJleHAiOjE3NTgyNTkzNzd9.lw7RaygYYWB6Pk7Kjb2--kMFtNYWedoKF0vKPPXecQKXucp4Q5lV4odaQWWweuhRUZDE-COt185fsEyk72jRhzGTY1sy_Uvj_n9nsNzQkLhHwQiullzqjCr_RaaIIaXrBU_HOZ_MmgqWpD46sai8yp_wAfjON4WeOvzxTKyxeRav-vJfH-AbiT4OiIygsw9Jv4mLRc9phpnf7w-ivLMtnHJo2Ute3ZaZ05Wr09kBVU4LabPZvO52V7QMK6ElOb8i8p13I4ksgeNF7c_4epYF6S_sNer049tj-H0-pYzNEHL1ATn0-TseBmaI3Cr7Nd3wKz-v_Fi3FwbhAzianUiHUg' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiI4ODNjMGUxYy05NjVlLTQwM2QtOGJjMC0zOWFkY2E5OWQ1NTEiLCJtZW1iZXJzaGlwIjoiY29yZSIsImlzc3VlciI6Imh0dHBzOi8vcmVwbGl0LXdlYi1wcm9kLnAucmVwbGl0LmNvbSIsInJvbGVzIjpbImludGVudF9idXNpbmVzcyIsIm9uYm9hcmRpbmdfam9iX3BtIiwib25ib2FyZGluZ19yb2xlX21hbmFnZXIiXSwiY2FuV3JpdGUiOnRydWUsImhhc1JlcGxpdEFpUHJvIjp0cnVlLCJmbGFnZ2luZ0NvbnRleHQiOiJ7XCJrZ...ib2FyZGluZ19qb2JfcG1cIixcIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyXCJdLFwiaXNfdGVhbVwiOmZhbHNlLFwibWVtYmVyc2hpcFwiOlwiY29yZVwifSIsImlhdCI6MTc1ODI1NTgwNSwiZXhwIjoxNzU4MjU5NDA1fQ.DG_ilz3SH0ZlJLpwdIrn60bAMF8AuUh-o0H4nGCi972vF6YWOT_Uf9PNhB--eBE7iprHSgT1xa3WMiQira_pOoyLwZ0CbHKG6JmWYZxo8eQ1GonIqo3kedfh8rhcSGQFZAKyB5Tw_fYS4JurODUabnZyQYcze3jMVMaVb1sFT6_6Zh6EZ9OFMk7Yq75-8Mz1karihexrWpmJKd1wAHEb7YPwB1-uanKXDYYXcXiRs_O6sDGvp2oVyIo8sqFSInwSHx2H6bGBIMkMl8kjf4-LV-TRswWOkvgbxrOm_2oRoP1T581ISkBPPc4EJLGjjQ3ZPbhVneKx7r5dk6PrGLFTFQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+connect @ 6504-210dff929b6c7e9f.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORWUX1I9tTa9tx-IVwcSC1jxmDV0j27lZ9UMMsDjD8BtNm4YfUhogju2oVpg3MwTDJ6pSoj5kdOJ1fXoSuQwXwgk.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiI4ODNjMGUxYy05NjVlLTQwM2QtOGJjMC0zOWFkY2E5OWQ1NTEiLCJtZW1iZXJzaGlwIjoiY29yZSIsImlzc3VlciI6Imh0dHBzOi8vcmVwbGl0LXdlYi1wcm9kLnAucmVwbGl0LmNvbSIsInJvbGVzIjpbImludGVudF9idXNpbmVzcyIsIm9uYm9hcmRpbmdfam9iX3BtIiwib25ib2FyZGluZ19yb2xlX21hbmFnZXIiXSwiY2FuV3JpdGUiOnRydWUsImhhc1JlcGxpdEFpUHJvIjp0cnVlLCJmbGFnZ2luZ0NvbnRleHQiOiJ7XCJrZ...ib2FyZGluZ19qb2JfcG1cIixcIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyXCJdLFwiaXNfdGVhbVwiOmZhbHNlLFwibWVtYmVyc2hpcFwiOlwiY29yZVwifSIsImlhdCI6MTc1ODI1NTgwNSwiZXhwIjoxNzU4MjU5NDA1fQ.DG_ilz3SH0ZlJLpwdIrn60bAMF8AuUh-o0H4nGCi972vF6YWOT_Uf9PNhB--eBE7iprHSgT1xa3WMiQira_pOoyLwZ0CbHKG6JmWYZxo8eQ1GonIqo3kedfh8rhcSGQFZAKyB5Tw_fYS4JurODUabnZyQYcze3jMVMaVb1sFT6_6Zh6EZ9OFMk7Yq75-8Mz1karihexrWpmJKd1wAHEb7YPwB1-uanKXDYYXcXiRs_O6sDGvp2oVyIo8sqFSInwSHx2H6bGBIMkMl8kjf4-LV-TRswWOkvgbxrOm_2oRoP1T581ISkBPPc4EJLGjjQ3ZPbhVneKx7r5dk6PrGLFTFQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket is closed before the connection is established.
+cleanupSocket @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+p.onerror @ 6504-210dff929b6c7e9f.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXViV3p4Z1lTQmdqWTBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...hYTBkbWVrcDJTalE0YlVVbE1rWllRVGh6V2tsSk9IWnBNM05FTlhRMGQxVkxSM1ZQV1RCM1RsRmpaVzkzYlhWVFNUTnRaVzFNVVRJbE1rSmpTV3BpU0dsTk1rd2xNa1pEYzFNNWNYVk5SVGhPUjJ3MFNraDVNVEo0VXpCMWNFVm1OWEpHV2tsR00zWTJhbUZzVUUxaFRTVXlRbEozTkV4RU1qZDJSbFV5YlhCdGEyRWxNa1pLWWxOMmRXWXdTM0FsTWtaa01ESjJhRTVVU2xad1VtdExNbXBNWmtWalpuRnpkMUV4ZEV0TVZrWmxUVFJLV2s0bE1rSm5Za3BwV1dKcVZWQjVWRzhsTWtKUk4wTmFkRWwyZHlVelJDVXpSQT09EYGIK211pCd1euB5754pOCwTdjsvuO3TwY_8Z6HirVlPPrMpGVnUtHzzIhF0CmmTtyd0B-wKre1jYV7W6FIVBg.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXQ3V3p4Z1lTQmdqVzBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...rTUVzM1pXWTBZVzVLU21WMldIRmpVbEZPY0ZSaFlubENRMGxyTUU1cmQzWXplV2xPUWxjeFprZHZZVEpsWjFWek5UaFpjbTFHWWpGWlZ5VXlSalZwVmpWamVWaExRVWg1YUdkTFNXNHdiVE54WldSbmNtUk5lbGszZG1GcGJYQlFkbGhpY1c5RFlXWmliVmhHVmlVeVJtVnphR2t3YVZkVmVuVktWVVJpU2psd1YxaDBSMjVFUmpobldGWnhVSFZ5WjBRMk9Xd3djelJKTUdJNFdUWlpPSGcxYUZOR1NuQkdKVEpHY0ZWeFMyRlpPR041YkdkS2NVWWxNa0k0ZURORVJrVlZSR0ZaVlZFd2VtMUpTRlZVYUVFbE0wUWxNMFE9X27w_xuWTr6aLxlbMgbmjE7-jxAjniMqFlcbOM5tgBGmLsckGvc7wTx2-C8Xk5QmXpLPvdMRhf8GCWcH4rz-DQ.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiI4ODNjMGUxYy05NjVlLTQwM2QtOGJjMC0zOWFkY2E5OWQ1NTEiLCJtZW1iZXJzaGlwIjoiY29yZSIsImlzc3VlciI6Imh0dHBzOi8vcmVwbGl0LXdlYi1wcm9kLnAucmVwbGl0LmNvbSIsInJvbGVzIjpbImludGVudF9idXNpbmVzcyIsIm9uYm9hcmRpbmdfam9iX3BtIiwib25ib2FyZGluZ19yb2xlX21hbmFnZXIiXSwiY2FuV3JpdGUiOnRydWUsImhhc1JlcGxpdEFpUHJvIjp0cnVlLCJmbGFnZ2luZ0NvbnRleHQiOiJ7XCJrZ...ib2FyZGluZ19qb2JfcG1cIixcIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyXCJdLFwiaXNfdGVhbVwiOmZhbHNlLFwibWVtYmVyc2hpcFwiOlwiY29yZVwifSIsImlhdCI6MTc1ODI1NTgwNSwiZXhwIjoxNzU4MjU5NDA1fQ.DG_ilz3SH0ZlJLpwdIrn60bAMF8AuUh-o0H4nGCi972vF6YWOT_Uf9PNhB--eBE7iprHSgT1xa3WMiQira_pOoyLwZ0CbHKG6JmWYZxo8eQ1GonIqo3kedfh8rhcSGQFZAKyB5Tw_fYS4JurODUabnZyQYcze3jMVMaVb1sFT6_6Zh6EZ9OFMk7Yq75-8Mz1karihexrWpmJKd1wAHEb7YPwB1-uanKXDYYXcXiRs_O6sDGvp2oVyIo8sqFSInwSHx2H6bGBIMkMl8kjf4-LV-TRswWOkvgbxrOm_2oRoP1T581ISkBPPc4EJLGjjQ3ZPbhVneKx7r5dk6PrGLFTFQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXc3V3p4Z1lTQmdqaTBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...TE5HTkNiRmRsYTNOalJUVm5VRGRZVW1RNE5WZHJURmRXT1U5VFpuWkJkU1V5UmtSVFNHMGxNa1pTZFZCUmFrRnpOekUyUTFwR01WcEhNVWRMYW1SRVRVaG5kV0ZpT0c1bVJIQXdNVWhNVjA1TGVrRlFTRXgxVjFoV1NuQnVUbFF4WVRkSWFITmxSRUZyZGt0VlNUaHhUWE15UXpaV1FrOTJPSEptU0hsNGRUSWxNa0pvVTNCbFRFMVllbFJtVEhCYVFtcDVhelV4YWxsd05DVXlRbUYwSlRKR1NGaDZkVVYwYUVwcGIwMDRVVzFUYTNoSVZFOXRRVVV4ZDFReldWTjFPVk16V0c1SVExb3hiU1V5UmpKblltMW5KVE5FSlRORaczPApYqW3f-tGviIVi_kgXeSw-5prFEC284NnK76C7ceZG1Ma2vW3IYcuudAHu5Lu7YLTaGX9d5vMeKY7N4AA.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiI4ODNjMGUxYy05NjVlLTQwM2QtOGJjMC0zOWFkY2E5OWQ1NTEiLCJtZW1iZXJzaGlwIjoiY29yZSIsImlzc3VlciI6Imh0dHBzOi8vcmVwbGl0LXdlYi1wcm9kLnAucmVwbGl0LmNvbSIsInJvbGVzIjpbImludGVudF9idXNpbmVzcyIsIm9uYm9hcmRpbmdfam9iX3BtIiwib25ib2FyZGluZ19yb2xlX21hbmFnZXIiXSwiY2FuV3JpdGUiOnRydWUsImhhc1JlcGxpdEFpUHJvIjp0cnVlLCJmbGFnZ2luZ0NvbnRleHQiOiJ7XCJrZ...ib2FyZGluZ19qb2JfcG1cIixcIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyXCJdLFwiaXNfdGVhbVwiOmZhbHNlLFwibWVtYmVyc2hpcFwiOlwiY29yZVwifSIsImlhdCI6MTc1ODI1NTgwNSwiZXhwIjoxNzU4MjU5NDA1fQ.DG_ilz3SH0ZlJLpwdIrn60bAMF8AuUh-o0H4nGCi972vF6YWOT_Uf9PNhB--eBE7iprHSgT1xa3WMiQira_pOoyLwZ0CbHKG6JmWYZxo8eQ1GonIqo3kedfh8rhcSGQFZAKyB5Tw_fYS4JurODUabnZyQYcze3jMVMaVb1sFT6_6Zh6EZ9OFMk7Yq75-8Mz1karihexrWpmJKd1wAHEb7YPwB1-uanKXDYYXcXiRs_O6sDGvp2oVyIo8sqFSInwSHx2H6bGBIMkMl8kjf4-LV-TRswWOkvgbxrOm_2oRoP1T581ISkBPPc4EJLGjjQ3ZPbhVneKx7r5dk6PrGLFTFQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXpyV3p4Z1lTQmdqdDBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...Q2VVOHlhbTFhV0RGTFdHMURaMjVSTlc1RUpUSkNiMGsyVTA1d2JEbHlUVWxNVkRkS2VrSkVNSFIzZVhWQ1pFOWFjR0Z1YXpWemNYRlRPVWhSZFd3bE1rSnpkMk5FYnlVeVJsSmhVMmxoZEdOM1oxbHVURmRSVWtzbE1rSkllVEpQYzNKNFlrOTVhRFZoZDNVbE1rWnliRVpKZWtOa2FVZHhXRFZ1Um0xYVRHRk1kMXBuUmpsdFkyUkVlRU5RYm5JMGVWZExXbHA1V1hodFEyWXdkVFV3U1dWMFkzZG1SbFlsTWtaQ2NGQkRibXRhZDFwNGRHOTNjeVV5UW5JNGNWbEdPRzVWZEhKRWVqVXdTMGN6TUd0bldHdFJKVE5FSlRORcBrV0pgduppW7rKMcrT8hzgDVK4x8aAdgweh9ksOtEcBurAJBzbFBEugNn_KrQP85bcCw1xYck_rHzkGwvN3g8.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket is closed before the connection is established.
+cleanupSocket @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+p.onerror @ 6504-210dff929b6c7e9f.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-ai-chat.replit.com/river?auth_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjM5OTM2OTc3LCJ1c2VyVGltZUNyZWF0ZWQiOiIyMDI1LTAyLTIzVDE3OjUxOjAyLjA2NloiLCJyZXBsSWQiOiI4ODNjMGUxYy05NjVlLTQwM2QtOGJjMC0zOWFkY2E5OWQ1NTEiLCJtZW1iZXJzaGlwIjoiY29yZSIsImlzc3VlciI6Imh0dHBzOi8vcmVwbGl0LXdlYi1wcm9kLnAucmVwbGl0LmNvbSIsInJvbGVzIjpbImludGVudF9idXNpbmVzcyIsIm9uYm9hcmRpbmdfam9iX3BtIiwib25ib2FyZGluZ19yb2xlX21hbmFnZXIiXSwiY2FuV3JpdGUiOnRydWUsImhhc1JlcGxpdEFpUHJvIjp0cnVlLCJmbGFnZ2luZ0NvbnRleHQiOiJ7XCJrZ...ib2FyZGluZ19qb2JfcG1cIixcIm9uYm9hcmRpbmdfcm9sZV9tYW5hZ2VyXCJdLFwiaXNfdGVhbVwiOmZhbHNlLFwibWVtYmVyc2hpcFwiOlwiY29yZVwifSIsImlhdCI6MTc1ODI1NTgwNSwiZXhwIjoxNzU4MjU5NDA1fQ.DG_ilz3SH0ZlJLpwdIrn60bAMF8AuUh-o0H4nGCi972vF6YWOT_Uf9PNhB--eBE7iprHSgT1xa3WMiQira_pOoyLwZ0CbHKG6JmWYZxo8eQ1GonIqo3kedfh8rhcSGQFZAKyB5Tw_fYS4JurODUabnZyQYcze3jMVMaVb1sFT6_6Zh6EZ9OFMk7Yq75-8Mz1karihexrWpmJKd1wAHEb7YPwB1-uanKXDYYXcXiRs_O6sDGvp2oVyIo8sqFSInwSHx2H6bGBIMkMl8kjf4-LV-TRswWOkvgbxrOm_2oRoP1T581ISkBPPc4EJLGjjQ3ZPbhVneKx7r5dk6PrGLFTFQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+@gruica/SuperBaza-FST:1 Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users. Avoid using aria-hidden on a focused element or its ancestor. Consider using the inert attribute instead, which will also prevent focus. For more details, see the aria-hidden section of the WAI-ARIA specification at https://w3c.github.io/aria/#aria-hidden.
+Element with focus: <div. useView_view__C2mnv css-lmk5p8 Surface_surfaceDefault__TcNI5>
+Ancestor with aria-hidden: <div.css-1g64b4x> <div data-replit-is-modal=​"true" data-centered=​"true" class=​"css-1g64b4x" style=​"opacity:​ 1;​ z-index:​ 100000;​" aria-hidden=​"true">​…​</div>​flex
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSTRiV3p4Z1lTQmdpQTByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...TFRbmx0TWxnNEpUSkdRMk54VVc1UFRIaHZVRXBpYTNCdk1GcHVjRWRzVm1WQlpteEJlbklsTWtKNU5tNTNhMkpxVlRWaVkzQk1SbTFGVTJabVRIVlRPRUpVZVRreFN6Wk5hazFUTWxwMlprZEdTVFZNVmpkcFVWcFZhbE5OUzJWVVNtMU5VRmd4WTBGcGNuTWxNa1pvY2tSTlMwSXlKVEpHVjNSVGRVTlRWRVpCT1ZKYU5reEVUR1JOUlUxVmJHRlBTMkZsTjFFNVltTnRNM05MUTFBMGNGVmxTa3hsY0Vjd2RVeEVkM3BHTXpsUWRFdHBXVmN5VVZCcE5uaEZVazlVTUZObFVuSktXV040Y1RCRlFsWlVURkpSSlRORUpUTkWIpyZaiZ-bbk7nZGolAuDj1DOuml_sUfktKl12ZcAGjg5UGBDGL6M26jWkoSF6enbH_ij-woW8zL27Wc_RJNYF.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSTY3V3p4Z1lTQmdpSzByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...zTWpkc1R6WmhkV0o2Vm1WRmVTVXlRa0lsTWtaQ2RYTndkblpqU1VneU1YaHVTVXRrV0ZkamIzZG1aV3hPVTNOMlYzWm1lbnBhT1VKYVIzVlRWMWRUUVdkak1teDZWME5FUjBWaU1tZ2xNa1pYUTFwMVdVUkZPVE5YY1ZwSE5WbGllVzlrVkhGQ1puQmtRWE5yVkdORlRsRjVPRkZ4ZFhselZDVXlSbEUwVkd3M2VYbDBVWFoyZWxWTVpqSnRSamxRVmlVeVFsbHlaMEpoVURnNVpVWmxNbGhIVFhWamNIRjZjWG9sTWtaVFN6UjRjRE50Umt4cVptUlhhbVUwZFdoTlZXaHZVRGx4V1VWYWJtbEljVFpSVFhjbE0wUWxNMFE9_pjNpN8bNrZzc68wm7tZj6U-Ngt-yRMz8d6iXR5A6hlksP-HDwe3nujyX8ViWlTvTc6Fr1QGPLoembry-GUZCg.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket is closed before the connection is established.
+cleanupSocket @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+p.onerror @ 6504-210dff929b6c7e9f.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSTlyV3p4Z1lTQmdpVjByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...alowMUNXbnBLYm5Kb1J6WXdaRWN6YlZadlZuWk5ia0pEY1Zka09UWkxSRVJ1UkdzelVFOWtUamhyT1RacFVIcHNiV3Q1SlRKR1ZsQkJjRTlyTWs5alIxcDNKVEpDY2tka05ESkRZWFIxZWtOcFFUTkdKVEpHYld0ck1WbHpPVWQzYW0xYWMwMUxRVE54VnpSamR6WkRka1ZGVGtWTGQyUkZlVGwwYWlVeVFtUjZKVEpDTUdkNU5pVXlRa1pvVFRkVmIyMWljV05QUkhKcVFuQlFjMFZEVGpKa2IxcFJZV3hLYUdwM05EWnZNM05tYzNwU1lXSXhNSFF3UjBGSFJpVXlSbTlKY1RKM1VIRnJRMEpoTjJWbWExWkJKVE5FSlRORQZXM3KxzS0tzKcnjjdI3m-7lJUuVz8h0ozMoY0_yn3V22mgHcX5qk8ZkztAFGlalTPYB9Kmwt1hqULizW3r_w4.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSWliYXp4Z1lTQmdpbzByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...UWNrbHdNWGRpZDNGeFJrWXhVRGxzVjFWS2FXaEVTRFZoVVVGQk1VWnBZVGRQYmpWNGFubDJjVmh3V1haTWVDVXlSbUpFV1dKUVRrMXFkWEpPU0NVeVFuaE9jM1JKYUZCQlpEWnZhMGhFYVd0VU5YWXhha3RMTjB4TlZFczJUMkpSY1hwUGNIZzNTVFExZWpRd2JWcHpibUZsU2tGNE9YWnplVk54UlRsMmNYazRibFpXUjNkcVprRnBXVlYyU1RaYWRrdGlZMGNsTWtKU2RrUkJha1JrUzNZeVNHdEZPRWMwU1ZGb1ZuUnFiMUpJTkV0QmMyeERXRGRzVVRkT2ExUWxNa0ptVm5CNVQybHRZVUZwVUhkU2N6QjNKVE5FSlRORVsneB_jiRURItlM_HK3ki2i7_PfNF1p9ZqbnPlgvCxEBC2jZ6_CBPsemsqUqGToJ5zD26ZtQVuJoLsxvhlGpA0.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSWxMYXp4Z1lTQmdpejByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...yT1haeVl5VXlRa3BTWXpKU2VHOUtNVUpWTmtoSmJuTk1OMUpHVEhablJtWnVRVWhzYkNVeVJqVk9WWEY0VHpGRkpUSkdhRlphUkhSVE0xa3dRblFsTWtKSlIzbHBkR2MzTkZSdE5VdzBTMFpxWnlVeVJqTk1OMnQyZUdWRlZFSWxNa1pHUVc1dFZETnRXSFZLVkhGNlJHUlRVWHBuTWtSSUpUSkdNRk1sTWtKTlYxQk9Wek5YZUV0aFlYY3hSMnhSVldoSFoxbGhORGRCUlVVd2J5VXlRbnBWWm5oT1RFMXpiVmxXV2pVelZscDRPRFV6VTJGMmFGSlNaWGcwVkhsaFptSlBUR2t4UTI1WFFsZEpKVEpHYTA1UkpUTkVKVE5FHObW4E1HLhz7wk1Ld1EWJ4Svgy8jVTFCyvu2_SDk7YP6GnZ3QbNhVyF7ZBa0YUZFbdb49F3zxall_L_nQEFjBw.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+_app-0ca3e0d0bb71f44c.js:4 WebSocket connection to 'wss://replit.com/graphql_subscriptions' failed: WebSocket opening handshake timed out
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:4
+6504-210dff929b6c7e9f.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXJyV3p4Z1lTQmdqTjBiUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...RGNXdE1jR1J4SlRKQ1IyWjJVWFp4U0ZSUE5EQnNkVWhQYlRWdVZ5VXlSbTFsU0VsRmRWTklURkZ4UkhvMFNrdzRkV1JTTmxnNFNWUlZaV2haZGxsU1YzbHJUVmhMVmpWTlVHaEVOR1JaVEVOaEpUSkNWblF3YkhGNVJHeEhZbUZTTUhJM01WTTRUMFJGV0d4NmMwWjBkMlpPVlhoTlYyRjVOR2huYUhSeVVtcExKVEpHUTBjNFExbHhkakZMSlRKQ1JFdHdWaVV5UWtOblNFSXlOemNsTWtKeGIwOU9UMHMwYW05NlJtcGlVbE5FUkZZMWNVSmljV2RTVjB3MmQxTTBRbk5oTWpkc2JrOU1KVEpDZGpJNFRISlJKVE5FSlRORQYkPDcpBEJi-NBPJzZiC2mUU0DUQWgxMGtuTa6mNGnotL2UXF7FirtfGEbJSX_okx_3f-PBQ6ERjQxwJOKg4Qc.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket is closed before the connection is established.
+cleanupSocket @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+b @ 6504-210dff929b6c7e9f.js:1
+connect @ 6504-210dff929b6c7e9f.js:1
+(anonymous) @ 6504-210dff929b6c7e9f.js:1
+n @ _app-0ca3e0d0bb71f44c.js:28
+setTimeout
+(anonymous) @ _app-0ca3e0d0bb71f44c.js:28
+retryConnect @ 6504-210dff929b6c7e9f.js:1
+y @ 6504-210dff929b6c7e9f.js:1
+p.onerror @ 6504-210dff929b6c7e9f.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSW43YXp4Z1lTQmdpKzByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...E5VMlpTVG01VGNtdHFOVzlqZVRaSVoxWXljVFJuVEdRNFVFZ3pRVWxqWXpscVNYZDRaRmhHTlhjMFZTVXlRalFsTWtaYWNHbFRURGxMYldkeVRVMHhNRFIyYkcxbGExcDRWakV4UzJ4cWFrNVVZaVV5Um1sUFlVcG9ZV2RsU21ZM01XaFlRblIzVmpOb2JVcGxZWHBYZG5SQ05VRlRWek5KZEZwbGFFOHpZbmNsTWtaUU9FTkxWMXBtYjJ4eVJtOVJOVkUxVVhveU1GQnpka3AzY0hWS09XUlpiSEo2V25Sck5WVjFjV2xxTjB3MlF6RldSamh6UkhOUGNUbElZMWMxUVV4M1JIWldKVEpHVkNVeVFtZFZRU1V6UkNVelJBPT1HKYhlVLVFchkB7kYhbOjhERjMTA6mEO2TMSgjA8JC_t82pMAbhHcUS6NwXKop4r7FfX5A2DF-pnKEzbEwZHYN.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXY3YXp4Z1lTQmdqZTByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...nlPRzFEUzBaRlFtdHdNVTB6TjJvNFMyZFFKVEpHVmxvMFJXbEZVelZPVnpCU2IxQkdlbk55WTBWMVpGVjFXbkp6VlhadlIzWjBVRzVOZVZKaWVXY2xNa0p3WWtOTmVrMTVWRUpPUzJGUllVbzNORWxsU3pkQ05rSnZZbXByYlVWb1NWQlBUREl6U1ZZMU4wRkRSamdsTWtKWU5tWklTMmxVWkdWalYxRTNhblFsTWtZeVltUnpaemhEWlUxc2FHeHdWV1pUV0V0WlpVdEpTa05GUzJWRlJVaHhWMUpQYUVjelMxTnpVVlp0UmsxeWQyMUxNaVV5UW1kcWQzbFhhbTFRWjFabVpGTkljVEpIU0V3eGNsbHZTbmNsTTBRbE0wUT0HrDjlGXvXMBBMrJnGQD_3YR84W1mnvocTiFIpljChyppr4XfD6mBTxefaXtnpagTAhGbPgY1LVJ9RpGQv5HIK.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSXliYXp4Z1lTQmdqbzByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...ENhSHBwV21keVZEVjNaR1ZRSlRKQ2RqaDJhbGhxVVV3eldEaEdiallsTWtKb1NrNXRRVkp0SlRKQ01Wa2xNa1lsTWtaamQwSjJOVXRCYzFKcU1XWXlTbHBPYzJoc1NtZ2xNa1l5YTNkVWVHZ2xNa0owT0RodVRqWTRibXhKWkdkNFJtOU1kRU5IY2pKVWQzbG9WMnRZWm1KbFZHNWpkVkp0Y0RSU1JsVTNlVkJ5VVc1c1QwWndhbnBJTjFadmIweHBNa3RLTjBFeGVHOTJlbE13T1V0aVVHNXVaeVV5Um10akpUSkdORkJQZUdNeVpubDRUMlJoU21SUFNFaHRibm80YkVzM1VFZFViMnhEZEhObGRYZDJUMmwzSlRORUpUTkVeRtADOshpdE3VJbdMBdM0ujFfLMG1kCKWlphGr0EjmGwjB593VAsnsXkobVVyQJiN79ji4m27QxsqphBi-VEN.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+4945-5f64ffd4ac7497af.js:1 WebSocket connection to 'wss://production-chort.replit.com/api/river' failed: WebSocket opening handshake timed out
+(anonymous) @ 4945-5f64ffd4ac7497af.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
+3820-1f1435e2e0ec4214.js:1 WebSocket connection to 'wss://eval.riker.platform.replit.com/wsv2/v2.public.Q2dZSTA3YXp4Z1lTQmdqeTByUEdCaUlGY21sclpYSXdBRHI0QVFva09EZ3pZekJsTVdNdE9UWTFaUzAwTUROa0xUaGlZekF0TXpsaFpHTmhPVGxrTlRVeEVnTnVhWGdhRjNKbGNHeHBkQzF5WlhCc0xXWnBiR1Z6TFhKcGEyVnlJZzFUZFhCbGNrSmhlbUV0UmxOVUtnWm5jblZwWTJGQ1VRb1ljbVZ3YkdsMExYSmxjR3d0WW14dlkydHpMWEpwYTJWeUVoWnlaWEJzYVhRdGNtVndiQzF0WlhSaExYSnBhMlZ5R2gxeVpYQnNhWFF0YldGeVoyRnlhVzVsTFdKc2IyTnJjeTF5YVd0bGNrb0hDTkhIaFJNUUFWQUFXZzlwYm5SbGJuUmZZblZ6YVc1bGMzTmFFVzl1WW05aGNtUnBibWRmYW05aVgzQnRXaGR2Ym1KdllYSmt...lpNR05EVG1KbkpUSkNia0ZGY1hWalFWSWxNa0pZZWtsc1EwdFljV3QxU0hreFRuRnlUa0UzT1daRU9ESnROMk4xZVVoUVNqSm1jakV3SlRKQ01FRnlWWFJFZHpGbk5sWWxNa0pCT1NVeVJsUlZZVlpuYzFSSlF5VXlSalJDUVROWmNrTTNNRFpXVVdGTk16TjRXR3MxZVhoTFpUSlBOMU5QTWtaNGNubGpXVGRsTXpOMGFVbzBTbVl4Tm1rNGFYVlZPRGhYVm5BeE5IZDRTakIyUm5SdlVrbFFKVEpHTjBrMU1WbFJRMDlSWTB0dlptVkJRMXBaZVV0RlpTVXlRaVV5UmtoamQyVlRRU1V5UW1sUllqRTVibWNsTTBRbE0wUT2wQNGTD1wtpT-us2A4GKDdgvhAnoe7t_RiDWaFWXOd1owFQqQLwkRt54gOO1K5B_VQ8LXHCCcYyFPOQVM9l90N.Q2dad2NtOWtPak1pQ25KbGNHeHBkQzVqYjIwPQ' failed: WebSocket opening handshake timed out
+(anonymous) @ 3820-1f1435e2e0ec4214.js:1
+(anonymous) @ main-2f353cbd1cc051ee.js:1
+n @ main-2f353cbd1cc051ee.js:1
+u @ main-2f353cbd1cc051ee.js:1
