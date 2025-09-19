@@ -225,8 +225,8 @@ const AdminServices = memo(function AdminServices() {
     returnNotes: ""
   });
 
-  // QuickServiceEntry test state
-  const [isQuickServiceOpen, setIsQuickServiceOpen] = useState(false);
+  // QuickServiceEntry test state - TEMPORARILY DISABLED
+  // const [isQuickServiceOpen, setIsQuickServiceOpen] = useState(false);
 
   // Destructure state for easier access
   const { searchQuery, activeFolder } = filterState;
@@ -728,14 +728,14 @@ const AdminServices = memo(function AdminServices() {
           </div>
           <div className="flex gap-3">
             <AdminSparePartsOrderingSimple />
-            <Button 
+            {/* <Button 
               onClick={() => setIsQuickServiceOpen(true)} 
               variant="outline"
               className="border-green-500 text-green-700 hover:bg-green-50"
             >
               <Plus className="h-4 w-4 mr-2" />
               Quick servis (TEST)
-            </Button>
+            </Button> */}
             <Button 
               onClick={() => window.location.href = '/admin/create-service'} 
               className="bg-primary hover:bg-primary/90"
@@ -1594,8 +1594,8 @@ const AdminServices = memo(function AdminServices() {
           </DialogContent>
         </Dialog>
 
-        {/* QuickServiceEntry Test Component */}
-        <QuickServiceEntry
+        {/* QuickServiceEntry Test Component - TEMPORARILY DISABLED */}
+        {/* <QuickServiceEntry
           isOpen={isQuickServiceOpen}
           onClose={() => setIsQuickServiceOpen(false)}
           mode="admin"
@@ -1604,7 +1604,7 @@ const AdminServices = memo(function AdminServices() {
             // Refresh services list
             refetch();
           }}
-        />
+        /> */}
       </div>
     </AdminLayout>
   );
