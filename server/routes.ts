@@ -258,93 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
-  
-  // ComPlus brendovi za automatsku detekciju - STVARNI PODACI
-  const complusBrands = [
-    'Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'
-  ];
-
-  // Mapa dobavljača sa prioritetom za ComPlus brend - AŽURIRANO SA STVARNIM PODACIMA
-  const supplierEmailConfig = new Map([
-    // 🎯 COMPLUS - GLAVNA DESTINACIJA ZA REZERVNE DELOVE
-    ["ComPlus", "servis@complus.me"],
-    ["ComPlus Servis", "servis@complus.me"],
-    ["servis@complus.me", "servis@complus.me"],
-    
-    // ComPlus povezani brendovi - STVARNI PODACI
-    ["Electrolux", "servis@complus.me"], // ComPlus brend
-    ["Electrolux Service", "servis@complus.me"], // ComPlus brend
-    ["Elica", "servis@complus.me"], // ComPlus brend
-    ["Elica Service", "servis@complus.me"], // ComPlus brend
-    ["Candy", "servis@complus.me"], // ComPlus brend
-    ["Candy Service", "servis@complus.me"], // ComPlus brend
-    ["Hoover", "servis@complus.me"], // ComPlus brend
-    ["Hoover Service", "servis@complus.me"], // ComPlus brend
-    ["Turbo Air", "servis@complus.me"], // ComPlus brend
-    ["TurboAir", "servis@complus.me"], // ComPlus brend
-    ["Turbo Air Service", "servis@complus.me"], // ComPlus brend
-    
-    // Lokalni ComPlus partneri
-    ["TehnoPlus", "robert.ivezic@tehnoplus.me"],
-    ["Frigo Sistem Todosijević", "gruica@frigosistemtodosijevic.com"],
-    
-    // Ostali dobavljači (backup za ne-ComPlus brendove)
-    ["Bosch Service", "servis@bosch.rs"],
-    ["Siemens Service", "delovi@siemens.rs"],
-    ["Gorenje Servis", "rezervni.delovi@gorenje.com"],
-    ["Whirlpool Parts", "parts@whirlpool.rs"],
-    ["Samsung Service", "spareparts@samsung.rs"],
-    ["LG Electronics", "parts@lg.rs"],
-    ["Beko Servis", "rezervni@beko.rs"],
-    ["Miele Service", "parts@miele.rs"]
-  ]);
-
-  /**
-   * Provera da li je uređaj ComPlus brenda na osnovu proizvođača
-   */
-  function isComplusBrand(manufacturerName: string): boolean {
-    if (!manufacturerName) return false;
-    return complusBrands.some(brand => 
-      manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
-      brand.toLowerCase().includes(manufacturerName.toLowerCase())
-    );
-  }
-
-  /**
-   * Dohvata email adresu dobavljača na osnovu naziva - OPTIMIZOVANO ZA COMPLUS
-   */
-  function getSupplierEmailByName(supplierName: string): string | null {
-    if (!supplierName) return null;
-    
-    // Prva provera - direktno poklapanje
-    const directMatch = supplierEmailConfig.get(supplierName);
-    if (directMatch) return directMatch;
-    
-    // Druga provera - case-insensitive poklapanje
-    const normalizedName = supplierName.toLowerCase().trim();
-    for (const [name, email] of supplierEmailConfig.entries()) {
-      if (name.toLowerCase() === normalizedName) {
-        return email;
-      }
-    }
-    
-    // Treća provera - parcijalno poklapanje (sadrži reči)
-    for (const [name, email] of supplierEmailConfig.entries()) {
-      const nameWords = name.toLowerCase().split(' ');
-      const supplierWords = normalizedName.split(' ');
-      
-      const hasCommonWord = nameWords.some(nameWord => 
-        supplierWords.some(supplierWord => 
-          nameWord.includes(supplierWord) || supplierWord.includes(nameWord)
-        )
-      );
-      
-      if (hasCommonWord) return email;
-    }
-    
-    return null; // Dobavljač nije pronađen
-  }
+  // ===== SUPPLIER PORTAL SISTEM ZA REZERVNE DELOVE =====
 
   // ===== NOVI OPTIMIZOVANI WORKFLOW ZA REZERVNE DELOVE =====
   
@@ -414,9 +328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let categoryData = null;
       let manufacturerName = ''; // Declare manufacturerName in wider scope
 
-      // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
+      // NOVO: SUPPLIER PORTAL SISTEM - Kreiraj porudžbinu u supplier portalu
       try {
-
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
           if (serviceData) {
@@ -440,123 +353,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         manufacturerName = manufacturerData?.name || '';
-        const isComPlus = isComplusBrand(manufacturerName);
 
-        console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
+        console.log(`📦 [SUPPLIER PORTAL] Proizvođač: "${manufacturerName}"`);
 
-        // 🎯 COMPLUS BREND - Koristi postojeći ComPlus email sistem
-        if (isComPlus) {
-          console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
+        // Pronađi dobavljača koji podržava ovaj brend
+        const allSuppliers = await storage.getAllSuppliers();
+        const availableSuppliers = allSuppliers.filter(supplier => {
+          if (!supplier.isActive || !supplier.portalEnabled) return false;
           
-          const deviceType = categoryData?.name || 'Uređaj';
-          const complusEmailSent = await emailService.sendComplusSparePartOrder(
-            existingOrder.serviceId || 0,
-            clientData?.fullName || 'N/A',
-            technicianData?.fullName || 'N/A',
-            deviceType,
-            manufacturerName,
-            existingOrder.partName,
-            existingOrder.partNumber || 'N/A',
-            urgency,
-            existingOrder.description ?? undefined
-          );
-
-          if (complusEmailSent) {
-            console.log(`🎯 [COMPLUS EMAIL] ✅ ComPlus email uspešno poslat na servis@complus.me za deo: ${existingOrder.partName}`);
-          } else {
-            console.error(`🎯 [COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
-          }
-        } 
-        // 📧 OSTALI BRENDOVI - Koristi opšti supplier sistem
-        else {
-          const supplierEmail = getSupplierEmailByName(supplierName);
+          // Ako nema podržane brendove, prihvati sve brendove
+          if (!supplier.supportedBrands) return true;
           
-          if (supplierEmail) {
-            // Pripremi podatke za opšti email template
-            const orderData = {
-              partName: existingOrder.partName,
-              partNumber: existingOrder.partNumber ?? undefined,
-              quantity: existingOrder.quantity,
-              urgency: urgency,
-              description: existingOrder.description ?? undefined,
-              serviceId: existingOrder.serviceId ?? undefined,
-              clientName: clientData?.fullName,
-              clientPhone: clientData?.phone,
-              applianceModel: applianceData?.model ?? undefined,
-              applianceSerialNumber: applianceData?.serialNumber ?? undefined,
-              manufacturerName: manufacturerName,
-              categoryName: categoryData?.name || 'Uređaj',
-              technicianName: technicianData?.fullName,
-              orderDate: new Date(),
-              adminNotes: adminNotes
-            };
-
-            // Pošalji email opštem dobavljaču
-            const emailSent = await emailService.sendSparePartOrderToSupplier(
-              { email: supplierEmail, name: supplierName },
-              orderData
+          try {
+            const supportedBrands = JSON.parse(supplier.supportedBrands);
+            return supportedBrands.some((brand: string) => 
+              manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
+              brand.toLowerCase().includes(manufacturerName.toLowerCase())
             );
-
-            if (emailSent) {
-              console.log(`📧 [GENERAL EMAIL] ✅ Email poslat dobavljaču ${supplierName} (${supplierEmail})`);
-            } else {
-              console.error(`📧 [GENERAL EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
-            }
-          } else {
-            console.log(`📧 [GENERAL EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
+          } catch {
+            // Ako ne može da parsira JSON, prihvati sve brendove
+            return true;
           }
-        }
-      } catch (emailError) {
-        console.error("📧 [EMAIL ERROR] Greška pri slanju email-a:", emailError);
-        // Email greška ne prekida workflow - admin je svakako poručio deo
-      }
-
-      // 📱 SMS PROTOKOL ZA PORUČIVANJE DELOVA
-      try {
-        const { createProtocolSMSService } = await import('./sms-communication-service.js');
+        }).sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sortiraj po prioritetu
         
-        // Dobijamo SMS konfiguraciju iz baze
-        const settingsArray = await storage.getSystemSettings();
-        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
-        
-        // Kreiranje Protocol SMS Service instance
-        const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key || '',
-          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-          senderId: settingsMap.sms_mobile_sender_id || null,
-          enabled: settingsMap.sms_mobile_enabled === 'true'
-        }, storage);
+        if (availableSuppliers.length > 0) {
+          // Uzmi prvog dostupnog dobavljača (sortirano po prioritetu)
+          const supplier = availableSuppliers[0];
+          
+          console.log(`📦 [SUPPLIER PORTAL] Kreiram porudžbinu za dobavljača: ${supplier.name} (prioritet: ${supplier.priority})`);
 
-        if (existingOrder.serviceId && clientData && technicianData) {
-          const smsData = {
-            serviceId: existingOrder.serviceId,
-            clientId: serviceData?.clientId || 0,
-            clientName: clientData.fullName,
-            clientPhone: clientData.phone,
-            deviceType: categoryData?.name || 'Uređaj',
-            deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerName,
-            technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
-            technicianPhone: technicianData.phone || '067123456',
-            partName: existingOrder.partName,
-            estimatedDate: estimatedDelivery || '3-5 dana',
-            createdBy: req.user.fullName || req.user.username
+          // Kreiraj supplier order u portalu
+          const supplierOrderData = {
+            supplierId: supplier.id,
+            sparePartOrderId: orderId,
+            status: 'pending' as const,
+            emailContent: `Porudžbina rezervnog dela: ${existingOrder.partName} (${existingOrder.partNumber || 'N/A'})`,
           };
 
-          console.log(`📱 [ORDER-SMS-PROTOCOL] Šaljem SMS protokol za poručeni deo ID: ${orderId}`);
-          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
+          const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
           
-          if (smsResult.success) {
-            console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
-          } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
-          }
+          // Kreiraj event u supplier portalu
+          const eventData = {
+            orderId: supplierOrder.id,
+            eventType: 'status_change' as const,
+            eventStatus: 'pending',
+            eventDescription: `Nova porudžbina kreirana od strane administratora: ${req.user.fullName || req.user.username}`,
+            eventNotes: adminNotes || `Deo: ${existingOrder.partName}, Količina: ${existingOrder.quantity}, Hitnost: ${urgency}`,
+            performedBy: req.user.id,
+            performedByRole: req.user.role as any,
+            performedByName: req.user.fullName || req.user.username,
+            supplierId: supplier.id,
+            supplierName: supplier.name,
+            relatedServiceId: existingOrder.serviceId,
+            priority: urgency,
+            isSystemGenerated: false,
+            communicationChannel: 'portal'
+          };
+
+          await storage.createSupplierOrderEvent(eventData);
+
+          console.log(`✅ [SUPPLIER PORTAL] Uspešno kreirana porudžbina #${supplierOrder.id} za dobavljača ${supplier.name}`);
+          console.log(`✅ [SUPPLIER PORTAL] Porudžbina će biti vidljiva u supplier portalu za ${supplier.name}`);
+        } else {
+          console.error(`❌ [SUPPLIER PORTAL] Nije pronađen aktivan dobavljač sa omogućenim portalom za brend: ${manufacturerName}`);
+          
+          // Fallback: Ažuriraj status na needs_manual_assignment ako nema dobavljača
+          await storage.updateSparePartOrderStatus(orderId, {
+            status: "pending",
+            adminNotes: (adminNotes || '') + `\n[SISTEM] Potrebno je ručno dodeljivanje dobavljača - nije pronađen aktivan dobavljač za brend: ${manufacturerName}`
+          });
         }
-      } catch (smsError) {
-        console.error("📱 [ORDER-SMS-PROTOCOL ERROR] Greška pri slanju SMS protokola:", smsError);
-        // SMS greška ne prekida workflow
+
+      } catch (portalError) {
+        console.error("❌ [SUPPLIER PORTAL] Greška pri kreiranju porudžbine u portalu:", portalError);
+        // Portal greška ne prekida workflow - admin je svakako poručio deo
       }
+
 
       res.json({ 
         success: true, 
@@ -692,85 +564,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       manufacturerName = manufacturerData?.name || '';
 
-      // EMAIL SISTEM
+      // SUPPLIER PORTAL SISTEM - Kreiraj porudžbinu u supplier portalu
       try {
-        const isComPlus = isComplusBrand(manufacturerName);
+        console.log(`📦 [SUPPLIER PORTAL] Proizvođač: "${manufacturerName}"`);
 
-        console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
-
-        // 🎯 COMPLUS BREND - Automatski email na servis@complus.me
-        if (isComPlus) {
-          console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
+        // Pronađi dobavljača koji podržava ovaj brend
+        const allSuppliers = await storage.getAllSuppliers();
+        const availableSuppliers = allSuppliers.filter(supplier => {
+          if (!supplier.isActive || !supplier.portalEnabled) return false;
           
-          const deviceType = categoryData?.name || 'Uređaj';
-          const complusEmailSent = await emailService.sendComplusSparePartOrder(
-            existingOrder.serviceId || 0,
-            clientData?.fullName || 'N/A',
-            technicianData?.fullName || 'N/A',
-            deviceType,
-            manufacturerName,
-            existingOrder.partName,
-            existingOrder.partNumber || 'N/A',
-            'normal', // urgency default
-            existingOrder.description ?? undefined
-          );
-
-          if (complusEmailSent) {
-            console.log(`🎯 [AUTO-COMPLUS EMAIL] ✅ ComPlus email uspešno poslat za odobreni deo: ${existingOrder.partName}`);
-          } else {
-            console.error(`🎯 [AUTO-COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
+          // Ako nema podržane brendove, prihvati sve brendove
+          if (!supplier.supportedBrands) return true;
+          
+          try {
+            const supportedBrands = JSON.parse(supplier.supportedBrands);
+            return supportedBrands.some((brand: string) => 
+              manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
+              brand.toLowerCase().includes(manufacturerName.toLowerCase())
+            );
+          } catch {
+            // Ako ne može da parsira JSON, prihvati sve brendove
+            return true;
           }
-        }
-      } catch (emailError) {
-        console.error("📧 [AUTO-EMAIL ERROR] Greška pri automatskom slanju email-a:", emailError);
-        // Email greška ne prekida workflow
-      }
-
-      // 📱 AUTOMATSKI SMS PROTOKOL ZA PORUČIVANJE DELOVA
-      try {
-        const { createProtocolSMSService } = await import('./sms-communication-service.js');
+        }).sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sortiraj po prioritetu
         
-        // Dobijamo SMS konfiguraciju iz baze
-        const settingsArray = await storage.getSystemSettings();
-        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
-        
-        // Kreiranje Protocol SMS Service instance
-        const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key || '',
-          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
-          senderId: settingsMap.sms_mobile_sender_id || null,
-          enabled: settingsMap.sms_mobile_enabled === 'true'
-        }, storage);
+        if (availableSuppliers.length > 0) {
+          // Uzmi prvog dostupnog dobavljača (sortirano po prioritetu)
+          const supplier = availableSuppliers[0];
+          
+          console.log(`📦 [SUPPLIER PORTAL] Kreiram porudžbinu za dobavljača: ${supplier.name} (prioritet: ${supplier.priority})`);
 
-        if (existingOrder.serviceId && clientData && technicianData) {
-          const smsData = {
-            serviceId: existingOrder.serviceId,
-            clientId: serviceData?.clientId || 0,
-            clientName: clientData.fullName,
-            clientPhone: clientData.phone,
-            deviceType: categoryData?.name || 'Uređaj',
-            deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerName,
-            technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
-            technicianPhone: technicianData.phone || '067123456',
-            partName: existingOrder.partName,
-            estimatedDate: '3-5 dana',
-            createdBy: req.user.fullName || req.user.username
+          // Kreiraj supplier order u portalu
+          const supplierOrderData = {
+            supplierId: supplier.id,
+            sparePartOrderId: orderId,
+            status: 'pending' as const,
+            emailContent: `Porudžbina rezervnog dela (odobrena): ${existingOrder.partName} (${existingOrder.partNumber || 'N/A'})`,
           };
 
-          console.log(`📱 [SMS-PARTS-ORDERED] Šaljem SMS protokol za poručene delove`);
-          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
+          const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
           
-          if (smsResult.success) {
-            console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
-          } else {
-            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
-          }
+          // Kreiraj event u supplier portalu
+          const eventData = {
+            orderId: supplierOrder.id,
+            eventType: 'status_change' as const,
+            eventStatus: 'pending',
+            eventDescription: `Odobrena porudžbina kreirana od strane administratora: ${req.user.fullName || req.user.username}`,
+            eventNotes: `Deo: ${existingOrder.partName}, Količina: ${existingOrder.quantity}, Hitnost: normal`,
+            performedBy: req.user.id,
+            performedByRole: req.user.role as any,
+            performedByName: req.user.fullName || req.user.username,
+            supplierId: supplier.id,
+            supplierName: supplier.name,
+            relatedServiceId: existingOrder.serviceId,
+            priority: 'normal',
+            isSystemGenerated: false,
+            communicationChannel: 'portal'
+          };
+
+          await storage.createSupplierOrderEvent(eventData);
+
+          console.log(`✅ [SUPPLIER PORTAL] Uspešno kreirana porudžbina #${supplierOrder.id} za dobavljača ${supplier.name}`);
+          console.log(`✅ [SUPPLIER PORTAL] Porudžbina će biti vidljiva u supplier portalu za ${supplier.name}`);
+        } else {
+          console.error(`❌ [SUPPLIER PORTAL] Nije pronađen aktivan dobavljač sa omogućenim portalom za brend: ${manufacturerName}`);
+          
+          // Fallback: Ažuriraj status na needs_manual_assignment ako nema dobavljača
+          await storage.updateSparePartOrderStatus(orderId, {
+            status: "admin_ordered",
+            adminNotes: (existingOrder.adminNotes || '') + `\n[SISTEM] Potrebno je ručno dodeljivanje dobavljača - nije pronađen aktivan dobavljač za brend: ${manufacturerName}`
+          });
         }
-      } catch (smsError) {
-        console.error("📱 [SMS-PARTS-ORDERED ERROR] Greška pri slanju SMS protokola:", smsError);
-        // SMS greška ne prekida workflow
+
+      } catch (portalError) {
+        console.error("❌ [SUPPLIER PORTAL] Greška pri kreiranju porudžbine u portalu:", portalError);
+        // Portal greška ne prekida workflow - admin je svakako odobrio deo
       }
 
       res.json({ 
