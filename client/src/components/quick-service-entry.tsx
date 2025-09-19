@@ -472,66 +472,65 @@ export function QuickServiceEntry({
                         render={({ field }) => (
                           <FormItem data-testid="client-field">
                             <FormLabel data-testid="client-label">Klijent *</FormLabel>
-                            <Popover open={isClientSelectorOpen} onOpenChange={setIsClientSelectorOpen}>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between"
-                                    data-testid="client-selector-trigger"
-                                    onClick={() => setIsClientSelectorOpen(!isClientSelectorOpen)}
-                                  >
-                                    {selectedClient 
-                                      ? `${selectedClient.fullName} (${selectedClient.phone})`
-                                      : "Odaberite klijenta..."
+                            <div className="relative">
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Pretražite i odaberite klijenta..."
+                                  value={selectedClient ? `${selectedClient.fullName} (${selectedClient.phone})` : clientSearchQuery}
+                                  onChange={(e) => {
+                                    setClientSearchQuery(e.target.value);
+                                    setIsClientSelectorOpen(true);
+                                    // Clear selection if user is typing
+                                    if (selectedClient && e.target.value !== `${selectedClient.fullName} (${selectedClient.phone})`) {
+                                      field.onChange("");
                                     }
-                                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[400px] p-0" data-testid="client-selector-popover" side="bottom" align="start">
-                                <Command>
-                                  <CommandInput
-                                    placeholder="Pretražite klijente..."
-                                    value={clientSearchQuery}
-                                    onValueChange={setClientSearchQuery}
-                                    data-testid="client-search-input"
-                                    autoFocus
-                                  />
-                                  <CommandEmpty data-testid="no-clients-found">
-                                    {clientsLoading ? "Učitavanje..." : "Nema rezultata za pretragu."}
-                                  </CommandEmpty>
-                                  <CommandGroup>
-                                    <ScrollArea className="h-[300px]">
-                                      {filteredClients.map((client) => (
-                                        <CommandItem
-                                          key={client.id}
-                                          value={client.id.toString()}
-                                          onSelect={() => {
-                                            field.onChange(client.id.toString());
-                                            setIsClientSelectorOpen(false);
-                                            setClientSearchQuery("");
-                                            adminForm.setValue("applianceId", ""); // Reset appliance selection
-                                          }}
-                                          className="cursor-pointer"
-                                          data-testid={`client-option-${client.id}`}
-                                        >
-                                          <div className="flex flex-col">
-                                            <span className="font-medium">{client.fullName}</span>
-                                            <span className="text-sm text-muted-foreground">{client.phone}</span>
-                                            {client.city && (
-                                              <span className="text-xs text-muted-foreground">{client.city}</span>
-                                            )}
-                                          </div>
-                                        </CommandItem>
-                                      ))}
-                                    </ScrollArea>
-                                  </CommandGroup>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
+                                  }}
+                                  onFocus={() => setIsClientSelectorOpen(true)}
+                                  onBlur={() => {
+                                    // Delay closing to allow for selection
+                                    setTimeout(() => setIsClientSelectorOpen(false), 200);
+                                  }}
+                                  data-testid="client-search-input"
+                                  className="pr-10"
+                                />
+                              </FormControl>
+                              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              
+                              {/* Dropdown results */}
+                              {isClientSelectorOpen && (filteredClients.length > 0 || clientsLoading) && (
+                                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-[300px] overflow-y-auto" data-testid="client-dropdown">
+                                  {clientsLoading ? (
+                                    <div className="p-3 text-sm text-muted-foreground">Učitavanje...</div>
+                                  ) : filteredClients.length === 0 ? (
+                                    <div className="p-3 text-sm text-muted-foreground">Nema rezultata za pretragu.</div>
+                                  ) : (
+                                    filteredClients.map((client) => (
+                                      <div
+                                        key={client.id}
+                                        className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault(); // Prevent blur from firing first
+                                          field.onChange(client.id.toString());
+                                          setClientSearchQuery("");
+                                          setIsClientSelectorOpen(false);
+                                          adminForm.setValue("applianceId", ""); // Reset appliance selection
+                                        }}
+                                        data-testid={`client-option-${client.id}`}
+                                      >
+                                        <div className="flex flex-col">
+                                          <span className="font-medium text-sm">{client.fullName}</span>
+                                          <span className="text-xs text-muted-foreground">{client.phone}</span>
+                                          {client.city && (
+                                            <span className="text-xs text-muted-foreground">{client.city}</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             <FormMessage data-testid="client-error" />
                           </FormItem>
                         )}
