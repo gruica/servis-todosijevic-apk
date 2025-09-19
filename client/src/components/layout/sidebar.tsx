@@ -45,7 +45,6 @@ export const Sidebar = memo(function Sidebar({ isMobileOpen, closeMobileMenu }: 
     { path: "/admin/spare-parts", label: "Rezervni delovi", icon: AppIcons.status.waitingParts, highlight: true, isProfessionalIcon: true },
     { path: "/admin/available-parts", label: "Dostupni delovi", icon: AppIcons.system.warehouse, highlight: true, isProfessionalIcon: true },
     { path: "/admin/spare-parts-catalog", label: "PartKeepr Katalog", icon: AppIcons.system.partsCatalog, highlight: true, isProfessionalIcon: true },
-    { path: "/admin/suppliers", label: "Dobavljači", icon: AppIcons.business.partner, highlight: true, isProfessionalIcon: true },
     { path: "/admin/web-scraping", label: "Web Scraping", icon: AppIcons.system.webScraping, highlight: true, isProfessionalIcon: true },
     { path: "/appliances", label: "Bela tehnika", icon: AppIcons.appliances.washingMachine, isProfessionalIcon: true },
     { path: "/users", label: "Upravljaj korisnicima", icon: AppIcons.system.userManagement, isProfessionalIcon: true },

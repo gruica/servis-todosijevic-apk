@@ -10,7 +10,6 @@ import Dashboard from "@/pages/dashboard";
 const Clients = lazy(() => import("@/pages/clients"));
 const ClientDetails = lazy(() => import("@/pages/client-details"));
 const Services = lazy(() => import("@/pages/services"));
-const NewServicePage = lazy(() => import("@/pages/new-service"));
 const SimplifiedServices = lazy(() => import("@/pages/simplified-services"));
 const BasicServicesPage = lazy(() => import("@/pages/basic/services"));
 const EnhancedServices = lazy(() => import("@/pages/enhanced-services"));
@@ -24,7 +23,6 @@ const AdminSparePartsCatalogPage = lazy(() => import("@/pages/admin/spare-parts-
 const AdminWebScrapingPage = lazy(() => import("@/pages/admin/web-scraping"));
 const AdminServicePhotosTest = lazy(() => import("@/pages/admin/service-photos-test"));
 const SuppliersPage = lazy(() => import("@/pages/admin/suppliers"));
-const AdminProcurement = lazy(() => import("@/pages/admin/procurement"));
 const PartsCatalogPage = lazy(() => import("@/pages/admin/parts-catalog"));
 const Appliances = lazy(() => import("@/pages/appliances"));
 const Users = lazy(() => import("@/pages/users"));
@@ -70,12 +68,6 @@ const NewBusinessClient = lazy(() => import("@/pages/business/clients/new"));
 const BusinessClients = lazy(() => import("@/pages/business/clients/index-simple"));
 const BusinessComplus = lazy(() => import("@/pages/business/complus"));
 const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
-
-// PERFORMANCE BOOST: Lazy load supplier pages
-const SupplierAuth = lazy(() => import("@/pages/supplier-auth"));
-const SupplierLogin = lazy(() => import("@/pages/suppliers/supplier-login"));
-const SupplierDashboard = lazy(() => import("@/pages/suppliers/dashboard"));
-const SupplierOrderDetail = lazy(() => import("@/pages/suppliers/order-detail"));
 
 // PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
@@ -155,7 +147,6 @@ function Router() {
       
       {/* Test da li radi na drugom mjestu */}
       <Route path="/test-page" component={SimpleTestPage} />
-      <Route path="/test-click" component={React.lazy(() => import("./test-click").then(m => ({ default: m.default })))} />
       
       {/* Dijagnostičke stranice - javno dostupne za lakše otklanjanje grešaka */}
       <Route path="/diagnostics" component={DiagnosticsPage} />
@@ -167,12 +158,6 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
       <Route path="/complus-auth" component={ComplusAuthPage} />
-      <Route path="/supplier-auth" component={SupplierAuth} />
-      <Route path="/suppliers/login" component={SupplierLogin} />
-      
-      {/* Supplier routes */}
-      <RoleProtectedRoute path="/suppliers/dashboard" component={SupplierDashboard} allowedRoles={["supplier_complus", "supplier_beko"]} />
-      <RoleProtectedRoute path="/suppliers/orders/:id" component={SupplierOrderDetail} allowedRoles={["supplier_complus", "supplier_beko"]} />
       
       {/* Admin routes */}
       <RoleProtectedRoute path="/admin" component={Dashboard} allowedRoles={["admin"]} />
@@ -192,11 +177,9 @@ function Router() {
       <RoleProtectedRoute path="/admin/service-photos-test" component={AdminServicePhotosTest} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/technician-services" component={TechnicianServicesAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/suppliers" component={SuppliersPage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/procurement" component={AdminProcurement} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/parts-catalog" component={PartsCatalogPage} allowedRoles={["admin"]} />
       {/* Javne verzije servisa za testiranje */}
       <Route path="/services" component={EnhancedServices} />
-      <RoleProtectedRoute path="/services/new" component={NewServicePage} allowedRoles={["admin"]} />
       <Route path="/services-basic" component={BasicServicesPage} />
       <Route path="/services-alt" component={SimplifiedServices} />
       <Route path="/services-safe" component={React.lazy(() => import('@/pages/services-safe'))} />

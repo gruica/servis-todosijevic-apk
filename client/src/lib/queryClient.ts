@@ -127,37 +127,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-
-// === MOBILE API FIX - fetch polyfill ===
-// Problem: Capacitor APK koristi relative URLs koji ne rade
-// Rešenje: Presretni fetch pozive i dodaj API_BASE prefix
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 
-                 (typeof window !== 'undefined' && (window as any).CAPACITOR_API_BASE) || 
-                 "";
-
-// Alternative environment support for Capacitor builds
-// Može biti postavljen u: 
-// 1. VITE_API_BASE_URL environment varijabla
-// 2. window.CAPACITOR_API_BASE runtime varijabla
-// 3. Auto-detect Capacitor environment
-const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
-
-if (API_BASE) {
-  console.log('🔧 Fetch polyfill aktiviran sa API_BASE:', API_BASE);
-  console.log('📱 Capacitor detected:', isCapacitor);
-  
-  const originalFetch = window.fetch;
-  window.fetch = (url: RequestInfo | URL, options?: RequestInit) => {
-    if (typeof url === 'string' && url.startsWith('/api/')) {
-      const newUrl = `${API_BASE}${url}`;
-      console.log(`🔄 API polyfill: ${url} → ${newUrl}`);
-      url = newUrl;
-    }
-    return originalFetch(url, options);
-  };
-} else if (isCapacitor) {
-  console.log('📱 Capacitor detected - no API_BASE configured');
-  console.log('💡 Tip: Set window.CAPACITOR_API_BASE or VITE_API_BASE_URL');
-} else {
-  console.log('🌐 Web mod - fetch polyfill neaktivan');
-}

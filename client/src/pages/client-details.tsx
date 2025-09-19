@@ -675,7 +675,7 @@ export default function ClientDetails() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories?.filter(category => category.id && category.id > 0).map(category => (
+                          {categories?.map(category => (
                             <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
                             </SelectItem>

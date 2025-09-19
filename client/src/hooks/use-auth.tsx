@@ -5,7 +5,6 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { UserRole, isSupplierRole, hasAdminAccess, hasTechnicianAccess, hasSupplierAccess, hasBusinessPartnerAccess } from "@shared/types";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,10 +20,6 @@ type AuthContextType = {
   isTechnician: boolean; // Provera da li je korisnik serviser
   isBusinessPartner: boolean; // Provera da li je korisnik poslovni partner
   isClient: boolean; // Provera da li je korisnik klijent
-  // Supplier role convenience methods
-  isSupplier: boolean; // Da li je korisnik dobavljač (bilo koji tip)
-  isSupplierComplus: boolean; // Da li je ComPlus dobavljač
-  isSupplierBeko: boolean; // Da li je Beko dobavljač
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -64,17 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return userData;
     },
     enabled: !!localStorage.getItem('auth_token'),
-    staleTime: 10 * 60 * 1000, // PERFORMANCE OPTIMIZATION: 10 minutes (from 2 minutes)
-    refetchOnWindowFocus: false, // Disable focus refetching for better performance
-    refetchOnMount: false, // Only refetch if data is stale
-    retry: (failureCount, error: any) => {
-      // Don't retry auth errors (401)
-      if (error?.status === 401 || error?.response?.status === 401) {
-        return false;
-      }
-      // Max 2 retries for other errors
-      return failureCount < 2;
-    },
+    staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
   
 
@@ -95,14 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: { user: SelectUser; token: string }) => {
-      // Store token first
       localStorage.setItem('auth_token', response.token);
-      
-      // PRELOAD STRATEGY: Cache user data immediately to avoid DB hit
       queryClient.setQueryData(["/api/jwt-user"], response.user);
-      console.log('🚀 [LOGIN-PRELOAD] User data cached immediately on login');
-      
-      // Don't call refetch since we already have fresh data
+      refetch();
       toast({
         title: "Uspešna prijava",
         description: `Dobrodošli, ${response.user.fullName}!`,
@@ -168,32 +150,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      // Send server-side cache invalidation request if user exists
-      if (user?.id) {
-        try {
-          await fetch('/api/jwt-user/invalidate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-            },
-            body: JSON.stringify({ userId: user.id })
-          });
-          console.log('🗑️ [LOGOUT-INVALIDATION] Server-side cache invalidated');
-        } catch (error) {
-          console.warn('⚠️ [LOGOUT-INVALIDATION] Failed to invalidate server cache:', error);
-          // Don't fail logout if cache invalidation fails
-        }
-      }
-      
       localStorage.removeItem('auth_token');
       localStorage.removeItem("lastAuthRedirect");
       return Promise.resolve();
     },
     onSuccess: () => {
-      // SMART CACHE INVALIDATION: Only remove JWT user query, not all queries
-      queryClient.removeQueries({ queryKey: ["/api/jwt-user"] });
-      console.log('🧹 [LOGOUT-CACHE] Client-side JWT cache cleared');
+      queryClient.setQueryData(["/api/jwt-user"], null);
+      queryClient.clear();
       
       toast({
         title: "Uspešno ste se odjavili",
@@ -214,11 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTechnician = user?.role === "technician";
   const isBusinessPartner = user?.role === "business_partner";
   const isClient = user?.role === "client";
-  
-  // Supplier role checks
-  const isSupplier = user ? isSupplierRole(user.role) : false;
-  const isSupplierComplus = user?.role === "supplier_complus";
-  const isSupplierBeko = user?.role === "supplier_beko";
 
   return (
     <AuthContext.Provider
@@ -235,10 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isTechnician: isTechnician || false,
         isBusinessPartner: isBusinessPartner || false,
         isClient: isClient || false,
-        // Supplier role methods
-        isSupplier: isSupplier || false,
-        isSupplierComplus: isSupplierComplus || false,
-        isSupplierBeko: isSupplierBeko || false,
       }}
     >
       {children}

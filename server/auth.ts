@@ -70,7 +70,7 @@ export function setupAuth(app: Express) {
   // Initialize persistent session store using connect-pg-simple
   const PgStore = connectPgSimple(session);
   const sessionStore = new PgStore({
-    conString: process.env.DATABASE_URL, // Use DATABASE_URL connection string
+    pool: storage.db, // Use existing database connection pool
     tableName: 'user_sessions', // Table for storing sessions
     createTableIfMissing: true, // Automatically create session table
     pruneSessionInterval: 60 * 15, // Clean expired sessions every 15 minutes

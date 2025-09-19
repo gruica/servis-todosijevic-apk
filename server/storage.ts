@@ -8,8 +8,8 @@ import {
   ServiceStatus,
   ServicePhoto, InsertServicePhoto,
   Technician, InsertTechnician,
-  /* MaintenanceSchedule, InsertMaintenanceSchedule,
-  MaintenanceAlert, InsertMaintenanceAlert, */
+  MaintenanceSchedule, InsertMaintenanceSchedule,
+  MaintenanceAlert, InsertMaintenanceAlert,
   RequestTracking, InsertRequestTracking,
   BotVerification, InsertBotVerification,
   EmailVerification, InsertEmailVerification,
@@ -24,37 +24,36 @@ import {
   ServiceCompletionReport, InsertServiceCompletionReport,
   Supplier, InsertSupplier,
   SupplierOrder, InsertSupplierOrder,
-  SupplierOrderEvent, InsertSupplierOrderEvent,
   PartsCatalog, InsertPartsCatalog,
   // AI Prediktivno održavanje
-  /* MaintenancePatterns, InsertMaintenancePatterns,
+  MaintenancePatterns, InsertMaintenancePatterns,
   PredictiveInsights, InsertPredictiveInsights,
-  AiAnalysisResults, InsertAiAnalysisResults, */
+  AiAnalysisResults, InsertAiAnalysisResults,
   // Tabele za pristup bazi
   users, technicians, clients, applianceCategories, manufacturers, 
-  appliances, services, /* maintenanceSchedules, maintenanceAlerts, */
+  appliances, services, maintenanceSchedules, maintenanceAlerts,
   requestTracking, botVerification, emailVerification, sparePartOrders,
   availableParts, partsActivityLog, notifications, systemSettings, removedParts, partsAllocations,
   sparePartsCatalog, PartsAllocation, InsertPartsAllocation,
   webScrapingSources, webScrapingLogs, webScrapingQueue, serviceCompletionReports,
-  suppliers, supplierOrders, supplierOrderEvents, partsCatalog,
+  suppliers, supplierOrders, partsCatalog,
   // AI Prediktivno održavanje tabele
-  /* maintenancePatterns, predictiveInsights, aiAnalysisResults, */
+  maintenancePatterns, predictiveInsights, aiAnalysisResults,
   // Fotografije servisa
   servicePhotos,
   // Conversation messages
   ConversationMessage, InsertConversationMessage, conversationMessages,
   // Sigurnosni sistem protiv brisanja servisa
   ServiceAuditLog, InsertServiceAuditLog, serviceAuditLogs,
-  UserPermission, InsertUserPermission, userPermissions
-  // DeletedService, InsertDeletedService, deletedServices
+  UserPermission, InsertUserPermission, userPermissions,
+  DeletedService, InsertDeletedService, deletedServices
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
-import { db, sql as sqlClient } from "./db";
+import { pool, db } from "./db";
 import { eq, and, desc, gte, lte, ne, isNull, like, ilike, count, sum, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
@@ -291,7 +290,6 @@ export interface IStorage {
   // Supplier Order methods
   getAllSupplierOrders(): Promise<SupplierOrder[]>;
   getSupplierOrder(id: number): Promise<SupplierOrder | undefined>;
-  getSupplierOrderWithDetails(id: number): Promise<any>;
   getSupplierOrdersBySupplier(supplierId: number): Promise<SupplierOrder[]>;
   getSupplierOrdersBySparePartOrder(sparePartOrderId: number): Promise<SupplierOrder[]>;
   getActiveSupplierOrders(): Promise<SupplierOrder[]>;
@@ -360,23 +358,9 @@ export interface IStorage {
   updateUserPermissions(userId: number, updates: Partial<InsertUserPermission>): Promise<UserPermission | undefined>;
   canUserDeleteServices(userId: number): Promise<boolean>;
   softDeleteService(serviceId: number, deletedBy: number, deletedByUsername: string, deletedByRole: string, reason?: string, ipAddress?: string, userAgent?: string): Promise<boolean>;
-  // restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean>;
-  // getDeletedServices(): Promise<DeletedService[]>;
-  // getDeletedService(serviceId: number): Promise<DeletedService | undefined>;
-  
-  // Missing methods for routes compatibility
-  getCategory(id: number): Promise<ApplianceCategory | undefined>;
-  setSystemSetting(key: string, value: string): Promise<SystemSetting | undefined>;
-  getBusinessPartner(id: number): Promise<User | undefined>;
-
-  // Supplier Portal methods (Task 2)
-  getSuppliersByPartnerType(partnerType: 'complus' | 'beko'): Promise<Supplier[]>;
-  createSupplierPortalUser(userData: InsertUser, supplierId: number): Promise<User>;
-  getSupplierPortalUsers(supplierId: number): Promise<User[]>;
-  
-  // Supplier Order Event methods
-  createSupplierOrderEvent(event: InsertSupplierOrderEvent): Promise<SupplierOrderEvent>;
-  getSupplierOrderEvents(orderId: number): Promise<SupplierOrderEvent[]>;
+  restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean>;
+  getDeletedServices(): Promise<DeletedService[]>;
+  getDeletedService(serviceId: number): Promise<DeletedService | undefined>;
 }
 
 // @ts-ignore - MemStorage class is not used in production, only for testing
@@ -1491,16 +1475,14 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // Koristimo PostgreSQL session store za produkciju
-    console.log("Inicijalizujem PostgreSQL session store...");
+    // Privremeno koristimo memory store za debugging
+    console.log("Inicijalizujem Memory session store za debugging...");
     
-    this.sessionStore = new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
-      tableName: 'user_sessions',
-      createTableIfMissing: true
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 sata
     });
     
-    console.log("PostgreSQL session store inicijalizovan uspešno");
+    console.log("Memory session store inicijalizovan uspešno");
     
     // Inicijalno podešavanje baze
     this.initializeDatabaseIfEmpty();
@@ -1666,24 +1648,6 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDatabaseIfEmpty(): Promise<void> {
     try {
-      // Hotfix: Add missing columns and tables idempotently
-      console.log("Applying database schema hotfixes...");
-      await sqlClient(`
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS supplier_id integer;
-        ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS partner_type text;
-        ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS portal_enabled boolean DEFAULT false;
-        CREATE TABLE IF NOT EXISTS supplier_order_events (
-          id serial PRIMARY KEY,
-          order_id integer NOT NULL,
-          event_type text NOT NULL,
-          event_description text NOT NULL,
-          performed_by integer NOT NULL,
-          performed_by_role text NOT NULL,
-          created_at timestamp DEFAULT NOW()
-        );
-      `);
-      console.log("Database schema hotfixes applied successfully");
-
       // Provera da li postoje korisnici
       const existingUsers = await db.select().from(users);
       if (existingUsers.length === 0) {
@@ -1695,7 +1659,6 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error("Greška pri inicijalizaciji baze:", error);
-      // Continue with initialization even if schema changes fail
     }
   }
 
@@ -2198,20 +2161,6 @@ export class DatabaseStorage implements IStorage {
         isCompletelyFixed: services.isCompletelyFixed,
         businessPartnerId: services.businessPartnerId,
         partnerCompanyName: services.partnerCompanyName,
-        // Add missing service fields
-        clientUnavailableReason: services.clientUnavailableReason,
-        needsRescheduling: services.needsRescheduling,
-        reschedulingNotes: services.reschedulingNotes,
-        devicePickedUp: services.devicePickedUp,
-        pickupDate: services.pickupDate,
-        pickupNotes: services.pickupNotes,
-        customerRefusesRepair: services.customerRefusesRepair,
-        customerRefusalReason: services.customerRefusalReason,
-        repairFailed: services.repairFailed,
-        repairFailureReason: services.repairFailureReason,
-        replacedPartsBeforeFailure: services.replacedPartsBeforeFailure,
-        repairFailureDate: services.repairFailureDate,
-        isWarrantyService: services.isWarrantyService,
         // Dodajemo podatke o klijentu za prikaz u tabeli
         clientName: clients.fullName,
         clientCity: clients.city,
@@ -2235,8 +2184,12 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(technicians, eq(services.technicianId, technicians.id))
       .orderBy(desc(services.createdAt));
       
-      // Apply limit and get result
-      const result = await (limit && limit > 0 ? query.limit(limit) : query);
+      // Dodamo limit ako je specificiran za optimizaciju
+      if (limit && limit > 0) {
+        query = query.limit(limit) as any;
+      }
+      
+      const result = await query;
       
       // Vodimo zapisnik o ključevima prvog rezultata za debug
       if (result.length > 0) {
@@ -2252,67 +2205,40 @@ export class DatabaseStorage implements IStorage {
       const transformedResult = result.map(service => {
         const transformed = { ...service };
         
-        // Handle potential field name transformations if needed
-        if (!transformed.createdAt && 'created_at' in transformed) {
+        // Ako je slučajno createdAt transformirano iz created_at nazad u snake_case od strane orm-a
+        if (!transformed.createdAt && (transformed as any).created_at) {
           transformed.createdAt = (transformed as any).created_at;
-          delete (transformed as any).created_at;
         }
         
-        if (!transformed.completedDate && 'completed_date' in transformed) {
+        // Ako je slučajno completedDate transformirano iz completed_date nazad u snake_case od strane orm-a
+        if (!transformed.completedDate && (transformed as any).completed_date) {
           transformed.completedDate = (transformed as any).completed_date;
-          delete (transformed as any).completed_date;
         }
         
         return transformed;
       });
       
-      // Map to proper Service[] format with client and appliance data
       return transformedResult.map(service => ({
-        id: service.id,
-        clientId: service.clientId,
-        applianceId: service.applianceId,
-        technicianId: service.technicianId,
-        description: service.description,
-        status: service.status,
-        warrantyStatus: service.warrantyStatus,
-        createdAt: service.createdAt,
-        scheduledDate: service.scheduledDate,
-        completedDate: service.completedDate,
-        technicianNotes: service.technicianNotes,
-        cost: service.cost,
-        usedParts: service.usedParts,
-        machineNotes: service.machineNotes,
-        isCompletelyFixed: service.isCompletelyFixed,
-        businessPartnerId: service.businessPartnerId,
-        partnerCompanyName: service.partnerCompanyName,
-        // FIXED: Add client data for frontend display
-        clientName: service.clientName,
-        clientCity: service.clientCity,
-        clientAddress: service.clientAddress,
-        clientPhone: service.clientPhone,
-        clientEmail: service.clientEmail,
-        // FIXED: Add appliance data for frontend display
-        applianceName: service.applianceName,
-        applianceSerialNumber: service.applianceSerialNumber,
-        // FIXED: Add category and manufacturer data
-        categoryName: service.categoryName,
-        manufacturerName: service.manufacturerName,
-        // FIXED: Add technician data
-        technicianName: service.technicianName,
-        clientUnavailableReason: service.clientUnavailableReason || null,
-        needsRescheduling: service.needsRescheduling || false,
-        reschedulingNotes: service.reschedulingNotes || null,
+        ...service,
         devicePickedUp: service.devicePickedUp || false,
         pickupDate: service.pickupDate || null,
         pickupNotes: service.pickupNotes || null,
-        customerRefusesRepair: service.customerRefusesRepair || false,
-        customerRefusalReason: service.customerRefusalReason || null,
-        repairFailed: service.repairFailed || false,
+        isWarrantyService: service.isWarrantyService || false,
+        clientRating: service.clientRating || null,
+        clientFeedback: service.clientFeedback || null,
+        feedbackDate: service.feedbackDate || null,
+        feedbackNotes: service.feedbackNotes || null,
+        hasApplianceDefect: service.hasApplianceDefect || false,
+        defectDescription: service.defectDescription || null,
+        defectDetectionDate: service.defectDetectionDate || null,
+        warrantyStatus: service.warrantyStatus || 'out_of_warranty',
+        warrantyExpirationDate: service.warrantyExpirationDate || null,
+        partsNeeded: service.partsNeeded || false,
+        estimatedCost: service.estimatedCost || null,
+        repairPossible: service.repairPossible || true,
         repairFailureReason: service.repairFailureReason || null,
-        replacedPartsBeforeFailure: service.replacedPartsBeforeFailure || null,
-        repairFailureDate: service.repairFailureDate || null,
-        isWarrantyService: service.isWarrantyService || false
-      } as Service));
+        repairFailureDate: service.repairFailureDate || null
+      })) as Service[];
     } catch (error) {
       console.error("Greška pri dobijanju svih servisa sa validacijom veza:", error);
       // Fallback na osnovni upit bez validacije
@@ -2361,33 +2287,26 @@ export class DatabaseStorage implements IStorage {
   async getServicesByStatus(status: ServiceStatus, limit?: number): Promise<Service[]> {
     let query = db.select().from(services).where(eq(services.status, status));
     
-    // Apply limit and return
-    return await (limit && limit > 0 ? query.limit(limit) : query);
+    // Dodamo limit ako je specificiran za optimizaciju
+    if (limit && limit > 0) {
+      query = query.limit(limit) as any;
+    }
+    
+    return await query;
   }
 
-  async getServicesByStatusDetailed(status: ServiceStatus): Promise<Service[]> {
-    try {
-      console.log(`getServicesByStatusDetailed called with status: ${status}`);
-      
-      const result = await db.select()
-        .from(services)
-        .where(eq(services.status, status))
-        .orderBy(desc(services.createdAt));
-      
-      return result;
-    } catch (error) {
-      console.error(`Greška pri dohvatanju servisa po statusu ${status}:`, error);
-      throw error;
-    }
+  async getServicesByStatusDetailed(status: ServiceStatus): Promise<any[]> {
+    // Temporary: Return empty array while debugging Drizzle ORM issues
+    console.log(`getServicesByStatusDetailed called with status: ${status}`);
+    return [];
   }
 
   async getServicesByTechnician(technicianId: number, limit?: number): Promise<Service[]> {
     try {
-      console.log(`Dohvatam servise za tehničara ${technicianId}`);
+      console.log(`Dohvatam servise za tehničara ${technicianId} sa JOIN podacima`);
       
-      // SELECT with LEFT JOINs to include client and appliance data
+      // Koristimo istu logiku kao getAllServices sa JOIN-ovima za kompletne podatke
       let query = db.select({
-        // Service base columns
         id: services.id,
         clientId: services.clientId,
         applianceId: services.applianceId,
@@ -2398,34 +2317,59 @@ export class DatabaseStorage implements IStorage {
         createdAt: services.createdAt,
         scheduledDate: services.scheduledDate,
         completedDate: services.completedDate,
-        cost: services.cost,
         technicianNotes: services.technicianNotes,
+        cost: services.cost,
+        usedParts: services.usedParts,
+        machineNotes: services.machineNotes,
+        isCompletelyFixed: services.isCompletelyFixed,
         businessPartnerId: services.businessPartnerId,
-        // Flat client fields expected by mobile UI
+        partnerCompanyName: services.partnerCompanyName,
+        // Podaci o klijentu za prikaz
         clientName: clients.fullName,
-        clientPhone: clients.phone,
-        clientAddress: clients.address,
         clientCity: clients.city,
+        clientAddress: clients.address,
+        clientPhone: clients.phone,
         clientEmail: clients.email,
-        // Appliance enrichment
+        // Podaci o uređaju za prikaz
         applianceName: appliances.model,
         applianceSerialNumber: appliances.serialNumber,
+        // Kategorija i proizvođač
         categoryName: applianceCategories.name,
         manufacturerName: manufacturers.name,
+        // Ime servisera
+        technicianName: technicians.fullName
       })
-        .from(services)
-        .leftJoin(clients, eq(services.clientId, clients.id))
-        .leftJoin(appliances, eq(services.applianceId, appliances.id))
-        .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
-        .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-        .where(eq(services.technicianId, technicianId))
-        .orderBy(desc(services.createdAt));
+      .from(services)
+      .innerJoin(clients, eq(services.clientId, clients.id))
+      .innerJoin(appliances, eq(services.applianceId, appliances.id))
+      .leftJoin(applianceCategories, eq(appliances.categoryId, applianceCategories.id))
+      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
+      .leftJoin(technicians, eq(services.technicianId, technicians.id))
+      .where(eq(services.technicianId, technicianId))
+      .orderBy(desc(services.createdAt));
         
-      // Apply limit and get result
-      const result = await (limit && limit > 0 ? query.limit(limit) : query);
-      console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId}`);
+      // Dodamo limit ako je specificiran
+      if (limit && limit > 0) {
+        query = query.limit(limit) as any;
+      }
       
-      return result as Service[];
+      const result = await query;
+      console.log(`Pronađeno ${result.length} servisa za tehničara ${technicianId} sa kompletnim podacima`);
+      
+      // Mapiranje rezultata u istu strukturu kao getAllServices
+      return result.map(service => ({
+        ...service,
+        priority: service.priority || 'normal',
+        specialInstructions: service.specialInstructions || null,
+        customerRequestDetails: service.customerRequestDetails || null,
+        estimatedCompletionDate: service.estimatedCompletionDate || null,
+        totalEstimatedCost: service.totalEstimatedCost || null,
+        repairFailed: service.repairFailed || false,
+        replacedPartsBeforeFailure: service.replacedPartsBeforeFailure || null,
+        repairPossible: service.repairPossible || true,
+        repairFailureReason: service.repairFailureReason || null,
+        repairFailureDate: service.repairFailureDate || null
+      })) as Service[];
     } catch (error) {
       console.error(`Greška pri dohvatanju servisa za tehničara ${technicianId}:`, error);
       throw error;
@@ -2446,8 +2390,12 @@ export class DatabaseStorage implements IStorage {
         ))
         .orderBy(desc(services.createdAt));
         
-      // Apply limit and get results
-      const results = await (limit && limit > 0 ? query.limit(limit) : query);
+      // Dodamo limit ako je specificiran
+      if (limit && limit > 0) {
+        query = query.limit(limit) as any;
+      }
+      
+      const results = await query;
       console.log(`Pronađeno ${results.length} servisa za tehničara ${technicianId} sa statusom '${status}'`);
       return results;
     } catch (error) {
@@ -2532,11 +2480,55 @@ export class DatabaseStorage implements IStorage {
       businessPartnerId: row.businessPartnerId,
       partnerCompanyName: row.partnerCompanyName,
       warrantyStatus: row.warrantyStatus,
+      // Додајемо сва недостајућа поља
+      devicePickedUp: false,
+      pickupDate: null,
+      pickupNotes: null,
+      isWarrantyService: false,
+      clientRating: null,
+      clientFeedback: null,
+      feedbackDate: null,
+      feedbackNotes: null,
+      hasApplianceDefect: false,
+      defectDescription: null,
+      defectDetectionDate: null,
+      warrantyExpirationDate: null,
+      partsNeeded: false,
+      estimatedCost: null,
+      repairPossible: true,
+      repairFailureReason: null,
+      repairFailureDate: null,
+      priority: 'medium' as const,
+      notes: null,
+      // Nested client object
+      client: row.clientFullName ? {
+        id: row.clientId,
+        fullName: row.clientFullName,
+        phone: row.clientPhone,
+        email: row.clientEmail,
+        address: row.clientAddress,
+        city: row.clientCity,
+        companyName: null
+      } : undefined,
+      // Nested appliance object with category
+      appliance: row.applianceModel || row.categoryName ? {
+        id: row.applianceId,
+        model: row.applianceModel,
+        serialNumber: row.applianceSerialNumber,
+        category: row.categoryName ? {
+          id: row.applianceId, // This will be overridden by actual category ID if needed
+          name: row.categoryName,
+          icon: row.categoryIcon
+        } : undefined,
+        manufacturer: row.manufacturerName ? {
+          name: row.manufacturerName
+        } : undefined
+      } : undefined
     })) as Service[];
   }
   
   // Business Partner methods
-  async getServicesByPartner(partnerId: number): Promise<Service[]> {
+  async getServicesByPartner(partnerId: number): Promise<any[]> {
     const startTime = Date.now();
     
     try {
@@ -2839,95 +2831,46 @@ export class DatabaseStorage implements IStorage {
     return history;
   }
 
-  // Maintenance Schedule methods - Hotfix: Handle undefined references
-  async getAllMaintenanceSchedules(): Promise<any[]> {
-    try {
-      // Check if maintenanceSchedules is defined before using it
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return [];
-      }
-      return await db.select().from(maintenanceSchedules);
-    } catch (error) {
-      console.warn("Maintenance schedules not available:", error.message);
-      return [];
-    }
+  // Maintenance Schedule methods
+  async getAllMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    return await db.select().from(maintenanceSchedules);
   }
 
-  async getMaintenanceSchedule(id: number): Promise<any | undefined> {
-    try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return undefined;
-      }
-      const [schedule] = await db
-        .select()
-        .from(maintenanceSchedules)
-        .where(eq(maintenanceSchedules.id, id));
-      return schedule;
-    } catch (error) {
-      console.warn("Maintenance schedules not available:", error.message);
-      return undefined;
-    }
+  async getMaintenanceSchedule(id: number): Promise<MaintenanceSchedule | undefined> {
+    const [schedule] = await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(eq(maintenanceSchedules.id, id));
+    return schedule;
   }
 
-  async getMaintenanceSchedulesByAppliance(applianceId: number): Promise<any[]> {
-    try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return [];
-      }
-      return await db
-        .select()
-        .from(maintenanceSchedules)
-        .where(eq(maintenanceSchedules.applianceId, applianceId));
-    } catch (error) {
-      console.warn("Maintenance schedules not available:", error.message);
-      return [];
-    }
+  async getMaintenanceSchedulesByAppliance(applianceId: number): Promise<MaintenanceSchedule[]> {
+    return await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(eq(maintenanceSchedules.applianceId, applianceId));
   }
 
-  async createMaintenanceSchedule(data: any): Promise<any> {
-    try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        throw new Error("Maintenance schedules are not available in this version");
-      }
-      const [schedule] = await db.insert(maintenanceSchedules).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning();
-      return schedule;
-    } catch (error) {
-      console.error("Cannot create maintenance schedule:", error.message);
-      throw new Error("Maintenance schedules are not available in this version");
-    }
+  async createMaintenanceSchedule(data: InsertMaintenanceSchedule): Promise<MaintenanceSchedule> {
+    const [schedule] = await db.insert(maintenanceSchedules).values({
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return schedule;
   }
 
-  async updateMaintenanceSchedule(id: number, data: any): Promise<any | undefined> {
-    try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return undefined;
-      }
-      const [updatedSchedule] = await db
-        .update(maintenanceSchedules)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(maintenanceSchedules.id, id))
-        .returning();
-      return updatedSchedule;
-    } catch (error) {
-      console.warn("Cannot update maintenance schedule:", error.message);
-      return undefined;
-    }
+  async updateMaintenanceSchedule(id: number, data: Partial<MaintenanceSchedule>): Promise<MaintenanceSchedule | undefined> {
+    const [updatedSchedule] = await db
+      .update(maintenanceSchedules)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(maintenanceSchedules.id, id))
+      .returning();
+    return updatedSchedule;
   }
 
   async deleteMaintenanceSchedule(id: number): Promise<boolean> {
     try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return false;
-      }
       const result = await db.delete(maintenanceSchedules).where(eq(maintenanceSchedules.id, id));
       return result.rowCount ? result.rowCount > 0 : false;
     } catch (error) {
@@ -2936,119 +2879,62 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<any[]> {
-    try {
-      if (typeof maintenanceSchedules === 'undefined') {
-        console.warn("Maintenance schedules table not available");
-        return [];
-      }
-      const now = new Date();
-      const thresholdDate = new Date();
-      thresholdDate.setDate(now.getDate() + daysThreshold);
-      
-      return await db
-        .select()
-        .from(maintenanceSchedules)
-        .where(
-          and(
-            eq(maintenanceSchedules.isActive, true),
-            gte(maintenanceSchedules.nextMaintenanceDate, now),
-            lte(maintenanceSchedules.nextMaintenanceDate, thresholdDate)
-          )
-        );
-    } catch (error) {
-      console.warn("Cannot get upcoming maintenance schedules:", error.message);
-      return [];
-    }
+  async getUpcomingMaintenanceSchedules(daysThreshold: number): Promise<MaintenanceSchedule[]> {
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(now.getDate() + daysThreshold);
+    
+    return await db
+      .select()
+      .from(maintenanceSchedules)
+      .where(
+        and(
+          eq(maintenanceSchedules.isActive, true),
+          gte(maintenanceSchedules.nextMaintenanceDate, now),
+          lte(maintenanceSchedules.nextMaintenanceDate, thresholdDate)
+        )
+      );
   }
 
-  // Maintenance Alert methods - Hotfix: Handle undefined references
-  async getAllMaintenanceAlerts(): Promise<any[]> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return [];
-      }
-      return await db.select().from(maintenanceAlerts);
-    } catch (error) {
-      console.warn("Maintenance alerts not available:", error.message);
-      return [];
-    }
+  // Maintenance Alert methods
+  async getAllMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return await db.select().from(maintenanceAlerts);
   }
 
-  async getMaintenanceAlert(id: number): Promise<any | undefined> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return undefined;
-      }
-      const [alert] = await db
-        .select()
-        .from(maintenanceAlerts)
-        .where(eq(maintenanceAlerts.id, id));
-      return alert;
-    } catch (error) {
-      console.warn("Maintenance alerts not available:", error.message);
-      return undefined;
-    }
+  async getMaintenanceAlert(id: number): Promise<MaintenanceAlert | undefined> {
+    const [alert] = await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.id, id));
+    return alert;
   }
 
-  async getMaintenanceAlertsBySchedule(scheduleId: number): Promise<any[]> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return [];
-      }
-      return await db
-        .select()
-        .from(maintenanceAlerts)
-        .where(eq(maintenanceAlerts.scheduleId, scheduleId));
-    } catch (error) {
-      console.warn("Maintenance alerts not available:", error.message);
-      return [];
-    }
+  async getMaintenanceAlertsBySchedule(scheduleId: number): Promise<MaintenanceAlert[]> {
+    return await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.scheduleId, scheduleId));
   }
 
-  async createMaintenanceAlert(data: any): Promise<any> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        throw new Error("Maintenance alerts are not available in this version");
-      }
-      const [alert] = await db.insert(maintenanceAlerts).values({
-        ...data,
-        createdAt: new Date()
-      }).returning();
-      return alert;
-    } catch (error) {
-      console.error("Cannot create maintenance alert:", error.message);
-      throw new Error("Maintenance alerts are not available in this version");
-    }
+  async createMaintenanceAlert(data: InsertMaintenanceAlert): Promise<MaintenanceAlert> {
+    const [alert] = await db.insert(maintenanceAlerts).values({
+      ...data,
+      createdAt: new Date()
+    }).returning();
+    return alert;
   }
 
-  async updateMaintenanceAlert(id: number, data: any): Promise<any | undefined> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return undefined;
-      }
-      const [updatedAlert] = await db
-        .update(maintenanceAlerts)
-        .set(data)
-        .where(eq(maintenanceAlerts.id, id))
-        .returning();
-      return updatedAlert;
-    } catch (error) {
-      console.warn("Cannot update maintenance alert:", error.message);
-      return undefined;
-    }
+  async updateMaintenanceAlert(id: number, data: Partial<MaintenanceAlert>): Promise<MaintenanceAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(maintenanceAlerts)
+      .set(data)
+      .where(eq(maintenanceAlerts.id, id))
+      .returning();
+    return updatedAlert;
   }
 
   async deleteMaintenanceAlert(id: number): Promise<boolean> {
     try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return false;
-      }
       const result = await db.delete(maintenanceAlerts).where(eq(maintenanceAlerts.id, id));
       return result.rowCount ? result.rowCount > 0 : false;
     } catch (error) {
@@ -3057,38 +2943,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUnreadMaintenanceAlerts(): Promise<any[]> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return [];
-      }
-      return await db
-        .select()
-        .from(maintenanceAlerts)
-        .where(eq(maintenanceAlerts.isRead, false));
-    } catch (error) {
-      console.warn("Cannot get unread maintenance alerts:", error.message);
-      return [];
-    }
+  async getUnreadMaintenanceAlerts(): Promise<MaintenanceAlert[]> {
+    return await db
+      .select()
+      .from(maintenanceAlerts)
+      .where(eq(maintenanceAlerts.isRead, false));
   }
 
-  async markMaintenanceAlertAsRead(id: number): Promise<any | undefined> {
-    try {
-      if (typeof maintenanceAlerts === 'undefined') {
-        console.warn("Maintenance alerts table not available");
-        return undefined;
-      }
-      const [updatedAlert] = await db
-        .update(maintenanceAlerts)
-        .set({ isRead: true })
-        .where(eq(maintenanceAlerts.id, id))
-        .returning();
-      return updatedAlert;
-    } catch (error) {
-      console.warn("Cannot mark maintenance alert as read:", error.message);
-      return undefined;
-    }
+  async markMaintenanceAlertAsRead(id: number): Promise<MaintenanceAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(maintenanceAlerts)
+      .set({ isRead: true })
+      .where(eq(maintenanceAlerts.id, id))
+      .returning();
+    return updatedAlert;
   }
 
   // Request tracking methods (rate limiting)
@@ -3339,6 +3207,7 @@ export class DatabaseStorage implements IStorage {
             email: client.email,
             address: client.address,
             city: client.city,
+            companyName: (client as any).companyName || null,
           } : null,
           appliance: appliance ? {
             id: appliance.id,
@@ -3441,6 +3310,7 @@ export class DatabaseStorage implements IStorage {
           email: client.email,
           address: client.address,
           city: client.city,
+          companyName: client.companyName,
         } : null,
         appliance: appliance ? {
           id: appliance.id,
@@ -3574,18 +3444,17 @@ export class DatabaseStorage implements IStorage {
 
   async getAllSparePartOrders(): Promise<any[]> {
     try {
-      // RAW SQL pristup da zaobiđe Drizzle ORM greške - KOMPLETNI SELECT SA SVIM POLJIMA
-      const orders = await sqlClient(`
-        SELECT id, part_name, part_number, quantity, status, urgency, 
-               created_at, updated_at, supplier_name, estimated_cost, 
-               actual_cost, admin_notes, description,
-               service_id AS "serviceId", technician_id AS "technicianId",
+      // RAW SQL pristup da zaobiđe Drizzle ORM greške
+      const result = await pool.query(`
+        SELECT id, part_name, quantity, status, urgency, created_at,
+               service_id, technician_id,
                'technician' as requester_type,
                technician_id as requester_user_id,
                'Serviser' as requester_name
         FROM spare_part_orders 
         ORDER BY created_at DESC
       `);
+      const orders = result.rows;
 
       // Zatim dodaj povezane podatke za svaki order
       const enrichedOrders = await Promise.all(
@@ -3611,7 +3480,7 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(order.technicianId);
               if (technician) {
                 technicianData = {
-                  name: technician.fullName || 'Nepoznat',
+                  name: technician.name,
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
@@ -3624,25 +3493,6 @@ export class DatabaseStorage implements IStorage {
 
           return {
             ...order,
-            // Mapuj snake_case iz baze u camelCase za frontend
-            id: order.id,
-            partName: order.part_name,
-            partNumber: order.part_number,
-            quantity: order.quantity,
-            status: order.status,
-            urgency: order.urgency,
-            createdAt: order.created_at,
-            updatedAt: order.updated_at,
-            supplierName: order.supplier_name,
-            estimatedCost: order.estimated_cost,
-            actualCost: order.actual_cost,
-            adminNotes: order.admin_notes,
-            description: order.description,
-            serviceId: order.serviceId,
-            technicianId: order.technicianId,
-            requesterType: order.requester_type,
-            requesterUserId: order.requester_user_id,
-            requesterName: order.requester_name,
             service: serviceData,
             technician: technicianData
           };
@@ -3720,7 +3570,7 @@ export class DatabaseStorage implements IStorage {
   async getSparePartOrdersByStatus(status: SparePartStatus): Promise<any[]> {
     try {
       // RAW SQL pristup sa postojećim kolonama - dodeli default vrednosti za requester polja
-      const result = await sqlClient(`
+      const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
                service_id, technician_id,
@@ -3733,7 +3583,7 @@ export class DatabaseStorage implements IStorage {
       `, [status]);
       
       // Mapuj snake_case iz baze u camelCase za frontend
-      return result.map(row => ({
+      return result.rows.map(row => ({
         id: row.id,
         partName: row.part_name,
         partNumber: row.part_number,
@@ -3762,7 +3612,7 @@ export class DatabaseStorage implements IStorage {
   async getPendingSparePartOrders(): Promise<SparePartOrder[]> {
     try {
       // Jednostavan pristup - koristi samo postojeće kolone, dodeli default vrednosti za requester
-      const result = await sqlClient(`
+      const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
                service_id, technician_id,
@@ -3775,7 +3625,7 @@ export class DatabaseStorage implements IStorage {
       `);
       
       // Mapuj snake_case iz baze u camelCase za frontend
-      return result.map(row => ({
+      return result.rows.map(row => ({
         id: row.id,
         partName: row.part_name,
         partNumber: row.part_number,
@@ -3804,10 +3654,10 @@ export class DatabaseStorage implements IStorage {
   async getAllRequestsSparePartOrders(): Promise<SparePartOrder[]> {
     try {
       // Dohvati sve zahteve: i "pending" i "requested" statuse
-      const orders = await sqlClient(`
+      const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
                supplier_name, estimated_cost, actual_cost, admin_notes, description,
-               service_id AS "serviceId", technician_id AS "technicianId",
+               service_id, technician_id,
                'technician' as requester_type,
                technician_id as requester_user_id,
                'Serviser' as requester_name
@@ -3816,71 +3666,29 @@ export class DatabaseStorage implements IStorage {
         ORDER BY created_at DESC
       `);
       
-      console.log(`📋 [ALL-REQUESTS] Pronađeno ${orders.length} zahteva (pending + requested)`);
-
-      // Zatim dodaj povezane podatke za svaki order (ista logika kao getAllSparePartOrders)
-      const enrichedOrders = await Promise.all(
-        orders.map(async (order) => {
-          let serviceData = undefined;
-          let technicianData = undefined;
-
-          // Dodaj service podatke ako postoji serviceId
-          if (order.serviceId) {
-            try {
-              const service = await this.getAdminServiceById(order.serviceId);
-              if (service) {
-                serviceData = service;
-              }
-            } catch (error) {
-              console.log(`Servis ${order.serviceId} nije pronađen:`, error);
-            }
-          }
-
-          // Dodaj technician podatke ako postoji technicianId  
-          if (order.technicianId) {
-            try {
-              const technician = await this.getTechnician(order.technicianId);
-              if (technician) {
-                technicianData = {
-                  name: technician.fullName || 'Nepoznat',
-                  phone: technician.phone || '',
-                  email: technician.email || '',
-                  specialization: technician.specialization || ''
-                };
-              }
-            } catch (error) {
-              console.log(`Serviser ${order.technicianId} nije pronađen:`, error);
-            }
-          }
-
-          return {
-            ...order,
-            // Mapuj snake_case iz baze u camelCase za frontend
-            id: order.id,
-            partName: order.part_name,
-            partNumber: order.part_number,
-            quantity: order.quantity,
-            status: order.status,
-            urgency: order.urgency,
-            createdAt: order.created_at,
-            updatedAt: order.updated_at,
-            supplierName: order.supplier_name,
-            estimatedCost: order.estimated_cost,
-            actualCost: order.actual_cost,
-            adminNotes: order.admin_notes,
-            description: order.description,
-            serviceId: order.serviceId,
-            technicianId: order.technicianId,
-            requesterType: order.requester_type,
-            requesterUserId: order.requester_user_id,
-            requesterName: order.requester_name,
-            service: serviceData,
-            technician: technicianData
-          };
-        })
-      );
-
-      return enrichedOrders;
+      console.log(`📋 [ALL-REQUESTS] Pronađeno ${result.rows.length} zahteva (pending + requested)`);
+      
+      // Mapuj snake_case iz baze u camelCase za frontend
+      return result.rows.map(row => ({
+        id: row.id,
+        partName: row.part_name,
+        partNumber: row.part_number,
+        quantity: row.quantity,
+        status: row.status,
+        urgency: row.urgency,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        supplierName: row.supplier_name,
+        estimatedCost: row.estimated_cost,
+        actualCost: row.actual_cost,
+        adminNotes: row.admin_notes,
+        description: row.description,
+        serviceId: row.service_id,
+        technicianId: row.technician_id,
+        requesterType: row.requester_type,
+        requesterUserId: row.requester_user_id,
+        requesterName: row.requester_name
+      }));
     } catch (error) {
       console.error('❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:', error);
       throw error;
@@ -3944,7 +3752,7 @@ export class DatabaseStorage implements IStorage {
   async deleteSparePartOrder(id: number): Promise<boolean> {
     try {
       // First delete any related notifications using RAW SQL to avoid schema issues
-      await sqlClient('DELETE FROM notifications WHERE related_spare_part_id = $1', [id]);
+      await pool.query('DELETE FROM notifications WHERE related_spare_part_id = $1', [id]);
       
       // Then delete the spare part order
       const result = await db
@@ -3983,8 +3791,7 @@ export class DatabaseStorage implements IStorage {
         clientName: null as string | null,
         clientPhone: null as string | null,
         applianceInfo: null as string | null,
-        serviceDescription: null as string | null,
-        warrantyStatus: null as string | null
+        serviceDescription: null as string | null
       };
 
       if (order.serviceId) {
@@ -3993,7 +3800,6 @@ export class DatabaseStorage implements IStorage {
           if (service) {
             serviceInfo.serviceId = service.id;
             serviceInfo.serviceDescription = service.description;
-            serviceInfo.warrantyStatus = service.warrantyStatus;
 
             // Get client info
             if (service.clientId) {
@@ -4028,13 +3834,13 @@ export class DatabaseStorage implements IStorage {
       // Create available part from the order
       const availablePartData = {
         partName: order.partName,
-        partNumber: order.partNumber || undefined,
+        partNumber: order.partNumber || null,
         quantity: order.quantity,
-        description: order.description || undefined,
-        supplierName: order.supplierName || undefined,
+        description: order.description || null,
+        supplierName: order.supplierName || null,
         unitCost: receivedData.actualCost || order.estimatedCost || null,
         location: receivedData.location || 'Glavno skladište',
-        warrantyStatus: (serviceInfo.warrantyStatus || "van garancije") as "u garanciji" | "van garancije",
+        warrantyStatus: order.warrantyStatus as "u garanciji" | "van garancije",
         categoryId: null, // Could be extracted from appliance if needed
         manufacturerId: null, // Could be extracted from appliance if needed
         originalOrderId: orderId,
@@ -4094,7 +3900,8 @@ export class DatabaseStorage implements IStorage {
         availablePartId: partId,
         serviceId,
         technicianId,
-        allocatedQuantity: quantity,
+        quantity,
+        allocatedDate: new Date(),
         allocatedBy,
         status: 'allocated' as const
       };
@@ -4452,18 +4259,14 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(availableParts, eq(partsAllocations.availablePartId, availableParts.id))
         .leftJoin(users, eq(partsAllocations.technicianId, users.id));
 
-      const conditions = [];
       if (serviceId) {
-        conditions.push(eq(partsAllocations.serviceId, serviceId));
+        query = query.where(eq(partsAllocations.serviceId, serviceId));
       }
       if (technicianId) {
-        conditions.push(eq(partsAllocations.technicianId, technicianId));
+        query = query.where(eq(partsAllocations.technicianId, technicianId));
       }
-      const finalQuery = conditions.length > 0 
-        ? query.where(conditions.length === 1 ? conditions[0] : and(...conditions))
-        : query;
 
-      return await finalQuery.orderBy(desc(partsAllocations.allocatedDate));
+      return await query.orderBy(desc(partsAllocations.allocatedDate));
     } catch (error) {
       console.error('Greška pri dohvatanju dodela delova:', error);
       return [];
@@ -4702,7 +4505,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Metoda za dohvatanje svih fotografija određene kategorije (globalno)
-  async getAllServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
+  async getServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
     console.log(`📸 DatabaseStorage: dohvatanje svih fotografija kategorije "${category}"`);
     
     try {
@@ -4779,12 +4582,10 @@ export class DatabaseStorage implements IStorage {
         .from(servicePhotos)
         .groupBy(servicePhotos.category);
       
-      const categoryStats = result
-        .filter(row => row.category !== null)
-        .map(row => ({
-          category: row.category as string,
-          count: row.count
-        }));
+      const categoryStats = result.map(row => ({
+        category: row.category,
+        count: row.count
+      }));
       
       console.log('📊 Statistike po kategorijama:', categoryStats);
       return categoryStats;
@@ -4845,11 +4646,11 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(availableParts, eq(partsActivityLog.partId, availableParts.id))
         .orderBy(desc(partsActivityLog.timestamp));
 
-      const finalQuery = partId 
-        ? query.where(eq(partsActivityLog.partId, partId))
-        : query;
+      if (partId) {
+        query = query.where(eq(partsActivityLog.partId, partId));
+      }
 
-      const activities = await finalQuery.limit(limit);
+      const activities = await query.limit(limit);
       return activities;
     } catch (error) {
       console.error('Greška pri dohvatanju log aktivnosti:', error);
@@ -5195,11 +4996,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(webScrapingLogs.createdAt))
         .limit(100);
       
-      const finalQuery = sourceId 
-        ? query.where(eq(webScrapingLogs.sourceId, sourceId))
-        : query;
+      if (sourceId) {
+        query = query.where(eq(webScrapingLogs.sourceId, sourceId));
+      }
       
-      const logs = await finalQuery;
+      const logs = await query;
       return logs;
     } catch (error) {
       console.error('Greška pri dohvatanju scraping logova:', error);
@@ -5279,7 +5080,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const reportData = {
         ...data,
-        technicianId: await this.getTechnicianIdFromService(data.serviceId),
+        technicianId: data.technicianId || await this.getTechnicianIdFromService(data.serviceId),
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -5461,102 +5262,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSupplierOrderWithDetails(id: number): Promise<any> {
-    try {
-      // Get the supplier order with joined data
-      const [order] = await db.select({
-        // Supplier order fields
-        id: supplierOrders.id,
-        supplierId: supplierOrders.supplierId,
-        sparePartOrderId: supplierOrders.sparePartOrderId,
-        orderNumber: supplierOrders.orderNumber,
-        status: supplierOrders.status,
-        trackingNumber: supplierOrders.trackingNumber,
-        totalCost: supplierOrders.totalCost,
-        currency: supplierOrders.currency,
-        estimatedDelivery: supplierOrders.estimatedDelivery,
-        emailContent: supplierOrders.emailContent,
-        supplierResponse: supplierOrders.supplierResponse,
-        createdAt: supplierOrders.createdAt,
-        updatedAt: supplierOrders.updatedAt,
-        // Supplier details
-        supplierName: suppliers.name,
-        supplierCompanyName: suppliers.companyName,
-        supplierEmail: suppliers.email,
-        supplierPhone: suppliers.phone,
-        supplierPartnerType: suppliers.partnerType,
-        // Spare part order details
-        sparePartOrderPartName: sparePartOrders.partName,
-        sparePartOrderPartNumber: sparePartOrders.partNumber,
-        sparePartOrderQuantity: sparePartOrders.quantity,
-        sparePartOrderDescription: sparePartOrders.description,
-        sparePartOrderUrgency: sparePartOrders.urgency,
-        sparePartOrderServiceId: sparePartOrders.serviceId,
-        // Client details from services
-        clientName: clients.fullName,
-        clientPhone: clients.phone,
-        clientAddress: clients.address,
-        // Appliance details
-        applianceModel: appliances.model,
-        applianceManufacturer: manufacturers.name
-      })
-      .from(supplierOrders)
-      .leftJoin(suppliers, eq(supplierOrders.supplierId, suppliers.id))
-      .leftJoin(sparePartOrders, eq(supplierOrders.sparePartOrderId, sparePartOrders.id))
-      .leftJoin(services, eq(sparePartOrders.serviceId, services.id))
-      .leftJoin(clients, eq(services.clientId, clients.id))
-      .leftJoin(appliances, eq(services.applianceId, appliances.id))
-      .leftJoin(manufacturers, eq(appliances.manufacturerId, manufacturers.id))
-      .where(eq(supplierOrders.id, id));
-
-      if (!order) {
-        return undefined;
-      }
-
-      // Transform the flat result into a nested structure
-      return {
-        id: order.id,
-        supplierId: order.supplierId,
-        sparePartOrderId: order.sparePartOrderId,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        trackingNumber: order.trackingNumber,
-        totalCost: order.totalCost,
-        currency: order.currency,
-        estimatedDelivery: order.estimatedDelivery,
-        emailContent: order.emailContent,
-        supplierResponse: order.supplierResponse,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        supplier: order.supplierName ? {
-          id: order.supplierId,
-          name: order.supplierName,
-          companyName: order.supplierCompanyName,
-          email: order.supplierEmail,
-          phone: order.supplierPhone,
-          partnerType: order.supplierPartnerType
-        } : undefined,
-        sparePartOrder: order.sparePartOrderPartName ? {
-          id: order.sparePartOrderId,
-          partName: order.sparePartOrderPartName,
-          partNumber: order.sparePartOrderPartNumber,
-          quantity: order.sparePartOrderQuantity,
-          description: order.sparePartOrderDescription,
-          urgency: order.sparePartOrderUrgency,
-          serviceId: order.sparePartOrderServiceId,
-          applianceModel: order.applianceModel,
-          applianceManufacturer: order.applianceManufacturer,
-          clientName: order.clientName,
-          clientPhone: order.clientPhone,
-          address: order.clientAddress
-        } : undefined
-      };
-    } catch (error) {
-      console.error('Greška pri dohvatanju detaljnih podataka porudžbine dobavljača:', error);
-      return undefined;
-    }
-  }
-
   async getSupplierOrdersBySupplier(supplierId: number): Promise<SupplierOrder[]> {
     try {
       return await db.select()
@@ -5643,121 +5348,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // ===== SUPPLIER PORTAL METHODS =====
-
-  async getSuppliersByPartnerType(partnerType: 'complus' | 'beko'): Promise<Supplier[]> {
-    try {
-      return await db.select()
-        .from(suppliers)
-        .where(and(
-          eq(suppliers.partnerType, partnerType),
-          eq(suppliers.isActive, true),
-          eq(suppliers.portalEnabled, true)
-        ))
-        .orderBy(desc(suppliers.priority), suppliers.name);
-    } catch (error) {
-      console.error('Greška pri dohvatanju dobavljača po tipu partnera:', error);
-      return [];
-    }
-  }
-
-  async createSupplierPortalUser(userData: InsertUser, supplierId: number): Promise<User> {
-    try {
-      // CRITICAL FIX 1: Validate supplier exists and has portalEnabled=true
-      const [supplier] = await db.select()
-        .from(suppliers)
-        .where(and(
-          eq(suppliers.id, supplierId),
-          eq(suppliers.isActive, true),
-          eq(suppliers.portalEnabled, true)
-        ));
-      
-      if (!supplier) {
-        throw new Error(`Supplier with ID ${supplierId} not found or portal not enabled`);
-      }
-
-      // CRITICAL FIX 2: Hash password properly using scrypt (SECURITY BUG FIX)
-      let hashedPassword = userData.password;
-      const parts = hashedPassword.split('.');
-      if (parts.length !== 2 || parts[0].length < 32 || parts[1].length < 16) {
-        // Password is not properly hashed, hash it using scrypt
-        hashedPassword = await this.hashPassword(userData.password);
-      }
-
-      // CRITICAL FIX 3: Assign correct role based on supplier's partnerType (FUNCTIONAL BUG FIX)
-      let role: string;
-      switch (supplier.partnerType?.toLowerCase()) {
-        case 'complus':
-          role = 'supplier_complus';
-          break;
-        case 'beko':
-          role = 'supplier_beko';
-          break;
-        default:
-          // Fallback to complus if partnerType is not set or invalid
-          role = 'supplier_complus';
-      }
-
-      // Set supplier-specific data with properly hashed password and correct role
-      const supplierUserData: InsertUser = {
-        ...userData,
-        password: hashedPassword, // Use hashed password
-        supplierId: supplierId,
-        role: role, // Use role based on supplier's partnerType
-        isVerified: true // Supplier users are pre-verified
-      };
-
-      // Create the user with secure data
-      const [newUser] = await db.insert(users).values(supplierUserData).returning();
-      
-      console.log(`🔐 [SECURITY] Created supplier portal user with role '${role}' for supplier '${supplier.name}' (${supplier.partnerType})`);
-      return newUser;
-    } catch (error) {
-      console.error('Greška pri kreiranju korisnika supplier portala:', error);
-      throw error;
-    }
-  }
-
-  async getSupplierPortalUsers(supplierId: number): Promise<User[]> {
-    try {
-      return await db.select()
-        .from(users)
-        .where(and(
-          eq(users.supplierId, supplierId),
-          or(
-            eq(users.role, 'supplier_complus'),
-            eq(users.role, 'supplier_beko')
-          )
-        ))
-        .orderBy(users.fullName);
-    } catch (error) {
-      console.error('Greška pri dohvatanju korisnika supplier portala:', error);
-      return [];
-    }
-  }
-
-  async createSupplierOrderEvent(event: InsertSupplierOrderEvent): Promise<SupplierOrderEvent> {
-    try {
-      const [newEvent] = await db.insert(supplierOrderEvents).values(event).returning();
-      return newEvent;
-    } catch (error) {
-      console.error('Greška pri kreiranju supplier order event-a:', error);
-      throw error;
-    }
-  }
-
-  async getSupplierOrderEvents(orderId: number): Promise<SupplierOrderEvent[]> {
-    try {
-      return await db.select()
-        .from(supplierOrderEvents)
-        .where(eq(supplierOrderEvents.supplierOrderId, orderId))
-        .orderBy(desc(supplierOrderEvents.createdAt));
-    } catch (error) {
-      console.error('Greška pri dohvatanju supplier order events:', error);
-      return [];
-    }
-  }
-
   // ===== PARTS CATALOG METHODS =====
 
   async getAllPartsFromCatalog(): Promise<PartsCatalog[]> {
@@ -5800,27 +5390,26 @@ export class DatabaseStorage implements IStorage {
 
   async searchPartsInCatalog(query: string, category?: string, manufacturerId?: number): Promise<PartsCatalog[]> {
     try {
-      // Build conditions array
-      const conditions = [
-        eq(partsCatalog.isActive, true),
-        or(
-          ilike(partsCatalog.partName, `%${query}%`),
-          ilike(partsCatalog.partNumber, `%${query}%`),
-          ilike(partsCatalog.description, `%${query}%`)
-        )
-      ];
+      let searchQuery = db.select()
+        .from(partsCatalog)
+        .where(
+          and(
+            eq(partsCatalog.isActive, true),
+            or(
+              ilike(partsCatalog.partName, `%${query}%`),
+              ilike(partsCatalog.partNumber, `%${query}%`),
+              ilike(partsCatalog.description, `%${query}%`)
+            )
+          )
+        );
 
       if (category) {
-        conditions.push(eq(partsCatalog.category, category));
+        searchQuery = searchQuery.where(eq(partsCatalog.category, category));
       }
 
       if (manufacturerId) {
-        conditions.push(eq(partsCatalog.manufacturerId, manufacturerId));
+        searchQuery = searchQuery.where(eq(partsCatalog.manufacturerId, manufacturerId));
       }
-
-      const searchQuery = db.select()
-        .from(partsCatalog)
-        .where(and(...conditions));
 
       return await searchQuery.orderBy(desc(partsCatalog.lastUpdated));
     } catch (error) {
@@ -6024,8 +5613,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllAuditLogs(limit?: number): Promise<ServiceAuditLog[]> {
     try {
-      const query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
-      return await (limit && limit > 0 ? query.limit(limit) : query);
+      let query = db.select().from(serviceAuditLogs).orderBy(desc(serviceAuditLogs.timestamp));
+      if (limit && limit > 0) {
+        query = query.limit(limit) as any;
+      }
+      return await query;
     } catch (error) {
       console.error('Greška pri dohvatanju svih audit log-ova:', error);
       return [];
@@ -6091,11 +5683,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Deleted Services funkcije (Soft Delete) - TEMPORARILY COMMENTED OUT
+  // Deleted Services funkcije (Soft Delete)
   async softDeleteService(serviceId: number, deletedBy: number, deletedByUsername: string, deletedByRole: string, reason?: string, ipAddress?: string, userAgent?: string): Promise<boolean> {
-    console.log('Deleted services functionality temporarily disabled');
-    return false;
-    /*
     try {
       console.log(`🗑️ [SOFT DELETE] Početak soft delete za servis ${serviceId} od strane ${deletedByUsername}`);
       
@@ -6151,11 +5740,8 @@ export class DatabaseStorage implements IStorage {
       console.error(`🗑️ [SOFT DELETE] ❌ Greška pri soft delete servisa ${serviceId}:`, error);
       return false;
     }
-    */
   }
 
-  // TEMPORARILY COMMENTED OUT - restoreDeletedService
-  /*
   async restoreDeletedService(serviceId: number, restoredBy: number, restoredByUsername: string, restoredByRole: string): Promise<boolean> {
     try {
       console.log(`🔄 [RESTORE] Početak vraćanja servisa ${serviceId} od strane ${restoredByUsername}`);
@@ -6214,10 +5800,7 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-  */
 
-  // TEMPORARILY COMMENTED OUT - getDeletedServices
-  /*
   async getDeletedServices(): Promise<DeletedService[]> {
     try {
       return await db.select()
@@ -6229,10 +5812,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  */
 
-  // TEMPORARILY COMMENTED OUT - getDeletedService
-  /*
   async getDeletedService(serviceId: number): Promise<DeletedService | undefined> {
     try {
       const [deletedService] = await db.select()
@@ -6245,7 +5825,6 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
-  */
 
   // Service Completion Report methods (missing implementations)
   async getServiceCompletionReportsByService(serviceId: number): Promise<ServiceCompletionReport[]> {
@@ -6312,7 +5891,7 @@ export class DatabaseStorage implements IStorage {
     try {
       return await db.select()
         .from(maintenancePatterns)
-        .where(eq(maintenancePatterns.applianceCategoryId, categoryId))
+        .where(eq(maintenancePatterns.categoryId, categoryId))
         .orderBy(desc(maintenancePatterns.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju pattern-a održavanja po kategoriji:', error);
@@ -6542,7 +6121,7 @@ export class DatabaseStorage implements IStorage {
     try {
       return await db.select()
         .from(aiAnalysisResults)
-        .where(eq(aiAnalysisResults.isSuccessful, true))
+        .where(eq(aiAnalysisResults.success, true))
         .orderBy(desc(aiAnalysisResults.createdAt));
     } catch (error) {
       console.error('Greška pri dohvatanju uspešnih AI analiza:', error);
@@ -6719,31 +6298,6 @@ export class DatabaseStorage implements IStorage {
       console.error('Greška pri brisanju notifikacije:', error);
       return false;
     }
-  }
-
-  // Missing methods for routes compatibility
-  async getCategory(id: number): Promise<ApplianceCategory | undefined> {
-    return this.getApplianceCategory(id);
-  }
-
-  async setSystemSetting(key: string, value: string): Promise<SystemSetting | undefined> {
-    try {
-      // Try to update existing setting first
-      const existing = await this.getSystemSetting(key);
-      if (existing) {
-        return this.updateSystemSetting(key, { value });
-      } else {
-        // Create new setting
-        return this.createSystemSetting({ key, value, category: 'general', description: '' });
-      }
-    } catch (error) {
-      console.error('Greška pri postavljanju system setting-a:', error);
-      return undefined;
-    }
-  }
-
-  async getBusinessPartner(id: number): Promise<User | undefined> {
-    return this.getUser(id);
   }
 
 }

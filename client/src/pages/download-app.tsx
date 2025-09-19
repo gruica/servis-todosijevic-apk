@@ -145,7 +145,7 @@ export default function DownloadAppPage() {
       // Create download link
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'FrigoSistem-v1.0.apk';
+      link.download = 'FrigoSistem-v2025.1.0.apk';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -196,46 +196,6 @@ export default function DownloadAppPage() {
     const subject = encodeURIComponent('FrigoSistem - Mobilna aplikacija');
     const body = encodeURIComponent(`Preuzmite FrigoSistem mobilnu aplikaciju:\n\n${window.location.origin}/download-app\n\nIli direktno preuzmite APK:\n${window.location.origin}/api/downloads/apk`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
-
-  // Download source ZIP for developers
-  const downloadSourceZIP = async () => {
-    toast({
-      title: "Počinje preuzimanje",
-      description: "ZIP sa source kodom se preuzima...",
-      duration: 3000,
-    });
-
-    try {
-      const response = await fetch('/api/downloads/source-zip');
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = 'ServisAplikacija-MacNodeJS.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up
-      window.URL.revokeObjectURL(downloadUrl);
-      
-      toast({
-        title: "Preuzimanje završeno!",
-        description: "ZIP fajl sa source kodom je preuzet (15MB).",
-        duration: 5000,
-      });
-    } catch (error) {
-      console.error('ZIP download failed:', error);
-      toast({
-        title: "Greška pri preuzimanju",
-        description: "Pokušajte ponovo za par sekundi.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
   };
 
   // Get device icon
@@ -423,7 +383,7 @@ export default function DownloadAppPage() {
                     Dodatne opcije:
                   </h4>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <Button
                       onClick={() => copyLink(`${window.location.origin}/download-app`, 'landing')}
                       variant="outline"
@@ -455,17 +415,6 @@ export default function DownloadAppPage() {
                     >
                       <Mail className="h-4 w-4 mr-2" />
                       Pošaljite email
-                    </Button>
-                    
-                    <Button
-                      onClick={downloadSourceZIP}
-                      variant="outline"
-                      size="sm"
-                      className="justify-start bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-700 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-800/30 dark:hover:to-pink-800/30"
-                      data-testid="button-download-zip"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      ZIP source (15MB)
                     </Button>
                   </div>
                 </div>
@@ -570,7 +519,7 @@ export default function DownloadAppPage() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Verzija:</span>
-                  <span className="font-medium">v1.0</span>
+                  <span className="font-medium">v2025.1.0</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Platforma:</span>

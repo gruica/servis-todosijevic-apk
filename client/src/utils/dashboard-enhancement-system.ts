@@ -21,10 +21,7 @@ let enhancementRoot: any = null;
 export function initializeDashboardEnhancement() {
   if (isEnhancementActive) return;
   
-  // PERFORMANCE FIX: Umesto rekurzivnog poziva, ograniči maksimalne pokušaje
-  let attempts = 0;
-  const maxAttempts = 10; // Maksimalno 5 sekundi (10 * 500ms)
-  
+  // Čeka da se Dashboard učita
   const checkForDashboard = () => {
     const dashboardElement = document.querySelector('[class*="min-h-screen"]') || 
                             document.querySelector('main') ||
@@ -32,12 +29,8 @@ export function initializeDashboardEnhancement() {
     
     if (dashboardElement && window.location.pathname === '/') {
       enhanceDashboard();
-    } else if (attempts < maxAttempts) {
-      attempts++;
-      setTimeout(checkForDashboard, 500);
     } else {
-      // Nakon 5 sekundi, prestani da pokušavaš
-      console.warn('Dashboard enhancement: Prekidanje pokušaja nakon maksimalnog broja pokušaja');
+      setTimeout(checkForDashboard, 500);
     }
   };
   
@@ -293,26 +286,9 @@ if (typeof window !== 'undefined') {
     }
   };
   
-  // PERFORMANCE FIX: Umesto setInterval, koristi event listener za routing promene
-  let lastPath = window.location.pathname;
+  setInterval(checkPathChange, 1000);
   
-  // Koristi event listener umesto polling-a
-  window.addEventListener('popstate', () => {
-    if (window.location.pathname !== lastPath) {
-      lastPath = window.location.pathname;
-      checkPathChange();
-    }
-  });
-  
-  // Takođe slušaj hashchange za SPA routing
-  window.addEventListener('hashchange', () => {
-    if (window.location.pathname !== lastPath) {
-      lastPath = window.location.pathname;
-      checkPathChange();
-    }
-  });
-  
-  // Inicijalna proverava (samo jednom)
+  // Inicijalna proverava
   if (window.location.pathname === '/') {
     setTimeout(initializeDashboardEnhancement, 2000);
   }

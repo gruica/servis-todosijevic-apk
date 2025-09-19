@@ -14,30 +14,6 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 32781
-externalPort = 3003
-
-[[ports]]
-localPort = 33199
-externalPort = 3001
-
-[[ports]]
-localPort = 36773
-externalPort = 5173
-
-[[ports]]
-localPort = 41031
-externalPort = 3000
-
-[[ports]]
-localPort = 42067
-externalPort = 4200
-
-[[ports]]
-localPort = 43933
-externalPort = 3002
-
 [workflows]
 runButton = "Project"
 
@@ -66,6 +42,3 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-
-[objectStorage]
-defaultBucketID = "replit-objstore-a8895b5b-7220-4445-8a0f-d5cbe6eea40b"

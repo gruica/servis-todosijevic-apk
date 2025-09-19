@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Trash2, Mail, Globe, Phone, Building, AlertCircle, CheckCircle, Clock, UserPlus, Send, Users, Package, ExternalLink, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Mail, Globe, Phone, Building, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { insertSupplierSchema, supplierPortalUserSchema, procurementRequestSchema, type InsertSupplier, type SupplierPortalUser, type ProcurementRequest } from "@shared/schema";
 
 interface Supplier {
   id: number;
@@ -59,64 +55,8 @@ export default function SuppliersPage() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [selectedTab, setSelectedTab] = useState<'suppliers' | 'orders'>('suppliers');
   
-  // New state for portal user creation
-  const [isPortalUserDialogOpen, setIsPortalUserDialogOpen] = useState(false);
-  const [selectedSupplierForPortal, setSelectedSupplierForPortal] = useState<Supplier | null>(null);
-  
-  // New state for procurement requests
-  const [isProcurementDialogOpen, setIsProcurementDialogOpen] = useState(false);
-  const [selectedSupplierForRequest, setSelectedSupplierForRequest] = useState<Supplier | null>(null);
-  
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Form state management
-  const createSupplierForm = useForm<InsertSupplier>({
-    resolver: zodResolver(insertSupplierSchema),
-    defaultValues: {
-      name: "",
-      companyName: "",
-      email: "",
-      phone: "",
-      address: "",
-      website: "",
-      supportedBrands: "",
-      integrationMethod: "email",
-      paymentTerms: "",
-      deliveryInfo: "",
-      contactPerson: "",
-      isActive: true,
-      priority: 5,
-      averageDeliveryDays: 7,
-      notes: "",
-      portalEnabled: false,
-    }
-  });
-
-  const portalUserForm = useForm<SupplierPortalUser>({
-    resolver: zodResolver(supplierPortalUserSchema),
-    defaultValues: {
-      username: "",
-      fullName: "",
-      email: "",
-      password: "",
-      role: "supplier_complus",
-      phone: "",
-    }
-  });
-
-  const procurementForm = useForm<ProcurementRequest>({
-    resolver: zodResolver(procurementRequestSchema),
-    defaultValues: {
-      partName: "",
-      partNumber: "",
-      quantity: 1,
-      description: "",
-      urgency: "normal",
-      expectedDelivery: "",
-      notes: "",
-    }
-  });
 
   // Fetch suppliers
   const { data: suppliers = [], isLoading: suppliersLoading } = useQuery<Supplier[]>({
@@ -148,7 +88,6 @@ export default function SuppliersPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/suppliers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/suppliers/stats'] });
       setIsCreateDialogOpen(false);
-      createSupplierForm.reset();
       toast({
         title: "Uspeh",
         description: "Dobavljač je uspešno kreiran",
@@ -175,7 +114,6 @@ export default function SuppliersPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/suppliers/stats'] });
       setIsEditDialogOpen(false);
       setEditingSupplier(null);
-      createSupplierForm.reset();
       toast({
         title: "Uspeh",
         description: "Dobavljač je uspešno ažuriran",
@@ -212,58 +150,6 @@ export default function SuppliersPage() {
     },
   });
 
-  // Create portal user mutation
-  const createPortalUserMutation = useMutation({
-    mutationFn: ({ supplierId, data }: { supplierId: number; data: any }) => 
-      apiRequest(`/api/suppliers/${supplierId}/users`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/suppliers'] });
-      setIsPortalUserDialogOpen(false);
-      setSelectedSupplierForPortal(null);
-      portalUserForm.reset();
-      toast({
-        title: "Uspeh",
-        description: "Portal korisnik je uspešno kreiran",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Greška",
-        description: "Greška pri kreiranju portal korisnika",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Send procurement request mutation
-  const sendProcurementRequestMutation = useMutation({
-    mutationFn: ({ supplierId, data }: { supplierId: number; data: any }) => 
-      apiRequest('/api/admin/procurement/requests', {
-        method: 'POST',
-        body: JSON.stringify({ ...data, supplierId }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/supplier-orders'] });
-      setIsProcurementDialogOpen(false);
-      setSelectedSupplierForRequest(null);
-      procurementForm.reset();
-      toast({
-        title: "Uspeh",
-        description: "Zahtev za nabavku je uspešno poslat",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Greška",
-        description: "Greška pri slanju zahteva za nabavku",
-        variant: "destructive",
-      });
-    },
-  });
-
   const filteredSuppliers = suppliers.filter((supplier) =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -291,68 +177,57 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleCreateSupplier = (data: InsertSupplier) => {
+  const handleCreateSupplier = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    
+    const data = {
+      name: formData.get('name') as string,
+      companyName: formData.get('companyName') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string || undefined,
+      address: formData.get('address') as string || undefined,
+      website: formData.get('website') as string || undefined,
+      supportedBrands: formData.get('supportedBrands') as string,
+      integrationMethod: formData.get('integrationMethod') as string,
+      paymentTerms: formData.get('paymentTerms') as string || undefined,
+      deliveryInfo: formData.get('deliveryInfo') as string || undefined,
+      contactPerson: formData.get('contactPerson') as string || undefined,
+      isActive: formData.get('isActive') === 'true',
+      priority: parseInt(formData.get('priority') as string),
+      averageDeliveryDays: parseInt(formData.get('averageDeliveryDays') as string),
+      notes: formData.get('notes') as string || undefined,
+    };
+
     createSupplierMutation.mutate(data);
   };
 
-  const handleEditSupplier = (data: InsertSupplier) => {
+  const handleEditSupplier = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!editingSupplier) return;
+
+    const formData = new FormData(event.currentTarget);
+    
+    const data = {
+      name: formData.get('name') as string,
+      companyName: formData.get('companyName') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string || undefined,
+      address: formData.get('address') as string || undefined,
+      website: formData.get('website') as string || undefined,
+      supportedBrands: formData.get('supportedBrands') as string,
+      integrationMethod: formData.get('integrationMethod') as string,
+      paymentTerms: formData.get('paymentTerms') as string || undefined,
+      deliveryInfo: formData.get('deliveryInfo') as string || undefined,
+      contactPerson: formData.get('contactPerson') as string || undefined,
+      isActive: formData.get('isActive') === 'true',
+      priority: parseInt(formData.get('priority') as string),
+      averageDeliveryDays: parseInt(formData.get('averageDeliveryDays') as string),
+      notes: formData.get('notes') as string || undefined,
+    };
+
     updateSupplierMutation.mutate({ id: editingSupplier.id, data });
   };
-
-  const handleCreatePortalUser = (data: SupplierPortalUser) => {
-    if (!selectedSupplierForPortal) return;
-    const userData = { ...data, supplierId: selectedSupplierForPortal.id };
-    createPortalUserMutation.mutate({ supplierId: selectedSupplierForPortal.id, data: userData });
-  };
-
-  const handleSendProcurementRequest = (data: ProcurementRequest) => {
-    if (!selectedSupplierForRequest) return;
-    sendProcurementRequestMutation.mutate({ supplierId: selectedSupplierForRequest.id, data });
-  };
-
-  // Reset forms when dialogs open/close
-  useEffect(() => {
-    if (isCreateDialogOpen) {
-      createSupplierForm.reset();
-    }
-  }, [isCreateDialogOpen]);
-
-  useEffect(() => {
-    if (isPortalUserDialogOpen) {
-      portalUserForm.reset();
-    }
-  }, [isPortalUserDialogOpen]);
-
-  useEffect(() => {
-    if (isProcurementDialogOpen) {
-      procurementForm.reset();
-    }
-  }, [isProcurementDialogOpen]);
-
-  // Populate form when editing supplier
-  useEffect(() => {
-    if (editingSupplier && isEditDialogOpen) {
-      createSupplierForm.reset({
-        name: editingSupplier.name,
-        companyName: editingSupplier.companyName,
-        email: editingSupplier.email,
-        phone: editingSupplier.phone || "",
-        address: editingSupplier.address || "",
-        website: editingSupplier.website || "",
-        supportedBrands: editingSupplier.supportedBrands,
-        integrationMethod: editingSupplier.integrationMethod,
-        paymentTerms: editingSupplier.paymentTerms || "",
-        deliveryInfo: editingSupplier.deliveryInfo || "",
-        contactPerson: editingSupplier.contactPerson || "",
-        isActive: editingSupplier.isActive,
-        priority: editingSupplier.priority,
-        averageDeliveryDays: editingSupplier.averageDeliveryDays,
-        notes: editingSupplier.notes || "",
-        portalEnabled: false, // Default for edit
-      });
-    }
-  }, [editingSupplier, isEditDialogOpen]);
 
   return (
     <div className="container mx-auto p-6">
@@ -503,74 +378,28 @@ export default function SuppliersPage() {
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      {/* Primary Actions Row */}
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          data-testid={`button-create-portal-user-${supplier.id}`}
-                          onClick={() => {
-                            setSelectedSupplierForPortal(supplier);
-                            setIsPortalUserDialogOpen(true);
-                          }}
-                        >
-                          <UserPlus className="h-4 w-4 mr-1" />
-                          Portal
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="flex-1"
-                          data-testid={`button-send-request-${supplier.id}`}
-                          onClick={() => {
-                            setSelectedSupplierForRequest(supplier);
-                            setIsProcurementDialogOpen(true);
-                          }}
-                        >
-                          <Send className="h-4 w-4 mr-1" />
-                          Zahtev
-                        </Button>
-                      </div>
-                      
-                      {/* Secondary Actions Row */}
-                      <div className="flex justify-between space-x-2">
-                        <div className="flex space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            data-testid={`button-edit-${supplier.id}`}
-                            onClick={() => {
-                              setEditingSupplier(supplier);
-                              setIsEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {supplier.website && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              data-testid={`button-visit-website-${supplier.id}`}
-                              onClick={() => window.open(supplier.website, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid={`button-delete-${supplier.id}`}
-                          onClick={() => {
-                            if (confirm('Da li ste sigurni da želite da obrišete ovog dobavljača?')) {
-                              deleteSupplierMutation.mutate(supplier.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="flex justify-end space-x-2 pt-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingSupplier(supplier);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm('Da li ste sigurni da želite da obrišete ovog dobavljača?')) {
+                            deleteSupplierMutation.mutate(supplier.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -643,271 +472,137 @@ export default function SuppliersPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...createSupplierForm}>
-            <form onSubmit={createSupplierForm.handleSubmit(handleCreateSupplier)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={createSupplierForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Naziv dobavljača*</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-supplier-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="companyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Naziv kompanije*</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-company-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <form onSubmit={handleCreateSupplier} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-name">Naziv dobavljača*</Label>
+                <Input id="create-name" name="name" required />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={createSupplierForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email*</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" data-testid="input-supplier-email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefon</FormLabel>
-                      <FormControl>
-                        <Input {...field} data-testid="input-supplier-phone" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-companyName">Naziv kompanije*</Label>
+                <Input id="create-companyName" name="companyName" required />
               </div>
+            </div>
 
-              <FormField
-                control={createSupplierForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Adresa</FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value || ""} data-testid="input-supplier-address" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-email">Email*</Label>
+                <Input id="create-email" name="email" type="email" required />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-phone">Telefon</Label>
+                <Input id="create-phone" name="phone" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-address">Adresa</Label>
+              <Input id="create-address" name="address" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-website">Website</Label>
+                <Input id="create-website" name="website" type="url" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-contactPerson">Kontakt osoba</Label>
+                <Input id="create-contactPerson" name="contactPerson" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-supportedBrands">Podržani brendovi (JSON format)*</Label>
+              <Input 
+                id="create-supportedBrands" 
+                name="supportedBrands" 
+                placeholder='["Electrolux", "Candy", "Beko"]'
+                required 
               />
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={createSupplierForm.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="url" data-testid="input-supplier-website" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="contactPerson"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kontakt osoba</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} data-testid="input-contact-person" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-integrationMethod">Metod integracije*</Label>
+                <Select name="integrationMethod" defaultValue="email">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="api">API</SelectItem>
+                    <SelectItem value="fax">Fax</SelectItem>
+                    <SelectItem value="manual">Ručno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-priority">Prioritet (1-10)*</Label>
+                <Input 
+                  id="create-priority" 
+                  name="priority" 
+                  type="number" 
+                  min="1" 
+                  max="10" 
+                  defaultValue="5"
+                  required 
                 />
               </div>
-
-              <FormField
-                control={createSupplierForm.control}
-                name="supportedBrands"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Podržani brendovi (JSON format)*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        value={field.value || ""}
-                        placeholder='["Electrolux", "Candy", "Beko"]'
-                        data-testid="input-supported-brands"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={createSupplierForm.control}
-                  name="integrationMethod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Metod integracije*</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-integration-method">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="api">API</SelectItem>
-                          <SelectItem value="fax">Fax</SelectItem>
-                          <SelectItem value="manual">Ručno</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prioritet (1-10)*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number" 
-                          min="1" 
-                          max="10"
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-supplier-priority"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="averageDeliveryDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prosečna dostava (dani)*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number" 
-                          min="1"
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-delivery-days"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-averageDeliveryDays">Prosečna dostava (dani)*</Label>
+                <Input 
+                  id="create-averageDeliveryDays" 
+                  name="averageDeliveryDays" 
+                  type="number" 
+                  min="1" 
+                  defaultValue="7"
+                  required 
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={createSupplierForm.control}
-                  name="paymentTerms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Uslovi plaćanja</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} data-testid="input-payment-terms" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={createSupplierForm.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <input 
-                          type="checkbox" 
-                          checked={field.value}
-                          onChange={field.onChange}
-                          data-testid="checkbox-is-active"
-                        />
-                      </FormControl>
-                      <FormLabel>Aktivan</FormLabel>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-paymentTerms">Uslovi plaćanja</Label>
+                <Input id="create-paymentTerms" name="paymentTerms" />
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <input 
+                  type="checkbox" 
+                  id="create-isActive" 
+                  name="isActive" 
+                  value="true"
+                  defaultChecked
+                />
+                <Label htmlFor="create-isActive">Aktivan</Label>
+              </div>
+            </div>
 
-              <FormField
-                control={createSupplierForm.control}
-                name="deliveryInfo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Informacije o dostavi</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} value={field.value || ""} data-testid="textarea-delivery-info" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="create-deliveryInfo">Informacije o dostavi</Label>
+              <Textarea id="create-deliveryInfo" name="deliveryInfo" />
+            </div>
 
-              <FormField
-                control={createSupplierForm.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Napomene</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} value={field.value || ""} data-testid="textarea-supplier-notes" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <Label htmlFor="create-notes">Napomene</Label>
+              <Textarea id="create-notes" name="notes" />
+            </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Otkaži
-                </Button>
-                <Button type="submit" disabled={createSupplierMutation.isPending}>
-                  {createSupplierMutation.isPending ? "Kreiranje..." : "Kreiraj dobavljača"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Otkaži
+              </Button>
+              <Button type="submit" disabled={createSupplierMutation.isPending}>
+                {createSupplierMutation.isPending ? "Kreiranje..." : "Kreiraj dobavljača"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -922,384 +617,183 @@ export default function SuppliersPage() {
           </DialogHeader>
           
           {editingSupplier && (
-            <Form {...createSupplierForm}>
-              <form onSubmit={createSupplierForm.handleSubmit(handleEditSupplier)} className="space-y-4">
-                <div className="text-sm text-muted-foreground mb-4">
-                  Uređuje se dobavljač: {editingSupplier.name}
-                </div>
-                
-                {/* Use the exact same form structure as create supplier form */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={createSupplierForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Naziv dobavljača*</FormLabel>
-                        <FormControl>
-                          <Input {...field} data-testid="input-edit-supplier-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={createSupplierForm.control}
-                    name="companyName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Naziv kompanije*</FormLabel>
-                        <FormControl>
-                          <Input {...field} data-testid="input-edit-company-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+            <form onSubmit={handleEditSupplier} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Naziv dobavljača*</Label>
+                  <Input 
+                    id="edit-name" 
+                    name="name" 
+                    defaultValue={editingSupplier.name}
+                    required 
                   />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-companyName">Naziv kompanije*</Label>
+                  <Input 
+                    id="edit-companyName" 
+                    name="companyName" 
+                    defaultValue={editingSupplier.companyName}
+                    required 
+                  />
+                </div>
+              </div>
 
-                {/* Copy the rest of the form structure from create supplier form */}
-                <div className="text-xs text-muted-foreground mb-2">
-                  Ostala polja se koriste ista kao kod kreiranja - forma će biti ažurirana automatski
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email*</Label>
+                  <Input 
+                    id="edit-email" 
+                    name="email" 
+                    type="email" 
+                    defaultValue={editingSupplier.email}
+                    required 
+                  />
                 </div>
                 
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                    Otkaži
-                  </Button>
-                  <Button type="submit" disabled={updateSupplierMutation.isPending}>
-                    {updateSupplierMutation.isPending ? "Ažuriranje..." : "Ažuriraj dobavljača"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Telefon</Label>
+                  <Input 
+                    id="edit-phone" 
+                    name="phone" 
+                    defaultValue={editingSupplier.phone}
+                  />
+                </div>
+              </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="edit-address">Adresa</Label>
+                <Input 
+                  id="edit-address" 
+                  name="address" 
+                  defaultValue={editingSupplier.address}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-website">Website</Label>
+                  <Input 
+                    id="edit-website" 
+                    name="website" 
+                    type="url" 
+                    defaultValue={editingSupplier.website}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-contactPerson">Kontakt osoba</Label>
+                  <Input 
+                    id="edit-contactPerson" 
+                    name="contactPerson" 
+                    defaultValue={editingSupplier.contactPerson}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-supportedBrands">Podržani brendovi*</Label>
+                <Input 
+                  id="edit-supportedBrands" 
+                  name="supportedBrands" 
+                  defaultValue={editingSupplier.supportedBrands}
+                  required 
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-integrationMethod">Metod integracije*</Label>
+                  <Select name="integrationMethod" defaultValue={editingSupplier.integrationMethod}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="api">API</SelectItem>
+                      <SelectItem value="fax">Fax</SelectItem>
+                      <SelectItem value="manual">Ručno</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-priority">Prioritet (1-10)*</Label>
+                  <Input 
+                    id="edit-priority" 
+                    name="priority" 
+                    type="number" 
+                    min="1" 
+                    max="10" 
+                    defaultValue={editingSupplier.priority}
+                    required 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-averageDeliveryDays">Prosečna dostava (dani)*</Label>
+                  <Input 
+                    id="edit-averageDeliveryDays" 
+                    name="averageDeliveryDays" 
+                    type="number" 
+                    min="1" 
+                    defaultValue={editingSupplier.averageDeliveryDays}
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-paymentTerms">Uslovi plaćanja</Label>
+                  <Input 
+                    id="edit-paymentTerms" 
+                    name="paymentTerms" 
+                    defaultValue={editingSupplier.paymentTerms}
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="edit-isActive" 
+                    name="isActive" 
+                    value="true"
+                    defaultChecked={editingSupplier.isActive}
+                  />
+                  <Label htmlFor="edit-isActive">Aktivan</Label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-deliveryInfo">Informacije o dostavi</Label>
+                <Textarea 
+                  id="edit-deliveryInfo" 
+                  name="deliveryInfo" 
+                  defaultValue={editingSupplier.deliveryInfo}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">Napomene</Label>
+                <Textarea 
+                  id="edit-notes" 
+                  name="notes" 
+                  defaultValue={editingSupplier.notes}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Otkaži
+                </Button>
+                <Button type="submit" disabled={updateSupplierMutation.isPending}>
+                  {updateSupplierMutation.isPending ? "Čuvanje..." : "Sačuvaj izmene"}
+                </Button>
+              </DialogFooter>
+            </form>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Portal User Dialog */}
-      <Dialog open={isPortalUserDialogOpen} onOpenChange={setIsPortalUserDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Kreiraj portal korisnika</DialogTitle>
-            <DialogDescription>
-              Kreiraj portal korisnika za dobavljača: {selectedSupplierForPortal?.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...portalUserForm}>
-            <form onSubmit={portalUserForm.handleSubmit(handleCreatePortalUser)} className="space-y-4">
-              <FormField
-                control={portalUserForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Korisničko ime*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        placeholder="npr. complus_admin"
-                        data-testid="input-portal-username"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={portalUserForm.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ime i prezime*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        placeholder="Ana Marković"
-                        data-testid="input-portal-fullname"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={portalUserForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        type="email" 
-                        placeholder="admin@supplier.com"
-                        data-testid="input-portal-email"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={portalUserForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Lozinka*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        type="password" 
-                        placeholder="Minimum 6 karaktera"
-                        data-testid="input-portal-password"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={portalUserForm.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tip portala*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-portal-role">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="supplier_complus">Supplier ComPlus</SelectItem>
-                        <SelectItem value="supplier_beko">Supplier Beko</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={portalUserForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefon</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        value={field.value || ""}
-                        placeholder="+381 64 123 4567"
-                        data-testid="input-portal-phone"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsPortalUserDialogOpen(false)}
-                data-testid="button-cancel-portal-user"
-              >
-                Otkaži
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createPortalUserMutation.isPending}
-                data-testid="button-create-portal-user"
-              >
-                {createPortalUserMutation.isPending ? "Kreiranje..." : "Kreiraj korisnika"}
-              </Button>
-            </DialogFooter>
-          </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Send Procurement Request Dialog */}
-      <Dialog open={isProcurementDialogOpen} onOpenChange={setIsProcurementDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Pošalji zahtev za nabavku</DialogTitle>
-            <DialogDescription>
-              Pošalji zahtev za rezervne delove dobavljaču: {selectedSupplierForRequest?.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...procurementForm}>
-            <form onSubmit={procurementForm.handleSubmit(handleSendProcurementRequest)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={procurementForm.control}
-                  name="partName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Naziv dela*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field}
-                          placeholder="Pumpa za mašinu za veš"
-                          data-testid="input-part-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={procurementForm.control}
-                  name="partNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Broj dela</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field}
-                          value={field.value || ""}
-                          placeholder="P123456789"
-                          data-testid="input-part-number"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={procurementForm.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Količina*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field}
-                          type="number" 
-                          min="1"
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-quantity"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={procurementForm.control}
-                  name="urgency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hitnost*</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-urgency">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="normal">Normalno</SelectItem>
-                          <SelectItem value="high">Visoko</SelectItem>
-                          <SelectItem value="urgent">Hitno</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={procurementForm.control}
-                name="expectedDelivery"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Očekivani datum dostave</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field}
-                        value={field.value || ""}
-                        type="date" 
-                        data-testid="input-expected-delivery"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={procurementForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Opis</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field}
-                        value={field.value || ""}
-                        placeholder="Dodatne informacije o zahtevu..."
-                        data-testid="textarea-description"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={procurementForm.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Napomene</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field}
-                        value={field.value || ""}
-                        placeholder="Interne napomene..."
-                        data-testid="textarea-notes"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsProcurementDialogOpen(false)}
-                data-testid="button-cancel-request"
-              >
-                Otkaži
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={sendProcurementRequestMutation.isPending}
-                data-testid="button-send-request"
-              >
-                {sendProcurementRequestMutation.isPending ? "Slanje..." : "Pošalji zahtev"}
-              </Button>
-            </DialogFooter>
-          </form>
-          </Form>
         </DialogContent>
       </Dialog>
     </div>

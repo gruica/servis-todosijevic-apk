@@ -3,13 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FrigidgeIcon, WasherIcon, AirConditionerIcon, StoveIcon } from "@/components/icons";
 import { useLocation, Link } from "wouter";
-import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon, Package } from "lucide-react";
+import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon } from "lucide-react";
 
 export default function HomePage() {
-  console.log("🟢 HOMEPAGE IS LOADING!");
   const [, navigate] = useLocation();
-  
-  console.log("🟢 navigate function:", navigate);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -36,7 +33,7 @@ export default function HomePage() {
             </div>
 
             {/* Kartice za brzi pristup */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
               <ServiceCard 
                 icon={<UsersIcon className="h-8 w-8 text-blue-500" />}
                 title="Admin pristup" 
@@ -82,15 +79,6 @@ export default function HomePage() {
                 textColor="text-indigo-700"
                 role="complus"
                 isSpecial={true}
-              />
-              <ServiceCard 
-                icon={<Package className="h-8 w-8 text-teal-500" />}
-                title="Dobavljači rezervnih delova" 
-                description="Portal za dobavljače - pregled i upravljanje porudžbinama" 
-                onClick={() => navigate("/supplier-auth")}
-                primaryColor="bg-teal-100 hover:bg-teal-200"
-                textColor="text-teal-700"
-                role="supplier"
               />
             </div>
 
@@ -234,22 +222,8 @@ interface ServiceCardProps {
 }
 
 function ServiceCard({ icon, title, description, onClick, primaryColor, textColor, role, isSpecial }: ServiceCardProps) {
-  const handleClick = () => {
-    console.log(`🟢 CLICKED: ${title} (role: ${role})`);
-    console.log(`🟢 onClick function:`, onClick);
-    try {
-      onClick();
-      console.log(`✅ onClick executed successfully for ${title}`);
-    } catch (error) {
-      console.error(`❌ Error in onClick for ${title}:`, error);
-    }
-  };
-
   return (
-    <Card 
-      className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''} cursor-pointer`} 
-      onClick={handleClick}
-    >
+    <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''}`} onClick={onClick}>
       <CardHeader className="pb-2">
         <div className="flex items-center space-x-2 mb-2">
           {icon}
@@ -266,6 +240,7 @@ function ServiceCard({ icon, title, description, onClick, primaryColor, textColo
         <Button 
           variant="outline" 
           className={`w-full text-white bg-blue-600 hover:bg-blue-700 border-blue-600`}
+          onClick={onClick}
         >
           Prijavi se kao {role === 'complus' ? 'Com Plus Admin' : role}
         </Button>

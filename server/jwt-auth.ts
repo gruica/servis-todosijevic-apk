@@ -67,20 +67,7 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
   // Get full user data from database to include technicianId
   const user = await storage.getUser(payload.userId);
   if (!user) {
-    console.error(`❌ [JWT-AUTH] User not found in database for ID: ${payload.userId}`);
     return res.status(401).json({ error: 'Korisnik nije pronađen' });
-  }
-  
-  // DEBUG: Log user data for supplier role troubleshooting
-  if (user.role?.startsWith('supplier_')) {
-    console.log(`🔍 [JWT-AUTH-DEBUG] Supplier user loaded from DB:`, {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      supplierId: user.supplierId,
-      fullName: user.fullName,
-      email: user.email
-    });
   }
   
   // Attach user info to request
@@ -91,20 +78,8 @@ export async function jwtAuthMiddleware(req: Request, res: Response, next: NextF
     technicianId: user.technicianId,
     fullName: user.fullName,
     email: user.email,
-    companyName: user.companyName,
-    supplierId: user.supplierId // CRITICAL: Add supplierId for supplier authorization
+    companyName: user.companyName
   };
-  
-  // Additional DEBUG: Log the final req.user object for suppliers
-  if ((req as any).user.role?.startsWith('supplier_')) {
-    console.log(`🔍 [JWT-AUTH-DEBUG] req.user object created:`, {
-      id: (req as any).user.id,
-      username: (req as any).user.username,
-      role: (req as any).user.role,
-      supplierId: (req as any).user.supplierId,
-      requestUrl: req.url
-    });
-  }
   
   next();
 }
@@ -118,38 +93,14 @@ export function requireRole(roles: string | string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
     
-    // DEBUG: Log role validation details
-    console.log(`🔍 [REQUIRE-ROLE-DEBUG] Role validation check:`, {
-      requestUrl: req.url,
-      requestMethod: req.method,
-      userExists: !!user,
-      userId: user?.id,
-      username: user?.username,
-      userRole: user?.role,
-      userRoleType: typeof user?.role,
-      allowedRoles: allowedRoles,
-      roleMatch: user?.role ? allowedRoles.includes(user.role) : false,
-      roleIncludes: allowedRoles.map(role => ({ role, matches: user?.role === role }))
-    });
-    
     if (!user) {
-      console.error(`❌ [REQUIRE-ROLE-DEBUG] No user object found for ${req.url}`);
       return res.status(401).json({ error: 'Potrebna je prijava' });
     }
     
     if (!allowedRoles.includes(user.role)) {
-      console.error(`❌ [REQUIRE-ROLE-DEBUG] Role authorization failed:`, {
-        requestUrl: req.url,
-        userId: user.id,
-        username: user.username,
-        actualRole: user.role,
-        allowedRoles: allowedRoles,
-        roleComparisons: allowedRoles.map(role => `'${role}' === '${user.role}' = ${role === user.role}`)
-      });
       return res.status(403).json({ error: 'Nemate dozvolu za ovu akciju' });
     }
     
-    console.log(`✅ [REQUIRE-ROLE-DEBUG] Role authorization success for ${user.username} (${user.role}) accessing ${req.url}`);
     next();
   };
 }

@@ -11,9 +11,3 @@ session-data/
 *.session
 .env.local
 .env.production
-
-# Testing artifacts - cookies and debug files
-*_cookies.txt
-cookies.txt
-debug_*.html
-debug_*.js

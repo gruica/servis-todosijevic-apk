@@ -7,8 +7,8 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 const authenticateJWT = jwtAuthMiddleware;
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
-import { db } from "./db";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
+import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -33,11 +33,43 @@ import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webho
 import QRCode from 'qrcode';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
-// CONSOLIDATED ENTERPRISE MONITORING & HEALTH CHECK SYSTEM
-// Cached health response object for performance optimization
-let cachedHealthResponse: any = null;
-let cacheTimestamp = 0;
-const HEALTH_CACHE_TTL = 30000; // 30 seconds cache TTL
+// ENTERPRISE MONITORING & HEALTH CHECK
+async function setupEnterpriseHealthEndpoint(app: Express) {
+  app.get("/api/health", async (req, res) => {
+    try {
+      const startTime = Date.now();
+      const { checkDatabaseHealth } = await import('./db.js');
+      const dbHealth = await checkDatabaseHealth();
+      
+      const systemHealth = {
+        status: dbHealth.healthy ? 'healthy' : 'unhealthy',
+        timestamp: new Date().toISOString(),
+        database: {
+          healthy: dbHealth.healthy,
+          responseTime: `${dbHealth.responseTime}ms`,
+          activeConnections: dbHealth.activeConnections
+        },
+        performance: {
+          healthCheckTime: `${Date.now() - startTime}ms`,
+          uptime: `${Math.floor(process.uptime())}s`,
+          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+        },
+        version: {
+          node: process.version,
+          app: 'FrigoSistem_v2025.1.0_Enterprise'
+        }
+      };
+      
+      res.status(dbHealth.healthy ? 200 : 503).json(systemHealth);
+    } catch (error) {
+      res.status(503).json({
+        status: 'unhealthy',
+        error: 'Health check failed',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+}
 
 // Mapiranje status kodova u opisne nazive statusa
 const STATUS_DESCRIPTIONS: Record<string, string> = {
@@ -56,35 +88,6 @@ function generateStatusUpdateMessage(serviceId: number, newStatus: string, techn
   const technicianPart = technicianName ? ` Serviser: ${technicianName}.` : '';
   return `Servis #${serviceId}: ${statusDescription}.${technicianPart} Frigo Sistem Todosijević`;
 }
-
-// ===== JWT USER CACHE SYSTEM =====
-// JWT User cache system for performance optimization
-const jwtUserCache = new Map();
-const JWT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-// Cache invalidation helper function
-function invalidateUserCache(userId: number) {
-  const cacheKey = `jwt-user-${userId}`;
-  jwtUserCache.delete(cacheKey);
-  console.log(`🗑️ [JWT-CACHE] Invalidated cache for user ID: ${userId}`);
-}
-
-// Auto-cleanup expired cache entries (runs every 5 minutes)
-setInterval(() => {
-  const now = Date.now();
-  let cleanedCount = 0;
-  
-  for (const [key, value] of jwtUserCache.entries()) {
-    if ((now - value.timestamp) >= JWT_CACHE_TTL) {
-      jwtUserCache.delete(key);
-      cleanedCount++;
-    }
-  }
-  
-  if (cleanedCount > 0) {
-    console.log(`🧹 [JWT-CACHE] Auto-cleanup: Removed ${cleanedCount} expired cache entries`);
-  }
-}, 5 * 60 * 1000); // Run every 5 minutes
 
 // Email postavke schema
 const emailSettingsSchema = z.object({
@@ -132,98 +135,13 @@ const catalogUpload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  // ===== CONSOLIDATED HEALTH & MONITORING SYSTEM =====
-  
-  // Lightweight HEAD handler for external monitoring systems
-  app.head('/api', (req, res) => {
-    res.status(200).end();
-  });
-  
-  // Main health endpoint with caching and optional DB check
-  app.get("/api/health", async (req, res) => {
-    try {
-      const startTime = Date.now();
-      const now = Date.now();
-      
-      // Return cached response if still valid
-      if (cachedHealthResponse && (now - cacheTimestamp) < HEALTH_CACHE_TTL) {
-        return res.status(200).json(cachedHealthResponse);
-      }
-      
-      // Basic health status
-      const health: any = {
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        uptime: `${Math.floor(process.uptime())}s`,
-        version: "2025.1.0",
-        responseTime: `${Date.now() - startTime}ms`
-      };
-
-      // Optional DB health check (only if db=true parameter)
-      if (req.query.db === 'true') {
-        try {
-          const { checkDatabaseHealth } = await import('./db.js');
-          const dbHealth = await checkDatabaseHealth();
-          health.database = {
-            status: dbHealth.healthy ? "connected" : "error",
-            responseTime: `${dbHealth.responseTime}ms`,
-            activeConnections: dbHealth.activeConnections
-          };
-          if (!dbHealth.healthy) {
-            health.status = "degraded";
-          }
-        } catch (error) {
-          health.database = { status: "error", error: "Connection failed" };
-          health.status = "degraded";
-        }
-      }
-
-      // Memory usage metrics
-      const memUsage = process.memoryUsage();
-      health.memory = {
-        used: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
-        total: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
-        percentage: `${Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)}%`
-      };
-      
-      // Update response time
-      health.responseTime = `${Date.now() - startTime}ms`;
-      
-      // Cache the response
-      cachedHealthResponse = health;
-      cacheTimestamp = now;
-      
-      res.status(200).json(health);
-    } catch (error) {
-      console.error("❌ [HEALTH] Health check error:", error);
-      res.status(503).json({
-        status: "error",
-        timestamp: new Date().toISOString(),
-        error: "Health check failed",
-        message: (error as Error).message || "Unknown error"
-      });
-    }
-  });
-  
-  // Status endpoint alias - redirects to main health endpoint
-  app.get("/api/status", (req, res) => {
-    res.redirect(301, "/api/health");
-  });
-
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Security audit log
-      console.log(`📦 [MAIN SPARE-PARTS] Admin ${req.user?.username} traži GLAVNU listu rezervnih delova - SA ENRICHED PODACIMA!`);
-      
-      // Prevent caching to ensure fresh data with new enriched structure
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
+      console.log(`[SECURITY AUDIT] Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
       
       const orders = await storage.getAllSparePartOrders();
-      console.log(`📦 [MAIN SPARE-PARTS] Vraćam ${orders.length} order-a sa enriched podacima`);
-      
       res.json(orders);
     } catch (error) {
       console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
@@ -244,12 +162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/spare-parts/all-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       console.log("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
-      
-      // Prevent caching to ensure fresh data with new enriched structure
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
       const orders = await storage.getAllRequestsSparePartOrders();
       res.json(orders);
     } catch (error) {
@@ -258,7 +170,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== SUPPLIER PORTAL SISTEM ZA REZERVNE DELOVE =====
+  // ===== COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM =====
+  
+  // ComPlus brendovi za automatsku detekciju - STVARNI PODACI
+  const complusBrands = [
+    'Electrolux', 'Elica', 'Candy', 'Hoover', 'Turbo Air'
+  ];
+
+  // Mapa dobavljača sa prioritetom za ComPlus brend - AŽURIRANO SA STVARNIM PODACIMA
+  const supplierEmailConfig = new Map([
+    // 🎯 COMPLUS - GLAVNA DESTINACIJA ZA REZERVNE DELOVE
+    ["ComPlus", "servis@complus.me"],
+    ["ComPlus Servis", "servis@complus.me"],
+    ["servis@complus.me", "servis@complus.me"],
+    
+    // ComPlus povezani brendovi - STVARNI PODACI
+    ["Electrolux", "servis@complus.me"], // ComPlus brend
+    ["Electrolux Service", "servis@complus.me"], // ComPlus brend
+    ["Elica", "servis@complus.me"], // ComPlus brend
+    ["Elica Service", "servis@complus.me"], // ComPlus brend
+    ["Candy", "servis@complus.me"], // ComPlus brend
+    ["Candy Service", "servis@complus.me"], // ComPlus brend
+    ["Hoover", "servis@complus.me"], // ComPlus brend
+    ["Hoover Service", "servis@complus.me"], // ComPlus brend
+    ["Turbo Air", "servis@complus.me"], // ComPlus brend
+    ["TurboAir", "servis@complus.me"], // ComPlus brend
+    ["Turbo Air Service", "servis@complus.me"], // ComPlus brend
+    
+    // Lokalni ComPlus partneri
+    ["TehnoPlus", "robert.ivezic@tehnoplus.me"],
+    ["Frigo Sistem Todosijević", "gruica@frigosistemtodosijevic.com"],
+    
+    // Ostali dobavljači (backup za ne-ComPlus brendove)
+    ["Bosch Service", "servis@bosch.rs"],
+    ["Siemens Service", "delovi@siemens.rs"],
+    ["Gorenje Servis", "rezervni.delovi@gorenje.com"],
+    ["Whirlpool Parts", "parts@whirlpool.rs"],
+    ["Samsung Service", "spareparts@samsung.rs"],
+    ["LG Electronics", "parts@lg.rs"],
+    ["Beko Servis", "rezervni@beko.rs"],
+    ["Miele Service", "parts@miele.rs"]
+  ]);
+
+  /**
+   * Provera da li je uređaj ComPlus brenda na osnovu proizvođača
+   */
+  function isComplusBrand(manufacturerName: string): boolean {
+    if (!manufacturerName) return false;
+    return complusBrands.some(brand => 
+      manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
+      brand.toLowerCase().includes(manufacturerName.toLowerCase())
+    );
+  }
+
+  /**
+   * Dohvata email adresu dobavljača na osnovu naziva - OPTIMIZOVANO ZA COMPLUS
+   */
+  function getSupplierEmailByName(supplierName: string): string | null {
+    if (!supplierName) return null;
+    
+    // Prva provera - direktno poklapanje
+    const directMatch = supplierEmailConfig.get(supplierName);
+    if (directMatch) return directMatch;
+    
+    // Druga provera - case-insensitive poklapanje
+    const normalizedName = supplierName.toLowerCase().trim();
+    for (const [name, email] of supplierEmailConfig.entries()) {
+      if (name.toLowerCase() === normalizedName) {
+        return email;
+      }
+    }
+    
+    // Treća provera - parcijalno poklapanje (sadrži reči)
+    for (const [name, email] of supplierEmailConfig.entries()) {
+      const nameWords = name.toLowerCase().split(' ');
+      const supplierWords = normalizedName.split(' ');
+      
+      const hasCommonWord = nameWords.some(nameWord => 
+        supplierWords.some(supplierWord => 
+          nameWord.includes(supplierWord) || supplierWord.includes(nameWord)
+        )
+      );
+      
+      if (hasCommonWord) return email;
+    }
+    
+    return null; // Dobavljač nije pronađen
+  }
 
   // ===== NOVI OPTIMIZOVANI WORKFLOW ZA REZERVNE DELOVE =====
   
@@ -271,10 +269,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const requestData = {
         ...req.body,
-        status: "requested" as "requested",
-        technicianId: req.user.technicianId || req.user!.id,
-        requesterType: "technician" as "technician",
-        requesterUserId: req.user.technicianId || req.user!.id,
+        status: "requested",
+        technicianId: req.user.technicianId || req.user.id,
+        requesterType: "technician",
+        requesterUserId: req.user.technicianId || req.user.id,
         requesterName: req.user.fullName || req.user.username
       };
 
@@ -319,17 +317,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
-      // Dohvati dodatne podatke za email - deklaracija u širem scope-u
-      let serviceData = null;
-      let clientData = null;
-      let applianceData = null;
-      let technicianData = null;
-      let manufacturerData = null;
-      let categoryData = null;
-      let manufacturerName = ''; // Declare manufacturerName in wider scope
-
-      // NOVO: SUPPLIER PORTAL SISTEM - Kreiraj porudžbinu u supplier portalu
+      // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
       try {
+        // Dohvati dodatne podatke za email
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
+
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
           if (serviceData) {
@@ -352,83 +349,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        manufacturerName = manufacturerData?.name || '';
+        const manufacturerName = manufacturerData?.name || '';
+        const isComPlus = isComplusBrand(manufacturerName);
 
-        console.log(`📦 [SUPPLIER PORTAL] Proizvođač: "${manufacturerName}"`);
+        console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
 
-        // Pronađi dobavljača koji podržava ovaj brend
-        const allSuppliers = await storage.getAllSuppliers();
-        const availableSuppliers = allSuppliers.filter(supplier => {
-          if (!supplier.isActive || !supplier.portalEnabled) return false;
+        // 🎯 COMPLUS BREND - Koristi postojeći ComPlus email sistem
+        if (isComPlus) {
+          console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
-          // Ako nema podržane brendove, prihvati sve brendove
-          if (!supplier.supportedBrands) return true;
-          
-          try {
-            const supportedBrands = JSON.parse(supplier.supportedBrands);
-            return supportedBrands.some((brand: string) => 
-              manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
-              brand.toLowerCase().includes(manufacturerName.toLowerCase())
-            );
-          } catch {
-            // Ako ne može da parsira JSON, prihvati sve brendove
-            return true;
+          const deviceType = categoryData?.name || 'Uređaj';
+          const complusEmailSent = await emailService.sendComplusSparePartOrder(
+            existingOrder.serviceId || 0,
+            clientData?.fullName || 'N/A',
+            technicianData?.fullName || 'N/A',
+            deviceType,
+            manufacturerName,
+            existingOrder.partName,
+            existingOrder.partNumber || 'N/A',
+            urgency,
+            existingOrder.description
+          );
+
+          if (complusEmailSent) {
+            console.log(`🎯 [COMPLUS EMAIL] ✅ ComPlus email uspešno poslat na servis@complus.me za deo: ${existingOrder.partName}`);
+          } else {
+            console.error(`🎯 [COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
           }
-        }).sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sortiraj po prioritetu
-        
-        if (availableSuppliers.length > 0) {
-          // Uzmi prvog dostupnog dobavljača (sortirano po prioritetu)
-          const supplier = availableSuppliers[0];
+        } 
+        // 📧 OSTALI BRENDOVI - Koristi opšti supplier sistem
+        else {
+          const supplierEmail = getSupplierEmailByName(supplierName);
           
-          console.log(`📦 [SUPPLIER PORTAL] Kreiram porudžbinu za dobavljača: ${supplier.name} (prioritet: ${supplier.priority})`);
+          if (supplierEmail) {
+            // Pripremi podatke za opšti email template
+            const orderData = {
+              partName: existingOrder.partName,
+              partNumber: existingOrder.partNumber,
+              quantity: existingOrder.quantity,
+              urgency: urgency,
+              description: existingOrder.description,
+              serviceId: existingOrder.serviceId,
+              clientName: clientData?.fullName,
+              clientPhone: clientData?.phone,
+              applianceModel: applianceData?.model,
+              applianceSerialNumber: applianceData?.serialNumber,
+              manufacturerName: manufacturerName,
+              categoryName: applianceData?.categoryName || serviceData?.categoryName,
+              technicianName: technicianData?.name,
+              orderDate: new Date(),
+              adminNotes: adminNotes
+            };
 
-          // Kreiraj supplier order u portalu
-          const supplierOrderData = {
-            supplierId: supplier.id,
-            sparePartOrderId: orderId,
-            status: 'pending' as const,
-            emailContent: `Porudžbina rezervnog dela: ${existingOrder.partName} (${existingOrder.partNumber || 'N/A'})`,
-          };
+            // Pošalji email opštem dobavljaču
+            const emailSent = await emailService.sendSparePartOrderToSupplier(
+              { email: supplierEmail, name: supplierName },
+              orderData
+            );
 
-          const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
-          
-          // Kreiraj event u supplier portalu
-          const eventData = {
-            orderId: supplierOrder.id,
-            eventType: 'status_change' as const,
-            eventStatus: 'pending',
-            eventDescription: `Nova porudžbina kreirana od strane administratora: ${req.user.fullName || req.user.username}`,
-            eventNotes: adminNotes || `Deo: ${existingOrder.partName}, Količina: ${existingOrder.quantity}, Hitnost: ${urgency}`,
-            performedBy: req.user.id,
-            performedByRole: req.user.role as any,
-            performedByName: req.user.fullName || req.user.username,
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            relatedServiceId: existingOrder.serviceId,
-            priority: urgency,
-            isSystemGenerated: false,
-            communicationChannel: 'portal'
-          };
-
-          await storage.createSupplierOrderEvent(eventData);
-
-          console.log(`✅ [SUPPLIER PORTAL] Uspešno kreirana porudžbina #${supplierOrder.id} za dobavljača ${supplier.name}`);
-          console.log(`✅ [SUPPLIER PORTAL] Porudžbina će biti vidljiva u supplier portalu za ${supplier.name}`);
-        } else {
-          console.error(`❌ [SUPPLIER PORTAL] Nije pronađen aktivan dobavljač sa omogućenim portalom za brend: ${manufacturerName}`);
-          
-          // Fallback: Ažuriraj status na needs_manual_assignment ako nema dobavljača
-          await storage.updateSparePartOrderStatus(orderId, {
-            status: "pending",
-            adminNotes: (adminNotes || '') + `\n[SISTEM] Potrebno je ručno dodeljivanje dobavljača - nije pronađen aktivan dobavljač za brend: ${manufacturerName}`
-          });
+            if (emailSent) {
+              console.log(`📧 [GENERAL EMAIL] ✅ Email poslat dobavljaču ${supplierName} (${supplierEmail})`);
+            } else {
+              console.error(`📧 [GENERAL EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
+            }
+          } else {
+            console.log(`📧 [GENERAL EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
+          }
         }
-
-      } catch (portalError) {
-        console.error("❌ [SUPPLIER PORTAL] Greška pri kreiranju porudžbine u portalu:", portalError);
-        // Portal greška ne prekida workflow - admin je svakako poručio deo
+      } catch (emailError) {
+        console.error("📧 [EMAIL ERROR] Greška pri slanju email-a:", emailError);
+        // Email greška ne prekida workflow - admin je svakako poručio deo
       }
 
+      // 📱 SMS PROTOKOL ZA PORUČIVANJE DELOVA
+      try {
+        const { createProtocolSMSService } = await import('./sms-communication-service.js');
+        
+        // Dobijamo SMS konfiguraciju iz baze
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        
+        // Kreiranje Protocol SMS Service instance
+        const protocolSMS = createProtocolSMSService({
+          apiKey: settingsMap.sms_mobile_api_key,
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        }, storage);
+
+        if (existingOrder.serviceId && clientData && technicianData) {
+          const smsData = {
+            serviceId: existingOrder.serviceId,
+            clientId: serviceData?.clientId || 0,
+            clientName: clientData.fullName,
+            clientPhone: clientData.phone,
+            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceModel: applianceData?.model || 'N/A',
+            manufacturerName: manufacturerName,
+            technicianId: technicianData.id,
+            technicianName: technicianData.name,
+            technicianPhone: technicianData.phone || '067123456',
+            partName: existingOrder.partName,
+            estimatedDate: estimatedDelivery || '3-5 dana',
+            createdBy: req.user.fullName || req.user.username
+          };
+
+          console.log(`📱 [ORDER-SMS-PROTOCOL] Šaljem SMS protokol za poručeni deo ID: ${orderId}`);
+          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
+          
+          if (smsResult.success) {
+            console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
+          } else {
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+          }
+        }
+      } catch (smsError) {
+        console.error("📱 [ORDER-SMS-PROTOCOL ERROR] Greška pri slanju SMS protokola:", smsError);
+        // SMS greška ne prekida workflow
+      }
 
       res.json({ 
         success: true, 
@@ -455,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "waiting_delivery",
         actualCost,
         adminNotes: adminNotes || null,
-        receivedBy: req.user!.id,
+        receivedBy: req.user.id,
         receivedAt: new Date()
       });
 
@@ -482,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "available",
-        madeAvailableBy: req.user!.id,
+        madeAvailableBy: req.user.id,
         madeAvailableAt: new Date()
       });
 
@@ -531,114 +569,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ [APPROVE-PENDING → ADMIN_ORDERED] Zahtev ${orderId} uspešno odobren i automatski poručen`);
 
-      // AUTOMATSKI EMAIL/SMS SISTEM - Dohvati podatke u širem scope-u
-      let serviceData = null;
-      let clientData = null;
-      let applianceData = null;
-      let technicianData = null;
-      let manufacturerData = null;
-      let categoryData = null;
-      let manufacturerName = '';
+      // AUTOMATSKI EMAIL/SMS SISTEM (kopiran iz order endpoint-a)
+      try {
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
 
-      if (existingOrder.serviceId) {
-        serviceData = await storage.getService(existingOrder.serviceId);
-        if (serviceData) {
-          if (serviceData.clientId) {
-            clientData = await storage.getClient(serviceData.clientId);
-          }
-          if (serviceData.applianceId) {
-            applianceData = await storage.getAppliance(serviceData.applianceId);
-            // Properly get manufacturer and category data
-            if (applianceData?.manufacturerId) {
-              manufacturerData = await storage.getManufacturer(applianceData.manufacturerId);
+        if (existingOrder.serviceId) {
+          serviceData = await storage.getService(existingOrder.serviceId);
+          if (serviceData) {
+            if (serviceData.clientId) {
+              clientData = await storage.getClient(serviceData.clientId);
             }
-            if (applianceData?.categoryId) {
-              categoryData = await storage.getApplianceCategory(applianceData.categoryId);
+            if (serviceData.applianceId) {
+              applianceData = await storage.getAppliance(serviceData.applianceId);
+              // Properly get manufacturer and category data
+              if (applianceData?.manufacturerId) {
+                manufacturerData = await storage.getManufacturer(applianceData.manufacturerId);
+              }
+              if (applianceData?.categoryId) {
+                categoryData = await storage.getApplianceCategory(applianceData.categoryId);
+              }
             }
-          }
-          if (serviceData.technicianId) {
-            technicianData = await storage.getTechnician(serviceData.technicianId);
+            if (serviceData.technicianId) {
+              technicianData = await storage.getTechnician(serviceData.technicianId);
+            }
           }
         }
+
+        const manufacturerName = manufacturerData?.name || '';
+        const isComPlus = isComplusBrand(manufacturerName);
+
+        console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
+
+        // 🎯 COMPLUS BREND - Automatski email na servis@complus.me
+        if (isComPlus) {
+          console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
+          
+          const deviceType = categoryData?.name || 'Uređaj';
+          const complusEmailSent = await emailService.sendComplusSparePartOrder(
+            existingOrder.serviceId || 0,
+            clientData?.fullName || 'N/A',
+            technicianData?.fullName || 'N/A',
+            deviceType,
+            manufacturerName,
+            existingOrder.partName,
+            existingOrder.partNumber || 'N/A',
+            'normal', // urgency default
+            existingOrder.description
+          );
+
+          if (complusEmailSent) {
+            console.log(`🎯 [AUTO-COMPLUS EMAIL] ✅ ComPlus email uspešno poslat za odobreni deo: ${existingOrder.partName}`);
+          } else {
+            console.error(`🎯 [AUTO-COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
+          }
+        }
+      } catch (emailError) {
+        console.error("📧 [AUTO-EMAIL ERROR] Greška pri automatskom slanju email-a:", emailError);
+        // Email greška ne prekida workflow
       }
 
-      manufacturerName = manufacturerData?.name || '';
-
-      // SUPPLIER PORTAL SISTEM - Kreiraj porudžbinu u supplier portalu
+      // 📱 AUTOMATSKI SMS PROTOKOL ZA PORUČIVANJE DELOVA
       try {
-        console.log(`📦 [SUPPLIER PORTAL] Proizvođač: "${manufacturerName}"`);
-
-        // Pronađi dobavljača koji podržava ovaj brend
-        const allSuppliers = await storage.getAllSuppliers();
-        const availableSuppliers = allSuppliers.filter(supplier => {
-          if (!supplier.isActive || !supplier.portalEnabled) return false;
-          
-          // Ako nema podržane brendove, prihvati sve brendove
-          if (!supplier.supportedBrands) return true;
-          
-          try {
-            const supportedBrands = JSON.parse(supplier.supportedBrands);
-            return supportedBrands.some((brand: string) => 
-              manufacturerName.toLowerCase().includes(brand.toLowerCase()) ||
-              brand.toLowerCase().includes(manufacturerName.toLowerCase())
-            );
-          } catch {
-            // Ako ne može da parsira JSON, prihvati sve brendove
-            return true;
-          }
-        }).sort((a, b) => (b.priority || 0) - (a.priority || 0)); // Sortiraj po prioritetu
+        const { createProtocolSMSService } = await import('./sms-communication-service.js');
         
-        if (availableSuppliers.length > 0) {
-          // Uzmi prvog dostupnog dobavljača (sortirano po prioritetu)
-          const supplier = availableSuppliers[0];
-          
-          console.log(`📦 [SUPPLIER PORTAL] Kreiram porudžbinu za dobavljača: ${supplier.name} (prioritet: ${supplier.priority})`);
+        // Dobijamo SMS konfiguraciju iz baze
+        const settingsArray = await storage.getSystemSettings();
+        const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
+        
+        // Kreiranje Protocol SMS Service instance
+        const protocolSMS = createProtocolSMSService({
+          apiKey: settingsMap.sms_mobile_api_key,
+          baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
+          senderId: settingsMap.sms_mobile_sender_id || null,
+          enabled: settingsMap.sms_mobile_enabled === 'true'
+        }, storage);
 
-          // Kreiraj supplier order u portalu
-          const supplierOrderData = {
-            supplierId: supplier.id,
-            sparePartOrderId: orderId,
-            status: 'pending' as const,
-            emailContent: `Porudžbina rezervnog dela (odobrena): ${existingOrder.partName} (${existingOrder.partNumber || 'N/A'})`,
+        if (existingOrder.serviceId && clientData && technicianData) {
+          const smsData = {
+            serviceId: existingOrder.serviceId,
+            clientId: serviceData?.clientId || 0,
+            clientName: clientData.fullName,
+            clientPhone: clientData.phone,
+            deviceType: applianceData?.categoryName || 'Uređaj',
+            deviceModel: applianceData?.model || 'N/A',
+            manufacturerName: manufacturerName,
+            technicianId: technicianData.id,
+            technicianName: technicianData.name,
+            technicianPhone: technicianData.phone || '067123456',
+            partName: existingOrder.partName,
+            estimatedDate: '3-5 dana',
+            createdBy: req.user.fullName || req.user.username
           };
 
-          const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
+          console.log(`📱 [SMS-PARTS-ORDERED] Šaljem SMS protokol za poručene delove`);
+          const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
           
-          // Kreiraj event u supplier portalu
-          const eventData = {
-            orderId: supplierOrder.id,
-            eventType: 'status_change' as const,
-            eventStatus: 'pending',
-            eventDescription: `Odobrena porudžbina kreirana od strane administratora: ${req.user.fullName || req.user.username}`,
-            eventNotes: `Deo: ${existingOrder.partName}, Količina: ${existingOrder.quantity}, Hitnost: normal`,
-            performedBy: req.user.id,
-            performedByRole: req.user.role as any,
-            performedByName: req.user.fullName || req.user.username,
-            supplierId: supplier.id,
-            supplierName: supplier.name,
-            relatedServiceId: existingOrder.serviceId,
-            priority: 'normal',
-            isSystemGenerated: false,
-            communicationChannel: 'portal'
-          };
-
-          await storage.createSupplierOrderEvent(eventData);
-
-          console.log(`✅ [SUPPLIER PORTAL] Uspešno kreirana porudžbina #${supplierOrder.id} za dobavljača ${supplier.name}`);
-          console.log(`✅ [SUPPLIER PORTAL] Porudžbina će biti vidljiva u supplier portalu za ${supplier.name}`);
-        } else {
-          console.error(`❌ [SUPPLIER PORTAL] Nije pronađen aktivan dobavljač sa omogućenim portalom za brend: ${manufacturerName}`);
-          
-          // Fallback: Ažuriraj status na needs_manual_assignment ako nema dobavljača
-          await storage.updateSparePartOrderStatus(orderId, {
-            status: "admin_ordered",
-            adminNotes: (existingOrder.adminNotes || '') + `\n[SISTEM] Potrebno je ručno dodeljivanje dobavljača - nije pronađen aktivan dobavljač za brend: ${manufacturerName}`
-          });
+          if (smsResult.success) {
+            console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
+          } else {
+            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+          }
         }
-
-      } catch (portalError) {
-        console.error("❌ [SUPPLIER PORTAL] Greška pri kreiranju porudžbine u portalu:", portalError);
-        // Portal greška ne prekida workflow - admin je svakako odobrio deo
+      } catch (smsError) {
+        console.error("📱 [SMS-PARTS-ORDERED ERROR] Greška pri slanju SMS protokola:", smsError);
+        // SMS greška ne prekida workflow
       }
 
       res.json({ 
@@ -665,7 +704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "consumed",
-        consumedBy: req.user.technicianId || req.user!.id,
+        consumedBy: req.user.technicianId || req.user.id,
         consumedAt: new Date(),
         consumedForServiceId: consumedForServiceId || null
       });
@@ -686,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/spare-parts/status/:status", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
 
-      const status = req.params.status as any; // Status parameter from URL
+      const status = req.params.status;
       const orders = await storage.getSparePartOrdersByStatus(status);
       
       res.json(orders);
@@ -703,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Samo serviseri mogu da pristupe svojim zahtevima" });
       }
 
-      const technicianId = req.user.technicianId || req.user!.id;
+      const technicianId = req.user.technicianId || req.user.id;
       const requests = await storage.getTechnicianSparePartRequests(technicianId);
       
       res.json(requests);
@@ -976,35 +1015,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download source ZIP endpoint for developers
-  app.get("/api/downloads/source-zip", async (req, res) => {
-    try {
-      const zipPath = path.join(process.cwd(), 'android/app/src/main/assets/public/ServisAplikacija-MacNodeJS.zip');
-      
-      // Check if ZIP exists
-      await fs.access(zipPath);
-      
-      const stat = await fs.stat(zipPath);
-      
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Length', stat.size.toString());
-      res.setHeader('Content-Disposition', 'attachment; filename="ServisAplikacija-MacNodeJS.zip"');
-      res.setHeader('Cache-Control', 'no-cache');
-      
-      // Send file
-      res.sendFile(zipPath);
-      
-      console.log(`📦 ZIP source preuzet - veličina: ${(stat.size / (1024 * 1024)).toFixed(1)}MB`);
-      
-    } catch (error) {
-      console.error('ZIP download error:', error);
-      res.status(404).json({ 
-        error: "ZIP fajl nije pronađen",
-        message: "Molimo kontaktirajte administratora."
-      });
-    }
-  });
-
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
 
@@ -1045,7 +1055,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: "1.0.0"
+    });
+  });
   
+  // Alternative health check route
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "ok", 
+      api: "ready",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
   
   // Inicijalizacija SMS servisa
   let smsService: SMSCommunicationService | null = null;
@@ -1165,138 +1192,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // JEDNOSTAVAN LOGOUT - automatski briše token i redirect
-  app.get("/api/simple-logout", (req, res) => {
-    res.send(`
-      <script>
-        localStorage.removeItem('auth_token');
-        localStorage.clear();
-        sessionStorage.clear();
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        });
-        alert('✅ LOGOUT USPEŠAN! Idemo na homepage...');
-        window.location.href = '/';
-      </script>
-    `);
-  });
-
-  // LOGOUT ENDPOINT - direktno briše JWT token
-  app.get("/api/logout", (req, res) => {
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Logout - Frigo Sistem</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-          .container { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; max-width: 500px; margin: 0 auto; }
-          button { padding: 15px 30px; font-size: 18px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
-          button:hover { background: #c0392b; }
-          .success { color: #2ecc71; font-weight: bold; }
-          .status { margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.2); border-radius: 5px; }
-        </style>
-        <script>
-          function logout() {
-            document.getElementById('result').innerHTML = '<p>⏳ Izvršavam logout...</p>';
-            localStorage.removeItem('auth_token');
-            localStorage.clear();
-            sessionStorage.clear();
-            document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); });
-            document.getElementById('result').innerHTML = '<p class="success">✅ USPEŠNO SI SE ODJAVIL!</p><p>Sada možeš pristupiti login formama na homepage-u.</p>';
-            setTimeout(() => checkAuthStatus(), 500);
-          }
-          function checkAuthStatus() {
-            const token = localStorage.getItem('auth_token');
-            const statusEl = document.getElementById('auth-status');
-            if (token) {
-              statusEl.innerHTML = '<span style="color: #e74c3c;">PRIJAVLJEN</span> (supplier_beko)';
-            } else {
-              statusEl.innerHTML = '<span style="color: #2ecc71;">ODJAVLJEN</span>';
-              document.getElementById('logout-btn').disabled = true;
-              document.getElementById('logout-btn').innerHTML = '✅ VEĆ SI ODJAVLJEN';
-            }
-          }
-          function goToHomepage() { window.location.href = '/'; }
-          window.onload = function() { checkAuthStatus(); }
-        </script>
-      </head>
-      <body>
-        <div class="container">
-          <h1>🔓 Logout iz sistema</h1>
-          <div class="status" id="status">Status: <span id="auth-status">Proverava se...</span></div>
-          <button onclick="logout()" id="logout-btn">🚪 IZLOGUJ SE (supplier_beko)</button>
-          <button onclick="goToHomepage()" style="background: #3498db;">🏠 IDI NA HOMEPAGE</button>
-          <div id="result" style="margin-top: 20px;"></div>
-        </div>
-      </body>
-      </html>
-    `);
-  });
-
-  // JWT User info endpoint - OPTIMIZED WITH CACHING
-  app.get("/api/jwt-user", jwtAuth, async (req, res) => {
+  // JWT User info endpoint
+  app.get("/api/jwt-user", jwtAuthMiddleware, async (req, res) => {
     try {
-      const userId = req.user?.id;
-      const cacheKey = `jwt-user-${userId}`;
-      const now = Date.now();
-      
-      // Check cache first
-      const cached = jwtUserCache.get(cacheKey);
-      if (cached && (now - cached.timestamp) < JWT_CACHE_TTL) {
-        console.log(`⚡ [JWT-CACHE] Cache hit for user ID: ${userId} (saved DB query)`);
-        return res.json(cached.data);
-      }
-      
-      // Only hit DB when cache miss or expired
-      console.log(`🔄 [JWT-CACHE] Cache miss for user ID: ${userId} - fetching from DB`);
+      const userId = (req as any).user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
-        return res.status(401).json({ error: "Korisnik nije pronađen" });
+        return res.status(404).json({ error: "Korisnik nije pronađen" });
       }
       
-      const userData = {
+      res.json({
         id: user.id,
         username: user.username,
         fullName: user.fullName,
         role: user.role,
         email: user.email,
         phone: user.phone,
-        technicianId: user.technicianId,
-        supplierId: user.supplierId
-      };
-      
-      // Cache the result
-      jwtUserCache.set(cacheKey, {
-        data: userData,
-        timestamp: now
+        technicianId: user.technicianId
       });
-      
-      console.log(`💾 [JWT-CACHE] Cached user data for ID: ${userId}`);
-      res.json(userData);
     } catch (error) {
-      console.error("❌ [JWT-USER] Greška:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju korisničkih podataka" });
-    }
-  });
-
-  // JWT User cache invalidation endpoint
-  app.post("/api/jwt-user/invalidate", jwtAuth, async (req, res) => {
-    try {
-      const { userId } = req.body;
-      const requestUserId = req.user?.id;
-      
-      // Security check: users can only invalidate their own cache
-      if (userId !== requestUserId) {
-        return res.status(403).json({ error: "Možete invalidirati samo svoj cache" });
-      }
-      
-      invalidateUserCache(userId);
-      res.json({ success: true, message: "Cache uspešno invalidiran" });
-    } catch (error) {
-      console.error("❌ [JWT-CACHE-INVALIDATE] Greška:", error);
-      res.status(500).json({ error: "Greška pri invalidaciji cache-a" });
+      console.error("JWT User info error:", error);
+      res.status(500).json({ error: "Greška pri dobijanju korisničkih podataka" });
     }
   });
 
@@ -1406,9 +1323,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalValue: parseFloat(totalValue) || 0,
         clientName: clientName || "",
         applianceModel: applianceModel || "",
-        status: "pending" as "pending",
+        status: "pending",
         createdAt: new Date().toISOString(),
-        requesterType: "admin" as "admin",
+        requesterType: "admin",
         requesterUserId: reqUser.id,
         requesterName: reqUser.fullName || reqUser.username
       };
@@ -2180,7 +2097,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/business/services", jwtAuth, async (req, res) => {
     try {
       // Koristi user ID iz JWT tokena umesto query parametra
-      if (!req.user || req.user!.role !== 'business_partner') {
+      if (!req.user || req.user.role !== 'business_partner') {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
@@ -2216,7 +2133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             quantity: part.quantity,
             productCode: (part as any).productCode || 'N/A',
             urgency: part.urgency,
-            // warrantyStatus: part.warrantyStatus, // Field doesn't exist on SparePartOrder
+            warrantyStatus: part.warrantyStatus,
             status: part.status,
             orderDate: part.createdAt,
             estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
@@ -2236,7 +2153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             (service as any).assignedAt ? { date: (service as any).assignedAt, event: `Dodeljen serviseru ${technician?.fullName}`, status: 'assigned' } : null,
             service.scheduledDate ? { date: service.scheduledDate, event: 'Zakazan termin', status: 'scheduled' } : null,
             (service as any).startedAt ? { date: (service as any).startedAt, event: 'Servis započet', status: 'in_progress' } : null,
-            service.completedDate ? { date: service.completedDate, event: 'Servis završen', status: 'completed' } : null
+            service.completedAt ? { date: service.completedAt, event: 'Servis završen', status: 'completed' } : null
           ].filter(Boolean),
           isCompleted: service.status === 'completed',
           totalCost: service.cost || 0,
@@ -2260,7 +2177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceId = parseInt(req.params.id);
       
       // Samo business partneri mogu pristupiti ovim podacima
-      if (!req.user || req.user!.role !== 'business_partner') {
+      if (!req.user || req.user.role !== 'business_partner') {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
       }
       
@@ -2272,7 +2189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Provera da li servis pripada poslovnom partneru
-      if (!req.user || service.businessPartnerId !== req.user!.id) {
+      if (!req.user || service.businessPartnerId !== req.user.id) {
         return res.status(403).json({ error: "Nemate pristup ovom servisu" });
       }
       
@@ -2309,7 +2226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: part.quantity,
           productCode: (part as any).productCode || 'N/A',
           urgency: part.urgency,
-          // warrantyStatus: part.warrantyStatus, // Field doesn't exist on SparePartOrder
+          warrantyStatus: part.warrantyStatus,
           status: part.status,
           orderDate: part.createdAt,
           estimatedDeliveryDate: (part as any).estimatedDeliveryDate || null,
@@ -2897,7 +2814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       const whatsappResult = await whatsappBusinessAPIService.sendServiceStatusUpdateNotification({
                         clientPhone: client.phone,
                         clientName: client.fullName,
-                        serviceId: id,
+                        serviceId: parseInt(id),
                         newStatus: statusDescription,
                         technicianName: technicianName,
                         notes: clientEmailContent
@@ -2961,7 +2878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         const completionResult = await whatsappBusinessAPIService.notifyServiceCompleted({
                           clientPhone: client.phone,
                           clientName: client.fullName,
-                          serviceId: Number(id),
+                          serviceId: parseInt(id),
                           technicianName: technicianName,
                           workPerformed: clientEmailContent,
                           warrantyStatus: updatedService.warrantyStatus
@@ -3435,8 +3352,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   newStatus: 'completed',
                   statusDescription: 'Završen',
                   technicianNotes: `${workPerformed} | Cena: ${cost || 'Besplatno'} RSD`,
-                  businessPartnerPhone: undefined,
-                  businessPartnerName: undefined
+                  businessPartnerPhone: null,
+                  businessPartnerName: null
                 });
                 
                 console.log(`[SERVICE COMPLETE] ✅ SMS poslat klijentu ${client.fullName} (${client.phone})`);
@@ -4375,9 +4292,9 @@ Frigo Sistem`;
       console.log(`[SERVICES BY TECHNICIANS] Vraćam ${services.length} servisa sa podacima:`, 
         services.slice(0, 1).map(s => ({
           id: s.id,
-          clientId: s.clientId,
-          applianceId: s.applianceId,
-          technicianId: s.technicianId,
+          clientName: s.clientName,
+          applianceName: s.applianceName,
+          technicianName: s.technicianName,
           status: s.status
         }))
       );
@@ -4634,9 +4551,9 @@ Frigo Sistem`;
             manufacturerId: parseInt(manufacturerId),
             model: model.trim(),
             serialNumber: serialNumber?.trim() || null,
-            purchaseDate: undefined, // Business partner ne šalje datum kupovine
-            warrantyExpires: undefined, // Neće biti postavljeno inicijalno
-            notes: undefined
+            purchaseDate: null, // Business partner ne šalje datum kupovine
+            warrantyExpires: null, // Neće biti postavljeno inicijalno
+            notes: null
           };
           
           console.log("Kreiram novi uređaj:", applianceData);
@@ -4818,7 +4735,7 @@ Frigo Sistem`;
           address: client.address || "",
           city: client.city || "",
           totalAppliances: clientAppliances.length,
-          registrationDate: new Date().toISOString()
+          registrationDate: client.createdAt || new Date().toISOString()
         },
         serviceStatistics: {
           totalServices: clientServices.length,
@@ -4892,16 +4809,16 @@ Frigo Sistem`;
       }
 
       // Povuci korisničke podatke da bi dobio technicianId
-      const userDetails = await storage.getUser(req.user!.id);
+      const userDetails = await storage.getUser(req.user.id);
       
       // Za servisere je potreban technicianId, za poslovne partnere nije
-      if (req.user!.role === "technician" && (!userDetails || !userDetails.technicianId)) {
+      if (req.user.role === "technician" && (!userDetails || !userDetails.technicianId)) {
         return res.status(403).json({ error: "Nemate ulogu servisera" });
       }
 
       // Za poslovne partnere, proveri da li su oni kreatori servisa
-      if (req.user!.role === "business_partner") {
-        if (service.businessPartnerId !== req.user!.id) {
+      if (req.user.role === "business_partner") {
+        if (service.businessPartnerId !== req.user.id) {
           return res.status(403).json({ error: "Možete dopunjavati samo servise koje ste vi kreirali" });
         }
       }
@@ -5022,10 +4939,10 @@ Frigo Sistem`;
         urgency: req.body.urgency || 'normal',
         warrantyStatus: 'van garancije' as const, // Default warranty status for mobile requests
         serviceId: serviceId,
-        status: "pending" as "pending", // Koristi pending status koji admin očekuje
-        technicianId: req.user.technicianId || req.user!.id,
-        requesterType: "technician" as "technician",
-        requesterUserId: req.user.technicianId || req.user!.id,
+        status: "pending" as const, // Koristi pending status koji admin očekuje
+        technicianId: req.user.technicianId || req.user.id,
+        requesterType: "technician",
+        requesterUserId: req.user.technicianId || req.user.id,
         requesterName: req.user.fullName || req.user.username
       };
 
@@ -5308,8 +5225,8 @@ Frigo Sistem`;
 
       const client = await storage.getClient(service.clientId);
       const appliance = await storage.getAppliance(service.applianceId);
-      const category = appliance ? await storage.getCategory(appliance.categoryId) : null;
-      const manufacturer = appliance ? await storage.getManufacturer(appliance.manufacturerId) : null;
+      const category = await storage.getCategory(appliance.categoryId);
+      const manufacturer = await storage.getManufacturer(appliance.manufacturerId);
       const technician = service.technicianId ? await storage.getTechnician(service.technicianId) : null;
 
       const whatsappService = await getWhatsAppWebService();
@@ -5322,10 +5239,10 @@ Frigo Sistem`;
 
       const serviceData = {
         serviceId: service.id.toString(),
-        clientName: client?.fullName || 'N/A',
-        clientPhone: client?.phone || '',
+        clientName: client.fullName,
+        clientPhone: client.phone,
         deviceType: category?.name || 'Uređaj',
-        deviceModel: appliance?.model || 'N/A',
+        deviceModel: appliance.model,
         technicianName: technician?.fullName || 'Serviser',
         completedDate: new Date().toLocaleDateString('sr-RS'),
         usedParts: service.usedParts || undefined,
@@ -5336,10 +5253,10 @@ Frigo Sistem`;
       };
 
       // 1. OBAVEŠTENJE KLIJENTU (ako ima telefon)
-      if (client?.phone) {
+      if (client.phone) {
         try {
           const success = await whatsappService.notifyServiceCompleted(serviceData);
-          notificationResults.client = { success, error: success ? null : 'Slanje neuspešno' as string | null };
+          notificationResults.client = { success, error: success ? null : 'Slanje neuspešno' };
           console.log(`📱 [WHATSAPP AUTO] Klijent obaveštenje: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
         } catch (error: any) {
           notificationResults.client = { success: false, error: error.message };
@@ -5350,7 +5267,7 @@ Frigo Sistem`;
       // 2. OBAVEŠTENJE ADMINU
       try {
         const success = await whatsappService.notifyAdminServiceCompleted(serviceData);
-        notificationResults.admin = { success, error: success ? null : 'Slanje neuspešno' as string | null };
+        notificationResults.admin = { success, error: success ? null : 'Slanje neuspešno' };
         console.log(`🎯 [WHATSAPP AUTO] Admin obaveštenje: ${success ? 'USPEŠNO' : 'NEUSPEŠNO'}`);
       } catch (error: any) {
         notificationResults.admin = { success: false, error: error.message };
@@ -5364,7 +5281,7 @@ Frigo Sistem`;
           if (businessPartner && businessPartner.phone) {
             const success = await whatsappService.notifyBusinessPartnerServiceCompleted({
               partnerPhone: businessPartner.phone,
-              partnerName: (businessPartner as any).name ?? businessPartner.fullName ?? 'Partner',
+              partnerName: businessPartner.name,
               serviceId: serviceData.serviceId,
               clientName: serviceData.clientName,
               deviceType: serviceData.deviceType,
@@ -5408,7 +5325,7 @@ Frigo Sistem`;
         mandatoryResults = await whatsappService.notifyAllMandatoryNumbers({
           serviceId: serviceData.serviceId,
           clientName: serviceData.clientName,
-          clientPhone: client?.phone || undefined,
+          clientPhone: client.phone || undefined,
           deviceType: serviceData.deviceType,
           deviceModel: serviceData.deviceModel,
           technicianName: serviceData.technicianName,
@@ -5443,7 +5360,7 @@ Frigo Sistem`;
       console.error('❌ [WHATSAPP AUTO] Greška pri automatskim obaveštenjima:', error);
       res.status(500).json({ 
         error: 'Greška pri automatskim WhatsApp obaveštenjima',
-        details: (error as Error).message 
+        details: error.message 
       });
     }
   });
@@ -5593,7 +5510,7 @@ Frigo Sistem`;
       
       // Kreiranje Protocol SMS Service instance sa ispravnom konfiguracijom
       const protocolSMS = createProtocolSMSService({
-        apiKey: settingsMap.sms_mobile_api_key || '',
+        apiKey: settingsMap.sms_mobile_api_key,
         baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
         senderId: settingsMap.sms_mobile_sender_id || null,
         enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -5668,7 +5585,7 @@ Frigo Sistem`;
       console.error('❌ [PROTOKOL TEST] Greška pri testiranju SMS protokola:', error);
       res.status(500).json({ 
         error: 'Greška pri testiranju SMS protokola',
-        details: (error as Error).message 
+        details: error.message 
       });
     }
   });
@@ -5695,7 +5612,7 @@ Frigo Sistem`;
       const settingsArray = await storage.getSystemSettings();
       const settingsMap = Object.fromEntries(settingsArray.map(s => [s.key, s.value]));
       const smsConfig = {
-        apiKey: settingsMap.sms_mobile_api_key || '',
+        apiKey: settingsMap.sms_mobile_api_key,
         baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
         senderId: settingsMap.sms_mobile_sender_id || null,
         enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -5757,7 +5674,7 @@ Frigo Sistem`;
       console.error('❌ Greška pri testiranju SMS segmentacije:', error);
       res.status(500).json({ 
         error: 'Greška pri testiranju SMS segmentacije',
-        details: (error as Error).message 
+        details: error.message 
       });
     }
   });
@@ -5844,7 +5761,7 @@ Frigo Sistem`;
           status, 
           adminNotes,
           processedAt: new Date(),
-          processedBy: req.user!.id 
+          processedBy: req.user.id 
         })
         .where(eq(dataDeletionRequests.id, parseInt(id)))
         .returning();
@@ -5962,7 +5879,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri ažuriranju konfiguracije',
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -5999,7 +5916,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri dobijanju konfiguracije',
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6023,7 +5940,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       console.error('❌ [WHATSAPP BUSINESS API] Greška pri testiranju konekcije:', error);
       res.status(500).json({ 
         error: 'Greška pri testiranju konekcije',
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6054,7 +5971,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju poruke',
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6107,7 +6024,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       }
 
       // Check authorization
-      const accessCheck = await checkServicePhotoAccess(req.user!.id, req.user!.role, serviceId);
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, serviceId);
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama ovog servisa" });
       }
@@ -6132,7 +6049,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         // Map photoUrl to photoPath and photoCategory to category
         photoPath: req.body.photoUrl || req.body.photoPath,
         category: req.body.photoCategory || req.body.category,
-        uploadedBy: req.user!.id
+        uploadedBy: req.user.id
       };
 
       // Remove unmapped fields to avoid validation issues
@@ -6146,7 +6063,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       }
 
       // Check authorization
-      const accessCheck = await checkServicePhotoAccess(req.user!.id, req.user!.role, parseInt(serviceId));
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, parseInt(serviceId));
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: "Nemate dozvolu za dodavanje fotografija ovom servisu" });
       }
@@ -6162,7 +6079,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
           validatedData.photoPath,
           {
-            owner: req.user!.id.toString(),
+            owner: req.user.id.toString(),
             visibility: "private", // Privatne fotografije servisa
           },
         );
@@ -6176,8 +6093,8 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       res.status(201).json(newPhoto);
     } catch (error) {
       console.error("Error creating service photo:", error);
-      if (error && typeof error === 'object' && 'name' in error && error.name === "ZodError") {
-        return res.status(400).json({ error: "Neispravni podaci", details: (error as any).errors });
+      if (error.name === "ZodError") {
+        return res.status(400).json({ error: "Neispravni podaci", details: error.errors });
       }
       res.status(500).json({ error: "Neuspešno kreiranje fotografije servisa" });
     }
@@ -6198,7 +6115,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       }
 
       // Check authorization
-      const accessCheck = await checkServicePhotoAccess(req.user!.id, req.user!.role, photo.serviceId);
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, photo.serviceId);
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: "Nemate dozvolu za brisanje ove fotografije" });
       }
@@ -6208,8 +6125,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         try {
           const { ObjectStorageService } = await import("./objectStorage");
           const objectStorageService = new ObjectStorageService();
-          // Note: deleteObject method may not exist - using alternative approach
-          console.log(`🗑️ [PHOTOS] Skipping object storage deletion for: ${photo.photoPath}`);
+          await objectStorageService.deleteObject(photo.photoPath);
           console.log(`🗑️ [PHOTOS] Deleted object from storage: ${photo.photoPath}`);
         } catch (storageError) {
           console.error("Error deleting from object storage:", storageError);
@@ -6245,7 +6161,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       }
 
       // Check authorization
-      const accessCheck = await checkServicePhotoAccess(req.user!.id, req.user!.role, serviceId);
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, serviceId);
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: "Nemate dozvolu za pristup fotografijama ovog servisa" });
       }
@@ -6272,7 +6188,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       }
 
       // Check authorization
-      const accessCheck = await checkServicePhotoAccess(req.user!.id, req.user!.role, photo.serviceId);
+      const accessCheck = await checkServicePhotoAccess(req.user.id, req.user.role, photo.serviceId);
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: "Nemate dozvolu za pristup ovoj fotografiji" });
       }
@@ -6487,7 +6403,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         services: billingServices,
         servicesByBrand: servicesByBrand,
         totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + Number(s.cost || 0), 0),
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
         autoDetectedCount: billingServices.filter(s => s.isAutoDetected).length,
         detectionSummary: {
           withCompletedDate: billingServices.filter(s => !s.isAutoDetected).length,
@@ -6496,7 +6412,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
           brand,
           count: servicesByBrand[brand].length,
-          cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0)
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
         }))
       });
 
@@ -6623,7 +6539,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       const brandBreakdown = Object.keys(servicesByBrand).map(brand => ({
         brand,
         count: servicesByBrand[brand].length,
-        cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0)
+        cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
       }));
 
       // Kreiranje months array - dodano jer je potrebno za response
@@ -6651,7 +6567,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
         services: billingServices,
         servicesByBrand,
         totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + Number(s.cost || 0), 0),
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
         autoDetectedCount: 0, // Regular mod nikad nema auto-detektovanih
         detectionSummary: {
           withCompletedDate: billingServices.length,
@@ -6918,7 +6834,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri pagination testu',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6938,7 +6854,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri health monitoring testu',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6958,7 +6874,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri auto recovery testu',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -6978,7 +6894,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri comprehensive test suite',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -7021,7 +6937,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri verifikaciji postojećih funkcija',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -7097,7 +7013,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       res.status(500).json({ 
         error: 'Greška pri slanju test poruke',
         success: false,
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -7121,18 +7037,18 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       
       // Get spare parts for all services
       const serviceIds = clientServices.map(s => s.id);
-      let allSpareParts: any[] = [];
+      let allSpareParts = [];
       
       try {
         for (const serviceId of serviceIds) {
           const serviceParts = await storage.getSparePartsByService(serviceId) || [];
-          allSpareParts = allSpareParts.concat(serviceParts.map((part: any) => ({
+          allSpareParts = allSpareParts.concat(serviceParts.map(part => ({
             ...part,
             serviceId: serviceId
           })));
         }
       } catch (sparePartsError) {
-        console.log('[ENHANCED CLIENT ANALYSIS] Spare parts nisu dostupni:', (sparePartsError as Error).message);
+        console.log('[ENHANCED CLIENT ANALYSIS] Spare parts nisu dostupni:', sparePartsError.message);
         allSpareParts = [];
       }
       
@@ -7150,7 +7066,10 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
           ...service,
           spareParts: serviceParts || [], // Osiguraj da spareParts uvek postoji
           cost: service.cost ? service.cost.toString() : undefined,
-          warrantyStatus: service.warrantyStatus || 'van garancije'
+          warrantyStatus: service.warrantyStatus || 'van garancije',
+          applianceModel: service.applianceModel || '',
+          manufacturerName: service.manufacturerName || '',
+          technicianName: service.technicianName || ''
         };
       });
       
@@ -7182,8 +7101,8 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       // Enhanced appliances data with proper structure
       const enhancedAppliances = clientAppliances.map(appliance => ({
         id: appliance.id || 0,
-        categoryId: appliance.categoryId,
-        manufacturerId: appliance.manufacturerId,
+        categoryName: appliance.categoryName || 'Nepoznata kategorija',
+        manufacturerName: appliance.manufacturerName || 'Nepoznat proizvođač',
         model: appliance.model || 'Nepoznat model',
         serialNumber: appliance.serialNumber || '',
         purchaseDate: appliance.purchaseDate || undefined,
@@ -7245,7 +7164,19 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
           costOptimization: totalCost > 50000 ? 
             'Visoki troškovi servisa - razmotriti preventivno održavanje' : 
             'Troškovi servisa su u normalnom opsegu', 
-          technicianPreference: 'Podaci o serviserima se mogu videti iz technicianId polja'
+          technicianPreference: (() => {
+            const technicianCounts = {};
+            enhancedServices.forEach(service => {
+              if (service.technicianName) {
+                technicianCounts[service.technicianName] = (technicianCounts[service.technicianName] || 0) + 1;
+              }
+            });
+            const mostFrequentTechnician = Object.entries(technicianCounts)
+              .sort(([,a], [,b]) => b - a)[0];
+            return mostFrequentTechnician ? 
+              `Najčešći serviser: ${mostFrequentTechnician[0]} (${mostFrequentTechnician[1]} servisa)` : 
+              'Nema dovoljno podataka o serviserima';
+          })()
         }
       };
       
@@ -7542,8 +7473,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   // GET /api/whatsapp-business/templates - Dobij listu dostupnih template-a
   app.get('/api/whatsapp-business/templates', jwtAuth, requireRole(['admin', 'technician']), async (req, res) => {
     try {
-      const { whatsappBusinessAPIService } = await import('./whatsapp-business-api-service.js');
-      const result = await whatsappBusinessAPIService.getMessageTemplates();
+      const result = await whatsAppBusinessService.getMessageTemplates();
       
       if (result.success) {
         res.json({
@@ -7797,7 +7727,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       res.status(500).json({
         success: false,
         error: 'Test WhatsApp poziv nije uspeo',
-        details: (error as Error).message
+        details: error.message
       });
     }
   });
@@ -7855,7 +7785,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const { filename } = req.params;
       
       // Provjeri admin dozvolu
-      if (!req.user || req.user!.role !== 'admin') {
+      if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Admin dozvola potrebna' });
       }
       
@@ -7907,7 +7837,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.error('❌ [ADMIN] Greška pri čitanju statičke stranice:', error);
       res.status(500).json({ 
         error: 'Server greška pri čitanju stranice',
-        details: (error as Error).message 
+        details: error.message 
       });
     }
   });
@@ -7918,7 +7848,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const { content } = req.body;
       
       // Provjeri admin dozvolu
-      if (!req.user || req.user!.role !== 'admin') {
+      if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Admin dozvola potrebna' });
       }
       
@@ -7950,7 +7880,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         await fs.writeFile(backupPath, existingContent, 'utf8');
         console.log(`💾 [ADMIN] Kreiran backup: ${backupPath}`);
       } catch (backupError) {
-        console.log(`⚠️ [ADMIN] Ne mogu kreirati backup za ${filename}:`, (backupError as Error).message);
+        console.log(`⚠️ [ADMIN] Ne mogu kreirati backup za ${filename}:`, backupError.message);
       }
       
       // Sačuvaj novi sadržaj
@@ -7973,7 +7903,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         res.status(500).json({ 
           error: 'Ne mogu sačuvati fajl',
           filename,
-          details: (writeError as Error).message 
+          details: writeError.message 
         });
       }
       
@@ -7981,7 +7911,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.error('❌ [ADMIN] Greška pri ažuriranju statičke stranice:', error);
       res.status(500).json({ 
         error: 'Server greška pri ažuriranju stranice',
-        details: (error as Error).message 
+        details: error.message 
       });
     }
   });
@@ -8374,7 +8304,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         services: billingServices,
         servicesByBrand: servicesByBrand,
         totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + Number(s.cost || 0), 0),
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
         autoDetectedCount: billingServices.filter(s => s.isAutoDetected).length,
         detectionSummary: {
           withCompletedDate: billingServices.filter(s => !s.isAutoDetected).length,
@@ -8383,7 +8313,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         brandBreakdown: Object.keys(servicesByBrand).map(brand => ({
           brand,
           count: servicesByBrand[brand].length,
-          cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0)
+          cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
         }))
       });
 
@@ -8512,7 +8442,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const brandBreakdown = Object.keys(servicesByBrand).map(brand => ({
         brand,
         count: servicesByBrand[brand].length,
-        cost: servicesByBrand[brand].reduce((sum, s) => sum + Number(s.cost || 0), 0)
+        cost: servicesByBrand[brand].reduce((sum, s) => sum + (s.cost || 0), 0)
       }));
 
       // Kreiranje months array - dodano jer je potrebno za response
@@ -8540,7 +8470,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         services: billingServices,
         servicesByBrand,
         totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + Number(s.cost || 0), 0),
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
         autoDetectedCount: 0, // Regular mod nikad nema auto-detektovanih
         detectionSummary: {
           withCompletedDate: billingServices.length,
@@ -8760,7 +8690,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const brandBreakdown = Object.entries(servicesByBrand).map(([brand, services]) => ({
         brand,
         count: services.length,
-        cost: services.reduce((sum, s) => sum + Number(s.cost || 0), 0)
+        cost: services.reduce((sum, s) => sum + (s.cost || 0), 0)
       }));
 
       const months = [
@@ -8778,7 +8708,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         services: billingServices,
         servicesByBrand,
         totalServices: billingServices.length,
-        totalCost: billingServices.reduce((sum, s) => sum + Number(s.cost || 0), 0),
+        totalCost: billingServices.reduce((sum, s) => sum + (s.cost || 0), 0),
         autoDetectedCount: autoDetectedWarrantyCount,
         overriddenCount: overriddenCount,
         detectionSummary: {
@@ -8802,1059 +8732,5 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
-
-  // ===============================
-  // 🏪 SUPPLIER MANAGEMENT ROUTES
-  // ===============================
-
-  // Get all suppliers
-  app.get("/api/admin/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži listu svih dobavljača`);
-      const suppliers = await storage.getAllSuppliers();
-      res.json(suppliers);
-    } catch (error) {
-      console.error("[SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
-    }
-  });
-
-  // Get active suppliers only
-  app.get("/api/admin/suppliers/active", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži aktivne dobavljače`);
-      const suppliers = await storage.getActiveSuppliers();
-      res.json(suppliers);
-    } catch (error) {
-      console.error("[SUPPLIERS] Greška pri dohvatanju aktivnih dobavljača:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju aktivnih dobavljača" });
-    }
-  });
-
-  // Get supplier by ID
-  app.get("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži dobavljača sa ID: ${id}`);
-      
-      const supplier = await storage.getSupplier(id);
-      
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-      
-      res.json(supplier);
-    } catch (error) {
-      console.error("[SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
-    }
-  });
-
-  // Create new supplier
-  app.post("/api/admin/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} kreira novog dobavljača`);
-      
-      const validatedData = schema.insertSupplierSchema.parse(req.body);
-      const supplier = await storage.createSupplier(validatedData);
-      
-      console.log(`[SUPPLIERS] Kreiran novi dobavljač: ${supplier.name}`);
-      res.status(201).json(supplier);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("[SUPPLIERS] Greška pri kreiranju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri kreiranju dobavljača" });
-    }
-  });
-
-  // Update supplier
-  app.put("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} ažurira dobavljača sa ID: ${id}`);
-      
-      const updates = schema.insertSupplierSchema.partial().parse(req.body);
-      const supplier = await storage.updateSupplier(id, updates);
-      
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-      
-      console.log(`[SUPPLIERS] Ažuriran dobavljač: ${supplier.name}`);
-      res.json(supplier);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("[SUPPLIERS] Greška pri ažuriranju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri ažuriranju dobavljača" });
-    }
-  });
-
-  // Delete supplier
-  app.delete("/api/admin/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} briše dobavljača sa ID: ${id}`);
-      
-      await storage.deleteSupplier(id);
-      
-      console.log(`[SUPPLIERS] Obrisan dobavljač sa ID: ${id}`);
-      res.json({ message: "Dobavljač je uspešno obrisan" });
-    } catch (error) {
-      console.error("[SUPPLIERS] Greška pri brisanju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri brisanju dobavljača" });
-    }
-  });
-
-  // Get all supplier orders
-  app.get("/api/admin/supplier-orders", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[SUPPLIER-ORDERS] Admin ${req.user?.username} traži sve porudžbine dobavljača`);
-      const orders = await storage.getAllSupplierOrders();
-      res.json(orders);
-    } catch (error) {
-      console.error("[SUPPLIER-ORDERS] Greška pri dohvatanju porudžbina:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju porudžbina dobavljača" });
-    }
-  });
-
-  // Update supplier order
-  app.put("/api/admin/supplier-orders/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`[SUPPLIER-ORDERS] Admin ${req.user?.username} ažurira porudžbinu sa ID: ${id}`);
-      
-      const updates = schema.insertSupplierOrderSchema.partial().parse(req.body);
-      const order = await storage.updateSupplierOrder(id, updates);
-      
-      if (!order) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-      
-      console.log(`[SUPPLIER-ORDERS] Ažurirana porudžbina sa ID: ${id}`);
-      res.json(order);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("[SUPPLIER-ORDERS] Greška pri ažuriranju porudžbine:", error);
-      res.status(500).json({ error: "Greška pri ažuriranju porudžbine" });
-    }
-  });
-
-  // Get supplier statistics
-  app.get("/api/admin/suppliers/stats", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`[SUPPLIERS] Admin ${req.user?.username} traži statistike dobavljača`);
-      
-      const suppliers = await storage.getAllSuppliers();
-      const orders = await storage.getAllSupplierOrders();
-      
-      const stats = {
-        totalSuppliers: suppliers.length,
-        activeSuppliers: suppliers.filter(s => s.isActive).length,
-        pendingOrders: orders.filter(o => o.status === 'pending').length,
-        emailIntegrations: suppliers.filter(s => s.integrationMethod === 'email').length
-      };
-      
-      res.json(stats);
-    } catch (error) {
-      console.error("[SUPPLIERS] Greška pri dohvatanju statistika:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju statistika dobavljača" });
-    }
-  });
-
-  // ===============================
-  // 🚪 SUPPLIER PORTAL API ENDPOINTS
-  // ===============================
-
-  // ===== AUTHENTICATION ENDPOINTS =====
-
-  // Supplier portal login - separate authentication for supplier users
-  app.post("/api/suppliers/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni" });
-      }
-
-      // Find user by username
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return res.status(401).json({ error: "Neispravni podaci za prijavu" });
-      }
-
-      // Check if user has supplier role
-      if (!['supplier_complus', 'supplier_beko'].includes(user.role)) {
-        return res.status(403).json({ error: "Pristup dozvoljen samo dobavljačima" });
-      }
-
-      // Check if user is verified
-      if (!user.isVerified) {
-        return res.status(403).json({ error: "Nalog još uvek nije odobren" });
-      }
-
-      // Validate password
-      const isValid = await comparePassword(password, user.password);
-      if (!isValid) {
-        return res.status(401).json({ error: "Neispravni podaci za prijavu" });
-      }
-
-      // Generate JWT token with only necessary claims (NO PASSWORD HASH!)
-      const token = generateToken({
-        userId: user.id,
-        username: user.username,
-        role: user.role
-      });
-      
-      console.log(`🔐 [SUPPLIER-LOGIN] Dobavljač ${user.username} (${user.role}) se prijavio`);
-
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          username: user.username,
-          fullName: user.fullName,
-          role: user.role,
-          supplierId: user.supplierId,
-          email: user.email
-        }
-      });
-    } catch (error) {
-      console.error("❌ [SUPPLIER-LOGIN] Greška pri prijavi dobavljača:", error);
-      res.status(500).json({ error: "Greška pri prijavi" });
-    }
-  });
-
-  // ===== ENHANCED SUPPLIER MANAGEMENT (Admin Only) =====
-
-  // ===== SUPPLIER PORTAL ENDPOINTS (MUST BE BEFORE ADMIN /api/suppliers) =====
-  
-  // List orders for current supplier
-  app.get("/api/suppliers/orders", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
-    try {
-      const { status, limit = 100 } = req.query;
-      const user = req.user!;
-      
-      console.log(`📦 [SUPPLIER-ORDERS] Dobavljač ${user.username} (${user.role}) traži porudžbine - status: ${status}`);
-      
-      if (!user.supplierId) {
-        console.error(`❌ [SUPPLIER-ORDERS] User ${user.username} (${user.role}) missing supplierId. User object:`, user);
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      const parsedLimit = Math.min(parseInt(limit as string) || 100, 500);
-      let orders = await storage.getSupplierOrdersBySupplier(user.supplierId!);
-      
-      if (status) {
-        orders = orders.filter(order => order.status === status);
-      }
-      
-      orders = orders.slice(0, parsedLimit);
-      
-      console.log(`📦 [SUPPLIER-ORDERS] Vraćam ${orders.length} porudžbina za dobavljača ID: ${user.supplierId!}`);
-      res.json(orders);
-    } catch (error) {
-      console.error("❌ [SUPPLIER-ORDERS] Greška pri dohvatanju porudžbina:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju porudžbina" });
-    }
-  });
-
-  // Get supplier dashboard stats
-  app.get("/api/suppliers/dashboard", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
-    try {
-      const user = req.user!;
-      console.log(`📊 [SUPPLIER-DASHBOARD] Dobavljač ${user.username} traži dashboard podatke`);
-
-      if (!user.supplierId) {
-        console.error(`❌ [SUPPLIER-DASHBOARD] User ${user.username} (${user.role}) missing supplierId. User object:`, user);
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      const orders = await storage.getSupplierOrdersBySupplier(user.supplierId);
-      const supplier = await storage.getSupplier(user.supplierId);
-      
-      const stats = {
-        totalOrders: orders.length,
-        pendingOrders: orders.filter(o => o.status === 'pending').length,
-        completedOrders: orders.filter(o => o.status === 'delivered').length,
-        inProgressOrders: orders.filter(o => o.status === 'pending').length,
-        supplierName: supplier?.name || 'N/A',
-        recentOrders: orders.slice(0, 5)
-      };
-      
-      res.json(stats);
-    } catch (error) {
-      console.error("❌ [SUPPLIER-DASHBOARD] Greška pri dohvatanju dashboard podataka:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dashboard podataka" });
-    }
-  });
-
-  // ===== ADMIN SUPPLIER MANAGEMENT =====
-  
-  // Get all suppliers with filtering
-  app.get("/api/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const { partnerType, isActive } = req.query;
-      console.log(`📋 [SUPPLIERS] Admin ${req.user?.username} traži dobavljače - filter: partnerType=${partnerType}, isActive=${isActive}`);
-      
-      let suppliers = await storage.getAllSuppliers();
-      
-      // Apply filters
-      if (partnerType) {
-        suppliers = suppliers.filter(s => s.partnerType === partnerType);
-      }
-      
-      if (isActive !== undefined) {
-        const activeFilter = isActive === 'true';
-        suppliers = suppliers.filter(s => s.isActive === activeFilter);
-      }
-      
-      res.json(suppliers);
-    } catch (error) {
-      console.error("❌ [SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
-    }
-  });
-
-  // Get single supplier details
-  app.get("/api/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`📋 [SUPPLIERS] Admin ${req.user?.username} traži dobavljača sa ID: ${id}`);
-      
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Neispravni ID dobavljača" });
-      }
-      
-      const supplier = await storage.getSupplier(id);
-      
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-      
-      res.json(supplier);
-    } catch (error) {
-      console.error("❌ [SUPPLIERS] Greška pri dohvatanju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju dobavljača" });
-    }
-  });
-
-  // Create new supplier
-  app.post("/api/suppliers", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      console.log(`📋 [SUPPLIERS] Admin ${req.user?.username} kreira novog dobavljača`);
-      
-      const validatedData = schema.insertSupplierSchema.parse(req.body);
-      const supplier = await storage.createSupplier(validatedData);
-      
-      console.log(`✅ [SUPPLIERS] Kreiran novi dobavljač: ${supplier.name} (ID: ${supplier.id})`);
-      res.status(201).json(supplier);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("❌ [SUPPLIERS] Greška pri kreiranju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri kreiranju dobavljača" });
-    }
-  });
-
-  // Update supplier details
-  app.put("/api/suppliers/:id", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      console.log(`📋 [SUPPLIERS] Admin ${req.user?.username} ažurira dobavljača sa ID: ${id}`);
-      
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Neispravni ID dobavljača" });
-      }
-      
-      const updates = schema.insertSupplierSchema.partial().parse(req.body);
-      const supplier = await storage.updateSupplier(id, updates);
-      
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-      
-      console.log(`✅ [SUPPLIERS] Ažuriran dobavljač: ${supplier.name} (ID: ${supplier.id})`);
-      res.json(supplier);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("❌ [SUPPLIERS] Greška pri ažuriranju dobavljača:", error);
-      res.status(500).json({ error: "Greška pri ažuriranju dobavljača" });
-    }
-  });
-
-  // ===== SUPPLIER PORTAL USER MANAGEMENT (Admin Only) =====
-
-  // Create portal user for supplier
-  app.post("/api/suppliers/:id/users", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const supplierId = parseInt(req.params.id);
-      console.log(`👤 [SUPPLIER-USERS] Admin ${req.user?.username} kreira portal korisnika za dobavljača ID: ${supplierId}`);
-      
-      if (isNaN(supplierId)) {
-        return res.status(400).json({ error: "Neispravni ID dobavljača" });
-      }
-
-      // Verify supplier exists
-      const supplier = await storage.getSupplier(supplierId);
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-
-      // Validate user data with supplier role
-      const userData = {
-        ...req.body,
-        supplierId: supplierId,
-        role: req.body.role || 'supplier_complus', // Default role
-        isVerified: true // Portal users are pre-verified by admin
-      };
-
-      const validatedData = schema.insertUserSchema.parse(userData);
-      const user = await storage.createSupplierPortalUser(validatedData, supplierId);
-      
-      console.log(`✅ [SUPPLIER-USERS] Kreiran portal korisnik: ${user.username} za dobavljača: ${supplier.name}`);
-      
-      // Return user without password
-      const { password, ...safeUser } = user;
-      res.status(201).json(safeUser);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("❌ [SUPPLIER-USERS] Greška pri kreiranju portal korisnika:", error);
-      res.status(500).json({ error: "Greška pri kreiranju portal korisnika" });
-    }
-  });
-
-  // List portal users for supplier
-  app.get("/api/suppliers/:id/users", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const supplierId = parseInt(req.params.id);
-      console.log(`👤 [SUPPLIER-USERS] Admin ${req.user?.username} traži portal korisnike za dobavljača ID: ${supplierId}`);
-      
-      if (isNaN(supplierId)) {
-        return res.status(400).json({ error: "Neispravni ID dobavljača" });
-      }
-
-      // Verify supplier exists
-      const supplier = await storage.getSupplier(supplierId);
-      if (!supplier) {
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-
-      const users = await storage.getSupplierPortalUsers(supplierId);
-      
-      // Return users without passwords
-      const safeUsers = users.map(({ password, ...user }) => user);
-      res.json(safeUsers);
-    } catch (error) {
-      console.error("❌ [SUPPLIER-USERS] Greška pri dohvatanju portal korisnika:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju portal korisnika" });
-    }
-  });
-
-
-  // Get specific order details for current supplier
-  app.get("/api/suppliers/orders/:id", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const user = req.user!;
-      
-      console.log(`📦 [SUPPLIER-ORDER-DETAIL] Dobavljač ${user.username} traži detalje porudžbine ID: ${orderId}`);
-      
-      if (isNaN(orderId)) {
-        return res.status(400).json({ error: "Neispravni ID porudžbine" });
-      }
-
-      if (!user.supplierId) {
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      // Get order with detailed information
-      const order = await storage.getSupplierOrderWithDetails(orderId);
-      if (!order) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-
-      // Verify order belongs to supplier
-      if (order.supplierId !== user.supplierId!) {
-        return res.status(403).json({ error: "Nemate dozvolu da pristupite ovoj porudžbini" });
-      }
-      
-      console.log(`✅ [SUPPLIER-ORDER-DETAIL] Vraćam detalje porudžbine ID: ${orderId} za dobavljača: ${user.username}`);
-      res.json(order);
-    } catch (error) {
-      console.error("❌ [SUPPLIER-ORDER-DETAIL] Greška pri dohvatanju detalja porudžbine:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju detalja porudžbine" });
-    }
-  });
-
-  // Update order status/response
-  app.put("/api/suppliers/orders/:id", jwtAuth, requireRole(['supplier_complus', 'supplier_beko']), async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const user = req.user!;
-      
-      console.log(`📦 [SUPPLIER-ORDERS] Dobavljač ${user.username} ažurira porudžbinu ID: ${orderId}`);
-      
-      if (isNaN(orderId)) {
-        return res.status(400).json({ error: "Neispravni ID porudžbine" });
-      }
-
-      if (!user.supplierId) {
-        return res.status(403).json({ error: "Korisnik nije povezan sa dobavljačem" });
-      }
-
-      // Verify order belongs to supplier
-      const existingOrder = await storage.getSupplierOrder(orderId);
-      if (!existingOrder) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-
-      if (existingOrder.supplierId !== user.supplierId!) {
-        return res.status(403).json({ error: "Nemate dozvolu da ažurirate ovu porudžbinu" });
-      }
-
-      const updates = schema.insertSupplierOrderSchema.partial().parse(req.body);
-      const order = await storage.updateSupplierOrder(orderId, updates);
-      
-      if (!order) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-      
-      console.log(`✅ [SUPPLIER-ORDERS] Ažurirana porudžbina ID: ${orderId} od strane dobavljača: ${user.username}`);
-      res.json(order);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("❌ [SUPPLIER-ORDERS] Greška pri ažuriranju porudžbine:", error);
-      res.status(500).json({ error: "Greška pri ažuriranju porudžbine" });
-    }
-  });
-
-  // Add event to order
-  app.post("/api/suppliers/orders/:id/events", jwtAuth, requireRole(['supplier_complus', 'supplier_beko', 'admin']), async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const user = req.user!;
-      
-      console.log(`📝 [ORDER-EVENTS] ${user.role} ${user.username} dodaje event za porudžbinu ID: ${orderId}`);
-      
-      if (isNaN(orderId)) {
-        return res.status(400).json({ error: "Neispravni ID porudžbine" });
-      }
-
-      // Verify order exists and access permissions
-      const existingOrder = await storage.getSupplierOrder(orderId);
-      if (!existingOrder) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-
-      // Suppliers can only access their own orders, admins can access all
-      if (user.role !== 'admin' && (!user.supplierId || existingOrder.supplierId !== user.supplierId)) {
-        return res.status(403).json({ error: "Nemate dozvolu da dodajete event za ovu porudžbinu" });
-      }
-
-      const eventData = {
-        ...req.body,
-        orderId: orderId,
-        orderType: 'supplier_order',
-        userId: user.id,
-        userName: user.fullName,
-        supplierId: existingOrder.supplierId,
-        supplierName: null // Will be resolved via supplierId lookup
-      };
-
-      const validatedData = schema.insertSupplierOrderEventSchema.parse(eventData);
-      const event = await storage.createSupplierOrderEvent(validatedData);
-      
-      console.log(`✅ [ORDER-EVENTS] Kreiran event ID: ${event.id} za porudžbinu ID: ${orderId}`);
-      res.status(201).json(event);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Neispravni podaci", 
-          details: error.errors 
-        });
-      }
-      console.error("❌ [ORDER-EVENTS] Greška pri kreiranju event-a:", error);
-      res.status(500).json({ error: "Greška pri kreiranju event-a" });
-    }
-  });
-
-  // Get order event history
-  app.get("/api/suppliers/orders/:id/events", jwtAuth, requireRole(['supplier_complus', 'supplier_beko', 'admin']), async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const user = req.user!;
-      
-      console.log(`📝 [ORDER-EVENTS] ${user.role} ${user.username} traži event-e za porudžbinu ID: ${orderId}`);
-      
-      if (isNaN(orderId)) {
-        return res.status(400).json({ error: "Neispravni ID porudžbine" });
-      }
-
-      // Verify order exists and access permissions
-      const existingOrder = await storage.getSupplierOrder(orderId);
-      if (!existingOrder) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-
-      // Suppliers can only access their own orders, admins can access all
-      if (user.role !== 'admin' && (!user.supplierId || existingOrder.supplierId !== user.supplierId)) {
-        return res.status(403).json({ error: "Nemate dozvolu da pristupite event-ima ove porudžbine" });
-      }
-
-      const events = await storage.getSupplierOrderEvents(orderId);
-      
-      console.log(`📝 [ORDER-EVENTS] Vraćam ${events.length} event-a za porudžbinu ID: ${orderId}`);
-      res.json(events);
-    } catch (error) {
-      console.error("❌ [ORDER-EVENTS] Greška pri dohvatanju event-a:", error);
-      res.status(500).json({ error: "Greška pri dohvatanju event-a porudžbine" });
-    }
-  });
-
-  // ===== DEBUGGING ENDPOINT FOR SUPPLIER AUTH TROUBLESHOOTING =====
-  
-  // TEMPORARY: Debug endpoint to see what JWT middleware is seeing
-  app.get("/api/debug/supplier-auth", jwtAuth, async (req, res) => {
-    try {
-      const user = req.user!;
-      
-      console.log(`🔍 [DEBUG-SUPPLIER-AUTH] Debug endpoint hit by user:`, {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        supplierId: user.supplierId,
-        technicianId: user.technicianId,
-        fullName: user.fullName,
-        email: user.email,
-        companyName: user.companyName,
-        hasSupplierRole: user.role?.startsWith('supplier_'),
-        supplierRoleCheck: ['supplier_complus', 'supplier_beko'].includes(user.role || ''),
-        supplierIdType: typeof user.supplierId,
-        supplierIdValue: user.supplierId
-      });
-      
-      // Also test database fetch directly
-      const dbUser = await storage.getUser(user.id);
-      console.log(`🔍 [DEBUG-SUPPLIER-AUTH] Same user from database direct fetch:`, {
-        id: dbUser?.id,
-        username: dbUser?.username,
-        role: dbUser?.role,
-        supplierId: dbUser?.supplierId,
-        supplierIdType: typeof dbUser?.supplierId,
-        supplierIdValue: dbUser?.supplierId
-      });
-      
-      res.json({
-        message: "Debug info logged to console",
-        middleware_user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          supplierId: user.supplierId,
-          supplierIdType: typeof user.supplierId
-        },
-        database_user: {
-          id: dbUser?.id,
-          username: dbUser?.username,
-          role: dbUser?.role,
-          supplierId: dbUser?.supplierId,
-          supplierIdType: typeof dbUser?.supplierId
-        },
-        role_checks: {
-          hasSupplierRole: user.role?.startsWith('supplier_'),
-          supplierRoleAllowed: ['supplier_complus', 'supplier_beko'].includes(user.role || ''),
-          supplierIdExists: !!user.supplierId,
-          supplierIdTruthy: user.supplierId ? true : false
-        }
-      });
-    } catch (error) {
-      console.error("❌ [DEBUG-SUPPLIER-AUTH] Error in debug endpoint:", error);
-      res.status(500).json({ error: "Debug endpoint error", details: error.message });
-    }
-  });
-
-
-  // ===== ADMIN PROCUREMENT FUNCTIONALITY =====
-
-  // Zod schema for procurement request validation
-  const procurementRequestSchema = z.object({
-    supplierId: z.number().int().positive("ID dobavljača mora biti pozitivan broj"),
-    partNumbers: z.array(z.string().min(1, "Broj dela ne može biti prazan")).min(1, "Mora biti unesen najmanje jedan broj dela"),
-    quantities: z.array(z.number().int().positive("Količina mora biti pozitivna")).min(1, "Mora biti unesena najmanje jedna količina"),
-    priority: z.enum(['urgent', 'normal', 'low']).default('normal'),
-    description: z.string().min(5, "Opis mora imati najmanje 5 karaktera").max(1000, "Opis je predugačak"),
-    serviceId: z.number().int().positive().optional(),
-    deadline: z.string().datetime().optional()
-  }).refine(
-    data => data.partNumbers.length === data.quantities.length,
-    { message: "Broj delova i količina moraju biti jednaki", path: ["quantities"] }
-  );
-
-  // POST /api/admin/procurement/requests - Send procurement requests to suppliers
-  app.post("/api/admin/procurement/requests", jwtAuth, requireRole(['admin']), async (req, res) => {
-    try {
-      const user = req.user!;
-      console.log(`🛒 [PROCUREMENT] Admin ${user.username} šalje zahtev za nabavku dobavljaču`);
-      
-      // Validate request data
-      const validatedData = procurementRequestSchema.parse(req.body);
-      const { supplierId, partNumbers, quantities, priority, description, serviceId, deadline } = validatedData;
-      
-      console.log(`🛒 [PROCUREMENT] Validacija prošla - Dobavljač ID: ${supplierId}, Delovi: ${partNumbers.length}, Prioritet: ${priority}`);
-      
-      // Check if supplier exists and is active
-      const supplier = await storage.getSupplier(supplierId);
-      if (!supplier) {
-        console.log(`❌ [PROCUREMENT] Dobavljač sa ID ${supplierId} ne postoji`);
-        return res.status(404).json({ error: "Dobavljač nije pronađen" });
-      }
-      
-      if (!supplier.isActive) {
-        console.log(`❌ [PROCUREMENT] Dobavljač ${supplier.name} nije aktivan`);
-        return res.status(400).json({ error: "Dobavljač nije aktivan" });
-      }
-      
-      console.log(`✅ [PROCUREMENT] Dobavljač ${supplier.name} (${supplier.partnerType}) je valjan i aktivan`);
-      
-      // Validate service if provided
-      let relatedService = null;
-      if (serviceId) {
-        relatedService = await storage.getService(serviceId);
-        if (!relatedService) {
-          return res.status(404).json({ error: "Povezani servis nije pronađen" });
-        }
-        console.log(`🔗 [PROCUREMENT] Povezan sa servisom #${serviceId}`);
-      }
-      
-      // Create supplier order - use existing spare part order as template
-      const supplierOrderData = {
-        supplierId: supplierId,
-        sparePartOrderId: null, // This is a direct procurement request, not tied to existing spare part order
-        status: 'pending' as const,
-        priority: priority,
-        requestDate: new Date(),
-        expectedDeliveryDate: deadline ? new Date(deadline) : null,
-        notes: description,
-        adminRequestedBy: user.id,
-        totalCost: null // Will be updated when supplier responds
-      };
-      
-      console.log(`📝 [PROCUREMENT] Kreiram supplier order sa podacima:`, {
-        supplierId: supplierOrderData.supplierId,
-        status: supplierOrderData.status,
-        priority: supplierOrderData.priority,
-        adminRequestedBy: supplierOrderData.adminRequestedBy
-      });
-      
-      // Create the supplier order
-      const supplierOrder = await storage.createSupplierOrder(supplierOrderData);
-      console.log(`✅ [PROCUREMENT] Kreiran supplier order ID: ${supplierOrder.id}`);
-      
-      // Generate tracking number for the request
-      const trackingNumber = `PROC-${supplierOrder.id}-${Date.now().toString().slice(-6)}`;
-      
-      // Create detailed parts list for the event description
-      const partsDetails = partNumbers.map((partNumber, index) => 
-        `${partNumber} (količina: ${quantities[index]})`
-      ).join(', ');
-      
-      // Create supplier order event for audit and tracking
-      const eventData = {
-        orderId: supplierOrder.id,
-        orderType: 'supplier_order' as const,
-        eventType: 'procurement_request_created' as const,
-        description: `Admin ${user.fullName} poslao zahtev za nabavku: ${partsDetails}. ${description}`,
-        userId: user.id,
-        userName: user.fullName,
-        supplierId: supplierId,
-        supplierName: supplier.name,
-        metadata: JSON.stringify({
-          partNumbers: partNumbers,
-          quantities: quantities,
-          priority: priority,
-          serviceId: serviceId,
-          deadline: deadline,
-          trackingNumber: trackingNumber
-        })
-      };
-      
-      const event = await storage.createSupplierOrderEvent(eventData);
-      console.log(`✅ [PROCUREMENT] Kreiran event ID: ${event.id} za tracking`);
-      
-      // Prepare notification data
-      const notificationData = {
-        supplierName: supplier.name,
-        partNumbers: partNumbers,
-        quantities: quantities,
-        priority: priority,
-        description: description,
-        adminName: user.fullName,
-        trackingNumber: trackingNumber,
-        deadline: deadline ? new Date(deadline).toLocaleDateString('sr-RS') : 'Nije specificiran',
-        serviceInfo: relatedService ? `Servis #${relatedService.id}` : 'Direktan zahtev'
-      };
-      
-      // Send notifications based on supplier preferences and configuration
-      let notificationSent = false;
-      
-      try {
-        // Email notification if supplier has email
-        if (supplier.email) {
-          console.log(`📧 [PROCUREMENT] Šaljem email notifikaciju na ${supplier.email}`);
-          
-          const emailSubject = `Novi zahtev za nabavku - ${trackingNumber}`;
-          const emailBody = `
-Poštovani,
-
-Primili ste novi zahtev za nabavku rezervnih delova:
-
-📋 DETALJI ZAHTEVA:
-• Tracking broj: ${trackingNumber}
-• Prioritet: ${priority.toUpperCase()}
-• Admin: ${user.fullName}
-• ${relatedService ? `Povezan servis: #${relatedService.id}` : 'Direktan zahtev'}
-
-🔧 REZERVNI DELOVI:
-${partNumbers.map((part, index) => `• ${part} - Količina: ${quantities[index]}`).join('\n')}
-
-📝 OPIS: ${description}
-
-⏰ DEADLINE: ${deadline ? new Date(deadline).toLocaleDateString('sr-RS') : 'Nije specificiran'}
-
-Za odgovor na zahtev, prijavite se na supplier portal ili kontaktirajte naš tim.
-
-Srdačan pozdrav,
-Frigo Sistem Todosijević
-          `.trim();
-          
-          await emailService.sendEmail(supplier.email, emailSubject, emailBody);
-          notificationSent = true;
-          console.log(`✅ [PROCUREMENT] Email uspešno poslat`);
-        }
-        
-        // SMS notification if supplier has phone and SMS is enabled
-        if (supplier.phone && supplier.smsNotifications) {
-          console.log(`📱 [PROCUREMENT] Šaljem SMS notifikaciju na ${supplier.phone}`);
-          
-          const smsMessage = `FRIGO SISTEM: Novi zahtev za nabavku ${trackingNumber}. ${partNumbers.length} deo(va). Prioritet: ${priority}. Proverite email ili portal.`;
-          
-          const sms = new SMSCommunicationService();
-          await sms.sendSMS(supplier.phone, smsMessage);
-          notificationSent = true;
-          console.log(`✅ [PROCUREMENT] SMS uspešno poslat`);
-        }
-        
-        // WhatsApp notification if configured
-        if (supplier.whatsappNumber) {
-          console.log(`💬 [PROCUREMENT] Pripremam WhatsApp notifikaciju za ${supplier.whatsappNumber}`);
-          // WhatsApp notification would go here if implemented
-        }
-        
-      } catch (notificationError) {
-        console.error(`⚠️ [PROCUREMENT] Greška pri slanju notifikacija:`, notificationError);
-        // Don't fail the whole request if notification fails
-      }
-      
-      // Calculate estimated response time based on supplier type and priority
-      let estimatedResponseHours = 24; // Default 24 hours
-      if (priority === 'urgent') {
-        estimatedResponseHours = supplier.partnerType === 'complus' ? 2 : 4;
-      } else if (priority === 'normal') {
-        estimatedResponseHours = supplier.partnerType === 'complus' ? 8 : 12;
-      } else {
-        estimatedResponseHours = 48;
-      }
-      
-      const estimatedResponseDate = new Date();
-      estimatedResponseDate.setHours(estimatedResponseDate.getHours() + estimatedResponseHours);
-      
-      // Prepare response data
-      const response = {
-        success: true,
-        requestId: supplierOrder.id,
-        supplierId: supplierId,
-        supplierName: supplier.name,
-        partnerType: supplier.partnerType,
-        status: 'pending',
-        trackingNumber: trackingNumber,
-        estimatedResponse: estimatedResponseDate.toISOString(),
-        partNumbers: partNumbers,
-        quantities: quantities,
-        priority: priority,
-        description: description,
-        notificationSent: notificationSent,
-        serviceId: serviceId,
-        deadline: deadline
-      };
-      
-      console.log(`✅ [PROCUREMENT] Zahtev uspešno kreiran i poslat:`, {
-        requestId: response.requestId,
-        trackingNumber: response.trackingNumber,
-        supplierName: response.supplierName,
-        partNumbers: response.partNumbers.length,
-        notificationSent: response.notificationSent
-      });
-      
-      res.status(201).json(response);
-      
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error(`❌ [PROCUREMENT] Validation error:`, error.errors);
-        return res.status(400).json({ 
-          error: "Neispravni podaci u zahtevu", 
-          details: error.errors.map(err => ({
-            field: err.path.join('.'),
-            message: err.message
-          }))
-        });
-      }
-      
-      console.error(`❌ [PROCUREMENT] Neočekivana greška:`, error);
-      res.status(500).json({ 
-        error: "Greška pri kreiranju zahteva za nabavku",
-        message: error instanceof Error ? error.message : "Nepoznata greška"
-      });
-    }
-  });
-
-  console.log("✅ [PROCUREMENT] Admin procurement endpoint je registrovan");
-  console.log("✅ [SUPPLIER-PORTAL] Svi supplier portal API endpoint-i su registrovani");
-
-  // Rate limiting za web vitals
-  const webVitalsRateLimit = new Map();
-  const WEB_VITALS_RATE_LIMIT = 60; // 60 requests per minute per IP
-  const WEB_VITALS_WINDOW = 60000; // 1 minute
-
-  // Original single metric endpoint (preserved for backward compatibility)
-  app.post('/api/web-vitals', (req, res) => {
-    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-    const now = Date.now();
-    
-    // Rate limiting check
-    if (!webVitalsRateLimit.has(clientIP)) {
-      webVitalsRateLimit.set(clientIP, { count: 1, resetTime: now + WEB_VITALS_WINDOW });
-    } else {
-      const rateLimitData = webVitalsRateLimit.get(clientIP);
-      if (now > rateLimitData.resetTime) {
-        rateLimitData.count = 1;
-        rateLimitData.resetTime = now + WEB_VITALS_WINDOW;
-      } else {
-        rateLimitData.count++;
-        if (rateLimitData.count > WEB_VITALS_RATE_LIMIT) {
-          return res.status(429).json({ error: 'Rate limit exceeded for web vitals' });
-        }
-      }
-    }
-    
-    const { name, value, id, delta } = req.body;
-    
-    // Reduce verbose logging in production
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`🚀 Core Web Vitals - ${name}: ${value}ms (ID: ${id}, Delta: ${delta})`);
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Web Vitals logged',
-      metric: { name, value, id, delta }
-    });
-  });
-
-  // New batch analytics endpoint for optimized web vitals throttling
-  app.post('/api/analytics/web-vitals', (req, res) => {
-    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-    const now = Date.now();
-    const isBatchRequest = req.headers['x-web-vitals-batch'] === 'true';
-    
-    // Enhanced rate limiting for batch requests
-    const batchRateLimit = isBatchRequest ? Math.floor(WEB_VITALS_RATE_LIMIT / 10) : WEB_VITALS_RATE_LIMIT;
-    
-    if (!webVitalsRateLimit.has(clientIP)) {
-      webVitalsRateLimit.set(clientIP, { count: 1, resetTime: now + WEB_VITALS_WINDOW });
-    } else {
-      const rateLimitData = webVitalsRateLimit.get(clientIP);
-      if (now > rateLimitData.resetTime) {
-        rateLimitData.count = 1;
-        rateLimitData.resetTime = now + WEB_VITALS_WINDOW;
-      } else {
-        rateLimitData.count++;
-        if (rateLimitData.count > batchRateLimit) {
-          return res.status(429).json({ error: 'Rate limit exceeded for web vitals analytics' });
-        }
-      }
-    }
-
-    // Handle batch format from throttler
-    if (isBatchRequest && req.body.metrics && Array.isArray(req.body.metrics)) {
-      const { metrics, timestamp, userAgent, url, sessionId } = req.body;
-      
-      // Process batch metrics with reduced logging
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`📊 Web Vitals Batch [${sessionId?.substring(0, 8)}]: ${metrics.length} metrike`, {
-          url: url || 'unknown',
-          timestamp: new Date(timestamp).toISOString(),
-          metrics: metrics.map((m: any) => `${m.name}:${Math.round(m.value)}ms`).join(', ')
-        });
-      } else {
-        // Production: samo kratki log
-        console.log(`📊 WV Batch: ${metrics.length}m, ${url}`);
-      }
-
-      return res.json({
-        success: true,
-        message: 'Web Vitals batch processed',
-        processed: metrics.length,
-        sessionId
-      });
-    }
-
-    // Handle single metric (fallback)
-    const { name, value, id, delta } = req.body;
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`📈 Web Vitals Single - ${name}: ${value}ms (ID: ${id}, Delta: ${delta})`);
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Web Vitals metric logged',
-      metric: { name, value, id, delta }
-    });
-  });
-
 }
 

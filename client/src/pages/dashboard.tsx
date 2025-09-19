@@ -118,23 +118,25 @@ const Dashboard = memo(function Dashboard() {
     queryKey: ["/api/categories"]
   });
   
-  // PERFORMANCE FIX: Uklanjamo refetchStats iz dependency array-a da izbegnemo infinite loop
+  // Dodajemo useEffect da osvežimo podatke kada se komponenta montira
   useEffect(() => {
+    // Dashboard useEffect se pokreće - debug log uklonjen za performance
+    
     try {
-      // Osvežimo statistiku samo jednom kada se komponenta montira
+      // Osvežimo statistiku kada se prikaže dashboard
       refetchStats();
       
-      // Postavimo interval za osvežavanje na svakih 30 sekundi (umesto 5)
+      // Postavimo interval za osvežavanje na svakih 5 sekundi
       const intervalId = setInterval(() => {
         refetchStats();
-      }, 30000);
+      }, 5000);
       
       // Čistimo interval pri demontiranju
       return () => clearInterval(intervalId);
     } catch (err) {
       console.error("Greška u useEffect:", err);
     }
-  }, []); // KRITIČNO: prazan dependency array!
+  }, [refetchStats]);
   
   // Enrich appliance stats with category data
   const enrichedApplianceStats = stats?.applianceStats?.map(stat => {
