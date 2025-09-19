@@ -171,6 +171,12 @@ export function QuickServiceEntry({
   const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
     enabled: isAdminMode,
+    onSuccess: (data) => {
+      console.log("✅ Clients loaded successfully:", data.length, "clients");
+    },
+    onError: (error) => {
+      console.error("❌ Failed to load clients:", error);
+    }
   });
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery<ApplianceCategory[]>({
@@ -207,17 +213,21 @@ export function QuickServiceEntry({
 
   // Filter clients for search - show all when no query
   const filteredClients = useMemo(() => {
+    console.log("🔍 Filter Debug - clients:", clients.length, "searchQuery:", clientSearchQuery);
     // Always show all clients initially
     if (!clientSearchQuery || !clientSearchQuery.trim()) {
+      console.log("🔍 Showing all clients:", clients.slice(0, 100).length);
       return clients.slice(0, 100); // Show first 100 clients to avoid performance issues
     }
     const query = clientSearchQuery.toLowerCase().trim();
-    return clients.filter(client => 
+    const filtered = clients.filter(client => 
       client.fullName.toLowerCase().includes(query) ||
       client.phone.includes(query) ||
       (client.email && client.email.toLowerCase().includes(query)) ||
       (client.city && client.city.toLowerCase().includes(query))
     );
+    console.log("🔍 Filtered clients:", filtered.length, "for query:", query);
+    return filtered;
   }, [clients, clientSearchQuery]);
 
   // Selected client data for display
