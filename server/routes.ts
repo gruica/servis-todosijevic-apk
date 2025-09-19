@@ -9091,9 +9091,14 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         totalOrders: orders.length,
         pendingOrders: orders.filter(o => o.status === 'pending').length,
         completedOrders: orders.filter(o => o.status === 'delivered').length,
-        inProgressOrders: orders.filter(o => o.status === 'pending').length,
+        inProgressOrders: orders.filter(o => ['sent', 'confirmed', 'shipped'].includes(o.status)).length,
+        urgentOrders: 0, // TODO: Add urgency field when spare part orders are linked
         supplierName: supplier?.name || 'N/A',
-        recentOrders: orders.slice(0, 5)
+        recentActivity: orders.slice(0, 5).map(order => ({
+          id: order.id,
+          description: `Porudžbina #${order.id} - ${order.status}`,
+          timestamp: order.created_at || new Date().toISOString()
+        }))
       };
       
       res.json(stats);
