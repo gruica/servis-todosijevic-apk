@@ -476,10 +476,12 @@ export function QuickServiceEntry({
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
+                                    type="button"
                                     variant="outline"
                                     role="combobox"
                                     className="w-full justify-between"
                                     data-testid="client-selector-trigger"
+                                    onClick={() => setIsClientSelectorOpen(!isClientSelectorOpen)}
                                   >
                                     {selectedClient 
                                       ? `${selectedClient.fullName} (${selectedClient.phone})`
@@ -489,13 +491,14 @@ export function QuickServiceEntry({
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[400px] p-0" data-testid="client-selector-popover">
+                              <PopoverContent className="w-[400px] p-0" data-testid="client-selector-popover" side="bottom" align="start">
                                 <Command>
                                   <CommandInput
                                     placeholder="Pretražite klijente..."
                                     value={clientSearchQuery}
                                     onValueChange={setClientSearchQuery}
                                     data-testid="client-search-input"
+                                    autoFocus
                                   />
                                   <CommandEmpty data-testid="no-clients-found">
                                     {clientsLoading ? "Učitavanje..." : "Nema rezultata za pretragu."}
