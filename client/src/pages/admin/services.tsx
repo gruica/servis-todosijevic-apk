@@ -239,7 +239,7 @@ const AdminServices = memo(function AdminServices() {
       description: "Servisi u toku, zakazani i čekaju rezervne delove",
       icon: Play,
       badgeColor: "bg-blue-500",
-      filter: (service) => ["pending", "scheduled", "in_progress", "waiting_parts", "device_parts_removed"].includes(service.status)
+      filter: (service) => ["pending", "scheduled", "in_progress", "waiting_parts", "device_parts_removed", "assigned"].includes(service.status)
     },
     {
       id: "business_partners",
