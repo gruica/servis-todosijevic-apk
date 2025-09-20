@@ -113,6 +113,7 @@ export interface IStorage {
   // Appliance Category methods
   getAllApplianceCategories(): Promise<ApplianceCategory[]>;
   getApplianceCategory(id: number): Promise<ApplianceCategory | undefined>;
+  getCategory(id: number): Promise<ApplianceCategory | undefined>; // Alias for getApplianceCategory
   createApplianceCategory(category: InsertApplianceCategory): Promise<ApplianceCategory>;
   
   // Manufacturer methods
@@ -156,6 +157,7 @@ export interface IStorage {
   getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>>;
   
   // Business Partner methods
+  getBusinessPartner(id: number): Promise<User | undefined>; // Business partners are users with role 'business'
   getServicesByPartner(partnerId: number): Promise<Service[]>;
   getClientsByPartner(partnerId: number): Promise<Client[]>;
   getServiceWithDetails(serviceId: number): Promise<any>;
@@ -231,6 +233,7 @@ export interface IStorage {
   createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
   updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined>;
   deleteSystemSetting(key: string): Promise<boolean>;
+  setSystemSetting(key: string, value: string): Promise<SystemSetting>; // Alias for create/update
 
   // Removed Parts methods
   getAllRemovedParts(): Promise<RemovedPart[]>;
@@ -1763,6 +1766,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  // Business Partner method - get user with role 'business'
+  async getBusinessPartner(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, id), eq(users.role, 'business')));
+    return user;
+  }
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
@@ -2058,6 +2070,11 @@ export class DatabaseStorage implements IStorage {
       .from(applianceCategories)
       .where(eq(applianceCategories.id, id));
     return category;
+  }
+
+  // Alias method for getApplianceCategory
+  async getCategory(id: number): Promise<ApplianceCategory | undefined> {
+    return this.getApplianceCategory(id);
   }
 
   async createApplianceCategory(data: InsertApplianceCategory): Promise<ApplianceCategory> {
@@ -4226,6 +4243,29 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju sistemske postavke:', error);
       return false;
+    }
+  }
+
+  // Alias method for create/update system setting
+  async setSystemSetting(key: string, value: string): Promise<SystemSetting> {
+    try {
+      // Try to update existing setting first
+      const existingSetting = await this.getSystemSetting(key);
+      if (existingSetting) {
+        const updated = await this.updateSystemSetting(key, { value });
+        if (updated) return updated;
+      }
+      
+      // Create new setting if update failed or setting doesn't exist
+      return await this.createSystemSetting({
+        key,
+        value,
+        category: 'general', // default category
+        description: `Auto-created setting for ${key}`
+      });
+    } catch (error) {
+      console.error('Greška pri postavljanju sistemske postavke:', error);
+      throw error;
     }
   }
 

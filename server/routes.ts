@@ -317,15 +317,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
+      // Dohvati dodatne podatke za email i SMS (van try-catch za široki scope)
+      let serviceData = null;
+      let clientData = null;
+      let applianceData = null;
+      let technicianData = null;
+      let manufacturerData = null;
+      let categoryData = null;
+
       // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
       try {
-        // Dohvati dodatne podatke za email
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let technicianData = null;
-        let manufacturerData = null;
-        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
@@ -569,14 +570,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ [APPROVE-PENDING → ADMIN_ORDERED] Zahtev ${orderId} uspešno odobren i automatski poručen`);
 
+      // Dohvati dodatne podatke za email i SMS (van try-catch za široki scope)
+      let serviceData = null;
+      let clientData = null;
+      let applianceData = null;
+      let technicianData = null;
+      let manufacturerData = null;
+      let categoryData = null;
+
       // AUTOMATSKI EMAIL/SMS SISTEM (kopiran iz order endpoint-a)
       try {
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let technicianData = null;
-        let manufacturerData = null;
-        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
