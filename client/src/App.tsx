@@ -6,6 +6,9 @@ import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
 
+// 🛡️ ENVIRONMENT COMPONENTS
+import { EnvironmentBanner, EnvironmentDebugInfo } from "@/components/environment-banner";
+
 // PERFORMANCE BOOST: Lazy load heavy components
 const Clients = lazy(() => import("@/pages/clients"));
 const ClientDetails = lazy(() => import("@/pages/client-details"));
@@ -299,8 +302,14 @@ function App() {
 
   return (
     <NotificationProvider>
+      {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
+      <EnvironmentBanner />
+      
       <Router />
       <Toaster />
+      
+      {/* 🔧 DEBUG INFO - Za development mod */}
+      <EnvironmentDebugInfo />
     </NotificationProvider>
   );
 }
