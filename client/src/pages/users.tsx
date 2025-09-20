@@ -80,7 +80,8 @@ const userRoles = [
   { value: "admin", label: "Administrator" },
   { value: "technician", label: "Serviser" },
   { value: "business_partner", label: "Poslovni korisnik" },
-  { value: "customer", label: "Klijent" }
+  { value: "customer", label: "Klijent" },
+  { value: "supplier", label: "Dobavljač" }
 ];
 
 // Define the form schema for user creation/editing
@@ -90,7 +91,7 @@ const userFormSchema = z.object({
   email: z.string().email({ message: "Unesite validnu email adresu" }),
   password: z.string().min(6, { message: "Lozinka mora imati najmanje 6 karaktera" }).optional(),
   fullName: z.string().min(2, { message: "Ime mora imati najmanje 2 karaktera" }),
-  role: z.enum(["admin", "technician", "business_partner", "customer"], { 
+  role: z.enum(["admin", "technician", "business_partner", "customer", "supplier"], { 
     required_error: "Uloga je obavezna"
   }),
   technicianId: z.number().nullable().optional()
@@ -109,7 +110,7 @@ interface User {
   id: number;
   username: string;
   fullName: string;
-  role: "admin" | "technician" | "business_partner" | "customer";
+  role: "admin" | "technician" | "business_partner" | "customer" | "supplier";
   technicianId: number | null;
   email?: string;
   phone?: string;
@@ -135,6 +136,8 @@ function getRoleName(role: string): string {
       return "Poslovni korisnik";
     case "customer":
       return "Klijent";
+    case "supplier":
+      return "Dobavljač";
     default:
       return role;
   }
@@ -151,6 +154,8 @@ function getRoleBadgeVariant(role: string): "default" | "secondary" | "destructi
       return "secondary";
     case "customer":
       return "outline";
+    case "supplier":
+      return "secondary";
     default:
       return "default";
   }
