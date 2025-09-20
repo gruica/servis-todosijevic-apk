@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { Truck, Package, Clock, CheckCircle, AlertCircle, User, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Truck, Package, Clock, CheckCircle, AlertCircle, User, Eye, LogOut } from "lucide-react";
 
 // Interface za supplier porudžbine
 interface SupplierOrder {
@@ -34,8 +35,9 @@ function translateOrderStatus(status: string) {
 }
 
 export default function SupplierDashboard() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   
   // Dohvatanje supplier porudžbina
   const { data: orders = [], isLoading } = useQuery<SupplierOrder[]>({
@@ -104,6 +106,35 @@ export default function SupplierDashboard() {
               >
                 <Package className="h-4 w-4 mr-2" />
                 Sve porudžbine
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  logoutMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      toast({
+                        title: "Odjava uspješna",
+                        description: "Uspješno ste se odjavili.",
+                      });
+                      navigate("/supplier-auth");
+                    },
+                    onError: (error: Error) => {
+                      toast({
+                        title: "Greška pri odjavi",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    },
+                  });
+                }}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? (
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Odjavi se
               </Button>
             </div>
           </div>

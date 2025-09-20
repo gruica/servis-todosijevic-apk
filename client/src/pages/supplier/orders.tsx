@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { ArrowLeft, Package, Clock, CheckCircle, Truck, User, Phone, Calendar, FileText, Save } from "lucide-react";
+import { ArrowLeft, Package, Clock, CheckCircle, Truck, User, Phone, Calendar, FileText, Save, LogOut } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 // Interface za supplier porudžbine
@@ -42,7 +42,7 @@ function translateOrderStatus(status: string) {
 }
 
 export default function SupplierOrders() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -162,6 +162,37 @@ export default function SupplierOrders() {
                   Upravljajte vašim porudžbinama
                 </p>
               </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  logoutMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      toast({
+                        title: "Odjava uspješna",
+                        description: "Uspješno ste se odjavili.",
+                      });
+                      navigate("/supplier-auth");
+                    },
+                    onError: (error: Error) => {
+                      toast({
+                        title: "Greška pri odjavi",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    },
+                  });
+                }}
+                disabled={logoutMutation.isPending}
+              >
+                {logoutMutation.isPending ? (
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full"></div>
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Odjavi se
+              </Button>
             </div>
           </div>
         </div>
