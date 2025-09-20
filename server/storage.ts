@@ -6464,6 +6464,150 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // 🔧 JEDNOSTAVNA RETROAKTIVNA SINHRONIZACIJA - popravka za missing kolone greške
+  async syncMissingSupplierOrdersSimple(): Promise<{ created: number; errors: string[] }> {
+    try {
+      console.log('🔄 [SIMPLE-SYNC] Pokretam jednostavnu retroaktivnu sinhronizaciju supplier orders...');
+      
+      // Pronađi sve admin_ordered porudžbine koje nemaju supplier order (jednostavan query)
+      const adminOrderedParts = await db.select()
+        .from(sparePartOrders)
+        .where(eq(sparePartOrders.status, 'admin_ordered'));
+        
+      console.log(`🔍 [SIMPLE-SYNC] Ukupno admin_ordered porudžbina: ${adminOrderedParts.length}`);
+      
+      // Pronađi koje već imaju supplier orders
+      const existingSupplierOrders = await db.select({
+        sparePartOrderId: supplierOrders.sparePartOrderId
+      }).from(supplierOrders);
+      
+      const existingIds = new Set(existingSupplierOrders.map(so => so.sparePartOrderId));
+      
+      // Filter missing ones
+      const missingParts = adminOrderedParts.filter(part => !existingIds.has(part.id));
+      
+      if (missingParts.length === 0) {
+        console.log('✅ [SIMPLE-SYNC] Sve admin_ordered porudžbine već imaju supplier orders');
+        return { created: 0, errors: [] };
+      }
+      
+      console.log(`🎯 [SIMPLE-SYNC] Pronašao ${missingParts.length} porudžbina bez supplier orders`);
+      
+      // Pronađi ili kreiraj default dobavljača
+      let defaultSupplier = await this.getDefaultSupplier();
+      if (!defaultSupplier) {
+        console.log(`🏗️ [SIMPLE-SYNC] Kreiram default dobavljača za simple sync...`);
+        defaultSupplier = await this.createDefaultSupplier();
+      }
+      
+      let createdCount = 0;
+      const errors: string[] = [];
+      
+      // Kreiraj supplier order za svaku missing porudžbinu (SAMO OSNOVNE KOLONE)
+      for (const sparePartOrder of missingParts) {
+        try {
+          const supplierOrderData = {
+            supplierId: defaultSupplier.id,
+            sparePartOrderId: sparePartOrder.id,
+            status: 'pending' as const,
+            sentAt: new Date(),
+            emailContent: `RETROAKTIVNO: Automatski kreiran zahtev za rezervni deo: ${sparePartOrder.partName}`
+          };
+          
+          const [supplierOrder] = await db.insert(supplierOrders)
+            .values(supplierOrderData)
+            .returning();
+            
+          console.log(`✅ [SIMPLE-SYNC] Kreiran supplier order ID: ${supplierOrder.id} za spare part ID: ${sparePartOrder.id}`);
+          createdCount++;
+        } catch (error) {
+          const errorMsg = `Greška pri kreiranju supplier order za spare part ID ${sparePartOrder.id}: ${error}`;
+          console.error(`❌ [SIMPLE-SYNC] ${errorMsg}`);
+          errors.push(errorMsg);
+        }
+      }
+      
+      console.log(`🎯 [SIMPLE-SYNC] Završeno: ${createdCount} kreirano, ${errors.length} grešaka`);
+      return { created: createdCount, errors };
+    } catch (error) {
+      console.error('❌ [SIMPLE-SYNC] Greška pri jednostavnoj retroaktivnoj sinhronizaciji:', error);
+      throw error;
+    }
+  }
+
+  // 🔧 JEDNOSTAVNA DIREKTAN SQL SYNC - zaobiđe Drizzle schema probleme
+  async syncMissingSupplierOrdersSQL(): Promise<{ created: number; errors: string[] }> {
+    try {
+      console.log('🔄 [SQL-SYNC] Pokretam direktnu SQL retroaktivnu sinhronizaciju...');
+      
+      // Pronađi sve admin_ordered porudžbine koje nemaju supplier order (direktan SQL)
+      const missingResult = await db.execute(sql`
+        SELECT spo.id as spare_part_id, spo.part_name
+        FROM spare_part_orders spo
+        LEFT JOIN supplier_orders so ON spo.id = so.spare_part_order_id
+        WHERE spo.status = 'admin_ordered' AND so.id IS NULL
+      `);
+      
+      console.log(`🎯 [SQL-SYNC] Pronašao ${missingResult.rows.length} porudžbina bez supplier orders`);
+      
+      if (missingResult.rows.length === 0) {
+        console.log('✅ [SQL-SYNC] Sve admin_ordered porudžbine već imaju supplier orders');
+        return { created: 0, errors: [] };
+      }
+      
+      // Pronađi ili kreiraj default dobavljača
+      let defaultSupplier = await this.getDefaultSupplier();
+      if (!defaultSupplier) {
+        console.log(`🏗️ [SQL-SYNC] Kreiram default dobavljača za SQL sync...`);
+        defaultSupplier = await this.createDefaultSupplier();
+      }
+      
+      let createdCount = 0;
+      const errors: string[] = [];
+      
+      // Kreiraj supplier order za svaku missing porudžbinu (DIREKTAN SQL - samo osnovne kolone)
+      for (const row of missingResult.rows) {
+        const sparePartId = row.spare_part_id as number;
+        const partName = row.part_name as string;
+        
+        try {
+          await db.execute(sql`
+            INSERT INTO supplier_orders (
+              supplier_id, 
+              spare_part_order_id, 
+              status, 
+              sent_at, 
+              email_content,
+              created_at,
+              updated_at
+            ) VALUES (
+              ${defaultSupplier.id},
+              ${sparePartId},
+              'pending',
+              NOW(),
+              ${`RETROAKTIVNO: Automatski kreiran zahtev za rezervni deo: ${partName}`},
+              NOW(),
+              NOW()
+            )
+          `);
+          
+          console.log(`✅ [SQL-SYNC] Kreiran supplier order za spare part ID: ${sparePartId}`);
+          createdCount++;
+        } catch (error) {
+          const errorMsg = `Greška pri kreiranju supplier order za spare part ID ${sparePartId}: ${error}`;
+          console.error(`❌ [SQL-SYNC] ${errorMsg}`);
+          errors.push(errorMsg);
+        }
+      }
+      
+      console.log(`🎯 [SQL-SYNC] Završeno: ${createdCount} kreirano, ${errors.length} grešaka`);
+      return { created: createdCount, errors };
+    } catch (error) {
+      console.error('❌ [SQL-SYNC] Greška pri direktnoj SQL retroaktivnoj sinhronizaciji:', error);
+      throw error;
+    }
+  }
+
 }
 
 // Koristimo PostgreSQL implementaciju umesto MemStorage
