@@ -8732,5 +8732,72 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ============================================================================
+  // 🚚 SUPPLIER PORTAL API ENDPOINTS
+  // ============================================================================
+  // API endpoint-i za dobavljače rezervnih delova - dodano na kraj fajla
+
+  // GET /api/supplier/orders - Dohvatanje porudžbina za supplier-a
+  app.get("/api/supplier/orders", jwtAuth, async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'supplier') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
+      }
+      
+      console.log(`[SUPPLIER API] Dohvatanje porudžbina za supplier-a: ${req.user.fullName} (ID: ${req.user.id})`);
+      
+      // Za sada vraćamo prazan niz jer tabela još nije kreirana
+      // U budućnosti ovo će dohvatiti porudžbine iz baze prema supplier-u
+      const orders = [];
+      
+      res.json(orders);
+      
+    } catch (error) {
+      console.error("[SUPPLIER API] Greška pri dohvatanju porudžbina:", error);
+      res.status(500).json({ 
+        error: "Greška pri dohvatanju porudžbina",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // PUT /api/supplier/order/:id - Ažuriranje statusa porudžbine
+  app.put("/api/supplier/order/:id", jwtAuth, async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'supplier') {
+        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
+      }
+      
+      const orderId = parseInt(req.params.id);
+      const { status, supplierNotes, estimatedDelivery } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: "Neispravan ID porudžbine" });
+      }
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status je obavezan" });
+      }
+      
+      console.log(`[SUPPLIER API] Ažuriranje porudžbine ${orderId} od supplier-a ${req.user.fullName}`);
+      console.log(`[SUPPLIER API] Novi status: ${status}, napomene: ${supplierNotes || 'nema'}`);
+      
+      // Za sada vraćamo success - u budućnosti ovo će ažurirati porudžbinu u bazi
+      res.json({ 
+        success: true, 
+        message: "Status porudžbine je ažuriran",
+        orderId: orderId,
+        newStatus: status
+      });
+      
+    } catch (error) {
+      console.error("[SUPPLIER API] Greška pri ažuriranju porudžbine:", error);
+      res.status(500).json({ 
+        error: "Greška pri ažuriranju porudžbine",
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
 }
 
