@@ -69,6 +69,11 @@ const BusinessClients = lazy(() => import("@/pages/business/clients/index-simple
 const BusinessComplus = lazy(() => import("@/pages/business/complus"));
 const BusinessSpareParts = lazy(() => import("@/pages/business/spare-parts"));
 
+// PERFORMANCE BOOST: Lazy load supplier pages
+const SupplierAuth = lazy(() => import("@/pages/supplier-auth"));
+const SupplierDashboard = lazy(() => import("@/pages/supplier/dashboard"));
+const SupplierOrders = lazy(() => import("@/pages/supplier/orders"));
+
 // PERFORMANCE BOOST: Lazy load remaining pages
 import HomePage from "@/pages/home-page";
 import ComplusAuthPage from "@/pages/complus-auth";
@@ -157,6 +162,7 @@ function Router() {
       
       <Route path="/auth" component={AuthPage} />
       <Route path="/business-auth" component={BusinessPartnerAuthPage} />
+      <Route path="/supplier-auth" component={SupplierAuth} />
       <Route path="/complus-auth" component={ComplusAuthPage} />
       
       {/* Admin routes */}
@@ -244,6 +250,10 @@ function Router() {
       <RoleProtectedRoute path="/business/clients" component={BusinessClients} allowedRoles={["business_partner", "business"]} />
       <RoleProtectedRoute path="/business/complus" component={BusinessComplus} allowedRoles={["business_partner", "business", "admin"]} />
       <RoleProtectedRoute path="/business/spare-parts" component={BusinessSpareParts} allowedRoles={["business_partner", "business", "admin"]} />
+      
+      {/* Supplier routes */}
+      <RoleProtectedRoute path="/supplier" component={SupplierDashboard} allowedRoles={["supplier"]} />
+      <RoleProtectedRoute path="/supplier/orders" component={SupplierOrders} allowedRoles={["supplier"]} />
       
         <Route component={NotFound} />
       </Switch>
