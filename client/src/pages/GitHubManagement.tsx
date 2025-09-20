@@ -26,7 +26,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/hooks/use-toast";
 
 interface GitHubUser {
   login: string;
@@ -70,7 +70,8 @@ interface BackupResponse {
 }
 
 export default function GitHubManagement() {
-  const { toast } = useToast();
+  // const { toast } = useToast();
+  const toast = (options: any) => console.log('Toast:', options); // Temporary fallback
   const [backupProgress, setBackupProgress] = useState(0);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
