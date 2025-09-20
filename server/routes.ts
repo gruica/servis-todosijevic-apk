@@ -8734,6 +8734,51 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   });
 
   // ============================================================================
+  // 🔧 ADMIN UTILITY ENDPOINTS - retroaktivna sinhronizacija
+  // ============================================================================
+  
+  // POST /api/admin/sync-supplier-orders - Retroaktivna sinhronizacija supplier orders
+  app.post("/api/admin/sync-supplier-orders", jwtAuth, async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Samo admin može pokrenuti sinhronizaciju" });
+      }
+      
+      console.log(`🔧 [ADMIN SYNC] Korisnik ${req.user.fullName} pokretá retroaktivnu sinhronizaciju...`);
+      
+      const result = await storage.syncMissingSupplierOrders();
+      
+      res.json({
+        success: true,
+        message: `Retroaktivna sinhronizacija završena`,
+        created: result.created,
+        errors: result.errors,
+        details: result.errors.length > 0 ? 
+          `Kreirano ${result.created} supplier orders, ${result.errors.length} grešaka` :
+          `Uspešno kreirano ${result.created} supplier orders`
+      });
+      
+    } catch (error) {
+      console.error('[ADMIN SYNC] Greška pri retroaktivnoj sinhronizaciji:', error);
+      res.status(500).json({ 
+        error: 'Greška pri retroaktivnoj sinhronizaciji supplier orders',
+        message: error instanceof Error ? error.message : 'Nepoznata greška'
+      });
+    }
+  });
+
+  // 🚨 TESTARAMO RETROAKTIVNU SYNC DIREKTNO - jednom kada aplikacija start
+  setTimeout(async () => {
+    try {
+      console.log('🧪 [STARTUP] Pozivam retroaktivnu sinhronizaciju na startup...');
+      const result = await storage.syncMissingSupplierOrders();
+      console.log(`🎯 [STARTUP] Retroaktivna sync rezultat:`, result);
+    } catch (error) {
+      console.error('❌ [STARTUP] Greška pri startup sync:', error);
+    }
+  }, 5000); // 5 sekundi nakon startup
+
+  // ============================================================================
   // 🚚 SUPPLIER PORTAL API ENDPOINTS
   // ============================================================================
   // API endpoint-i za dobavljače rezervnih delova - dodano na kraj fajla

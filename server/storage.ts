@@ -5448,6 +5448,70 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // 🔧 RETROAKTIVNA SINHRONIZACIJA - kreira supplier orders za postojeće admin_ordered porudžbine
+  async syncMissingSupplierOrders(): Promise<{ created: number; errors: string[] }> {
+    try {
+      console.log('🔄 [RETRO-SYNC] Pokretam retroaktivnu sinhronizaciju supplier orders...');
+      
+      // Pronađi sve admin_ordered porudžbine koje nemaju supplier order
+      const missingOrders = await db.select()
+        .from(sparePartOrders)
+        .leftJoin(supplierOrders, eq(sparePartOrders.id, supplierOrders.sparePartOrderId))
+        .where(and(
+          eq(sparePartOrders.status, 'admin_ordered'),
+          isNull(supplierOrders.id)
+        ));
+      
+      if (missingOrders.length === 0) {
+        console.log('✅ [RETRO-SYNC] Sve admin_ordered porudžbine već imaju supplier orders');
+        return { created: 0, errors: [] };
+      }
+      
+      console.log(`🔍 [RETRO-SYNC] Pronašao ${missingOrders.length} porudžbina bez supplier orders`);
+      
+      // Pronađi ili kreiraj default dobavljača
+      let defaultSupplier = await this.getDefaultSupplier();
+      if (!defaultSupplier) {
+        console.log(`🏗️ [RETRO-SYNC] Kreiram default dobavljača za retroaktivnu sync...`);
+        defaultSupplier = await this.createDefaultSupplier();
+      }
+      
+      let createdCount = 0;
+      const errors: string[] = [];
+      
+      // Kreiraj supplier order za svaku missing porudžbinu
+      for (const orderData of missingOrders) {
+        const sparePartOrder = orderData.spare_part_orders;
+        if (!sparePartOrder) continue;
+        
+        try {
+          const supplierOrder = await this.createSupplierOrder({
+            supplierId: defaultSupplier.id,
+            sparePartOrderId: sparePartOrder.id,
+            status: 'pending',
+            sentAt: new Date(), // Označava kada je poslato (sada u retro sync)
+            emailContent: `RETROAKTIVNO: Automatski kreiran zahtev za rezervni deo: ${sparePartOrder.partName}`,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          
+          console.log(`✅ [RETRO-SYNC] Kreiran supplier order ID: ${supplierOrder.id} za spare part ID: ${sparePartOrder.id}`);
+          createdCount++;
+        } catch (error) {
+          const errorMsg = `Greška pri kreiranju supplier order za spare part ID ${sparePartOrder.id}: ${error}`;
+          console.error(`❌ [RETRO-SYNC] ${errorMsg}`);
+          errors.push(errorMsg);
+        }
+      }
+      
+      console.log(`🎯 [RETRO-SYNC] Završeno: ${createdCount} kreirano, ${errors.length} grešaka`);
+      return { created: createdCount, errors };
+    } catch (error) {
+      console.error('❌ [RETRO-SYNC] Greška pri retroaktivnoj sinhronizaciji:', error);
+      throw error;
+    }
+  }
+
   // ===== PARTS CATALOG METHODS =====
 
   async getAllPartsFromCatalog(): Promise<PartsCatalog[]> {
