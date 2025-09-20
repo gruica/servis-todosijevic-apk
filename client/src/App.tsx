@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Router } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import React, { useEffect, Suspense, lazy } from "react";
 import NotFound from "@/pages/not-found";
@@ -128,7 +128,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-function Router() {
+function RouterComponent() {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Switch>
@@ -303,16 +303,18 @@ function App() {
   }, []);
 
   return (
-    <NotificationProvider>
-      {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
-      <EnvironmentBanner />
-      
-      <Router />
-      <Toaster />
-      
-      {/* 🔧 DEBUG INFO - Za development mod */}
-      <EnvironmentDebugInfo />
-    </NotificationProvider>
+    <Router>
+      <NotificationProvider>
+        {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
+        <EnvironmentBanner />
+        
+        <RouterComponent />
+        <Toaster />
+        
+        {/* 🔧 DEBUG INFO - Za development mod */}
+        <EnvironmentDebugInfo />
+      </NotificationProvider>
+    </Router>
   );
 }
 
