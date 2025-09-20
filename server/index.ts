@@ -10,6 +10,7 @@ import { BekoCronService } from "./beko-cron-service.js";
 
 // 🛡️ IMPORT ENVIRONMENT CONFIGURATION
 import { ENV, validateProductionRequirements, logger } from "@shared/environment";
+import { ProductionSafety } from "./production-safety";
 
 const servisKomercCronService = new ServisKomercCronService();
 const bekoCronService = BekoCronService.getInstance();
@@ -19,6 +20,9 @@ import { storage } from "./storage";
 
 // 🛡️ VALIDATE ENVIRONMENT BEFORE STARTING
 validateProductionRequirements();
+
+// 🛡️ INITIALIZE PRODUCTION SAFETY MEASURES
+ProductionSafety.initializeProductionSafety();
 
 const app = express();
 
