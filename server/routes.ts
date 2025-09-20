@@ -8767,16 +8767,16 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     }
   });
 
-  // 🚨 RETROAKTIVNA SYNC PRIVREMENO ISKLJUČENA - ČEKA SINHRONIZACIJU BAZE
-  // setTimeout(async () => {
-  //   try {
-  //     console.log('🧪 [STARTUP] Pozivam retroaktivnu sinhronizaciju na startup...');
-  //     const result = await storage.syncMissingSupplierOrders();
-  //     console.log(`🎯 [STARTUP] Retroaktivna sync rezultat:`, result);
-  //   } catch (error) {
-  //     console.error('❌ [STARTUP] Greška pri startup sync:', error);
-  //   }
-  // }, 5000); // 5 sekundi nakon startup
+  // 🚨 TESTARAMO RETROAKTIVNU SYNC DIREKTNO - jednom kada aplikacija start
+  setTimeout(async () => {
+    try {
+      console.log('🧪 [STARTUP] Pozivam retroaktivnu sinhronizaciju na startup...');
+      const result = await storage.syncMissingSupplierOrders();
+      console.log(`🎯 [STARTUP] Retroaktivna sync rezultat:`, result);
+    } catch (error) {
+      console.error('❌ [STARTUP] Greška pri startup sync:', error);
+    }
+  }, 5000); // 5 sekundi nakon startup
 
   // ============================================================================
   // 🚚 SUPPLIER PORTAL API ENDPOINTS
