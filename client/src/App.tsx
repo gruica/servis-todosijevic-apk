@@ -97,7 +97,7 @@ const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 const DownloadAppPage = lazy(() => import("@/pages/download-app"));
-const GitHubManagement = lazy(() => import("@/pages/TestGitHub"));
+import GitHubManagement from "@/pages/SimpleGitHub";
 // Inline test komponenta sa console.log
 const SimpleTestPage = () => {
   console.log('🟢 SimpleTestPage rendering!');
