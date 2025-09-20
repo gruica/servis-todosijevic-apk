@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation, Router } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import React, { useEffect, Suspense, lazy } from "react";
 import NotFound from "@/pages/not-found";
@@ -303,18 +303,16 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <NotificationProvider>
-        {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
-        <EnvironmentBanner />
-        
-        <RouterComponent />
-        <Toaster />
-        
-        {/* 🔧 DEBUG INFO - Za development mod */}
-        <EnvironmentDebugInfo />
-      </NotificationProvider>
-    </Router>
+    <NotificationProvider>
+      {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
+      <EnvironmentBanner />
+      
+      <RouterComponent />
+      <Toaster />
+      
+      {/* 🔧 DEBUG INFO - Za development mod */}
+      <EnvironmentDebugInfo />
+    </NotificationProvider>
   );
 }
 
