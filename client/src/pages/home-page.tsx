@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FrigidgeIcon, WasherIcon, AirConditionerIcon, StoveIcon } from "@/components/icons";
-import { Link } from "wouter";
+import { useLocation, Link } from "wouter";
 import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon } from "lucide-react";
 
 export default function HomePage() {
+  const [, navigate] = useLocation();
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -37,7 +38,7 @@ export default function HomePage() {
                 icon={<UsersIcon className="h-8 w-8 text-blue-500" />}
                 title="Admin pristup" 
                 description="Upravljanje servisima, klijentima i tehničarima" 
-                href="/auth"
+                onClick={() => navigate("/auth")}
                 primaryColor="bg-blue-100 hover:bg-blue-200"
                 textColor="text-blue-700"
                 role="admin"
@@ -46,7 +47,7 @@ export default function HomePage() {
                 icon={<SettingsIcon className="h-8 w-8 text-green-500" />}
                 title="Serviseri" 
                 description="Pristup servisima i pregled dodeljenih zadataka" 
-                href="/auth"
+                onClick={() => navigate("/auth")}
                 primaryColor="bg-green-100 hover:bg-green-200"
                 textColor="text-green-700"
                 role="serviser"
@@ -55,7 +56,7 @@ export default function HomePage() {
                 icon={<UsersIcon className="h-8 w-8 text-purple-500" />}
                 title="Klijenti" 
                 description="Prijava servisa i praćenje statusa" 
-                href="/auth"
+                onClick={() => navigate("/auth")}
                 primaryColor="bg-purple-100 hover:bg-purple-200"
                 textColor="text-purple-700"
                 role="klijent"
@@ -64,7 +65,7 @@ export default function HomePage() {
                 icon={<BuildingIcon className="h-8 w-8 text-orange-500" />}
                 title="Poslovni partneri" 
                 description="Upravljanje servisima za poslovne korisnike" 
-                href="/business-auth"
+                onClick={() => navigate("/business-auth")}
                 primaryColor="bg-orange-100 hover:bg-orange-200"
                 textColor="text-orange-700"
                 role="partner"
@@ -73,7 +74,7 @@ export default function HomePage() {
                 icon={<SettingsIcon className="h-8 w-8 text-indigo-500" />}
                 title="Com Plus Panel" 
                 description="Administrativni panel za Com Plus brendove" 
-                href="/complus-auth"
+                onClick={() => navigate("/complus-auth")}
                 primaryColor="bg-indigo-100 hover:bg-indigo-200"
                 textColor="text-indigo-700"
                 role="complus"
@@ -184,15 +185,14 @@ export default function HomePage() {
           <div className="mt-6 text-center text-blue-200">
             <p>&copy; {new Date().getFullYear()} Frigo Sistem Todosijević. Sva prava zadržana.</p>
             <div className="mt-2 space-x-4">
-              <Link href="/email-verification-demo">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-blue-200 border-blue-200 hover:bg-blue-800"
-                >
-                  Test Email Verifikacije
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/email-verification-demo")}
+                className="text-blue-200 border-blue-200 hover:bg-blue-800"
+              >
+                Test Email Verifikacije
+              </Button>
               <Link href="/privacy/policy">
                 <Button 
                   variant="outline" 
@@ -214,38 +214,37 @@ interface ServiceCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  href: string;
+  onClick: () => void;
   primaryColor: string;
   textColor: string;
   role: string;
   isSpecial?: boolean;
 }
 
-function ServiceCard({ icon, title, description, href, primaryColor, textColor, role, isSpecial }: ServiceCardProps) {
+function ServiceCard({ icon, title, description, onClick, primaryColor, textColor, role, isSpecial }: ServiceCardProps) {
   return (
-    <Link href={href}>
-      <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''} cursor-pointer`}>
-        <CardHeader className="pb-2">
-          <div className="flex items-center space-x-2 mb-2">
-            {icon}
-            <CardTitle className={`${textColor} text-xl`}>{title}</CardTitle>
+    <Card className={`${primaryColor} border-none transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md ${isSpecial ? 'ring-2 ring-indigo-300' : ''}`} onClick={onClick}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center space-x-2 mb-2">
+          {icon}
+          <CardTitle className={`${textColor} text-xl`}>{title}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-700 mb-3">{description}</p>
+        {isSpecial && (
+          <div className="mb-3 text-xs text-indigo-600 font-medium">
+            Electrolux • Elica • Candy • Hoover • Turbo Air
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-700 mb-3">{description}</p>
-          {isSpecial && (
-            <div className="mb-3 text-xs text-indigo-600 font-medium">
-              Electrolux • Elica • Candy • Hoover • Turbo Air
-            </div>
-          )}
-          <Button 
-            variant="outline" 
-            className={`w-full text-white bg-blue-600 hover:bg-blue-700 border-blue-600`}
-          >
-            Prijavi se kao {role === 'complus' ? 'Com Plus Admin' : role}
-          </Button>
-        </CardContent>
-      </Card>
-    </Link>
+        )}
+        <Button 
+          variant="outline" 
+          className={`w-full text-white bg-blue-600 hover:bg-blue-700 border-blue-600`}
+          onClick={onClick}
+        >
+          Prijavi se kao {role === 'complus' ? 'Com Plus Admin' : role}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

@@ -8,28 +8,13 @@ import { complusCronService } from "./complus-cron-service";
 import { ServisKomercCronService } from "./servis-komerc-cron-service";
 import { BekoCronService } from "./beko-cron-service.js";
 
-// 🛡️ IMPORT ENVIRONMENT CONFIGURATION
-import { ENV, validateProductionRequirements, logger } from "@shared/environment";
-import { ProductionSafety } from "./production-safety";
-
 const servisKomercCronService = new ServisKomercCronService();
 const bekoCronService = BekoCronService.getInstance();
 
 import { storage } from "./storage";
 // Mobile SMS Service has been completely removed
 
-// 🛡️ VALIDATE ENVIRONMENT BEFORE STARTING
-validateProductionRequirements();
-
-// 🛡️ INITIALIZE PRODUCTION SAFETY MEASURES
-ProductionSafety.initializeProductionSafety();
-
 const app = express();
-
-// 🎯 ENVIRONMENT LOGGING
-logger.info(`🚀 Starting ${ENV.appName}`);
-logger.info(`📊 Environment: ${ENV.isDevelopment ? 'DEVELOPMENT' : 'PRODUCTION'}`);
-logger.info(`🔐 Debug features: ${ENV.enableDebugFeatures ? 'ENABLED' : 'DISABLED'}`);
 
 // Omogući trust proxy za Replit
 app.set('trust proxy', 1);
@@ -56,7 +41,9 @@ app.use((req, res, next) => {
   // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
   
   // Only log CORS in development mode to improve production performance
-  logger.debug(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+  }
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);

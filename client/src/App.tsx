@@ -6,9 +6,6 @@ import AuthPage from "@/pages/auth-page";
 import BusinessPartnerAuthPage from "@/pages/business-partner-auth";
 import Dashboard from "@/pages/dashboard";
 
-// 🛡️ ENVIRONMENT COMPONENTS
-import { EnvironmentBanner, EnvironmentDebugInfo } from "@/components/environment-banner";
-
 // PERFORMANCE BOOST: Lazy load heavy components
 const Clients = lazy(() => import("@/pages/clients"));
 const ClientDetails = lazy(() => import("@/pages/client-details"));
@@ -97,7 +94,6 @@ const ComplusDashboard = lazy(() => import("@/pages/complus"));
 const WhatsAppTest = lazy(() => import("@/pages/whatsapp-test"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/privacy-policy"));
 const DownloadAppPage = lazy(() => import("@/pages/download-app"));
-import GitHubManagement from "@/pages/SimpleGitHub";
 // Inline test komponenta sa console.log
 const SimpleTestPage = () => {
   console.log('🟢 SimpleTestPage rendering!');
@@ -128,7 +124,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-function RouterComponent() {
+function Router() {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Switch>
@@ -212,7 +208,6 @@ function RouterComponent() {
       <RoleProtectedRoute path="/admin/complus-billing" component={ComplusBillingPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/beko-billing" component={BekoBillingPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/ai-predictive-maintenance" component={AIPredictiveMaintenancePage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/github" component={GitHubManagement} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/page-management" component={lazy(() => import('./pages/admin/page-management'))} allowedRoles={["admin"]} />
       
       {/* Com Plus nezavisan administrativni panel */}
@@ -304,14 +299,8 @@ function App() {
 
   return (
     <NotificationProvider>
-      {/* 🛡️ ENVIRONMENT BANNER - Pokazuje u kom modu se aplikacija nalazi */}
-      <EnvironmentBanner />
-      
-      <RouterComponent />
+      <Router />
       <Toaster />
-      
-      {/* 🔧 DEBUG INFO - Za development mod */}
-      <EnvironmentDebugInfo />
     </NotificationProvider>
   );
 }

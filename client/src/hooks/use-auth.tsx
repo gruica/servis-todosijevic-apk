@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
 type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
@@ -24,6 +26,7 @@ type LoginData = Pick<InsertUser, "username" | "password">;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast();
   const {
     data: user,
     error,
@@ -82,10 +85,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('auth_token', response.token);
       queryClient.setQueryData(["/api/jwt-user"], response.user);
       refetch();
-      console.log('User logged in successfully:', response.user.fullName);
+      toast({
+        title: "Uspešna prijava",
+        description: `Dobrodošli, ${response.user.fullName}!`,
+      });
     },
     onError: (error: Error) => {
-      console.error('Login error:', error.message);
+      // Proveri da li je greška o neverifikovanom nalogu
+      const errorMessage = error.message || "";
+      const isVerificationError = errorMessage.includes("nije verifikovan") || 
+                                 errorMessage.includes("nije još verifikovan") ||
+                                 errorMessage.includes("sačekajte potvrdu");
+      
+      toast({
+        title: "Greška pri prijavi",
+        description: isVerificationError 
+          ? "Vaš nalog još nije verifikovan. Molimo sačekajte da administrator odobri vaš nalog."
+          : "Neispravno korisničko ime ili lozinka",
+        variant: "destructive",
+      });
     },
   });
 
@@ -108,15 +126,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Ako je korisnik poslovni partner, ne postavljamo ga u queryClient
       // jer mora biti verifikovan pre pristupa
       if (data.role === "business_partner") {
-        console.log('Business partner registered successfully');
+        toast({
+          title: "Uspešna registracija",
+          description: data.message || "Zahtev za registraciju je uspešno poslat. Administrator će uskoro verifikovati vaš nalog.",
+        });
       } else {
         // Za ostale tipove korisnika, postavljamo podatke u queryClient
         queryClient.setQueryData(["/api/jwt-user"], data);
-        console.log('User registered successfully:', data.fullName);
+        toast({
+          title: "Uspešna registracija",
+          description: `Dobrodošli, ${data.fullName}!`,
+        });
       }
     },
     onError: (error: Error) => {
-      console.error('Registration error:', error.message);
+      toast({
+        title: "Greška pri registraciji",
+        description: error.message || "Korisničko ime već postoji",
+        variant: "destructive",
+      });
     },
   });
 
@@ -130,7 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/jwt-user"], null);
       queryClient.clear();
       
-      console.log('User logged out successfully');
+      toast({
+        title: "Uspešno ste se odjavili",
+        description: "Vidimo se ponovo!",
+      });
     },
   });
 

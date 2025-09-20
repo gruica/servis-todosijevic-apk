@@ -31,7 +31,6 @@ import { aiPredictiveMaintenanceService } from './services/ai-predictive-mainten
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import QRCode from 'qrcode';
-import { githubService } from './github-service.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -8729,104 +8728,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.error('[SMART COMPLUS BILLING] ❌ Greška:', error);
       res.status(500).json({ 
         error: 'Greška pri pametnoj detekciji ComPlus servisa',
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // ==================== GitHub API Routes ====================
-  
-  // Dobij sva GitHub repozitorija
-  app.get("/api/github/repositories", authenticateJWT, async (req: Request, res: Response) => {
-    try {
-      const repositories = await githubService.getRepositories();
-      res.json({
-        success: true,
-        repositories,
-        total: repositories.length
-      });
-    } catch (error) {
-      console.error('❌ Greška pri dobijanju repozitorija:', error);
-      res.status(500).json({ 
-        error: 'Greška pri dobijanju GitHub repozitorija',
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // Dobij GitHub korisničke informacije 
-  app.get("/api/github/user", authenticateJWT, async (req: Request, res: Response) => {
-    try {
-      const userInfo = await githubService.getUserInfo();
-      res.json({
-        success: true,
-        user: userInfo
-      });
-    } catch (error) {
-      console.error('❌ Greška pri dobijanju GitHub korisnika:', error);
-      res.status(500).json({ 
-        error: 'Greška pri dobijanju GitHub korisničkih podataka',
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // Kreiraj automatski backup
-  app.post("/api/github/backup", authenticateJWT, async (req: Request, res: Response) => {
-    try {
-      const { repoName } = req.body;
-      
-      if (!repoName) {
-        return res.status(400).json({ 
-          error: 'Ime repozitorija je obavezno' 
-        });
-      }
-
-      // Generiši ime repozitorija ako nije dato
-      const finalRepoName = repoName || `frigosistem-backup-${Date.now()}`;
-      
-      console.log(`🔄 Pokretanje automatskog backup-a u repozitorij: ${finalRepoName}`);
-      
-      const backupResult = await githubService.createBackup(finalRepoName);
-      
-      res.json({
-        success: true,
-        message: 'Automatski backup je uspešno kreiran',
-        backup: backupResult
-      });
-
-    } catch (error) {
-      console.error('❌ Greška pri kreiranju backup-a:', error);
-      res.status(500).json({ 
-        error: 'Greška pri kreiranju automatskog backup-a',
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // Kreiraj novi repozitorij
-  app.post("/api/github/repository", authenticateJWT, async (req: Request, res: Response) => {
-    try {
-      const { name, description, isPrivate } = req.body;
-      
-      if (!name) {
-        return res.status(400).json({ 
-          error: 'Ime repozitorija je obavezno' 
-        });
-      }
-
-      const repository = await githubService.createRepository(name, description, isPrivate);
-      
-      res.json({
-        success: true,
-        message: 'Repozitorij je uspešno kreiran',
-        repository
-      });
-
-    } catch (error) {
-      console.error('❌ Greška pri kreiranju repozitorija:', error);
-      res.status(500).json({ 
-        error: 'Greška pri kreiranju GitHub repozitorija',
         message: error instanceof Error ? error.message : 'Nepoznata greška'
       });
     }

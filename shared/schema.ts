@@ -1048,6 +1048,7 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: true,
   urgency: true,
   status: true,
+  warrantyStatus: true,
   estimatedCost: true,
   actualCost: true,
   supplierName: true,
@@ -1055,6 +1056,9 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   expectedDelivery: true,
   receivedDate: true,
   adminNotes: true,
+  requesterType: true,
+  requesterUserId: true,
+  requesterName: true,
 }).extend({
   serviceId: z.number().int().positive("ID servisa mora biti pozitivan broj").optional(),
   technicianId: z.number().int().positive("ID servisera mora biti pozitivan broj").optional(),
@@ -1065,10 +1069,17 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   description: z.string().max(500, "Opis je predugačak").or(z.literal("")).optional(),
   urgency: sparePartUrgencyEnum.default("normal"),
   status: sparePartStatusEnum.default("pending"),
+  warrantyStatus: sparePartWarrantyStatusEnum,
   estimatedCost: z.string().max(50, "Procenjena cena je predugačka").or(z.literal("")).optional(),
   actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
   supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
   adminNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
+  isDelivered: z.boolean().default(false).optional(),
+  deliveryConfirmedBy: z.number().int().positive().optional(),
+  autoRemoveAfterDelivery: z.boolean().default(true).optional(),
+  requesterType: sparePartRequesterTypeEnum.optional(),
+  requesterUserId: z.number().int().positive("ID korisnika mora biti pozitivan broj").optional(),
+  requesterName: z.string().max(100, "Ime korisnika je predugačko").or(z.literal("")).optional(),
 });
 
 export type InsertSparePartOrder = z.infer<typeof insertSparePartOrderSchema>;
