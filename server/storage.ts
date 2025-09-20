@@ -3742,6 +3742,41 @@ export class DatabaseStorage implements IStorage {
       }
 
       console.log(`📦 [WORKFLOW] Uspešno ažuriran rezervni deo ID: ${id}, novi status: ${updates.status}`);
+      
+      // 🚀 AUTOMATSKI SUPPLIER WORKFLOW - kada se status promeni na 'admin_ordered'
+      if (updates.status === 'admin_ordered') {
+        try {
+          console.log(`🔄 [AUTO-SUPPLIER] Aktiviram automatski supplier workflow za deo ID: ${id}`);
+          
+          // Pronađi default dobavljača ili kreiraj jedan ako ne postoji
+          let defaultSupplier = await this.getDefaultSupplier();
+          if (!defaultSupplier) {
+            console.log(`🏗️ [AUTO-SUPPLIER] Kreiram default dobavljača...`);
+            defaultSupplier = await this.createDefaultSupplier();
+          }
+          
+          if (defaultSupplier) {
+            // Kreiraj supplier order entry automatski
+            const supplierOrder = await this.createSupplierOrder({
+              supplierId: defaultSupplier.id,
+              sparePartOrderId: id,
+              status: 'pending',
+              sentAt: new Date(),
+              emailContent: `Automatski kreiran zahtev za rezervni deo: ${updatedOrder.partName}`,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            
+            console.log(`✅ [AUTO-SUPPLIER] Kreiran supplier order ID: ${supplierOrder.id} za dobavljača: ${defaultSupplier.name}`);
+          } else {
+            console.warn(`⚠️ [AUTO-SUPPLIER] Nije moguće kreirati supplier order - nema dostupnog dobavljača`);
+          }
+        } catch (supplierError) {
+          console.error(`❌ [AUTO-SUPPLIER] Greška pri kreiranju supplier order:`, supplierError);
+          // Ne prekidamo glavni workflow ako supplier deo ne uspe
+        }
+      }
+      
       return updatedOrder;
     } catch (error) {
       console.error('❌ [WORKFLOW] Greška pri ažuriranju statusa rezervnog dela:', error);
@@ -5345,6 +5380,71 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine dobavljača:', error);
       return false;
+    }
+  }
+
+  // 🚀 AUTOMATSKI SUPPLIER WORKFLOW - pomoćne metode
+  async getDefaultSupplier(): Promise<Supplier | undefined> {
+    try {
+      // Probaj da pronađeš dobavljača sa nazivom "Default" ili prvi aktivni dobavljač
+      const [defaultSupplier] = await db.select()
+        .from(suppliers)
+        .where(and(
+          eq(suppliers.isActive, true),
+          or(
+            like(suppliers.name, '%Default%'),
+            like(suppliers.name, '%Opšti%'),
+            like(suppliers.name, '%General%')
+          )
+        ))
+        .limit(1);
+      
+      if (defaultSupplier) {
+        console.log(`🔍 [DEFAULT-SUPPLIER] Pronašao postojećeg default dobavljača: ${defaultSupplier.name}`);
+        return defaultSupplier;
+      }
+      
+      // Ako nema default, uzmi prvi aktivni dobavljač
+      const [firstActiveSupplier] = await db.select()
+        .from(suppliers)
+        .where(eq(suppliers.isActive, true))
+        .limit(1);
+      
+      if (firstActiveSupplier) {
+        console.log(`🔍 [DEFAULT-SUPPLIER] Koristim prvi aktivni dobavljač: ${firstActiveSupplier.name}`);
+        return firstActiveSupplier;
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Greška pri pronalaženju default dobavljača:', error);
+      return undefined;
+    }
+  }
+
+  async createDefaultSupplier(): Promise<Supplier> {
+    try {
+      const defaultSupplier = await this.createSupplier({
+        name: "Opšti Dobavljač",
+        companyName: "Frigo Sistem Todosijević - Opšti Dobavljač",
+        email: "servis@frigosistemtodosijevic.me",
+        phone: "+382 67 047 527",
+        address: "Podgorica, Crna Gora",
+        website: "https://frigosistemtodosijevic.me",
+        integrationMethod: "email",
+        paymentTerms: "Net 30",
+        deliveryInfo: "Standardna dostava 3-5 radnih dana",
+        supportedBrands: "Univerzalni dobavljač za sve brendove",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      console.log(`🏗️ [DEFAULT-SUPPLIER] Kreiran novi default dobavljač: ${defaultSupplier.name} (ID: ${defaultSupplier.id})`);
+      return defaultSupplier;
+    } catch (error) {
+      console.error('Greška pri kreiranju default dobavljača:', error);
+      throw error;
     }
   }
 

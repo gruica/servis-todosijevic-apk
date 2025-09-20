@@ -8747,9 +8747,99 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       
       console.log(`[SUPPLIER API] Dohvatanje porudžbina za supplier-a: ${req.user.fullName} (ID: ${req.user.id})`);
       
-      // Za sada vraćamo prazan niz jer tabela još nije kreirana
-      // U budućnosti ovo će dohvatiti porudžbine iz baze prema supplier-u
-      const orders = [];
+      // 🚀 STVARNA IMPLEMENTACIJA - dohvatanje supplier orders sa kompletnim informacijama
+      
+      // Pronađi supplier-a na osnovu korisničkog emaila/username-a
+      const suppliers = await storage.getAllSuppliers();
+      const currentSupplier = suppliers.find(s => 
+        s.email === req.user.email || 
+        s.email === req.user.username ||
+        s.name.includes(req.user.fullName?.split(' ')[0] || '')
+      );
+      
+      if (!currentSupplier) {
+        console.warn(`⚠️ [SUPPLIER API] Supplier za korisnika ${req.user.fullName} nije pronađen u bazi`);
+        return res.json([]); // Vraćaj prazan niz ako supplier nije pronađen
+      }
+      
+      console.log(`🔍 [SUPPLIER API] Pronašao supplier-a: ${currentSupplier.name} (ID: ${currentSupplier.id})`);
+      
+      // Dohvati sve supplier orders za ovog dobavljača
+      const supplierOrders = await storage.getSupplierOrdersBySupplier(currentSupplier.id);
+      
+      // Dohvati kompletne informacije o spare part orders sa JOIN-om
+      const ordersWithDetails = await Promise.all(
+        supplierOrders.map(async (supplierOrder) => {
+          const sparePartOrder = await storage.getSparePartOrder(supplierOrder.sparePartOrderId);
+          
+          if (!sparePartOrder) {
+            return null;
+          }
+          
+          // Dohvati informacije o serviseru
+          let technicianInfo = null;
+          if (sparePartOrder.technicianId) {
+            const technician = await storage.getTechnician(sparePartOrder.technicianId);
+            if (technician) {
+              technicianInfo = {
+                name: technician.fullName,
+                phone: technician.phone,
+                email: technician.email,
+                specialization: technician.specialization
+              };
+            }
+          }
+          
+          // Dohvati informacije o servisu i klijentu
+          let serviceInfo = null;
+          if (sparePartOrder.serviceId) {
+            const service = await storage.getService(sparePartOrder.serviceId);
+            if (service) {
+              const client = await storage.getClient(service.clientId);
+              serviceInfo = {
+                id: service.id,
+                status: service.status,
+                description: service.description,
+                scheduledDate: service.scheduledDate,
+                client: client ? {
+                  fullName: client.fullName,
+                  phone: client.phone,
+                  email: client.email,
+                  address: client.address,
+                  city: client.city
+                } : null
+              };
+            }
+          }
+          
+          return {
+            id: supplierOrder.id,
+            partName: sparePartOrder.partName,
+            partNumber: sparePartOrder.partNumber,
+            quantity: sparePartOrder.quantity,
+            description: sparePartOrder.description,
+            urgency: sparePartOrder.urgency,
+            status: supplierOrder.status,
+            estimatedDelivery: supplierOrder.estimatedDelivery,
+            supplierNotes: supplierOrder.supplierResponse,
+            orderDate: supplierOrder.sentAt,
+            createdAt: supplierOrder.createdAt,
+            // Dodaj informacije o tome ko je poručio i za koji servis
+            technician: technicianInfo,
+            service: serviceInfo,
+            // Originalne spare part informacije
+            originalSparePartOrderId: sparePartOrder.id,
+            warrantyStatus: sparePartOrder.warrantyStatus,
+            estimatedCost: sparePartOrder.estimatedCost
+          };
+        })
+      );
+      
+      const orders = ordersWithDetails.filter(order => order !== null);
+      
+      console.log(`📦 [SUPPLIER API] Pronašao ${orders.length} porudžbina za supplier-a ${currentSupplier.name}`);
+      console.log(`📋 [SUPPLIER API] Detalji: ${orders.map(o => `${o.partName} (${o.status})`).join(', ')}`);
+      
       
       res.json(orders);
       
@@ -8783,12 +8873,65 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.log(`[SUPPLIER API] Ažuriranje porudžbine ${orderId} od supplier-a ${req.user.fullName}`);
       console.log(`[SUPPLIER API] Novi status: ${status}, napomene: ${supplierNotes || 'nema'}`);
       
-      // Za sada vraćamo success - u budućnosti ovo će ažurirati porudžbinu u bazi
+      // 🚀 STVARNA IMPLEMENTACIJA - ažuriranje supplier order statusa
+      
+      // Pronađi supplier-a na osnovu korisničkog emaila/username-a  
+      const suppliers = await storage.getAllSuppliers();
+      const currentSupplier = suppliers.find(s => 
+        s.email === req.user.email || 
+        s.email === req.user.username ||
+        s.name.includes(req.user.fullName?.split(' ')[0] || '')
+      );
+      
+      if (!currentSupplier) {
+        return res.status(403).json({ error: "Supplier za vaš korisnički nalog nije pronađen" });
+      }
+      
+      // Dohvati supplier order i proveri da li pripada ovom dobavljaču
+      const supplierOrder = await storage.getSupplierOrder(orderId);
+      
+      if (!supplierOrder) {
+        return res.status(404).json({ error: "Porudžbina nije pronađena" });
+      }
+      
+      if (supplierOrder.supplierId !== currentSupplier.id) {
+        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje ove porudžbine" });
+      }
+      
+      // Ažuriraj supplier order
+      const updateData: Partial<any> = {
+        status,
+        supplierResponse: supplierNotes,
+        updatedAt: new Date()
+      };
+      
+      // Dodaj timestamp na osnovu statusa
+      if (status === 'confirmed') {
+        updateData.confirmedAt = new Date();
+      } else if (status === 'shipped') {
+        updateData.shippedAt = new Date();
+        if (estimatedDelivery) {
+          updateData.estimatedDelivery = new Date(estimatedDelivery);
+        }
+      } else if (status === 'delivered') {
+        updateData.deliveredAt = new Date();
+        updateData.actualDelivery = new Date();
+      }
+      
+      const updatedOrder = await storage.updateSupplierOrder(orderId, updateData);
+      
+      if (!updatedOrder) {
+        return res.status(500).json({ error: "Greška pri ažuriranju porudžbine" });
+      }
+      
+      console.log(`✅ [SUPPLIER API] Supplier ${currentSupplier.name} ažurirao porudžbinu ${orderId}: ${status}`);
+      
       res.json({ 
         success: true, 
-        message: "Status porudžbine je ažuriran",
+        message: "Status porudžbine je uspešno ažuriran",
         orderId: orderId,
-        newStatus: status
+        newStatus: status,
+        updatedOrder: updatedOrder
       });
       
     } catch (error) {
