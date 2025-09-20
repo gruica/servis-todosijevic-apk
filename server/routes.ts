@@ -7,7 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 const authenticateJWT = jwtAuthMiddleware;
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema, SupplierOrder, Supplier } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -8898,8 +8898,8 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         return res.status(403).json({ error: "Nemate dozvolu za ažuriranje ove porudžbine" });
       }
       
-      // Ažuriraj supplier order
-      const updateData: Partial<any> = {
+      // Ažuriraj supplier order  
+      const updateData: Partial<SupplierOrder> = {
         status,
         supplierResponse: supplierNotes,
         updatedAt: new Date()
