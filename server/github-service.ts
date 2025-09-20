@@ -178,7 +178,7 @@ export class GitHubService {
         }
       }
 
-      const owner = repository.full_name?.split('/')[0] || repository.name;
+      const owner = ('full_name' in repository ? repository.full_name?.split('/')[0] : null) || ('fullName' in repository ? repository.fullName?.split('/')[0] : null) || repository.name;
 
       // 2. Backup ključnih fajlova
       const filesToBackup = [
@@ -224,6 +224,8 @@ export class GitHubService {
       }
 
       // 3. Kreiraj README sa informacijama
+      const repositoryUrl = ('html_url' in repository ? repository.html_url : null) || ('htmlUrl' in repository ? repository.htmlUrl : null) || `https://github.com/${owner}/${repoName}`;
+      
       const readmeContent = `# FrigoSistem - Automatski Backup
 
 ## Informacije o backup-u
@@ -241,7 +243,7 @@ export class GitHubService {
 - \`vite.config.ts\` - Vite konfiguracija
 
 ## Restore instrukcije
-1. Kloniraj repozitorij: \`git clone ${repository.html_url}\`
+1. Kloniraj repozitorij: \`git clone ${repositoryUrl}\`
 2. Instaliraj zavisnosti: \`npm install\`
 3. Pokreni aplikaciju: \`npm run dev\`
 
@@ -260,7 +262,7 @@ export class GitHubService {
       console.log('✅ Backup potpuno završen!');
 
       return {
-        repository: repository.html_url,
+        repository: repositoryUrl,
         backupResults,
         totalFiles: backupResults.length,
         successfulFiles: backupResults.filter(r => r.success).length,
