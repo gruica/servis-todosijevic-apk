@@ -19,27 +19,86 @@ server: {
 ### **Korak 1: Download projekta**
 ```bash
 # Skipi sve fajlove sa Replit-a u lokalni folder
-# Posebno važno: android/ folder i dist/ folder
+# Posebno važno: android/ folder, client/ folder, server/ folder, package.json
 ```
 
 ### **Korak 2: Instaliranje potrebnih alata**
 ```bash
+# Node.js 18+ (ako nije instaliran)
+# Download: https://nodejs.org/
+
 # Java JDK 17+ (ako nije instaliran)
 # Download: https://www.oracle.com/java/technologies/downloads/
 
-# Android Studio (ako nije instaliran)  
+# Android Studio (obavezno za SDK)
 # Download: https://developer.android.com/studio
 ```
 
-### **Korak 3: APK kreiranje**
+### **Korak 3: Android SDK setup**
+```bash
+# Instaliraj Android Studio i otvori bilo koji projekat
+# Idi na: Tools > SDK Manager
+# Instaliraj: Android SDK Platform-Tools, Android SDK Build-Tools
+
+# Postavi environment varijablu (ili dodaj u android/local.properties):
+export ANDROID_HOME=/path/to/Android/Sdk
+
+# ILI kreiraj android/local.properties fajl:
+echo "sdk.dir=/path/to/Android/Sdk" > android/local.properties
+```
+
+### **Korak 4: Priprema web build-a**
+```bash
+# Instaliraj dependencies
+npm install
+
+# Kreiraj production build
+npm run build
+
+# Sinhronizuj sa Android projektom
+npx cap sync android
+
+# Proveri da li su assets kopirani:
+ls android/app/src/main/assets/public/
+```
+
+### **Korak 5: APK kreiranje**
 ```bash
 # Navigiraj u android folder
 cd android
 
-# Kreiraj debug APK
+# Za testiranje - Debug APK (jednostavno)
 ./gradlew assembleDebug
 
-# ILI kreiraj release APK (za produkciju)
+# Za produkciju - Release APK (potrebno je signing)
+./gradlew assembleRelease
+```
+
+### **Korak 6: Signing za produkciju (VAŽNO!)**
+```bash
+# Kreiraj keystore (jednom)
+keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
+
+# Dodaj u android/app/build.gradle:
+android {
+    signingConfigs {
+        release {
+            storeFile file('my-release-key.jks')
+            storePassword 'store_password'
+            keyAlias 'my-key-alias'
+            keyPassword 'key_password'
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+# Zatim build release APK:
 ./gradlew assembleRelease
 ```
 
