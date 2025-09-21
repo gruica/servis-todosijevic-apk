@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     // APK koristi Replit server za sve API pozive
-    url: 'https://workspace.gruica.repl.co',
+    url: 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev',
   },
   plugins: {
     SplashScreen: {
