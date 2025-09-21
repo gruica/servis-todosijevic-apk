@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingOrder.partName,
             existingOrder.partNumber || 'N/A',
             'normal', // urgency default
-            existingOrder.description
+            existingOrder.description || undefined
           );
 
           if (complusEmailSent) {
@@ -675,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
@@ -729,7 +729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
 
       const status = req.params.status;
-      const orders = await storage.getSparePartOrdersByStatus(status);
+      const orders = await storage.getSparePartOrdersByStatus(status as any);
       
       res.json(orders);
     } catch (error) {
@@ -2817,7 +2817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       const whatsappResult = await whatsappBusinessAPIService.sendServiceStatusUpdateNotification({
                         clientPhone: client.phone,
                         clientName: client.fullName,
-                        serviceId: parseInt(id),
+                        serviceId: typeof id === 'string' ? parseInt(id) : id,
                         newStatus: statusDescription,
                         technicianName: technicianName,
                         notes: clientEmailContent
