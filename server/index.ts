@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes, setupSecurityEndpoints } from "./routes";
+import path from 'path';
 
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
@@ -38,7 +39,10 @@ app.use((req, res, next) => {
     'https://www.frigosistemtodosijevic.me', 
     'https://admin.me',
     'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev',
-    'http://127.0.0.1:5000' // localhost za development
+    'http://127.0.0.1:5000', // localhost za development
+    'https://median.co',     // za APK kreiranje
+    'https://app.median.co', // median app studio
+    'https://studio.median.co' // median studio alternativa
   ]);
   
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
@@ -75,6 +79,13 @@ app.use((req, res, next) => {
 
 // NAKON body parser-a postavi session middleware
 setupAuth(app);
+
+// SPECIFIČAN ENDPOINT ZA MANIFEST.JSON (za median.co)
+app.get('/manifest.json', (req, res) => {
+  res.header('Content-Type', 'application/json; charset=utf-8');
+  res.header('Access-Control-Allow-Origin', '*'); // Dozvoliti svim domenima za manifest
+  res.sendFile(path.join(process.cwd(), 'client/public/manifest.json'));
+});
 
 // Session middleware je konfigurisan u setupAuth()
 
