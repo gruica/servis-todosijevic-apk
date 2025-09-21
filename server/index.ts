@@ -54,9 +54,13 @@ app.use((req, res, next) => {
   // Dodaj Vary header za cache sigurnost
   res.header('Vary', 'Origin');
   
-  // Log samo u development
+  // Log samo važne CORS događaje u development
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${origin ? allowedOrigins.has(origin) : false}`);
+    const isAllowed = origin && allowedOrigins.has(origin);
+    // Logiraj samo dozvoljene zahteve i neočekivane blokove (ne i normalne bot zahteve)
+    if (isAllowed || (origin && origin !== 'undefined')) {
+      console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${isAllowed}`);
+    }
   }
   
   // Handle preflight requests
