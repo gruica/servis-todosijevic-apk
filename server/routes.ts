@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingOrder.partName,
             existingOrder.partNumber || 'N/A',
             urgency,
-            existingOrder.description
+            existingOrder.description || undefined
           );
 
           if (complusEmailSent) {
@@ -386,16 +386,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Pripremi podatke za opšti email template
             const orderData = {
               partName: existingOrder.partName,
-              partNumber: existingOrder.partNumber,
+              partNumber: existingOrder.partNumber || undefined,
               quantity: existingOrder.quantity,
               urgency: urgency,
-              description: existingOrder.description,
-              serviceId: existingOrder.serviceId,
+              description: existingOrder.description || undefined,
+              serviceId: existingOrder.serviceId || undefined,
               clientName: clientData?.fullName,
               clientPhone: clientData?.phone,
               applianceModel: applianceData?.model,
               applianceSerialNumber: applianceData?.serialNumber,
-              manufacturerName: manufacturerName,
+              manufacturerName: manufacturerData?.name || '',
               categoryName: categoryData?.name,
               technicianName: technicianData?.fullName,
               orderDate: new Date(),
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key,
+          apiKey: settingsMap.sms_mobile_api_key || '',
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -446,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientPhone: clientData.phone,
             deviceType: categoryData?.name || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerName,
+            manufacturerName: manufacturerData?.name || '',
             technicianId: technicianData.id,
             technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
@@ -461,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
@@ -646,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key,
+          apiKey: settingsMap.sms_mobile_api_key || '',
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -660,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientPhone: clientData.phone,
             deviceType: categoryData?.name || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerName,
+            manufacturerName: manufacturerData?.name || '',
             technicianId: technicianData.id,
             technicianName: technicianData.fullName,
             technicianPhone: technicianData.phone || '067123456',
