@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "../lib/safeTokenStorage";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/jwt-user"],
     queryFn: async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = safeGetItem('auth_token');
       if (!token) {
         return null;
       }
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem('auth_token');
+          safeRemoveItem('auth_token');
           return null;
         }
         throw new Error('Failed to fetch user');
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[useAuth] JWT User data received:', userData);
       return userData;
     },
-    enabled: !!localStorage.getItem('auth_token'),
+    enabled: !!safeGetItem('auth_token'),
     staleTime: 2 * 60 * 1000, // PERFORMANCE BOOST: 2 minute stale time for auth
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (response: { user: SelectUser; token: string }) => {
-      localStorage.setItem('auth_token', response.token);
+      safeSetItem('auth_token', response.token);
       queryClient.setQueryData(["/api/jwt-user"], response.user);
       refetch();
       toast({
@@ -150,8 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem("lastAuthRedirect");
+      safeRemoveItem('auth_token');
+      safeRemoveItem("lastAuthRedirect");
       return Promise.resolve();
     },
     onSuccess: () => {
@@ -166,8 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const clearAuthUser = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem("lastAuthRedirect");
+    safeRemoveItem('auth_token');
+    safeRemoveItem("lastAuthRedirect");
     queryClient.setQueryData(["/api/jwt-user"], null);
     queryClient.invalidateQueries({queryKey: ["/api/jwt-user"]});
   };
