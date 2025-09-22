@@ -32,8 +32,28 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
-  // Specificno dozvoljavamo origin za Replit
-  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
+  // Lista dozvoljenih origin-a za APK i web pristup
+  const allowedOrigins = [
+    'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev', // Development Replit
+    'https://tehnikamne.me', // Production domen
+    'https://www.tehnikamne.me', // Production domen sa www
+    'http://127.0.0.1:5000', // Local development
+    'http://localhost:5000' // Local development alternativa
+  ];
+  
+  const requestOrigin = req.headers.origin || req.headers.referer;
+  let allowedOrigin = allowedOrigins[0]; // Default fallback
+  
+  // Proveri da li je origin u listi dozvoljenih
+  if (requestOrigin) {
+    const isAllowed = allowedOrigins.some(origin => 
+      requestOrigin.startsWith(origin) || requestOrigin.includes(origin.replace('https://', ''))
+    );
+    if (isAllowed) {
+      allowedOrigin = requestOrigin;
+    }
+  }
+  
   res.header('Access-Control-Allow-Origin', allowedOrigin);
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
