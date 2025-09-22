@@ -209,7 +209,7 @@ function WorkflowActionDialog({ order, action, onClose }: WorkflowActionDialogPr
   );
 }
 
-function SparePartCard({ order, onAction }: { order: SparePartOrder; onAction: (order: SparePartOrder, action: string) => void }) {
+function SparePartCard({ order, onAction }: { order: any; onAction: (order: any, action: string) => void }) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       requested: { label: 'Zahtevano', variant: 'secondary' as const, icon: Package },
@@ -296,57 +296,92 @@ function SparePartCard({ order, onAction }: { order: SparePartOrder; onAction: (
           {getStatusBadge(order.status)}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
-          <div>
-            <span className="text-muted-foreground">Količina:</span> {order.quantity}
+        {/* OSNOVNI PODACI - KOMPAKTNO */}
+        <div className="flex flex-wrap gap-4 text-sm mb-3">
+          <div className="bg-blue-50 px-2 py-1 rounded">
+            <span className="text-blue-700 font-medium">Količina:</span> <span className="text-blue-900">{order.quantity}</span>
           </div>
-          <div>
-            <span className="text-muted-foreground">Hitnost:</span> {order.urgency}
+          <div className="bg-purple-50 px-2 py-1 rounded">
+            <span className="text-purple-700 font-medium">Hitnost:</span> <span className="text-purple-900">{order.urgency}</span>
           </div>
-          
-          {/* NOVI PODACI O SERVISERU I KLIJENTU */}
-          {order.technician?.fullName && (
-            <div>
-              <span className="text-muted-foreground">Serviser:</span> {order.technician.fullName}
+        </div>
+
+        {/* SERVISNE INFORMACIJE - KARTICE */}
+        <div className="space-y-3 mb-3">
+          {(order.technician?.fullName || order.serviceId) && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <h5 className="font-semibold text-green-800 mb-2 flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                Servisne informacije
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {order.technician?.fullName && (
+                  <div><span className="text-green-700 font-medium">Serviser:</span> {order.technician.fullName}</div>
+                )}
+                {order.serviceId && (
+                  <div><span className="text-green-700 font-medium">Servis ID:</span> #{order.serviceId}</div>
+                )}
+              </div>
             </div>
           )}
-          {order.serviceId && (
-            <div>
-              <span className="text-muted-foreground">Servis ID:</span> #{order.serviceId}
+
+          {(order.service?.client?.fullName || order.service?.client?.phone) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <h5 className="font-semibold text-blue-800 mb-2 flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                Podaci o klijentu
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {order.service?.client?.fullName && (
+                  <div><span className="text-blue-700 font-medium">Klijent:</span> {order.service.client.fullName}</div>
+                )}
+                {order.service?.client?.phone && (
+                  <div><span className="text-blue-700 font-medium">Telefon:</span> {order.service.client.phone}</div>
+                )}
+              </div>
             </div>
           )}
-          {order.service?.client?.fullName && (
-            <div>
-              <span className="text-muted-foreground">Klijent:</span> {order.service.client.fullName}
-            </div>
-          )}
-          {order.service?.client?.phone && (
-            <div>
-              <span className="text-muted-foreground">Telefon:</span> {order.service.client.phone}
-            </div>
-          )}
+
           {order.service?.appliance && (
-            <div>
-              <span className="text-muted-foreground">Aparat:</span> {order.service.appliance.manufacturer?.name} {order.service.appliance.model}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <h5 className="font-semibold text-orange-800 mb-2 flex items-center">
+                <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                Informacije o aparatu
+              </h5>
+              <div className="text-sm">
+                <div><span className="text-orange-700 font-medium">Aparat:</span> {order.service.appliance.manufacturer?.name} {order.service.appliance.model}</div>
+              </div>
             </div>
           )}
+
           {order.warrantyStatus && (
-            <div>
-              <span className="text-muted-foreground">Garancija:</span> 
-              <span className={order.warrantyStatus === 'u garanciji' ? 'text-green-600 font-semibold ml-1' : 'text-red-600 font-semibold ml-1'}>
-                {order.warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
-              </span>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <h5 className="font-semibold text-gray-800 mb-2 flex items-center">
+                <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
+                Garancijski status
+              </h5>
+              <div className="text-sm">
+                <span className={order.warrantyStatus === 'u garanciji' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                  {order.warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
+                </span>
+              </div>
             </div>
           )}
-          
-          {order.supplierName && (
-            <div>
-              <span className="text-muted-foreground">Dobavljač:</span> {order.supplierName}
-            </div>
-          )}
-          {order.actualCost && (
-            <div>
-              <span className="text-muted-foreground">Cena:</span> {order.actualCost}
+
+          {(order.supplierName || order.actualCost) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <h5 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                Dobavljač i cena
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {order.supplierName && (
+                  <div><span className="text-yellow-700 font-medium">Dobavljač:</span> {order.supplierName}</div>
+                )}
+                {order.actualCost && (
+                  <div><span className="text-yellow-700 font-medium">Cena:</span> {order.actualCost}</div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -390,7 +425,7 @@ export function SparePartsWorkflow() {
     })
   }));
 
-  const handleAction = (order: SparePartOrder, action: string) => {
+  const handleAction = (order: any, action: string) => {
     setSelectedAction({ order, action });
   };
 
@@ -453,7 +488,7 @@ export function SparePartsWorkflow() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {query.data.map((order: SparePartOrder) => (
+                  {query.data.map((order: any) => (
                     <SparePartCard 
                       key={order.id} 
                       order={order} 
@@ -897,7 +932,7 @@ export function SparePartsWorkflowEnhanced() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {query.data.map((order: SparePartOrder) => (
+                  {query.data.map((order: any) => (
                     <SparePartCardEnhanced 
                       key={order.id} 
                       order={order} 
