@@ -32,6 +32,7 @@ import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import QRCode from 'qrcode';
 import { getSecurityDashboard, getSecurityLogs, performSecurityMaintenance, securityHealthCheck, triggerTestAlert, getBlockedIPs, exportSecurityMetrics, getSecurityConfig } from './security-endpoints.js';
+import { runPenetrationTests, getPenetrationTestResults, getPenetrationTestStatus, clearPenetrationTestHistory } from './penetration-testing.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
@@ -1034,6 +1035,12 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
   app.get("/api/security/blocked-ips", jwtAuth, requireRole(['admin']), getBlockedIPs);
   app.get("/api/security/metrics/export", jwtAuth, requireRole(['admin']), exportSecurityMetrics);
   app.get("/api/security/config", jwtAuth, requireRole(['admin']), getSecurityConfig);
+
+  // 🎯 PENETRATION TESTING ENDPOINTS - ADMIN ONLY (Development/Staging only)
+  app.post("/api/security/pentest/run", jwtAuth, requireRole(['admin']), runPenetrationTests);
+  app.get("/api/security/pentest/results", jwtAuth, requireRole(['admin']), getPenetrationTestResults);
+  app.get("/api/security/pentest/status", jwtAuth, requireRole(['admin']), getPenetrationTestStatus);
+  app.delete("/api/security/pentest/history", jwtAuth, requireRole(['admin']), clearPenetrationTestHistory);
 
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
