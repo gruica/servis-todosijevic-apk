@@ -10,16 +10,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Package, Clock, CheckCircle, ArrowRight, Truck, ShoppingCart } from 'lucide-react';
+import { Package, Clock, CheckCircle, ArrowRight, Truck, ShoppingCart, Wrench, User, Phone, MapPin, Settings } from 'lucide-react';
 
 interface SparePartOrder {
   id: number;
+  serviceId?: number;
+  technicianId?: number;
+  applianceId?: number;
   partName: string;
   partNumber?: string;
   quantity: number;
   description?: string;
   urgency: string;
   status: string;
+  warrantyStatus?: 'u garanciji' | 'van garancije';
   supplierName?: string;
   estimatedCost?: string;
   actualCost?: string;
@@ -35,6 +39,33 @@ interface SparePartOrder {
   receivedAt?: string;
   consumedBy?: number;
   consumedAt?: string;
+  // Related enriched data
+  service?: {
+    id: number;
+    status: string;
+    description: string;
+    createdAt: string;
+    scheduledDate?: string;
+    client?: {
+      fullName: string;
+      phone: string;
+      email?: string;
+      address?: string;
+      city?: string;
+    } | null;
+    appliance?: {
+      model?: string;
+      serialNumber?: string;
+      category?: { name: string };
+      manufacturer?: { name: string };
+    } | null;
+  };
+  technician?: {
+    name: string;
+    phone: string;
+    email: string;
+    specialization: string;
+  };
 }
 
 interface WorkflowActionDialogProps {
@@ -616,6 +647,60 @@ function SparePartCardEnhanced({ order, onAction }: { order: SparePartOrder; onA
             )}
           </div>
           {getStatusBadgeEnhanced(order.status)}
+        </div>
+
+        {/* COMPACT CONTEXT BAR - SERVIS/APARAT/KLIJENT */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 space-y-2">
+          {order.service && (
+            <div className="flex items-center gap-2 text-sm" data-testid={`text-service-${order.service.id}`}>
+              <Wrench className="w-4 h-4 text-blue-600" />
+              <span className="font-medium text-blue-800">Servis #{order.service.id}</span>
+              {order.service.description && (
+                <span className="text-gray-600 truncate" title={order.service.description}>
+                  • {order.service.description.length > 30 ? `${order.service.description.substring(0, 30)}...` : order.service.description}
+                </span>
+              )}
+            </div>
+          )}
+          
+          {order.service?.appliance && (
+            <div className="flex items-center gap-2 text-sm" data-testid={`text-appliance-${order.id}`}>
+              <Settings className="w-4 h-4 text-orange-600" />
+              <span className="text-orange-800">
+                {order.service.appliance.manufacturer?.name || "Nepoznat"} • 
+                {order.service.appliance.category?.name || "Nepoznata kategorija"} • 
+                {order.service.appliance.model || "Nepoznat model"}
+              </span>
+            </div>
+          )}
+          
+          {order.service?.client && (
+            <div className="flex items-center gap-2 text-sm" data-testid={`text-client-${order.id}`}>
+              <User className="w-4 h-4 text-green-600" />
+              <span className="text-green-800 font-medium" title={order.service.client.fullName}>
+                {order.service.client.fullName.length > 25 ? `${order.service.client.fullName.substring(0, 25)}...` : order.service.client.fullName}
+              </span>
+              {order.service.client.phone && (
+                <>
+                  <Phone className="w-3 h-3 text-gray-500 ml-2" />
+                  <span className="text-gray-600">{order.service.client.phone}</span>
+                </>
+              )}
+              {order.service.client.city && (
+                <>
+                  <MapPin className="w-3 h-3 text-gray-500 ml-2" />
+                  <span className="text-gray-600">{order.service.client.city}</span>
+                </>
+              )}
+            </div>
+          )}
+          
+          {!order.service && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Wrench className="w-4 h-4" />
+              <span>Podaci o servisu nisu dostupni</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm mb-3">
