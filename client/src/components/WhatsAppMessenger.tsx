@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 import { Send, MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 interface WhatsAppMessengerProps {
@@ -53,7 +54,9 @@ export function WhatsAppMessenger({ serviceId, clientPhone, clientName, readOnly
   const sendMessageMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload) => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       try {
         const response = await fetch('/api/sms-mobile-api/send', {

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   Smartphone, 
   Wifi, 
@@ -101,6 +102,7 @@ interface RecoveryResult {
 export function WhatsAppWebController() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
   const [targetPhoneNumber, setTargetPhoneNumber] = useState('');
   const [selectedContact, setSelectedContact] = useState<WhatsAppContact | null>(null);
@@ -171,7 +173,9 @@ export function WhatsAppWebController() {
   const initializeMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       const response = await fetch('/api/whatsapp-web/initialize', {
         method: 'POST',
@@ -208,7 +212,9 @@ export function WhatsAppWebController() {
   const sendMessageMutation = useMutation({
     mutationFn: async ({ phoneNumber, message }: { phoneNumber: string; message: string }) => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       const response = await fetch('/api/whatsapp-web/send-message', {
         method: 'POST',
@@ -249,7 +255,9 @@ export function WhatsAppWebController() {
   const optimizeMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       const response = await fetch('/api/whatsapp-web/optimize', {
         method: 'POST',
@@ -286,7 +294,9 @@ export function WhatsAppWebController() {
   const cleanupMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       const response = await fetch('/api/whatsapp-web/cleanup-sessions', {
         method: 'POST',
@@ -322,7 +332,9 @@ export function WhatsAppWebController() {
   const recoveryMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       const response = await fetch('/api/whatsapp-web/auto-recovery', {
         method: 'POST',

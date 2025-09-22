@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { MessageCircle, Phone, Clock, CheckCircle2, Send, MessageSquare, AlertCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ConversationMessage {
   id: number;
@@ -53,7 +54,9 @@ export function ConversationHistory({ serviceId, readOnly = false }: Conversatio
     queryKey: [`/api/conversations/${serviceId}/history`],
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
       
       const response = await fetch(`/api/conversations/${serviceId}/history`, {
         headers: {
@@ -75,7 +78,9 @@ export function ConversationHistory({ serviceId, readOnly = false }: Conversatio
   const updateStatusMutation = useMutation({
     mutationFn: async ({ messageId, status }: { messageId: number; status: string }) => {
       const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
       
       const response = await fetch(`/api/conversations/${messageId}/status`, {
         method: 'PUT',
