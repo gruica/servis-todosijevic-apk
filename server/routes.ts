@@ -317,39 +317,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
-      // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
-      try {
-        // Dohvati dodatne podatke za email
-        let serviceData = null;
-        let clientData = null;
-        let applianceData = null;
-        let technicianData = null;
-        let manufacturerData = null;
-        let categoryData = null;
+      // Helper funkcija za null -> undefined konverziju
+      const toUndef = (value: string | null): string | undefined => value ?? undefined;
 
-        if (existingOrder.serviceId) {
-          serviceData = await storage.getService(existingOrder.serviceId);
-          if (serviceData) {
-            if (serviceData.clientId) {
-              clientData = await storage.getClient(serviceData.clientId);
+      // Dohvati dodatne podatke za email i SMS
+      let service = null;
+      let client = null;
+      let appliance = null;
+      let technician = null;
+      let manufacturer = null;
+      let category = null;
+
+      if (existingOrder.serviceId) {
+        service = await storage.getService(existingOrder.serviceId);
+        if (service) {
+          if (service.clientId) {
+            client = await storage.getClient(service.clientId);
+          }
+          if (service.applianceId) {
+            appliance = await storage.getAppliance(service.applianceId);
+            // Properly get manufacturer and category data
+            if (appliance?.manufacturerId) {
+              manufacturer = await storage.getManufacturer(appliance.manufacturerId);
             }
-            if (serviceData.applianceId) {
-              applianceData = await storage.getAppliance(serviceData.applianceId);
-              // Properly get manufacturer and category data
-              if (applianceData?.manufacturerId) {
-                manufacturerData = await storage.getManufacturer(applianceData.manufacturerId);
-              }
-              if (applianceData?.categoryId) {
-                categoryData = await storage.getApplianceCategory(applianceData.categoryId);
-              }
-            }
-            if (serviceData.technicianId) {
-              technicianData = await storage.getTechnician(serviceData.technicianId);
+            if (appliance?.categoryId) {
+              category = await storage.getApplianceCategory(appliance.categoryId);
             }
           }
+          if (service.technicianId) {
+            technician = await storage.getTechnician(service.technicianId);
+          }
         }
+      }
 
-        const manufacturerName = manufacturerData?.name || '';
+      // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
+      try {
+
+        const manufacturerName = manufacturer?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
         console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
@@ -358,17 +362,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isComPlus) {
           console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
-          const deviceType = categoryData?.name || 'Uređaj';
+          const deviceType = category?.name || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
             existingOrder.serviceId || 0,
-            clientData?.fullName || 'N/A',
-            technicianData?.fullName || 'N/A',
+            client?.fullName || 'N/A',
+            technician?.fullName || 'N/A',
             deviceType,
             manufacturerName,
             existingOrder.partName,
-            existingOrder.partNumber || 'N/A',
+            toUndef(existingOrder.partNumber) || 'N/A',
             urgency,
-            existingOrder.description
+            toUndef(existingOrder.description)
           );
 
           if (complusEmailSent) {
@@ -385,18 +389,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Pripremi podatke za opšti email template
             const orderData = {
               partName: existingOrder.partName,
-              partNumber: existingOrder.partNumber,
+              partNumber: toUndef(existingOrder.partNumber),
               quantity: existingOrder.quantity,
               urgency: urgency,
-              description: existingOrder.description,
+              description: toUndef(existingOrder.description),
               serviceId: existingOrder.serviceId,
-              clientName: clientData?.fullName,
-              clientPhone: clientData?.phone,
-              applianceModel: applianceData?.model,
-              applianceSerialNumber: applianceData?.serialNumber,
+              clientName: client?.fullName,
+              clientPhone: client?.phone,
+              applianceModel: appliance?.model,
+              applianceSerialNumber: appliance?.serialNumber,
               manufacturerName: manufacturerName,
-              categoryName: applianceData?.categoryName || serviceData?.categoryName,
-              technicianName: technicianData?.name,
+              categoryName: category?.name,
+              technicianName: technician?.fullName,
               orderDate: new Date(),
               adminNotes: adminNotes
             };
@@ -437,18 +441,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enabled: settingsMap.sms_mobile_enabled === 'true'
         }, storage);
 
-        if (existingOrder.serviceId && clientData && technicianData) {
+        if (existingOrder.serviceId && client && technician) {
           const smsData = {
             serviceId: existingOrder.serviceId,
-            clientId: serviceData?.clientId || 0,
-            clientName: clientData.fullName,
-            clientPhone: clientData.phone,
-            deviceType: applianceData?.categoryName || 'Uređaj',
-            deviceModel: applianceData?.model || 'N/A',
+            clientId: service?.clientId || 0,
+            clientName: client.fullName,
+            clientPhone: client.phone,
+            deviceType: category?.name || 'Uređaj',
+            deviceModel: appliance?.model || 'N/A',
             manufacturerName: manufacturerName,
-            technicianId: technicianData.id,
-            technicianName: technicianData.name,
-            technicianPhone: technicianData.phone || '067123456',
+            technicianId: technician.id,
+            technicianName: technician.fullName,
+            technicianPhone: technician.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: estimatedDelivery || '3-5 dana',
             createdBy: req.user.fullName || req.user.username
@@ -460,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
@@ -492,9 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "waiting_delivery",
         actualCost,
-        adminNotes: adminNotes || null,
-        receivedBy: req.user.id,
-        receivedAt: new Date()
+        adminNotes: adminNotes ? `${adminNotes} (Primio: ${req.user.fullName || req.user.username})` : `Primio: ${req.user.fullName || req.user.username}`
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} potvrdio prijem rezervnog dela ID: ${orderId}`);
@@ -520,8 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "available",
-        madeAvailableBy: req.user.id,
-        madeAvailableAt: new Date()
+        adminNotes: `Dostupno napravio: ${req.user.fullName || req.user.username}`
       });
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} prebacio deo u dostupno: ID ${orderId}`);
@@ -672,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
+            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
@@ -704,8 +705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.updateSparePartOrderStatus(orderId, {
         status: "consumed",
-        consumedBy: req.user.technicianId || req.user.id,
-        consumedAt: new Date(),
+        adminNotes: `Potrošeno od strane: ${req.user.fullName || req.user.username}`,
         consumedForServiceId: consumedForServiceId || null
       });
 
