@@ -33,9 +33,14 @@ import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webho
 import QRCode from 'qrcode';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
-// ENTERPRISE MONITORING & HEALTH CHECK
+// 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
 async function setupEnterpriseHealthEndpoint(app: Express) {
-  app.get("/api/health", async (req, res) => {
+  // 🛡️ Zaštićeni zdravstveni endpoint - admin only u production
+  const healthMiddlewares = process.env.NODE_ENV === 'production' 
+    ? [jwtAuth, requireRole(['admin'])] 
+    : [];
+    
+  app.get("/api/health", ...healthMiddlewares, async (req, res) => {
     try {
       const startTime = Date.now();
       const { checkDatabaseHealth } = await import('./db.js');
@@ -52,12 +57,16 @@ async function setupEnterpriseHealthEndpoint(app: Express) {
         performance: {
           healthCheckTime: `${Date.now() - startTime}ms`,
           uptime: `${Math.floor(process.uptime())}s`,
-          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+          ...(process.env.NODE_ENV !== 'production' && {
+            memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+          })
         },
-        version: {
-          node: process.version,
-          app: 'FrigoSistem_v2025.1.0_Enterprise'
-        }
+        ...(process.env.NODE_ENV !== 'production' && {
+          version: {
+            node: process.version,
+            app: 'FrigoSistem_v2025.1.0_Enterprise'
+          }
+        })
       };
       
       res.status(dbHealth.healthy ? 200 : 503).json(systemHealth);
@@ -1055,23 +1064,36 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
     }
   });
 
+  // 🛡️ Osnovni health endpoint - ograničene informacije u production
   app.get("/health", (req, res) => {
-    res.status(200).json({ 
+    const healthResponse: any = { 
       status: "healthy", 
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: "1.0.0"
-    });
+      timestamp: new Date().toISOString()
+    };
+    
+    // 🛡️ Detaljne informacije samo u development
+    if (process.env.NODE_ENV !== 'production') {
+      healthResponse.uptime = process.uptime();
+      healthResponse.version = "1.0.0";
+    }
+    
+    res.status(200).json(healthResponse);
   });
   
-  // Alternative health check route
+  // 🛡️ Basic API health endpoint - minimal data u production
   app.get("/api/health", (req, res) => {
-    res.status(200).json({ 
+    const healthResponse: any = { 
       status: "ok", 
       api: "ready",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    });
+      timestamp: new Date().toISOString()
+    };
+    
+    // 🛡️ Detaljne informacije samo u development
+    if (process.env.NODE_ENV !== 'production') {
+      healthResponse.uptime = process.uptime();
+    }
+    
+    res.status(200).json(healthResponse);
   });
   
   // Inicijalizacija SMS servisa
