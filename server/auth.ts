@@ -49,7 +49,6 @@ export async function comparePassword(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   // Detect production environment 
   const isProduction = process.env.REPLIT_ENVIRONMENT === 'production' || 
-                       !!process.env.REPLIT_DEV_DOMAIN || 
                        process.env.NODE_ENV === 'production';
   
   // MANDATORY SESSION_SECRET validation - fail-fast for production security
@@ -126,12 +125,8 @@ export function setupAuth(app: Express) {
             return done(null, false, { message: 'Neispravno korisničko ime ili lozinka' });
           }
           
-          // Dodatna provera: da li je korisnik verifikovan
-          // Administratori mogu da se prijave uvek, ostali korisnici moraju biti verifikovani
-          if (user.role !== 'admin' && !user.isVerified) {
-            console.log(`User ${username} is not verified`);
-            return done(null, false, { message: 'Vaš nalog nije još verifikovan od strane administratora. Molimo sačekajte potvrdu.' });
-          }
+          // Verifikacija je uklonjena - korisnici se mogu ulogirati bez obzira na isVerified status
+          // isVerified se proverava na endpoint nivou kad je potrebno
           
           console.log(`Authentication successful for: ${username}`);
           return done(null, user);

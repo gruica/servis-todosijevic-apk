@@ -1160,11 +1160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
       }
       
-      // Check if user is verified
-      if (!user.isVerified) {
-        console.log(`JWT Login: User ${username} not verified`);
-        return res.status(401).json({ error: "Račun nije verifikovan. Kontaktirajte administratora." });
-      }
+      // isVerified check uklonjen - korisnici se mogu ulogirati bez obzira na verification status
       
       // Generate JWT token
       const token = generateToken({
