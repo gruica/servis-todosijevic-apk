@@ -31,6 +31,7 @@ import { aiPredictiveMaintenanceService } from './services/ai-predictive-mainten
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import QRCode from 'qrcode';
+import { getSecurityDashboard, getSecurityLogs, performSecurityMaintenance, securityHealthCheck, triggerTestAlert, getBlockedIPs, exportSecurityMetrics, getSecurityConfig } from './security-endpoints.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
@@ -1023,6 +1024,16 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
       res.status(500).json({ error: 'Failed to generate QR code' });
     }
   });
+
+  // 🛡️ SECURITY MANAGEMENT ENDPOINTS - ADMIN ONLY
+  app.get("/api/security/dashboard", jwtAuth, requireRole(['admin']), getSecurityDashboard);
+  app.get("/api/security/logs", jwtAuth, requireRole(['admin']), getSecurityLogs);
+  app.post("/api/security/maintenance", jwtAuth, requireRole(['admin']), performSecurityMaintenance);
+  app.get("/api/security/health", jwtAuth, requireRole(['admin']), securityHealthCheck);
+  app.post("/api/security/test-alert", jwtAuth, requireRole(['admin']), triggerTestAlert);
+  app.get("/api/security/blocked-ips", jwtAuth, requireRole(['admin']), getBlockedIPs);
+  app.get("/api/security/metrics/export", jwtAuth, requireRole(['admin']), exportSecurityMetrics);
+  app.get("/api/security/config", jwtAuth, requireRole(['admin']), getSecurityConfig);
 
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);

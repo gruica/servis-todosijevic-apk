@@ -10,6 +10,8 @@ import { setupAuth } from "./auth";
 import { complusCronService } from "./complus-cron-service";
 import { ServisKomercCronService } from "./servis-komerc-cron-service";
 import { BekoCronService } from "./beko-cron-service.js";
+import { completeSecurityStack } from "./security-middleware.js";
+import { logSecurityEvent, SecurityEventType } from "./security-monitor.js";
 
 const servisKomercCronService = new ServisKomercCronService();
 const bekoCronService = BekoCronService.getInstance();
@@ -94,8 +96,13 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', allowedOrigins[0]); // Default fallback
     res.header('Access-Control-Allow-Credentials', 'true');
   } else {
-    // Nepoznat origin - BLOKIRATI
+    // Nepoznat origin - BLOKIRATI + LOG SECURITY EVENT
     console.warn(`🚫 CORS: Blokiran nepoznat origin: ${requestOrigin}`);
+    logSecurityEvent(SecurityEventType.CORS_VIOLATION, {
+      origin: requestOrigin,
+      path: req.path,
+      method: req.method
+    }, req);
     return res.status(403).json({ error: 'CORS policy violation - origin not allowed' });
   }
   
@@ -132,9 +139,14 @@ app.get('/uploads/:fileName', async (req, res) => {
     return res.status(400).json({ error: 'Invalid file name' });
   }
   
-  // 🛡️ BLOKIRANJE PATH TRAVERSAL KARAKTERA
+  // 🛡️ BLOKIRANJE PATH TRAVERSAL KARAKTERA + SECURITY LOGGING
   if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\') || fileName.includes('\0')) {
     console.warn(`🚫 SECURITY: Path traversal pokušaj blokiran: ${fileName}`);
+    logSecurityEvent(SecurityEventType.PATH_TRAVERSAL_ATTEMPT, {
+      fileName,
+      path: req.path,
+      detectedPattern: 'file_name_traversal'
+    }, req);
     return res.status(400).json({ error: 'Invalid file name - security violation' });
   }
   
@@ -237,6 +249,9 @@ app.use((req, res, next) => {
 
 // 🛡️ APLIKACIJA RATE LIMITING-a NA API ENDPOINT-E
 app.use('/api/', apiLimiter);
+
+// 🛡️ ENTERPRISE SECURITY MONITORING STACK
+app.use(completeSecurityStack());
 
 (async () => {
   // Mobile SMS Service has been completely removed
