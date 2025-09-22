@@ -4,24 +4,33 @@
 /**
  * Safely gets an item from storage with localStorage->cookie fallback
  */
-export function safeGetItem(key) {
+export function safeGetItem(key: string): string | null {
+  console.log(`[MOBILE-DEBUG] GET ${key}: Starting...`);
+  
   try {
     // Try localStorage first
     if (typeof localStorage !== 'undefined' && localStorage.getItem) {
       const value = localStorage.getItem(key);
       if (value !== null) {
+        console.log(`[MOBILE-DEBUG] GET ${key}: localStorage SUCCESS`);
         return value;
       }
+      console.log(`[MOBILE-DEBUG] GET ${key}: localStorage EMPTY`);
+    } else {
+      console.log(`[MOBILE-DEBUG] GET ${key}: localStorage UNAVAILABLE`);
     }
   } catch (error) {
-    console.warn(`localStorage unavailable for ${key}, trying cookie fallback:`, error);
+    console.log(`[MOBILE-DEBUG] GET ${key}: localStorage ERROR:`, error);
   }
   
   // Fallback to cookies for mobile browsers
   try {
+    console.log(`[MOBILE-DEBUG] GET ${key}: Trying cookie fallback`);
     const name = key + "=";
     const decodedCookie = decodeURIComponent(document.cookie);
     const cookieArray = decodedCookie.split(';');
+    
+    console.log(`[MOBILE-DEBUG] GET ${key}: Found ${cookieArray.length} cookies`);
     
     for (let i = 0; i < cookieArray.length; i++) {
       let cookie = cookieArray[i];
@@ -29,32 +38,42 @@ export function safeGetItem(key) {
         cookie = cookie.substring(1);
       }
       if (cookie.indexOf(name) === 0) {
-        return cookie.substring(name.length, cookie.length);
+        const value = cookie.substring(name.length, cookie.length);
+        console.log(`[MOBILE-DEBUG] GET ${key}: Cookie SUCCESS`);
+        return value;
       }
     }
+    console.log(`[MOBILE-DEBUG] GET ${key}: Cookie NOT FOUND`);
   } catch (error) {
-    console.warn(`Cookie fallback failed for ${key}:`, error);
+    console.log(`[MOBILE-DEBUG] GET ${key}: Cookie ERROR:`, error);
   }
   
+  console.log(`[MOBILE-DEBUG] GET ${key}: FINAL RESULT: null`);
   return null;
 }
 
 /**
  * Safely sets an item in storage with localStorage->cookie fallback
  */
-export function safeSetItem(key, value) {
+export function safeSetItem(key: string, value: string): boolean {
+  console.log(`[MOBILE-DEBUG] SET ${key}: Starting...`);
+  
   try {
     // Try localStorage first
     if (typeof localStorage !== 'undefined' && localStorage.setItem) {
       localStorage.setItem(key, value);
+      console.log(`[MOBILE-DEBUG] SET ${key}: localStorage SUCCESS`);
       return true;
     }
+    console.log(`[MOBILE-DEBUG] SET ${key}: localStorage UNAVAILABLE`);
   } catch (error) {
-    console.warn(`localStorage unavailable for ${key}, using cookie fallback:`, error);
+    console.log(`[MOBILE-DEBUG] SET ${key}: localStorage ERROR:`, error);
   }
   
   // Fallback to cookies for mobile browsers
   try {
+    console.log(`[MOBILE-DEBUG] SET ${key}: Trying cookie fallback`);
+    
     // Set secure cookie with 30 day expiration (same as JWT token expiration)
     const expires = new Date();
     expires.setTime(expires.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
@@ -64,10 +83,14 @@ export function safeSetItem(key, value) {
     const isSecure = window.location.protocol === 'https:';
     const cookieValue = `${key}=${encodeURIComponent(value)}; expires=${expiresString}; path=/; SameSite=Lax${isSecure ? '; Secure' : ''}`;
     
+    console.log(`[MOBILE-DEBUG] SET ${key}: Cookie value length: ${cookieValue.length}`);
+    console.log(`[MOBILE-DEBUG] SET ${key}: Using HTTPS: ${isSecure}`);
+    
     document.cookie = cookieValue;
+    console.log(`[MOBILE-DEBUG] SET ${key}: Cookie SET SUCCESS`);
     return true;
   } catch (error) {
-    console.error(`Both localStorage and cookie fallback failed for ${key}:`, error);
+    console.log(`[MOBILE-DEBUG] SET ${key}: Cookie ERROR:`, error);
     return false;
   }
 }
@@ -75,7 +98,7 @@ export function safeSetItem(key, value) {
 /**
  * Safely removes an item from storage (both localStorage and cookies)
  */
-export function safeRemoveItem(key) {
+export function safeRemoveItem(key: string): boolean {
   let removed = false;
   
   // Try localStorage first
@@ -102,7 +125,7 @@ export function safeRemoveItem(key) {
 /**
  * Check if any storage mechanism is available
  */
-export function isStorageAvailable() {
+export function isStorageAvailable(): boolean {
   try {
     // Test localStorage
     if (typeof localStorage !== 'undefined') {
