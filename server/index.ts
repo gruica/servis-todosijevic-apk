@@ -43,9 +43,16 @@ app.use((req, res, next) => {
   
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
   
-  // Samo dozvolji access ako je origin u whitelist-i
-  if (origin && allowedOrigins.has(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+  // Dozvolji access ako je origin u whitelist-i ILI undefined (mobile browsers)
+  const isAllowedOrigin = (origin && allowedOrigins.has(origin)) || !origin;
+  
+  if (isAllowedOrigin) {
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+    } else {
+      // Za mobilne browsere bez origin header-a
+      res.header('Access-Control-Allow-Origin', '*');
+    }
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -56,13 +63,12 @@ app.use((req, res, next) => {
   
   // Log samo u development
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${origin ? allowedOrigins.has(origin) : false}`);
+    console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${isAllowedOrigin}, mobile=${!origin}`);
   }
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    const isAllowed = origin && allowedOrigins.has(origin);
-    res.sendStatus(isAllowed ? 200 : 403);
+    res.sendStatus(isAllowedOrigin ? 200 : 403);
     return;
   }
   
