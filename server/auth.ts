@@ -89,7 +89,7 @@ export function setupAuth(app: Express) {
       secure: isProduction, // Enable secure cookies in production (HTTPS)
       httpOnly: true, // Prevent XSS attacks
       sameSite: isProduction ? "strict" : "lax", // CSRF protection
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours (reduced from 30 days for security)
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for mobile app persistence
       domain: undefined,
       path: '/'
     },
