@@ -25,12 +25,13 @@ const app = express();
 app.set('trust proxy', 1);
 
 // 🛡️ SIGURNOSNI HEADERS - HELMET MIDDLEWARE
+const isDevelopment = app.get("env") === "development";
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Za Vite development
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: isDevelopment ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"] : ["'self'"], // Production: zabrani unsafe
+      styleSrc: ["'self'", "'unsafe-inline'"], // Potrebno za CSS
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", "https:", "wss:"],
       fontSrc: ["'self'", "https:"],

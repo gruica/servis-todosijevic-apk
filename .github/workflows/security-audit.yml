@@ -33,7 +33,28 @@ jobs:
       - name: 🔒 Advanced Security Scan (audit-ci)
         run: |
           echo "🔍 Running audit-ci for configurable thresholds..."
-          npx audit-ci --high || echo "⚠️ High/Critical vulnerabilities detected"
+          npm audit --json > audit-results.json || true
+          
+          # 🚫 SECURITY GATE - Blokirati kritične ranjivosti
+          CRITICAL=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          
+          echo "Critical vulnerabilities: $CRITICAL"
+          echo "High vulnerabilities: $HIGH"
+          
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ SECURITY GATE FAILED: $CRITICAL critical vulnerabilities found!"
+            echo "🚫 Deployment blocked until vulnerabilities are resolved."
+            exit 1
+          fi
+          
+          if [ "$HIGH" -gt 2 ]; then
+            echo "❌ SECURITY GATE FAILED: $HIGH high vulnerabilities found (max: 2)!"
+            echo "🚫 Deployment blocked until vulnerabilities are resolved."
+            exit 1
+          fi
+          
+          echo "✅ Security gate passed!"
           
       - name: 🐛 Runtime Vulnerability Check
         run: |

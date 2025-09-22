@@ -84,10 +84,15 @@ class EncryptionKeyManager {
     if (masterKeyHex && masterKeyHex.length === 64) {
       this.masterKey = Buffer.from(masterKeyHex, 'hex');
     } else {
-      // Generate new master key (u production bi ovo trebalo da bude iz HSM-a)
-      this.masterKey = crypto.randomBytes(32);
-      console.log('🔐 [ENCRYPTION] Master key generated. Store this securely:');
-      console.log(`MASTER_ENCRYPTION_KEY=${this.masterKey.toString('hex')}`);
+      if (process.env.NODE_ENV === 'production') {
+        // U production NIKAD ne generiši nov key, zahtevaj postojeći
+        throw new Error('MASTER_ENCRYPTION_KEY environment variable is required in production');
+      } else {
+        // Generate new master key samo u development okruženju
+        this.masterKey = crypto.randomBytes(32);
+        console.log('🔐 [ENCRYPTION] Development master key generated. Set MASTER_ENCRYPTION_KEY in production.');
+        // NIKAD ne loguj ključ, čak ni u development-u iz sigurnosnih razloga
+      }
     }
     
     // Generate RSA key pair for asymmetric encryption
