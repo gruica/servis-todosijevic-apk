@@ -477,7 +477,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredOrders.map((order) => (
                 <Card key={order.id} className="border">
                   <CardContent className="p-4">
