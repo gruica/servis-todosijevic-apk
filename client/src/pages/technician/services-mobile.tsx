@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -1253,6 +1254,7 @@ function ServiceCard({ service }: { service: Service }) {
 export default function TechnicianServicesMobile() {
   const [activeTab, setActiveTab] = useState("active");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
   
   // Fetch services data with JWT authentication
   const { data: services = [], isLoading } = useQuery({
@@ -1271,11 +1273,17 @@ export default function TechnicianServicesMobile() {
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('auth_token');
+          throw new Error('Authentication expired');
+        }
         throw new Error(`Failed to fetch services: ${response.status}`);
       }
       
       return response.json();
-    }
+    },
+    enabled: !!user && user.role === 'technician', // Ne pozivaj API ako nema korisnika ili nije serviser
+    retry: false // Ne retryuj auth greške
   });
   
   // Filter services by status
@@ -1291,11 +1299,47 @@ export default function TechnicianServicesMobile() {
     services.filter((s: Service) => ['cancelled'].includes(s.status))
   , [services]);
   
+  // Loading state za auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Verifikujem pristup...</span>
+        </div>
+      </div>
+    );
+  }
+  
+  // Redirect na login ako nema korisnika ili nije serviser
+  if (!user || user.role !== 'technician') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <UserX className="h-8 w-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Pristup ograničen</h2>
+          <p className="text-gray-600 mb-6">
+            {!user 
+              ? "Morate se prijaviti da biste pristupili ovoj stranici." 
+              : "Ova stranica je dostupna samo servisirima."}
+          </p>
+          <Link href="/login" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <LogOut className="h-4 w-4 mr-2" />
+            Prijavite se
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Učitavam servise...</span>
         </div>
       </div>
     );
