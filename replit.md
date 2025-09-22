@@ -117,10 +117,10 @@ Creating new functions instead of changing existing ones is mandatory.
 - **File Uploads**: Multer.
 - **Image Processing**: Sharp.
 
-## Test Account Credentials
+## Production Authentication
 
-### Testing Authentication System
-For testing and development purposes, the following test accounts are available with proper database relationships:
+### Available Login Credentials
+The system uses production user accounts with role-based access control:
 
 #### Admin Account
 - **Username**: admin
@@ -129,27 +129,7 @@ For testing and development purposes, the following test accounts are available 
 - **Email**: admin@frigosistem.com
 - **Access**: Full system access, all admin features
 
-#### Technician Account  
-- **Username**: test-serviser@example.com
-- **Password**: 123456
-- **Role**: technician
-- **Email**: test-serviser@example.com
-- **Access**: Mobile technician interface, service management
-- **Notes**: Properly linked with technicians table (technicianId: 5)
+#### Production Users
+All other user accounts (technicians, business partners, customers) are production accounts with real business data. Contact system administrator for access credentials.
 
-#### Business Partner Account
-- **Username**: test-partner@example.com  
-- **Password**: 123456
-- **Role**: business_partner
-- **Email**: test-partner@example.com
-- **Company**: Test Partner Kompanija
-- **Access**: Business partner portal, service requests
-
-#### Customer Account
-- **Username**: test-customer@example.com
-- **Password**: 123456  
-- **Role**: customer
-- **Email**: test-customer@example.com
-- **Access**: Customer portal, service history
-
-All test accounts are verified and ready for immediate use. JWT tokens have 30-day expiration.
+JWT tokens have 30-day expiration for all user roles.
