@@ -49,7 +49,6 @@ import {
   DeletedService, InsertDeletedService, deletedServices
 } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 import connectPg from "connect-pg-simple";
@@ -57,7 +56,6 @@ import { pool, db } from "./db";
 import { eq, and, desc, gte, lte, ne, isNull, like, ilike, count, sum, or, inArray, sql } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
-const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
 // Define extended storage interface
@@ -417,9 +415,8 @@ export class MemStorage implements IStorage {
     this.maintenanceScheduleId = 1;
     this.maintenanceAlertId = 1;
     
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    });
+    // Session store se sada koristi samo kroz auth.ts (PostgreSQL)
+    // MemoryStore uklonjen jer nije potreban
     
     // Add some initial categories with proper icons
     this.seedApplianceCategories();
@@ -1478,14 +1475,8 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // Privremeno koristimo memory store za debugging
-    console.log("Inicijalizujem Memory session store za debugging...");
-    
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 sata
-    });
-    
-    console.log("Memory session store inicijalizovan uspešno");
+    // Session store se koristi kroz auth.ts sa PostgreSQL persistence
+    console.log("Inicijalizujem DB storage sa PostgreSQL session management...");
     
     // Inicijalno podešavanje baze
     this.initializeDatabaseIfEmpty();
