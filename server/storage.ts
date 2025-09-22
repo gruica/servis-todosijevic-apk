@@ -3489,7 +3489,8 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(order.technician_id);
               if (technician) {
                 technicianData = {
-                  name: technician.fullName || technician.name,
+                  fullName: technician.fullName || technician.name, // Frontend traži fullName
+                  name: technician.fullName || technician.name,     // Backup za kompatibilnost  
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
@@ -3646,7 +3647,8 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(row.technician_id);
               if (technician) {
                 technicianData = {
-                  name: technician.fullName || technician.name,
+                  fullName: technician.fullName || technician.name, // Frontend traži fullName
+                  name: technician.fullName || technician.name,     // Backup za kompatibilnost  
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
@@ -3784,7 +3786,8 @@ export class DatabaseStorage implements IStorage {
               const technician = await this.getTechnician(row.technician_id);
               if (technician) {
                 technicianData = {
-                  name: technician.fullName || technician.name,
+                  fullName: technician.fullName || technician.name, // Frontend traži fullName
+                  name: technician.fullName || technician.name,     // Backup za kompatibilnost  
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''

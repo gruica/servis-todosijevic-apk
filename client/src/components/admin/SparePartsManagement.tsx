@@ -288,9 +288,31 @@ export function SparePartsManagement() {
                       <p><strong>Količina:</strong> {order.quantity}</p>
                       <p><strong>Serviser:</strong> {order.technician?.fullName || 'N/A'}</p>
                       <p><strong>Servis ID:</strong> #{order.serviceId}</p>
+                      
+                      {/* NOVI PODACI O KLIJENTU I APARATU */}
+                      {order.service?.client?.fullName && (
+                        <p><strong>Klijent:</strong> {order.service.client.fullName}</p>
+                      )}
+                      {order.service?.client?.phone && (
+                        <p><strong>Telefon:</strong> {order.service.client.phone}</p>
+                      )}
+                      {order.service?.appliance && (
+                        <p><strong>Aparat:</strong> {order.service.appliance.manufacturer?.name} {order.service.appliance.model}</p>
+                      )}
+                      {order.warrantyStatus && (
+                        <p><strong>Garancija:</strong> 
+                          <span className={order.warrantyStatus === 'u garanciji' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                            {order.warrantyStatus === 'u garanciji' ? ' 🛡️ U garanciji' : ' 💰 Van garancije'}
+                          </span>
+                        </p>
+                      )}
+                      
                       <p><strong>Datum porudžbine:</strong> {formatDate(order.createdAt)}</p>
-                      {order.notes && (
-                        <p><strong>Napomene:</strong> {order.notes}</p>
+                      {order.description && (
+                        <p><strong>Opis:</strong> {order.description}</p>
+                      )}
+                      {order.adminNotes && (
+                        <p><strong>Admin napomene:</strong> {order.adminNotes}</p>
                       )}
                     </div>
                   </div>
