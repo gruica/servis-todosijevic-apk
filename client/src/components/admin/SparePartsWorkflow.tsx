@@ -487,7 +487,7 @@ export function SparePartsWorkflow() {
                   Nema rezervnih delova u ovom statusu
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {query.data.map((order: any) => (
                     <SparePartCard 
                       key={order.id} 
@@ -931,7 +931,7 @@ export function SparePartsWorkflowEnhanced() {
                     'Nema rezervnih delova u ovom statusu'}
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {query.data.map((order: any) => (
                     <SparePartCardEnhanced 
                       key={order.id} 

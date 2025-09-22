@@ -255,7 +255,7 @@ export function SparePartsManagement() {
       </Card>
 
       {/* Orders List */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredOrders.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">

@@ -141,7 +141,7 @@ export function WaitingForPartsSection() {
             <p>Nema servisa koji čekaju rezervne delove</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {waitingServices.map((service) => (
               <div
                 key={service.id}
