@@ -80,16 +80,16 @@ enum IntrusionType {
   ABNORMAL_REQUEST_SIZE = 'ABNORMAL_REQUEST_SIZE'
 }
 
-// 🛡️ Global IDS Configuration
+// 🛡️ Global IDS Configuration - PRODUCTION OPTIMIZED
 const idsConfig: IDSConfig = {
   enabled: true,
-  sensitivity: process.env.NODE_ENV === 'production' ? 'high' : 'medium',
+  sensitivity: process.env.NODE_ENV === 'production' ? 'medium' : 'medium', // Ublaženo za production
   realTimeMonitoring: true,
   automaticBlocking: process.env.NODE_ENV === 'production',
   geoAnomalyDetection: true,
   behavioralAnalytics: true,
-  maxSuspiciousScore: 75,
-  blockingThreshold: 85
+  maxSuspiciousScore: process.env.NODE_ENV === 'production' ? 90 : 75, // Povećano za production
+  blockingThreshold: process.env.NODE_ENV === 'production' ? 95 : 85 // Povećano za production
 };
 
 // 📈 In-memory stores (u production bi ovo bilo Redis/Database)
