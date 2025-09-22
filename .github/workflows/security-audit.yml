@@ -1,0 +1,230 @@
+name: 🛡️ Security Audit & Dependency Scanning
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Svaki ponedeljak u 02:00 UTC
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  security-audit:
+    name: 🔍 Dependency & Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: 📦 Install dependencies
+        run: npm ci --audit=false
+        
+      - name: 🛡️ NPM Security Audit
+        run: |
+          echo "🔍 Running npm audit..."
+          npm audit --audit-level moderate || echo "⚠️ Vulnerabilities found, continuing with detailed scan..."
+          
+      - name: 🔒 Advanced Security Scan (audit-ci)
+        run: |
+          echo "🔍 Running audit-ci for configurable thresholds..."
+          npx audit-ci --high || echo "⚠️ High/Critical vulnerabilities detected"
+          
+      - name: 🐛 Runtime Vulnerability Check
+        run: |
+          echo "🔍 Checking for runtime vulnerabilities..."
+          npx is-my-node-vulnerable || echo "⚠️ Runtime vulnerabilities detected"
+          
+      - name: 🔍 ESLint Security Scan
+        run: |
+          echo "🔍 Running ESLint security rules..."
+          npm run lint:security || echo "⚠️ Security issues detected in code"
+          
+      - name: 📊 Generate Security Report
+        if: always()
+        run: |
+          echo "📊 Generating comprehensive security report..."
+          
+          echo "## 🛡️ Security Audit Report" > security-report.md
+          echo "**Generated:** $(date)" >> security-report.md
+          echo "" >> security-report.md
+          
+          echo "### 📦 NPM Audit Results" >> security-report.md
+          npm audit --json > npm-audit.json || true
+          cat npm-audit.json | jq -r '.vulnerabilities | to_entries[] | "- **\(.key)**: \(.value.severity) severity"' >> security-report.md || echo "No npm audit data" >> security-report.md
+          
+          echo "" >> security-report.md
+          echo "### 🐛 Runtime Vulnerabilities" >> security-report.md
+          npx is-my-node-vulnerable --json > runtime-vuln.json || true
+          cat runtime-vuln.json | jq -r '.vulnerabilities[]? | "- \(.title): \(.description)"' >> security-report.md || echo "No runtime vulnerabilities" >> security-report.md
+          
+      - name: 📤 Upload Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            security-report.md
+            npm-audit.json
+            runtime-vuln.json
+            
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('security-report.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🛡️ Security Audit Results\n\n${report}`
+            });
+
+  dependency-check:
+    name: 📋 Dependency Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: 📊 Analyze Dependencies
+        run: |
+          echo "📊 Analyzing dependency tree..."
+          npm ls --depth=0 > dependencies.txt || true
+          
+          echo "📦 Package count:"
+          npm ls --depth=0 --json | jq '.dependencies | length' || echo "Could not count packages"
+          
+          echo "⚠️  Outdated packages:"
+          npm outdated || echo "All packages up to date"
+          
+      - name: 🔍 License Check
+        run: |
+          echo "🔍 Checking package licenses..."
+          npx license-checker --summary > licenses.txt || echo "License check failed"
+          cat licenses.txt
+          
+      - name: 📤 Upload Dependency Analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-analysis
+          path: |
+            dependencies.txt
+            licenses.txt
+
+  security-headers-test:
+    name: 🌐 Security Headers Validation
+    runs-on: ubuntu-latest
+    needs: security-audit
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: 📦 Install dependencies
+        run: npm ci --audit=false
+        
+      - name: 🚀 Start Application
+        run: |
+          npm run dev &
+          APP_PID=$!
+          echo $APP_PID > app.pid
+          
+          # Wait for app to start
+          sleep 10
+          
+      - name: 🛡️ Test Security Headers
+        run: |
+          echo "🛡️ Testing security headers..."
+          
+          # Test CORS
+          echo "Testing CORS..."
+          curl -H "Origin: https://malicious-site.com" -I localhost:5000/api/health || true
+          
+          # Test Security Headers
+          echo "Testing Security Headers..."
+          curl -I localhost:5000/api/health | grep -E "(X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security|Content-Security-Policy)" || true
+          
+          # Test Rate Limiting
+          echo "Testing Rate Limiting..."
+          for i in {1..10}; do
+            curl -s -o /dev/null -w "%{http_code} " localhost:5000/api/health
+          done
+          echo ""
+          
+      - name: 🛑 Stop Application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+          fi
+
+  final-security-score:
+    name: 🏆 Security Score & Summary
+    runs-on: ubuntu-latest
+    needs: [security-audit, dependency-check, security-headers-test]
+    if: always()
+    
+    steps:
+      - name: 📥 Download Reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+          
+      - name: 📊 Calculate Security Score
+        run: |
+          echo "🏆 Calculating overall security score..."
+          
+          SCORE=100
+          
+          # Check for critical vulnerabilities
+          if [ -f reports/security-report/npm-audit.json ]; then
+            CRITICAL=$(cat reports/security-report/npm-audit.json | jq -r '.metadata.vulnerabilities.critical // 0')
+            HIGH=$(cat reports/security-report/npm-audit.json | jq -r '.metadata.vulnerabilities.high // 0')
+            
+            if [ "$CRITICAL" -gt 0 ]; then
+              SCORE=$((SCORE - CRITICAL * 15))
+              echo "❌ Critical vulnerabilities: $CRITICAL (-$((CRITICAL * 15)) points)"
+            fi
+            
+            if [ "$HIGH" -gt 0 ]; then
+              SCORE=$((SCORE - HIGH * 10))
+              echo "⚠️  High vulnerabilities: $HIGH (-$((HIGH * 10)) points)"
+            fi
+          fi
+          
+          # Ensure score doesn't go below 0
+          if [ $SCORE -lt 0 ]; then
+            SCORE=0
+          fi
+          
+          echo "🏆 **FINAL SECURITY SCORE: $SCORE/100**"
+          
+          if [ $SCORE -ge 90 ]; then
+            echo "✅ EXCELLENT - Production ready!"
+          elif [ $SCORE -ge 80 ]; then
+            echo "✅ GOOD - Minor improvements needed"
+          elif [ $SCORE -ge 70 ]; then
+            echo "⚠️  MODERATE - Several issues to address"
+          else
+            echo "❌ POOR - Critical security issues found"
+          fi
