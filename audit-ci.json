@@ -1,0 +1,15 @@
+{
+  "low": true,
+  "moderate": true, 
+  "high": true,
+  "critical": true,
+  "report-type": "full",
+  "advisories": [],
+  "allowlist": [],
+  "directory": "./",
+  "registry": "https://registry.npmjs.org/",
+  "show-found": true,
+  "show-not-found": false,
+  "skip-dev": false,
+  "output-format": "text"
+}

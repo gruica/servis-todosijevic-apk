@@ -256,6 +256,14 @@ app.use(completeSecurityStack());
 (async () => {
   // Mobile SMS Service has been completely removed
   
+  // Initialize data encryption system
+  try {
+    const { initializeEncryption } = await import('./data-encryption.js');
+    initializeEncryption();
+  } catch (error) {
+    console.error('❌ [ENCRYPTION] Failed to initialize:', error);
+  }
+  
   const server = await registerRoutes(app, loginLimiter);
   
   // Registruj sigurnosne endpoint-e za audit i soft delete
