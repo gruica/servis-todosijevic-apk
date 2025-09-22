@@ -1,6 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes, setupSecurityEndpoints } from "./routes";
-import path from 'path';
 
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
@@ -39,10 +38,7 @@ app.use((req, res, next) => {
     'https://www.frigosistemtodosijevic.me', 
     'https://admin.me',
     'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev',
-    'http://127.0.0.1:5000', // localhost za development
-    'https://median.co',     // za APK kreiranje
-    'https://app.median.co', // median app studio
-    'https://studio.median.co' // median studio alternativa
+    'http://127.0.0.1:5000' // localhost za development
   ]);
   
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
@@ -58,13 +54,9 @@ app.use((req, res, next) => {
   // Dodaj Vary header za cache sigurnost
   res.header('Vary', 'Origin');
   
-  // Log samo važne CORS događaje u development
+  // Log samo u development
   if (process.env.NODE_ENV !== 'production') {
-    const isAllowed = origin && allowedOrigins.has(origin);
-    // Logiraj samo dozvoljene zahteve i neočekivane blokove (ne i normalne bot zahteve)
-    if (isAllowed || (origin && origin !== 'undefined')) {
-      console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${isAllowed}`);
-    }
+    console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${origin ? allowedOrigins.has(origin) : false}`);
   }
   
   // Handle preflight requests
@@ -79,13 +71,6 @@ app.use((req, res, next) => {
 
 // NAKON body parser-a postavi session middleware
 setupAuth(app);
-
-// SPECIFIČAN ENDPOINT ZA MANIFEST.JSON (za median.co)
-app.get('/manifest.json', (req, res) => {
-  res.header('Content-Type', 'application/json; charset=utf-8');
-  res.header('Access-Control-Allow-Origin', '*'); // Dozvoliti svim domenima za manifest
-  res.sendFile(path.join(process.cwd(), 'client/public/manifest.json'));
-});
 
 // Session middleware je konfigurisan u setupAuth()
 

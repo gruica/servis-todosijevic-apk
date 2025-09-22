@@ -17,8 +17,7 @@ import {
   AlertTriangle,
   UserX,
   PhoneOff,
-  Package,
-  Printer
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -160,61 +159,6 @@ export default function BusinessServices() {
   const { highlightedServiceId, shouldAutoOpen, setShouldAutoOpen } = useNotification();
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  // Funkcija za štampanje servisa
-  const handlePrintService = async (serviceId: number) => {
-    try {
-      console.log(`[PRINT] Počinje štampanje servisa ${serviceId}`);
-      
-      // Poziv API endpoint-a za štampanje
-      const response = await fetch(`/api/business/services/${serviceId}/print`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Kreiranje Blob objekta od HTML sadržaja
-      const htmlContent = await response.text();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      
-      // Kreiranje URL-a za preuzimanje
-      const url = URL.createObjectURL(blob);
-      
-      // Otvaranje novog prozora sa HTML sadržajem za štampanje
-      const printWindow = window.open(url, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          // Automatski pokretanje štampanja kada se učita sadržaj
-          setTimeout(() => {
-            printWindow.print();
-          }, 500);
-        };
-      } else {
-        // Fallback ako ne može da otvori novi prozor
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Prijava_kvara_${serviceId}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-      
-      // Oslobađanje URL-a
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      
-      console.log(`✅ [PRINT] Uspešno štampanje servisa ${serviceId}`);
-      
-    } catch (error) {
-      console.error('[PRINT] Greška pri štampanju:', error);
-      alert('Greška pri generisanju dokumenta za štampanje');
-    }
-  };
   
   // Detekcija mobilnog uređaja
   useEffect(() => {
@@ -656,19 +600,8 @@ export default function BusinessServices() {
               )}
               
               {/* Akcije u dialogu */}
-              <div className="pt-4 border-t space-y-2">
-                {/* Dugme za štampanje - dostupno za sve servise */}
-                <Button 
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => handlePrintService(selectedService.id)}
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Štampaj prijavu
-                </Button>
-                
-                {/* Dugme za izmenu - samo za servise koji nisu završeni/otkazani */}
-                {(selectedService.status !== 'completed' && selectedService.status !== 'cancelled') && (
+              {(selectedService.status !== 'completed' && selectedService.status !== 'cancelled') && (
+                <div className="pt-4 border-t">
                   <Button 
                     className="w-full"
                     onClick={() => {
@@ -678,8 +611,8 @@ export default function BusinessServices() {
                   >
                     Izmeni servis
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

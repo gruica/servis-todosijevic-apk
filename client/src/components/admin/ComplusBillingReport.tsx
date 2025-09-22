@@ -60,7 +60,6 @@ export default function ComplusBillingReport() {
   const savedMonth = localStorage.getItem('complus_billing_month');
   const savedYear = localStorage.getItem('complus_billing_year');
   const savedEnhanced = localStorage.getItem('complus_billing_enhanced');
-  const savedPrintEnabled = localStorage.getItem('complus_print_enabled');
   
   const [selectedMonth, setSelectedMonth] = useState<string>(
     savedMonth || String(currentDate.getMonth() + 1).padStart(2, '0')
@@ -70,9 +69,6 @@ export default function ComplusBillingReport() {
   );
   const [enhancedMode, setEnhancedMode] = useState<boolean>(
     savedEnhanced ? savedEnhanced === 'true' : true
-  );
-  const [adminPrintEnabled, setAdminPrintEnabled] = useState<boolean>(
-    savedPrintEnabled ? savedPrintEnabled === 'true' : false
   );
 
   console.log('[COMPLUS BILLING] Component mounted - Month:', selectedMonth, 'Year:', selectedYear, 'Enhanced:', enhancedMode);
@@ -99,9 +95,8 @@ export default function ComplusBillingReport() {
     localStorage.setItem('complus_billing_month', selectedMonth);
     localStorage.setItem('complus_billing_year', String(selectedYear));
     localStorage.setItem('complus_billing_enhanced', String(enhancedMode));
-    localStorage.setItem('complus_print_enabled', String(adminPrintEnabled));
-    console.log('[COMPLUS BILLING] Saved to localStorage:', { selectedMonth, selectedYear, enhancedMode, adminPrintEnabled });
-  }, [selectedMonth, selectedYear, enhancedMode, adminPrintEnabled]);
+    console.log('[COMPLUS BILLING] Saved to localStorage:', { selectedMonth, selectedYear, enhancedMode });
+  }, [selectedMonth, selectedYear, enhancedMode]);
   
   console.log('[COMPLUS BILLING] Enabled check:', {
     selectedMonth,
@@ -383,16 +378,14 @@ export default function ComplusBillingReport() {
             </div>
 
             <div className="flex items-end gap-2">
-              {adminPrintEnabled && (
-                <Button 
-                  onClick={handlePrintReport}
-                  disabled={!billingData?.services.length}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Štampaj izveštaj
-                </Button>
-              )}
+              <Button 
+                onClick={handlePrintReport}
+                disabled={!billingData?.services.length}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Štampaj izveštaj
+              </Button>
               <Button 
                 onClick={handleExportToCSV}
                 disabled={!billingData?.services.length}
@@ -638,50 +631,6 @@ export default function ComplusBillingReport() {
               <p>Nema završenih garancijskih servisa za izabrani period</p>
             </div>
           ) : null}
-        </CardContent>
-      </Card>
-
-      {/* Admin Kontrola Štampanja - Dodato na kraj ComPlus komponente */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800">
-            <Printer className="h-5 w-5" />
-            Admin Kontrola - Direktno Štampanje ComPlus
-          </CardTitle>
-          <p className="text-sm text-blue-700">
-            Opcija za aktiviranje direktnog štampanja ComPlus fakturisanja za partnere
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-              <div>
-                <h3 className="font-medium text-blue-900">Omogući direktno štampanje</h3>
-                <p className="text-sm text-blue-700">
-                  Kada je aktivno, partneri mogu direktno da štampaju ComPlus fakturisanja
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={adminPrintEnabled}
-              onCheckedChange={setAdminPrintEnabled}
-              className="data-[state=checked]:bg-blue-600"
-            />
-          </div>
-          {adminPrintEnabled && (
-            <Alert className="mt-4 border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                <strong>Direktno štampanje je aktivno!</strong> Dugme za štampanje je sada dostupno partnerima za ComPlus fakturisanja.
-              </AlertDescription>
-            </Alert>
-          )}
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-sm text-yellow-800">
-              <strong>Brendovi koji se pokrivaju:</strong> Electrolux, Elica, Candy, Hoover, Turbo Air
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -15,7 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft, CheckCircle2, ChevronUp, ChevronDown, Printer } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -69,7 +69,6 @@ export default function NewBusinessServiceRequest() {
   const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [createdServiceId, setCreatedServiceId] = useState<number | null>(null);
   const [isFloatingMode, setIsFloatingMode] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     client: true,
@@ -184,14 +183,8 @@ export default function NewBusinessServiceRequest() {
         setIsSubmitting(false);
       }
     },
-    onSuccess: (response: any) => {
+    onSuccess: () => {
       setSubmitSuccess(true);
-      // Sačuvaj ID kreirane prijave za štampanje
-      if (response && response.serviceId) {
-        setCreatedServiceId(response.serviceId);
-      } else if (response && response.id) {
-        setCreatedServiceId(response.id);
-      }
       // Invalidate services cache to refresh the services list
       queryClient.invalidateQueries({ queryKey: ["/api/business/services"] });
       queryClient.invalidateQueries({ queryKey: ["/api/business/services-jwt"] });
@@ -236,78 +229,6 @@ export default function NewBusinessServiceRequest() {
   const onSubmit = (values: NewServiceFormValues) => {
     createServiceMutation.mutate(values);
   };
-
-  // Funkcija za štampanje kreirane prijave
-  const handlePrintCreatedService = async () => {
-    if (!createdServiceId) {
-      toast({
-        title: "Greška",
-        description: "ID servisa nije dostupan za štampanje",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      console.log(`[PRINT] Počinje štampanje novog servisa ${createdServiceId}`);
-      
-      // Poziv API endpoint-a za štampanje
-      const response = await fetch(`/api/business/services/${createdServiceId}/print`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Kreiranje Blob objekta od HTML sadržaja
-      const htmlContent = await response.text();
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      
-      // Kreiranje URL-a za preuzimanje
-      const url = URL.createObjectURL(blob);
-      
-      // Otvaranje novog prozora sa HTML sadržajem za štampanje
-      const printWindow = window.open(url, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          // Automatski pokretanje štampanja kada se učita sadržaj
-          setTimeout(() => {
-            printWindow.print();
-          }, 500);
-        };
-      } else {
-        // Fallback ako ne može da otvori novi prozor
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Prijava_kvara_${createdServiceId}.html`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-      
-      // Oslobađanje URL-a
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      
-      toast({
-        title: "Uspešno",
-        description: "Dokument je spreman za štampanje",
-      });
-      console.log(`✅ [PRINT] Uspešno štampanje novog servisa ${createdServiceId}`);
-      
-    } catch (error) {
-      console.error('[PRINT] Greška pri štampanju novog servisa:', error);
-      toast({
-        title: "Greška",
-        description: "Greška pri generisanju dokumenta za štampanje",
-        variant: "destructive",
-      });
-    }
-  };
   
   if (submitSuccess) {
     return (
@@ -324,17 +245,9 @@ export default function NewBusinessServiceRequest() {
             <Button onClick={() => navigate("/business/services")}>
               Pregledaj zahteve
             </Button>
-            {/* Dugme za štampanje - samo ako imamo ID kreirane prijave */}
-            {createdServiceId && (
-              <Button variant="outline" onClick={handlePrintCreatedService}>
-                <Printer className="h-4 w-4 mr-2" />
-                Štampaj prijavu
-              </Button>
-            )}
             <Button variant="outline" onClick={() => {
               form.reset();
               setSubmitSuccess(false);
-              setCreatedServiceId(null);
             }}>
               Kreiraj novi zahtev
             </Button>

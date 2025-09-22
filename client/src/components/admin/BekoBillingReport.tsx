@@ -59,7 +59,6 @@ export default function BekoBillingReport() {
   const [selectedMonth, setSelectedMonth] = useState<string>(String(currentDate.getMonth() + 1).padStart(2, '0'));
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [enhancedMode, setEnhancedMode] = useState<boolean>(true); // Defaultno koristi enhanced mode
-  const [adminPrintEnabled, setAdminPrintEnabled] = useState<boolean>(false); // Admin kontrola štampanja
 
   const bekoBrands = ['Beko', 'Grundig', 'Blomberg'];
   const months = [
@@ -125,172 +124,6 @@ export default function BekoBillingReport() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Nova funkcija za direktno štampanje Beko izvještaja
-  const handlePrintReport = () => {
-    if (!billingData?.services.length) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    
-    const printContent = `
-      <html>
-        <head>
-          <title>Beko Fakturisanje - ${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</title>
-          <style>
-            @page { size: A4 landscape; margin: 15mm; }
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0; 
-              font-size: 9px; 
-              line-height: 1.2; 
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 15px; 
-              border-bottom: 2px solid #dc2626; 
-              padding-bottom: 8px; 
-            }
-            .header h1 { margin: 0; font-size: 18px; color: #dc2626; }
-            .header h2 { margin: 5px 0; font-size: 16px; color: #dc2626; }
-            .header p { margin: 0; font-size: 10px; }
-            .warranty-badge { 
-              background: #059669; 
-              color: white; 
-              padding: 4px 8px; 
-              border-radius: 12px; 
-              font-size: 10px; 
-              margin-top: 5px; 
-              display: inline-block; 
-            }
-            .summary { 
-              background: #fef2f2; 
-              border: 1px solid #fecaca; 
-              padding: 8px; 
-              margin-bottom: 10px; 
-              font-size: 10px;
-              display: flex;
-              justify-content: space-between;
-            }
-            .services-table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              font-size: 8px;
-            }
-            .services-table th { 
-              background: #dc2626; 
-              color: white;
-              border: 1px solid #ccc; 
-              padding: 4px 2px; 
-              text-align: left; 
-              font-weight: bold;
-              white-space: nowrap;
-            }
-            .services-table td { 
-              border: 1px solid #ccc; 
-              padding: 3px 2px; 
-              vertical-align: top;
-              max-width: 80px;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-            .services-table tr:nth-child(even) { background: #fef2f2; }
-            .services-table tr:hover { background: #fee2e2; }
-            .service-number { font-weight: bold; color: #dc2626; }
-            .cost { font-weight: bold; color: #059669; }
-            .brand { font-size: 7px; color: #666; }
-            .phone { font-size: 7px; }
-            .serial { font-size: 6px; font-family: monospace; }
-            .warranty-indicator { 
-              background: #059669; 
-              color: white; 
-              padding: 2px 4px; 
-              border-radius: 4px; 
-              font-size: 6px; 
-              font-weight: bold; 
-            }
-            .footer { 
-              margin-top: 10px; 
-              text-align: center; 
-              font-size: 8px; 
-              color: #666; 
-              border-top: 1px solid #dc2626;
-              padding-top: 8px;
-            }
-            @media print { 
-              body { margin: 0; } 
-              .no-print { display: none; }
-              .services-table { page-break-inside: auto; }
-              .services-table tr { page-break-inside: avoid; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>🔧 Beko Fakturisanje</h1>
-            <h2>${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}</h2>
-            <p>Završeni garantni servisi - Beko brandovi</p>
-            <div class="warranty-badge">✅ SAMO GARANTNI SERVISI</div>
-          </div>
-          
-          <div class="summary">
-            <div><strong>Ukupno servisa:</strong> ${billingData.totalServices}</div>
-            <div><strong>Ukupna vrednost:</strong> ${Number(billingData.totalCost || 0).toFixed(2)} €</div>
-            <div><strong>Brendovi:</strong> ${billingData.brandBreakdown.map(b => `${b.brand} (${b.count})`).join(', ')}</div>
-            ${billingData.autoDetectedCount ? `<div><strong>Auto-detektovano:</strong> ${billingData.autoDetectedCount} servisa</div>` : ''}
-          </div>
-          
-          <table class="services-table">
-            <thead>
-              <tr>
-                <th style="width: 6%;">Servis #</th>
-                <th style="width: 14%;">Klijent</th>
-                <th style="width: 9%;">Telefon</th>
-                <th style="width: 12%;">Adresa</th>
-                <th style="width: 8%;">Grad</th>
-                <th style="width: 10%;">Uređaj</th>
-                <th style="width: 8%;">Brend</th>
-                <th style="width: 10%;">Model</th>
-                <th style="width: 9%;">Serijski #</th>
-                <th style="width: 9%;">Serviser</th>
-                <th style="width: 7%;">Završeno</th>
-                <th style="width: 6%;">Cena</th>
-                <th style="width: 4%;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${billingData.services.map(service => `
-                <tr>
-                  <td class="service-number">#${service.serviceNumber}</td>
-                  <td>${service.clientName}</td>
-                  <td class="phone">${service.clientPhone}</td>
-                  <td>${service.clientAddress}</td>
-                  <td>${service.clientCity}</td>
-                  <td>${service.applianceCategory}</td>
-                  <td class="brand">${service.manufacturerName}</td>
-                  <td>${service.applianceModel}</td>
-                  <td class="serial">${service.serialNumber}</td>
-                  <td>${service.technicianName}</td>
-                  <td>${format(new Date(service.completedDate), 'dd.MM.yy')}${service.isAutoDetected ? '*' : ''}</td>
-                  <td class="cost">${Number(service.cost || 0).toFixed(2)}€</td>
-                  <td><span class="warranty-indicator">GAR</span></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="footer">
-            ${billingData.autoDetectedCount ? '<p>* Auto-detektovani servisi (korišten datum kreiranja)</p>' : ''}
-            <p>Izveštaj generisan: ${format(new Date(), 'dd.MM.yyyy HH:mm')} | Frigo Sistem Todosijević | Beko Garantni Servisi</p>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
   };
 
   return (
@@ -372,26 +205,15 @@ export default function BekoBillingReport() {
               </p>
             </div>
 
-            <div className="flex items-end space-x-2">
+            <div className="flex items-end">
               <Button 
                 onClick={handleExportToCSV} 
                 disabled={!billingData?.services.length}
-                variant="outline"
-                className="flex-1"
+                className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                CSV
+                Izvezi CSV
               </Button>
-              {adminPrintEnabled && (
-                <Button 
-                  onClick={handlePrintReport}
-                  disabled={!billingData?.services.length}
-                  className="flex-1 bg-red-600 hover:bg-red-700"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Štampaj
-                </Button>
-              )}
             </div>
           </div>
         </CardContent>
@@ -604,45 +426,6 @@ export default function BekoBillingReport() {
           </AlertDescription>
         </Alert>
       )}
-
-      {/* Admin Kontrola Štampanja - Dodato na kraj komponente */}
-      <Card className="border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <Printer className="h-5 w-5" />
-            Admin Kontrola - Direktno Štampanje
-          </CardTitle>
-          <p className="text-sm text-red-700">
-            Opcija za aktiviranje direktnog štampanja Beko fakturisanja za partnere
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-red-200">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-              <div>
-                <h3 className="font-medium text-red-900">Omogući direktno štampanje</h3>
-                <p className="text-sm text-red-700">
-                  Kada je aktivno, partneri mogu direktno da štampaju Beko fakturisanja
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={adminPrintEnabled}
-              onCheckedChange={setAdminPrintEnabled}
-              className="data-[state=checked]:bg-red-600"
-            />
-          </div>
-          {adminPrintEnabled && (
-            <Alert className="mt-4 border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                <strong>Direktno štampanje je aktivno!</strong> Dugme za štampanje je sada dostupno partnerima za Beko fakturisanja.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
