@@ -133,7 +133,7 @@ const catalogUpload = multer({
 
 
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, loginLimiter?: any): Promise<Server> {
 
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
@@ -1132,8 +1132,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/security/verify-bot", verifyBotAnswer);
   app.get("/api/security/rate-limit-status", getRateLimitStatus);
   
-  // JWT Login endpoint - replacing session-based login
-  app.post("/api/jwt-login", async (req, res) => {
+  // 🛡️ JWT Login endpoint sa RATE LIMITING zaštitom
+  const loginMiddlewares = loginLimiter ? [loginLimiter] : [];
+  app.post("/api/jwt-login", ...loginMiddlewares, async (req, res) => {
     try {
       const { username, password } = req.body;
       
