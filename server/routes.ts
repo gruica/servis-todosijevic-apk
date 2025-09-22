@@ -7,7 +7,7 @@ import { emailService } from "./email-service";
 import { excelService } from "./excel-service";
 import { generateToken, jwtAuthMiddleware, jwtAuth, requireRole } from "./jwt-auth";
 const authenticateJWT = jwtAuthMiddleware;
-import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema, SupplierOrder, Supplier } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertApplianceSchema, insertApplianceCategorySchema, insertManufacturerSchema, insertTechnicianSchema, insertUserSchema, serviceStatusEnum, warrantyStatusEnum, warrantyStatusStrictEnum, insertMaintenanceScheduleSchema, insertMaintenanceAlertSchema, maintenanceFrequencyEnum, insertSparePartOrderSchema, sparePartUrgencyEnum, sparePartStatusEnum, sparePartWarrantyStatusEnum, insertRemovedPartSchema, insertSparePartsCatalogSchema, sparePartCategoryEnum, sparePartAvailabilityEnum, sparePartSourceTypeEnum, insertServiceCompletionReportSchema } from "@shared/schema";
 import { db, pool } from "./db";
 import { z } from "zod";
 import multer from "multer";
@@ -317,16 +317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
-      // Dohvati dodatne podatke za email i SMS (van try-catch za široki scope)
-      let serviceData = null;
-      let clientData = null;
-      let applianceData = null;
-      let technicianData = null;
-      let manufacturerData = null;
-      let categoryData = null;
-
       // NOVO: COMPLUS FOKUSIRAN AUTOMATSKI EMAIL SISTEM
       try {
+        // Dohvati dodatne podatke za email
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
@@ -369,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingOrder.partName,
             existingOrder.partNumber || 'N/A',
             urgency,
-            existingOrder.description || undefined
+            existingOrder.description
           );
 
           if (complusEmailSent) {
@@ -386,18 +385,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Pripremi podatke za opšti email template
             const orderData = {
               partName: existingOrder.partName,
-              partNumber: existingOrder.partNumber || undefined,
+              partNumber: existingOrder.partNumber,
               quantity: existingOrder.quantity,
               urgency: urgency,
-              description: existingOrder.description || undefined,
-              serviceId: existingOrder.serviceId || undefined,
+              description: existingOrder.description,
+              serviceId: existingOrder.serviceId,
               clientName: clientData?.fullName,
               clientPhone: clientData?.phone,
               applianceModel: applianceData?.model,
               applianceSerialNumber: applianceData?.serialNumber,
-              manufacturerName: manufacturerData?.name || '',
-              categoryName: categoryData?.name,
-              technicianName: technicianData?.fullName,
+              manufacturerName: manufacturerName,
+              categoryName: applianceData?.categoryName || serviceData?.categoryName,
+              technicianName: technicianData?.name,
               orderDate: new Date(),
               adminNotes: adminNotes
             };
@@ -432,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key || '',
+          apiKey: settingsMap.sms_mobile_api_key,
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -444,11 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientId: serviceData?.clientId || 0,
             clientName: clientData.fullName,
             clientPhone: clientData.phone,
-            deviceType: categoryData?.name || 'Uređaj',
+            deviceType: applianceData?.categoryName || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerData?.name || '',
+            manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
+            technicianName: technicianData.name,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: estimatedDelivery || '3-5 dana',
@@ -461,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
+            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
           }
         }
       } catch (smsError) {
@@ -570,16 +569,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ [APPROVE-PENDING → ADMIN_ORDERED] Zahtev ${orderId} uspešno odobren i automatski poručen`);
 
-      // Dohvati dodatne podatke za email i SMS (van try-catch za široki scope)
-      let serviceData = null;
-      let clientData = null;
-      let applianceData = null;
-      let technicianData = null;
-      let manufacturerData = null;
-      let categoryData = null;
-
       // AUTOMATSKI EMAIL/SMS SISTEM (kopiran iz order endpoint-a)
       try {
+        let serviceData = null;
+        let clientData = null;
+        let applianceData = null;
+        let technicianData = null;
+        let manufacturerData = null;
+        let categoryData = null;
 
         if (existingOrder.serviceId) {
           serviceData = await storage.getService(existingOrder.serviceId);
@@ -622,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingOrder.partName,
             existingOrder.partNumber || 'N/A',
             'normal', // urgency default
-            existingOrder.description || undefined
+            existingOrder.description
           );
 
           if (complusEmailSent) {
@@ -646,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Kreiranje Protocol SMS Service instance
         const protocolSMS = createProtocolSMSService({
-          apiKey: settingsMap.sms_mobile_api_key || '',
+          apiKey: settingsMap.sms_mobile_api_key,
           baseUrl: settingsMap.sms_mobile_base_url || 'https://api.smsmobileapi.com',
           senderId: settingsMap.sms_mobile_sender_id || null,
           enabled: settingsMap.sms_mobile_enabled === 'true'
@@ -658,11 +655,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientId: serviceData?.clientId || 0,
             clientName: clientData.fullName,
             clientPhone: clientData.phone,
-            deviceType: categoryData?.name || 'Uređaj',
+            deviceType: applianceData?.categoryName || 'Uređaj',
             deviceModel: applianceData?.model || 'N/A',
-            manufacturerName: manufacturerData?.name || '',
+            manufacturerName: manufacturerName,
             technicianId: technicianData.id,
-            technicianName: technicianData.fullName,
+            technicianName: technicianData.name,
             technicianPhone: technicianData.phone || '067123456',
             partName: existingOrder.partName,
             estimatedDate: '3-5 dana',
@@ -675,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (smsResult.success) {
             console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
+            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.error);
           }
         }
       } catch (smsError) {
@@ -729,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
 
       const status = req.params.status;
-      const orders = await storage.getSparePartOrdersByStatus(status as any);
+      const orders = await storage.getSparePartOrdersByStatus(status);
       
       res.json(orders);
     } catch (error) {
@@ -2817,7 +2814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       const whatsappResult = await whatsappBusinessAPIService.sendServiceStatusUpdateNotification({
                         clientPhone: client.phone,
                         clientName: client.fullName,
-                        serviceId: typeof id === 'string' ? parseInt(id) : id,
+                        serviceId: parseInt(id),
                         newStatus: statusDescription,
                         technicianName: technicianName,
                         notes: clientEmailContent
@@ -8731,216 +8728,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       console.error('[SMART COMPLUS BILLING] ❌ Greška:', error);
       res.status(500).json({ 
         error: 'Greška pri pametnoj detekciji ComPlus servisa',
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // ============================================================================
-  // 🚚 SUPPLIER PORTAL API ENDPOINTS
-  // ============================================================================
-  // API endpoint-i za dobavljače rezervnih delova - dodano na kraj fajla
-
-  // GET /api/supplier/orders - Dohvatanje porudžbina za supplier-a
-  app.get("/api/supplier/orders", jwtAuth, async (req, res) => {
-    try {
-      if (!req.user || req.user.role !== 'supplier') {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
-      }
-      
-      console.log(`[SUPPLIER API] Dohvatanje porudžbina za supplier-a: ${req.user.fullName} (ID: ${req.user.id})`);
-      
-      // 🚀 STVARNA IMPLEMENTACIJA - dohvatanje supplier orders sa kompletnim informacijama
-      
-      // Pronađi supplier-a na osnovu korisničkog emaila/username-a
-      const suppliers = await storage.getAllSuppliers();
-      const currentSupplier = suppliers.find(s => 
-        s.email === req.user.email || 
-        s.email === req.user.username ||
-        s.name.includes(req.user.fullName?.split(' ')[0] || '')
-      );
-      
-      if (!currentSupplier) {
-        console.warn(`⚠️ [SUPPLIER API] Supplier za korisnika ${req.user.fullName} nije pronađen u bazi`);
-        return res.json([]); // Vraćaj prazan niz ako supplier nije pronađen
-      }
-      
-      console.log(`🔍 [SUPPLIER API] Pronašao supplier-a: ${currentSupplier.name} (ID: ${currentSupplier.id})`);
-      
-      // Dohvati sve supplier orders za ovog dobavljača
-      const supplierOrders = await storage.getSupplierOrdersBySupplier(currentSupplier.id);
-      
-      // Dohvati kompletne informacije o spare part orders sa JOIN-om
-      const ordersWithDetails = await Promise.all(
-        supplierOrders.map(async (supplierOrder) => {
-          const sparePartOrder = await storage.getSparePartOrder(supplierOrder.sparePartOrderId);
-          
-          if (!sparePartOrder) {
-            return null;
-          }
-          
-          // Dohvati informacije o serviseru
-          let technicianInfo = null;
-          if (sparePartOrder.technicianId) {
-            const technician = await storage.getTechnician(sparePartOrder.technicianId);
-            if (technician) {
-              technicianInfo = {
-                name: technician.fullName,
-                phone: technician.phone,
-                email: technician.email,
-                specialization: technician.specialization
-              };
-            }
-          }
-          
-          // Dohvati informacije o servisu i klijentu
-          let serviceInfo = null;
-          if (sparePartOrder.serviceId) {
-            const service = await storage.getService(sparePartOrder.serviceId);
-            if (service) {
-              const client = await storage.getClient(service.clientId);
-              serviceInfo = {
-                id: service.id,
-                status: service.status,
-                description: service.description,
-                scheduledDate: service.scheduledDate,
-                client: client ? {
-                  fullName: client.fullName,
-                  phone: client.phone,
-                  email: client.email,
-                  address: client.address,
-                  city: client.city
-                } : null
-              };
-            }
-          }
-          
-          return {
-            id: supplierOrder.id,
-            partName: sparePartOrder.partName,
-            partNumber: sparePartOrder.partNumber,
-            quantity: sparePartOrder.quantity,
-            description: sparePartOrder.description,
-            urgency: sparePartOrder.urgency,
-            status: supplierOrder.status,
-            estimatedDelivery: supplierOrder.estimatedDelivery,
-            supplierNotes: supplierOrder.supplierResponse,
-            orderDate: supplierOrder.sentAt,
-            createdAt: supplierOrder.createdAt,
-            // Dodaj informacije o tome ko je poručio i za koji servis
-            technician: technicianInfo,
-            service: serviceInfo,
-            // Originalne spare part informacije
-            originalSparePartOrderId: sparePartOrder.id,
-            warrantyStatus: sparePartOrder.warrantyStatus,
-            estimatedCost: sparePartOrder.estimatedCost
-          };
-        })
-      );
-      
-      const orders = ordersWithDetails.filter(order => order !== null);
-      
-      console.log(`📦 [SUPPLIER API] Pronašao ${orders.length} porudžbina za supplier-a ${currentSupplier.name}`);
-      console.log(`📋 [SUPPLIER API] Detalji: ${orders.map(o => `${o.partName} (${o.status})`).join(', ')}`);
-      
-      
-      res.json(orders);
-      
-    } catch (error) {
-      console.error("[SUPPLIER API] Greška pri dohvatanju porudžbina:", error);
-      res.status(500).json({ 
-        error: "Greška pri dohvatanju porudžbina",
-        message: error instanceof Error ? error.message : 'Nepoznata greška'
-      });
-    }
-  });
-
-  // PUT /api/supplier/order/:id - Ažuriranje statusa porudžbine
-  app.put("/api/supplier/order/:id", jwtAuth, async (req, res) => {
-    try {
-      if (!req.user || req.user.role !== 'supplier') {
-        return res.status(403).json({ error: "Nemate dozvolu za pristup ovim podacima" });
-      }
-      
-      const orderId = parseInt(req.params.id);
-      const { status, supplierNotes, estimatedDelivery } = req.body;
-      
-      if (isNaN(orderId)) {
-        return res.status(400).json({ error: "Neispravan ID porudžbine" });
-      }
-      
-      if (!status) {
-        return res.status(400).json({ error: "Status je obavezan" });
-      }
-      
-      console.log(`[SUPPLIER API] Ažuriranje porudžbine ${orderId} od supplier-a ${req.user.fullName}`);
-      console.log(`[SUPPLIER API] Novi status: ${status}, napomene: ${supplierNotes || 'nema'}`);
-      
-      // 🚀 STVARNA IMPLEMENTACIJA - ažuriranje supplier order statusa
-      
-      // Pronađi supplier-a na osnovu korisničkog emaila/username-a  
-      const suppliers = await storage.getAllSuppliers();
-      const currentSupplier = suppliers.find(s => 
-        s.email === req.user.email || 
-        s.email === req.user.username ||
-        s.name.includes(req.user.fullName?.split(' ')[0] || '')
-      );
-      
-      if (!currentSupplier) {
-        return res.status(403).json({ error: "Supplier za vaš korisnički nalog nije pronađen" });
-      }
-      
-      // Dohvati supplier order i proveri da li pripada ovom dobavljaču
-      const supplierOrder = await storage.getSupplierOrder(orderId);
-      
-      if (!supplierOrder) {
-        return res.status(404).json({ error: "Porudžbina nije pronađena" });
-      }
-      
-      if (supplierOrder.supplierId !== currentSupplier.id) {
-        return res.status(403).json({ error: "Nemate dozvolu za ažuriranje ove porudžbine" });
-      }
-      
-      // Ažuriraj supplier order  
-      const updateData: Partial<SupplierOrder> = {
-        status,
-        supplierResponse: supplierNotes,
-        updatedAt: new Date()
-      };
-      
-      // Dodaj timestamp na osnovu statusa
-      if (status === 'confirmed') {
-        updateData.confirmedAt = new Date();
-      } else if (status === 'shipped') {
-        updateData.shippedAt = new Date();
-        if (estimatedDelivery) {
-          updateData.estimatedDelivery = new Date(estimatedDelivery);
-        }
-      } else if (status === 'delivered') {
-        updateData.deliveredAt = new Date();
-        updateData.actualDelivery = new Date();
-      }
-      
-      const updatedOrder = await storage.updateSupplierOrder(orderId, updateData);
-      
-      if (!updatedOrder) {
-        return res.status(500).json({ error: "Greška pri ažuriranju porudžbine" });
-      }
-      
-      console.log(`✅ [SUPPLIER API] Supplier ${currentSupplier.name} ažurirao porudžbinu ${orderId}: ${status}`);
-      
-      res.json({ 
-        success: true, 
-        message: "Status porudžbine je uspešno ažuriran",
-        orderId: orderId,
-        newStatus: status,
-        updatedOrder: updatedOrder
-      });
-      
-    } catch (error) {
-      console.error("[SUPPLIER API] Greška pri ažuriranju porudžbine:", error);
-      res.status(500).json({ 
-        error: "Greška pri ažuriranju porudžbine",
         message: error instanceof Error ? error.message : 'Nepoznata greška'
       });
     }

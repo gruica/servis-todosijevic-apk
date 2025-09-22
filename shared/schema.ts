@@ -954,11 +954,6 @@ export const sparePartOrders = pgTable("spare_part_orders", {
   adminNotes: text("admin_notes"), // Napomene administratora
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  // ===== NOVA POLJA DODANA NA KRAJ (2025) =====
-  warrantyStatus: text("warranty_status"), // u garanciji ili van garancije
-  requesterType: text("requester_type"), // admin ili technician
-  requesterUserId: integer("requester_user_id"), // ID korisnika koji je zatražio
-  requesterName: text("requester_name"), // Ime korisnika koji je zatražio
 });
 
 // Status enums za rezervne delove

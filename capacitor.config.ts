@@ -6,8 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist/public',
   server: {
     androidScheme: 'https',
-    // APK koristi Replit server za sve API pozive
-    url: 'https://workspace.gruica.repl.co',
+    // Samo za razvoj - u produkciji ukloniti ovu opciju
+    // url: 'http://192.168.1.100:5000', // Zameniti sa vašom lokalnom IP adresom
   },
   plugins: {
     SplashScreen: {

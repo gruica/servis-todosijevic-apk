@@ -113,7 +113,6 @@ export interface IStorage {
   // Appliance Category methods
   getAllApplianceCategories(): Promise<ApplianceCategory[]>;
   getApplianceCategory(id: number): Promise<ApplianceCategory | undefined>;
-  getCategory(id: number): Promise<ApplianceCategory | undefined>; // Alias for getApplianceCategory
   createApplianceCategory(category: InsertApplianceCategory): Promise<ApplianceCategory>;
   
   // Manufacturer methods
@@ -157,7 +156,6 @@ export interface IStorage {
   getServicePhotosCountByCategory(): Promise<Array<{category: string, count: number}>>;
   
   // Business Partner methods
-  getBusinessPartner(id: number): Promise<User | undefined>; // Business partners are users with role 'business'
   getServicesByPartner(partnerId: number): Promise<Service[]>;
   getClientsByPartner(partnerId: number): Promise<Client[]>;
   getServiceWithDetails(serviceId: number): Promise<any>;
@@ -233,7 +231,6 @@ export interface IStorage {
   createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
   updateSystemSetting(key: string, setting: Partial<SystemSetting>): Promise<SystemSetting | undefined>;
   deleteSystemSetting(key: string): Promise<boolean>;
-  setSystemSetting(key: string, value: string): Promise<SystemSetting>; // Alias for create/update
 
   // Removed Parts methods
   getAllRemovedParts(): Promise<RemovedPart[]>;
@@ -1766,15 +1763,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Business Partner method - get user with role 'business'
-  async getBusinessPartner(id: number): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(and(eq(users.id, id), eq(users.role, 'business')));
-    return user;
-  }
-
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
@@ -2070,11 +2058,6 @@ export class DatabaseStorage implements IStorage {
       .from(applianceCategories)
       .where(eq(applianceCategories.id, id));
     return category;
-  }
-
-  // Alias method for getApplianceCategory
-  async getCategory(id: number): Promise<ApplianceCategory | undefined> {
-    return this.getApplianceCategory(id);
   }
 
   async createApplianceCategory(data: InsertApplianceCategory): Promise<ApplianceCategory> {
@@ -3759,41 +3742,6 @@ export class DatabaseStorage implements IStorage {
       }
 
       console.log(`📦 [WORKFLOW] Uspešno ažuriran rezervni deo ID: ${id}, novi status: ${updates.status}`);
-      
-      // 🚀 AUTOMATSKI SUPPLIER WORKFLOW - kada se status promeni na 'admin_ordered'
-      if (updates.status === 'admin_ordered') {
-        try {
-          console.log(`🔄 [AUTO-SUPPLIER] Aktiviram automatski supplier workflow za deo ID: ${id}`);
-          
-          // Pronađi default dobavljača ili kreiraj jedan ako ne postoji
-          let defaultSupplier = await this.getDefaultSupplier();
-          if (!defaultSupplier) {
-            console.log(`🏗️ [AUTO-SUPPLIER] Kreiram default dobavljača...`);
-            defaultSupplier = await this.createDefaultSupplier();
-          }
-          
-          if (defaultSupplier) {
-            // Kreiraj supplier order entry automatski
-            const supplierOrder = await this.createSupplierOrder({
-              supplierId: defaultSupplier.id,
-              sparePartOrderId: id,
-              status: 'pending',
-              sentAt: new Date(),
-              emailContent: `Automatski kreiran zahtev za rezervni deo: ${updatedOrder.partName}`,
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-            
-            console.log(`✅ [AUTO-SUPPLIER] Kreiran supplier order ID: ${supplierOrder.id} za dobavljača: ${defaultSupplier.name}`);
-          } else {
-            console.warn(`⚠️ [AUTO-SUPPLIER] Nije moguće kreirati supplier order - nema dostupnog dobavljača`);
-          }
-        } catch (supplierError) {
-          console.error(`❌ [AUTO-SUPPLIER] Greška pri kreiranju supplier order:`, supplierError);
-          // Ne prekidamo glavni workflow ako supplier deo ne uspe
-        }
-      }
-      
       return updatedOrder;
     } catch (error) {
       console.error('❌ [WORKFLOW] Greška pri ažuriranju statusa rezervnog dela:', error);
@@ -4243,29 +4191,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju sistemske postavke:', error);
       return false;
-    }
-  }
-
-  // Alias method for create/update system setting
-  async setSystemSetting(key: string, value: string): Promise<SystemSetting> {
-    try {
-      // Try to update existing setting first
-      const existingSetting = await this.getSystemSetting(key);
-      if (existingSetting) {
-        const updated = await this.updateSystemSetting(key, { value });
-        if (updated) return updated;
-      }
-      
-      // Create new setting if update failed or setting doesn't exist
-      return await this.createSystemSetting({
-        key,
-        value,
-        category: 'general', // default category
-        description: `Auto-created setting for ${key}`
-      });
-    } catch (error) {
-      console.error('Greška pri postavljanju sistemske postavke:', error);
-      throw error;
     }
   }
 
@@ -5420,71 +5345,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Greška pri brisanju porudžbine dobavljača:', error);
       return false;
-    }
-  }
-
-  // 🚀 AUTOMATSKI SUPPLIER WORKFLOW - pomoćne metode
-  async getDefaultSupplier(): Promise<Supplier | undefined> {
-    try {
-      // Probaj da pronađeš dobavljača sa nazivom "Default" ili prvi aktivni dobavljač
-      const [defaultSupplier] = await db.select()
-        .from(suppliers)
-        .where(and(
-          eq(suppliers.isActive, true),
-          or(
-            like(suppliers.name, '%Default%'),
-            like(suppliers.name, '%Opšti%'),
-            like(suppliers.name, '%General%')
-          )
-        ))
-        .limit(1);
-      
-      if (defaultSupplier) {
-        console.log(`🔍 [DEFAULT-SUPPLIER] Pronašao postojećeg default dobavljača: ${defaultSupplier.name}`);
-        return defaultSupplier;
-      }
-      
-      // Ako nema default, uzmi prvi aktivni dobavljač
-      const [firstActiveSupplier] = await db.select()
-        .from(suppliers)
-        .where(eq(suppliers.isActive, true))
-        .limit(1);
-      
-      if (firstActiveSupplier) {
-        console.log(`🔍 [DEFAULT-SUPPLIER] Koristim prvi aktivni dobavljač: ${firstActiveSupplier.name}`);
-        return firstActiveSupplier;
-      }
-      
-      return undefined;
-    } catch (error) {
-      console.error('Greška pri pronalaženju default dobavljača:', error);
-      return undefined;
-    }
-  }
-
-  async createDefaultSupplier(): Promise<Supplier> {
-    try {
-      const defaultSupplier = await this.createSupplier({
-        name: "Opšti Dobavljač",
-        companyName: "Frigo Sistem Todosijević - Opšti Dobavljač",
-        email: "servis@frigosistemtodosijevic.me",
-        phone: "+382 67 047 527",
-        address: "Podgorica, Crna Gora",
-        website: "https://frigosistemtodosijevic.me",
-        integrationMethod: "email",
-        paymentTerms: "Net 30",
-        deliveryInfo: "Standardna dostava 3-5 radnih dana",
-        supportedBrands: "Univerzalni dobavljač za sve brendove",
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      
-      console.log(`🏗️ [DEFAULT-SUPPLIER] Kreiran novi default dobavljač: ${defaultSupplier.name} (ID: ${defaultSupplier.id})`);
-      return defaultSupplier;
-    } catch (error) {
-      console.error('Greška pri kreiranju default dobavljača:', error);
-      throw error;
     }
   }
 

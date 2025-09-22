@@ -30,53 +30,23 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' })); // Povećano sa default 1mb na 10mb za Base64 fotografije
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// SIGURNI CORS middleware - samo dozvoljeni domeni
+// ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
-  // Lista dozvoljenih domena - SAMO VAŠI DOMENI + MOBILE SUPPORT
-  const allowedOrigins = new Set([
-    'https://frigosistemtodosijevic.me',
-    'https://www.frigosistemtodosijevic.me', 
-    'https://admin.me',
-    'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev',
-    'http://127.0.0.1:5000', // localhost za development
-    'capacitor://localhost', // Capacitor mobile apps
-    'ionic://localhost', // Ionic mobile apps  
-    'http://localhost', // Generic mobile localhost
-    'https://localhost' // Generic mobile localhost with HTTPS
-  ]);
+  // Specificno dozvoljavamo origin za Replit
+  const allowedOrigin = req.headers.origin || req.headers.referer || 'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev';
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
   
-  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
-  
-  // Dozvolji access ako je origin u whitelist-i ILI undefined (mobile browsers)
-  const isAllowedOrigin = (origin && allowedOrigins.has(origin)) || !origin;
-  
-  if (isAllowedOrigin) {
-    if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-    } else {
-      // Za mobilne browsere bez origin header-a
-      res.header('Access-Control-Allow-Origin', '*');
-    }
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  }
-  
-  // Dodaj Vary header za cache sigurnost
-  res.header('Vary', 'Origin');
-  
-  // Log samo u development
+  // Only log CORS in development mode to improve production performance
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${isAllowedOrigin}, mobile=${!origin}`);
+    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
   }
   
-  // Handle preflight requests - proper mobile support with 204
   if (req.method === 'OPTIONS') {
-    if (isAllowedOrigin) {
-      res.status(204).end();
-    } else {
-      res.sendStatus(403);
-    }
+    res.sendStatus(200);
     return;
   }
   

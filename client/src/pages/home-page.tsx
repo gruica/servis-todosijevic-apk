@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FrigidgeIcon, WasherIcon, AirConditionerIcon, StoveIcon } from "@/components/icons";
 import { useLocation, Link } from "wouter";
-import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon, TruckIcon } from "lucide-react";
+import { CalendarIcon, SettingsIcon, UsersIcon, BuildingIcon } from "lucide-react";
 
 export default function HomePage() {
   const [, navigate] = useLocation();
@@ -33,7 +33,7 @@ export default function HomePage() {
             </div>
 
             {/* Kartice za brzi pristup */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
               <ServiceCard 
                 icon={<UsersIcon className="h-8 w-8 text-blue-500" />}
                 title="Admin pristup" 
@@ -79,15 +79,6 @@ export default function HomePage() {
                 textColor="text-indigo-700"
                 role="complus"
                 isSpecial={true}
-              />
-              <ServiceCard 
-                icon={<TruckIcon className="h-8 w-8 text-teal-500" />}
-                title="Dobavljači" 
-                description="Portal za upravljanje porudžbinama rezervnih delova" 
-                onClick={() => navigate("/supplier-auth")}
-                primaryColor="bg-teal-100 hover:bg-teal-200"
-                textColor="text-teal-700"
-                role="supplier"
               />
             </div>
 

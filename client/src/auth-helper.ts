@@ -5,30 +5,20 @@ import { apiRequest } from "@/lib/queryClient";
  */
 export class AuthHelper {
   /**
-   * Prijavljuje korisnika sa datim kredencijalima (JWT-based za mobile kompatibilnost)
+   * Prijavljuje korisnika sa datim kredencijalima
    */
   static async login(username: string, password: string) {
-    const response = await fetch("/api/jwt-login", { 
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json'
-      },
+    const response = await apiRequest("/api/login", { 
+      method: "POST", 
       body: JSON.stringify({ username, password }) 
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Greška pri prijavljivanju" }));
-      throw new Error(errorData.error || "Greška pri prijavljivanju");
+      const errorText = await response.text();
+      throw new Error(errorText || "Greška pri prijavljivanju");
     }
     
-    const result = await response.json();
-    
-    // Sačuvaj JWT token u localStorage za mobilne browsere
-    if (result.token) {
-      localStorage.setItem('auth_token', result.token);
-    }
-    
-    return result;
+    return await response.json();
   }
   
   /**
