@@ -32,13 +32,17 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // SIGURNI CORS middleware - samo dozvoljeni domeni
 app.use((req, res, next) => {
-  // Lista dozvoljenih domena - SAMO VAŠI DOMENI
+  // Lista dozvoljenih domena - SAMO VAŠI DOMENI + MOBILE SUPPORT
   const allowedOrigins = new Set([
     'https://frigosistemtodosijevic.me',
     'https://www.frigosistemtodosijevic.me', 
     'https://admin.me',
     'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev',
-    'http://127.0.0.1:5000' // localhost za development
+    'http://127.0.0.1:5000', // localhost za development
+    'capacitor://localhost', // Capacitor mobile apps
+    'ionic://localhost', // Ionic mobile apps  
+    'http://localhost', // Generic mobile localhost
+    'https://localhost' // Generic mobile localhost with HTTPS
   ]);
   
   const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
@@ -66,9 +70,13 @@ app.use((req, res, next) => {
     console.log(`SECURE CORS: method=${req.method}, origin=${origin}, allowed=${isAllowedOrigin}, mobile=${!origin}`);
   }
   
-  // Handle preflight requests
+  // Handle preflight requests - proper mobile support with 204
   if (req.method === 'OPTIONS') {
-    res.sendStatus(isAllowedOrigin ? 200 : 403);
+    if (isAllowedOrigin) {
+      res.status(204).end();
+    } else {
+      res.sendStatus(403);
+    }
     return;
   }
   
