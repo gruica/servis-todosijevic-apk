@@ -67,19 +67,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      console.log(`[MOBILE DEBUG] Login attempt for: ${credentials.username}`);
+      console.log(`[MOBILE DEBUG] User-Agent: ${navigator.userAgent}`);
+      console.log(`[MOBILE DEBUG] localStorage available:`, !!localStorage);
       
-      const res = await fetch("/api/jwt-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: "Login failed" }));
-        throw new Error(errorData.error || "Neispravno korisničko ime ili lozinka");
+      try {
+        const res = await fetch("/api/jwt-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+        });
+        
+        console.log(`[MOBILE DEBUG] Response status: ${res.status}`);
+        console.log(`[MOBILE DEBUG] Response ok: ${res.ok}`);
+        console.log(`[MOBILE DEBUG] Response headers:`, Object.fromEntries(res.headers));
+        
+        if (!res.ok) {
+          const responseText = await res.text();
+          console.log(`[MOBILE DEBUG] Error response text:`, responseText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+          } catch (e) {
+            errorData = { error: "Login failed - invalid JSON response" };
+          }
+          
+          const errorMessage = errorData.error || "Neispravno korisničko ime ili lozinka";
+          console.log(`[MOBILE DEBUG] Throwing error:`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        const responseData = await res.json();
+        console.log(`[MOBILE DEBUG] Login successful, got token:`, !!responseData.token);
+        console.log(`[MOBILE DEBUG] Login successful, user:`, responseData.user?.username);
+        return responseData;
+      } catch (networkError) {
+        console.log(`[MOBILE DEBUG] Network/fetch error:`, networkError);
+        throw networkError;
       }
-      
-      return await res.json();
     },
     onSuccess: (response: { user: SelectUser; token: string }) => {
       localStorage.setItem('auth_token', response.token);
