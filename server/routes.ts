@@ -8732,5 +8732,61 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
     }
   });
+
+  // ============================================================================
+  // ADMIN ENDPOINT: RESET SVIH KORISNIČKIH SESIJA (MASS LOGOUT)
+  // ============================================================================
+  
+  app.post('/api/admin/reset-all-users', jwtAuth, async (req, res) => {
+    try {
+      // Samo admin može resetovati sve korisnike
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ 
+          error: "Nemate dozvolu", 
+          message: "Samo administratori mogu resetovati korisničke sesije." 
+        });
+      }
+
+      console.log("🔄 [ADMIN RESET] Pokrećem resetovanje svih korisničkih sesija...");
+      console.log("🔄 [ADMIN RESET] Zahtev od:", req.user?.username);
+
+      // 1. Brisanje svih sesija iz PostgreSQL session store tabele
+      const deleteSessionsQuery = 'DELETE FROM user_sessions';
+      
+      try {
+        const result = await storage.db.query(deleteSessionsQuery);
+        const deletedSessionsCount = result.rowCount || 0;
+        console.log(`🗑️ [ADMIN RESET] Obrisano ${deletedSessionsCount} sesija iz baze podataka`);
+        
+        // 2. Statistic reset
+        const resetStats = {
+          deletedSessions: deletedSessionsCount,
+          resetTimestamp: new Date().toISOString(),
+          resetBy: req.user?.username,
+          method: 'session_table_truncate'
+        };
+
+        console.log("✅ [ADMIN RESET] Svi korisnici su uspešno odjavljeni");
+        console.log("📊 [ADMIN RESET] Statistike resetovanja:", resetStats);
+
+        res.json({
+          success: true,
+          message: "Svi korisnici su uspešno odjavljeni",
+          stats: resetStats
+        });
+
+      } catch (dbError) {
+        console.error("❌ [ADMIN RESET] Greška pri brisanju sesija iz baze:", dbError);
+        throw dbError;
+      }
+
+    } catch (error) {
+      console.error("❌ [ADMIN RESET] Greška pri resetovanju korisnika:", error);
+      res.status(500).json({ 
+        error: "Greška pri resetovanju korisničkih sesija",
+        message: error instanceof Error ? error.message : "Nepoznata greška"
+      });
+    }
+  });
 }
 
