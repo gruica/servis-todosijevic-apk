@@ -3444,10 +3444,13 @@ export class DatabaseStorage implements IStorage {
 
   async getAllSparePartOrders(): Promise<any[]> {
     try {
-      // RAW SQL pristup da zaobiđe Drizzle ORM greške
+      console.log('🔍 [SPARE PARTS] Dohvatanje svih porudžbina sa povezanim podacima...');
+      
+      // RAW SQL pristup sa pravilnim snake_case mapiranjem
       const result = await pool.query(`
-        SELECT id, part_name, quantity, status, urgency, created_at,
-               service_id, technician_id,
+        SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
+               service_id, technician_id, appliance_id, description, 
+               estimated_cost, actual_cost, supplier_name, admin_notes,
                'technician' as requester_type,
                technician_id as requester_user_id,
                'Serviser' as requester_name
@@ -3455,6 +3458,7 @@ export class DatabaseStorage implements IStorage {
         ORDER BY created_at DESC
       `);
       const orders = result.rows;
+      console.log(`📋 [SPARE PARTS] Pronađeno ${orders.length} porudžbina u bazi`);
 
       // Zatim dodaj povezane podatke za svaki order
       const enrichedOrders = await Promise.all(
@@ -3462,46 +3466,73 @@ export class DatabaseStorage implements IStorage {
           let serviceData = undefined;
           let technicianData = undefined;
 
-          // Dodaj service podatke ako postoji serviceId
-          if (order.serviceId) {
+          console.log(`🔗 [SPARE PARTS] Obogaćujem porudžbinu #${order.id} (serviceId: ${order.service_id}, technicianId: ${order.technician_id})`);
+
+          // Dodaj service podatke ako postoji serviceId - ISPRAVKA: koristim order.service_id umesto order.serviceId
+          if (order.service_id) {
             try {
-              const service = await this.getAdminServiceById(order.serviceId);
+              const service = await this.getAdminServiceById(order.service_id);
               if (service) {
                 serviceData = service;
+                console.log(`✅ [SPARE PARTS] Servis #${order.service_id} povezan sa klijentom: ${service.client?.fullName}`);
+              } else {
+                console.log(`⚠️ [SPARE PARTS] Servis #${order.service_id} nije pronađen u bazi`);
               }
             } catch (error) {
-              console.log(`Servis ${order.serviceId} nije pronađen:`, error);
+              console.log(`❌ [SPARE PARTS] Greška pri dohvatanju servisa ${order.service_id}:`, error);
             }
           }
 
-          // Dodaj technician podatke ako postoji technicianId
-          if (order.technicianId) {
+          // Dodaj technician podatke ako postoji technicianId - ISPRAVKA: koristim order.technician_id
+          if (order.technician_id) {
             try {
-              const technician = await this.getTechnician(order.technicianId);
+              const technician = await this.getTechnician(order.technician_id);
               if (technician) {
                 technicianData = {
-                  name: technician.name,
+                  name: technician.fullName || technician.name,
                   phone: technician.phone || '',
                   email: technician.email || '',
                   specialization: technician.specialization || ''
                 };
+                console.log(`✅ [SPARE PARTS] Tehniker #${order.technician_id} povezan: ${technicianData.name}`);
+              } else {
+                console.log(`⚠️ [SPARE PARTS] Tehniker #${order.technician_id} nije pronađen u bazi`);
               }
             } catch (error) {
-              console.log(`Serviser ${order.technicianId} nije pronađen:`, error);
+              console.log(`❌ [SPARE PARTS] Greška pri dohvatanju tehnikara ${order.technician_id}:`, error);
             }
           }
 
-          return {
-            ...order,
+          // Pravilno mapiranje snake_case iz baze u camelCase za frontend
+          const mappedOrder = {
+            id: order.id,
+            partName: order.part_name,
+            partNumber: order.part_number,
+            quantity: order.quantity,
+            description: order.description,
+            urgency: order.urgency,
+            status: order.status,
+            estimatedCost: order.estimated_cost,
+            actualCost: order.actual_cost,
+            supplierName: order.supplier_name,
+            adminNotes: order.admin_notes,
+            serviceId: order.service_id,
+            technicianId: order.technician_id,
+            applianceId: order.appliance_id,
+            createdAt: order.created_at,
+            updatedAt: order.updated_at,
             service: serviceData,
             technician: technicianData
           };
+
+          return mappedOrder;
         })
       );
 
+      console.log(`🎯 [SPARE PARTS] Uspešno obogaćeno ${enrichedOrders.length} porudžbina`);
       return enrichedOrders;
     } catch (error) {
-      console.error('Greška pri dohvatanju svih porudžbina rezervnih delova:', error);
+      console.error('❌ [SPARE PARTS] Greška pri dohvatanju svih porudžbina rezervnih delova:', error);
       throw error;
     }
   }
