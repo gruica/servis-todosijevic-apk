@@ -303,6 +303,42 @@ function SparePartCard({ order, onAction }: { order: SparePartOrder; onAction: (
           <div>
             <span className="text-muted-foreground">Hitnost:</span> {order.urgency}
           </div>
+          
+          {/* NOVI PODACI O SERVISERU I KLIJENTU */}
+          {order.technician?.fullName && (
+            <div>
+              <span className="text-muted-foreground">Serviser:</span> {order.technician.fullName}
+            </div>
+          )}
+          {order.serviceId && (
+            <div>
+              <span className="text-muted-foreground">Servis ID:</span> #{order.serviceId}
+            </div>
+          )}
+          {order.service?.client?.fullName && (
+            <div>
+              <span className="text-muted-foreground">Klijent:</span> {order.service.client.fullName}
+            </div>
+          )}
+          {order.service?.client?.phone && (
+            <div>
+              <span className="text-muted-foreground">Telefon:</span> {order.service.client.phone}
+            </div>
+          )}
+          {order.service?.appliance && (
+            <div>
+              <span className="text-muted-foreground">Aparat:</span> {order.service.appliance.manufacturer?.name} {order.service.appliance.model}
+            </div>
+          )}
+          {order.warrantyStatus && (
+            <div>
+              <span className="text-muted-foreground">Garancija:</span> 
+              <span className={order.warrantyStatus === 'u garanciji' ? 'text-green-600 font-semibold ml-1' : 'text-red-600 font-semibold ml-1'}>
+                {order.warrantyStatus === 'u garanciji' ? '🛡️ U garanciji' : '💰 Van garancije'}
+              </span>
+            </div>
+          )}
+          
           {order.supplierName && (
             <div>
               <span className="text-muted-foreground">Dobavljač:</span> {order.supplierName}
