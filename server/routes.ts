@@ -34,6 +34,7 @@ import QRCode from 'qrcode';
 import { getSecurityDashboard, getSecurityLogs, performSecurityMaintenance, securityHealthCheck, triggerTestAlert, getBlockedIPs, exportSecurityMetrics, getSecurityConfig } from './security-endpoints.js';
 import { runPenetrationTests, getPenetrationTestResults, getPenetrationTestStatus, clearPenetrationTestHistory } from './penetration-testing.js';
 import { getIDSStatus, getIntrusionEvents, getIDSBlockedIPs, unblockIPAddress, getUserBehaviorProfiles, updateIDSConfig } from './intrusion-detection.js';
+import { getSecurityDashboardData, getSecurityMetricsHistory, getSecurityAlerts, acknowledgeSecurityAlert, resolveSecurityAlert, getSecurityExecutiveSummary, updateDashboardConfig, startRealTimeMetricsCollection } from './security-dashboard.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
@@ -1050,6 +1051,15 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
   app.post("/api/security/ids/unblock-ip", jwtAuth, requireRole(['admin']), unblockIPAddress);
   app.get("/api/security/ids/user-profiles", jwtAuth, requireRole(['admin']), getUserBehaviorProfiles);
   app.patch("/api/security/ids/config", jwtAuth, requireRole(['admin']), updateIDSConfig);
+
+  // 📊 SECURITY DASHBOARD & REAL-TIME ALERTING - ADMIN ONLY
+  app.get("/api/security/dashboard/data", jwtAuth, requireRole(['admin']), getSecurityDashboardData);
+  app.get("/api/security/dashboard/metrics/history", jwtAuth, requireRole(['admin']), getSecurityMetricsHistory);
+  app.get("/api/security/dashboard/alerts", jwtAuth, requireRole(['admin']), getSecurityAlerts);
+  app.post("/api/security/dashboard/alerts/:alertId/acknowledge", jwtAuth, requireRole(['admin']), acknowledgeSecurityAlert);
+  app.post("/api/security/dashboard/alerts/:alertId/resolve", jwtAuth, requireRole(['admin']), resolveSecurityAlert);
+  app.get("/api/security/dashboard/executive-summary", jwtAuth, requireRole(['admin']), getSecurityExecutiveSummary);
+  app.patch("/api/security/dashboard/config", jwtAuth, requireRole(['admin']), updateDashboardConfig);
 
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
