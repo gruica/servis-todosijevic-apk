@@ -103,9 +103,10 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
   
-  // Only log CORS in development mode to improve production performance
+  // 🛡️ BEZBEDNOST: Ne loguj CORS details u production zbog session ID-jeva
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, allowed=${!!requestOrigin && allowedOrigins.includes(requestOrigin)}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+    // Ukloni sessionID iz logova zbog bezbednosti
+    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, allowed=${!!requestOrigin && allowedOrigins.includes(requestOrigin)}, cookies=${req.headers.cookie ? 'present' : 'missing'}`);
   }
   
   if (req.method === 'OPTIONS') {

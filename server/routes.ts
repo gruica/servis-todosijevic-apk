@@ -1154,7 +1154,10 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
       // Check password
       const isPasswordValid = await comparePassword(password, user.password);
       if (!isPasswordValid) {
-        console.log(`JWT Login: Invalid password for ${username}`);
+        // 🛡️ BEZBEDNOST: Ne loguj password failures u production
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`JWT Login: Invalid password for ${username}`);
+        }
         return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
       }
       
@@ -4907,7 +4910,10 @@ Frigo Sistem`;
 
       const token = generateToken(tokenPayload);
       
-      console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
+      // 🛡️ BEZBEDNOST: Ne loguj token generation u production
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
+      }
       
       res.json({ 
         token,
