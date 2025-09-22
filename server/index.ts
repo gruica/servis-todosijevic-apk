@@ -74,52 +74,49 @@ const apiLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' })); // Povećano sa default 1mb na 10mb za Base64 fotografije
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// 🛡️ SIGURNA CORS KONFIGURACIJA - EXACT MATCH ONLY
+// 🛡️ SIGURNA CORS KONFIGURACIJA - DINAMIČKA SAME-ORIGIN PODRŠKA
 app.use((req, res, next) => {
-  // Lista dozvoljenih origin-a za APK i web pristup - EXACT MATCH
-  const allowedOrigins = [
-    'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev', // Development Replit
-    'https://tehnikamne.me', // Production domen
-    'https://www.tehnikamne.me', // Production domen sa www
-    'http://127.0.0.1:5000', // Local development
-    'http://localhost:5000' // Local development alternativa
-  ];
+  const origin = req.headers.origin as string | undefined;
+  const proto = (req.headers["x-forwarded-proto"] as string) || "http";
+  const host = req.headers.host;
+  const selfOrigin = host ? `${proto}://${host}` : undefined;
   
-  const requestOrigin = req.headers.origin; // SAMO origin, ne referer
+  // Dozvoljeni cross-origin domeni iz environment varijabli + statički
+  const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
+  const allowSet = new Set([
+    ...envOrigins,
+    "https://tehnikamne.me",
+    "https://www.tehnikamne.me", 
+    "http://127.0.0.1:5000",
+    "http://localhost:5000"
+  ]);
   
-  // 🛡️ SIGURNA CORS PROVERA - EXACT MATCH ONLY
-  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-    // Origin je eksplicitno dozvoljen
-    res.header('Access-Control-Allow-Origin', requestOrigin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  } else if (!requestOrigin) {
-    // Same-origin zahtevi (bez Origin header-a) - dozvoli ih
-    res.header('Access-Control-Allow-Origin', allowedOrigins[0]); // Default fallback
-    res.header('Access-Control-Allow-Credentials', 'true');
-  } else {
+  if (origin && (origin === selfOrigin || allowSet.has(origin))) {
+    // Origin je dozvoljen (same-origin ili eksplicitno dozvoljen)
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"] as string || "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.setHeader("Access-Control-Allow-Methods", req.headers["access-control-request-method"] as string || "GET, POST, PUT, DELETE, OPTIONS");
+    
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+  } else if (origin) {
     // Nepoznat origin - BLOKIRATI + LOG SECURITY EVENT
-    console.warn(`🚫 CORS: Blokiran nepoznat origin: ${requestOrigin}`);
+    console.warn(`🚫 CORS: Blokiran nepoznat origin: ${origin}`);
     logSecurityEvent(SecurityEventType.CORS_VIOLATION, {
-      origin: requestOrigin,
+      origin: origin,
       path: req.path,
       method: req.method
     }, req);
     return res.status(403).json({ error: 'CORS policy violation - origin not allowed' });
   }
-  
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
+  // Ako nema origin header, tretiraј kao same-origin (ne postavljaj CORS header-e)
   
   // 🛡️ BEZBEDNOST: Ne loguj CORS details u production zbog session ID-jeva
   if (process.env.NODE_ENV !== 'production') {
-    // Ukloni sessionID iz logova zbog bezbednosti
-    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, allowed=${!!requestOrigin && allowedOrigins.includes(requestOrigin)}, cookies=${req.headers.cookie ? 'present' : 'missing'}`);
-  }
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
+    console.log(`CORS: method=${req.method}, origin=${origin}, selfOrigin=${selfOrigin}, allowed=${!origin || origin === selfOrigin || allowSet.has(origin)}`);
   }
   
   next();
