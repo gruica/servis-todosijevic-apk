@@ -3600,6 +3600,8 @@ export class DatabaseStorage implements IStorage {
 
   async getSparePartOrdersByStatus(status: SparePartStatus): Promise<any[]> {
     try {
+      console.log(`🔍 [SPARE PARTS STATUS] Dohvatanje porudžbina sa statusom: ${status}`);
+      
       // RAW SQL pristup sa postojećim kolonama - dodeli default vrednosti za requester polja
       const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at, 
@@ -3613,29 +3615,81 @@ export class DatabaseStorage implements IStorage {
         ORDER BY created_at DESC
       `, [status]);
       
-      // Mapuj snake_case iz baze u camelCase za frontend
-      return result.rows.map(row => ({
-        id: row.id,
-        partName: row.part_name,
-        partNumber: row.part_number,
-        quantity: row.quantity,
-        status: row.status,
-        urgency: row.urgency,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        supplierName: row.supplier_name,
-        estimatedCost: row.estimated_cost,
-        actualCost: row.actual_cost,
-        adminNotes: row.admin_notes,
-        description: row.description,
-        serviceId: row.service_id,
-        technicianId: row.technician_id,
-        requesterType: row.requester_type,
-        requesterUserId: row.requester_user_id,
-        requesterName: row.requester_name
-      }));
+      console.log(`📋 [SPARE PARTS STATUS] Pronađeno ${result.rows.length} porudžbina sa statusom ${status}`);
+
+      // Obogaćuj podatke sa povezanim servisima i tehničarima
+      const enrichedOrders = await Promise.all(
+        result.rows.map(async (row) => {
+          let serviceData = undefined;
+          let technicianData = undefined;
+
+          console.log(`🔗 [SPARE PARTS STATUS] Obogaćujem porudžbinu #${row.id} (serviceId: ${row.service_id}, technicianId: ${row.technician_id})`);
+
+          // Dodaj service podatke ako postoji serviceId
+          if (row.service_id) {
+            try {
+              const service = await this.getAdminServiceById(row.service_id);
+              if (service) {
+                serviceData = service;
+                console.log(`✅ [SPARE PARTS STATUS] Servis #${row.service_id} povezan sa klijentom: ${service.client?.fullName}`);
+              } else {
+                console.log(`⚠️ [SPARE PARTS STATUS] Servis #${row.service_id} nije pronađen u bazi`);
+              }
+            } catch (error) {
+              console.log(`❌ [SPARE PARTS STATUS] Greška pri dohvatanju servisa ${row.service_id}:`, error);
+            }
+          }
+
+          // Dodaj technician podatke ako postoji technicianId
+          if (row.technician_id) {
+            try {
+              const technician = await this.getTechnician(row.technician_id);
+              if (technician) {
+                technicianData = {
+                  name: technician.fullName || technician.name,
+                  phone: technician.phone || '',
+                  email: technician.email || '',
+                  specialization: technician.specialization || ''
+                };
+                console.log(`✅ [SPARE PARTS STATUS] Tehniker #${row.technician_id} povezan: ${technicianData.name}`);
+              } else {
+                console.log(`⚠️ [SPARE PARTS STATUS] Tehniker #${row.technician_id} nije pronađen u bazi`);
+              }
+            } catch (error) {
+              console.log(`❌ [SPARE PARTS STATUS] Greška pri dohvatanju tehnikara ${row.technician_id}:`, error);
+            }
+          }
+
+          // Mapuj snake_case iz baze u camelCase za frontend
+          return {
+            id: row.id,
+            partName: row.part_name,
+            partNumber: row.part_number,
+            quantity: row.quantity,
+            status: row.status,
+            urgency: row.urgency,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            supplierName: row.supplier_name,
+            estimatedCost: row.estimated_cost,
+            actualCost: row.actual_cost,
+            adminNotes: row.admin_notes,
+            description: row.description,
+            serviceId: row.service_id,
+            technicianId: row.technician_id,
+            requesterType: row.requester_type,
+            requesterUserId: row.requester_user_id,
+            requesterName: row.requester_name,
+            service: serviceData,
+            technician: technicianData
+          };
+        })
+      );
+
+      console.log(`🎯 [SPARE PARTS STATUS] Uspešno obogaćeno ${enrichedOrders.length} porudžbina sa statusom ${status}`);
+      return enrichedOrders;
     } catch (error) {
-      console.error('Greška pri dohvatanju porudžbina po statusu:', error);
+      console.error('❌ [SPARE PARTS STATUS] Greška pri dohvatanju porudžbina po statusu:', error);
       throw error;
     }
   }
@@ -3682,8 +3736,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAllRequestsSparePartOrders(): Promise<SparePartOrder[]> {
+  async getAllRequestsSparePartOrders(): Promise<any[]> {
     try {
+      console.log('🔍 [ALL-REQUESTS] Dohvatanje svih zahteva (pending + requested) sa povezanim podacima...');
+      
       // Dohvati sve zahteve: i "pending" i "requested" statuse
       const result = await pool.query(`
         SELECT id, part_name, part_number, quantity, status, urgency, created_at, updated_at,
@@ -3698,28 +3754,78 @@ export class DatabaseStorage implements IStorage {
       `);
       
       console.log(`📋 [ALL-REQUESTS] Pronađeno ${result.rows.length} zahteva (pending + requested)`);
-      
-      // Mapuj snake_case iz baze u camelCase za frontend
-      return result.rows.map(row => ({
-        id: row.id,
-        partName: row.part_name,
-        partNumber: row.part_number,
-        quantity: row.quantity,
-        status: row.status,
-        urgency: row.urgency,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        supplierName: row.supplier_name,
-        estimatedCost: row.estimated_cost,
-        actualCost: row.actual_cost,
-        adminNotes: row.admin_notes,
-        description: row.description,
-        serviceId: row.service_id,
-        technicianId: row.technician_id,
-        requesterType: row.requester_type,
-        requesterUserId: row.requester_user_id,
-        requesterName: row.requester_name
-      }));
+
+      // Obogaćuj podatke sa povezanim servisima i tehničarima
+      const enrichedOrders = await Promise.all(
+        result.rows.map(async (row) => {
+          let serviceData = undefined;
+          let technicianData = undefined;
+
+          console.log(`🔗 [ALL-REQUESTS] Obogaćujem porudžbinu #${row.id} (serviceId: ${row.service_id}, technicianId: ${row.technician_id})`);
+
+          // Dodaj service podatke ako postoji serviceId
+          if (row.service_id) {
+            try {
+              const service = await this.getAdminServiceById(row.service_id);
+              if (service) {
+                serviceData = service;
+                console.log(`✅ [ALL-REQUESTS] Servis #${row.service_id} povezan sa klijentom: ${service.client?.fullName}`);
+              } else {
+                console.log(`⚠️ [ALL-REQUESTS] Servis #${row.service_id} nije pronađen u bazi`);
+              }
+            } catch (error) {
+              console.log(`❌ [ALL-REQUESTS] Greška pri dohvatanju servisa ${row.service_id}:`, error);
+            }
+          }
+
+          // Dodaj technician podatke ako postoji technicianId
+          if (row.technician_id) {
+            try {
+              const technician = await this.getTechnician(row.technician_id);
+              if (technician) {
+                technicianData = {
+                  name: technician.fullName || technician.name,
+                  phone: technician.phone || '',
+                  email: technician.email || '',
+                  specialization: technician.specialization || ''
+                };
+                console.log(`✅ [ALL-REQUESTS] Tehniker #${row.technician_id} povezan: ${technicianData.name}`);
+              } else {
+                console.log(`⚠️ [ALL-REQUESTS] Tehniker #${row.technician_id} nije pronađen u bazi`);
+              }
+            } catch (error) {
+              console.log(`❌ [ALL-REQUESTS] Greška pri dohvatanju tehnikara ${row.technician_id}:`, error);
+            }
+          }
+
+          // Mapuj snake_case iz baze u camelCase za frontend
+          return {
+            id: row.id,
+            partName: row.part_name,
+            partNumber: row.part_number,
+            quantity: row.quantity,
+            status: row.status,
+            urgency: row.urgency,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            supplierName: row.supplier_name,
+            estimatedCost: row.estimated_cost,
+            actualCost: row.actual_cost,
+            adminNotes: row.admin_notes,
+            description: row.description,
+            serviceId: row.service_id,
+            technicianId: row.technician_id,
+            requesterType: row.requester_type,
+            requesterUserId: row.requester_user_id,
+            requesterName: row.requester_name,
+            service: serviceData,
+            technician: technicianData
+          };
+        })
+      );
+
+      console.log(`🎯 [ALL-REQUESTS] Uspešno obogaćeno ${enrichedOrders.length} zahteva`);
+      return enrichedOrders;
     } catch (error) {
       console.error('❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:', error);
       throw error;
