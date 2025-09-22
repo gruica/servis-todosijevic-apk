@@ -35,6 +35,7 @@ import { getSecurityDashboard, getSecurityLogs, performSecurityMaintenance, secu
 import { runPenetrationTests, getPenetrationTestResults, getPenetrationTestStatus, clearPenetrationTestHistory } from './penetration-testing.js';
 import { getIDSStatus, getIntrusionEvents, getIDSBlockedIPs, unblockIPAddress, getUserBehaviorProfiles, updateIDSConfig } from './intrusion-detection.js';
 import { getSecurityDashboardData, getSecurityMetricsHistory, getSecurityAlerts, acknowledgeSecurityAlert, resolveSecurityAlert, getSecurityExecutiveSummary, updateDashboardConfig, startRealTimeMetricsCollection } from './security-dashboard.js';
+import { getEncryptionStatus, rotateEncryptionKeys, testEncryption, getEncryptionKeys, initializeEncryption } from './data-encryption.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
@@ -1060,6 +1061,12 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
   app.post("/api/security/dashboard/alerts/:alertId/resolve", jwtAuth, requireRole(['admin']), resolveSecurityAlert);
   app.get("/api/security/dashboard/executive-summary", jwtAuth, requireRole(['admin']), getSecurityExecutiveSummary);
   app.patch("/api/security/dashboard/config", jwtAuth, requireRole(['admin']), updateDashboardConfig);
+
+  // 🔐 DATA ENCRYPTION & PROTECTION ENDPOINTS - ADMIN ONLY
+  app.get("/api/security/encryption/status", jwtAuth, requireRole(['admin']), getEncryptionStatus);
+  app.post("/api/security/encryption/rotate-keys", jwtAuth, requireRole(['admin']), rotateEncryptionKeys);
+  app.post("/api/security/encryption/test", jwtAuth, requireRole(['admin']), testEncryption);
+  app.get("/api/security/encryption/keys", jwtAuth, requireRole(['admin']), getEncryptionKeys);
 
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
