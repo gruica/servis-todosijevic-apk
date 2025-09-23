@@ -156,20 +156,66 @@ export function shareSparePartOrder(order: any): Promise<boolean> {
 }
 
 export function shareServiceInfo(service: any): Promise<boolean> {
+  // Izvuci informacije o klijentu i aparatu iz povezanih objekata
+  const client = service.client;
+  const appliance = service.appliance;
+  const technician = service.technician;
+  
+  // Formiraj detaljne informacije o aparatu
+  const applianceInfo = appliance ? 
+    `${appliance.manufacturer?.name || 'Nepoznat proizvodjac'} ${appliance.model || 'Nepoznat model'}` : 
+    'Nepoznat uređaj';
+  
+  const serialNumber = appliance?.serialNumber || 'Nepoznat S/N';
+  const category = appliance?.category?.name || 'Nepoznata kategorija';
+  
+  // Formiraj informacije o klijentu  
+  const clientInfo = client ? 
+    `${client.fullName}${client.address ? `, ${client.address}` : ''}${client.city ? `, ${client.city}` : ''}` : 
+    'Nepoznat klijent';
+  
+  // Formatiranje datuma
+  const createdDate = service.createdAt ? new Date(service.createdAt).toLocaleDateString('sr-Cyrl-ME') : 'N/A';
+  const scheduledDate = service.scheduledDate ? new Date(service.scheduledDate).toLocaleDateString('sr-Cyrl-ME') : 'Nije zakazano';
+  const completedDate = service.status === 'completed' && service.updatedAt ? 
+    new Date(service.updatedAt).toLocaleDateString('sr-Cyrl-ME') : 'N/A';
+  
+  // Status sa emoji
+  const statusWithEmoji = getServiceStatusEmoji(service.status) + ' ' + getServiceStatusText(service.status);
+  
   const shareData: ShareData = {
     title: '🔧 SERVIS INFORMACIJE - Frigo Sistem',
-    text: `🏠 Klijent: ${service.clientName}
-📍 Adresa: ${service.address}
-📱 Telefon: ${service.phone}
-🔧 Uređaj: ${service.deviceType}
-📋 Problem: ${service.description}
-👨‍🔧 Tehniker: ${service.technicianName}
-⏰ Status: ${service.status}
-📅 Datum: ${new Date(service.createdAt).toLocaleDateString('sr-RS')}
+    text: `📋 SERVIS #${service.id} - ${statusWithEmoji}
 
-🆔 Servis #${service.id}
+🏠 KLIJENT: ${clientInfo}
+📱 Telefon: ${client?.phone || 'N/A'}
+📧 Email: ${client?.email || 'N/A'}
+${client?.companyName ? `🏢 Kompanija: ${client.companyName}` : ''}
 
-🔗 Detalji: ${getProductionUrl()}/admin/services/${service.id}`
+🔧 UREĐAJ: ${applianceInfo}
+📦 Kategorija: ${category}
+📟 S/N: ${serialNumber}
+
+👨‍🔧 SERVISER: ${technician?.fullName || 'Nije dodeljen'}
+📞 Tel. servisera: ${technician?.phone || 'N/A'}
+🔧 Specijalizacija: ${technician?.specialization || 'N/A'}
+
+📅 DATUM KREIRANJA: ${createdDate}
+⏰ DATUM ZAKAZIVANJA: ${scheduledDate}
+${service.status === 'completed' ? `✅ DATUM ZAVRŠETKA: ${completedDate}` : ''}
+
+📋 PROBLEM: ${service.description || 'Nema opisa'}
+${service.technicianNotes ? `👨‍🔧 NAPOMENE SERVISERA: ${service.technicianNotes}` : ''}
+${service.usedParts ? `🔧 KORIŠĆENI DIJELOVI: ${service.usedParts}` : ''}
+${service.machineNotes ? `⚙️ NAPOMENE O APARATU: ${service.machineNotes}` : ''}
+${service.cost ? `💰 TROŠKOVI: ${service.cost} EUR` : ''}
+${service.isCompletelyFixed !== undefined ? (service.isCompletelyFixed ? '✅ POTPUNO ISPRAVLJEN' : '⚠️ DJELOMIČNO ISPRAVLJEN') : ''}
+
+⚠️ PRIORITET: ${service.priority ? service.priority.toUpperCase() : 'NORMALAN'}
+${service.devicePickedUp ? `📦 UREĐAJ PREUZET: ${service.pickupDate ? new Date(service.pickupDate).toLocaleDateString('sr-Cyrl-ME') : 'Da'}` : '🏠 UREĐAJ KOD KLIJENTA'}
+${service.isWarrantyService ? '🛡️ GARANTNI SERVIS' : '💰 VANGARANTNI SERVIS'}
+
+🔗 Detalji: ${getProductionUrl()}/admin/services?service=${service.id}`
   };
   
   return shareContent(shareData);
@@ -226,4 +272,29 @@ function getUrgencyText(urgency: string): string {
     'urgent': 'Hitno'
   };
   return urgencyTexts[urgency] || urgency;
+}
+
+// Service status helper funkcije
+function getServiceStatusEmoji(status: string): string {
+  const statusEmojis: Record<string, string> = {
+    'pending': '⏳',
+    'in_progress': '🔧',
+    'completed': '✅',
+    'cancelled': '❌',
+    'waiting_parts': '📦',
+    'scheduled': '📅'
+  };
+  return statusEmojis[status] || '📋';
+}
+
+function getServiceStatusText(status: string): string {
+  const statusTexts: Record<string, string> = {
+    'pending': 'Na čekanju',
+    'in_progress': 'U toku',
+    'completed': 'Završen',
+    'cancelled': 'Otkazan',
+    'waiting_parts': 'Čeka dijelove',
+    'scheduled': 'Zakazan'
+  };
+  return statusTexts[status] || status;
 }
