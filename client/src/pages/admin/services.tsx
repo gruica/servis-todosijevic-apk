@@ -39,13 +39,15 @@ import {
   Play,
   Pause,
   Filter,
-  Building
+  Building,
+  Share
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { AdminSparePartsOrderingSimple } from "@/components/admin/AdminSparePartsOrderingSimple";
 import { SimpleServicePhotos } from "@/components/SimpleServicePhotos";
 import { ConversationHistory } from "@/components/ConversationHistory";
 import { WhatsAppMessenger } from "@/components/WhatsAppMessenger";
+import { shareServiceInfo } from "@/utils/shareUtils";
 
 interface AdminService {
   id: number;
@@ -604,6 +606,27 @@ const AdminServices = memo(function AdminServices() {
     dispatchDialog({ type: 'OPEN_RETURN', payload: service });
   };
 
+  // Handle share service information
+  const handleShareService = async (service: AdminService) => {
+    try {
+      const success = await shareServiceInfo(service);
+      if (success) {
+        toast({
+          title: "Uspješno podijeljeno!",
+          description: "Servis informacije su uspješno podijeljene preko vanjskih aplikacija.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Greška pri dijeljenju servis informacija:', error);
+      toast({
+        title: "Greška pri dijeljenju",
+        description: "Nastala je greška tokom dijeljenja servis informacija.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Handle PDF report generation
   const handlePdfReport = async (service: AdminService) => {
     try {
@@ -951,6 +974,13 @@ const AdminServices = memo(function AdminServices() {
                             title="Generiši PDF izvještaj"
                           >
                             <FileText className="h-3 w-3" />
+                          </button>
+                          <button
+                            className="p-1 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors"
+                            onClick={() => handleShareService(service)}
+                            title="Dijeli servis informacije"
+                          >
+                            <Share className="h-3 w-3" />
                           </button>
                           <button
                             className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
