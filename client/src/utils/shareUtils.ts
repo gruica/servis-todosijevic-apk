@@ -40,8 +40,17 @@ function fallbackShare(data: ShareData): boolean {
     const textToCopy = `${data.title}\n\n${data.text}${data.url ? `\n\n${data.url}` : ''}`;
     navigator.clipboard.writeText(textToCopy);
     
-    // Prikaži notifikaciju
-    alert('Sadržaj kopiran u clipboard! Možete ga podijeliti u Viber, WhatsApp ili bilo kojoj aplikaciji.');
+    // Prikaži detaljnu notifikaciju sa preview-om
+    const previewLength = 200;
+    const preview = textToCopy.length > previewLength ? 
+      textToCopy.substring(0, previewLength) + '...' : textToCopy;
+    
+    const confirmed = confirm(`✅ SADRŽAJ KOPIRAN U CLIPBOARD!\n\nPreview sadržaja:\n"${preview}"\n\n💡 INSTRUKCIJE:\n1. Otvorite Viber/WhatsApp/Email\n2. Pritisnite Ctrl+V (Windows) ili Cmd+V (Mac)\n3. Poslati će se kompletan sadržaj sa svim detaljima\n\nKliknite OK za zatvaranje`);
+    
+    if (!confirmed) {
+      // Ako korisnik klikne Cancel, pokušaj sa share dialog-om
+      openShareDialog(data);
+    }
     return true;
   } catch (error) {
     console.error('Greška pri kopiranju:', error);
