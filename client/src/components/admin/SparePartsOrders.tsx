@@ -32,8 +32,10 @@ import {
   Building,
   Settings,
   Trash2,
-  ShoppingCart
+  ShoppingCart,
+  Share2
 } from 'lucide-react';
+import { shareSparePartOrder } from '@/utils/shareUtils';
 
 interface SparePartOrder {
   id: number;
@@ -377,6 +379,24 @@ const SparePartsOrders = memo(function SparePartsOrders() {
     }
   };
 
+  // Handle share order
+  const handleShareOrder = async (order: SparePartOrder) => {
+    try {
+      await shareSparePartOrder(order);
+      toast({
+        title: "Sadržaj podeljen",
+        description: "Informacije o rezervnom delu su uspešno podeljene.",
+      });
+    } catch (error) {
+      console.error('Greška pri dijeljenju:', error);
+      toast({
+        title: "Greška pri dijeljenju",
+        description: "Došlo je do greške pri dijeljenju sadržaja.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle confirm delivery (NOVA FUNKCIONALNOST)
   const handleConfirmDelivery = (order: SparePartOrder) => {
     if (window.confirm(`Da li ste sigurni da želite da potvrdite isporuku dela "${order.partName}"? Ova akcija će automatski ukloniti deo iz sistema poručivanja.`)) {
@@ -621,6 +641,15 @@ const SparePartsOrders = memo(function SparePartsOrders() {
                           onClick={() => handleViewDetails(order)}
                         >
                           Detalji
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleShareOrder(order)}
+                          className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                        >
+                          <Share2 className="h-4 w-4 mr-1" />
+                          Podijeli
                         </Button>
                         {order.status === 'pending' && (
                           <>

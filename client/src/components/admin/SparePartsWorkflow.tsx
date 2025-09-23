@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Package, Clock, CheckCircle, ArrowRight, Truck, ShoppingCart, Wrench, User, Phone, MapPin, Settings } from 'lucide-react';
+import { Package, Clock, CheckCircle, ArrowRight, Truck, ShoppingCart, Wrench, User, Phone, MapPin, Settings, Share2 } from 'lucide-react';
+import { shareSparePartOrder } from '@/utils/shareUtils';
 
 interface SparePartOrder {
   id: number;
@@ -550,7 +551,7 @@ export function SparePartsWorkflow() {
 // DODANO ZBOG PROBLEMA: Administrator ne vidi "pending" delove od servisera
 // POŠTUJE PRAVILA: Ne mijenja postojeći kod, dodaje novu funkciju na kraj
 
-function SparePartCardEnhanced({ order, onAction }: { order: SparePartOrder; onAction: (order: SparePartOrder, action: string) => void }) {
+function SparePartCardEnhanced({ order, onAction, onShare }: { order: SparePartOrder; onAction: (order: SparePartOrder, action: string) => void; onShare: (order: SparePartOrder) => void }) {
   const getStatusBadgeEnhanced = (status: string) => {
     const statusConfigEnhanced = {
       pending: { label: 'Na čekanju', variant: 'destructive' as const, icon: Clock },
@@ -755,7 +756,18 @@ function SparePartCardEnhanced({ order, onAction }: { order: SparePartOrder; onA
               📅 {new Date(order.createdAt).toLocaleDateString('sr-RS')}
             </span>
           </div>
-          {getActionButtonEnhanced(order.status)}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onShare(order)}
+              className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+            >
+              <Share2 className="w-3 h-3 mr-1" />
+              Podijeli
+            </Button>
+            {getActionButtonEnhanced(order.status)}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -769,7 +781,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const endpointMap = {
+      const endpointMap: Record<string, string> = {
         'approve-pending': `/api/admin/spare-parts/${order.id}/approve-pending`,
         order: `/api/admin/spare-parts/${order.id}/order`,
         receive: `/api/admin/spare-parts/${order.id}/receive`,
@@ -778,6 +790,9 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
       };
 
       const endpoint = endpointMap[action];
+      if (!endpoint) {
+        throw new Error(`Unknown action: ${action}`);
+      }
       return await apiRequest(endpoint, {
         method: 'PATCH',
         body: data ? JSON.stringify(data) : undefined
@@ -965,6 +980,25 @@ export function SparePartsWorkflowEnhanced() {
     setSelectedAction(null);
   };
 
+  const { toast } = useToast();
+
+  const handleShareOrder = async (order: SparePartOrder) => {
+    try {
+      await shareSparePartOrder(order);
+      toast({
+        title: "Sadržaj podeljen",
+        description: "Informacije o rezervnom delu su uspešno podeljene.",
+      });
+    } catch (error) {
+      console.error('Greška pri dijeljenju:', error);
+      toast({
+        title: "Greška pri dijeljenju",
+        description: "Došlo je do greške pri dijeljenju sadržaja.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getTabCountEnhanced = (status: string) => {
     const query = queriesEnhanced.find(q => q.status === status);
     return Array.isArray(query?.query.data) ? query.query.data.length : 0;
@@ -1032,6 +1066,7 @@ export function SparePartsWorkflowEnhanced() {
                       key={order.id} 
                       order={order} 
                       onAction={handleActionEnhanced}
+                      onShare={handleShareOrder}
                     />
                   ))}
                 </div>
