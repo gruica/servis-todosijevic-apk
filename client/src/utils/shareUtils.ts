@@ -132,8 +132,8 @@ export function shareSparePartOrder(order: any): Promise<boolean> {
 ⚠️ PRIORITET: ${getUrgencyText(order.urgency)}
 ⏰ STATUS: ${getStatusEmoji(order.status)} ${getStatusText(order.status)}
 
-💰 PROCJENA: ${order.estimatedCost || 'N/A'} RSD
-💵 STVARNA: ${order.actualCost || 'N/A'} RSD
+💰 PROCJENA: ${order.estimatedCost || 'N/A'} EUR
+💵 STVARNA: ${order.actualCost || 'N/A'} EUR
 🏪 DOBAVLJAČ: ${order.supplierName || 'N/A'}
 
 📝 OPIS: ${order.description || 'Nema dodatnog opisa'}

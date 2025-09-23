@@ -165,7 +165,7 @@ function WorkflowActionDialog({ order, action, onClose }: WorkflowActionDialogPr
                 id="actualCost"
                 value={formData.actualCost || ''}
                 onChange={(e) => setFormData({...formData, actualCost: e.target.value})}
-                placeholder="npr. 2500 RSD"
+                placeholder="npr. 250 EUR"
               />
             </div>
             <div>
@@ -880,7 +880,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
                 id="actualCost"
                 value={formData.actualCost || ''}
                 onChange={(e) => setFormData({...formData, actualCost: e.target.value})}
-                placeholder="npr. 2500 RSD"
+                placeholder="npr. 250 EUR"
               />
             </div>
             <div>
