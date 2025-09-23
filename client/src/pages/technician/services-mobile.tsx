@@ -986,7 +986,7 @@ function ServiceCard({ service }: { service: Service }) {
                 id="used-parts"
                 value={completionData.usedParts}
                 onChange={(e) => setCompletionData(prev => ({ ...prev, usedParts: e.target.value }))}
-                placeholder="Lista korišćenih rezervnih delova..."
+                placeholder="Lista korišćenih rezervnih dijelova..."
                 rows={2}
                 className="resize-none"
               />

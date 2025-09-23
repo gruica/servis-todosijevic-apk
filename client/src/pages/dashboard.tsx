@@ -560,7 +560,7 @@ const Dashboard = memo(function Dashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-lg font-semibold text-gray-800">Servisi koji čekaju delove</CardTitle>
-                    <p className="text-sm text-gray-600">Pregled servisa u stanju čekanja rezervnih delova</p>
+                    <p className="text-sm text-gray-600">Pregled servisa u stanju čekanja rezervnih dijelova</p>
                   </div>
                 </div>
               </CardHeader>
