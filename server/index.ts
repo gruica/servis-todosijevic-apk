@@ -1,8 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes, setupSecurityEndpoints } from "./routes";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import path from "path";
 
 import { setupVite, serveStatic, log } from "./vite";
 import { maintenanceService } from "./maintenance-service";
@@ -10,8 +7,6 @@ import { setupAuth } from "./auth";
 import { complusCronService } from "./complus-cron-service";
 import { ServisKomercCronService } from "./servis-komerc-cron-service";
 import { BekoCronService } from "./beko-cron-service.js";
-import { completeSecurityStack } from "./security-middleware.js";
-import { logSecurityEvent, SecurityEventType } from "./security-monitor.js";
 
 const servisKomercCronService = new ServisKomercCronService();
 const bekoCronService = BekoCronService.getInstance();
@@ -24,99 +19,55 @@ const app = express();
 // Omogući trust proxy za Replit
 app.set('trust proxy', 1);
 
-// 🛡️ SIGURNOSNI HEADERS - HELMET MIDDLEWARE
-const isDevelopment = app.get("env") === "development";
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: isDevelopment ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"] : ["'self'"], // Production: zabrani unsafe
-      styleSrc: ["'self'", "'unsafe-inline'"], // Potrebno za CSS
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https:", "wss:"],
-      fontSrc: ["'self'", "https:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'self'", "https://replit.com", "https://*.replit.com"],
-      frameAncestors: ["'self'", "https://replit.com", "https://*.replit.com", "https://*.replit.dev", "https://*.repl.co", "https://*.id.repl.co", "https://*.riker.replit.dev", "http://127.0.0.1:5000"]
-    },
-  },
-  hsts: {
-    maxAge: 31536000, // 1 godina
-    includeSubDomains: true,
-    preload: true
-  },
-  noSniff: true,
-  xssFilter: true,
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" }
-}));
-
-// 🛡️ RATE LIMITING za login endpoint
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuta
-  max: 5, // maksimalno 5 pokušaja po IP adresi
-  message: { error: 'Previše pokušaja logovanja. Pokušajte ponovo za 15 minuta.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true // Ne računa uspešne login-e
-});
-
-// 🛡️ OPŠTI RATE LIMITING za API endpoint-e
-const apiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuta
-  max: 100, // maksimalno 100 zahteva po IP adresi u minuti
-  message: { error: 'Previše zahteva. Pokušajte ponovo za minut.' },
-  standardHeaders: true,
-  legacyHeaders: false
+// GLOBALNI CSP MIDDLEWARE - MORA BITI PRE VITE SETUP-A
+app.use((req, res, next) => {
+  // Postavi CSP frame-ancestors header za sve Replit domene
+  res.header('Content-Security-Policy', 'frame-ancestors \'self\' https://replit.com https://*.replit.com https://*.replit.dev https://*.repl.co https://*.id.repl.co https://*.riker.replit.dev http://127.0.0.1:5000');
+  next();
 });
 
 // PRVO postavi JSON body parser middleware sa povećanim limitom za Base64 fotografije
 app.use(express.json({ limit: '10mb' })); // Povećano sa default 1mb na 10mb za Base64 fotografije
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// 🛡️ SIGURNA CORS KONFIGURACIJA - DINAMIČKA SAME-ORIGIN PODRŠKA
+// ZATIM CORS middleware za omogućavanje cookies
 app.use((req, res, next) => {
-  const origin = req.headers.origin as string | undefined;
-  const proto = (req.headers["x-forwarded-proto"] as string) || "http";
-  const host = req.headers.host;
-  const selfOrigin = host ? `${proto}://${host}` : undefined;
+  // Lista dozvoljenih origin-a za APK i web pristup
+  const allowedOrigins = [
+    'https://883c0e1c-965e-403d-8bc0-39adca99d551-00-liflphmab0x.riker.replit.dev', // Development Replit
+    'https://tehnikamne.me', // Production domen
+    'https://www.tehnikamne.me', // Production domen sa www
+    'http://127.0.0.1:5000', // Local development
+    'http://localhost:5000' // Local development alternativa
+  ];
   
-  // Dozvoljeni cross-origin domeni iz environment varijabli + statički
-  const envOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
-  const allowSet = new Set([
-    ...envOrigins,
-    "https://tehnikamne.me",
-    "https://www.tehnikamne.me", 
-    "http://127.0.0.1:5000",
-    "http://localhost:5000"
-  ]);
+  const requestOrigin = req.headers.origin || req.headers.referer;
+  let allowedOrigin = allowedOrigins[0]; // Default fallback
   
-  if (origin && (origin === selfOrigin || allowSet.has(origin))) {
-    // Origin je dozvoljen (same-origin ili eksplicitno dozvoljen)
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"] as string || "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    res.setHeader("Access-Control-Allow-Methods", req.headers["access-control-request-method"] as string || "GET, POST, PUT, DELETE, OPTIONS");
-    
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(204);
+  // Proveri da li je origin u listi dozvoljenih
+  if (requestOrigin) {
+    const isAllowed = allowedOrigins.some(origin => 
+      requestOrigin.startsWith(origin) || requestOrigin.includes(origin.replace('https://', ''))
+    );
+    if (isAllowed) {
+      allowedOrigin = requestOrigin;
     }
-  } else if (origin) {
-    // Nepoznat origin - BLOKIRATI + LOG SECURITY EVENT
-    console.warn(`🚫 CORS: Blokiran nepoznat origin: ${origin}`);
-    logSecurityEvent(SecurityEventType.CORS_VIOLATION, {
-      origin: origin,
-      path: req.path,
-      method: req.method
-    }, req);
-    return res.status(403).json({ error: 'CORS policy violation - origin not allowed' });
   }
-  // Ako nema origin header, tretiraј kao same-origin (ne postavljaj CORS header-e)
   
-  // 🛡️ BEZBEDNOST: Ne loguj CORS details u production zbog session ID-jeva
+  res.header('Access-Control-Allow-Origin', allowedOrigin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  // CSP header za iframe embedding će biti postavljen nakon Vite setup-a
+  
+  // Only log CORS in development mode to improve production performance
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`CORS: method=${req.method}, origin=${origin}, selfOrigin=${selfOrigin}, allowed=${!origin || origin === selfOrigin || allowSet.has(origin)}`);
+    console.log(`CORS: method=${req.method}, origin=${req.headers.origin}, referer=${req.headers.referer}, allowedOrigin=${allowedOrigin}, cookies=${req.headers.cookie ? 'present' : 'missing'}, sessionID=${req.sessionID || 'none'}`);
+  }
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
   }
   
   next();
@@ -127,80 +78,36 @@ setupAuth(app);
 
 // Session middleware je konfigurisan u setupAuth()
 
-// 🛡️ SIGURNI ENDPOINT ZA SERVIRANJE SLIKA - ZAŠTIĆEN OD DIRECTORY TRAVERSAL
+// JEDNOSTAVAN ENDPOINT ZA SERVIRANJE SLIKA DIREKTNO OVDE
 app.get('/uploads/:fileName', async (req, res) => {
   const fs = await import('fs');
+  const path = await import('path');
   const fileName = req.params.fileName;
+  const filePath = path.join(process.cwd(), 'uploads', fileName);
   
-  // 🛡️ SIGURNOSNA VALIDACIJA IMENA FAJLA
-  if (!fileName || typeof fileName !== 'string') {
-    return res.status(400).json({ error: 'Invalid file name' });
-  }
+  console.log(`📷 Serving image: ${fileName}`);
   
-  // 🛡️ BLOKIRANJE PATH TRAVERSAL KARAKTERA + SECURITY LOGGING
-  if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\') || fileName.includes('\0')) {
-    console.warn(`🚫 SECURITY: Path traversal pokušaj blokiran: ${fileName}`);
-    logSecurityEvent(SecurityEventType.PATH_TRAVERSAL_ATTEMPT, {
-      fileName,
-      path: req.path,
-      detectedPattern: 'file_name_traversal'
-    }, req);
-    return res.status(400).json({ error: 'Invalid file name - security violation' });
-  }
-  
-  // 🛡️ DOZVOLJENE EKSTENZIJE FAJLOVA
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.gif'];
-  const ext = path.extname(fileName).toLowerCase();
-  if (!allowedExtensions.includes(ext)) {
-    console.warn(`🚫 SECURITY: Nedozvoljena ekstenzija blokirana: ${ext} za fajl ${fileName}`);
-    return res.status(400).json({ error: 'File type not allowed' });
-  }
-  
-  // 🛡️ SIGURNO KREIRANJE PUTANJE - PATH RESOLUTION SA VALIDACIJOM
-  const uploadsDir = path.resolve(process.cwd(), 'uploads');
-  const requestedPath = path.resolve(uploadsDir, fileName);
-  
-  // 🛡️ PROVERA DA LI JE PUTANJA UNUTAR UPLOADS DIREKTORIJA
-  if (!requestedPath.startsWith(uploadsDir + path.sep) && requestedPath !== uploadsDir) {
-    console.warn(`🚫 SECURITY: Path traversal pokušaj blokiran - putanja van uploads: ${requestedPath}`);
-    return res.status(400).json({ error: 'Path traversal blocked' });
-  }
-  
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`📷 Serving secure image: ${fileName}`);
-  }
-  
-  if (!fs.existsSync(requestedPath)) {
-    return res.status(404).json({ error: 'File not found' });
+  if (!fs.existsSync(filePath)) {
+    console.log(`📷 Image not found: ${filePath}`);
+    return res.status(404).send('Image not found');
   }
   
   try {
-    // Mapa ekstenzija na MIME tipove
-    const mimeTypes: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.webp': 'image/webp',
-      '.gif': 'image/gif',
-      '.pdf': 'application/pdf'
-    };
-    
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const ext = path.extname(fileName).toLowerCase();
+    let contentType = 'image/jpeg';
+    if (ext === '.webp') contentType = 'image/webp';
+    else if (ext === '.png') contentType = 'image/png';
     
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.setHeader('X-Content-Type-Options', 'nosniff'); // Dodatna XSS zaštita
     
-    const fileStream = fs.createReadStream(requestedPath);
+    const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`📷 ✅ Secure image served: ${fileName}`);
-    }
+    console.log(`📷 ✅ Image served: ${fileName}`);
     
   } catch (error) {
     console.error(`📷 ❌ Error serving image:`, error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).send('Error serving image');
   }
 });
 
@@ -245,24 +152,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🛡️ APLIKACIJA RATE LIMITING-a NA API ENDPOINT-E
-app.use('/api/', apiLimiter);
-
-// 🛡️ ENTERPRISE SECURITY MONITORING STACK
-app.use(completeSecurityStack());
-
 (async () => {
   // Mobile SMS Service has been completely removed
   
-  // Initialize data encryption system
-  try {
-    const { initializeEncryption } = await import('./data-encryption.js');
-    initializeEncryption();
-  } catch (error) {
-    console.error('❌ [ENCRYPTION] Failed to initialize:', error);
-  }
-  
-  const server = await registerRoutes(app, loginLimiter);
+  const server = await registerRoutes(app);
   
   // Registruj sigurnosne endpoint-e za audit i soft delete
   setupSecurityEndpoints(app, storage);

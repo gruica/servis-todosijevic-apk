@@ -31,21 +31,11 @@ import { aiPredictiveMaintenanceService } from './services/ai-predictive-mainten
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import QRCode from 'qrcode';
-import { getSecurityDashboard, getSecurityLogs, performSecurityMaintenance, securityHealthCheck, triggerTestAlert, getBlockedIPs, exportSecurityMetrics, getSecurityConfig } from './security-endpoints.js';
-import { runPenetrationTests, getPenetrationTestResults, getPenetrationTestStatus, clearPenetrationTestHistory } from './penetration-testing.js';
-import { getIDSStatus, getIntrusionEvents, getIDSBlockedIPs, unblockIPAddress, getUserBehaviorProfiles, updateIDSConfig } from './intrusion-detection.js';
-import { getSecurityDashboardData, getSecurityMetricsHistory, getSecurityAlerts, acknowledgeSecurityAlert, resolveSecurityAlert, getSecurityExecutiveSummary, updateDashboardConfig, startRealTimeMetricsCollection } from './security-dashboard.js';
-import { getEncryptionStatus, rotateEncryptionKeys, testEncryption, getEncryptionKeys, initializeEncryption } from './data-encryption.js';
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
-// 🛡️ ENTERPRISE MONITORING & HEALTH CHECK - ZAŠTIĆENO U PRODUCTION
+// ENTERPRISE MONITORING & HEALTH CHECK
 async function setupEnterpriseHealthEndpoint(app: Express) {
-  // 🛡️ Zaštićeni zdravstveni endpoint - admin only u production
-  const healthMiddlewares = process.env.NODE_ENV === 'production' 
-    ? [jwtAuth, requireRole(['admin'])] 
-    : [];
-    
-  app.get("/api/health", ...healthMiddlewares, async (req, res) => {
+  app.get("/api/health", async (req, res) => {
     try {
       const startTime = Date.now();
       const { checkDatabaseHealth } = await import('./db.js');
@@ -62,16 +52,12 @@ async function setupEnterpriseHealthEndpoint(app: Express) {
         performance: {
           healthCheckTime: `${Date.now() - startTime}ms`,
           uptime: `${Math.floor(process.uptime())}s`,
-          ...(process.env.NODE_ENV !== 'production' && {
-            memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
-          })
+          memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
         },
-        ...(process.env.NODE_ENV !== 'production' && {
-          version: {
-            node: process.version,
-            app: 'FrigoSistem_v2025.1.0_Enterprise'
-          }
-        })
+        version: {
+          node: process.version,
+          app: 'FrigoSistem_v2025.1.0_Enterprise'
+        }
       };
       
       res.status(dbHealth.healthy ? 200 : 503).json(systemHealth);
@@ -147,7 +133,7 @@ const catalogUpload = multer({
 
 
 
-export async function registerRoutes(app: Express, loginLimiter?: any): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== SPARE PARTS ADMIN ENDPOINTS =====
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
@@ -1029,45 +1015,6 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
     }
   });
 
-  // 🛡️ SECURITY MANAGEMENT ENDPOINTS - ADMIN ONLY
-  app.get("/api/security/dashboard", jwtAuth, requireRole(['admin']), getSecurityDashboard);
-  app.get("/api/security/logs", jwtAuth, requireRole(['admin']), getSecurityLogs);
-  app.post("/api/security/maintenance", jwtAuth, requireRole(['admin']), performSecurityMaintenance);
-  app.get("/api/security/health", jwtAuth, requireRole(['admin']), securityHealthCheck);
-  app.post("/api/security/test-alert", jwtAuth, requireRole(['admin']), triggerTestAlert);
-  app.get("/api/security/blocked-ips", jwtAuth, requireRole(['admin']), getBlockedIPs);
-  app.get("/api/security/metrics/export", jwtAuth, requireRole(['admin']), exportSecurityMetrics);
-  app.get("/api/security/config", jwtAuth, requireRole(['admin']), getSecurityConfig);
-
-  // 🎯 PENETRATION TESTING ENDPOINTS - ADMIN ONLY (Development/Staging only)
-  app.post("/api/security/pentest/run", jwtAuth, requireRole(['admin']), runPenetrationTests);
-  app.get("/api/security/pentest/results", jwtAuth, requireRole(['admin']), getPenetrationTestResults);
-  app.get("/api/security/pentest/status", jwtAuth, requireRole(['admin']), getPenetrationTestStatus);
-  app.delete("/api/security/pentest/history", jwtAuth, requireRole(['admin']), clearPenetrationTestHistory);
-
-  // 🛡️ INTRUSION DETECTION SYSTEM ENDPOINTS - ADMIN ONLY
-  app.get("/api/security/ids/status", jwtAuth, requireRole(['admin']), getIDSStatus);
-  app.get("/api/security/ids/events", jwtAuth, requireRole(['admin']), getIntrusionEvents);
-  app.get("/api/security/ids/blocked-ips", jwtAuth, requireRole(['admin']), getIDSBlockedIPs);
-  app.post("/api/security/ids/unblock-ip", jwtAuth, requireRole(['admin']), unblockIPAddress);
-  app.get("/api/security/ids/user-profiles", jwtAuth, requireRole(['admin']), getUserBehaviorProfiles);
-  app.patch("/api/security/ids/config", jwtAuth, requireRole(['admin']), updateIDSConfig);
-
-  // 📊 SECURITY DASHBOARD & REAL-TIME ALERTING - ADMIN ONLY
-  app.get("/api/security/dashboard/data", jwtAuth, requireRole(['admin']), getSecurityDashboardData);
-  app.get("/api/security/dashboard/metrics/history", jwtAuth, requireRole(['admin']), getSecurityMetricsHistory);
-  app.get("/api/security/dashboard/alerts", jwtAuth, requireRole(['admin']), getSecurityAlerts);
-  app.post("/api/security/dashboard/alerts/:alertId/acknowledge", jwtAuth, requireRole(['admin']), acknowledgeSecurityAlert);
-  app.post("/api/security/dashboard/alerts/:alertId/resolve", jwtAuth, requireRole(['admin']), resolveSecurityAlert);
-  app.get("/api/security/dashboard/executive-summary", jwtAuth, requireRole(['admin']), getSecurityExecutiveSummary);
-  app.patch("/api/security/dashboard/config", jwtAuth, requireRole(['admin']), updateDashboardConfig);
-
-  // 🔐 DATA ENCRYPTION & PROTECTION ENDPOINTS - ADMIN ONLY
-  app.get("/api/security/encryption/status", jwtAuth, requireRole(['admin']), getEncryptionStatus);
-  app.post("/api/security/encryption/rotate-keys", jwtAuth, requireRole(['admin']), rotateEncryptionKeys);
-  app.post("/api/security/encryption/test", jwtAuth, requireRole(['admin']), testEncryption);
-  app.get("/api/security/encryption/keys", jwtAuth, requireRole(['admin']), getEncryptionKeys);
-
   // setupAuth se poziva u server/index.ts pre CORS middleware-a
   const server = createServer(app);
 
@@ -1108,36 +1055,23 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
     }
   });
 
-  // 🛡️ Osnovni health endpoint - ograničene informacije u production
   app.get("/health", (req, res) => {
-    const healthResponse: any = { 
+    res.status(200).json({ 
       status: "healthy", 
-      timestamp: new Date().toISOString()
-    };
-    
-    // 🛡️ Detaljne informacije samo u development
-    if (process.env.NODE_ENV !== 'production') {
-      healthResponse.uptime = process.uptime();
-      healthResponse.version = "1.0.0";
-    }
-    
-    res.status(200).json(healthResponse);
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: "1.0.0"
+    });
   });
   
-  // 🛡️ Basic API health endpoint - minimal data u production
+  // Alternative health check route
   app.get("/api/health", (req, res) => {
-    const healthResponse: any = { 
+    res.status(200).json({ 
       status: "ok", 
       api: "ready",
-      timestamp: new Date().toISOString()
-    };
-    
-    // 🛡️ Detaljne informacije samo u development
-    if (process.env.NODE_ENV !== 'production') {
-      healthResponse.uptime = process.uptime();
-    }
-    
-    res.status(200).json(healthResponse);
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
   });
   
   // Inicijalizacija SMS servisa
@@ -1198,9 +1132,8 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
   app.post("/api/security/verify-bot", verifyBotAnswer);
   app.get("/api/security/rate-limit-status", getRateLimitStatus);
   
-  // 🛡️ JWT Login endpoint sa RATE LIMITING zaštitom
-  const loginMiddlewares = loginLimiter ? [loginLimiter] : [];
-  app.post("/api/jwt-login", ...loginMiddlewares, async (req, res) => {
+  // JWT Login endpoint - replacing session-based login
+  app.post("/api/jwt-login", async (req, res) => {
     try {
       const { username, password } = req.body;
       
@@ -1220,10 +1153,7 @@ export async function registerRoutes(app: Express, loginLimiter?: any): Promise<
       // Check password
       const isPasswordValid = await comparePassword(password, user.password);
       if (!isPasswordValid) {
-        // 🛡️ BEZBEDNOST: Ne loguj password failures u production
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(`JWT Login: Invalid password for ${username}`);
-        }
+        console.log(`JWT Login: Invalid password for ${username}`);
         return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
       }
       
@@ -4976,10 +4906,7 @@ Frigo Sistem`;
 
       const token = generateToken(tokenPayload);
       
-      // 🛡️ BEZBEDNOST: Ne loguj token generation u production
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
-      }
+      console.log(`🔑 [JWT TOKEN GENERATION] Token generisan za korisnika: ${user.username} (${user.role})`);
       
       res.json({ 
         token,
