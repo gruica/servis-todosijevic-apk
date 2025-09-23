@@ -34,7 +34,7 @@ export function formatRelativeDate(date: Date): string {
     return `pre ${days} ${days === 1 ? 'dan' : 'dana'}`;
   }
   
-  // Manje od meseca
+  // Manje od mjeseca
   if (diffInSeconds < 2419200) { // ~4 nedelje
     const weeks = Math.floor(diffInSeconds / 604800);
     return `pre ${weeks} ${weeks === 1 ? 'nedelju' : 'nedelje'}`;
@@ -43,7 +43,7 @@ export function formatRelativeDate(date: Date): string {
   // Manje od godine
   if (diffInSeconds < 31536000) {
     const months = Math.floor(diffInSeconds / 2419200);
-    return `pre ${months} ${months === 1 ? 'mesec' : months < 5 ? 'meseca' : 'meseci'}`;
+    return `pre ${months} ${months === 1 ? 'mjesec' : months < 5 ? 'mjeseca' : 'mjeseci'}`;
   }
   
   // Više od godine
@@ -65,9 +65,9 @@ export function formatLocalDate(date: Date): string {
 }
 
 /**
- * Formatira datum i vreme u format dd.mm.yyyy. HH:MM:SS
+ * Formatira datum i vrijeme u format dd.mm.yyyy. HH:MM:SS
  * @param date Datum koji treba formatirati
- * @returns Formatiran lokalni datum i vreme
+ * @returns Formatiran lokalni datum i vrijeme
  */
 export function formatLocalDateTime(date: Date): string {
   return date.toLocaleDateString('sr-Latn-ME', {
@@ -82,7 +82,7 @@ export function formatLocalDateTime(date: Date): string {
 }
 
 /**
- * Formatira vreme u format HH:MM
+ * Formatira vrijeme u format HH:MM
  * @param date Datum koji treba formatirati
  * @returns Formatiran lokalni datum
  */
