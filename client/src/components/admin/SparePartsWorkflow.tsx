@@ -151,7 +151,7 @@ function WorkflowActionDialog({ order, action, onClose }: WorkflowActionDialogPr
               />
             </div>
             <Button type="submit" disabled={mutation.isPending} className="w-full">
-              {mutation.isPending ? 'Poručujem...' : 'Poruči rezervni deo'}
+              {mutation.isPending ? 'Poručujem...' : 'Poruči rezervni dio'}
             </Button>
           </form>
         );
@@ -187,7 +187,7 @@ function WorkflowActionDialog({ order, action, onClose }: WorkflowActionDialogPr
       case 'make-available':
         return (
           <div className="space-y-4">
-            <p>Da li ste sigurni da želite da prebacite ovaj rezervni deo u dostupno stanje?</p>
+            <p>Da li ste sigurni da želite da prebacite ovaj rezervni dio u dostupno stanje?</p>
             <p className="text-sm text-muted-foreground">
               Deo će biti dostupan serviserima za korišćenje.
             </p>
@@ -223,7 +223,7 @@ function WorkflowActionDialog({ order, action, onClose }: WorkflowActionDialogPr
 
   const getDialogTitle = () => {
     switch (action) {
-      case 'order': return 'Poruči rezervni deo';
+      case 'order': return 'Poruči rezervni dio';
       case 'receive': return 'Potvrdi prijem';
       case 'make-available': return 'Prebaci u dostupno';
       case 'consume': return 'Označi kao potrošeno';
@@ -474,7 +474,7 @@ export function SparePartsWorkflow() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Package className="w-6 h-6 text-blue-600" />
-        <h2 className="text-2xl font-bold">Workflow rezervnih delova</h2>
+        <h2 className="text-2xl font-bold">Workflow rezervnih dijelova</h2>
       </div>
 
       <Tabs defaultValue="requested" className="w-full">
@@ -516,7 +516,7 @@ export function SparePartsWorkflow() {
                 </div>
               ) : !Array.isArray(query?.data) || query.data.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nema rezervnih delova u ovom statusu
+                  Nema rezervnih dijelova u ovom statusu
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -867,7 +867,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
               />
             </div>
             <Button type="submit" disabled={mutation.isPending} className="w-full">
-              {mutation.isPending ? 'Poručujem...' : 'Poruči rezervni deo'}
+              {mutation.isPending ? 'Poručujem...' : 'Poruči rezervni dio'}
             </Button>
           </form>
         );
@@ -901,7 +901,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
       case 'make-available':
         return (
           <div className="space-y-4">
-            <p>Da li ste sigurni da želite da prebacite ovaj rezervni deo u dostupno stanje?</p>
+            <p>Da li ste sigurni da želite da prebacite ovaj rezervni dio u dostupno stanje?</p>
             <p className="text-sm text-muted-foreground">
               Deo će biti dostupan serviserima za korišćenje.
             </p>
@@ -936,7 +936,7 @@ function WorkflowActionDialogEnhanced({ order, action, onClose }: WorkflowAction
   const getDialogTitleEnhanced = () => {
     switch (action) {
       case 'approve-pending': return 'Odobri zahtev';
-      case 'order': return 'Poruči rezervni deo';
+      case 'order': return 'Poruči rezervni dio';
       case 'receive': return 'Potvrdi prijem';
       case 'make-available': return 'Prebaci u dostupno';
       case 'consume': return 'Označi kao potrošeno';
@@ -1008,7 +1008,7 @@ export function SparePartsWorkflowEnhanced() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Package className="w-6 h-6 text-blue-600" />
-        <h2 className="text-2xl font-bold">Workflow rezervnih delova</h2>
+        <h2 className="text-2xl font-bold">Workflow rezervnih dijelova</h2>
         <Badge variant="secondary" className="ml-2">Enhanced - sa pending statusom</Badge>
       </div>
 
@@ -1057,7 +1057,7 @@ export function SparePartsWorkflowEnhanced() {
                 <div className="text-center py-8 text-muted-foreground">
                   {status === 'pending' ? 
                     'Nema novih zahteva za rezervne delove od servisera' : 
-                    'Nema rezervnih delova u ovom statusu'}
+                    'Nema rezervnih dijelova u ovom statusu'}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

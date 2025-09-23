@@ -48,7 +48,7 @@ export default function BusinessSpareParts() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   
-  // Dohvatanje odobrenih rezervnih delova
+  // Dohvatanje odobrenih rezervnih dijelova
   const { data: approvedParts = [], isLoading } = useQuery<ApprovedSparePart[]>({
     queryKey: ["/api/business/approved-spare-parts"],
     queryFn: async () => {
@@ -80,7 +80,7 @@ export default function BusinessSpareParts() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Učitavanje rezervnih delova...</p>
+            <p className="text-gray-600">Učitavanje rezervnih dijelova...</p>
           </div>
         </div>
       </BusinessLayout>
@@ -155,7 +155,7 @@ export default function BusinessSpareParts() {
               Odobreni rezervni delovi
             </CardTitle>
             <CardDescription>
-              Lista rezervnih delova koje je administrator odobrio za poručivanje
+              Lista rezervnih dijelova koje je administrator odobrio za poručivanje
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -165,10 +165,10 @@ export default function BusinessSpareParts() {
                   <Package className="h-8 w-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Nema odobrenih rezervnih delova
+                  Nema odobrenih rezervnih dijelova
                 </h3>
                 <p className="text-gray-600 max-w-md">
-                  Trenutno nema rezervnih delova koje je administrator odobrio za vaše Com Plus servise.
+                  Trenutno nema rezervnih dijelova koje je administrator odobrio za vaše Com Plus servise.
                 </p>
               </div>
             ) : (

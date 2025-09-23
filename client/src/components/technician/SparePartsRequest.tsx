@@ -63,7 +63,7 @@ function RequestPartDialog({ onClose }: { onClose: () => void }) {
     onSuccess: () => {
       toast({
         title: "Zahtev poslat",
-        description: "Vaš zahtev za rezervni deo je uspešno poslat administratoru",
+        description: "Vaš zahtev za rezervni dio je uspešno poslat administratoru",
       });
       
       // Refresh queries
@@ -74,7 +74,7 @@ function RequestPartDialog({ onClose }: { onClose: () => void }) {
     onError: (error: any) => {
       toast({
         title: "Greška",
-        description: error.message || "Greška pri slanju zahteva za rezervni deo",
+        description: error.message || "Greška pri slanju zahteva za rezervni dio",
         variant: "destructive",
       });
     }
@@ -96,7 +96,7 @@ function RequestPartDialog({ onClose }: { onClose: () => void }) {
   return (
     <DialogContent className="max-w-md">
       <DialogHeader>
-        <DialogTitle>Zahtevaj rezervni deo</DialogTitle>
+        <DialogTitle>Zahtevaj rezervni dio</DialogTitle>
       </DialogHeader>
       
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -420,7 +420,7 @@ export function SparePartsRequest() {
           ) : !Array.isArray(myRequests) || myRequests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Nemate zahteva za rezervne delove</p>
+              <p>Nemate zahteva za rezervne dijelove</p>
               <Button 
                 variant="outline" 
                 className="mt-4"
@@ -448,7 +448,7 @@ export function SparePartsRequest() {
           ) : !Array.isArray(availableParts) || availableParts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Trenutno nema dostupnih rezervnih delova</p>
+              <p>Trenutno nema dostupnih rezervnih dijelova</p>
               <p className="text-sm">Delovi će se pojaviti ovde kada administrator označi da su stigli i dostupni za preuzimanje</p>
             </div>
           ) : (

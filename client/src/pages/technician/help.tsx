@@ -36,14 +36,14 @@ const faqData: FAQItem[] = [
   },
   {
     id: 2,
-    question: "Kako da naručim rezervne delove?",
-    answer: "Otvorite detalje servisa i kliknite na 'Poruči rezervni deo'. Unesite naziv dela, kod proizvoda (ako je poznat), količinu i opis. Sistem će automatski poslati zahtev dobavljaču i obavestiti klijenta.",
+    question: "Kako da naručim rezervne dijelove?",
+    answer: "Otvorite detalje servisa i kliknite na 'Poruči rezervni dio'. Unesite naziv dela, kod proizvoda (ako je poznat), količinu i opis. Sistem će automatski poslati zahtev dobavljaču i obavestiti klijenta.",
     category: "services"
   },
   {
     id: 3,
     question: "Šta znače različiti statusi servisa?",
-    answer: "Pending - novi servis čeka dodelu; Assigned - servis vam je dodeljen; In Progress - radite na servisu; Waiting Parts - čekate rezervne delove; Completed - servis je završen; Cancelled - servis je otkazan.",
+    answer: "Pending - novi servis čeka dodelu; Assigned - servis vam je dodeljen; In Progress - radite na servisu; Waiting Parts - čekate rezervne dijelove; Completed - servis je završen; Cancelled - servis je otkazan.",
     category: "basic"
   },
   {
@@ -89,8 +89,8 @@ const tutorials = [
   },
   {
     id: 3,
-    title: "Naručivanje rezervnih delova",
-    description: "Kompletan proces naručivanja i praćenja rezervnih delova",
+    title: "Naručivanje rezervnih dijelova",
+    description: "Kompletan proces naručivanja i praćenja rezervnih dijelova",
     duration: "6 min",
     difficulty: "Početnik"
   }
