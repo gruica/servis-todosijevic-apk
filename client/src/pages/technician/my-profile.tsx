@@ -259,7 +259,7 @@ export default function TechnicianMyProfile() {
                   <div className="text-center p-3 bg-green-50 rounded-lg">
                     <Calendar className="h-6 w-6 text-green-600 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-green-600">{stats.this_month_completed}</p>
-                    <p className="text-sm text-gray-600">Ovaj mesec</p>
+                    <p className="text-sm text-gray-600">Ovaj mjesec</p>
                   </div>
                   
                   <div className="text-center p-3 bg-yellow-50 rounded-lg">
@@ -278,7 +278,7 @@ export default function TechnicianMyProfile() {
                 <Separator />
                 
                 <div className="text-center">
-                  <p className="text-sm text-gray-500">Prosečno vreme završetka</p>
+                  <p className="text-sm text-gray-500">Prosječno vrijeme završetka</p>
                   <p className="text-lg font-semibold">{stats.average_completion_days} dana</p>
                 </div>
               </CardContent>

@@ -327,7 +327,7 @@ export default function ComprehensiveAnalytics() {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Ovaj mesec</CardTitle>
+                <CardTitle className="text-sm font-medium">Ovaj mjesec</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">{analytics.serviceAnalysis.monthlyStats.thisMonth}</div>
@@ -339,7 +339,7 @@ export default function ComprehensiveAnalytics() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Prosečno vreme</CardTitle>
+                <CardTitle className="text-sm font-medium">Prosječno vrijeme</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">{analytics.serviceAnalysis.averageCompletionTime}h</div>
@@ -661,7 +661,7 @@ export default function ComprehensiveAnalytics() {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Ovaj mesec</CardTitle>
+                <CardTitle className="text-sm font-medium">Ovaj mjesec</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">{analytics.financialAnalysis.revenue.thisMonth}</div>
@@ -694,7 +694,7 @@ export default function ComprehensiveAnalytics() {
             <Card>
               <CardHeader>
                 <CardTitle>Rezervni delovi</CardTitle>
-                <CardDescription>Status porudžbina rezervnih delova</CardDescription>
+                <CardDescription>Status porudžbina rezervnih dijelova</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -780,7 +780,7 @@ export default function ComprehensiveAnalytics() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {Object.entries(analytics.trendAnalysis.seasonalPatterns)
-                    .sort(([,a], [,b]) => b.average - a.average)[0]?.[1].average || 0} servisa/mesec
+                    .sort(([,a], [,b]) => b.average - a.average)[0]?.[1].average || 0} servisa/mjesec
                 </p>
               </CardContent>
             </Card>
@@ -799,7 +799,7 @@ export default function ComprehensiveAnalytics() {
                   <div key={season} className="text-center p-4 border rounded-lg">
                     <h4 className="font-medium mb-2">{season}</h4>
                     <div className="text-2xl font-bold text-primary">{data.average}</div>
-                    <p className="text-xs text-muted-foreground">servisa/mesec</p>
+                    <p className="text-xs text-muted-foreground">servisa/mjesec</p>
                     <p className="text-xs text-muted-foreground mt-1">Ukupno: {data.total}</p>
                   </div>
                 ))}
