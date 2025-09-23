@@ -479,7 +479,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredOrders.map((order) => (
-                <Card key={order.id} className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-indigo-500 bg-gradient-to-br from-white to-gray-50">
+                <Card key={order.id} className="hover:shadow-xl transition-all duration-300 border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-orange-50 transform hover:scale-105">
                   <CardHeader className="pb-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-lg">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
