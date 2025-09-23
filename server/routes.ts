@@ -31,6 +31,39 @@ import { aiPredictiveMaintenanceService } from './services/ai-predictive-mainten
 import { ObjectStorageService } from './objectStorage.js';
 import { verifyWebhook, handleWebhook, getWebhookConfig } from './whatsapp-webhook-handler';
 import QRCode from 'qrcode';
+
+// Production logger for clean deployment
+class ProductionLogger {
+  private isDevelopment = process.env.NODE_ENV === 'development';
+  
+  debug(message: string, ...args: any[]) {
+    if (this.isDevelopment) {
+      console.log(message, ...args);
+    }
+  }
+  
+  info(message: string, ...args: any[]) {
+    if (this.isDevelopment) {
+      console.info(message, ...args);
+    }
+  }
+  
+  warn(message: string, ...args: any[]) {
+    console.warn(message, ...args);
+  }
+  
+  error(message: string, ...args: any[]) {
+    console.error(message, ...args);
+  }
+  
+  security(message: string, ...args: any[]) {
+    // Always log security events
+    console.log(`[SECURITY] ${message}`, ...args);
+  }
+}
+
+const logger = new ProductionLogger();
+
 // SMS Mobile functionality AKTIVNA za sve notifikacije
 
 // ENTERPRISE MONITORING & HEALTH CHECK
@@ -139,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/spare-parts", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
       // Security audit log
-      console.log(`[SECURITY AUDIT] Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
+      logger.security(`Admin ${req.user?.username} (ID: ${req.user?.id}) accessed spare parts list from IP: ${req.ip}`);
       
       const orders = await storage.getAllSparePartOrders();
       res.json(orders);
@@ -161,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/spare-parts/all-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      console.log("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
+      logger.debug("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
       const orders = await storage.getAllRequestsSparePartOrders();
       res.json(orders);
     } catch (error) {
@@ -277,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const order = await storage.createSparePartOrder(requestData);
-      console.log(`📦 [WORKFLOW] Serviser ${req.user.username} zahtevao rezervni deo: ${requestData.partName}`);
+      logger.debug(`📦 [WORKFLOW] Serviser ${req.user.username} zahtevao rezervni deo: ${requestData.partName}`);
       
       res.json({ 
         success: true, 
@@ -315,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderDate: new Date()
       });
 
-      console.log(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
+      logger.debug(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
       // Helper funkcija za null -> undefined konverziju
       const toUndef = (value: string | null): string | undefined => value ?? undefined;
@@ -356,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const manufacturerName = manufacturer?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
-        console.log(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
+        logger.debug(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
 
         // 🎯 COMPLUS BREND - Koristi postojeći ComPlus email sistem
         if (isComPlus) {
@@ -1141,25 +1174,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni" });
       }
       
-      console.log(`JWT Login attempt for: ${username}`);
+      logger.debug(`JWT Login attempt for: ${username}`);
       
       // Find user
       const user = await storage.getUserByUsername(username);
       if (!user) {
-        console.log(`JWT Login: User ${username} not found`);
+        logger.debug(`JWT Login: User ${username} not found`);
         return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
       }
       
       // Check password
       const isPasswordValid = await comparePassword(password, user.password);
       if (!isPasswordValid) {
-        console.log(`JWT Login: Invalid password for ${username}`);
+        logger.debug(`JWT Login: Invalid password for ${username}`);
         return res.status(401).json({ error: "Neispravno korisničko ime ili lozinka" });
       }
       
       // Check if user is verified
       if (!user.isVerified) {
-        console.log(`JWT Login: User ${username} not verified`);
+        logger.debug(`JWT Login: User ${username} not verified`);
         return res.status(401).json({ error: "Račun nije verifikovan. Kontaktirajte administratora." });
       }
       
@@ -1170,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role
       });
       
-      console.log(`JWT Login successful for: ${username} (${user.role})`);
+      logger.info(`JWT Login successful for: ${username} (${user.role})`);
       
       // Return token and user info
       res.json({
@@ -1390,11 +1423,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Provera da li klijent već postoji
   app.post("/api/clients/check", async (req, res) => {
-    console.log("🔍 /api/clients/check endpoint pozvan sa:", req.body);
+    logger.debug("🔍 /api/clients/check endpoint pozvan sa:", req.body);
     try {
       const { email } = req.body;
       if (!email) {
-        console.log("❌ Email nije prosleđen");
+        logger.debug("❌ Email nije prosleđen");
         return res.status(400).json({ error: "Email je obavezan" });
       }
       
@@ -1402,10 +1435,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingClient = clients.find(c => c.email === email);
       
       if (existingClient) {
-        console.log("✅ Klijent pronađen:", existingClient.id);
+        logger.debug("✅ Klijent pronađen:", existingClient.id);
         res.json({ exists: true, id: existingClient.id });
       } else {
-        console.log("❌ Klijent nije pronađen");
+        logger.debug("❌ Klijent nije pronađen");
         res.json({ exists: false });
       }
     } catch (error) {
