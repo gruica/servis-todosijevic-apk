@@ -87,17 +87,48 @@ function openShareDialog(data: ShareData) {
 // Specifične funkcije za dijeljenje različitih tipova sadržaja
 
 export function shareSparePartOrder(order: any): Promise<boolean> {
+  // Izvuci informacije o servisu, klijentu i aparatu iz povezanih objekata
+  const service = order.service;
+  const client = service?.client;
+  const appliance = service?.appliance;
+  const technician = order.technician || service?.technician;
+  
+  // Formiraj kompletan opis za dobavljača
+  const applianceInfo = appliance ? 
+    `${appliance.manufacturer?.name || 'Nepoznat proizvodjac'} ${appliance.model || 'Nepoznat model'}` : 
+    'Nepoznat uređaj';
+  
+  const serialNumber = appliance?.serialNumber || 'Nepoznat S/N';
+  const warrantyStatus = service?.warrantyStatus || 'Nepoznato';
+  const clientInfo = client ? 
+    `${client.fullName}${client.address ? `, ${client.address}` : ''}${client.city ? `, ${client.city}` : ''}` : 
+    'Nepoznat klijent';
+  
   const shareData: ShareData = {
     title: '🔧 ZAHTEV ZA REZERVNI DEO - Frigo Sistem',
-    text: `📋 Deo: ${order.partName}
-🏠 Klijent: ${order.clientName || 'N/A'}
-📍 Lokacija: ${order.clientAddress || 'N/A'}
-👨‍🔧 Tehniker: ${order.technicianName || 'N/A'}
-⏰ Status: ${getStatusEmoji(order.status)} ${getStatusText(order.status)}
-💰 Cena: ${order.estimatedCost || order.actualCost || 'N/A'} RSD
-📝 Opis: ${order.description || 'Nema opisa'}
+    text: `📋 DEO: ${order.partName}${order.partNumber ? ` (${order.partNumber})` : ''}
 
-🆔 Porudžbina #${order.id}`,
+🏠 KLIJENT: ${clientInfo}
+📱 Telefon: ${client?.phone || 'N/A'}
+
+🔧 UREĐAJ: ${applianceInfo}
+📟 S/N: ${serialNumber}
+⚖️ GARANCIJA: ${warrantyStatus}
+
+👨‍🔧 TEHNIKER: ${technician?.fullName || technician?.name || 'N/A'}
+📞 Tel: ${technician?.phone || 'N/A'}
+
+📦 KOLIČINA: ${order.quantity}
+⚠️ PRIORITET: ${getUrgencyText(order.urgency)}
+⏰ STATUS: ${getStatusEmoji(order.status)} ${getStatusText(order.status)}
+
+💰 PROCJENA: ${order.estimatedCost || 'N/A'} RSD
+💵 STVARNA: ${order.actualCost || 'N/A'} RSD
+🏪 DOBAVLJAČ: ${order.supplierName || 'N/A'}
+
+📝 OPIS: ${order.description || 'Nema dodatnog opisa'}
+
+🆔 Porudžbina #${order.id}${service ? ` | Servis #${service.id}` : ''}`,
     url: window.location.origin + `/admin/spare-parts?order=${order.id}`
   };
   
@@ -164,4 +195,13 @@ function getStatusText(status: string): string {
     'waiting_delivery': 'Čeka dostavu'
   };
   return statusTexts[status] || status;
+}
+
+function getUrgencyText(urgency: string): string {
+  const urgencyTexts: Record<string, string> = {
+    'normal': 'Normalno',
+    'high': 'Visoko',
+    'urgent': 'Hitno'
+  };
+  return urgencyTexts[urgency] || urgency;
 }
