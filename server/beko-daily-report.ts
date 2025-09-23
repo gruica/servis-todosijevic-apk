@@ -252,7 +252,7 @@ export class BekoDailyReportService {
                     <div class="stat-label">Korišćenih delova</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number beko-red">${data.completedServices.reduce((sum, s) => sum + (s.cost || 0), 0).toLocaleString('sr-ME')} RSD</div>
+                    <div class="stat-number beko-red">${data.completedServices.reduce((sum, s) => sum + (s.cost || 0), 0).toLocaleString('sr-ME')} EUR</div>
                     <div class="stat-label">Ukupna vrednost</div>
                 </div>
             </div>
@@ -307,7 +307,7 @@ export class BekoDailyReportService {
                                 <strong>Uradeno:</strong> ${service.workPerformed}
                             </td>
                             <td><span style="color: #059669; font-weight: bold;">✅ Završeno</span></td>
-                            <td><strong>${service.cost ? service.cost.toLocaleString('sr-ME') + ' RSD' : 'Garantno'}</strong></td>
+                            <td><strong>${service.cost ? service.cost.toLocaleString('sr-ME') + ' EUR' : 'Garantno'}</strong></td>
                         </tr>
                         `).join('')}
                     </tbody>

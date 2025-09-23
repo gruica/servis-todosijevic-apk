@@ -3373,7 +3373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (client?.phone) {
                 // Popravljam newline karaktere - koristim \n umesto \\n
-                const message = `SERVIS ZAVRŠEN #${serviceId}\n\nPoštovani ${client.fullName},\n\nVaš servis je uspešno završen.\nRad: ${workPerformed}\nCena: ${cost || 'Besplatno (garancija)'} RSD\n\nHvala vam!\n\nFrigo Sistem Todosijević\n067-051-141`;
+                const message = `SERVIS ZAVRŠEN #${serviceId}\n\nPoštovani ${client.fullName},\n\nVaš servis je uspešno završen.\nRad: ${workPerformed}\nCena: ${cost || 'Besplatno (garancija)'} EUR\n\nHvala vam!\n\nFrigo Sistem Todosijević\n067-051-141`;
                 
                 console.log(`[SERVICE COMPLETE] 📱 Šalje SMS: "${message}"`);
                 
@@ -3384,7 +3384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   clientName: client.fullName,
                   newStatus: 'completed',
                   statusDescription: 'Završen',
-                  technicianNotes: `${workPerformed} | Cena: ${cost || 'Besplatno'} RSD`,
+                  technicianNotes: `${workPerformed} | Cena: ${cost || 'Besplatno'} EUR`,
                   businessPartnerPhone: null,
                   businessPartnerName: null
                 });

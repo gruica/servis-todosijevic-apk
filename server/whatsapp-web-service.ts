@@ -324,7 +324,7 @@ Vaš servis je uspešno završen!
 • Status: ${serviceData.isCompletelyFixed ? '✅ Potpuno popravljen' : '⚠️ Delimično popravljen'}
 • Garancija: ${serviceData.warrantyStatus}
 
-${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\n\n` : ''}${serviceData.machineNotes ? `📝 *Napomene:*\n${serviceData.machineNotes}\n\n` : ''}${serviceData.cost ? `💰 *Troškovi:* ${serviceData.cost} RSD\n\n` : ''}Hvala što ste odabrali Frigo Sistem Todosijević!
+${serviceData.usedParts ? `🔧 *Korišćeni delovi:*\n${serviceData.usedParts}\n\n` : ''}${serviceData.machineNotes ? `📝 *Napomene:*\n${serviceData.machineNotes}\n\n` : ''}${serviceData.cost ? `💰 *Troškovi:* ${serviceData.cost} EUR\n\n` : ''}Hvala što ste odabrali Frigo Sistem Todosijević!
 📞 Za dodatne informacije: 067051141`;
 
     return await this.sendMessage(serviceData.clientPhone, message);
@@ -359,7 +359,7 @@ Serviser ${serviceData.technicianName} je završio servis.
 • Serviser: ${serviceData.technicianName}
 • Status: ${serviceData.isCompletelyFixed ? 'Potpuno popravljen' : 'Delimično popravljen'}
 • Garancija: ${serviceData.warrantyStatus}
-${serviceData.cost ? `• Troškovi: ${serviceData.cost} RSD` : ''}
+${serviceData.cost ? `• Troškovi: ${serviceData.cost} EUR` : ''}
 ${serviceData.usedParts ? `• Delovi: ${serviceData.usedParts}` : ''}
 
 ⏰ Završeno: ${serviceData.completedDate}`;
@@ -393,7 +393,7 @@ Servis koji ste prosledili je završen.
 • Uređaj: ${serviceData.deviceType} - ${serviceData.deviceModel}
 • Serviser: ${serviceData.technicianName}
 • Status: ${serviceData.isCompletelyFixed ? '✅ Uspešno popravljen' : '⚠️ Delimično popravljen'}
-${serviceData.cost ? `• Troškovi: ${serviceData.cost} RSD` : ''}
+${serviceData.cost ? `• Troškovi: ${serviceData.cost} EUR` : ''}
 
 ⏰ Završeno: ${serviceData.completedDate}
 

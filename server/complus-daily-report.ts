@@ -806,7 +806,7 @@ export class ComplusDailyReportService {
             <td>${service.applianceType} ${service.applianceBrand}</td>
             <td>${service.applianceModel || 'N/A'}</td>
             <td>${service.workPerformed || 'N/A'}</td>
-            <td><strong>${service.cost ? service.cost + ' RSD' : 'N/A'}</strong></td>
+            <td><strong>${service.cost ? service.cost + ' EUR' : 'N/A'}</strong></td>
             <td>${new Date(service.completedAt).toLocaleTimeString('sr-ME', { hour: '2-digit', minute: '2-digit' })}</td>
         </tr>
     `).join('');

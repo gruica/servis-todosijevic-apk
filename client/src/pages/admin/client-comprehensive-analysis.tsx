@@ -197,9 +197,9 @@ const AdminClientComprehensiveAnalysis = memo(function AdminClientComprehensiveA
   // Formatiranje cene
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('sr-RS', { 
+    return new Intl.NumberFormat('sr-ME', { 
       style: 'currency', 
-      currency: 'RSD',
+      currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(num || 0);

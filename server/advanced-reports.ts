@@ -262,7 +262,7 @@ export class AdvancedReportsService {
       console.log(`[ADVANCED REPORTS] Mesečni izveštaj generisan:`);
       console.log(`- ${completedServices.length} završenih servisa`);
       console.log(`- ${visitedClients.length} posećenih klijenata`);
-      console.log(`- ${totalRevenue.toFixed(2)} RSD ukupan prihod`);
+      console.log(`- ${totalRevenue.toFixed(2)} EUR ukupan prihod`);
       console.log(`- ${partsUsed.length} korišćenih delova`);
       console.log(`- ${partsOrdered.length} poručenih delova`);
 

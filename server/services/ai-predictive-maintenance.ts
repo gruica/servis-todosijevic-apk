@@ -350,7 +350,7 @@ export class AIPredictiveMaintenanceService {
       predictedMaintenanceDate: predictedDate,
       predictedFailures: patterns?.commonFailurePoints || ['Redovno održavanje'],
       recommendedActions: ['Zakazati pregled uređaja', 'Proveriti osnovne funkcionalnosti'],
-      estimatedCost: 3000, // RSD
+      estimatedCost: 300, // EUR
       confidenceLevel: 30,
       factors: {
         ageInfluence: 30,

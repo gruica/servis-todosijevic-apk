@@ -96,7 +96,13 @@ export default function DownloadAppPage() {
     addMetaTag('og:title', 'FrigoSistem - Mobilna aplikacija');
     addMetaTag('og:description', 'Preuzmite našu mobilnu aplikaciju za lakši pristup servisima bele tehnike');
     addMetaTag('og:type', 'website');
-    addMetaTag('og:url', window.location.href);
+    const getProductionUrl = () => {
+      if (window.location.origin.includes('replit.dev')) {
+        return 'https://tehnikamne.me';
+      }
+      return window.location.origin;
+    };
+    addMetaTag('og:url', window.location.href.replace(window.location.origin, getProductionUrl()));
     
   }, []);
 
@@ -106,8 +112,14 @@ export default function DownloadAppPage() {
       if (device === 'desktop' || device === 'unknown') {
         setIsGeneratingQR(true);
         try {
-          const landingUrl = `${window.location.origin}/download-app`;
-          const downloadUrl = `${window.location.origin}/api/downloads/apk`;
+          const getProductionUrl = () => {
+            if (window.location.origin.includes('replit.dev')) {
+              return 'https://tehnikamne.me';
+            }
+            return window.location.origin;
+          };
+          const landingUrl = `${getProductionUrl()}/download-app`;
+          const downloadUrl = `${getProductionUrl()}/api/downloads/apk`;
           
           // Generate QR for direct download
           const response = await fetch(`/api/downloads/qr?url=${encodeURIComponent(downloadUrl)}&size=250`);
@@ -194,7 +206,13 @@ export default function DownloadAppPage() {
   // Share via email
   const shareViaEmail = () => {
     const subject = encodeURIComponent('FrigoSistem - Mobilna aplikacija');
-    const body = encodeURIComponent(`Preuzmite FrigoSistem mobilnu aplikaciju:\n\n${window.location.origin}/download-app\n\nIli direktno preuzmite APK:\n${window.location.origin}/api/downloads/apk`);
+    const getProductionUrl = () => {
+      if (window.location.origin.includes('replit.dev')) {
+        return 'https://tehnikamne.me';
+      }
+      return window.location.origin;
+    };
+    const body = encodeURIComponent(`Preuzmite FrigoSistem mobilnu aplikaciju:\n\n${getProductionUrl()}/download-app\n\nIli direktno preuzmite APK:\n${getProductionUrl()}/api/downloads/apk`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
@@ -385,7 +403,15 @@ export default function DownloadAppPage() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <Button
-                      onClick={() => copyLink(`${window.location.origin}/download-app`, 'landing')}
+                      onClick={() => {
+                        const getProductionUrl = () => {
+                          if (window.location.origin.includes('replit.dev')) {
+                            return 'https://tehnikamne.me';
+                          }
+                          return window.location.origin;
+                        };
+                        copyLink(`${getProductionUrl()}/download-app`, 'landing');
+                      }}
                       variant="outline"
                       size="sm"
                       className="justify-start"
@@ -396,7 +422,15 @@ export default function DownloadAppPage() {
                     </Button>
                     
                     <Button
-                      onClick={() => copyLink(`${window.location.origin}/api/downloads/apk`, 'direct')}
+                      onClick={() => {
+                        const getProductionUrl = () => {
+                          if (window.location.origin.includes('replit.dev')) {
+                            return 'https://tehnikamne.me';
+                          }
+                          return window.location.origin;
+                        };
+                        copyLink(`${getProductionUrl()}/api/downloads/apk`, 'direct');
+                      }}
                       variant="outline"
                       size="sm"
                       className="justify-start"

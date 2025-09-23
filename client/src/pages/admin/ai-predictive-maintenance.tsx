@@ -439,7 +439,7 @@ export default function AIPredictiveMaintenancePage() {
                           </div>
                         </TableCell>
                         <TableCell>{insight.predictedMaintenanceDate}</TableCell>
-                        <TableCell>{insight.estimatedCost.toLocaleString()} RSD</TableCell>
+                        <TableCell>{insight.estimatedCost.toLocaleString()} EUR</TableCell>
                         <TableCell>{insight.confidenceLevel}%</TableCell>
                         <TableCell>
                           <Dialog>
