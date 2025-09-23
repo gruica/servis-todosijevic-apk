@@ -147,8 +147,9 @@ export function shareSparePartOrder(order: any): Promise<boolean> {
 
 📝 OPIS: ${order.description || 'Nema dodatnog opisa'}
 
-🆔 Porudžbina #${order.id}${service ? ` | Servis #${service.id}` : ''}`,
-    url: getProductionUrl() + `/admin/spare-parts?order=${order.id}`
+🆔 Porudžbina #${order.id}${service ? ` | Servis #${service.id}` : ''}
+
+🔗 Detalji: ${getProductionUrl()}/admin/spare-parts?order=${order.id}`
   };
   
   return shareContent(shareData);
@@ -166,8 +167,9 @@ export function shareServiceInfo(service: any): Promise<boolean> {
 ⏰ Status: ${service.status}
 📅 Datum: ${new Date(service.createdAt).toLocaleDateString('sr-RS')}
 
-🆔 Servis #${service.id}`,
-    url: getProductionUrl() + `/admin/services/${service.id}`
+🆔 Servis #${service.id}
+
+🔗 Detalji: ${getProductionUrl()}/admin/services/${service.id}`
   };
   
   return shareContent(shareData);
@@ -182,8 +184,9 @@ export function shareClientInfo(client: any): Promise<boolean> {
 📧 Email: ${client.email || 'N/A'}
 💼 Tip: ${client.type || 'Fizičko lice'}
 
-🆔 Klijent #${client.id}`,
-    url: getProductionUrl() + `/admin/clients/${client.id}`
+🆔 Klijent #${client.id}
+
+🔗 Detalji: ${getProductionUrl()}/admin/clients/${client.id}`
   };
   
   return shareContent(shareData);
