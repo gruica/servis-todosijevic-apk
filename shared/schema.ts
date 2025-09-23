@@ -1070,7 +1070,6 @@ export const insertSparePartOrderSchema = createInsertSchema(sparePartOrders).pi
   actualCost: z.string().max(50, "Stvarna cena je predugačka").or(z.literal("")).optional(),
   supplierName: z.string().max(100, "Naziv dobavljača je predugačak").or(z.literal("")).optional(),
   adminNotes: z.string().max(1000, "Napomene su predugačke").or(z.literal("")).optional(),
-  warrantyStatus: sparePartWarrantyStatusEnum,
   isDelivered: z.boolean().default(false).optional(),
   deliveryConfirmedBy: z.number().int().positive().optional(),
   autoRemoveAfterDelivery: z.boolean().default(true).optional(),
