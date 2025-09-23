@@ -106,6 +106,13 @@ function openShareDialog(data: ShareData) {
 // Specifične funkcije za dijeljenje različitih tipova sadržaja
 
 export function shareSparePartOrder(order: any): Promise<boolean> {
+  // DEBUG: Log-ovanje kompletnih podataka o rezervnom dijelu
+  console.log('🔧 [SHARE DEBUG] Kompletni order objekat:', order);
+  console.log('📋 [SHARE DEBUG] Service podaci:', order.service);
+  console.log('👤 [SHARE DEBUG] Client podaci:', order.service?.client);
+  console.log('📱 [SHARE DEBUG] Appliance podaci:', order.service?.appliance);
+  console.log('👨‍🔧 [SHARE DEBUG] Technician podaci:', order.technician || order.service?.technician);
+  
   // Izvuci informacije o servisu, klijentu i aparatu iz povezanih objekata
   const service = order.service;
   const client = service?.client;
