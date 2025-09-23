@@ -5,6 +5,16 @@ export interface ShareData {
   url?: string;
 }
 
+// Funkcija za dobavljanje production URL-a
+function getProductionUrl(): string {
+  // Ako je development (replit.dev), koristi production URL
+  if (window.location.origin.includes('replit.dev')) {
+    return 'https://tehnikamne.me'; // Production domen
+  }
+  // Inače koristi trenutni origin (već je production)
+  return window.location.origin;
+}
+
 // Glavna funkcija za dijeljenje sadržaja
 export async function shareContent(data: ShareData): Promise<boolean> {
   // Proverava Web Share API podršku
@@ -129,7 +139,7 @@ export function shareSparePartOrder(order: any): Promise<boolean> {
 📝 OPIS: ${order.description || 'Nema dodatnog opisa'}
 
 🆔 Porudžbina #${order.id}${service ? ` | Servis #${service.id}` : ''}`,
-    url: window.location.origin + `/admin/spare-parts?order=${order.id}`
+    url: getProductionUrl() + `/admin/spare-parts?order=${order.id}`
   };
   
   return shareContent(shareData);
@@ -148,7 +158,7 @@ export function shareServiceInfo(service: any): Promise<boolean> {
 📅 Datum: ${new Date(service.createdAt).toLocaleDateString('sr-RS')}
 
 🆔 Servis #${service.id}`,
-    url: window.location.origin + `/admin/services/${service.id}`
+    url: getProductionUrl() + `/admin/services/${service.id}`
   };
   
   return shareContent(shareData);
@@ -164,7 +174,7 @@ export function shareClientInfo(client: any): Promise<boolean> {
 💼 Tip: ${client.type || 'Fizičko lice'}
 
 🆔 Klijent #${client.id}`,
-    url: window.location.origin + `/admin/clients/${client.id}`
+    url: getProductionUrl() + `/admin/clients/${client.id}`
   };
   
   return shareContent(shareData);
