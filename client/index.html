@@ -559,10 +559,10 @@
   <body>
     <div id="root"></div>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - SAMO U PRODUCTION -->
     <script>
-      // Progressive Web App Service Worker Registration
-      if ('serviceWorker' in navigator) {
+      // Progressive Web App Service Worker Registration - SAMO U PRODUCTION
+      if ('serviceWorker' in navigator && location.hostname !== 'localhost' && !location.hostname.includes('replit')) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js')
             .then(function(registration) {
@@ -583,6 +583,14 @@
             .catch(function(error) {
               console.log('❌ Service Worker registracija neuspešna:', error);
             });
+        });
+      } else if ('serviceWorker' in navigator) {
+        // U development modu - unregister postojeći SW
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('🗑️ Service Worker unregister u development modu');
+          }
         });
       }
     </script>
