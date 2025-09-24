@@ -103,15 +103,12 @@ const config: CapacitorConfig = {
     
     // Network security konfiguracija
     useLegacyBridge: false, // Koristi novi bridge za bolje performanse
-    hideLogs: !isDevelopment, // Sakrij logs u production
   },
   
   // iOS specifične optimizacije (za buduće proširenje)
   ios: {
     allowsLinkPreview: false,
-    handleApplicationNotifications: true,
     scrollEnabled: true,
-    swipeGesture: true,
     backgroundColor: "#1E293B",
   },
   
