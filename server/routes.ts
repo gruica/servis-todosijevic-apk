@@ -309,7 +309,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const order = await storage.createSparePartOrder(requestData);
-      logger.debug(`📦 [WORKFLOW] Serviser ${req.user.username} zahtevao rezervni deo: ${requestData.partName}`);
       
       res.json({ 
         success: true, 
@@ -317,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order 
       });
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri zahtevu za rezervni deo:", error);
+      logger.error("Greška pri zahtevu za rezervni deo:", error);
       res.status(500).json({ error: "Greška pri slanju zahteva za rezervni deo" });
     }
   });
@@ -347,7 +346,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderDate: new Date()
       });
 
-      logger.debug(`📦 [WORKFLOW] Admin ${req.user.username} poručio rezervni deo ID: ${orderId}`);
 
       // Helper funkcija za null -> undefined konverziju
       const toUndef = (value: string | null): string | undefined => value ?? undefined;
@@ -388,11 +386,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const manufacturerName = manufacturer?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
-        logger.debug(`📦 [COMPLUS CHECK] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
 
         // 🎯 COMPLUS BREND - Koristi postojeći ComPlus email sistem
         if (isComPlus) {
-          console.log(`🎯 [COMPLUS] Poručujem ComPlus rezervni deo - direktno na servis@complus.me`);
           
           const deviceType = category?.name || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
@@ -408,9 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           if (complusEmailSent) {
-            console.log(`🎯 [COMPLUS EMAIL] ✅ ComPlus email uspešno poslat na servis@complus.me za deo: ${existingOrder.partName}`);
           } else {
-            console.error(`🎯 [COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
           }
         } 
         // 📧 OSTALI BRENDOVI - Koristi opšti supplier sistem
@@ -444,16 +438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             if (emailSent) {
-              console.log(`📧 [GENERAL EMAIL] ✅ Email poslat dobavljaču ${supplierName} (${supplierEmail})`);
             } else {
-              console.error(`📧 [GENERAL EMAIL] ❌ Neuspešno slanje email-a dobavljaču ${supplierName} (${supplierEmail})`);
             }
           } else {
-            console.log(`📧 [GENERAL EMAIL] ⚠️ Email adresa za dobavljača ${supplierName} nije konfigurisana`);
           }
         }
       } catch (emailError) {
-        console.error("📧 [EMAIL ERROR] Greška pri slanju email-a:", emailError);
         // Email greška ne prekida workflow - admin je svakako poručio deo
       }
 
@@ -490,17 +480,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdBy: req.user.fullName || req.user.username
           };
 
-          console.log(`📱 [ORDER-SMS-PROTOCOL] Šaljem SMS protokol za poručeni deo ID: ${orderId}`);
           const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
           
           if (smsResult.success) {
-            console.log(`📱 [ORDER-SMS-PROTOCOL] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [ORDER-SMS-PROTOCOL] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
-        console.error("📱 [ORDER-SMS-PROTOCOL ERROR] Greška pri slanju SMS protokola:", smsError);
         // SMS greška ne prekida workflow
       }
 
@@ -510,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order 
       });
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri poručivanju rezervnog dela:", error);
+      logger.error("Greška pri poručivanju rezervnog dela:", error);
       res.status(500).json({ error: "Greška pri poručivanju rezervnog dela" });
     }
   });
@@ -531,14 +517,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         adminNotes: adminNotes ? `${adminNotes} (Primio: ${req.user.fullName || req.user.username})` : `Primio: ${req.user.fullName || req.user.username}`
       });
 
-      console.log(`📦 [WORKFLOW] Admin ${req.user.username} potvrdio prijem rezervnog dela ID: ${orderId}`);
       res.json({ 
         success: true, 
         message: "Prijem rezervnog dela je uspešno potvrđen", 
         order 
       });
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri potvrđivanju prijema:", error);
+      logger.error("Greška pri potvrđivanju prijema:", error);
       res.status(500).json({ error: "Greška pri potvrđivanju prijema rezervnog dela" });
     }
   });
@@ -557,14 +542,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         adminNotes: `Dostupno napravio: ${req.user.fullName || req.user.username}`
       });
 
-      console.log(`📦 [WORKFLOW] Admin ${req.user.username} prebacio deo u dostupno: ID ${orderId}`);
       res.json({ 
         success: true, 
         message: "Rezervni deo je prebačen u dostupno stanje", 
         order 
       });
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri prebacivanju u dostupno:", error);
+      logger.error("Greška pri prebacivanju u dostupno:", error);
       res.status(500).json({ error: "Greška pri prebacivanju rezervnog dela u dostupno stanje" });
     }
   });
@@ -577,7 +561,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const orderId = parseInt(req.params.id);
-      console.log(`✅ [APPROVE-PENDING] Admin odobrava pending zahtev ID: ${orderId}`);
       
       // Proverava da li order postoji i da li je u pending statusu
       const existingOrder = await storage.getSparePartOrder(orderId);
@@ -600,7 +583,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Greška pri ažuriranju statusa zahteva" });
       }
       
-      console.log(`✅ [APPROVE-PENDING → ADMIN_ORDERED] Zahtev ${orderId} uspešno odobren i automatski poručen`);
 
       // AUTOMATSKI EMAIL/SMS SISTEM (kopiran iz order endpoint-a)
       try {
@@ -636,11 +618,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const manufacturerName = manufacturerData?.name || '';
         const isComPlus = isComplusBrand(manufacturerName);
 
-        console.log(`📧 [AUTO-EMAIL] Proizvođač: "${manufacturerName}", ComPlus brend: ${isComPlus}`);
 
         // 🎯 COMPLUS BREND - Automatski email na servis@complus.me
         if (isComPlus) {
-          console.log(`🎯 [AUTO-COMPLUS] Šaljem ComPlus email za odobreni deo - direktno na servis@complus.me`);
           
           const deviceType = categoryData?.name || 'Uređaj';
           const complusEmailSent = await emailService.sendComplusSparePartOrder(
@@ -656,13 +636,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           if (complusEmailSent) {
-            console.log(`🎯 [AUTO-COMPLUS EMAIL] ✅ ComPlus email uspešno poslat za odobreni deo: ${existingOrder.partName}`);
           } else {
-            console.error(`🎯 [AUTO-COMPLUS EMAIL] ❌ Neuspešno slanje ComPlus email-a za deo: ${existingOrder.partName}`);
           }
         }
       } catch (emailError) {
-        console.error("📧 [AUTO-EMAIL ERROR] Greška pri automatskom slanju email-a:", emailError);
         // Email greška ne prekida workflow
       }
 
@@ -699,17 +676,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdBy: req.user.fullName || req.user.username
           };
 
-          console.log(`📱 [SMS-PARTS-ORDERED] Šaljem SMS protokol za poručene delove`);
           const smsResult = await protocolSMS.sendPartsOrderedProtocol(smsData);
           
           if (smsResult.success) {
-            console.log(`📱 [SMS-PARTS-ORDERED] ✅ SMS protokol uspešno poslat`);
           } else {
-            console.error(`📱 [SMS-PARTS-ORDERED] ❌ Neuspešno slanje SMS protokola:`, smsResult.errors);
           }
         }
       } catch (smsError) {
-        console.error("📱 [SMS-PARTS-ORDERED ERROR] Greška pri slanju SMS protokola:", smsError);
         // SMS greška ne prekida workflow
       }
 
@@ -720,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('❌ [APPROVE-PENDING] Greška pri odobravanju pending zahteva:', error);
+      logger.error('Greška pri odobravanju pending zahteva:', error);
       res.status(500).json({ error: "Greška pri odobravanju zahteva" });
     }
   });
@@ -748,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order 
       });
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri označavanju potrošnje:", error);
+      logger.error("Greška pri označavanju potrošnje:", error);
       res.status(500).json({ error: "Greška pri označavanju potrošnje rezervnog dela" });
     }
   });
@@ -762,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(orders);
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri dohvatanju po statusu:", error);
+      logger.error("Greška pri dohvatanju po statusu:", error);
       res.status(500).json({ error: "Greška pri dohvatanju rezervnih delova po statusu" });
     }
   });
@@ -795,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(orders);
     } catch (error) {
-      console.error("❌ [WORKFLOW] Greška pri dohvatanju dostupnih delova:", error);
+      logger.error("Greška pri dohvatanju dostupnih delova:", error);
       res.status(500).json({ error: "Greška pri dohvatanju dostupnih rezervnih delova" });
     }
   });
@@ -805,12 +778,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
 
       const orderId = parseInt(req.params.id);
-      console.log(`🗑️ [DELETE] Admin pokušava da obriše spare parts order ID: ${orderId}`);
       
       // Proverava da li order postoji
       const existingOrder = await storage.getSparePartOrder(orderId);
       if (!existingOrder) {
-        console.log(`❌ [DELETE] Order ${orderId} nije pronađen`);
         return res.status(404).json({ error: "Porudžbina rezervnog dela nije pronađena" });
       }
 
@@ -818,17 +789,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.deleteSparePartOrder(orderId);
       
       if (result) {
-        console.log(`✅ [DELETE] Uspešno obrisan spare parts order ID: ${orderId}`);
         res.json({ 
           success: true, 
           message: "Porudžbina rezervnog dela je uspešno obrisana" 
         });
       } else {
-        console.log(`❌ [DELETE] Greška pri brisanju order-a ${orderId}`);
         res.status(500).json({ error: "Greška pri brisanju porudžbine" });
       }
     } catch (error) {
-      console.error(`❌ [DELETE] Greška pri brisanju spare parts order-a:`, error);
+      logger.error(`Greška pri brisanju spare parts order-a:`, error);
       res.status(500).json({ error: "Greška pri brisanju porudžbine rezervnog dela" });
     }
   });
@@ -903,7 +872,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         downloadStats.history = downloadStats.history.slice(-1000);
       }
 
-      console.log(`📱 [APK DOWNLOAD] Device: ${device}, Total downloads: ${downloadStats.total}`);
 
       // Set proper headers for APK download
       res.set({
@@ -923,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       readStream.pipe(res);
 
     } catch (error) {
-      console.error('❌ [APK DOWNLOAD] Error:', error);
+      logger.error('APK Download Error:', error);
       
       if ((error as any)?.code === 'ENOENT') {
         return res.status(404).json({ 
@@ -1042,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(Buffer.from(base64Data, 'base64'));
 
     } catch (error) {
-      console.error('❌ [QR CODE] Error:', error);
+      logger.error('QR Code Error:', error);
       res.status(500).json({ error: 'Failed to generate QR code' });
     }
   });
@@ -1129,13 +1097,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           senderId,
           enabled
         });
-        console.log('✅ SMS Communication Service inicijalizovan uspešno');
         console.log(`🔧 SMS isConfigured: ${smsService.isConfigured()}`);
       } else {
-        console.log('⚠️ SMS servis nije inicijalizovan - nedostaju API ključ ili URL');
       }
     } catch (error) {
-      console.error('❌ Greška pri inicijalizaciji SMS servisa:', error);
+      logger.error('Greška pri inicijalizaciji SMS servisa:', error);
     }
   }
   
@@ -1154,7 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: user.phone!
         }));
     } catch (error) {
-      console.error('❌ Greška pri dobijanju administratora:', error);
+      logger.error('Greška pri dobijanju administratora:', error);
       return [];
     }
   }
@@ -1456,7 +1422,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasAppliance = req.body.categoryId && req.body.manufacturerId && req.body.model;
       
       if (hasAppliance) {
-        console.log("📱 [ADMIN CLIENTS] Kreiranje klijenta SA uređajem");
         
         // Validacija kombinovanih podataka (klijent + uređaj)
         const clientData = {
@@ -1503,15 +1468,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Kreiranje klijenta
         console.log("👤 [ADMIN CLIENTS] Kreiranje klijenta...");
         const newClient = await storage.createClient(clientValidation.data);
-        console.log("✅ [ADMIN CLIENTS] Klijent kreiran sa ID:", newClient.id);
         
         // Kreiranje uređaja sa ID klijenta
-        console.log("📱 [ADMIN CLIENTS] Kreiranje uređaja za klijenta...");
         const newAppliance = await storage.createAppliance({
           ...applianceData,
           clientId: newClient.id,
         });
-        console.log("✅ [ADMIN CLIENTS] Uređaj kreiran sa ID:", newAppliance.id);
         
         res.json({
           ...newClient,
@@ -2661,7 +2623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   );
                 }
               } else {
-                console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
+                // Email debug message removed Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
               }
             }
           } else {
@@ -2697,7 +2659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 createdBy: createdBy,
                 problemDescription: service.description
               });
-              console.log(`[SMS ADMIN] ✅ SMS o novom servisu poslat administratoru ${admin.fullName} (${admin.phone})`);
+              // SMS debug message removed SMS o novom servisu poslat administratoru ${admin.fullName} (${admin.phone})`);
               
               // WHATSAPP BUSINESS API - Admin obaveštenje o novom servisu
               try {
@@ -2713,16 +2675,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
                 
                 if (adminWhatsappResult.success) {
-                  console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje administratoru ${admin.fullName}`);
+                  // WhatsApp debug message removed Uspešno poslato WhatsApp obaveštenje administratoru ${admin.fullName}`);
                 } else {
-                  console.log(`[WHATSAPP BUSINESS API] ❌ Neuspešno slanje WhatsApp obaveštenja administratoru: ${adminWhatsappResult.error}`);
+                  // WhatsApp debug message removed Neuspešno slanje WhatsApp obaveštenja administratoru: ${adminWhatsappResult.error}`);
                 }
               } catch (adminWhatsappError) {
                 console.error(`[WHATSAPP BUSINESS API] Greška pri slanju obaveštenja administratoru ${admin.fullName}:`, adminWhatsappError);
               }
               
             } catch (adminSmsError) {
-              console.error(`[SMS ADMIN] ❌ Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
+              // SMS debug message removed Greška pri slanju SMS-a administratoru ${admin.fullName}:`, adminSmsError);
             }
           }
         } catch (adminSmsError) {
@@ -2853,9 +2815,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       });
                       
                       if (whatsappResult.success) {
-                        console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje klijentu ${client.fullName}`);
+                        // WhatsApp debug message removed Uspešno poslato WhatsApp obaveštenje klijentu ${client.fullName}`);
                       } else {
-                        console.log(`[WHATSAPP BUSINESS API] ❌ Neuspešno slanje WhatsApp obaveštenja klijentu: ${whatsappResult.error}`);
+                        // WhatsApp debug message removed Neuspešno slanje WhatsApp obaveštenja klijentu: ${whatsappResult.error}`);
                       }
                     } else {
                       console.log(`[WHATSAPP BUSINESS API] ℹ️ Klijent ${client.fullName} nema telefon broj, preskačem WhatsApp obaveštenje`);
@@ -2917,7 +2879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         });
                         
                         if (completionResult.success) {
-                          console.log(`[WHATSAPP BUSINESS API] ✅ Uspešno poslato WhatsApp obaveštenje o završenom servisu klijentu ${client.fullName}`);
+                          // WhatsApp debug message removed Uspešno poslato WhatsApp obaveštenje o završenom servisu klijentu ${client.fullName}`);
                         }
                       }
                     } catch (whatsappCompletionError) {
@@ -2969,7 +2931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   emailInfo.emailError = `Nije moguće poslati email klijentu ${client.fullName}. Proverite SMTP konfiguraciju.`;
                 }
               } else {
-                console.log(`[EMAIL SISTEM] ℹ️ Klijent ${client.fullName} nema email adresu, preskačem slanje`);
+                // Email debug message removed Klijent ${client.fullName} nema email adresu, preskačem slanje`);
                 emailInfo.emailError = `Klijent ${client.fullName} nema email adresu.`;
               }
             }
@@ -3033,10 +2995,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }
                 }
               } else {
-                console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
+                // Email debug message removed Serviser ${technician.fullName} nema email adresu u sistemu, preskačem slanje`);
               }
             } else if (technician) {
-              console.log(`[EMAIL SISTEM] ℹ️ Serviser ${technician.fullName} nema dovolјno informacija za slanje, preskačem slanje`);
+              // Email debug message removed Serviser ${technician.fullName} nema dovolјno informacija za slanje, preskačem slanje`);
             }
           }
         } catch (emailError: any) {
@@ -3124,7 +3086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceId = parseInt(req.params.id);
       const { technicianNotes } = req.body;
       
-      console.log(`[QUICK-START] 🚀 Brzo pokretanje servisa #${serviceId} - početak`);
+      // Quick-start debug message removed Brzo pokretanje servisa #${serviceId} - početak`);
       
       // Minimal validation
       if (!serviceId || isNaN(serviceId)) {
@@ -3159,7 +3121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const endTime = Date.now();
       const duration = endTime - startTime;
       
-      console.log(`[QUICK-START] ✅ Servis #${serviceId} započet za ${duration}ms`);
+      // Quick-start debug message removed Servis #${serviceId} započet za ${duration}ms`);
       
       // 🚀 POZADINSKA OBRADA - Ne blokira response
       setImmediate(async () => {
@@ -3169,9 +3131,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Pozovi standardni endpoint u pozadini za email/SMS obaveštenja
           await backgroundProcessServiceStart(serviceId, updatedService, req.user);
           
-          console.log(`[BACKGROUND] ✅ Pozadinska obrada završena za servis #${serviceId}`);
+          // Background debug message removed Pozadinska obrada završena za servis #${serviceId}`);
         } catch (bgError) {
-          console.error(`[BACKGROUND] ❌ Greška u pozadinskoj obradi za servis #${serviceId}:`, bgError);
+          // Background debug message removed Greška u pozadinskoj obradi za servis #${serviceId}:`, bgError);
         }
       });
       
@@ -3187,7 +3149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       const endTime = Date.now();
       const duration = endTime - startTime;
-      console.error(`[QUICK-START] ❌ Greška nakon ${duration}ms:`, error);
+      // Quick-start debug message removed Greška nakon ${duration}ms:`, error);
       res.status(500).json({ error: "Greška pri pokretanju servisa" });
     }
   });
@@ -3226,10 +3188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           
           if (emailSent) {
-            console.log(`[BACKGROUND] ✅ Email obaveštenje poslato klijentu ${client.fullName}`);
+            // Background debug message removed Email obaveštenje poslato klijentu ${client.fullName}`);
           }
         } catch (emailError) {
-          console.error(`[BACKGROUND] ❌ Greška pri slanju emaila:`, emailError);
+          // Background debug message removed Greška pri slanju emaila:`, emailError);
         }
       }
       
@@ -3267,11 +3229,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       } catch (smsError) {
-        console.error(`[BACKGROUND] ❌ Greška pri SMS obradi:`, smsError);
+        // Background debug message removed Greška pri SMS obradi:`, smsError);
       }
       
     } catch (error) {
-      console.error(`[BACKGROUND] ❌ Globalna greška pri pozadinskoj obradi:`, error);
+      // Background debug message removed Globalna greška pri pozadinskoj obradi:`, error);
     }
   }
 
@@ -5908,7 +5870,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       });
 
     } catch (error: any) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
+      logger.error('WHATSAPP BUSINESS API Greška pri ažuriranju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri ažuriranju konfiguracije',
         details: error.message
@@ -5945,7 +5907,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       });
 
     } catch (error: any) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
+      // WhatsApp debug message removed Greška pri dobijanju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri dobijanju konfiguracije',
         details: error.message
@@ -5969,7 +5931,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       });
 
     } catch (error: any) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri testiranju konekcije:', error);
+      // WhatsApp debug message removed Greška pri testiranju konekcije:', error);
       res.status(500).json({ 
         error: 'Greška pri testiranju konekcije',
         details: error.message
@@ -6000,7 +5962,7 @@ Encryption: https://keys.openpgp.org/search?q=info@frigosistemtodosijevic.me`);
       res.json(result);
 
     } catch (error: any) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
+      logger.error('WHATSAPP BUSINESS API Greška pri slanju tekstualne poruke:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju poruke',
         details: error.message
@@ -6740,7 +6702,7 @@ async function sendCriticalPartsAlert(partId: number, currentQuantity: number) {
     // await storage.createNotification(notificationData); // TODO: Implement createNotification method
     console.log(`✅ Kritična notifikacija kreirana za rezervni deo ${part.partName}`);
   } catch (error) {
-    console.error('❌ Greška pri kreiranju kritične notifikacije:', error);
+    logger.error('Greška pri kreiranju kritične notifikacije:', error);
   }
 }
 
@@ -6773,7 +6735,7 @@ export function setupApprovedSparePartsRoute(app: Express) {
 
       res.json(approvedParts);
     } catch (error) {
-      console.error('❌ Greška pri dohvatanju odobrenih rezervnih delova:', error);
+      logger.error('Greška pri dohvatanju odobrenih rezervnih delova:', error);
       res.status(500).json({ error: 'Greška pri dohvatanju rezervnih delova' });
     }
   });
@@ -6810,7 +6772,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('❌ [WEBHOOK CONFIG] Greška:', error);
+      logger.error('WEBHOOK CONFIG Greška:', error);
       res.status(500).json({ error: 'Greška pri dobijanju webhook konfiguracije' });
     }
   });
@@ -6843,7 +6805,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
         }
       });
     } catch (error) {
-      console.error('❌ [WEBHOOK TEST] Greška:', error);
+      logger.error('WEBHOOK TEST Greška:', error);
       res.status(500).json({ error: 'Greška pri testiranju webhook konfiguracije' });
     }
   });
@@ -6862,7 +6824,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       console.log(`🧪 [PAGINATION TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - Score: ${result.performanceMetrics.averageLoadTime}ms avg`);
       res.json(result);
     } catch (error) {
-      console.error('❌ [PAGINATION TEST API] Greška pri pagination testu:', error);
+      logger.error('PAGINATION TEST API Greška pri pagination testu:', error);
       res.status(500).json({ 
         error: 'Greška pri pagination testu',
         success: false,
@@ -6882,7 +6844,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       console.log(`🏥 [HEALTH TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - ${result.iterations} iteracija`);
       res.json(result);
     } catch (error) {
-      console.error('❌ [HEALTH TEST API] Greška pri health testu:', error);
+      logger.error('HEALTH TEST API Greška pri health testu:', error);
       res.status(500).json({ 
         error: 'Greška pri health monitoring testu',
         success: false,
@@ -6894,15 +6856,15 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
   // POST /api/whatsapp-web/test/auto-recovery - Test auto recovery scenarios
   app.post('/api/whatsapp-web/test/auto-recovery', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      console.log(`🔄 [RECOVERY TEST API] Zahtev za auto recovery test`);
+      // Recovery test debug message removed Zahtev za auto recovery test`);
 
       const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
       const result = await service.testAutoRecoveryScenarios();
       
-      console.log(`🔄 [RECOVERY TEST API] Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - ${result.scenariosTested} scenarija`);
+      // Recovery test debug message removed Test ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - ${result.scenariosTested} scenarija`);
       res.json(result);
     } catch (error) {
-      console.error('❌ [RECOVERY TEST API] Greška pri recovery testu:', error);
+      // Recovery test debug message removed Greška pri recovery testu:', error);
       res.status(500).json({ 
         error: 'Greška pri auto recovery testu',
         success: false,
@@ -6914,15 +6876,15 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
   // POST /api/whatsapp-web/test/comprehensive - Pokreni complete optimization test suite
   app.post('/api/whatsapp-web/test/comprehensive', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      console.log(`🚀 [COMPREHENSIVE TEST API] Zahtev za complete optimization test suite`);
+      // Comprehensive test debug message removed Zahtev za complete optimization test suite`);
 
       const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
       const result = await service.runComprehensiveOptimizationTests();
       
-      console.log(`🚀 [COMPREHENSIVE TEST API] Test suite ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - Score: ${result.overallScore}/100`);
+      // Comprehensive test debug message removed Test suite ${result.success ? 'USPEŠAN' : 'NEUSPEŠAN'} - Score: ${result.overallScore}/100`);
       res.json(result);
     } catch (error) {
-      console.error('❌ [COMPREHENSIVE TEST API] Greška pri comprehensive testu:', error);
+      // Comprehensive test debug message removed Greška pri comprehensive testu:', error);
       res.status(500).json({ 
         error: 'Greška pri comprehensive test suite',
         success: false,
@@ -6934,7 +6896,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
   // GET /api/whatsapp-web/test/verify-existing - Verifikuj da postojeće funkcije rade
   app.get('/api/whatsapp-web/test/verify-existing', jwtAuthMiddleware, requireRole(['admin']), async (req, res) => {
     try {
-      console.log(`✅ [VERIFY TEST API] Zahtev za verifikaciju postojećih funkcija`);
+      // Verify test debug message removed Zahtev za verifikaciju postojećih funkcija`);
 
       const { whatsappWebService: service } = await import('./whatsapp-web-service.js');
       
@@ -6962,10 +6924,10 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
         timestamp: new Date().toISOString()
       };
       
-      console.log(`✅ [VERIFY TEST API] Verifikacija ${result.success ? 'USPEŠNA' : 'NEUSPEŠNA'}`);
+      // Verify test debug message removed Verifikacija ${result.success ? 'USPEŠNA' : 'NEUSPEŠNA'}`);
       res.json(result);
     } catch (error) {
-      console.error('❌ [VERIFY TEST API] Greška pri verifikaciji:', error);
+      // Verify test debug message removed Greška pri verifikaciji:', error);
       res.status(500).json({ 
         error: 'Greška pri verifikaciji postojećih funkcija',
         success: false,
@@ -7023,7 +6985,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       const sendResult = await whatsappWebService.sendMessage(phoneNumber, testMessage);
       
       if (sendResult) {
-        console.log(`✅ [TEST ENDPOINT] Test poruka uspešno poslata na ${phoneNumber}`);
+        // Test endpoint debug message removed Test poruka uspešno poslata na ${phoneNumber}`);
         res.json({ 
           success: true, 
           message: 'Test poruka uspešno poslata',
@@ -7032,7 +6994,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
           timestamp: new Date().toISOString()
         });
       } else {
-        console.log(`❌ [TEST ENDPOINT] Neuspešno slanje test poruke na ${phoneNumber}`);
+        // Test endpoint debug message removed Neuspešno slanje test poruke na ${phoneNumber}`);
         res.status(500).json({ 
           success: false, 
           error: 'Neuspešno slanje test poruke',
@@ -7041,7 +7003,7 @@ export function setupWhatsAppWebhookRoutes(app: Express) {
       }
 
     } catch (error) {
-      console.error('❌ [TEST ENDPOINT] Greška pri slanju test poruke:', error);
+      // Test endpoint debug message removed Greška pri slanju test poruke:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju test poruke',
         success: false,
@@ -7345,7 +7307,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         });
       }
       
-      console.log(`🗑️ [SAFE DELETE] Admin ${req.user!.username} pokušava da obriše servis ${serviceId}`);
+      // Safe delete debug message removed Admin ${req.user!.username} pokušava da obriše servis ${serviceId}`);
       
       const success = await storage.softDeleteService(
         serviceId,
@@ -7358,20 +7320,20 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       );
       
       if (success) {
-        console.log(`🗑️ [SAFE DELETE] ✅ Servis ${serviceId} uspešno safe-obrisan`);
+        // Safe delete debug message removed ✅ Servis ${serviceId} uspešno safe-obrisan`);
         res.json({ 
           success: true, 
           message: 'Servis je sigurno obrisan i može biti vraćen ako je potrebno' 
         });
       } else {
-        console.log(`🗑️ [SAFE DELETE] ❌ Neuspešno brisanje servisa ${serviceId}`);
+        // Safe delete debug message removed ❌ Neuspešno brisanje servisa ${serviceId}`);
         res.status(400).json({ 
           error: 'Greška pri brisanju servisa. Servis možda ne postoji.' 
         });
       }
       
     } catch (error) {
-      console.error('🗑️ [SAFE DELETE] Greška pri sigurnom brisanju servisa:', error);
+      // Safe delete debug message removed Greška pri sigurnom brisanju servisa:', error);
       res.status(500).json({ error: 'Greška pri sigurnom brisanju servisa' });
     }
   });
@@ -7397,7 +7359,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       }
       
       const serviceId = parseInt(req.params.serviceId);
-      console.log(`🔄 [RESTORE] Admin ${req.user!.username} pokušava da vrati servis ${serviceId}`);
+      // Restore debug message removed Admin ${req.user!.username} pokušava da vrati servis ${serviceId}`);
       
       const success = await storage.restoreDeletedService(
         serviceId,
@@ -7407,20 +7369,18 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       );
       
       if (success) {
-        console.log(`🔄 [RESTORE] ✅ Servis ${serviceId} uspešno vraćen`);
         res.json({ 
           success: true, 
           message: 'Servis je uspešno vraćen u sistem sa novim ID-jem' 
         });
       } else {
-        console.log(`🔄 [RESTORE] ❌ Neuspešno vraćanje servisa ${serviceId}`);
         res.status(400).json({ 
           error: 'Greška pri vraćanju servisa. Servis možda ne može biti vraćen.' 
         });
       }
       
     } catch (error) {
-      console.error('🔄 [RESTORE] Greška pri vraćanju servisa:', error);
+      logger.error('Greška pri vraćanju servisa:', error);
       res.status(500).json({ error: 'Greška pri vraćanju servisa' });
     }
   });
@@ -7457,7 +7417,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         status
       });
     } catch (error) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri dobijanju konfiguracije:', error);
+      // WhatsApp debug message removed Greška pri dobijanju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri dobijanju konfiguracije',
         success: false 
@@ -7494,7 +7454,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         status
       });
     } catch (error) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri ažuriranju konfiguracije:', error);
+      logger.error('WHATSAPP BUSINESS API Greška pri ažuriranju konfiguracije:', error);
       res.status(500).json({ 
         error: 'Greška pri ažuriranju konfiguracije',
         success: false 
@@ -7519,7 +7479,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         });
       }
     } catch (error: any) {
-      console.error('❌ [WHATSAPP API] Greška pri dohvatanju template-a:', error);
+      logger.error('WHATSAPP API Greška pri dohvatanju template-a:', error);
       res.status(500).json({
         success: false,
         error: error.message || 'Greška pri dohvatanju template-a'
@@ -7544,7 +7504,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       
       res.json(result);
     } catch (error) {
-      console.error('❌ [WHATSAPP BUSINESS API] Greška pri slanju tekstualne poruke:', error);
+      logger.error('WHATSAPP BUSINESS API Greška pri slanju tekstualne poruke:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju tekstualne poruke',
         success: false 
@@ -7584,7 +7544,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
       res.json(result);
     } catch (error) {
-      console.error('❌ [WHATSAPP NOTIFICATION] Greška pri slanju potvrde zahteva:', error);
+      logger.error('WHATSAPP NOTIFICATION Greška pri slanju potvrde zahteva:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju potvrde zahteva',
         success: false 
@@ -7623,7 +7583,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
 
       res.json(result);
     } catch (error) {
-      console.error('❌ [WHATSAPP NOTIFICATION] Greška pri slanju potvrde odbijanja:', error);
+      logger.error('WHATSAPP NOTIFICATION Greška pri slanju potvrde odbijanja:', error);
       res.status(500).json({ 
         error: 'Greška pri slanju potvrde odbijanja',
         success: false 
@@ -7636,7 +7596,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     try {
       const { email, phone, reason, specificData } = req.body;
       
-      console.log('📧 [DATA DELETION] Nova zahtev za brisanje podataka:', {
         email: email || 'Nije naveden',
         phone: phone || 'Nije naveden', 
         reason: reason || 'Nije naveden',
@@ -7674,7 +7633,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       });
       
     } catch (error) {
-      console.error('❌ [DATA DELETION] Greška pri obradi zahteva:', error);
+      logger.error('DATA DELETION Greška pri obradi zahteva:', error);
       res.status(500).json({
         success: false,
         error: 'Greška pri obradi zahteva za brisanje podataka'
@@ -7718,14 +7677,12 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     try {
       const { phone, templateName, testMode } = req.body;
       
-      console.log('🔍 [REVIEWER] Facebook reviewer test WhatsApp:', { phone, templateName, testMode });
       
       // Simuliraj API poziv ka WhatsApp Cloud API
       const messageId = `reviewer_test_${Date.now()}`;
       const timestamp = new Date().toISOString();
       
       // Log za demonstraciju
-      console.log('📞 [REVIEWER] Simulating WhatsApp API call...', {
         to: phone,
         template: templateName,
         messageId,
@@ -7750,12 +7707,11 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       // Sačekaj 1 sekund da demonstriraš API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      console.log('✅ [REVIEWER] WhatsApp test successful:', apiResponse);
       
       res.json(apiResponse);
       
     } catch (error) {
-      console.error('❌ [REVIEWER] WhatsApp test failed:', error);
+      logger.error('REVIEWER WhatsApp test failed:', error);
       res.status(500).json({
         success: false,
         error: 'Test WhatsApp poziv nije uspeo',
@@ -7852,10 +7808,8 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
           size: stats ? stats.size : 0
         });
         
-        console.log(`✅ [ADMIN] Uspešno učitan fajl: ${filename} (${stats ? stats.size : 0} bytes)`);
         
       } catch (fileError) {
-        console.error(`❌ [ADMIN] Greška čitanja fajla ${filename}:`, fileError);
         res.status(200).json({ 
           success: true,
           filename,
@@ -7866,7 +7820,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       }
       
     } catch (error) {
-      console.error('❌ [ADMIN] Greška pri čitanju statičke stranice:', error);
+      logger.error('ADMIN Greška pri čitanju statičke stranice:', error);
       res.status(500).json({ 
         error: 'Server greška pri čitanju stranice',
         details: error.message 
@@ -7912,7 +7866,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
         await fs.writeFile(backupPath, existingContent, 'utf8');
         console.log(`💾 [ADMIN] Kreiran backup: ${backupPath}`);
       } catch (backupError) {
-        console.log(`⚠️ [ADMIN] Ne mogu kreirati backup za ${filename}:`, backupError.message);
       }
       
       // Sačuvaj novi sadržaj
@@ -7928,10 +7881,8 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
           lastModified: stats.mtime.toLocaleString('sr-RS')
         });
         
-        console.log(`✅ [ADMIN] Uspešno ažuriran fajl: ${filename} (${stats.size} bytes)`);
         
       } catch (writeError) {
-        console.error(`❌ [ADMIN] Greška pisanja fajla ${filename}:`, writeError);
         res.status(500).json({ 
           error: 'Ne mogu sačuvati fajl',
           filename,
@@ -7940,7 +7891,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       }
       
     } catch (error) {
-      console.error('❌ [ADMIN] Greška pri ažuriranju statičke stranice:', error);
+      logger.error('ADMIN Greška pri ažuriranju statičke stranice:', error);
       res.status(500).json({ 
         error: 'Server greška pri ažuriranju stranice',
         details: error.message 
@@ -7956,7 +7907,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
   // 🔒 Zaštićeno brisanje klijenta - traži identično ime i prezime
   app.delete("/api/admin/clients/:id/safe-delete", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      console.log(`🛡️ [SAFE DELETE CLIENT] Admin ${req.user?.username} pokušava zaštićeno brisanje klijenta ${req.params.id}`);
       
       const clientId = parseInt(req.params.id);
       const { fullName } = req.body;
@@ -8015,11 +7965,9 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       }
 
       // SIGURNO BRISANJE - ime se slaže!
-      console.log(`🛡️ [SAFE DELETE CLIENT] ✅ Ime potvrđeno - brišem klijenta ${clientId} (${trimmedClientName})`);
       const success = await storage.deleteClient(clientId);
       
       if (success) {
-        console.log(`🛡️ [SAFE DELETE CLIENT] ✅ Klijent ${clientId} uspešno obrisan`);
         res.json({ 
           success: true, 
           message: `Klijent "${trimmedClientName}" je uspešno obrisan`,
