@@ -150,6 +150,7 @@ export interface IStorage {
   updateServicePhoto(id: number, photo: Partial<ServicePhoto>): Promise<ServicePhoto | undefined>;
   deleteServicePhoto(id: number): Promise<void>;
   getServicePhotosByCategory(serviceId: number, category: string): Promise<ServicePhoto[]>;
+  getAllServicePhotosByCategory(category: string): Promise<ServicePhoto[]>;
   // Storage analysis methods
   getTotalServicePhotosCount(): Promise<number>;
   getServicePhotosCount(): Promise<number>; // Alias za storage optimizaciju
@@ -4645,7 +4646,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Metoda za dohvatanje svih fotografija određene kategorije (globalno)
-  async getServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
+  async getAllServicePhotosByCategory(category: string): Promise<ServicePhoto[]> {
     console.log(`📸 DatabaseStorage: dohvatanje svih fotografija kategorije "${category}"`);
     
     try {
