@@ -285,7 +285,7 @@ function canUseWebShareAPI(data: ShareData): boolean {
  * Provera da li su files podržani u Web Share API
  */
 function canShareFiles(): boolean {
-  return !!(navigator.canShare && File);
+  return !!(typeof navigator !== 'undefined' && navigator.canShare && typeof File !== 'undefined');
 }
 
 /**
@@ -398,6 +398,67 @@ export function getSharingCapabilities(): {
   };
 }
 
+/**
+ * DODATNE APLIKACIJSKE SHARING FUNKCIJE
+ * 
+ * Ove funkcije su specifične za aplikaciju i koriste se
+ * u različitim komponentama kroz aplikaciju.
+ */
+
+/**
+ * Share service info - alias za shareService funkciju
+ */
+export async function shareServiceInfo(serviceData: {
+  id: number;
+  serviceNumber: string;
+  clientName: string;
+  appliance: string;
+  status: string;
+}): Promise<ShareResult> {
+  return shareService(serviceData);
+}
+
+/**
+ * Share spare part order info
+ */
+export async function shareSparePartOrder(orderData: {
+  id: number;
+  partName: string;
+  quantity: number;
+  price?: number;
+  supplier?: string;
+  status?: string;
+  serviceNumber?: string;
+}): Promise<ShareResult> {
+  const baseUrl = runtimeHelpers.getApiBaseUrl();
+  const orderUrl = `${baseUrl}/spare-parts/${orderData.id}`;
+  
+  const title = `Rezervni dio: ${orderData.partName}`;
+  let text = `Količina: ${orderData.quantity}`;
+  
+  if (orderData.price) {
+    text += `\nCijena: €${orderData.price}`;
+  }
+  
+  if (orderData.supplier) {
+    text += `\nDobavljač: ${orderData.supplier}`;
+  }
+  
+  if (orderData.status) {
+    text += `\nStatus: ${orderData.status}`;
+  }
+  
+  if (orderData.serviceNumber) {
+    text += `\nServis broj: ${orderData.serviceNumber}`;
+  }
+  
+  return shareContent({
+    title,
+    text,
+    url: orderUrl,
+  });
+}
+
 // Development debugging
 if (runtimeHelpers.isDevelopment() && typeof window !== 'undefined') {
   // @ts-ignore - debug helper
@@ -405,6 +466,8 @@ if (runtimeHelpers.isDevelopment() && typeof window !== 'undefined') {
     shareText,
     shareUrl,
     shareService,
+    shareServiceInfo,
+    shareSparePartOrder,
     shareFile,
     getSharingCapabilities,
     isSharingAvailable,
