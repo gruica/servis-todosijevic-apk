@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
   const queryClient = useQueryClient();
 
   // Monitor network status
-  useState(() => {
+  useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       toast({
@@ -77,7 +77,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  });
+  }, []);
 
   // Fetch service photos
   const { data: photos = [], isLoading, refetch } = useQuery<ServicePhoto[]>({
