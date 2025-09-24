@@ -1,362 +1,414 @@
-import { runtimeHelpers } from '@shared/runtime-config';
-import { isNativeMobile } from '@/capacitor';
-
 /**
- * NATIVE/WEB COMPATIBLE SHARING UTILITIES
+ * PLATFORM-AWARE SHARING UTILITIES
  * 
- * Ovaj modul pruža unified sharing funkcionalnost koja radi
- * identično na web i mobilnim platformama sa intelligent fallback-om.
+ * Ovaj modul omogućava sharing funkcionalnosti koje rade
+ * identično na web i native platformama sa intelligent
+ * fallback mehanizmima i optimizovanim korisničkim iskustvom.
  */
 
-export interface ShareData {
+import { Capacitor } from '@capacitor/core';
+import { runtimeHelpers } from '@shared/runtime-config';
+
+/**
+ * Interface za share podatke
+ */
+interface ShareData {
   title?: string;
   text?: string;
   url?: string;
   files?: File[];
 }
 
+/**
+ * Interface za share result
+ */
 interface ShareResult {
   success: boolean;
   error?: string;
-  method: 'native' | 'web' | 'fallback';
+  activityType?: string;
 }
 
 /**
- * Proverava da li je native sharing dostupan
- */
-function isNativeShareSupported(): boolean {
-  if (!isNativeMobile) {
-    return false;
-  }
-  
-  // Proverava da li postoji navigator.share API (koji postoji i na web-u u novijim browser-ima)
-  return 'share' in navigator;
-}
-
-/**
- * Proverava da li je Web Share API dostupan
- */
-function isWebShareSupported(): boolean {
-  return !isNativeMobile && 'share' in navigator;
-}
-
-/**
- * GLAVNI SHARING INTERFACE - WORKS ON ALL PLATFORMS
+ * NAPREDNI NATIVE SHARING SA WEB SHARE API FALLBACK
  * 
- * Automatski bira najbolji sharing metod na osnovu platforme i dostupnosti
+ * Koristi Capacitor Share plugin za native platforme,
+ * Web Share API za moderne browser-e, i clipboard fallback
  */
 export async function shareContent(data: ShareData): Promise<ShareResult> {
   try {
-    console.log('📤 [Share] Starting share process:', { 
-      platform: runtimeHelpers.getPlatform(),
-      isNative: runtimeHelpers.isNative(),
-      data: { title: data.title, hasUrl: !!data.url, hasFiles: !!data.files?.length }
-    });
+    console.log('📤 [Share] Starting share:', data);
     
-    // 1. Pokušaj native sharing (mobile apps i moderne browser-e)
-    if (isNativeShareSupported()) {
-      try {
-        console.log('📱 [Share] Attempting native share...');
-        
-        const shareData: any = {};
-        
-        if (data.title) shareData.title = data.title;
-        if (data.text) shareData.text = data.text;
-        if (data.url) shareData.url = data.url;
-        
-        // Files se podržavaju samo u naprednim implementacijama
-        if (data.files && data.files.length > 0) {
-          // Proverava da li browser podržava file sharing
-          if (navigator.canShare && navigator.canShare({ files: data.files })) {
-            shareData.files = data.files;
-          } else {
-            console.warn('⚠️ [Share] Files not supported, sharing without files');
-          }
-        }
-        
-        await navigator.share(shareData);
-        console.log('✅ [Share] Native share successful');
-        
-        return {
-          success: true,
-          method: 'native'
-        };
-        
-      } catch (error: any) {
-        console.warn('⚠️ [Share] Native share failed, falling back:', error.message);
-        
-        // Ako je korisnik otkazao sharing, to nije greška
-        if (error.name === 'AbortError' || error.message.includes('canceled')) {
-          return {
-            success: false,
-            error: 'User canceled sharing',
-            method: 'native'
-          };
-        }
-        
-        // Za ostale greške, pokušaj fallback
-      }
+    // Native sharing za mobilne aplikacije
+    if (runtimeHelpers.isNative()) {
+      return await shareNative(data);
     }
     
-    // 2. Pokušaj Web Share API (za browser-e koji ga podržavaju)
-    if (isWebShareSupported()) {
-      try {
-        console.log('🌐 [Share] Attempting web share...');
-        
-        const shareData: any = {};
-        if (data.title) shareData.title = data.title;
-        if (data.text) shareData.text = data.text;
-        if (data.url) shareData.url = data.url;
-        
-        await navigator.share(shareData);
-        console.log('✅ [Share] Web share successful');
-        
-        return {
-          success: true,
-          method: 'web'
-        };
-        
-      } catch (error: any) {
-        console.warn('⚠️ [Share] Web share failed, falling back:', error.message);
-        
-        if (error.name === 'AbortError') {
-          return {
-            success: false,
-            error: 'User canceled sharing',
-            method: 'web'
-          };
-        }
-      }
+    // Web Share API za moderne browser-e
+    if (canUseWebShareAPI(data)) {
+      return await shareWeb(data);
     }
     
-    // 3. Fallback - Copy to clipboard + pokazujemo korisno informacije
-    console.log('📋 [Share] Using fallback method (copy to clipboard)');
+    // Fallback na clipboard + toast
+    return await shareFallback(data);
     
-    const textToShare = buildShareText(data);
+  } catch (error) {
+    console.error('❌ [Share] Share failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Sharing failed'
+    };
+  }
+}
+
+/**
+ * Native sharing implementation za Capacitor aplikacije
+ */
+async function shareNative(data: ShareData): Promise<ShareResult> {
+  try {
+    console.log('📱 [Share] Using native sharing');
     
-    // Pokušaj copy to clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        await navigator.clipboard.writeText(textToShare);
-        console.log('✅ [Share] Copied to clipboard:', textToShare);
-        
-        return {
-          success: true,
-          method: 'fallback'
-        };
-        
-      } catch (error) {
-        console.warn('⚠️ [Share] Clipboard copy failed:', error);
-      }
-    }
+    // Dinamički import Capacitor Share plugin-a
+    const { Share } = await import('@capacitor/share');
     
-    // Krajnji fallback - samo log
-    console.log('📝 [Share] Final fallback - manual copy required:', textToShare);
+    // Pripremi podatke za Capacitor Share
+    const shareOptions: any = {};
+    
+    if (data.title) shareOptions.title = data.title;
+    if (data.text) shareOptions.text = data.text;
+    if (data.url) shareOptions.url = data.url;
+    
+    // Capacitor Share API poziv
+    const result = await Share.share(shareOptions);
+    
+    console.log('✅ [Share] Native share successful:', result);
     
     return {
       success: true,
-      method: 'fallback'
+      activityType: result.activityType,
     };
     
-  } catch (error: any) {
-    console.error('❌ [Share] All sharing methods failed:', error);
+  } catch (error) {
+    console.error('❌ [Share] Native share failed:', error);
     
-    return {
-      success: false,
-      error: error.message || 'Sharing failed',
-      method: 'fallback'
-    };
+    // Fallback na web sharing ako native ne radi
+    if (canUseWebShareAPI(data)) {
+      console.log('🔄 [Share] Falling back to web share');
+      return await shareWeb(data);
+    }
+    
+    // Ultimate fallback
+    return await shareFallback(data);
   }
 }
 
 /**
- * Kreira tekst za sharing na osnovu podataka
+ * Web Share API implementation za moderne browser-e
  */
-function buildShareText(data: ShareData): string {
-  const parts: string[] = [];
-  
-  if (data.title) {
-    parts.push(data.title);
-  }
-  
-  if (data.text) {
-    parts.push(data.text);
-  }
-  
-  if (data.url) {
-    parts.push(data.url);
-  }
-  
-  return parts.join('\n\n');
-}
-
-/**
- * Specialized sharing functions za common use cases
- */
-export const shareHelpers = {
-  /** Share URL sa optional tekst */
-  shareUrl: async (url: string, title?: string, text?: string): Promise<ShareResult> => {
-    return shareContent({
-      title: title || 'Podeliti link',
-      text: text,
-      url: url
-    });
-  },
-  
-  /** Share tekst (ohne URL) */
-  shareText: async (text: string, title?: string): Promise<ShareResult> => {
-    return shareContent({
-      title: title || 'Podeliti tekst',
-      text: text
-    });
-  },
-  
-  /** Share service informacije (specifično za ovu aplikaciju) */
-  shareService: async (serviceId: number | string, clientName?: string): Promise<ShareResult> => {
-    const baseUrl = runtimeHelpers.getApiBaseUrl();
-    const serviceUrl = `${baseUrl}/servis/${serviceId}`;
+async function shareWeb(data: ShareData): Promise<ShareResult> {
+  try {
+    console.log('🌐 [Share] Using Web Share API');
     
-    const title = 'Servis Todosijević';
-    const text = clientName 
-      ? `Servis za klijenta ${clientName}` 
-      : 'Informacije o servisu';
-    
-    return shareContent({
-      title,
-      text,
-      url: serviceUrl
-    });
-  },
-  
-  /** Share file (ako je podržano) */
-  shareFile: async (file: File, title?: string): Promise<ShareResult> => {
-    return shareContent({
-      title: title || 'Podeliti fajl',
-      files: [file]
-    });
-  },
-  
-  /** Share multiple files */
-  shareFiles: async (files: File[], title?: string): Promise<ShareResult> => {
-    return shareContent({
-      title: title || 'Podeliti fajlove',
-      files: files
-    });
-  },
-  
-  /** Check sharing capabilities */
-  getCapabilities: () => ({
-    nativeShare: isNativeShareSupported(),
-    webShare: isWebShareSupported(),
-    clipboardWrite: !!(navigator.clipboard && navigator.clipboard.writeText),
-    canShareFiles: !!(navigator.canShare && navigator.share),
-    platform: runtimeHelpers.getPlatform(),
-    recommendedMethod: isNativeShareSupported() ? 'native' : 
-                     isWebShareSupported() ? 'web' : 'fallback'
-  })
-};
-
-/**
- * React hook za sharing (optional, ako se koristi u komponentama)
- */
-export function useSharing() {
-  const share = async (data: ShareData) => {
-    const result = await shareContent(data);
-    
-    // Možete dodati toast notifikacije ili error handling ovde
-    if (!result.success) {
-      console.error('Sharing failed:', result.error);
-    }
-    
-    return result;
-  };
-  
-  return {
-    share,
-    shareUrl: shareHelpers.shareUrl,
-    shareText: shareHelpers.shareText,
-    shareService: shareHelpers.shareService,
-    shareFile: shareHelpers.shareFile,
-    capabilities: shareHelpers.getCapabilities(),
-  };
-}
-
-/**
- * Error handling utilities za sharing
- */
-export const shareErrorHandler = {
-  /** Obrađuje sharing greške i prikazuje korisne poruke */
-  handleShareError: (error: any, method: string): string => {
-    console.error(`❌ [Share] ${method} failed:`, error);
-    
-    if (error.name === 'AbortError' || error.message?.includes('canceled')) {
-      return 'Deljenje je otkazano';
-    }
-    
-    if (error.name === 'NotAllowedError') {
-      return 'Deljenje nije dozvoljeno. Proverite dozvole aplikacije.';
-    }
-    
-    if (error.name === 'DataError') {
-      return 'Podaci za deljenje nisu validni.';
-    }
-    
-    if (error.message?.includes('not supported')) {
-      return 'Deljenje nije podržano na ovom uređaju.';
-    }
-    
-    return 'Greška pri deljenju. Pokušajte ponovo.';
-  },
-  
-  /** Retry logic za sharing sa exponential backoff */
-  retryShare: async (shareData: ShareData, maxRetries: number = 3): Promise<ShareResult> => {
-    let lastError: any;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`🔄 [Share] Attempt ${attempt}/${maxRetries}`);
-        
-        const result = await shareContent(shareData);
-        
-        if (result.success) {
-          return result;
-        }
-        
-        lastError = new Error(result.error || 'Share failed');
-        
-        // Ne retry-uj ako je korisnik otkazao
-        if (result.error?.includes('canceled')) {
-          break;
-        }
-        
-        // Wait before retry (exponential backoff)
-        if (attempt < maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-          console.log(`⏳ [Share] Waiting ${delay}ms before retry...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-        
-      } catch (error) {
-        lastError = error;
-        console.warn(`⚠️ [Share] Attempt ${attempt} failed:`, error);
+    // Proveri da li su files podržani
+    if (data.files && data.files.length > 0) {
+      if (!canShareFiles()) {
+        console.warn('⚠️ [Share] Files not supported, using fallback');
+        return await shareFallback(data);
       }
     }
     
+    // Pripremi podatke za navigator.share
+    const shareData: any = {};
+    
+    if (data.title) shareData.title = data.title;
+    if (data.text) shareData.text = data.text;
+    if (data.url) shareData.url = data.url;
+    if (data.files && data.files.length > 0) shareData.files = data.files;
+    
+    // Navigator.share API poziv
+    await navigator.share(shareData);
+    
+    console.log('✅ [Share] Web share successful');
+    
+    return {
+      success: true,
+      activityType: 'web-share-api',
+    };
+    
+  } catch (error) {
+    console.error('❌ [Share] Web share failed:', error);
+    
+    // Ako je korisnik otkazao sharing, to nije greška
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        success: false,
+        error: 'User cancelled sharing',
+      };
+    }
+    
+    // Fallback na clipboard
+    return await shareFallback(data);
+  }
+}
+
+/**
+ * Fallback sharing implementation (clipboard + notification)
+ */
+async function shareFallback(data: ShareData): Promise<ShareResult> {
+  try {
+    console.log('📋 [Share] Using clipboard fallback');
+    
+    // Kreiraj text za copying
+    let textToCopy = '';
+    
+    if (data.title) textToCopy += `${data.title}\n`;
+    if (data.text) textToCopy += `${data.text}\n`;
+    if (data.url) textToCopy += `${data.url}`;
+    
+    // Copy u clipboard
+    if (textToCopy.trim()) {
+      await copyToClipboard(textToCopy.trim());
+      
+      // Prikaži success toast (ako je dostupan)
+      showShareToast('Podaci su kopirani u clipboard!', 'success');
+      
+      console.log('✅ [Share] Clipboard fallback successful');
+      
+      return {
+        success: true,
+        activityType: 'clipboard-fallback',
+      };
+    } else {
+      throw new Error('No content to share');
+    }
+    
+  } catch (error) {
+    console.error('❌ [Share] Clipboard fallback failed:', error);
+    
+    // Prikaži error toast
+    showShareToast('Greška pri dijeljenju sadržaja', 'error');
+    
     return {
       success: false,
-      error: shareErrorHandler.handleShareError(lastError, 'retry'),
-      method: 'fallback'
+      error: error instanceof Error ? error.message : 'Clipboard failed'
     };
   }
-};
+}
 
-// Debug info za development
+/**
+ * Copy text u clipboard sa cross-platform support
+ */
+async function copyToClipboard(text: string): Promise<void> {
+  try {
+    // Modern Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    
+    // Fallback na deprecated execCommand
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    if (!successful) {
+      throw new Error('execCommand copy failed');
+    }
+    
+  } catch (error) {
+    console.error('❌ [Share] Clipboard copy failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Prikaži toast notification za sharing
+ */
+function showShareToast(message: string, type: 'success' | 'error' = 'success'): void {
+  try {
+    // Pokušaj koristiti aplikacijski toast sistem
+    if (typeof window !== 'undefined' && (window as any).showToast) {
+      (window as any).showToast({
+        title: type === 'success' ? 'Uspjeh' : 'Greška',
+        description: message,
+        variant: type === 'error' ? 'destructive' : 'default',
+      });
+      return;
+    }
+    
+    // Fallback na browser alert (samo za greške)
+    if (type === 'error') {
+      alert(message);
+    } else {
+      console.log(`📢 [Share] ${message}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ [Share] Toast failed:', error);
+  }
+}
+
+/**
+ * Provera da li je Web Share API dostupan
+ */
+function canUseWebShareAPI(data: ShareData): boolean {
+  if (typeof navigator === 'undefined' || !navigator.share) {
+    return false;
+  }
+  
+  // Proveri da li imamo podatke za sharing
+  const hasBasicData = !!(data.title || data.text || data.url);
+  const hasFiles = !!(data.files && data.files.length > 0);
+  
+  if (!hasBasicData && !hasFiles) {
+    return false;
+  }
+  
+  // Ako imamo files, proveri da li su podržani
+  if (hasFiles && !canShareFiles()) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Provera da li su files podržani u Web Share API
+ */
+function canShareFiles(): boolean {
+  return !!(navigator.canShare && File);
+}
+
+/**
+ * HELPER FUNKCIJE ZA RAZLIČITE TIPOVE SHARING-A
+ */
+
+/**
+ * Share tekst sadržaj
+ */
+export async function shareText(text: string, title?: string): Promise<ShareResult> {
+  return shareContent({
+    title: title || 'Podjeli tekst',
+    text: text,
+  });
+}
+
+/**
+ * Share URL link
+ */
+export async function shareUrl(url: string, title?: string, description?: string): Promise<ShareResult> {
+  return shareContent({
+    title: title || 'Podjeli link',
+    text: description,
+    url: url,
+  });
+}
+
+/**
+ * Share service details (specifično za ovu aplikaciju)
+ */
+export async function shareService(serviceData: {
+  id: number;
+  serviceNumber: string;
+  clientName: string;
+  appliance: string;
+  status: string;
+}): Promise<ShareResult> {
+  const baseUrl = runtimeHelpers.getApiBaseUrl();
+  const serviceUrl = `${baseUrl}/service/${serviceData.id}`;
+  
+  const title = `Servis #${serviceData.serviceNumber}`;
+  const text = `Klijent: ${serviceData.clientName}\nUređaj: ${serviceData.appliance}\nStatus: ${serviceData.status}`;
+  
+  return shareContent({
+    title,
+    text,
+    url: serviceUrl,
+  });
+}
+
+/**
+ * Share QR kod ili fotografiju
+ */
+export async function shareFile(file: File, title?: string, description?: string): Promise<ShareResult> {
+  return shareContent({
+    title: title || 'Podjeli datoteku',
+    text: description,
+    files: [file],
+  });
+}
+
+/**
+ * UTILITY FUNKCIJE ZA CHECKING DOSTUPNOSTI
+ */
+
+/**
+ * Provera da li je sharing dostupan na trenutnoj platformi
+ */
+export function isSharingAvailable(): boolean {
+  // Native sharing uvek dostupan
+  if (runtimeHelpers.isNative()) {
+    return true;
+  }
+  
+  // Web - proveri Web Share API ili clipboard
+  return canUseWebShareAPI({ text: 'test' }) || !!(navigator.clipboard || document.queryCommandSupported?.('copy'));
+}
+
+/**
+ * Provera da li je file sharing dostupan
+ */
+export function isFileSharingAvailable(): boolean {
+  // Native platforms podržavaju file sharing
+  if (runtimeHelpers.isNative()) {
+    return true;
+  }
+  
+  // Web - proveri Web Share API sa files
+  return canShareFiles();
+}
+
+/**
+ * Dobij sharing capabilities za UI
+ */
+export function getSharingCapabilities(): {
+  canShareText: boolean;
+  canShareUrl: boolean;
+  canShareFiles: boolean;
+  preferredMethod: 'native' | 'web' | 'clipboard';
+} {
+  const isNative = runtimeHelpers.isNative();
+  const canUseWebShare = canUseWebShareAPI({ text: 'test' });
+  const canUseClipboard = !!(navigator.clipboard || document.queryCommandSupported?.('copy'));
+  
+  return {
+    canShareText: isNative || canUseWebShare || canUseClipboard,
+    canShareUrl: isNative || canUseWebShare || canUseClipboard,
+    canShareFiles: isNative || canShareFiles(),
+    preferredMethod: isNative ? 'native' : canUseWebShare ? 'web' : 'clipboard',
+  };
+}
+
+// Development debugging
 if (runtimeHelpers.isDevelopment() && typeof window !== 'undefined') {
-  // @ts-ignore
+  // @ts-ignore - debug helper
   window.shareDebug = {
-    capabilities: shareHelpers.getCapabilities(),
-    test: (data: ShareData) => shareContent(data),
-    helpers: shareHelpers,
+    shareText,
+    shareUrl,
+    shareService,
+    shareFile,
+    getSharingCapabilities,
+    isSharingAvailable,
+    isFileSharingAvailable,
   };
   
   console.log('🛠️ [Share] Debug helpers available at window.shareDebug');

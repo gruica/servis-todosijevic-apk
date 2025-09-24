@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiHelpers, apiRequest } from '@/lib/queryClient';
+import { getQueryFn, apiRequest, queryClient } from '../lib/queryClient';
 import { runtimeHelpers } from '@shared/runtime-config';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * ENVIRONMENT-AWARE AUTHENTICATION SYSTEM
@@ -261,7 +262,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Profile update mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<User>) => {
-      return apiHelpers.put('/api/user/profile', profileData);
+      return apiRequest('/api/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+      });
     },
     onSuccess: () => {
       console.log('✅ [Auth] Profile updated successfully');
