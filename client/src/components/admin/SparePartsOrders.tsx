@@ -114,11 +114,10 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   useEffect(() => {
     const generateTokenIfNeeded = async () => {
       const existingToken = localStorage.getItem('auth_token');
-      console.log('🔍 Checking for existing JWT token:', existingToken ? 'Found' : 'Not found');
+      // Check for existing JWT token
       
       if (!existingToken) {
         try {
-          console.log('🔑 Attempting to generate JWT token...');
           const response = await fetch('/api/generate-jwt-token', {
             method: 'POST',
             credentials: 'include',
@@ -127,24 +126,22 @@ const SparePartsOrders = memo(function SparePartsOrders() {
             }
           });
           
-          console.log('🔑 JWT token response status:', response.status);
-          
           if (response.ok) {
             const data = await response.json();
             localStorage.setItem('auth_token', data.token);
-            console.log('✅ JWT token automatski generisan za rezervne delove');
+            // JWT token successfully generated
             
             // Refresh spare parts data after token is set
             queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
           } else {
             const errorData = await response.json();
-            console.error('❌ JWT token generation failed:', errorData);
+            // JWT token generation failed
           }
         } catch (error) {
-          console.error('❌ Greška pri generisanju JWT tokena:', error);
+          // Error generating JWT token
         }
       } else {
-        console.log('✅ JWT token već postoji u localStorage');
+        // JWT token already exists
       }
     };
     
@@ -158,15 +155,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
   });
 
 
-  // Debug logging for TanStack Query v5
-  useEffect(() => {
-    if (orders && orders.length > 0) {
-      console.log('✅ Spare parts data received:', orders.length, 'orders');
-    }
-    if (error) {
-      console.error('❌ Spare parts query error:', error);
-    }
-  }, [orders, error]);
+  // Data loaded successfully
 
   // Update order mutation
   const updateOrderMutation = useMutation({
@@ -213,7 +202,7 @@ const SparePartsOrders = memo(function SparePartsOrders() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/spare-parts'] });
     },
     onError: (error: any) => {
-      console.error('❌ [DELETE MUTATION] Greška pri brisanju:', error);
+      // Delete mutation error occurred
       toast({
         title: "Greška pri brisanju",
         description: error.message || "Nije moguće obrisati porudžbinu. Proverite da li ste prijavljeni.",
