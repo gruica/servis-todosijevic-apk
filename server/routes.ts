@@ -7596,13 +7596,6 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
     try {
       const { email, phone, reason, specificData } = req.body;
       
-        email: email || 'Nije naveden',
-        phone: phone || 'Nije naveden', 
-        reason: reason || 'Nije naveden',
-        specificData: specificData || 'Nije naveden',
-        timestamp: new Date().toISOString()
-      });
-      
       // Pošaljemo email administratoru
       try {
         const { sendNotificationEmail } = await import('./email-service.js');
@@ -7682,12 +7675,7 @@ export function setupSecurityEndpoints(app: Express, storage: IStorage) {
       const messageId = `reviewer_test_${Date.now()}`;
       const timestamp = new Date().toISOString();
       
-      // Log za demonstraciju
-        to: phone,
-        template: templateName,
-        messageId,
-        timestamp
-      });
+      // Test mode API demonstration
       
       // Simuliraj uspešan odgovor
       const apiResponse = {
