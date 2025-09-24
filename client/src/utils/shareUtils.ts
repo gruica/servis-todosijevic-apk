@@ -1,300 +1,363 @@
-// Web Share API utility funkcije
+import { runtimeHelpers } from '@shared/runtime-config';
+import { isNativeMobile } from '@/capacitor';
+
+/**
+ * NATIVE/WEB COMPATIBLE SHARING UTILITIES
+ * 
+ * Ovaj modul pruža unified sharing funkcionalnost koja radi
+ * identično na web i mobilnim platformama sa intelligent fallback-om.
+ */
+
 export interface ShareData {
-  title: string;
-  text: string;
+  title?: string;
+  text?: string;
   url?: string;
+  files?: File[];
 }
 
-// Funkcija za dobavljanje production URL-a
-function getProductionUrl(): string {
-  // Ako je development (replit.dev), koristi production URL
-  if (window.location.origin.includes('replit.dev')) {
-    return 'https://tehnikamne.me'; // Production domen
+interface ShareResult {
+  success: boolean;
+  error?: string;
+  method: 'native' | 'web' | 'fallback';
+}
+
+/**
+ * Proverava da li je native sharing dostupan
+ */
+function isNativeShareSupported(): boolean {
+  if (!isNativeMobile) {
+    return false;
   }
-  // Inače koristi trenutni origin (već je production)
-  return window.location.origin;
+  
+  // Proverava da li postoji navigator.share API (koji postoji i na web-u u novijim browser-ima)
+  return 'share' in navigator;
 }
 
-// Glavna funkcija za dijeljenje sadržaja
-export async function shareContent(data: ShareData): Promise<boolean> {
-  // Proverava Web Share API podršku
-  if (navigator.share && navigator.canShare && navigator.canShare(data)) {
-    try {
-      await navigator.share(data);
-      return true;
-    } catch (error) {
-      console.error('Greška pri dijeljenju:', error);
-      // Fallback na custom dijeljenje
-      return fallbackShare(data);
-    }
-  } else {
-    // Fallback za browsere koji ne podržavaju Web Share API
-    return fallbackShare(data);
-  }
+/**
+ * Proverava da li je Web Share API dostupan
+ */
+function isWebShareSupported(): boolean {
+  return !isNativeMobile && 'share' in navigator;
 }
 
-// Fallback funkcija za starije browsere
-function fallbackShare(data: ShareData): boolean {
+/**
+ * GLAVNI SHARING INTERFACE - WORKS ON ALL PLATFORMS
+ * 
+ * Automatski bira najbolji sharing metod na osnovu platforme i dostupnosti
+ */
+export async function shareContent(data: ShareData): Promise<ShareResult> {
   try {
-    // Copy to clipboard
-    const textToCopy = `${data.title}\n\n${data.text}${data.url ? `\n\n${data.url}` : ''}`;
-    navigator.clipboard.writeText(textToCopy);
+    console.log('📤 [Share] Starting share process:', { 
+      platform: runtimeHelpers.getPlatform(),
+      isNative: runtimeHelpers.isNative(),
+      data: { title: data.title, hasUrl: !!data.url, hasFiles: !!data.files?.length }
+    });
     
-    // Prikaži detaljnu notifikaciju sa preview-om
-    const previewLength = 200;
-    const preview = textToCopy.length > previewLength ? 
-      textToCopy.substring(0, previewLength) + '...' : textToCopy;
-    
-    const confirmed = confirm(`✅ SADRŽAJ KOPIRAN U CLIPBOARD!\n\nPreview sadržaja:\n"${preview}"\n\n💡 INSTRUKCIJE:\n1. Otvorite Viber/WhatsApp/Email\n2. Pritisnite Ctrl+V (Windows) ili Cmd+V (Mac)\n3. Poslati će se kompletan sadržaj sa svim detaljima\n\nKliknite OK za zatvaranje`);
-    
-    if (!confirmed) {
-      // Ako korisnik klikne Cancel, pokušaj sa share dialog-om
-      openShareDialog(data);
+    // 1. Pokušaj native sharing (mobile apps i moderne browser-e)
+    if (isNativeShareSupported()) {
+      try {
+        console.log('📱 [Share] Attempting native share...');
+        
+        const shareData: any = {};
+        
+        if (data.title) shareData.title = data.title;
+        if (data.text) shareData.text = data.text;
+        if (data.url) shareData.url = data.url;
+        
+        // Files se podržavaju samo u naprednim implementacijama
+        if (data.files && data.files.length > 0) {
+          // Proverava da li browser podržava file sharing
+          if (navigator.canShare && navigator.canShare({ files: data.files })) {
+            shareData.files = data.files;
+          } else {
+            console.warn('⚠️ [Share] Files not supported, sharing without files');
+          }
+        }
+        
+        await navigator.share(shareData);
+        console.log('✅ [Share] Native share successful');
+        
+        return {
+          success: true,
+          method: 'native'
+        };
+        
+      } catch (error: any) {
+        console.warn('⚠️ [Share] Native share failed, falling back:', error.message);
+        
+        // Ako je korisnik otkazao sharing, to nije greška
+        if (error.name === 'AbortError' || error.message.includes('canceled')) {
+          return {
+            success: false,
+            error: 'User canceled sharing',
+            method: 'native'
+          };
+        }
+        
+        // Za ostale greške, pokušaj fallback
+      }
     }
-    return true;
-  } catch (error) {
-    console.error('Greška pri kopiranju:', error);
     
-    // Poslednji fallback - otvori URL selektore
-    openShareDialog(data);
-    return true;
+    // 2. Pokušaj Web Share API (za browser-e koji ga podržavaju)
+    if (isWebShareSupported()) {
+      try {
+        console.log('🌐 [Share] Attempting web share...');
+        
+        const shareData: any = {};
+        if (data.title) shareData.title = data.title;
+        if (data.text) shareData.text = data.text;
+        if (data.url) shareData.url = data.url;
+        
+        await navigator.share(shareData);
+        console.log('✅ [Share] Web share successful');
+        
+        return {
+          success: true,
+          method: 'web'
+        };
+        
+      } catch (error: any) {
+        console.warn('⚠️ [Share] Web share failed, falling back:', error.message);
+        
+        if (error.name === 'AbortError') {
+          return {
+            success: false,
+            error: 'User canceled sharing',
+            method: 'web'
+          };
+        }
+      }
+    }
+    
+    // 3. Fallback - Copy to clipboard + pokazujemo korisno informacije
+    console.log('📋 [Share] Using fallback method (copy to clipboard)');
+    
+    const textToShare = buildShareText(data);
+    
+    // Pokušaj copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(textToShare);
+        console.log('✅ [Share] Copied to clipboard:', textToShare);
+        
+        return {
+          success: true,
+          method: 'fallback'
+        };
+        
+      } catch (error) {
+        console.warn('⚠️ [Share] Clipboard copy failed:', error);
+      }
+    }
+    
+    // Krajnji fallback - samo log
+    console.log('📝 [Share] Final fallback - manual copy required:', textToShare);
+    
+    return {
+      success: true,
+      method: 'fallback'
+    };
+    
+  } catch (error: any) {
+    console.error('❌ [Share] All sharing methods failed:', error);
+    
+    return {
+      success: false,
+      error: error.message || 'Sharing failed',
+      method: 'fallback'
+    };
   }
 }
 
-// Custom share dialog za dodatne opcije
-function openShareDialog(data: ShareData) {
-  const encodedText = encodeURIComponent(`${data.title}\n\n${data.text}`);
-  const encodedUrl = data.url ? encodeURIComponent(data.url) : '';
+/**
+ * Kreira tekst za sharing na osnovu podataka
+ */
+function buildShareText(data: ShareData): string {
+  const parts: string[] = [];
   
-  // Kreiraj share opcije
-  const shareOptions = [
-    {
-      name: 'Viber',
-      url: `viber://forward?text=${encodedText}${encodedUrl ? '%0A' + encodedUrl : ''}`,
-      fallback: () => window.open(`https://www.viber.com/en/`, '_blank')
-    },
-    {
-      name: 'WhatsApp', 
-      url: `https://wa.me/?text=${encodedText}${encodedUrl ? '%0A' + encodedUrl : ''}`,
-      fallback: () => window.open(`https://web.whatsapp.com/`, '_blank')
-    },
-    {
-      name: 'Telegram',
-      url: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
-      fallback: () => window.open(`https://web.telegram.org/`, '_blank')
-    }
-  ];
+  if (data.title) {
+    parts.push(data.title);
+  }
   
-  // Pokušaj deep link-ove
-  shareOptions.forEach(option => {
-    const link = document.createElement('a');
-    link.href = option.url;
-    link.target = '_blank';
-    link.style.display = 'none';
-    document.body.appendChild(link);
+  if (data.text) {
+    parts.push(data.text);
+  }
+  
+  if (data.url) {
+    parts.push(data.url);
+  }
+  
+  return parts.join('\n\n');
+}
+
+/**
+ * Specialized sharing functions za common use cases
+ */
+export const shareHelpers = {
+  /** Share URL sa optional tekst */
+  shareUrl: async (url: string, title?: string, text?: string): Promise<ShareResult> => {
+    return shareContent({
+      title: title || 'Podeliti link',
+      text: text,
+      url: url
+    });
+  },
+  
+  /** Share tekst (ohne URL) */
+  shareText: async (text: string, title?: string): Promise<ShareResult> => {
+    return shareContent({
+      title: title || 'Podeliti tekst',
+      text: text
+    });
+  },
+  
+  /** Share service informacije (specifično za ovu aplikaciju) */
+  shareService: async (serviceId: number | string, clientName?: string): Promise<ShareResult> => {
+    const baseUrl = runtimeHelpers.getApiBaseUrl();
+    const serviceUrl = `${baseUrl}/servis/${serviceId}`;
     
-    try {
-      link.click();
-    } catch (error) {
-      option.fallback();
+    const title = 'Servis Todosijević';
+    const text = clientName 
+      ? `Servis za klijenta ${clientName}` 
+      : 'Informacije o servisu';
+    
+    return shareContent({
+      title,
+      text,
+      url: serviceUrl
+    });
+  },
+  
+  /** Share file (ako je podržano) */
+  shareFile: async (file: File, title?: string): Promise<ShareResult> => {
+    return shareContent({
+      title: title || 'Podeliti fajl',
+      files: [file]
+    });
+  },
+  
+  /** Share multiple files */
+  shareFiles: async (files: File[], title?: string): Promise<ShareResult> => {
+    return shareContent({
+      title: title || 'Podeliti fajlove',
+      files: files
+    });
+  },
+  
+  /** Check sharing capabilities */
+  getCapabilities: () => ({
+    nativeShare: isNativeShareSupported(),
+    webShare: isWebShareSupported(),
+    clipboardWrite: !!(navigator.clipboard && navigator.clipboard.writeText),
+    canShareFiles: !!(navigator.canShare && navigator.share),
+    platform: runtimeHelpers.getPlatform(),
+    recommendedMethod: isNativeShareSupported() ? 'native' : 
+                     isWebShareSupported() ? 'web' : 'fallback'
+  })
+};
+
+/**
+ * React hook za sharing (optional, ako se koristi u komponentama)
+ */
+export function useSharing() {
+  const share = async (data: ShareData) => {
+    const result = await shareContent(data);
+    
+    // Možete dodati toast notifikacije ili error handling ovde
+    if (!result.success) {
+      console.error('Sharing failed:', result.error);
     }
     
-    document.body.removeChild(link);
-  });
-}
-
-// Specifične funkcije za dijeljenje različitih tipova sadržaja
-
-export function shareSparePartOrder(order: any): Promise<boolean> {
-  // Izvuci informacije o servisu, klijentu i aparatu iz povezanih objekata
-  const service = order.service;
-  const client = service?.client;
-  const appliance = service?.appliance;
-  const technician = order.technician || service?.technician;
-  
-  // Formiraj kompletan opis za dobavljača
-  const applianceInfo = appliance ? 
-    `${appliance.manufacturer?.name || 'Nepoznat proizvodjac'} ${appliance.model || 'Nepoznat model'}` : 
-    'Nepoznat uređaj';
-  
-  const serialNumber = appliance?.serialNumber || 'Nepoznat S/N';
-  const warrantyStatus = service?.warrantyStatus || 'Nepoznato';
-  const clientInfo = client ? 
-    `${client.fullName}${client.address ? `, ${client.address}` : ''}${client.city ? `, ${client.city}` : ''}` : 
-    'Nepoznat klijent';
-  
-  const shareData: ShareData = {
-    title: '🔧 ZAHTEV ZA REZERVNI DEO - Frigo Sistem',
-    text: `📋 DEO: ${order.partName}${order.partNumber ? ` (${order.partNumber})` : ''}
-
-🏠 KLIJENT: ${clientInfo}
-📱 Telefon: ${client?.phone || 'N/A'}
-
-🔧 UREĐAJ: ${applianceInfo}
-📟 S/N: ${serialNumber}
-⚖️ GARANCIJA: ${warrantyStatus}
-
-👨‍🔧 TEHNIKER: ${technician?.fullName || technician?.name || 'N/A'}
-📞 Tel: ${technician?.phone || 'N/A'}
-
-📦 KOLIČINA: ${order.quantity}
-⚠️ PRIORITET: ${getUrgencyText(order.urgency)}
-⏰ STATUS: ${getStatusEmoji(order.status)} ${getStatusText(order.status)}
-
-💰 PROCJENA: ${order.estimatedCost || 'N/A'} EUR
-💵 STVARNA: ${order.actualCost || 'N/A'} EUR
-🏪 DOBAVLJAČ: ${order.supplierName || 'N/A'}
-
-📝 OPIS: ${order.description || 'Nema dodatnog opisa'}
-
-🆔 Porudžbina #${order.id}${service ? ` | Servis #${service.id}` : ''}
-
-🔗 Detalji: ${getProductionUrl()}/admin/spare-parts?order=${order.id}`
+    return result;
   };
   
-  return shareContent(shareData);
+  return {
+    share,
+    shareUrl: shareHelpers.shareUrl,
+    shareText: shareHelpers.shareText,
+    shareService: shareHelpers.shareService,
+    shareFile: shareHelpers.shareFile,
+    capabilities: shareHelpers.getCapabilities(),
+  };
 }
 
-export function shareServiceInfo(service: any): Promise<boolean> {
-  // Izvuci informacije o klijentu i aparatu iz povezanih objekata
-  const client = service.client;
-  const appliance = service.appliance;
-  const technician = service.technician;
+/**
+ * Error handling utilities za sharing
+ */
+export const shareErrorHandler = {
+  /** Obrađuje sharing greške i prikazuje korisne poruke */
+  handleShareError: (error: any, method: string): string => {
+    console.error(`❌ [Share] ${method} failed:`, error);
+    
+    if (error.name === 'AbortError' || error.message?.includes('canceled')) {
+      return 'Deljenje je otkazano';
+    }
+    
+    if (error.name === 'NotAllowedError') {
+      return 'Deljenje nije dozvoljeno. Proverite dozvole aplikacije.';
+    }
+    
+    if (error.name === 'DataError') {
+      return 'Podaci za deljenje nisu validni.';
+    }
+    
+    if (error.message?.includes('not supported')) {
+      return 'Deljenje nije podržano na ovom uređaju.';
+    }
+    
+    return 'Greška pri deljenju. Pokušajte ponovo.';
+  },
   
-  // Formiraj detaljne informacije o aparatu
-  const applianceInfo = appliance ? 
-    `${appliance.manufacturer?.name || 'Nepoznat proizvodjac'} ${appliance.model || 'Nepoznat model'}` : 
-    'Nepoznat uređaj';
-  
-  const serialNumber = appliance?.serialNumber || 'Nepoznat S/N';
-  const category = appliance?.category?.name || 'Nepoznata kategorija';
-  
-  // Formiraj informacije o klijentu  
-  const clientInfo = client ? 
-    `${client.fullName}${client.address ? `, ${client.address}` : ''}${client.city ? `, ${client.city}` : ''}` : 
-    'Nepoznat klijent';
-  
-  // Formatiranje datuma
-  const createdDate = service.createdAt ? new Date(service.createdAt).toLocaleDateString('sr-Cyrl-ME') : 'N/A';
-  const scheduledDate = service.scheduledDate ? new Date(service.scheduledDate).toLocaleDateString('sr-Cyrl-ME') : 'Nije zakazano';
-  const completedDate = service.status === 'completed' && service.updatedAt ? 
-    new Date(service.updatedAt).toLocaleDateString('sr-Cyrl-ME') : 'N/A';
-  
-  // Status sa emoji
-  const statusWithEmoji = getServiceStatusEmoji(service.status) + ' ' + getServiceStatusText(service.status);
-  
-  const shareData: ShareData = {
-    title: '🔧 SERVIS INFORMACIJE - Frigo Sistem',
-    text: `📋 SERVIS #${service.id} - ${statusWithEmoji}
+  /** Retry logic za sharing sa exponential backoff */
+  retryShare: async (shareData: ShareData, maxRetries: number = 3): Promise<ShareResult> => {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 [Share] Attempt ${attempt}/${maxRetries}`);
+        
+        const result = await shareContent(shareData);
+        
+        if (result.success) {
+          return result;
+        }
+        
+        lastError = new Error(result.error || 'Share failed');
+        
+        // Ne retry-uj ako je korisnik otkazao
+        if (result.error?.includes('canceled')) {
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          console.log(`⏳ [Share] Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+      } catch (error) {
+        lastError = error;
+        console.warn(`⚠️ [Share] Attempt ${attempt} failed:`, error);
+      }
+    }
+    
+    return {
+      success: false,
+      error: shareErrorHandler.handleShareError(lastError, 'retry'),
+      method: 'fallback'
+    };
+  }
+};
 
-🏠 KLIJENT: ${clientInfo}
-📱 Telefon: ${client?.phone || 'N/A'}
-📧 Email: ${client?.email || 'N/A'}
-${client?.companyName ? `🏢 Kompanija: ${client.companyName}` : ''}
-
-🔧 UREĐAJ: ${applianceInfo}
-📦 Kategorija: ${category}
-📟 S/N: ${serialNumber}
-
-👨‍🔧 SERVISER: ${technician?.fullName || 'Nije dodeljen'}
-📞 Tel. servisera: ${technician?.phone || 'N/A'}
-🔧 Specijalizacija: ${technician?.specialization || 'N/A'}
-
-📅 DATUM KREIRANJA: ${createdDate}
-⏰ DATUM ZAKAZIVANJA: ${scheduledDate}
-${service.status === 'completed' ? `✅ DATUM ZAVRŠETKA: ${completedDate}` : ''}
-
-📋 PROBLEM: ${service.description || 'Nema opisa'}
-${service.technicianNotes ? `👨‍🔧 NAPOMENE SERVISERA: ${service.technicianNotes}` : ''}
-${service.usedParts ? `🔧 KORIŠĆENI DIJELOVI: ${service.usedParts}` : ''}
-${service.machineNotes ? `⚙️ NAPOMENE O APARATU: ${service.machineNotes}` : ''}
-${service.cost ? `💰 TROŠKOVI: ${service.cost} EUR` : ''}
-${service.isCompletelyFixed !== undefined ? (service.isCompletelyFixed ? '✅ POTPUNO ISPRAVLJEN' : '⚠️ DJELOMIČNO ISPRAVLJEN') : ''}
-
-⚠️ PRIORITET: ${service.priority ? service.priority.toUpperCase() : 'NORMALAN'}
-${service.devicePickedUp ? `📦 UREĐAJ PREUZET: ${service.pickupDate ? new Date(service.pickupDate).toLocaleDateString('sr-Cyrl-ME') : 'Da'}` : '🏠 UREĐAJ KOD KLIJENTA'}
-${service.isWarrantyService ? '🛡️ GARANTNI SERVIS' : '💰 VANGARANTNI SERVIS'}
-
-🔗 Detalji: ${getProductionUrl()}/admin/services?service=${service.id}`
+// Debug info za development
+if (runtimeHelpers.isDevelopment() && typeof window !== 'undefined') {
+  // @ts-ignore
+  window.shareDebug = {
+    capabilities: shareHelpers.getCapabilities(),
+    test: (data: ShareData) => shareContent(data),
+    helpers: shareHelpers,
   };
   
-  return shareContent(shareData);
-}
-
-export function shareClientInfo(client: any): Promise<boolean> {
-  const shareData: ShareData = {
-    title: '👤 KLIJENT INFORMACIJE - Frigo Sistem',
-    text: `🏠 Ime: ${client.name}
-📍 Adresa: ${client.address}
-📱 Telefon: ${client.phone}
-📧 Email: ${client.email || 'N/A'}
-💼 Tip: ${client.type || 'Fizičko lice'}
-
-🆔 Klijent #${client.id}
-
-🔗 Detalji: ${getProductionUrl()}/admin/clients/${client.id}`
-  };
-  
-  return shareContent(shareData);
-}
-
-// Helper funkcije
-function getStatusEmoji(status: string): string {
-  const statusEmojis: Record<string, string> = {
-    'pending': '⏳',
-    'requested': '📝', 
-    'admin_ordered': '🛒',
-    'received': '📦',
-    'available': '✅',
-    'consumed': '✅',
-    'waiting_delivery': '🚚'
-  };
-  return statusEmojis[status] || '📋';
-}
-
-function getStatusText(status: string): string {
-  const statusTexts: Record<string, string> = {
-    'pending': 'Na čekanju',
-    'requested': 'Zahtevano',
-    'admin_ordered': 'Admin poručio',
-    'received': 'Stigao',
-    'available': 'Dostupan',
-    'consumed': 'Iskorišćen',
-    'waiting_delivery': 'Čeka dostavu'
-  };
-  return statusTexts[status] || status;
-}
-
-function getUrgencyText(urgency: string): string {
-  const urgencyTexts: Record<string, string> = {
-    'normal': 'Normalno',
-    'high': 'Visoko',
-    'urgent': 'Hitno'
-  };
-  return urgencyTexts[urgency] || urgency;
-}
-
-// Service status helper funkcije
-function getServiceStatusEmoji(status: string): string {
-  const statusEmojis: Record<string, string> = {
-    'pending': '⏳',
-    'in_progress': '🔧',
-    'completed': '✅',
-    'cancelled': '❌',
-    'waiting_parts': '📦',
-    'scheduled': '📅'
-  };
-  return statusEmojis[status] || '📋';
-}
-
-function getServiceStatusText(status: string): string {
-  const statusTexts: Record<string, string> = {
-    'pending': 'Na čekanju',
-    'in_progress': 'U toku',
-    'completed': 'Završen',
-    'cancelled': 'Otkazan',
-    'waiting_parts': 'Čeka dijelove',
-    'scheduled': 'Zakazan'
-  };
-  return statusTexts[status] || status;
+  console.log('🛠️ [Share] Debug helpers available at window.shareDebug');
 }
