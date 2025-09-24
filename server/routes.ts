@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getAllSparePartOrders();
       res.json(orders);
     } catch (error) {
-      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina:", error);
+      logger.error("Greška pri dohvatanju porudžbina rezervnih delova:", error);
       res.status(500).json({ error: "Greška pri učitavanju porudžbina rezervnih delova" });
     }
   });
@@ -187,18 +187,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getPendingSparePartOrders();
       res.json(orders);
     } catch (error) {
-      console.error("❌ [SPARE PARTS] Greška pri dohvatanju porudžbina na čekanju:", error);
+      logger.error("Greška pri dohvatanju porudžbina na čekanju:", error);
       res.status(500).json({ error: "Greška pri učitavanju porudžbina na čekanju" });
     }
   });
 
   app.get("/api/admin/spare-parts/all-requests", jwtAuth, requireRole(['admin']), async (req, res) => {
     try {
-      logger.debug("📋 [ALL-REQUESTS] Admin traži sve zahteve (pending + requested)");
       const orders = await storage.getAllRequestsSparePartOrders();
       res.json(orders);
     } catch (error) {
-      console.error("❌ [ALL-REQUESTS] Greška pri dohvatanju svih zahteva:", error);
+      logger.error("Greška pri dohvatanju svih zahteva rezervnih delova:", error);
       res.status(500).json({ error: "Greška pri učitavanju svih zahteva rezervnih delova" });
     }
   });
