@@ -92,6 +92,10 @@ const config: CapacitorConfig = {
     Device: {
       // Automatically enabled - koristi se u runtime-config
     },
+    // Camera plugin za native photo capture
+    Camera: {
+      // Automatically enabled - koristi se u MobilePhotoUploader
+    },
   },
   
   // Android specifične optimizacije
@@ -121,6 +125,7 @@ const config: CapacitorConfig = {
     '@capacitor/device',
     '@capacitor/preferences',
     '@capacitor/network', // Dodato za offline support
+    '@capacitor/camera', // Dodato za native photo capture
   ],
   
   // Logging za debugging mobilne aplikacije
