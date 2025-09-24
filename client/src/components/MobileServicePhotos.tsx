@@ -82,7 +82,11 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
   // Fetch service photos
   const { data: photos = [], isLoading, refetch } = useQuery<ServicePhoto[]>({
     queryKey: ['/api/service-photos', serviceId],
-    queryFn: () => apiRequest(`/api/service-photos?serviceId=${serviceId}`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/service-photos?serviceId=${serviceId}`);
+      const data = await response.json();
+      return data as ServicePhoto[];
+    },
     enabled: !!serviceId && isOnline
   });
 
@@ -269,7 +273,7 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
   // Group photos by category - safe guard against null/undefined photos
   const photosArray = Array.isArray(photos) ? photos : [];
   const photosByCategory = photosArray.reduce((acc: Record<string, ServicePhoto[]>, photo: ServicePhoto) => {
-    const category = photo.category || photo.photoCategory || 'other';
+    const category = photo.photoCategory || 'other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(photo);
     return acc;
@@ -397,11 +401,11 @@ export function MobileServicePhotos({ serviceId, readOnly = false, showUpload = 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Image className="h-5 w-5" />
-            Fotografije servisa ({photos.length})
+            Fotografije servisa ({photosArray.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {photos.length === 0 ? (
+          {photosArray.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Camera className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p>Nema fotografija za ovaj servis</p>

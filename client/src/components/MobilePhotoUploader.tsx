@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Camera, Upload, Mic, MapPin, Image, Check, X, Loader2 } from 'lucide-react';
+import { useNativeCamera } from '@/utils/nativeCameraUtils';
 
 interface MobilePhotoUploaderProps {
   serviceId: number;
@@ -33,6 +34,7 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { capturePhoto, pickFromGallery, isNativeSupported } = useNativeCamera();
 
   // Get current location
   const getCurrentLocation = () => {
@@ -57,8 +59,30 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
     }
   };
 
-  // Handle camera capture
-  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle camera capture (Native vs Web)
+  const handleCameraCapture = async () => {
+    try {
+      const photo = await capturePhoto({
+        quality: 80,
+        correctOrientation: true,
+        source: 'camera'
+      });
+      setCapturedImage(photo.dataUrl);
+      toast({
+        title: "📸 Fotografija snimljena",
+        description: isNativeSupported ? "Koristite native kameru" : "Koristite web kameru",
+      });
+    } catch (error: any) {
+      console.error('Camera capture error:', error);
+      // Fallback to web input if native fails
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
+      }
+    }
+  };
+
+  // Fallback web camera capture
+  const handleWebCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -69,8 +93,30 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
     reader.readAsDataURL(file);
   };
 
-  // Handle file selection
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle gallery selection (Native vs Web)
+  const handleGallerySelect = async () => {
+    try {
+      const photo = await pickFromGallery({
+        quality: 80,
+        correctOrientation: true,
+        source: 'gallery'
+      });
+      setCapturedImage(photo.dataUrl);
+      toast({
+        title: "🖼️ Slika odabrana",
+        description: isNativeSupported ? "Koristi native galeriju" : "Koristi web galeriju",
+      });
+    } catch (error: any) {
+      console.error('Gallery selection error:', error);
+      // Fallback to web input if native fails
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }
+  };
+
+  // Fallback web file selection
+  const handleWebFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -192,23 +238,23 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
           <div className="space-y-3">
             {/* Camera Button */}
             <Button 
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={handleCameraCapture}
               className="w-full h-12 text-base"
               size="lg"
             >
               <Camera className="h-6 w-6 mr-2" />
-              Fotografiši kamerom
+              {isNativeSupported ? '📱 Native kamera' : '🌐 Web kamera'}
             </Button>
             
             {/* Gallery Button */}
             <Button 
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleGallerySelect}
               variant="outline"
               className="w-full h-12 text-base"
               size="lg"
             >
               <Image className="h-6 w-6 mr-2" />
-              Izaberi iz galerije
+              {isNativeSupported ? '📱 Native galerija' : '🌐 Web galerija'}
             </Button>
 
             {/* Location Button */}
@@ -312,20 +358,20 @@ export function MobilePhotoUploader({ serviceId, onPhotoUploaded, onClose }: Mob
           </div>
         )}
 
-        {/* Hidden file inputs */}
+        {/* Hidden file inputs (web fallback) */}
         <input
           ref={cameraInputRef}
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={handleCameraCapture}
+          onChange={handleWebCameraCapture}
           className="hidden"
         />
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          onChange={handleFileSelect}
+          onChange={handleWebFileSelect}
           className="hidden"
         />
 
